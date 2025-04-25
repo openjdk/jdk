@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
@@ -145,13 +144,15 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     }
     if (ntags == LogTag::MaxTags) {
       if (errstream != nullptr) {
-        errstream->print_cr("Too many tags in log selection '%s' (can only have up to " SIZE_FORMAT " tags).",
+        errstream->print_cr("Too many tags in log selection '%s' (can only have up to %zu tags).",
                                str, LogTag::MaxTags);
       }
       return LogSelection::Invalid;
     }
     tags[ntags++] = tag;
-    cur_tag = plus_pos + 1;
+    if (plus_pos != nullptr) {
+      cur_tag = plus_pos + 1;
+    }
   } while (plus_pos != nullptr);
 
   for (size_t i = 0; i < ntags; i++) {

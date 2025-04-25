@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,18 +523,19 @@ final class WPathGraphics extends PathGraphics {
 
         float awScale = getAwScale(scaleFactorX, scaleFactorY);
         int iangle = getAngle(ptx);
+        double devangle = Math.atan2(deviceTransform.getShearY(), deviceTransform.getScaleY());
 
         ptx = new Point2D.Double(1.0, 0.0);
         deviceTransform.deltaTransform(ptx, ptx);
         double advanceScaleX = Math.sqrt(ptx.x*ptx.x+ptx.y*ptx.y);
         pty = new Point2D.Double(0.0, 1.0);
         deviceTransform.deltaTransform(pty, pty);
-        double advanceScaleY = Math.sqrt(pty.x*pty.x+pty.y*pty.y);
+        double advanceScaleY = -Math.sqrt(pty.x*pty.x+pty.y*pty.y);
 
         Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof TrueTypeFont) {
             textOut(str, font, (TrueTypeFont)font2D, frc,
-                    scaledFontSizeY, iangle, awScale,
+                    scaledFontSizeY, iangle, devangle, awScale,
                     advanceScaleX, advanceScaleY,
                     x, y, devpos.x, devpos.y, targetW);
         } else if (font2D instanceof CompositeFont) {
@@ -565,7 +566,7 @@ final class WPathGraphics extends PathGraphics {
                 String substr = new String(chars, startChar,endChar-startChar);
                 PhysicalFont slotFont = compFont.getSlotFont(slot);
                 textOut(substr, font, slotFont, frc,
-                        scaledFontSizeY, iangle, awScale,
+                        scaledFontSizeY, iangle, devangle, awScale,
                         advanceScaleX, advanceScaleY,
                         userx, usery, devx, devy, 0f);
                 Rectangle2D bds = font.getStringBounds(substr, frc);
@@ -628,22 +629,11 @@ final class WPathGraphics extends PathGraphics {
          */
         Point2D.Float userpos = new Point2D.Float(x, y);
         /* Add the position of the first glyph - its not always 0,0 */
+        /* This glyph position includes the font's transform translation, if any */
         Point2D g0pos = gv.getGlyphPosition(0);
         userpos.x += (float)g0pos.getX();
         userpos.y += (float)g0pos.getY();
         Point2D.Float devpos = new Point2D.Float();
-
-        /* Already have the translate from the deviceTransform,
-         * but the font may have a translation component too.
-         */
-        if (font.isTransformed()) {
-            AffineTransform fontTx = font.getTransform();
-            float translateX = (float)(fontTx.getTranslateX());
-            float translateY = (float)(fontTx.getTranslateY());
-            if (Math.abs(translateX) < 0.00001) translateX = 0f;
-            if (Math.abs(translateY) < 0.00001) translateY = 0f;
-            userpos.x += translateX; userpos.y += translateY;
-        }
         deviceTransform.transform(userpos, devpos);
 
         if (getClip() != null) {
@@ -688,13 +678,14 @@ final class WPathGraphics extends PathGraphics {
 
         float awScale = getAwScale(scaleFactorX, scaleFactorY);
         int iangle = getAngle(ptx);
+        double devangle = Math.atan2(deviceTransform.getShearY(), deviceTransform.getScaleY());
 
         ptx = new Point2D.Double(1.0, 0.0);
         deviceTransform.deltaTransform(ptx, ptx);
         double advanceScaleX = Math.sqrt(ptx.x*ptx.x+ptx.y*ptx.y);
         pty = new Point2D.Double(0.0, 1.0);
         deviceTransform.deltaTransform(pty, pty);
-        double advanceScaleY = Math.sqrt(pty.x*pty.x+pty.y*pty.y);
+        double advanceScaleY = -Math.sqrt(pty.x*pty.x+pty.y*pty.y);
 
         int numGlyphs = gv.getNumGlyphs();
         int[] glyphCodes = gv.getGlyphCodes(0, numGlyphs, null);
@@ -754,6 +745,8 @@ final class WPathGraphics extends PathGraphics {
          */
         AffineTransform advanceTransform =
            AffineTransform.getScaleInstance(advanceScaleX, advanceScaleY);
+        advanceTransform.rotate(devangle); // radians
+        advanceTransform.rotate(iangle * Math.PI / 1800.0); // 1/10 degrees -> radians
         float[] glyphAdvPos = new float[glyphPos.length];
 
         advanceTransform.transform(glyphPos, 0,         //source
@@ -830,7 +823,8 @@ final class WPathGraphics extends PathGraphics {
     private void textOut(String str,
                           Font font, PhysicalFont font2D,
                           FontRenderContext frc,
-                          float deviceSize, int rotation, float awScale,
+                          float deviceSize, int iangle, double devangle,
+                          float awScale,
                           double scaleFactorX, double scaleFactorY,
                           float userx, float usery,
                           float devx, float devy, float targetW) {
@@ -838,8 +832,7 @@ final class WPathGraphics extends PathGraphics {
          String family = font2D.getFamilyName(null);
          int style = font.getStyle() | font2D.getStyle();
          WPrinterJob wPrinterJob = (WPrinterJob)getPrinterJob();
-         boolean setFont = wPrinterJob.setFont(family, deviceSize, style,
-                                               rotation, awScale);
+         boolean setFont = wPrinterJob.setFont(family, deviceSize, style, iangle, awScale);
          if (!setFont) {
              super.drawString(str, userx, usery, font, frc, targetW);
              return;
@@ -873,6 +866,8 @@ final class WPathGraphics extends PathGraphics {
               */
              AffineTransform advanceTransform =
                 AffineTransform.getScaleInstance(scaleFactorX, scaleFactorY);
+             advanceTransform.rotate(devangle); // radians
+             advanceTransform.rotate(iangle * Math.PI / 1800.0); // 1/10 degrees -> radians
              float[] glyphAdvPos = new float[glyphPos.length];
 
              advanceTransform.transform(glyphPos, 0,         //source

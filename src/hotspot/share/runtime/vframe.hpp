@@ -281,7 +281,8 @@ class vframeStreamCommon : StackObj {
 
  public:
   // Constructor
-  inline vframeStreamCommon(RegisterMap reg_map);
+  inline vframeStreamCommon(JavaThread* thread, RegisterMap::UpdateMap update_map, RegisterMap::ProcessFrames process_frames, RegisterMap::WalkContinuation walk_cont);
+  vframeStreamCommon(oop continuation);
 
   // Accessors
   Method* method() const { return _method; }

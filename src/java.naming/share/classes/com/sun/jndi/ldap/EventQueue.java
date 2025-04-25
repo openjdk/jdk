@@ -71,7 +71,7 @@ final class EventQueue implements Runnable {
 
     // package private
     EventQueue() {
-        qThread = Obj.helper.createThread(this);
+        qThread = new Thread(this);
         qThread.setDaemon(true);  // not a user thread
         qThread.start();
     }

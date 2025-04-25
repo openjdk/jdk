@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinScriptTest.java
+ * @compile -Xlint:all -Werror WinScriptTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinScriptTest
  */
@@ -102,6 +102,9 @@ public class WinScriptTest {
                     msiScriptData.assertJPackageOutput(result.getOutput());
                 });
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         test.run();
@@ -124,19 +127,19 @@ public class WinScriptTest {
         void assertJPackageOutput(List<String> output) {
             TKit.assertTextStream(String.format("    jp: %s", echoText))
                     .predicate(String::equals)
-                    .apply(output.stream());
+                    .apply(output);
 
             String cwdPattern = String.format("    jp: CWD(%s)=", envVarName);
             TKit.assertTextStream(cwdPattern)
                     .predicate(String::startsWith)
-                    .apply(output.stream());
+                    .apply(output);
             String cwd = output.stream().filter(line -> line.startsWith(
                     cwdPattern)).findFirst().get().substring(cwdPattern.length());
 
             String envVarPattern = String.format("    jp: %s=", envVarName);
             TKit.assertTextStream(envVarPattern)
                     .predicate(String::startsWith)
-                    .apply(output.stream());
+                    .apply(output);
             String envVar = output.stream().filter(line -> line.startsWith(
                     envVarPattern)).findFirst().get().substring(envVarPattern.length());
 

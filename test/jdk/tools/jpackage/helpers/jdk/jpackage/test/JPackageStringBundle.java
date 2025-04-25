@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,15 @@ public enum JPackageStringBundle {
     }
 
     private String getFormattedString(String key, Object[] args) {
-        return MessageFormat.format(getString(key), args);
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
     }
 
-    public CannedFormattedString cannedFormattedString(String key, String ... args) {
+    public CannedFormattedString cannedFormattedString(String key, Object ... args) {
         return new CannedFormattedString(this::getFormattedString, key, args);
     }
 

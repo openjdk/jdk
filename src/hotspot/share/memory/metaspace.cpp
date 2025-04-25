@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -32,11 +31,13 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -57,11 +58,12 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "virtualspace.hpp"
+#include "utilities/ostream.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -213,21 +215,24 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale) {
 
 void MetaspaceUtils::print_on(outputStream* out) {
 
-  // Used from all GCs. It first prints out totals, then, separately, the class space portion.
+  // First prints out totals, then, separately, the class space portion.
   MetaspaceCombinedStats stats = get_combined_statistics();
-  out->print_cr(" Metaspace       "
-                "used "      SIZE_FORMAT "K, "
-                "committed " SIZE_FORMAT "K, "
-                "reserved "  SIZE_FORMAT "K",
+  out->print("Metaspace ");
+  out->fill_to(17);
+  out->print_cr("used %zuK, "
+                "committed %zuK, "
+                "reserved %zuK",
                 stats.used()/K,
                 stats.committed()/K,
                 stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    out->print_cr("  class space    "
-                  "used "      SIZE_FORMAT "K, "
-                  "committed " SIZE_FORMAT "K, "
-                  "reserved "  SIZE_FORMAT "K",
+    StreamAutoIndentor indentor(out, 1);
+    out->print("class space ");
+    out->fill_to(17);
+    out->print_cr("used %zuK, "
+                  "committed %zuK, "
+                  "reserved %zuK",
                   stats.class_space_stats().used()/K,
                   stats.class_space_stats().committed()/K,
                   stats.class_space_stats().reserved()/K);
@@ -385,7 +390,7 @@ bool MetaspaceGC::can_expand(size_t word_size, bool is_class) {
   if (is_class && Metaspace::using_class_space()) {
     size_t class_committed = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
     if (class_committed + word_size * BytesPerWord > CompressedClassSpaceSize) {
-      log_trace(gc, metaspace, freelist)("Cannot expand %s metaspace by " SIZE_FORMAT " words (CompressedClassSpaceSize = " SIZE_FORMAT " words)",
+      log_trace(gc, metaspace, freelist)("Cannot expand %s metaspace by %zu words (CompressedClassSpaceSize = %zu words)",
                 (is_class ? "class" : "non-class"), word_size, CompressedClassSpaceSize / sizeof(MetaWord));
       return false;
     }
@@ -394,7 +399,7 @@ bool MetaspaceGC::can_expand(size_t word_size, bool is_class) {
   // Check if the user has imposed a limit on the metaspace memory.
   size_t committed_bytes = MetaspaceUtils::committed_bytes();
   if (committed_bytes + word_size * BytesPerWord > MaxMetaspaceSize) {
-    log_trace(gc, metaspace, freelist)("Cannot expand %s metaspace by " SIZE_FORMAT " words (MaxMetaspaceSize = " SIZE_FORMAT " words)",
+    log_trace(gc, metaspace, freelist)("Cannot expand %s metaspace by %zu words (MaxMetaspaceSize = %zu words)",
               (is_class ? "class" : "non-class"), word_size, MaxMetaspaceSize / sizeof(MetaWord));
     return false;
   }
@@ -412,8 +417,8 @@ size_t MetaspaceGC::allowed_expansion() {
   size_t left_until_GC = capacity_until_gc > committed_bytes ?
       capacity_until_gc - committed_bytes : 0;
   size_t left_to_commit = MIN2(left_until_GC, left_until_max);
-  log_trace(gc, metaspace, freelist)("allowed expansion words: " SIZE_FORMAT
-            " (left_until_max: " SIZE_FORMAT ", left_until_GC: " SIZE_FORMAT ".",
+  log_trace(gc, metaspace, freelist)("allowed expansion words: %zu"
+            " (left_until_max: %zu, left_until_GC: %zu.",
             left_to_commit / BytesPerWord, left_until_max / BytesPerWord, left_until_GC / BytesPerWord);
 
   return left_to_commit / BytesPerWord;
@@ -477,7 +482,7 @@ void MetaspaceGC::compute_new_size() {
   // No expansion, now see if we want to shrink
   // We would never want to shrink more than this
   assert(capacity_until_GC >= minimum_desired_capacity,
-         SIZE_FORMAT " >= " SIZE_FORMAT,
+         "%zu >= %zu",
          capacity_until_GC, minimum_desired_capacity);
   size_t max_shrink_bytes = capacity_until_GC - minimum_desired_capacity;
 
@@ -511,7 +516,7 @@ void MetaspaceGC::compute_new_size() {
       shrink_bytes = align_down(shrink_bytes, Metaspace::commit_alignment());
 
       assert(shrink_bytes <= max_shrink_bytes,
-             "invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
+             "invalid shrink size %zu not <= %zu",
              shrink_bytes, max_shrink_bytes);
       if (current_shrink_factor == 0) {
         _shrink_factor = 10;
@@ -553,7 +558,7 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
     MetaWord* base = VirtualSpaceList::vslist_class()->base_of_first_node();
     size_t size = VirtualSpaceList::vslist_class()->word_size_of_first_node();
     MetaWord* top = base + size;
-    st->print("Compressed class space mapped at: " PTR_FORMAT "-" PTR_FORMAT ", reserved size: " SIZE_FORMAT,
+    st->print("Compressed class space mapped at: " PTR_FORMAT "-" PTR_FORMAT ", reserved size: %zu",
                p2i(base), p2i(top), (top - base) * BytesPerWord);
     st->cr();
   }
@@ -562,10 +567,10 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
 // Given a prereserved space, use that to set up the compressed class space list.
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   assert(rs.size() >= CompressedClassSpaceSize,
-         SIZE_FORMAT " != " SIZE_FORMAT, rs.size(), CompressedClassSpaceSize);
+         "%zu != %zu", rs.size(), CompressedClassSpaceSize);
   assert(using_class_space(), "Must be using class space");
 
-  assert(rs.size() == CompressedClassSpaceSize, SIZE_FORMAT " != " SIZE_FORMAT,
+  assert(rs.size() == CompressedClassSpaceSize, "%zu != %zu",
          rs.size(), CompressedClassSpaceSize);
   assert(is_aligned(rs.base(), Metaspace::reserve_alignment()) &&
          is_aligned(rs.size(), Metaspace::reserve_alignment()),
@@ -597,17 +602,20 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   }
 
   // Wrap resulting range in ReservedSpace
-  ReservedSpace rs;
   if (result != nullptr) {
     log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
-    rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
-                                                      os::vm_page_size(), false, false);
+
+    return ReservedSpace(result,
+                         size,
+                         Metaspace::reserve_alignment(),
+                         os::vm_page_size(),
+                         !ExecMem,
+                         false /* special */);
   } else {
     log_debug(metaspace, map)("Failed to map.");
-    rs = ReservedSpace();
+    return {};
   }
-  return rs;
 }
 #endif // _LP64
 
@@ -688,7 +696,7 @@ void Metaspace::ergo_initialize() {
     //  Lets just live with that, its not a big deal.
     if (adjusted_ccs_size != CompressedClassSpaceSize) {
       FLAG_SET_ERGO(CompressedClassSpaceSize, adjusted_ccs_size);
-      log_info(metaspace)("Setting CompressedClassSpaceSize to " SIZE_FORMAT ".",
+      log_info(metaspace)("Setting CompressedClassSpaceSize to %zu.",
                           CompressedClassSpaceSize);
     }
   }
@@ -713,7 +721,6 @@ void Metaspace::global_initialize() {
   metaspace::ChunkHeaderPool::initialize();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    assert(!CDSConfig::is_using_archive(), "sanity");
     MetaspaceShared::initialize_for_static_dump();
   }
 
@@ -757,11 +764,15 @@ void Metaspace::global_initialize() {
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
-                    "(must be aligned to " SIZE_FORMAT_X ").",
+                    "(must be aligned to 0x%zx).",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
-      rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                         os::vm_page_size() /* large */, (char*)base);
+
+      rs = MemoryReserver::reserve((char*)base,
+                                   size,
+                                   Metaspace::reserve_alignment(),
+                                   os::vm_page_size());
+
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
@@ -785,12 +796,12 @@ void Metaspace::global_initialize() {
     // ...failing that, give up.
     if (!rs.is_reserved()) {
       vm_exit_during_initialization(
-          err_msg("Could not allocate compressed class space: " SIZE_FORMAT " bytes",
+          err_msg("Could not allocate compressed class space: %zu bytes",
                    CompressedClassSpaceSize));
     }
 
     // Mark class space as such
-    MemTracker::record_virtual_memory_tag((address)rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag(rs, mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);
@@ -798,35 +809,42 @@ void Metaspace::global_initialize() {
     // Set up compressed class pointer encoding.
     // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
+
+    // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
+    // establish a protection zone. Accidentally decoding a zero nKlass ID and then using it will result
+    // in an immediate segmentation fault instead of a delayed error much later.
+    if (CompressedKlassPointers::base() == (address)rs.base()) {
+      // Let the protection zone be a whole commit granule. Otherwise, buddy allocator may later place neighboring
+      // chunks in the same granule, see that the granule is not yet committed, and commit it, which would replace
+      // the protection mapping and make the zone readable.
+      // Alternatively, we could commit the chunk right now, but that is a tiny bit more fiddly, since we are not
+      // fully set up yet at this point.
+      const size_t protzone_size = metaspace::Settings::commit_granule_bytes(); // granule size >= page size
+      const size_t protzone_wordsize = protzone_size / BytesPerWord;
+      const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(protzone_wordsize);
+      metaspace::Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
+      const address protzone = (address) chunk->base();
+      assert(protzone == (address)rs.base(), "The very first chunk should be located at the class space start?");
+      assert(chunk->word_size() == protzone_wordsize, "Weird chunk size");
+      CompressedKlassPointers::establish_protection_zone(protzone, protzone_size);
+    } else {
+      assert(CompressedKlassPointers::base() == nullptr, "Zero-based encoding expected");
+    }
+
   }
 
-#endif
+#endif // _LP64
 
   // Initialize non-class virtual space list, and its chunk manager:
   MetaspaceContext::initialize_nonclass_space_context();
 
   _tracer = new MetaspaceTracer();
 
-  // We must prevent the very first address of the ccs from being used to store
-  // metadata, since that address would translate to a narrow pointer of 0, and the
-  // VM does not distinguish between "narrow 0 as in null" and "narrow 0 as in start
-  //  of ccs".
-  // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
-  // had a header and therefore could not allocate anything at offset 0.
-#ifdef _LP64
-  if (using_class_space()) {
-    // The simplest way to fix this is to allocate a tiny dummy chunk right at the
-    // start of ccs and do not use it for anything.
-    MetaspaceContext::context_class()->cm()->get_chunk(metaspace::chunklevel::HIGHEST_CHUNK_LEVEL);
-  }
-#endif
-
 #ifdef _LP64
   if (UseCompressedClassPointers) {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       CDS_ONLY(MetaspaceShared::print_on(&ls);)
       Metaspace::print_compressed_class_space(&ls);
@@ -851,7 +869,7 @@ size_t Metaspace::max_allocation_word_size() {
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type, bool use_class_space) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
-         "allocation size too large (" SIZE_FORMAT ")", word_size);
+         "allocation size too large (%zu)", word_size);
 
   assert(loader_data != nullptr, "Should never pass around a null loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
@@ -927,7 +945,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   {
     LogMessage(gc, metaspace, freelist, oom) log;
     if (log.is_info()) {
-      log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
+      log.info("Metaspace (%s) allocation failed for size %zu",
                is_class_space_allocation(mdtype) ? "class" : "data", word_size);
       ResourceMark rm;
       if (log.is_debug()) {
@@ -1021,4 +1039,3 @@ bool Metaspace::is_in_shared_metaspace(const void* ptr) {
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -251,7 +250,7 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  st->print_cr("JNI global refs: " SIZE_FORMAT ", weak refs: " SIZE_FORMAT,
+  st->print_cr("JNI global refs: %zu, weak refs: %zu",
                global_handles()->allocation_count(),
                weak_global_handles()->allocation_count());
   st->cr();

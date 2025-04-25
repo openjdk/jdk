@@ -31,11 +31,11 @@ import java.lang.classfile.attribute.StackMapFrameInfo.ObjectVerificationTypeInf
 import java.lang.classfile.attribute.StackMapFrameInfo.SimpleVerificationTypeInfo;
 import java.lang.classfile.attribute.StackMapFrameInfo.UninitializedVerificationTypeInfo;
 import java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo;
-import java.lang.classfile.components.ClassPrinter.LeafNode;
-import java.lang.classfile.components.ClassPrinter.ListNode;
-import java.lang.classfile.components.ClassPrinter.MapNode;
-import java.lang.classfile.components.ClassPrinter.Node;
-import java.lang.classfile.components.ClassPrinter.Verbosity;
+import jdk.internal.classfile.components.ClassPrinter.LeafNode;
+import jdk.internal.classfile.components.ClassPrinter.ListNode;
+import jdk.internal.classfile.components.ClassPrinter.MapNode;
+import jdk.internal.classfile.components.ClassPrinter.Node;
+import jdk.internal.classfile.components.ClassPrinter.Verbosity;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ConstantDesc;

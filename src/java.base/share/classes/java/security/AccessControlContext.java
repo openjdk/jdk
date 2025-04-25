@@ -44,14 +44,6 @@ import java.util.List;
 public final class AccessControlContext {
 
     private ProtectionDomain[] context;
-    // isPrivileged and isAuthorized are referenced by the VM - do not remove
-    // or change their names
-    private boolean isPrivileged;
-    private boolean isAuthorized = false;
-
-    // Note: This field is directly used by the virtual machine
-    // native codes. Don't touch it.
-    private AccessControlContext privilegedContext;
 
     @SuppressWarnings("removal")
     private DomainCombiner combiner = null;

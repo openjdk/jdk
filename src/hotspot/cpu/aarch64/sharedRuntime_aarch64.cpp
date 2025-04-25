@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
@@ -760,7 +759,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ ldrw(rscratch1, Address(rmethod, Method::access_flags_offset()));
+      __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
       __ andsw(zr, rscratch1, JVM_ACC_STATIC);
       __ br(Assembler::EQ, L_skip_barrier); // non-static
     }
@@ -1479,7 +1478,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
@@ -1668,15 +1666,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(r19->as_VMReg());
 
   for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
     arg_order.push(i);
     arg_order.push(c_arg);
   }
 
-  int temploc = -1;
   for (int ai = 0; ai < arg_order.length(); ai += 2) {
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
@@ -1892,7 +1887,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   Label safepoint_in_progress, safepoint_in_progress_done;
-  Label after_transition;
 
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
@@ -1925,7 +1919,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
-  __ bind(after_transition);
 
   if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
     // Check preemption for Object.wait()
@@ -2790,7 +2783,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ cbnz(rscratch1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rmethod, rthread);
+  __ get_vm_result_metadata(rmethod, rthread);
   __ str(rmethod, Address(sp, reg_save.reg_offset_in_bytes(rmethod)));
 
   // r0 is where we want to jump, overwrite rscratch1 which is saved and scratch
@@ -2809,7 +2802,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(zr, Address(rthread, JavaThread::vm_result_oop_offset()));
 
   __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));

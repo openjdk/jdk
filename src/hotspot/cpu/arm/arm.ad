@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -283,10 +283,10 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
   if (framesize != 0) {
-    st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
+    st->print   ("SUB    R_SP, R_SP, %zu", framesize);
   }
 
-  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() == nullptr) {
     st->print("ldr t0, [guard]\n\t");
     st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp t0, t1\n\t");
@@ -362,7 +362,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
-    st->print("ADD    R_SP, R_SP, " SIZE_FORMAT "\n\t",framesize);
+    st->print("ADD    R_SP, R_SP, %zu\n\t",framesize);
   }
   st->print("POP    R_FP|R_LR_LR");
 
@@ -996,6 +996,10 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
 }
 
 bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
   return false;
 }
 
@@ -4506,18 +4510,6 @@ instruct unnecessary_membar_volatile() %{
 %}
 
 //----------Register Move Instructions-----------------------------------------
-// instruct roundDouble_nop(regD dst) %{
-//   match(Set dst (RoundDouble dst));
-//   ins_pipe(empty);
-// %}
-
-
-// instruct roundFloat_nop(regF dst) %{
-//   match(Set dst (RoundFloat dst));
-//   ins_pipe(empty);
-// %}
-
-
 
 // Cast Index to Pointer for unsafe natives
 instruct castX2P(iRegX src, iRegP dst) %{
@@ -9000,7 +8992,8 @@ instruct ShouldNotReachHere( )
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(tail_call);

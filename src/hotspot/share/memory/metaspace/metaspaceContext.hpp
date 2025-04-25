@@ -28,10 +28,10 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace/counters.hpp"
-#include "memory/virtualspace.hpp"
 #include "utilities/debug.hpp"
 
 class outputStream;
+class ReservedSpace;
 
 namespace metaspace {
 

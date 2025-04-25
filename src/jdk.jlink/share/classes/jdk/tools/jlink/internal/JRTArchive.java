@@ -26,8 +26,6 @@
 package jdk.tools.jlink.internal;
 
 import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
-import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.MODIFIED_FILE;
-import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.PATCH_MODULE;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,7 +35,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -48,6 +45,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -56,7 +54,6 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
-import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
@@ -80,6 +77,7 @@ public class JRTArchive implements Archive {
     private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
     private final TaskHelper taskHelper;
+    private final Set<String> upgradeableFiles;
 
     /**
      * JRTArchive constructor
@@ -90,12 +88,15 @@ public class JRTArchive implements Archive {
      *        install aborts the link.
      * @param perModDiff The lib/modules (a.k.a jimage) diff for this module,
      *                   possibly an empty list if there are no differences.
+     * @param taskHelper The task helper instance.
+     * @param upgradeableFiles The set of files that are allowed for upgrades.
      */
     JRTArchive(String module,
                Path path,
                boolean errorOnModifiedFile,
                List<ResourceDiff> perModDiff,
-               TaskHelper taskHelper) {
+               TaskHelper taskHelper,
+               Set<String> upgradeableFiles) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -109,6 +110,7 @@ public class JRTArchive implements Archive {
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
                             .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
         this.taskHelper = taskHelper;
+        this.upgradeableFiles = upgradeableFiles;
     }
 
     @Override
@@ -221,9 +223,12 @@ public class JRTArchive implements Archive {
 
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
-                        if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
+                        if (!isUpgradeableFile(m.resPath) &&
+                                shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
-                                throw new RuntimeImageLinkException(path.toString(), MODIFIED_FILE);
+                                String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
+                                IOException cause = new IOException(msg);
+                                throw new UncheckedIOException(cause);
                             } else {
                                 taskHelper.warning("err.runtime.link.modified.file", path.toString());
                             }
@@ -239,6 +244,17 @@ public class JRTArchive implements Archive {
                  })
                  .toList());
         }
+    }
+
+    /**
+     * Certain files in a module are considered upgradeable. That is,
+     * their hash sums aren't checked.
+     *
+     * @param resPath The resource path of the file to check for upgradeability.
+     * @return {@code true} if the file is upgradeable. {@code false} otherwise.
+     */
+    private boolean isUpgradeableFile(String resPath) {
+        return upgradeableFiles.contains(resPath);
     }
 
     static boolean shaSumMismatch(Path res, String expectedSha, boolean isSymlink) {
@@ -460,16 +476,7 @@ public class JRTArchive implements Archive {
                             // the underlying base path is a JrtPath with the
                             // JrtFileSystem underneath which is able to handle
                             // this size query.
-                            try {
-                                return Files.size(archive.getPath().resolve(resPath));
-                            } catch (NoSuchFileException file) {
-                                // This indicates that we don't find the class in the
-                                // modules image using the JRT FS provider. Yet, we find
-                                // the class using the system module finder. Therefore,
-                                // we have a patched module. Mention that module patching
-                                // is not supported.
-                                throw new RuntimeImageLinkException(file.getFile(), PATCH_MODULE);
-                            }
+                            return Files.size(archive.getPath().resolve(resPath));
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);

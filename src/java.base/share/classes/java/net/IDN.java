@@ -66,6 +66,9 @@ import jdk.internal.icu.text.UCharacterIterator;
  * Applications are responsible for taking adequate security measures when using
  * international domain names.
  *
+ * <p>Unless otherwise specified, passing a {@code null} argument to any method
+ * in this class will cause a {@link NullPointerException} to be thrown.
+ *
  * @spec https://www.rfc-editor.org/info/rfc1122
  *      RFC 1122: Requirements for Internet Hosts - Communication Layers
  * @spec https://www.rfc-editor.org/info/rfc1123

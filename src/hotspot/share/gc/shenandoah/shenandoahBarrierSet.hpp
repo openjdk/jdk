@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +32,26 @@
 
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
+class ShenandoahCardTable;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahCardTable* _card_table;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
 public:
-  ShenandoahBarrierSet(ShenandoahHeap* heap);
+  ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region);
 
   static ShenandoahBarrierSetAssembler* assembler();
 
   inline static ShenandoahBarrierSet* barrier_set() {
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());
+  }
+
+  inline ShenandoahCardTable* card_table() {
+    return _card_table;
   }
 
   static ShenandoahSATBMarkQueueSet& satb_mark_queue_set() {
@@ -70,17 +77,21 @@ public:
     return (decorators & IN_NATIVE) != 0;
   }
 
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   template <class T>
   inline void arraycopy_barrier(T* src, T* dst, size_t count);
   inline void clone_barrier(oop src);
   void clone_barrier_runtime(oop src);
 
-  virtual void on_thread_create(Thread* thread);
-  virtual void on_thread_destroy(Thread* thread);
-  virtual void on_thread_attach(Thread* thread);
-  virtual void on_thread_detach(Thread* thread);
+  // Support for optimizing compilers to call the barrier set on slow path allocations
+  // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
+  // compensating actions to restore card-marks that might otherwise be incorrectly elided.
+  void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) override;
+  void on_thread_create(Thread* thread) override;
+  void on_thread_destroy(Thread* thread) override;
+  void on_thread_attach(Thread* thread) override;
+  void on_thread_detach(Thread* thread) override;
 
   static inline oop resolve_forwarded_not_null(oop p);
   static inline oop resolve_forwarded_not_null_mutator(oop p);
@@ -111,9 +122,14 @@ public:
   template <typename T>
   inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value);
 
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_post(T* field);
+
+  void write_ref_array(HeapWord* start, size_t count);
+
 private:
   template <class T>
-  inline void arraycopy_marking(T* src, T* dst, size_t count);
+  inline void arraycopy_marking(T* src, T* dst, size_t count, bool is_old_marking);
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>

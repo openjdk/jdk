@@ -63,7 +63,7 @@ TEST_JOBS ?= 0
 
 # Use hard-coded values for java flags (one size, fits all!)
 JAVA_FLAGS := -Duser.language=en -Duser.country=US
-JAVA_FLAGS_BIG := -Xms64M -Xmx1600M
+JAVA_FLAGS_BIG := -Xms64M -Xmx2048M
 JAVA_FLAGS_SMALL := -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILDJDK_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)

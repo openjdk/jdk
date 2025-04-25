@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
 
@@ -31,14 +30,10 @@ void VM_SerialCollectForAllocation::doit() {
   GCCauseSetter gccs(gch, _gc_cause);
   _result = gch->satisfy_failed_allocation(_word_size, _tlab);
   assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
-
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
 }
 
 void VM_SerialGCCollect::doit() {
   SerialHeap* gch = SerialHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  gch->try_collect_at_safepoint(_full);
+  gch->collect_at_safepoint(_full);
 }

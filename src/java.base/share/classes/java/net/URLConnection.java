@@ -306,7 +306,7 @@ public abstract class URLConnection {
         if (map == null) {
             fileNameMap = map = new FileNameMap() {
                 private final FileNameMap internalMap =
-                    sun.net.www.MimeTable.loadTable();
+                    sun.net.www.MimeTable.getDefaultTable();
 
                 public String getContentTypeFor(String fileName) {
                     return internalMap.getContentTypeFor(fileName);
@@ -1388,7 +1388,6 @@ public abstract class URLConnection {
         return UnknownContentHandler.INSTANCE;
     }
 
-    @SuppressWarnings("removal")
     private ContentHandler lookupContentHandlerViaProvider(String contentType) {
 
         ClassLoader cl = ClassLoader.getSystemClassLoader();

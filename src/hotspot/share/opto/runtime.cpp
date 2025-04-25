@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -31,6 +30,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -132,7 +132,9 @@ static bool check_compiled_frame(JavaThread* thread) {
 */
 
 #define GEN_C2_BLOB(name, type)                    \
-  generate_ ## name ## _blob();
+  BLOB_FIELD_NAME(name) =                       \
+    generate_ ## name ## _blob();                  \
+  if (BLOB_FIELD_NAME(name) == nullptr) { return false; }
 
 // a few helper macros to conjure up generate_stub call arguments
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
@@ -192,6 +194,85 @@ bool OptoRuntime::generate(ciEnv* env) {
 #undef GEN_C2_JVMTI_STUB
 // #undef gen
 
+const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
+const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
+const TypeFunc* OptoRuntime::_multianewarray3_Type                = nullptr;
+const TypeFunc* OptoRuntime::_multianewarray4_Type                = nullptr;
+const TypeFunc* OptoRuntime::_multianewarray5_Type                = nullptr;
+const TypeFunc* OptoRuntime::_multianewarrayN_Type                = nullptr;
+const TypeFunc* OptoRuntime::_complete_monitor_enter_Type         = nullptr;
+const TypeFunc* OptoRuntime::_complete_monitor_exit_Type          = nullptr;
+const TypeFunc* OptoRuntime::_monitor_notify_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_uncommon_trap_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_athrow_Type                         = nullptr;
+const TypeFunc* OptoRuntime::_rethrow_Type                        = nullptr;
+const TypeFunc* OptoRuntime::_Math_D_D_Type                       = nullptr;
+const TypeFunc* OptoRuntime::_Math_DD_D_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_modf_Type                           = nullptr;
+const TypeFunc* OptoRuntime::_l2f_Type                            = nullptr;
+const TypeFunc* OptoRuntime::_void_long_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_void_void_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_jfr_write_checkpoint_Type           = nullptr;
+const TypeFunc* OptoRuntime::_flush_windows_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_fast_arraycopy_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_checkcast_arraycopy_Type            = nullptr;
+const TypeFunc* OptoRuntime::_generic_arraycopy_Type              = nullptr;
+const TypeFunc* OptoRuntime::_slow_arraycopy_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_unsafe_setmemory_Type               = nullptr;
+const TypeFunc* OptoRuntime::_array_fill_Type                     = nullptr;
+const TypeFunc* OptoRuntime::_array_sort_Type                     = nullptr;
+const TypeFunc* OptoRuntime::_array_partition_Type                = nullptr;
+const TypeFunc* OptoRuntime::_aescrypt_block_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_cipherBlockChaining_aescrypt_Type   = nullptr;
+const TypeFunc* OptoRuntime::_electronicCodeBook_aescrypt_Type    = nullptr;
+const TypeFunc* OptoRuntime::_counterMode_aescrypt_Type           = nullptr;
+const TypeFunc* OptoRuntime::_galoisCounterMode_aescrypt_Type     = nullptr;
+const TypeFunc* OptoRuntime::_digestBase_implCompress_with_sha3_Type      = nullptr;
+const TypeFunc* OptoRuntime::_digestBase_implCompress_without_sha3_Type   = nullptr;
+const TypeFunc* OptoRuntime::_digestBase_implCompressMB_with_sha3_Type    = nullptr;
+const TypeFunc* OptoRuntime::_digestBase_implCompressMB_without_sha3_Type = nullptr;
+const TypeFunc* OptoRuntime::_double_keccak_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_multiplyToLen_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_montgomeryMultiply_Type             = nullptr;
+const TypeFunc* OptoRuntime::_montgomerySquare_Type               = nullptr;
+const TypeFunc* OptoRuntime::_squareToLen_Type                    = nullptr;
+const TypeFunc* OptoRuntime::_mulAdd_Type                         = nullptr;
+const TypeFunc* OptoRuntime::_bigIntegerShift_Type                = nullptr;
+const TypeFunc* OptoRuntime::_vectorizedMismatch_Type             = nullptr;
+const TypeFunc* OptoRuntime::_ghash_processBlocks_Type            = nullptr;
+const TypeFunc* OptoRuntime::_chacha20Block_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_kyberNtt_Type                       = nullptr;
+const TypeFunc* OptoRuntime::_kyberInverseNtt_Type                = nullptr;
+const TypeFunc* OptoRuntime::_kyberNttMult_Type                   = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_2_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_3_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_kyber12To16_Type                    = nullptr;
+const TypeFunc* OptoRuntime::_kyberBarrettReduce_Type             = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumAlmostNtt_Type             = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumAlmostInverseNtt_Type      = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumNttMult_Type               = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumMontMulByConstant_Type     = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumDecomposePoly_Type         = nullptr;
+const TypeFunc* OptoRuntime::_base64_encodeBlock_Type             = nullptr;
+const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
+const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_poly1305_processBlocks_Type         = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_montgomeryMult_P256_Type    = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
+const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
+const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
+const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
+const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
+#if INCLUDE_JFR
+const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
+#endif // INCLUDE_JFR
+#if INCLUDE_JVMTI
+const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
+#endif // INCLUDE_JVMTI
+const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
+const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
@@ -202,6 +283,7 @@ address OptoRuntime::generate_stub(ciEnv* env,
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(directive);
   ResourceMark rm;
   Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);
@@ -265,7 +347,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     // Scavenge and allocate an instance.
     Handle holder(current, klass->klass_holder()); // keep the klass alive
     oop result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
-    current->set_vm_result(result);
+    current->set_vm_result_oop(result);
 
     // Pass oops back through thread local storage.  Our apparent type to Java
     // is that we return an oop, but we can block on exit from this routine and
@@ -311,7 +393,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(result);
+  current->set_vm_result_oop(result);
   JRT_BLOCK_END;
 
   // inform GC that we won't do card marks for initializing writes.
@@ -339,14 +421,14 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(result);
+  current->set_vm_result_oop(result);
   JRT_BLOCK_END;
 
 
   // inform GC that we won't do card marks for initializing writes.
   SharedRuntime::on_slowpath_allocation_exit(current);
 
-  oop result = current->vm_result();
+  oop result = current->vm_result_oop();
   if ((len > 0) && (result != nullptr) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
@@ -383,7 +465,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 3 dimensions
@@ -400,7 +482,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 4 dimensions
@@ -418,7 +500,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 5 dimensions
@@ -437,7 +519,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* dims, JavaThread* current))
@@ -455,7 +537,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread* current))
@@ -498,7 +580,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread*
   JRT_BLOCK_END;
 JRT_END
 
-const TypeFunc *OptoRuntime::new_instance_Type() {
+static const TypeFunc* make_new_instance_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // Klass to be allocated
@@ -514,7 +596,7 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
 }
 
 #if INCLUDE_JVMTI
-const TypeFunc *OptoRuntime::notify_jvmti_vthread_Type() {
+static const TypeFunc* make_notify_jvmti_vthread_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // VirtualThread oop
@@ -530,7 +612,7 @@ const TypeFunc *OptoRuntime::notify_jvmti_vthread_Type() {
 }
 #endif
 
-const TypeFunc *OptoRuntime::athrow_Type() {
+static const TypeFunc* make_athrow_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // Klass to be allocated
@@ -544,8 +626,7 @@ const TypeFunc *OptoRuntime::athrow_Type() {
   return TypeFunc::make(domain, range);
 }
 
-
-const TypeFunc *OptoRuntime::new_array_Type() {
+static const TypeFunc* make_new_array_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
@@ -561,11 +642,7 @@ const TypeFunc *OptoRuntime::new_array_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::new_array_nozero_Type() {
-  return new_array_Type();
-}
-
-const TypeFunc *OptoRuntime::multianewarray_Type(int ndim) {
+const TypeFunc* OptoRuntime::multianewarray_Type(int ndim) {
   // create input type (domain)
   const int nargs = ndim + 1;
   const Type **fields = TypeTuple::fields(nargs);
@@ -582,23 +659,7 @@ const TypeFunc *OptoRuntime::multianewarray_Type(int ndim) {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::multianewarray2_Type() {
-  return multianewarray_Type(2);
-}
-
-const TypeFunc *OptoRuntime::multianewarray3_Type() {
-  return multianewarray_Type(3);
-}
-
-const TypeFunc *OptoRuntime::multianewarray4_Type() {
-  return multianewarray_Type(4);
-}
-
-const TypeFunc *OptoRuntime::multianewarray5_Type() {
-  return multianewarray_Type(5);
-}
-
-const TypeFunc *OptoRuntime::multianewarrayN_Type() {
+static const TypeFunc* make_multianewarrayN_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
@@ -613,7 +674,7 @@ const TypeFunc *OptoRuntime::multianewarrayN_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::uncommon_trap_Type() {
+static const TypeFunc* make_uncommon_trap_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInt::INT; // trap_reason (deopt reason and action)
@@ -628,7 +689,8 @@ const TypeFunc *OptoRuntime::uncommon_trap_Type() {
 
 //-----------------------------------------------------------------------------
 // Monitor Handling
-const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
+
+static const TypeFunc* make_complete_monitor_enter_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -643,12 +705,9 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
   return TypeFunc::make(domain,range);
 }
 
-const TypeFunc *OptoRuntime::complete_monitor_locking_Type() {
-  return complete_monitor_enter_Type();
-}
-
 //-----------------------------------------------------------------------------
-const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
+
+static const TypeFunc* make_complete_monitor_exit_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(3);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -664,7 +723,7 @@ const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::monitor_notify_Type() {
+static const TypeFunc* make_monitor_notify_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -676,11 +735,7 @@ const TypeFunc *OptoRuntime::monitor_notify_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::monitor_notifyAll_Type() {
-  return monitor_notify_Type();
-}
-
-const TypeFunc* OptoRuntime::flush_windows_Type() {
+static const TypeFunc* make_flush_windows_Type() {
   // create input type (domain)
   const Type** fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = nullptr; // void
@@ -694,7 +749,7 @@ const TypeFunc* OptoRuntime::flush_windows_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::l2f_Type() {
+static const TypeFunc* make_l2f_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeLong::LONG;
@@ -709,7 +764,7 @@ const TypeFunc* OptoRuntime::l2f_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::modf_Type() {
+static const TypeFunc* make_modf_Type() {
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = Type::FLOAT;
   fields[TypeFunc::Parms+1] = Type::FLOAT;
@@ -724,7 +779,7 @@ const TypeFunc* OptoRuntime::modf_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::Math_D_D_Type() {
+static const TypeFunc* make_Math_D_D_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   // Symbol* name of class to be loaded
@@ -741,7 +796,7 @@ const TypeFunc *OptoRuntime::Math_D_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
+const TypeFunc* OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(num_arg);
   // Symbol* name of class to be loaded
@@ -760,7 +815,7 @@ const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVec
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::Math_DD_D_Type() {
+static const TypeFunc* make_Math_DD_D_Type() {
   const Type **fields = TypeTuple::fields(4);
   fields[TypeFunc::Parms+0] = Type::DOUBLE;
   fields[TypeFunc::Parms+1] = Type::HALF;
@@ -779,7 +834,7 @@ const TypeFunc* OptoRuntime::Math_DD_D_Type() {
 
 //-------------- currentTimeMillis, currentTimeNanos, etc
 
-const TypeFunc* OptoRuntime::void_long_Type() {
+static const TypeFunc* make_void_long_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(0);
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
@@ -793,34 +848,35 @@ const TypeFunc* OptoRuntime::void_long_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::void_void_Type() {
-   // create input type (domain)
-   const Type **fields = TypeTuple::fields(0);
-   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
+static const TypeFunc* make_void_void_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(0);
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-   // create result type (range)
-   fields = TypeTuple::fields(0);
-   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-   return TypeFunc::make(domain, range);
- }
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+  return TypeFunc::make(domain, range);
+}
 
- const TypeFunc* OptoRuntime::jfr_write_checkpoint_Type() {
-   // create input type (domain)
-   const Type **fields = TypeTuple::fields(0);
-   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
+static const TypeFunc* make_jfr_write_checkpoint_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(0);
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
 
-   // create result type (range)
-   fields = TypeTuple::fields(0);
-   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
-   return TypeFunc::make(domain, range);
- }
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
 
 
 // Takes as parameters:
 // void *dest
 // long size
 // uchar byte
-const TypeFunc* OptoRuntime::make_setmemory_Type() {
+
+static const TypeFunc* make_setmemory_Type() {
   // create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** fields = TypeTuple::fields(argcnt);
@@ -885,29 +941,7 @@ static const TypeFunc* make_arraycopy_Type(ArrayCopyType act) {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::fast_arraycopy_Type() {
-  // This signature is simple:  Two base pointers and a size_t.
-  return make_arraycopy_Type(ac_fast);
-}
-
-const TypeFunc* OptoRuntime::checkcast_arraycopy_Type() {
-  // An extension of fast_arraycopy_Type which adds type checking.
-  return make_arraycopy_Type(ac_checkcast);
-}
-
-const TypeFunc* OptoRuntime::slow_arraycopy_Type() {
-  // This signature is exactly the same as System.arraycopy.
-  // There are no intptr_t (int/long) arguments.
-  return make_arraycopy_Type(ac_slow);
-}
-
-const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
-  // This signature is like System.arraycopy, except that it returns status.
-  return make_arraycopy_Type(ac_generic);
-}
-
-
-const TypeFunc* OptoRuntime::array_fill_Type() {
+static const TypeFunc* make_array_fill_Type() {
   const Type** fields;
   int argp = TypeFunc::Parms;
   // create input type (domain): pointer, int, size_t
@@ -926,7 +960,7 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::array_partition_Type() {
+static const TypeFunc* make_array_partition_Type() {
   // create input type (domain)
   int num_args = 7;
   int argcnt = num_args;
@@ -949,7 +983,7 @@ const TypeFunc* OptoRuntime::array_partition_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::array_sort_Type() {
+static const TypeFunc* make_array_sort_Type() {
   // create input type (domain)
   int num_args      = 4;
   int argcnt = num_args;
@@ -969,8 +1003,7 @@ const TypeFunc* OptoRuntime::array_sort_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for aescrypt encrypt/decrypt operations, just three pointers returning void (length is constant)
-const TypeFunc* OptoRuntime::aescrypt_block_Type() {
+static const TypeFunc* make_aescrypt_block_Type() {
   // create input type (domain)
   int num_args      = 3;
   int argcnt = num_args;
@@ -989,10 +1022,7 @@ const TypeFunc* OptoRuntime::aescrypt_block_Type() {
   return TypeFunc::make(domain, range);
 }
 
-/**
- * int updateBytesCRC32(int crc, byte* b, int len)
- */
-const TypeFunc* OptoRuntime::updateBytesCRC32_Type() {
+static const TypeFunc* make_updateBytesCRC32_Type() {
   // create input type (domain)
   int num_args      = 3;
   int argcnt = num_args;
@@ -1011,10 +1041,7 @@ const TypeFunc* OptoRuntime::updateBytesCRC32_Type() {
   return TypeFunc::make(domain, range);
 }
 
-/**
- * int updateBytesCRC32C(int crc, byte* buf, int len, int* table)
- */
-const TypeFunc* OptoRuntime::updateBytesCRC32C_Type() {
+static const TypeFunc* make_updateBytesCRC32C_Type() {
   // create input type (domain)
   int num_args      = 4;
   int argcnt = num_args;
@@ -1034,10 +1061,7 @@ const TypeFunc* OptoRuntime::updateBytesCRC32C_Type() {
   return TypeFunc::make(domain, range);
 }
 
-/**
-*  int updateBytesAdler32(int adler, bytes* b, int off, int len)
-*/
-const TypeFunc* OptoRuntime::updateBytesAdler32_Type() {
+static const TypeFunc* make_updateBytesAdler32_Type() {
   // create input type (domain)
   int num_args      = 3;
   int argcnt = num_args;
@@ -1056,8 +1080,7 @@ const TypeFunc* OptoRuntime::updateBytesAdler32_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
-const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
+static const TypeFunc* make_cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
   int num_args      = 5;
   int argcnt = num_args;
@@ -1078,8 +1101,7 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for electronicCodeBook calls of aescrypt encrypt/decrypt, three pointers and a length, returning int
-const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
+static const TypeFunc* make_electronicCodeBook_aescrypt_Type() {
   // create input type (domain)
   int num_args = 4;
   int argcnt = num_args;
@@ -1099,8 +1121,7 @@ const TypeFunc* OptoRuntime::electronicCodeBook_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
-const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
+static const TypeFunc* make_counterMode_aescrypt_Type() {
   // create input type (domain)
   int num_args = 7;
   int argcnt = num_args;
@@ -1122,8 +1143,7 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
-const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
+static const TypeFunc* make_galoisCounterMode_aescrypt_Type() {
   // create input type (domain)
   int num_args = 8;
   int argcnt = num_args;
@@ -1147,10 +1167,7 @@ const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
-/*
- * void implCompress(byte[] buf, int ofs)
- */
-const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
+static const TypeFunc* make_digestBase_implCompress_Type(bool is_sha3) {
   // create input type (domain)
   int num_args = is_sha3 ? 3 : 2;
   int argcnt = num_args;
@@ -1172,7 +1189,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
 /*
  * int implCompressMultiBlock(byte[] b, int ofs, int limit)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
+static const TypeFunc* make_digestBase_implCompressMB_Type(bool is_sha3) {
   // create input type (domain)
   int num_args = is_sha3 ? 5 : 4;
   int argcnt = num_args;
@@ -1193,7 +1210,26 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::multiplyToLen_Type() {
+// SHAKE128Parallel doubleKeccak function
+static const TypeFunc* make_double_keccak_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // status0
+    fields[argp++] = TypePtr::NOTNULL;      // status1
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_multiplyToLen_Type() {
   // create input type (domain)
   int num_args      = 5;
   int argcnt = num_args;
@@ -1214,7 +1250,7 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::squareToLen_Type() {
+static const TypeFunc* make_squareToLen_Type() {
   // create input type (domain)
   int num_args      = 4;
   int argcnt = num_args;
@@ -1234,8 +1270,7 @@ const TypeFunc* OptoRuntime::squareToLen_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for mulAdd calls, 2 pointers and 3 ints, returning int
-const TypeFunc* OptoRuntime::mulAdd_Type() {
+static const TypeFunc* make_mulAdd_Type() {
   // create input type (domain)
   int num_args      = 5;
   int argcnt = num_args;
@@ -1256,7 +1291,7 @@ const TypeFunc* OptoRuntime::mulAdd_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::montgomeryMultiply_Type() {
+static const TypeFunc* make_montgomeryMultiply_Type() {
   // create input type (domain)
   int num_args      = 7;
   int argcnt = num_args;
@@ -1280,7 +1315,7 @@ const TypeFunc* OptoRuntime::montgomeryMultiply_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::montgomerySquare_Type() {
+static const TypeFunc* make_montgomerySquare_Type() {
   // create input type (domain)
   int num_args      = 6;
   int argcnt = num_args;
@@ -1303,7 +1338,7 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc * OptoRuntime::bigIntegerShift_Type() {
+static const TypeFunc* make_bigIntegerShift_Type() {
   int argcnt = 5;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1322,7 +1357,7 @@ const TypeFunc * OptoRuntime::bigIntegerShift_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* OptoRuntime::vectorizedMismatch_Type() {
+static const TypeFunc* make_vectorizedMismatch_Type() {
   // create input type (domain)
   int num_args = 4;
   int argcnt = num_args;
@@ -1342,47 +1377,283 @@ const TypeFunc* OptoRuntime::vectorizedMismatch_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// GHASH block processing
-const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
-    int argcnt = 4;
+static const TypeFunc* make_ghash_processBlocks_Type() {
+  int argcnt = 4;
 
-    const Type** fields = TypeTuple::fields(argcnt);
-    int argp = TypeFunc::Parms;
-    fields[argp++] = TypePtr::NOTNULL;    // state
-    fields[argp++] = TypePtr::NOTNULL;    // subkeyH
-    fields[argp++] = TypePtr::NOTNULL;    // data
-    fields[argp++] = TypeInt::INT;        // blocks
-    assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
-    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // state
+  fields[argp++] = TypePtr::NOTNULL;    // subkeyH
+  fields[argp++] = TypePtr::NOTNULL;    // data
+  fields[argp++] = TypeInt::INT;        // blocks
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
-    // result type needed
-    fields = TypeTuple::fields(1);
-    fields[TypeFunc::Parms+0] = nullptr; // void
-    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
-    return TypeFunc::make(domain, range);
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
 }
 
-// ChaCha20 Block function
-const TypeFunc* OptoRuntime::chacha20Block_Type() {
+static const TypeFunc* make_chacha20Block_Type() {
+  int argcnt = 2;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;      // state
+  fields[argp++] = TypePtr::NOTNULL;      // result
+
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;     // key stream outlen as int
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// Kyber NTT function
+static const TypeFunc* make_kyberNtt_Type() {
     int argcnt = 2;
 
     const Type** fields = TypeTuple::fields(argcnt);
     int argp = TypeFunc::Parms;
-    fields[argp++] = TypePtr::NOTNULL;      // state
-    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // NTT zetas
 
     assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
     const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // result type needed
     fields = TypeTuple::fields(1);
-    fields[TypeFunc::Parms + 0] = TypeInt::INT;     // key stream outlen as int
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
     return TypeFunc::make(domain, range);
 }
 
-// Base64 encode function
-const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
+// Kyber inverse NTT function
+static const TypeFunc* make_kyberInverseNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // inverse NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber NTT multiply function
+static const TypeFunc* make_kyberNttMult_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // ntta
+    fields[argp++] = TypePtr::NOTNULL;      // nttb
+    fields[argp++] = TypePtr::NOTNULL;      // NTT multiply zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+// Kyber add 2 polynomials function
+static const TypeFunc* make_kyberAddPoly_2_Type() {
+    int argcnt = 3;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber add 3 polynomials function
+static const TypeFunc* make_kyberAddPoly_3_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+    fields[argp++] = TypePtr::NOTNULL;      // c
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber XOF output parsing into polynomial coefficients candidates
+// or decompress(12,...) function
+static const TypeFunc* make_kyber12To16_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // condensed
+    fields[argp++] = TypeInt::INT;          // condensedOffs
+    fields[argp++] = TypePtr::NOTNULL;      // parsed
+    fields[argp++] = TypeInt::INT;          // parsedLength
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber Barrett reduce function
+static const TypeFunc* make_kyberBarrettReduce_Type() {
+    int argcnt = 1;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium NTT function except for the final "normalization" to |coeff| < Q
+static const TypeFunc* make_dilithiumAlmostNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium inverse NTT function except the final mod Q division by 2^256
+static const TypeFunc* make_dilithiumAlmostInverseNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // inverse NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium NTT multiply function
+static const TypeFunc* make_dilithiumNttMult_Type() {
+    int argcnt = 3;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // ntta
+    fields[argp++] = TypePtr::NOTNULL;      // nttb
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium Montgomery multiply a polynome coefficient array by a constant
+static const TypeFunc* make_dilithiumMontMulByConstant_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypeInt::INT;          // constant multiplier
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium decompose polynomial
+static const TypeFunc* make_dilithiumDecomposePoly_Type() {
+    int argcnt = 5;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // input
+    fields[argp++] = TypePtr::NOTNULL;      // lowPart
+    fields[argp++] = TypePtr::NOTNULL;      // highPart
+    fields[argp++] = TypeInt::INT;          // 2 * gamma2
+    fields[argp++] = TypeInt::INT;          // multiplier
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_base64_encodeBlock_Type() {
   int argcnt = 6;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1403,8 +1674,7 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// String IndexOf function
-const TypeFunc* OptoRuntime::string_IndexOf_Type() {
+static const TypeFunc* make_string_IndexOf_Type() {
   int argcnt = 4;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1423,8 +1693,7 @@ const TypeFunc* OptoRuntime::string_IndexOf_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// Base64 decode function
-const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
+static const TypeFunc* make_base64_decodeBlock_Type() {
   int argcnt = 7;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1446,8 +1715,7 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// Poly1305 processMultipleBlocks function
-const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
+static const TypeFunc* make_poly1305_processBlocks_Type() {
   int argcnt = 4;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1466,8 +1734,7 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// MontgomeryIntegerPolynomialP256 multiply function
-const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
+static const TypeFunc* make_intpoly_montgomeryMult_P256_Type() {
   int argcnt = 3;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1485,8 +1752,7 @@ const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// IntegerPolynomial constant time assignment function
-const TypeFunc* OptoRuntime::intpoly_assign_Type() {
+static const TypeFunc* make_intpoly_assign_Type() {
   int argcnt = 4;
 
   const Type** fields = TypeTuple::fields(argcnt);
@@ -1505,8 +1771,8 @@ const TypeFunc* OptoRuntime::intpoly_assign_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//------------- Interpreter state access for on stack replacement
-const TypeFunc* OptoRuntime::osr_end_Type() {
+//------------- Interpreter state for on stack replacement
+static const TypeFunc* make_osr_end_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeRawPtr::BOTTOM; // OSR temp buf
@@ -1568,7 +1834,6 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     trace_exception(&ls, exception(), pc, "");
   }
@@ -1747,13 +2012,12 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   }
 #endif
 
-  thread->set_vm_result(exception);
+  thread->set_vm_result_oop(exception);
   // Frame not compiled (handles deoptimization blob)
   return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);
 }
 
-
-const TypeFunc *OptoRuntime::rethrow_Type() {
+static const TypeFunc* make_rethrow_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // Exception oop
@@ -1803,8 +2067,7 @@ bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   return caller_frame.is_deoptimized_frame();
 }
 
-
-const TypeFunc *OptoRuntime::register_finalizer_Type() {
+static const TypeFunc* make_register_finalizer_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // oop;          Receiver
@@ -1821,7 +2084,7 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
 }
 
 #if INCLUDE_JFR
-const TypeFunc *OptoRuntime::class_id_load_barrier_Type() {
+static const TypeFunc* make_class_id_load_barrier_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
@@ -1834,11 +2097,10 @@ const TypeFunc *OptoRuntime::class_id_load_barrier_Type() {
 
   return TypeFunc::make(domain,range);
 }
-#endif
+#endif // INCLUDE_JFR
 
 //-----------------------------------------------------------------------------
-// Dtrace support.  entry and exit probes have the same signature
-const TypeFunc *OptoRuntime::dtrace_method_entry_exit_Type() {
+static const TypeFunc* make_dtrace_method_entry_exit_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeRawPtr::BOTTOM; // Thread-local storage
@@ -1853,7 +2115,7 @@ const TypeFunc *OptoRuntime::dtrace_method_entry_exit_Type() {
   return TypeFunc::make(domain,range);
 }
 
-const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
+static const TypeFunc* make_dtrace_object_alloc_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeRawPtr::BOTTOM; // Thread-local storage
@@ -1868,7 +2130,6 @@ const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
 
   return TypeFunc::make(domain,range);
 }
-
 
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
@@ -1953,6 +2214,88 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     c->set_next(head);
   } while (Atomic::cmpxchg(&_named_counters, head, c) != head);
   return c;
+}
+
+void OptoRuntime::initialize_types() {
+  _new_instance_Type                  = make_new_instance_Type();
+  _new_array_Type                     = make_new_array_Type();
+  _multianewarray2_Type               = multianewarray_Type(2);
+  _multianewarray3_Type               = multianewarray_Type(3);
+  _multianewarray4_Type               = multianewarray_Type(4);
+  _multianewarray5_Type               = multianewarray_Type(5);
+  _multianewarrayN_Type               = make_multianewarrayN_Type();
+  _complete_monitor_enter_Type        = make_complete_monitor_enter_Type();
+  _complete_monitor_exit_Type         = make_complete_monitor_exit_Type();
+  _monitor_notify_Type                = make_monitor_notify_Type();
+  _uncommon_trap_Type                 = make_uncommon_trap_Type();
+  _athrow_Type                        = make_athrow_Type();
+  _rethrow_Type                       = make_rethrow_Type();
+  _Math_D_D_Type                      = make_Math_D_D_Type();
+  _Math_DD_D_Type                     = make_Math_DD_D_Type();
+  _modf_Type                          = make_modf_Type();
+  _l2f_Type                           = make_l2f_Type();
+  _void_long_Type                     = make_void_long_Type();
+  _void_void_Type                     = make_void_void_Type();
+  _jfr_write_checkpoint_Type          = make_jfr_write_checkpoint_Type();
+  _flush_windows_Type                 = make_flush_windows_Type();
+  _fast_arraycopy_Type                = make_arraycopy_Type(ac_fast);
+  _checkcast_arraycopy_Type           = make_arraycopy_Type(ac_checkcast);
+  _generic_arraycopy_Type             = make_arraycopy_Type(ac_generic);
+  _slow_arraycopy_Type                = make_arraycopy_Type(ac_slow);
+  _unsafe_setmemory_Type              = make_setmemory_Type();
+  _array_fill_Type                    = make_array_fill_Type();
+  _array_sort_Type                    = make_array_sort_Type();
+  _array_partition_Type               = make_array_partition_Type();
+  _aescrypt_block_Type                = make_aescrypt_block_Type();
+  _cipherBlockChaining_aescrypt_Type  = make_cipherBlockChaining_aescrypt_Type();
+  _electronicCodeBook_aescrypt_Type   = make_electronicCodeBook_aescrypt_Type();
+  _counterMode_aescrypt_Type          = make_counterMode_aescrypt_Type();
+  _galoisCounterMode_aescrypt_Type    = make_galoisCounterMode_aescrypt_Type();
+  _digestBase_implCompress_with_sha3_Type      = make_digestBase_implCompress_Type(  /* is_sha3= */ true);
+  _digestBase_implCompress_without_sha3_Type   = make_digestBase_implCompress_Type(  /* is_sha3= */ false);;
+  _digestBase_implCompressMB_with_sha3_Type    = make_digestBase_implCompressMB_Type(/* is_sha3= */ true);
+  _digestBase_implCompressMB_without_sha3_Type = make_digestBase_implCompressMB_Type(/* is_sha3= */ false);
+  _double_keccak_Type                 = make_double_keccak_Type();
+  _multiplyToLen_Type                 = make_multiplyToLen_Type();
+  _montgomeryMultiply_Type            = make_montgomeryMultiply_Type();
+  _montgomerySquare_Type              = make_montgomerySquare_Type();
+  _squareToLen_Type                   = make_squareToLen_Type();
+  _mulAdd_Type                        = make_mulAdd_Type();
+  _bigIntegerShift_Type               = make_bigIntegerShift_Type();
+  _vectorizedMismatch_Type            = make_vectorizedMismatch_Type();
+  _ghash_processBlocks_Type           = make_ghash_processBlocks_Type();
+  _chacha20Block_Type                 = make_chacha20Block_Type();
+  _kyberNtt_Type                      = make_kyberNtt_Type();
+  _kyberInverseNtt_Type               = make_kyberInverseNtt_Type();
+  _kyberNttMult_Type                  = make_kyberNttMult_Type();
+  _kyberAddPoly_2_Type                = make_kyberAddPoly_2_Type();
+  _kyberAddPoly_3_Type                = make_kyberAddPoly_3_Type();
+  _kyber12To16_Type                   = make_kyber12To16_Type();
+  _kyberBarrettReduce_Type            = make_kyberBarrettReduce_Type();
+  _dilithiumAlmostNtt_Type            = make_dilithiumAlmostNtt_Type();
+  _dilithiumAlmostInverseNtt_Type     = make_dilithiumAlmostInverseNtt_Type();
+  _dilithiumNttMult_Type              = make_dilithiumNttMult_Type();
+  _dilithiumMontMulByConstant_Type    = make_dilithiumMontMulByConstant_Type();
+  _dilithiumDecomposePoly_Type        = make_dilithiumDecomposePoly_Type();
+  _base64_encodeBlock_Type            = make_base64_encodeBlock_Type();
+  _base64_decodeBlock_Type            = make_base64_decodeBlock_Type();
+  _string_IndexOf_Type                = make_string_IndexOf_Type();
+  _poly1305_processBlocks_Type        = make_poly1305_processBlocks_Type();
+  _intpoly_montgomeryMult_P256_Type   = make_intpoly_montgomeryMult_P256_Type();
+  _intpoly_assign_Type                = make_intpoly_assign_Type();
+  _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
+  _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
+  _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
+  _osr_end_Type                       = make_osr_end_Type();
+  _register_finalizer_Type            = make_register_finalizer_Type();
+  JFR_ONLY(
+    _class_id_load_barrier_Type       = make_class_id_load_barrier_Type();
+  )
+#if INCLUDE_JVMTI
+  _notify_jvmti_vthread_Type          = make_notify_jvmti_vthread_Type();
+#endif // INCLUDE_JVMTI
+  _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
+  _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
 }
 
 int trace_exception_counter = 0;

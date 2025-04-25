@@ -25,8 +25,6 @@
 
 package javax.naming.spi;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.naming.*;
@@ -471,7 +469,6 @@ public class NamingManager {
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
-    @SuppressWarnings("removal")
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
         ClassLoader loader;
@@ -492,16 +489,8 @@ public class NamingManager {
                 throw ne;
             }
 
-            if (System.getSecurityManager() == null) {
-                loader = Thread.currentThread().getContextClassLoader();
-                if (loader == null) loader = ClassLoader.getSystemClassLoader();
-            } else {
-                PrivilegedAction<ClassLoader> pa = () -> {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    return (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
-                };
-                loader = AccessController.doPrivileged(pa);
-            }
+            loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) loader = ClassLoader.getSystemClassLoader();
 
             var key = FACTORIES_CACHE.sub(className);
             try {
@@ -570,12 +559,6 @@ public class NamingManager {
             if (initctx_factory_builder != null)
                 throw new IllegalStateException(
                     "InitialContextFactoryBuilder already set");
-
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkSetFactory();
-            }
             initctx_factory_builder = builder;
     }
 

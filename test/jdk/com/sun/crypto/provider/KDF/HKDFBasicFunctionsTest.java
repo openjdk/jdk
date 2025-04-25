@@ -52,14 +52,14 @@ public class HKDFBasicFunctionsTest {
         var extractAndExpand = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(info, len);
         var okm2 = kdf.deriveKey("OKM", extractAndExpand);
 
-        Asserts.assertEqualsByteArray(prk.getEncoded(), expectedPrk,
+        Asserts.assertEqualsByteArray(expectedPrk, prk.getEncoded(),
                                       "the PRK must match the expected value");
 
-        Asserts.assertEqualsByteArray(okm1.getEncoded(), expectedOkm,
+        Asserts.assertEqualsByteArray(expectedOkm, okm1.getEncoded(),
                                       "the OKM must match the expected value "
                                       + "(expand)");
 
-        Asserts.assertEqualsByteArray(okm2.getEncoded(), expectedOkm,
+        Asserts.assertEqualsByteArray(expectedOkm, okm2.getEncoded(),
                                       "the OKM must match the expected value "
                                       + "(extract expand)");
 

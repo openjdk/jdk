@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.classfile.attribute.*;
  * @test Wildcards
  * @bug 6843077
  * @summary test that annotations target wildcards get emitted to classfile
- * @enablePreview
  */
 public class Wildcards {
     public static void main(String[] args) throws Exception {

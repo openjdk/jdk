@@ -38,7 +38,6 @@ import tests.JImageGenerator;
  * @bug 8311591
  * @library /test/lib
  *          ../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin

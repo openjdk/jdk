@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,16 @@ class GraphKit : public Phase {
   // Helper to throw a built-in exception.
   // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
   void builtin_throw(Deoptimization::DeoptReason reason);
+  void builtin_throw(Deoptimization::DeoptReason reason,
+                     ciInstance* exception_object,
+                     bool allow_too_many_traps);
+  bool builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
+                                    ciInstance* exception_object);
+ private:
+  bool is_builtin_throw_hot(Deoptimization::DeoptReason reason);
+  ciInstance* builtin_throw_exception(Deoptimization::DeoptReason reason) const;
+
+ public:
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -752,15 +762,6 @@ class GraphKit : public Phase {
   void final_sync(IdealKit& ideal);
 
   public:
-  // Helper function to round double arguments before a call
-  void round_double_arguments(ciMethod* dest_method);
-
-  // rounding for strict float precision conformance
-  Node* precision_rounding(Node* n);
-
-  // rounding for strict double precision conformance
-  Node* dprecision_rounding(Node* n);
-
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
@@ -870,7 +871,7 @@ class GraphKit : public Phase {
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

@@ -50,7 +50,7 @@ import javax.annotation.processing.ProcessingEnvironment;
  * @see AbstractAnnotationValueVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_24)
+@SupportedSourceVersion(RELEASE_25)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public abstract class AbstractAnnotationValueVisitorPreview<R, P> extends AbstractAnnotationValueVisitor14<R, P> {
 

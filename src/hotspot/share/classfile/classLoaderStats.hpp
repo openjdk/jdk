@@ -58,12 +58,6 @@ public:
   static int num_arguments() {
     return 0;
   }
-
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", nullptr};
-    return p;
-  }
 };
 
 

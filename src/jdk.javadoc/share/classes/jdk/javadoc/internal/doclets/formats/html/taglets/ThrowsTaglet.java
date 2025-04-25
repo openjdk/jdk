@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // since {@inheritDoc} in @throws is processed by ThrowsTaglet (this taglet) rather than
             // InheritDocTaglet, we have to duplicate some of the behavior of the latter taglet
             String signature = utils.getSimpleName(holder)
-                    + utils.flatSignature((ExecutableElement) holder, tagletWriter.getCurrentPageElement());
+                    + utils.flatSignature((ExecutableElement) holder, tagletWriter.getCurrentTypeElement());
             messages.warning(holder, "doclet.noInheritedDoc", signature);
         }
         return tagletWriter.getOutputInstance(); // TODO: consider invalid rather than empty output
@@ -235,7 +235,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         var executable = (ExecutableElement) holder;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
-                tagletWriter.getCurrentPageElement(), executable);
+                tagletWriter.getCurrentTypeElement(), executable);
         List<? extends TypeMirror> substitutedExceptionTypes = instantiatedType.getThrownTypes();
         List<? extends TypeMirror> originalExceptionTypes = executable.getThrownTypes();
         Map<TypeMirror, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(

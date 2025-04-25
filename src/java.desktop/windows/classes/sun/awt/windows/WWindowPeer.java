@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,7 +849,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * it removes the list of the active windows from the disposed AppContext and
      * unregisters ActiveWindowListener listener.
      */
-    private static class GuiDisposedListener implements PropertyChangeListener {
+    private static final class GuiDisposedListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             boolean isDisposed = (Boolean)e.getNewValue();
@@ -875,7 +875,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * window is always at the end of the list. The list is stored in AppContext.
      */
     @SuppressWarnings("unchecked")
-    private static class ActiveWindowListener implements PropertyChangeListener {
+    private static final class ActiveWindowListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             Window w = (Window)e.getNewValue();

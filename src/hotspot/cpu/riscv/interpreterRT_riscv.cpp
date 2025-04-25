@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -138,10 +137,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   Register reg = next_gpr();
   if (reg == c_rarg1) {
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
-    __ addi(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
   } else if (reg != noreg) {
       // c_rarg2-c_rarg7
-      __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+      __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
       __ mv(reg, zr); //_num_reg_int_args:c_rarg -> 1:c_rarg2,  2:c_rarg3...
       __ ld(temp(), x10);
       Label L;
@@ -150,7 +149,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
       __ bind(L);
   } else {
     //to stack
-    __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
     __ ld(temp(), x10);
     Label L;
     __ bnez(temp(), L);

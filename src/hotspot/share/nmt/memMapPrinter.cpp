@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
-
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -44,6 +42,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // Note: throughout this code we will use the term "VMA" for OS system level memory mapping
 
@@ -97,8 +96,8 @@ public:
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
-    ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_mem_tags);)
+    permit_forbidden_function::free(_ranges);
+    permit_forbidden_function::free(_mem_tags);
   }
 
   bool add(const void* from, const void* to, MemTag mem_tag) {
@@ -113,8 +112,8 @@ public:
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
-      ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _mem_tags = (MemTag*)::realloc(_mem_tags, new_capacity * sizeof(MemTag));)
+      _ranges = (Range*)permit_forbidden_function::realloc(_ranges, new_capacity * sizeof(Range));
+      _mem_tags = (MemTag*)permit_forbidden_function::realloc(_mem_tags, new_capacity * sizeof(MemTag));
       if (_ranges == nullptr || _mem_tags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
@@ -172,7 +171,8 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   // Very rarely however is a VMA backing a thread stack folded together with another adjacent VMA by the
   // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
   // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
-  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
+  // Note it is possible to encounter a brand new thread that has not yet initialized its stack fields.
+  return t->stack_base_or_null() != nullptr && range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
 }
 
 struct GCThreadClosure : public ThreadClosure {
@@ -194,7 +194,7 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
   // avoid commas and spaces in output to ease post-processing via awk
   char tmp[64];
   stringStream ss(tmp, sizeof(tmp));
-  ss.print(":" UINTX_FORMAT "-%s", (uintx)thread_id, name);
+  ss.print(":%zu-%s", (uintx)thread_id, name);
   for (int i = 0; tmp[i] != '\0'; i++) {
     if (!isalnum(tmp[i])) {
       tmp[i] = '-';

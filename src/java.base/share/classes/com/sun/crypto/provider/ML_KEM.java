@@ -28,6 +28,7 @@ package com.sun.crypto.provider;
 import java.security.*;
 import java.util.Arrays;
 import javax.crypto.DecapsulateException;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.provider.SHA3Parallel.Shake128Parallel;
@@ -71,7 +72,7 @@ public final class ML_KEM {
             -1599, -709, -789, -1317, -57, 1049, -584
     };
 
-    private static final short[] MONT_ZETAS_FOR_VECTOR_NTT_ARR = new short[]{
+    private static final short[] montZetasForVectorNttArr = new short[]{
             // level 0
             -758, -758, -758, -758, -758, -758, -758, -758,
             -758, -758, -758, -758, -758, -758, -758, -758,
@@ -192,7 +193,26 @@ public final class ML_KEM {
             -108, -108, -308, -308, 996, 996, 991, 991,
             958, 958, -1460, -1460, 1522, 1522, 1628, 1628
     };
-    private static final short[] MONT_ZETAS_FOR_VECTOR_INVERSE_NTT_ARR = new short[]{
+    private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
+            584, -1049, 57, 1317, 789, 709, 1599, -1601,
+            -990, 604, 348, 857, 612, 474, 1177, -1014,
+            -88, -982, -191, 668, 1386, 486, -1153, -534,
+            514, 137, 586, -1178, 227, 339, -907, 244,
+            1200, -833, 1394, -30, 1074, 636, -317, -1192,
+            -1259, -355, -425, -884, -977, 1430, 868, 607,
+            184, 1448, 702, 1327, 431, 497, 595, -94,
+            1649, -1497, -620, 42, -172, 1107, -222, 1003,
+            426, -845, 395, -510, 1613, 825, 1269, -290,
+            -1429, 623, -567, 1617, 36, 1007, 1440, 332,
+            -201, 1313, -1382, -744, 669, -1538, 128, -1598,
+            1401, 1183, -553, 714, 405, -1155, -445, 406,
+            -1496, -49, 82, 1369, 259, 1604, 373, 909,
+            -1249, -1000, -25, -52, 530, -895, 1226, 819,
+            -185, 281, -742, 1253, 417, 1400, 35, -593,
+            97, -1263, 551, -585, 969, -914, -1188
+    };
+
+    private static final short[] montZetasForVectorInverseNttArr = new short[]{
             // level 0
             -1628, -1628, -1522, -1522, 1460, 1460, -958, -958,
             -991, -991, -996, -996, 308, 308, 108, 108,
@@ -332,8 +352,7 @@ public final class ML_KEM {
             1601, -1601, -1599, 1599, -709, 709, -789, 789,
             -1317, 1317, -57, 57, 1049, -1049, -584, 584
     };
-
-    private static final short[] MONT_ZETAS_FOR_VECTOR_NTT_MULT_ARR = new short[]{
+    private static final short[] montZetasForVectorNttMultArr = new short[]{
             -1103, 1103, 430, -430, 555, -555, 843, -843,
             -1251, 1251, 871, -871, 1550, -1550, 105, -105,
             422, -422, 587, -587, 177, -177, -235, 235,
@@ -499,7 +518,7 @@ public final class ML_KEM {
         System.arraycopy(kPkePrivateKey, 0, decapsKey, 0, kPkePrivateKey.length);
         Arrays.fill(kPkePrivateKey, (byte)0);
         System.arraycopy(encapsKey, 0, decapsKey,
-            kPkePrivateKey.length, encapsKey.length);
+                kPkePrivateKey.length, encapsKey.length);
 
         mlKemH.update(encapsKey);
         try {
@@ -523,7 +542,7 @@ public final class ML_KEM {
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
             mlKemG = MessageDigest.getInstance(HASH_G_NAME);
-        } catch (NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             // This should never happen.
             throw new RuntimeException(e);
         }
@@ -534,7 +553,7 @@ public final class ML_KEM {
         var kHatAndRandomCoins = mlKemG.digest();
         var randomCoins = Arrays.copyOfRange(kHatAndRandomCoins, 32, 64);
         var cipherText = kPkeEncrypt(new K_PKE_EncryptionKey(encapsulationKey.keyBytes),
-            randomMessage, randomCoins);
+                randomMessage, randomCoins);
         Arrays.fill(randomCoins, (byte) 0);
         byte[] sharedSecret = Arrays.copyOfRange(kHatAndRandomCoins, 0, 32);
         Arrays.fill(kHatAndRandomCoins, (byte) 0);
@@ -564,7 +583,7 @@ public final class ML_KEM {
 
         byte[] kPkePrivateKeyBytes = new byte[mlKem_k * encode12PolyLen];
         System.arraycopy(decapsKeyBytes, 0, kPkePrivateKeyBytes, 0,
-            kPkePrivateKeyBytes.length);
+                kPkePrivateKeyBytes.length);
 
         byte[] encapsKeyBytes = new byte[mlKem_k * encode12PolyLen + 32];
         System.arraycopy(decapsKeyBytes, mlKem_k * encode12PolyLen,
@@ -678,8 +697,8 @@ public final class ML_KEM {
                 pkEncoded, (mlKem_k * ML_KEM_N * 12) / 8, rho.length);
 
         return new K_PKE_KeyPair(
-            new K_PKE_EncryptionKey(pkEncoded),
-            new K_PKE_DecryptionKey(skEncoded));
+                new K_PKE_EncryptionKey(pkEncoded),
+                new K_PKE_DecryptionKey(skEncoded));
     }
 
     private K_PKE_CipherText kPkeEncrypt(
@@ -789,7 +808,7 @@ public final class ML_KEM {
 
             for (int i = 0; i < mlKem_k; i++) {
                 for (int j = 0; j < mlKem_k; j++) {
-                    xofBufArr[parInd] = seedBuf.clone();
+                    System.arraycopy(seedBuf, 0, xofBufArr[parInd], 0, seedBuf.length);
                     if (transposed) {
                         xofBufArr[parInd][rhoLen] = (byte) i;
                         xofBufArr[parInd][rhoLen + 1] = (byte) j;
@@ -969,11 +988,13 @@ public final class ML_KEM {
         return vector;
     }
 
-    static void implMlKemNtt(short[] poly, short[] ntt_zetas) {
-        implMlKemNttJava(poly);
+    @IntrinsicCandidate
+    static int implKyberNtt(short[] poly, short[] ntt_zetas) {
+        implKyberNttJava(poly);
+        return 1;
     }
 
-    private static void implMlKemNttJava(short[] poly) {
+    static void implKyberNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -984,18 +1005,21 @@ public final class ML_KEM {
         }
     }
 
-    // The elements of poly should be in the range [-ML_KEM_Q, ML_KEM_Q]
-    // The elements of poly at return will be in the range of [0, ML_KEM_Q]
+    // The elements of poly should be in the range [-mlKem_q, mlKem_q]
+    // The elements of poly at return will be in the range of [0, mlKem_q]
     private void mlKemNTT(short[] poly) {
-        implMlKemNtt(poly, MONT_ZETAS_FOR_VECTOR_NTT_ARR);
+        assert poly.length == ML_KEM_N;
+        implKyberNtt(poly, montZetasForVectorNttArr);
         mlKemBarrettReduce(poly);
     }
 
-    static void implMlKemInverseNtt(short[] poly, short[] zetas) {
-        implMlKemInverseNttJava(poly);
+    @IntrinsicCandidate
+    static int implKyberInverseNtt(short[] poly, short[] zetas) {
+        implKyberInverseNttJava(poly);
+        return 1;
     }
 
-    private static void implMlKemInverseNttJava(short[] poly) {
+    static void implKyberInverseNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -1009,7 +1033,8 @@ public final class ML_KEM {
     // Works in place, but also returns its (modified) input so that it can
     // be used in expressions
     private short[] mlKemInverseNTT(short[] poly) {
-        implMlKemInverseNtt(poly, MONT_ZETAS_FOR_VECTOR_INVERSE_NTT_ARR);
+        assert poly.length == ML_KEM_N;
+        implKyberInverseNtt(poly, montZetasForVectorInverseNttArr);
         return poly;
     }
 
@@ -1100,15 +1125,16 @@ public final class ML_KEM {
         return result;
     }
 
-    static void implMlKemNttMult(short[] result, short[] ntta, short[] nttb,
+    @IntrinsicCandidate
+    static int implKyberNttMult(short[] result, short[] ntta, short[] nttb,
                                 short[] zetas) {
-        implMlKemNttMultJava(result, ntta, nttb);
+        implKyberNttMultJava(result, ntta, nttb);
+        return 1;
     }
 
-    private static void implMlKemNttMultJava(short[] result,
-                                             short[] ntta, short[] nttb) {
-
+    static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
         for (int m = 0; m < ML_KEM_N / 2; m++) {
+
             int a0 = ntta[2 * m];
             int a1 = ntta[2 * m + 1];
             int b0 = nttb[2 * m];
@@ -1123,9 +1149,11 @@ public final class ML_KEM {
 
     // Multiplies two polynomials represented in the NTT domain.
     // The result is a representation of the product still in the NTT domain.
-    // The coefficients in the result are in the range (-ML_KEM_Q, ML_KEM_Q).
+    // The coefficients in the result are in the range (-mlKem_q, mlKem_q).
     private void nttMult(short[] result, short[] ntta, short[] nttb) {
-        implMlKemNttMult(result, ntta, nttb, MONT_ZETAS_FOR_VECTOR_NTT_MULT_ARR);
+        assert (result.length == ML_KEM_N) && (ntta.length == ML_KEM_N) &&
+                (nttb.length == ML_KEM_N);
+        implKyberNttMult(result, ntta, nttb, montZetasForVectorNttMultArr);
     }
 
     // Adds the vector of polynomials b to a in place, i.e. a will hold
@@ -1142,15 +1170,18 @@ public final class ML_KEM {
         return a;
     }
 
-    static void implMlKemAddPoly(short[] result, short[] a, short[] b) {
-        implMlKemAddPolyJava(result, a, b);
+    @IntrinsicCandidate
+    static int implKyberAddPoly(short[] result, short[] a, short[] b) {
+        implKyberAddPolyJava(result, a, b);
+        return 1;
     }
 
-    private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b) {
+    static void implKyberAddPolyJava(short[] result, short[] a, short[] b) {
         for (int m = 0; m < ML_KEM_N; m++) {
-            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > -ML_KEM_Q
-            result[m] = (short) r;
+            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > - ML_KEM_Q
+            a[m] = (short) r;
         }
+        mlKemBarrettReduce(a);
     }
 
     // Adds the polynomial b to a in place, i.e. (the modified) a will hold
@@ -1158,17 +1189,19 @@ public final class ML_KEM {
     // The coefficients are supposed be greater than -ML_KEM_Q in a and
     // greater than -ML_KEM_Q and less than ML_KEM_Q in b.
     // The coefficients in the result are greater than -ML_KEM_Q.
-    private void mlKemAddPoly(short[] a, short[] b) {
-        implMlKemAddPoly(a, a, b);
+    private short[] mlKemAddPoly(short[] a, short[] b) {
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N);
+        implKyberAddPoly(a, a, b);
+        return a;
     }
 
-    static void implMlKemAddPoly(short[] result, short[] a, short[] b, short[] c) {
-        implMlKemAddPolyJava(result, a, b, c);
+    @IntrinsicCandidate
+    static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {
+        implKyberAddPolyJava(result, a, b, c);
+        return 1;
     }
 
-    private static void implMlKemAddPolyJava(short[] result, short[] a,
-                                             short[] b, short[] c) {
-
+    static void implKyberAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
         for (int m = 0; m < ML_KEM_N; m++) {
             int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
             result[m] = (short) r;
@@ -1181,7 +1214,9 @@ public final class ML_KEM {
     // greater than -ML_KEM_Q and less than ML_KEM_Q.
     // The coefficients in the result are nonnegative and less than ML_KEM_Q.
     private short[] mlKemAddPoly(short[] a, short[] b, short[] c) {
-        implMlKemAddPoly(a, a, b, c);
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N) &&
+                (c.length == ML_KEM_N);
+        implKyberAddPoly(a, a, b, c);
         mlKemBarrettReduce(a);
         return a;
     }
@@ -1304,15 +1339,13 @@ public final class ML_KEM {
         return result;
     }
 
-    private static void implMlKem12To16(byte[] condensed, int index,
-                                        short[] parsed, int parsedLength) {
-
-        implMlKem12To16Java(condensed, index, parsed, parsedLength);
+    @IntrinsicCandidate
+    private static int implKyber12To16(byte[] condensed, int index, short[] parsed, int parsedLength) {
+        implKyber12To16Java(condensed, index, parsed, parsedLength);
+        return 1;
     }
 
-    private static void implMlKem12To16Java(byte[] condensed, int index,
-                                            short[] parsed, int parsedLength) {
-
+    private static void implKyber12To16Java(byte[] condensed, int index, short[] parsed, int parsedLength) {
         for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
             parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
                     256 * (condensed[i + index + 1] & 0xf));
@@ -1322,15 +1355,22 @@ public final class ML_KEM {
     }
 
     // The intrinsic implementations assume that the input and output buffers
-    // are such that condensed can be read in 192-byte chunks and
-    // parsed can be written in 128 shorts chunks. In other words,
-    // if (i - 1) * 128 < parsedLengths <= i * 128 then
-    // parsed.size should be at least i * 128 and
-    // condensed.size should be at least index + i * 192
+    // are such that condensed can be read in 96-byte chunks and
+    // parsed can be written in 64 shorts chunks except for the last chunk
+    // that can be either 48 or 64 shorts. In other words,
+    // if (i - 1) * 64 < parsedLengths <= i * 64 then
+    // parsed.length should be either i * 64 or (i-1) * 64 + 48 and
+    // condensed.length should be at least index + i * 96.
     private void twelve2Sixteen(byte[] condensed, int index,
                                 short[] parsed, int parsedLength) {
-
-        implMlKem12To16(condensed, index, parsed, parsedLength);
+        int i = parsedLength / 64;
+        int remainder = parsedLength - i * 64;
+        if (remainder != 0) {
+            i++;
+        }
+        assert ((remainder == 0) || (remainder == 48)) &&
+                (index + i * 96 <= condensed.length);
+        implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
     private static void decodePoly5(byte[] condensed, int index, short[] parsed) {
@@ -1471,15 +1511,16 @@ public final class ML_KEM {
         return result;
     }
 
-    static void implMlKemBarrettReduce(short[] coeffs) {
-        implMlKemBarrettReduceJava(coeffs);
+    @IntrinsicCandidate
+    static int implKyberBarrettReduce(short[] coeffs) {
+        implKyberBarrettReduceJava(coeffs);
+        return 1;
     }
 
-    private static void implMlKemBarrettReduceJava(short[] coeffs) {
+    static void implKyberBarrettReduceJava(short[] poly) {
         for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) coeffs[m] * BARRETT_MULTIPLIER) >>
-                    BARRETT_SHIFT;
-            coeffs[m] = (short) (coeffs[m] - tmp * ML_KEM_Q);
+            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
+            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
         }
     }
 
@@ -1492,8 +1533,9 @@ public final class ML_KEM {
     // That means that if the original poly[i] > -ML_KEM_Q then at return it
     // will be in the range [0, ML_KEM_Q), i.e. it will be the canonical
     // representative of its residue class.
-    private void mlKemBarrettReduce(short[] poly) {
-        implMlKemBarrettReduce(poly);
+    private static void mlKemBarrettReduce(short[] poly) {
+        assert poly.length == ML_KEM_N;
+        implKyberBarrettReduce(poly);
     }
 
     // Precondition: -(2^MONT_R_BITS -1) * MONT_Q <= b * c < (2^MONT_R_BITS - 1) * MONT_Q
@@ -1503,8 +1545,8 @@ public final class ML_KEM {
         int a = b * c;
         int aHigh = a >> MONT_R_BITS;
         int aLow = a & ((1 << MONT_R_BITS) - 1);
-        int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >>
-                (32 - MONT_R_BITS); // signed low product
+        // signed low product
+        int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >> (32 - MONT_R_BITS);
 
         return (aHigh - ((m * MONT_Q) >> MONT_R_BITS)); // subtract signed high product
     }

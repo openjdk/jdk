@@ -393,16 +393,7 @@ public abstract class PrintServiceLookup {
         /*
          * add any directly registered services
          */
-        ArrayList<PrintService> registeredServices = null;
-        try {
-          @SuppressWarnings("removal")
-          SecurityManager security = System.getSecurityManager();
-          if (security != null) {
-            security.checkPrintJobAccess();
-          }
-          registeredServices = getRegisteredServices();
-        } catch (SecurityException se) {
-        }
+        ArrayList<PrintService> registeredServices = getRegisteredServices();
         if (registeredServices != null) {
             PrintService[] services = registeredServices.toArray(
                            new PrintService[registeredServices.size()]);
@@ -458,16 +449,7 @@ public abstract class PrintServiceLookup {
         /*
          * add any directly registered services
          */
-        ArrayList<PrintService> registeredServices = null;
-        try {
-          @SuppressWarnings("removal")
-          SecurityManager security = System.getSecurityManager();
-          if (security != null) {
-            security.checkPrintJobAccess();
-          }
-          registeredServices = getRegisteredServices();
-        } catch (Exception e) {
-        }
+        ArrayList<PrintService> registeredServices = getRegisteredServices();
         if (registeredServices != null) {
             PrintService[] services =
                 registeredServices.toArray(new PrintService[registeredServices.size()]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -129,6 +130,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.graal.enabled", this::isGraalEnabled);
         // jdk.hasLibgraal is true if the libgraal shared library file is present
         map.put("jdk.hasLibgraal", this::hasLibgraal);
+        map.put("java.enablePreview", this::isPreviewEnabled);
         map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
@@ -140,6 +142,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
         map.put("jlink.packagedModules", this::packagedModules);
+        map.put("jdk.static", this::isStatic);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -452,7 +455,9 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if this VM can write Java heap objects into the CDS archive
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified,
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
@@ -583,6 +588,9 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
+    protected String isPreviewEnabled() {
+        return "" + PreviewFeatures.isEnabled();
+    }
     /**
      * A simple check for container support
      *
@@ -816,6 +824,10 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
+    }
+
+    private String isStatic() {
+        return Boolean.toString(WB.isStatic());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // This implementation of "G1BlockOffsetTable" divides the covered region
@@ -48,7 +47,7 @@ private:
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
-           "%s - offset: " SIZE_FORMAT ", N_words: %u",
+           "%s - offset: %zu, N_words: %u",
            msg, offset, CardTable::card_size_in_words());
   }
 
@@ -90,10 +89,7 @@ public:
 
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
-  static size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
-    return ReservedSpace::allocation_align_size_up(number_of_slots);
-  }
+  static size_t compute_size(size_t mem_region_words);
 
   // Returns how many bytes of the heap a single byte of the BOT corresponds to.
   static size_t heap_map_factor() {

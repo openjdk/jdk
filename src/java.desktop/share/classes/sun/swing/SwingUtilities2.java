@@ -92,7 +92,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.font.FontDesignMetrics;
@@ -1462,20 +1461,6 @@ public class SwingUtilities2 {
    public static boolean canAccessSystemClipboard() {
        return !GraphicsEnvironment.isHeadless();
    }
-
-    /**
-     * Utility method that throws SecurityException if SecurityManager is set
-     * and modifiers are not public
-     *
-     * @param modifiers a set of modifiers
-     */
-    @SuppressWarnings("removal")
-    public static void checkAccess(int modifiers) {
-        if (System.getSecurityManager() != null
-                && !Modifier.isPublic(modifiers)) {
-            throw new SecurityException("Resource is not accessible");
-        }
-    }
 
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");

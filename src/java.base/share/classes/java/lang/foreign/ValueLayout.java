@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package java.lang.foreign;
 
+import jdk.internal.foreign.layout.ValueLayouts;
+
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
  * A layout that models values of basic data types. Examples of values modeled by

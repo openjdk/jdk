@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ public class bug6559152 {
     private static JFrame frame;
     private static JComboBox cb;
     private static Robot robot;
-    private static Point p = null;
-    private static Dimension d;
+    private static volatile Point p = null;
+    private static volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -84,7 +84,7 @@ public class bug6559152 {
     }
 
     private static void setupUI() {
-        frame = new JFrame();
+        frame = new JFrame("bug6559152");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         DefaultTableModel model = new DefaultTableModel(1, 1);

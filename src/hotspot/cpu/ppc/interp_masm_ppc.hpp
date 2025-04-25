@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -265,7 +265,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

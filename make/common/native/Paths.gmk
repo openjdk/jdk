@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains functionality related to handling paths for source files
 # and object files. This is complicated by the fact that we usually, but not
@@ -31,6 +34,7 @@
 # "@-files", which we normally use to avoid hitting command line length limits.
 # Finally this file contains functionality for locating all source code files
 # that should be included in the compilation.
+################################################################################
 
 ################################################################################
 # When absolute paths are not allowed in the output, and the compiler does not
@@ -240,3 +244,8 @@ define SetupObjectFileList
     endif
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -43,7 +43,7 @@ public:
     union {
       jvalue    _value;
       Metadata* _metadata;
-      GrowableArray<jvalue>* _array;
+      GrowableArray<jbyte>* _array;
     } _v;
     int       _offset;         // offset of this constant (in bytes) relative to the constant table base.
     float     _freq;
@@ -72,18 +72,17 @@ public:
     {
       _v._metadata = metadata;
     }
-    Constant(BasicType type, GrowableArray<jvalue>* array, int alignment, bool can_be_reused = true) :
-      _type(type),
+    Constant(GrowableArray<jbyte>* array, int alignment) :
+      _type(T_BYTE),
       _is_array(true),
       _alignment(alignment),
       _offset(-1),
       _freq(0.0f),
-      _can_be_reused(can_be_reused)
+      _can_be_reused(true)
     {
-      assert(is_java_primitive(type), "not applicable for %s", type2name(type));
       assert(is_power_of_2(alignment), "invalid alignment %d", alignment);
-      _v._array = new GrowableArray<jvalue>(array->length());
-      for (jvalue ele : *array) {
+      _v._array = new GrowableArray<jbyte>(array->length());
+      for (jbyte ele : *array) {
         _v._array->append(ele);
       }
     }
@@ -102,7 +101,7 @@ public:
 
     Metadata* get_metadata() const { return _v._metadata; }
 
-    GrowableArray<jvalue>* get_array() const { return _v._array; }
+    const GrowableArray<jbyte>* get_array() const { return _v._array; }
 
     int         offset()  const    { return _offset; }
     void    set_offset(int offset) {        _offset = offset; }
@@ -135,6 +134,10 @@ public:
 
   int size() const { assert(_size != -1, "not calculated yet"); return _size; }
 
+  // The minimum alignment requirement of the constant table, must be a power of 2. The constant
+  // section of the nmethod must satisfy this value.
+  int alignment() const;
+
   int calculate_table_base_offset() const;  // AD specific
   void set_table_base_offset(int x)  { assert(_table_base_offset == -1 || x == _table_base_offset, "can't change"); _table_base_offset = x; }
   int      table_base_offset() const { assert(_table_base_offset != -1, "not set yet");                      return _table_base_offset; }
@@ -150,8 +153,8 @@ public:
   void     add(Constant& con);
   Constant add(MachConstantNode* n, BasicType type, jvalue value);
   Constant add(Metadata* metadata);
-  Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array);
-  Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array, int alignment);
+  Constant add(MachConstantNode* n, GrowableArray<jbyte>* array);
+  Constant add(MachConstantNode* n, GrowableArray<jbyte>* array, int alignment);
   Constant add(MachConstantNode* n, MachOper* oper);
   Constant add(MachConstantNode* n, jint i) {
     jvalue value; value.i = i;

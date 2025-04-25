@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,9 +157,6 @@ public class VectorSupport {
 
     public static class VectorSpecies<E> {}
 
-    /**
-     * @hidden
-     */
     public static class VectorPayload {
         private final Object payload; // array of primitives
 
@@ -172,26 +169,18 @@ public class VectorSupport {
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
-    /**
-     * @hidden
-     */
+
     public static class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
@@ -232,56 +221,6 @@ public class VectorSupport {
                                  IndexPartiallyInUpperRangeOperation<E, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(offset, limit);
-    }
-
-    /* ============================================================================ */
-    public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
-                                          SH extends VectorShuffle<?>> {
-        SH apply(int length, int start, int step, S s);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <E,
-     S extends VectorSpecies<E>,
-     SH extends VectorShuffle<E>>
-    SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
-                   int length,
-                   int start, int step, int wrap,
-                   ShuffleIotaOperation<S, SH> defaultImpl) {
-       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(length, start, step, s);
-    }
-
-    public interface ShuffleToVectorOperation<V extends Vector<?>,
-                                              SH extends VectorShuffle<?>> {
-       V apply(SH sh);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <V extends Vector<E>,
-     SH extends VectorShuffle<E>,
-     E>
-    V shuffleToVector(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, SH sh,
-                      int length,
-                      ShuffleToVectorOperation<V, SH> defaultImpl) {
-      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-      return defaultImpl.apply(sh);
-    }
-
-    public interface WrapShuffleIndexesOperation<SH extends VectorShuffle<?>> {
-        SH apply(SH sh);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <E,
-     SH extends VectorShuffle<E>>
-    SH wrapShuffleIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
-                          WrapShuffleIndexesOperation<SH> defaultImpl) {
-       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(sh);
     }
 
     /* ============================================================================ */

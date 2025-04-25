@@ -354,7 +354,7 @@ public final class AnnotationReader {
     public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
         var tag = value.tag();
         buf.writeU1(tag);
-        switch (value.tag()) {
+        switch (tag) {
             case TAG_BOOLEAN, TAG_BYTE, TAG_CHAR, TAG_DOUBLE, TAG_FLOAT, TAG_INT, TAG_LONG, TAG_SHORT, TAG_STRING ->
                     buf.writeIndex(((AnnotationValue.OfConstant) value).constant());
             case TAG_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());

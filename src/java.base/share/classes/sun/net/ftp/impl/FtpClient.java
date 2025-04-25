@@ -710,13 +710,13 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         } else if (address.isLoopbackAddress() && s.startsWith("127.")) { // can be 127.0
             return new InetSocketAddress(s, port);
         } else if (address.isLoopbackAddress()) {
-            if (privilegedLocalHost().getHostAddress().equals(s)) {
+            if (getLocalHost().getHostAddress().equals(s)) {
                 return new InetSocketAddress(s, port);
             } else {
                 throw new FtpProtocolException(ERROR_MSG);
             }
         } else if (s.startsWith("127.")) {
-            if (privilegedLocalHost().equals(address)) {
+            if (getLocalHost().equals(address)) {
                 return new InetSocketAddress(s, port);
             } else {
                 throw new FtpProtocolException(ERROR_MSG);
@@ -724,7 +724,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         String hostName = address.getHostName();
         if (!(IPAddressUtil.isIPv4LiteralAddress(hostName) || IPAddressUtil.isIPv6LiteralAddress(hostName))) {
-            InetAddress[] names = privilegedGetAllByName(hostName);
+            InetAddress[] names = getAllByName(hostName);
             String resAddress = Arrays
                 .stream(names)
                 .map(InetAddress::getHostAddress)
@@ -738,7 +738,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         throw new FtpProtocolException(ERROR_MSG);
     }
 
-    private static InetAddress privilegedLocalHost() throws FtpProtocolException {
+    private static InetAddress getLocalHost() throws FtpProtocolException {
         try {
             return InetAddress.getLocalHost();
         } catch (Exception e) {
@@ -748,7 +748,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
     }
 
-    private static InetAddress[] privilegedGetAllByName(String hostName) throws FtpProtocolException {
+    private static InetAddress[] getAllByName(String hostName) throws FtpProtocolException {
         try {
             return InetAddress.getAllByName(hostName);
         } catch (Exception e) {

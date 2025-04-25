@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8272215 8315767
+ * @bug 8272215 8315767 8332686
  * @summary Test for ofLiteral, ofPosixLiteral APIs in InetAddress classes
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
  *                     OfLiteralTest
@@ -373,7 +373,18 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, ""),            // empty
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x1FFFFFFFF"), // 2^33 - 1 is too large
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100000000"), // 2^32 is too large
-                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "040000000000")
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "040000000000"),
+
+                // Empty literals
+                Arguments.of(InetAddressClass.INET_ADDRESS, ""),
+                Arguments.of(InetAddressClass.INET4_ADDRESS, ""),
+                Arguments.of(InetAddressClass.INET6_ADDRESS, ""),
+
+                // Blank literals
+                Arguments.of(InetAddressClass.INET_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET4_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET6_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "    ")
         );
         // Construct arguments for a test case with IPv6-scoped address with scope-id
         // specified as a string with non-existing network interface name

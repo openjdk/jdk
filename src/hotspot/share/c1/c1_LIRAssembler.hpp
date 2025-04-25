@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,11 +166,11 @@ class LIR_Assembler: public CompilationResourceObj {
   void const2reg  (LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info);
   void const2stack(LIR_Opr src, LIR_Opr dest);
   void const2mem  (LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide);
-  void reg2stack  (LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack);
+  void reg2stack  (LIR_Opr src, LIR_Opr dest, BasicType type);
   void reg2reg    (LIR_Opr src, LIR_Opr dest);
   void reg2mem    (LIR_Opr src, LIR_Opr dest, BasicType type,
                    LIR_PatchCode patch_code, CodeEmitInfo* info,
-                   bool pop_fpu_stack, bool wide);
+                   bool wide);
   void stack2reg  (LIR_Opr src, LIR_Opr dest, BasicType type);
   void stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type);
   void mem2reg    (LIR_Opr src, LIR_Opr dest, BasicType type,
@@ -206,18 +206,17 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_profile_type(LIR_OpProfileType* op);
   void emit_delay(LIR_OpDelay* op);
 
-  void arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info, bool pop_fpu_stack);
+  void arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info);
   void arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr temp, LIR_Opr result, CodeEmitInfo* info);
-  void intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, LIR_Opr dest, LIR_Op* op);
+  void intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr temp, LIR_Opr dest, LIR_Op* op);
 #ifdef ASSERT
   void emit_assert(LIR_OpAssert* op);
 #endif
 
   void logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
 
-  void roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack);
   void move_op(LIR_Opr src, LIR_Opr result, BasicType type,
-               LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide);
+               LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide);
   void volatile_move_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);
   void comp_mem_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);  // info set for null exceptions
   void comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr result, LIR_Op2* op);

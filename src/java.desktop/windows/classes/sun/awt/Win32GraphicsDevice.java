@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -81,7 +80,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     // pipelines which are mutually exclusive with opengl, for which
     // pixel formats were added in the first place
     protected static boolean pfDisabled;
-    private static AWTPermission fullScreenExclusivePermission;
     // the original display mode we had before entering the fullscreen
     // mode
     private DisplayMode defaultDisplayMode;
@@ -349,29 +347,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                     getLocalGraphicsEnvironment().getDefaultScreenDevice());
     }
 
-    private static boolean isFSExclusiveModeAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (fullScreenExclusivePermission == null) {
-                fullScreenExclusivePermission =
-                    new AWTPermission("fullScreenExclusive");
-            }
-            try {
-                security.checkPermission(fullScreenExclusivePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * returns true unless we're not allowed to use fullscreen mode.
      */
     @Override
     public boolean isFullScreenSupported() {
-        return isFSExclusiveModeAllowed();
+        return true;
     }
 
     @Override
@@ -609,7 +590,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * The listener restores the default display mode when window is iconified
      * and sets it back to the one set by the user on de-iconification.
      */
-    private static class Win32FSWindowAdapter extends WindowAdapter {
+    private static final class Win32FSWindowAdapter extends WindowAdapter {
         private Win32GraphicsDevice device;
         private DisplayMode dm;
 

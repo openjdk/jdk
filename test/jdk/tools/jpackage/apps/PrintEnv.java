@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,12 @@
  * questions.
  */
 
-import java.util.List;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PrintEnv {
 
@@ -41,6 +45,11 @@ public class PrintEnv {
             } else if (arg.startsWith(PRINT_SYS_PROP)) {
                 String name = arg.substring(PRINT_SYS_PROP.length());
                 lines.add(name + "=" + System.getProperty(name));
+            } else if (arg.startsWith(PRINT_MODULES)) {
+                lines.add(ModuleFinder.ofSystem().findAll().stream()
+                        .map(ModuleReference::descriptor)
+                        .map(ModuleDescriptor::name)
+                        .collect(Collectors.joining(",")));
             } else {
                 throw new IllegalArgumentException();
             }
@@ -51,4 +60,5 @@ public class PrintEnv {
 
     private final static String PRINT_ENV_VAR = "--print-env-var=";
     private final static String PRINT_SYS_PROP = "--print-sys-prop=";
+    private final static String PRINT_MODULES = "--print-modules";
 }

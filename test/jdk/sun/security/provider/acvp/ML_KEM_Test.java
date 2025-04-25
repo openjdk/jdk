@@ -43,6 +43,15 @@ public class ML_KEM_Test {
         }
     }
 
+    static NamedParameterSpec genParams(String pname) {
+       return switch (pname) {
+            case "ML-KEM-512" -> NamedParameterSpec.ML_KEM_512;
+            case "ML-KEM-768" -> NamedParameterSpec.ML_KEM_768;
+            case "ML-KEM-1024" -> NamedParameterSpec.ML_KEM_1024;
+            default -> throw new RuntimeException("Unknown params: " + pname);
+        };
+    }
+
     static void keyGenTest(JSONValue kat, Provider p) throws Exception {
         var g = p == null
                 ? KeyPairGenerator.getInstance("ML-KEM")
@@ -52,7 +61,7 @@ public class ML_KEM_Test {
                 : KeyFactory.getInstance("ML-KEM", p);
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
-            var np = new NamedParameterSpec(pname);
+            var np = genParams(pname);
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
@@ -61,8 +70,8 @@ public class ML_KEM_Test {
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("ek").asString()));
-                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("dk").asString()));
+                Asserts.assertEqualsByteArray(toByteArray(c.get("ek").asString()), pk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("dk").asString()), sk);
             }
             System.out.println();
         }
@@ -88,9 +97,9 @@ public class ML_KEM_Test {
                             ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
                     var enc = e.encapsulate();
                     Asserts.assertEqualsByteArray(
-                            enc.encapsulation(), toByteArray(c.get("c").asString()));
+                            toByteArray(c.get("c").asString()), enc.encapsulation());
                     Asserts.assertEqualsByteArray(
-                            enc.key().getEncoded(), toByteArray(c.get("k").asString()));
+                            toByteArray(c.get("k").asString()), enc.key().getEncoded());
                 }
                 System.out.println();
             } else if (function.equals("decapsulation")) {
@@ -103,7 +112,7 @@ public class ML_KEM_Test {
                     System.out.print(c.get("tcId").asString() + " ");
                     var d = g.newDecapsulator(dk);
                     var k = d.decapsulate(toByteArray(c.get("c").asString()));
-                    Asserts.assertEqualsByteArray(k.getEncoded(), toByteArray(c.get("k").asString()));
+                    Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
                 }
                 System.out.println();
             }

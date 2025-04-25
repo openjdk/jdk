@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -34,14 +33,19 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::riscv::_zero_blocks = nullptr;
-address StubRoutines::riscv::_compare_long_string_LL = nullptr;
-address StubRoutines::riscv::_compare_long_string_UU = nullptr;
-address StubRoutines::riscv::_compare_long_string_LU = nullptr;
-address StubRoutines::riscv::_compare_long_string_UL = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_ll = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_uu = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_ul = nullptr;
+
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
 
 bool StubRoutines::riscv::_completed = false;
 
@@ -479,5 +483,17 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
     0x29413c29, 0x548c7116, 0xd2dba657, 0xaf16eb68, 0x05050e94,
     0x78c843ab, 0xfe9f94ea, 0x8352d9d5, 0x71c95953, 0x0c04146c,
     0x8a53c32d, 0xf79e8e12, 0x5d8d6bee, 0x204026d1, 0xa617f190,
-    0xdbdabcaf
+    0xdbdabcaf,
+
+    // CRC32 table for carry-less multiplication implementation
+    0xe88ef372UL, 0x00000001UL,
+    0x4a7fe880UL, 0x00000001UL,
+    0x54442bd4UL, 0x00000001UL,
+    0xc6e41596UL, 0x00000001UL,
+    0x3db1ecdcUL, 0x00000000UL,
+    0x74359406UL, 0x00000001UL,
+    0xf1da05aaUL, 0x00000000UL,
+    0x5a546366UL, 0x00000001UL,
+    0x751997d0UL, 0x00000001UL,
+    0xccaa009eUL, 0x00000000UL,
 };

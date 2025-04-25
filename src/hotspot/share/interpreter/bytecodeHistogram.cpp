@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
@@ -34,7 +33,7 @@
 
 // Implementation of BytecodeCounter
 
-int   BytecodeCounter::_counter_value = 0;
+uintx BytecodeCounter::_counter_value = 0;
 jlong BytecodeCounter::_reset_time    = 0;
 
 
@@ -56,7 +55,7 @@ double BytecodeCounter::frequency() {
 
 void BytecodeCounter::print() {
   tty->print_cr(
-    "%d bytecodes executed in %.1fs (%.3fMHz)",
+    "%zu bytecodes executed in %.1fs (%.3fMHz)",
     counter_value(),
     elapsed_time(),
     frequency() / 1000000.0

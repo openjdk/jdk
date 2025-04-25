@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
  * @bug 8193125 8196623 8335989
  * @summary test modifiers with java.base
  * @library /tools/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
  */
@@ -168,7 +166,7 @@ public class JavaBaseTest {
             for (String mod : mods) {
                 String key = mod.equals("static")
                     ? "compiler.err.mod.not.allowed.here: " + mod
-                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive)";
+                    : "compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.java.base.transitive)";
                 String message = "module-info.java:1:12: " + key;
                 if (log.contains(message)) {
                     foundErrorMessage = true;

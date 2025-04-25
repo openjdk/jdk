@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 
   TaskQueueEntryChunk* cur = _chunk_list;
   while (cur != nullptr) {
-    guarantee(num_chunks <= _chunks_in_chunk_list, "Found " SIZE_FORMAT " oop chunks which is more than there should be", num_chunks);
+    guarantee(num_chunks <= _chunks_in_chunk_list, "Found %zu oop chunks which is more than there should be", num_chunks);
 
     for (size_t i = 0; i < EntriesPerChunk; ++i) {
       if (cur->data[i].is_null()) {
@@ -228,6 +228,10 @@ inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
   _mark_stats_cache.add_live_words(_g1h->addr_to_region(obj), obj_size);
 }
 
+inline void G1CMTask::inc_incoming_refs(oop const obj) {
+  _mark_stats_cache.inc_incoming_refs(_g1h->addr_to_region(obj));
+}
+
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
   task(worker_id)->update_liveness(obj, size);
 }
@@ -287,6 +291,10 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
   if (obj == nullptr) {
     return false;
+  }
+
+  if (!G1HeapRegion::is_in_same_region(p, obj)) {
+    inc_incoming_refs(obj);
   }
   return make_reference_grey(obj);
 }

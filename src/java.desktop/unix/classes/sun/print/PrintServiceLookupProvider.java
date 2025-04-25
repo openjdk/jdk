@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,12 +210,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
-
         if (printServices == null || !pollServices) {
             refreshServices();
         }
@@ -549,11 +543,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         PrintRequestAttributeSet requestSet = null;
         PrintServiceAttributeSet serviceSet = null;
 
@@ -613,22 +602,11 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         return new MultiDocPrintService[0];
     }
 
 
     public synchronized PrintService getDefaultPrintService() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
-
         // clear defaultPrintService
         defaultPrintService = null;
         String psuri = null;

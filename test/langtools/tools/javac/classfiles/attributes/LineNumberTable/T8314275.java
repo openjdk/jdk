@@ -25,7 +25,6 @@
  * @bug 8314275
  * @summary Tests a line number table attribute for switch expression
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util

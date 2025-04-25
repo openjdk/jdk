@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import jdk.xml.internal.XMLSecurityManager;
  *
  * @author  Ramesh Mandava
  *
- * @LastModified: Jan 2022
+ * @LastModified: Nov 2024
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -78,12 +78,7 @@ public  class XPathFactoryImpl extends XPathFactory {
         /**
          * javax.xml.xpath.XPathFactory implementation.
          */
-        @SuppressWarnings("removal")
         public XPathFactoryImpl() {
-            if (System.getSecurityManager() != null) {
-                _isSecureMode = true;
-                _isNotSecureProcessing = false;
-            }
             _featureManager = new JdkXmlFeatures(!_isNotSecureProcessing);
             _xmlSecMgr = new XMLSecurityManager(true);
         }

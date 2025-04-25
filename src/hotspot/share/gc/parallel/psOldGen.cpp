@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -114,8 +113,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, min_gen_size(),
-                                           max_gen_size(), virtual_space());
+  _gen_counters = new GenerationCounters(perf_data_name, level, 1, min_gen_size(),
+                                         max_gen_size(), virtual_space()->committed_size());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
                                       _object_space, _gen_counters);
@@ -190,21 +189,18 @@ bool PSOldGen::expand(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
+  const size_t remaining_bytes = virtual_space()->uncommitted_size();
+  if (remaining_bytes == 0) {
+    return false;
+  }
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_up(bytes, alignment);
+  size_t aligned_bytes = align_up(MIN2(bytes, remaining_bytes), alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {
     // With NUMA we use round-robin page allocation for the old gen. Expand by at least
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
-  }
-  if (aligned_bytes == 0) {
-    // The alignment caused the number of bytes to wrap.  A call to expand
-    // implies a best effort to expand by "bytes" but not a guarantee.  Align
-    // down to give a best effort.  This is likely the most that the generation
-    // can expand since it has some capacity to start with.
-    aligned_bytes = align_down(bytes, alignment);
   }
 
   bool success = false;
@@ -218,9 +214,6 @@ bool PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
-  }
   return success;
 }
 
@@ -244,14 +237,14 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all();
+      _gen_counters->update_all(_virtual_space->committed_size());
     }
   }
 
   if (result) {
     size_t new_mem_size = virtual_space()->committed_size();
     size_t old_mem_size = new_mem_size - bytes;
-    log_debug(gc)("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_debug(gc)("Expanding %s from %zuK by %zuK to %zuK",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
 
@@ -269,8 +262,9 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(bytes > 0, "precondition");
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
@@ -279,7 +273,7 @@ void PSOldGen::shrink(size_t bytes) {
 
     size_t new_mem_size = virtual_space()->committed_size();
     size_t old_mem_size = new_mem_size + bytes;
-    log_debug(gc)("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_debug(gc)("Shrinking %s from %zuK by %zuK to %zuK",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
 }
@@ -309,9 +303,9 @@ void PSOldGen::resize(size_t desired_free_space) {
   const size_t current_size = capacity_in_bytes();
 
   log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: "
-    "desired free: " SIZE_FORMAT " used: " SIZE_FORMAT
-    " new size: " SIZE_FORMAT " current size " SIZE_FORMAT
-    " gen limits: " SIZE_FORMAT " / " SIZE_FORMAT,
+    "desired free: %zu used: %zu"
+    " new size: %zu current size %zu"
+    " gen limits: %zu / %zu",
     desired_free_space, used_in_bytes(), new_size, current_size,
     max_gen_size(), min_gen_size());
 
@@ -321,15 +315,13 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: collection: %d (" SIZE_FORMAT ") -> (" SIZE_FORMAT ") ",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: collection: %d (%zu) -> (%zu) ",
                       ParallelScavengeHeap::heap()->total_collections(),
                       size_before,
                       virtual_space()->committed_size());
@@ -366,21 +358,18 @@ void PSOldGen::post_resize() {
 
 void PSOldGen::print() const { print_on(tty);}
 void PSOldGen::print_on(outputStream* st) const {
-  st->print(" %-15s", name());
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-              capacity_in_bytes()/K, used_in_bytes()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(virtual_space()->low_boundary()),
-                p2i(virtual_space()->high()),
-                p2i(virtual_space()->high_boundary()));
+  st->print("%-15s", name());
+  st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
+  virtual_space()->print_space_boundaries_on(st);
 
-  st->print("  object"); object_space()->print_on(st);
+  StreamAutoIndentor indentor(st, 1);
+  object_space()->print_on(st, "object ");
 }
 
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space->committed_size());
   }
 }
 

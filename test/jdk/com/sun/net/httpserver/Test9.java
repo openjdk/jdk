@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test9
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test9
  * @summary Light weight HTTP server
@@ -33,17 +36,27 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* Same as Test1 but requests run in parallel.
  */
 
 public class Test9 extends Test {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test9.class.getSimpleName() + '-';
 
     static SSLContext ctx;
     static boolean error = false;
@@ -52,16 +65,19 @@ public class Test9 extends Test {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
+        Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
+        Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test9: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             s1 = HttpServer.create (addr, 0);
             s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
+            // Assert that both files share the same parent and can be served from the same `FileServerHandler`
+            assertEquals(smallFilePath.getParent(), largeFilePath.getParent());
+            HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
+            HttpContext c1 = s1.createContext ("/", h);
+            HttpContext c2 = s2.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
@@ -75,22 +91,22 @@ public class Test9 extends Test {
             error = false;
             Thread[] t = new Thread[100];
 
-            t[0] = test (true, "http", root+"/test1", p1, "smallfile.txt", 23);
-            t[1] = test (true, "http", root+"/test1", p1, "largefile.txt", 2730088);
-            t[2] = test (true, "https", root+"/test1", p2, "smallfile.txt", 23);
-            t[3] = test (true, "https", root+"/test1", p2, "largefile.txt", 2730088);
-            t[4] = test (false, "http", root+"/test1", p1, "smallfile.txt", 23);
-            t[5] = test (false, "http", root+"/test1", p1, "largefile.txt", 2730088);
-            t[6] = test (false, "https", root+"/test1", p2, "smallfile.txt", 23);
-            t[7] = test (false, "https", root+"/test1", p2, "largefile.txt", 2730088);
-            t[8] = test (true, "http", root+"/test1", p1, "smallfile.txt", 23);
-            t[9] = test (true, "http", root+"/test1", p1, "largefile.txt", 2730088);
-            t[10] = test (true, "https", root+"/test1", p2, "smallfile.txt", 23);
-            t[11] = test (true, "https", root+"/test1", p2, "largefile.txt", 2730088);
-            t[12] = test (false, "http", root+"/test1", p1, "smallfile.txt", 23);
-            t[13] = test (false, "http", root+"/test1", p1, "largefile.txt", 2730088);
-            t[14] = test (false, "https", root+"/test1", p2, "smallfile.txt", 23);
-            t[15] = test (false, "https", root+"/test1", p2, "largefile.txt", 2730088);
+            t[0] = test (true, "http", p1, smallFilePath);
+            t[1] = test (true, "http", p1, largeFilePath);
+            t[2] = test (true, "https", p2, smallFilePath);
+            t[3] = test (true, "https", p2, largeFilePath);
+            t[4] = test (false, "http", p1, smallFilePath);
+            t[5] = test (false, "http", p1, largeFilePath);
+            t[6] = test (false, "https", p2, smallFilePath);
+            t[7] = test (false, "https", p2, largeFilePath);
+            t[8] = test (true, "http", p1, smallFilePath);
+            t[9] = test (true, "http", p1, largeFilePath);
+            t[10] = test (true, "https", p2, smallFilePath);
+            t[11] = test (true, "https", p2, largeFilePath);
+            t[12] = test (false, "http", p1, smallFilePath);
+            t[13] = test (false, "http", p1, largeFilePath);
+            t[14] = test (false, "https", p2, smallFilePath);
+            t[15] = test (false, "https", p2, largeFilePath);
             for (int i=0; i<16; i++) {
                 t[i].join();
             }
@@ -106,13 +122,15 @@ public class Test9 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
+            Files.delete(smallFilePath);
+            Files.delete(largeFilePath);
         }
     }
 
     static int foo = 1;
 
-    static ClientThread test (boolean fixedLen, String protocol, String root, int port, String f, int size) throws Exception {
-        ClientThread t = new ClientThread (fixedLen, protocol, root, port, f, size);
+    static ClientThread test (boolean fixedLen, String protocol, int port, Path filePath) throws Exception {
+        ClientThread t = new ClientThread (fixedLen, protocol, port, filePath);
         t.start();
         return t;
     }
@@ -123,18 +141,14 @@ public class Test9 extends Test {
 
         boolean fixedLen;
         String protocol;
-        String root;
         int port;
-        String f;
-        int size;
+        private final Path filePath;
 
-        ClientThread (boolean fixedLen, String protocol, String root, int port, String f, int size) {
+        ClientThread (boolean fixedLen, String protocol, int port, Path filePath) {
             this.fixedLen = fixedLen;
             this.protocol = protocol;
-            this.root = root;
             this.port = port;
-            this.f =  f;
-            this.size = size;
+            this.filePath = filePath;
         }
 
         public void run () {
@@ -143,7 +157,7 @@ public class Test9 extends Test {
                     .scheme(protocol)
                     .loopback()
                     .port(port)
-                    .path("/test1/" + f)
+                    .path("/" + filePath.getFileName())
                     .toURL();
 
                 HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
@@ -178,20 +192,17 @@ public class Test9 extends Test {
                 is.close();
                 fout.close();
 
-                if (count != size) {
+                if (count != filePath.toFile().length()) {
                     System.out.println ("wrong amount of data returned");
                     System.out.println ("fixedLen = "+fixedLen);
                     System.out.println ("protocol = "+protocol);
-                    System.out.println ("root = "+root);
                     System.out.println ("port = "+port);
-                    System.out.println ("f = "+f);
-                    System.out.println ("size = "+size);
+                    System.out.println ("file = " + filePath);
                     System.out.println ("temp = "+temp);
                     System.out.println ("count = "+count);
                     error = true;
                 }
-                String orig = root + "/" + f;
-                compare (new File(orig), temp);
+                assertFileContentsEqual(filePath, temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -200,26 +211,4 @@ public class Test9 extends Test {
         }
     }
 
-    /* compare the contents of the two files */
-
-    static void compare (File f1, File f2) throws IOException {
-        InputStream i1 = new BufferedInputStream (new FileInputStream(f1));
-        InputStream i2 = new BufferedInputStream (new FileInputStream(f2));
-
-        int c1,c2;
-        try {
-            while ((c1=i1.read()) != -1) {
-                c2 = i2.read();
-                if (c1 != c2) {
-                    throw new RuntimeException ("file compare failed 1");
-                }
-            }
-            if (i2.read() != -1) {
-                throw new RuntimeException ("file compare failed 2");
-            }
-        } finally {
-            i1.close();
-            i2.close();
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
@@ -850,7 +849,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, java_thread);
+    get_vm_result_oop(oop_result, java_thread);
   }
 }
 
@@ -1146,15 +1145,15 @@ void MacroAssembler::call_VM(Register oop_result,
 }
 
 
-void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
-  ldr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-  str(zr, Address(java_thread, JavaThread::vm_result_offset()));
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register java_thread) {
+  ldr(oop_result, Address(java_thread, JavaThread::vm_result_oop_offset()));
+  str(zr, Address(java_thread, JavaThread::vm_result_oop_offset()));
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
-  ldr(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
-  str(zr, Address(java_thread, JavaThread::vm_result_2_offset()));
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register java_thread) {
+  ldr(metadata_result, Address(java_thread, JavaThread::vm_result_metadata_offset()));
+  str(zr, Address(java_thread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::align(int modulus) {
@@ -2042,7 +2041,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
   // Fast path check: class is fully initialized
   lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
   ldarb(scratch, scratch);
-  subs(zr, scratch, InstanceKlass::fully_initialized);
+  cmp(scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
   // Fast path check: current thread is initializer thread
@@ -5291,32 +5290,47 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
-  assert(UseCompressedClassPointers, "not using compressed class pointers");
   assert(Metaspace::initialized(), "metaspace not initialized yet");
+  assert(_klass_decode_mode != KlassDecodeNone, "should be initialized");
+  return _klass_decode_mode;
+}
 
-  if (_klass_decode_mode != KlassDecodeNone) {
-    return _klass_decode_mode;
-  }
+MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
+  assert(UseCompressedClassPointers, "not using compressed class pointers");
 
-  if (CompressedKlassPointers::base() == nullptr) {
-    return (_klass_decode_mode = KlassDecodeZero);
+  // KlassDecodeMode shouldn't be set already.
+  assert(_klass_decode_mode == KlassDecodeNone, "set once");
+
+  if (base == nullptr) {
+    return KlassDecodeZero;
   }
 
   if (operand_valid_for_logical_immediate(
-        /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
-    const uint64_t range_mask = (1ULL << log2i(range)) - 1;
-    if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
-      return (_klass_decode_mode = KlassDecodeXor);
+        /*is32*/false, (uint64_t)base)) {
+    const uint64_t range_mask = right_n_bits(log2i_ceil(range));
+    if (((uint64_t)base & range_mask) == 0) {
+      return KlassDecodeXor;
     }
   }
 
   const uint64_t shifted_base =
-    (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-  guarantee((shifted_base & 0xffff0000ffffffff) == 0,
-            "compressed class base bad alignment");
+    (uint64_t)base >> shift;
+  if ((shifted_base & 0xffff0000ffffffff) == 0) {
+    return KlassDecodeMovk;
+  }
 
-  return (_klass_decode_mode = KlassDecodeMovk);
+  // No valid encoding.
+  return KlassDecodeNone;
+}
+
+// Check if one of the above decoding modes will work for given base, shift and range.
+bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
+  return klass_decode_mode(base, shift, range) != KlassDecodeNone;
+}
+
+bool MacroAssembler::set_klass_decode_mode(address base, int shift, const size_t range) {
+  _klass_decode_mode = klass_decode_mode(base, shift, range);
+  return _klass_decode_mode != KlassDecodeNone;
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
@@ -7020,8 +7034,15 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     str(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(t1, obj);
+    ldrb(t1, Address(t1, Klass::misc_flags_offset()));
+    tst(t1, KlassFlags::_misc_is_value_based_class);
+    br(Assembler::NE, slow);
   }
 
   // Check if the lock-stack is full.

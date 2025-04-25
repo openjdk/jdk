@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
 package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Programmatic entry point to start the jwebserver tool.
@@ -67,7 +63,7 @@ public class JWebServer {
         setMaxReqTime();
         setMaxConnectionsIfNotSet();
 
-        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true), "jwebserver", args);
         if (ec != 0) {
             System.exit(ec);
         }  // otherwise, the server has either been started successfully and
@@ -84,15 +80,9 @@ public class JWebServer {
         }
     }
 
-    @SuppressWarnings("removal")
     static void setMaxConnectionsIfNotSet() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            if (System.getProperty(SYS_PROP_MAX_CONNECTIONS) != null) {
-                // an explicit value has already been set, so we don't override it
-                return null;
-            }
+        if (System.getProperty(SYS_PROP_MAX_CONNECTIONS) == null) {
             System.setProperty(SYS_PROP_MAX_CONNECTIONS, DEFAULT_JWEBSERVER_MAX_CONNECTIONS);
-            return null;
-        });
+        }
     }
 }

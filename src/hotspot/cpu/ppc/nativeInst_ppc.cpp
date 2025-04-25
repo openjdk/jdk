@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
@@ -56,7 +55,7 @@ bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
 void NativeInstruction::verify() {
   // Make sure code pattern is actually an instruction address.
   address addr = addr_at(0);
-  if (addr == 0 || ((intptr_t)addr & 3) != 0) {
+  if (addr == nullptr || ((intptr_t)addr & 3) != 0) {
     fatal("not an instruction address");
   }
 }
@@ -115,7 +114,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
     // does not provide this information. The branch will be patched
     // later during a final fixup, when all necessary information is
     // available.
-    if (trampoline_stub_addr == 0)
+    if (trampoline_stub_addr == nullptr)
       return;
 
     // Patch the constant in the call's trampoline stub.

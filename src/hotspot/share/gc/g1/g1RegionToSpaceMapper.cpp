@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
@@ -48,7 +47,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mem_tag);
+  MemTracker::record_virtual_memory_tag(rs, mem_tag);
 }
 
 // Used to manually signal a mapper to handle a set of regions as committed.
@@ -91,7 +90,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     guarantee(is_range_uncommitted(start_idx, num_regions),
-              "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
+              "Range not uncommitted, start: %u, num_regions: %zu",
               start_idx, num_regions);
 
     const size_t start_page = (size_t)start_idx * _pages_per_region;
@@ -113,7 +112,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
     guarantee(is_range_committed(start_idx, num_regions),
-             "Range not committed, start: %u, num_regions: " SIZE_FORMAT,
+             "Range not committed, start: %u, num_regions: %zu",
               start_idx, num_regions);
 
     _storage.uncommit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);

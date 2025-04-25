@@ -30,7 +30,7 @@
 #include "oops/oop.hpp"
 #include "runtime/perfDataTypes.hpp"
 
-/* Copyright (c) 1992, 2021, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2024, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
 // Age table for adaptive feedback-mediated tenuring (scavenging)

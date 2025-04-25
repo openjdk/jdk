@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8331670
+ * @bug 8331670 8338383
  * @summary Basic test for --sun-misc-unsafe-memory-access=<value>
  * @library /test/lib
  * @compile TryUnsafeMemoryAccess.java
@@ -43,19 +43,15 @@ import jdk.test.lib.process.OutputAnalyzer;
 class UnsafeMemoryAccessWarnings {
 
     /**
-     * Test default is "allow"
+     * Test default is "warn"
      */
-    @Test
-    void testDefault() throws Exception {
-        test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner")
-            .shouldHaveExitValue(0)
-            .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::objectFieldOffset")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::putLong")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::getLong")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::invokeCleaner");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "allocateMemory+freeMemory",
+            "objectFieldOffset+putLong+getLong"
+    })
+    void testDefault(String input) throws Exception {
+        testOneWarning(input);
     }
 
     /**
@@ -81,11 +77,19 @@ class UnsafeMemoryAccessWarnings {
     @ParameterizedTest
     @ValueSource(strings = {
             "allocateMemory+freeMemory",
-            "objectFieldOffset+putLong+getLong",
-            "invokeCleaner"
+            "objectFieldOffset+putLong+getLong"
     })
     void testWarn(String input) throws Exception {
-        var output = test(input, "--sun-misc-unsafe-memory-access=warn").shouldHaveExitValue(0);
+        testOneWarning(input, "--sun-misc-unsafe-memory-access=warn");
+    }
+
+    /**
+     * Test that a warning is printed by the first memory access method only.
+     * @param input comma separated list of Unsafe memory access methods to execute
+     * @param vmopts VM options
+     */
+    private void testOneWarning(String input, String... vmopts) throws Exception {
+        var output = test(input, vmopts).shouldHaveExitValue(0);
 
         // should be warning printed for the first memory access method
         String[] methodNames = input.split("\\+");
@@ -99,6 +103,7 @@ class UnsafeMemoryAccessWarnings {
         int index = 1;
         while (index < methodNames.length) {
             String methodName = methodNames[index++];
+            assertNotEquals(firstMethodName, methodName);
             output.shouldNotContain("WARNING: sun.misc.Unsafe::" + methodName);
         }
     }

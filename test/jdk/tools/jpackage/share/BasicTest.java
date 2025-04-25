@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,72 @@
  */
 
 
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /*
  * @test
  * @summary jpackage basic testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile BasicTest.java
+ * @compile -Xlint:all -Werror BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=BasicTest
  */
 
 public final class BasicTest {
+
+    public static Collection<?> addModulesParams() {
+        List<Object[][]> params = new ArrayList<>();
+        params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop,jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop", "--add-modules", "jdk.jartool" } });
+        if (isAllModulePathCapable()) {
+            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+            params.add(new Object[][] { new String[] { "--add-modules", "ALL-MODULE-PATH",
+                                                       // Since JDK-8345259 ALL-MODULE-PATH requires --module-path arg
+                                                       "--module-path", jmods.toString() } });
+        }
+        return Collections.unmodifiableList(params);
+    }
+
+    private static boolean isAllModulePathCapable() {
+        Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+        boolean noJmods = Files.notExists(jmods);
+        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+           TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
+           return false;
+        }
+        return true;
+    }
+
     @Test
     public void testNoArgs() {
         List<String> output =
@@ -78,12 +111,11 @@ public final class BasicTest {
                 .ignoreFakeRuntime();
 
         cmd.executeAndAssertImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
-        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
-        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output);
+        TKit.assertTextStream("jpackage.app-path=").apply(output);
     }
 
     @Test
@@ -189,13 +221,37 @@ public final class BasicTest {
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("regular output")
                     .predicate(String::contains).negate()
-                    .apply(nonVerboseOutput.stream());
+                    .apply(nonVerboseOutput);
         });
 
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("verbose output")
-                    .apply(verboseOutput[0].stream());
+                    .apply(verboseOutput[0]);
         });
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testErrorsAlwaysPrinted(boolean verbose) {
+        final var cmd = JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .useToolProvider(false)
+                .discardStdout(true)
+                .removeArgumentWithValue("--main-class");
+
+        if (verbose) {
+            cmd.addArgument("--verbose");
+        }
+
+        cmd.validateOutput(Stream.of(
+                List.of("error.no-main-class-with-main-jar", "hello.jar"),
+                List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
+        ).map(args -> {
+            return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
+        }).toArray(CannedFormattedString[]::new));
+
+        cmd.execute(1);
     }
 
     @Test
@@ -306,17 +362,12 @@ public final class BasicTest {
     }
 
     @Test
-    @Parameter("ALL-MODULE-PATH")
-    @Parameter("ALL-DEFAULT")
-    @Parameter("java.desktop")
-    @Parameter("java.desktop,jdk.jartool")
-    @Parameter({ "java.desktop", "jdk.jartool" })
-    public void testAddModules(String... addModulesArg) {
+    @ParameterSupplier("addModulesParams")
+    public void testAddModules(String[] addModulesArg) {
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules
-        Stream.of(addModulesArg).map(v -> Stream.of("--add-modules", v)).flatMap(
-                s -> s).forEachOrdered(cmd::addArgument);
+        Stream.of(addModulesArg).forEachOrdered(cmd::addArgument);
         cmd.executeAndAssertHelloAppImageCreated();
     }
 
@@ -357,7 +408,10 @@ public final class BasicTest {
         );
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
-            pkgTest.setExpectedExitCode(1).addBundleVerifier(cmd -> {
+            pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
+                cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                        "ERR_BuildRootInvalid", cmd.getArgumentValue("--temp")));
+            }).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.
                 Path tempDir = Path.of(cmd.getArgumentValue("--temp"));
                 TKit.assertDirectoryContent(tempDir).match(Path.of("foo.txt"));

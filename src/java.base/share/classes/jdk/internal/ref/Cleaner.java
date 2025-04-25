@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.internal.ref;
 
 import java.lang.ref.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 
 /**
@@ -136,21 +134,17 @@ public class Cleaner
     /**
      * Runs this cleaner, if it has not been run before.
      */
-    @SuppressWarnings("removal")
     public void clean() {
         if (!remove(this))
             return;
         try {
             thunk.run();
         } catch (final Throwable x) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        if (System.err != null)
-                            new Error("Cleaner terminated abnormally", x)
-                                .printStackTrace();
-                        System.exit(1);
-                        return null;
-                    }});
+            if (System.err != null) {
+                new Error("Cleaner terminated abnormally", x)
+                        .printStackTrace();
+            }
+            System.exit(1);
         }
     }
 }

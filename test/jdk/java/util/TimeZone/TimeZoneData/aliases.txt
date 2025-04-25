@@ -1,6 +1,3 @@
-Link	Asia/Riyadh87	Mideast/Riyadh87
-Link	Asia/Riyadh88	Mideast/Riyadh88
-Link	Asia/Riyadh89	Mideast/Riyadh89
 Link	Australia/Sydney	Australia/ACT	#= Australia/Canberra
 Link	Australia/Lord_Howe	Australia/LHI
 Link	Australia/Sydney	Australia/NSW

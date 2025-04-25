@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/epsilon/epsilonArguments.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -46,7 +45,7 @@ void EpsilonArguments::initialize() {
   }
 
   if (EpsilonMaxTLABSize < MinTLABSize) {
-    log_warning(gc)("EpsilonMaxTLABSize < MinTLABSize, adjusting it to " SIZE_FORMAT, MinTLABSize);
+    log_warning(gc)("EpsilonMaxTLABSize < MinTLABSize, adjusting it to %zu", MinTLABSize);
     EpsilonMaxTLABSize = MinTLABSize;
   }
 

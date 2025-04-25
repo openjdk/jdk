@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,7 @@ public class KeyManagerFactory {
      *          Algorithm Names Specification for information about standard
      *          algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -165,6 +166,7 @@ public class KeyManagerFactory {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -210,6 +212,7 @@ public class KeyManagerFactory {
      *
      * @param provider an instance of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if provider is {@code null}

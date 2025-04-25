@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -310,6 +309,23 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   if (!is_vthread) {
     JfrThreadGroup::serialize(&writer, thread_group_id);
   }
+  // VirtualThread threadgroup already serialized invariant.
+}
+
+// This serializer is used when the vthread name cannot
+// be determined because we cannot access any oops.
+void JfrSimplifiedVirtualThreadConstant::serialize(JfrCheckpointWriter & writer) {
+  writer.write_key(_vtid);
+  // Write the null string categorically as the os name for virtual threads.
+  writer.write((const char*)nullptr); // os name
+  writer.write(0); // os id
+  // vthread name cannot be determined for this simplified version.
+  // This is because we cannot access any oops.
+  writer.write_empty_string();
+  writer.write(_vtid); // java tid
+  // java thread group - VirtualThread threadgroup reserved id 1
+  writer.write(1);
+  writer.write<bool>(true); // isVirtual
   // VirtualThread threadgroup already serialized invariant.
 }
 

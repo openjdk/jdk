@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
@@ -40,7 +41,6 @@ class SerializeClosure;
 class StaticArchiveBuilder;
 
 template<class E> class Array;
-template<class E> class GrowableArray;
 
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
@@ -71,7 +71,6 @@ class MetaspaceShared : AllStatic {
     n_regions = 4              // total number of regions
   };
 
-  static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
@@ -131,14 +130,14 @@ public:
   }
 
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
-  static void link_shared_classes(bool jcmd_request, TRAPS) NOT_CDS_RETURN;
-  static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
+  static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
   // Alignment for the 2 core CDS regions (RW/RO) only.
   // (Heap region alignments are decided by GC).
   static size_t core_region_alignment();
+  static size_t protection_zone_size();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
   // print loaded classes names to file.
   static void dump_loaded_classes(const char* file_name, TRAPS);

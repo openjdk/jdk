@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -1378,7 +1379,6 @@ public final class System {
 
 
         private static volatile LoggerFinder service;
-        @SuppressWarnings("removal")
         static LoggerFinder accessProvider() {
             // We do not need to synchronize: LoggerFinderLoader will
             // always return the same instance, so if we don't have it,
@@ -1482,7 +1482,6 @@ public final class System {
      *
      * @since 9
      */
-    @SuppressWarnings("removal")
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
@@ -2149,7 +2148,7 @@ public final class System {
             }
 
             public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
+                return c.getProtectionDomain();
             }
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
@@ -2180,14 +2179,6 @@ public final class System {
                 return str.coder();
             }
 
-            public int getCharsLatin1(long i, int index, byte[] buf) {
-                return StringLatin1.getChars(i, index, buf);
-            }
-
-            public int getCharsUTF16(long i, int index, byte[] buf) {
-                return StringUTF16.getChars(i, index, buf);
-            }
-
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
@@ -2203,11 +2194,6 @@ public final class System {
             @Override
             public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
                 return ClassLoader.nativeLibrariesFor(loader);
-            }
-
-            @Override
-            public void exit(int statusCode) {
-                Shutdown.exit(statusCode);
             }
 
             public Thread[] getAllThreads() {

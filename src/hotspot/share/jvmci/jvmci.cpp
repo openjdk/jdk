@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,14 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
@@ -380,7 +379,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
     _fatal_log_fd = log_fd;
   } else if (_first_error_tid != current_thread_id) {
     // This is not the first thread reporting a libjvmci error
-    tty->print_cr("[thread " INTX_FORMAT " also had an error in the JVMCI native library]",
+    tty->print_cr("[thread %zd also had an error in the JVMCI native library]",
                     current_thread_id);
 
     // Fatal error reporting is single threaded so just block this thread.

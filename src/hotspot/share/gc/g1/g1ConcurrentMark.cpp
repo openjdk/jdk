@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
@@ -53,8 +52,8 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "jvm.h"
@@ -140,7 +139,7 @@ bool G1CMMarkStack::initialize() {
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 
-  log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
+  log_debug(gc)("Initialize mark stack with %zu chunks, maximum %zu",
                 initial_num_chunks, max_capacity);
 
   return _chunk_allocator.initialize(initial_num_chunks, max_num_chunks);
@@ -205,7 +204,7 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   size_t new_capacity = bucket_size(0);
 
   if (!reserve(new_capacity)) {
-    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
+    log_warning(gc)("Failed to reserve memory for new overflow mark stack with %zu chunks and size %zuB.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
     return false;
   }
   return true;
@@ -213,7 +212,7 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
 
 bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   if (_capacity == _max_capacity) {
-    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
+    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of %zu chunks.", _capacity);
     return false;
   }
 
@@ -221,7 +220,7 @@ bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   desired_capacity = MIN2(desired_capacity, _max_capacity);
 
   if (reserve(desired_capacity)) {
-    log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
+    log_debug(gc)("Expanded the mark stack capacity from %zu to %zu chunks",
                   old_capacity, desired_capacity);
     return true;
   }
@@ -249,7 +248,7 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
-  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity" SIZE_FORMAT " chunks.", _max_capacity);
+  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity of %zu chunks.", _max_capacity);
 
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
@@ -273,7 +272,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
     TaskQueueEntryChunk* bucket_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(bucket_capacity, mtGC);
 
     if (bucket_base == nullptr) {
-      log_warning(gc)("Failed to reserve memory for increasing the overflow mark stack capacity with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.",
+      log_warning(gc)("Failed to reserve memory for increasing the overflow mark stack capacity with %zu chunks and size %zuB.",
                       bucket_capacity, bucket_capacity * sizeof(TaskQueueEntryChunk));
       return false;
     }
@@ -384,7 +383,7 @@ void G1CMRootMemRegions::reset() {
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
   size_t idx = Atomic::fetch_then_add(&_num_root_regions, 1u);
-  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space " SIZE_FORMAT, _max_regions);
+  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %zu", _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
   _root_regions[idx].set_start(start);
@@ -446,7 +445,7 @@ void G1CMRootMemRegions::scan_finished() {
 
   if (!_should_abort) {
     assert(_claimed_root_regions >= num_root_regions(),
-           "we should have claimed all root regions, claimed " SIZE_FORMAT ", length = %u",
+           "we should have claimed all root regions, claimed %zu, length = %u",
            _claimed_root_regions, num_root_regions());
   }
 
@@ -790,7 +789,7 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
 
   G1ClearBitMapTask cl(this, num_workers, may_yield);
 
-  log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
+  log_debug(gc, ergo)("Running %s with %u workers for %zu work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
   guarantee(may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
@@ -1274,7 +1273,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         // The liveness of this humongous obj decided by either its allocation
         // time (allocated after conc-mark-start, i.e. live) or conc-marking.
         const bool is_live = _cm->top_at_mark_start(hr) == hr->bottom()
-                             || _cm->contains_live_object(hr->hrm_index());
+                          || _cm->contains_live_object(hr->hrm_index())
+                          || hr->has_pinned_objects();
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
           auto on_humongous_region = [&] (G1HeapRegion* hr) {
@@ -1289,9 +1289,12 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
           reclaim_empty_humongous_region(hr);
         }
       } else if (hr->is_old()) {
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(hr->hrm_index()));
+        uint region_idx = hr->hrm_index();
+        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
 
-        if (hr->live_bytes() != 0) {
+        const bool is_live = hr->live_bytes() != 0
+                          || hr->has_pinned_objects();
+        if (is_live) {
           if (tracker->update_old_before_rebuild(hr)) {
             _num_selected_for_rebuild++;
           }
@@ -1737,7 +1740,7 @@ void G1ConcurrentMark::weak_refs_work() {
     // We can not trust g1_is_alive and the contents of the heap if the marking stack
     // overflowed while processing references. Exit the VM.
     fatal("Overflow during reference processing, can not continue. Current mark stack depth: "
-          SIZE_FORMAT ", MarkStackSize: " SIZE_FORMAT ", MarkStackSizeMax: " SIZE_FORMAT ". "
+          "%zu, MarkStackSize: %zu, MarkStackSizeMax: %zu. "
           "Please increase MarkStackSize and/or MarkStackSizeMax and restart.",
           _global_mark_stack.size(), MarkStackSize, MarkStackSizeMax);
     return;
@@ -1882,7 +1885,7 @@ void G1ConcurrentMark::finalize_marking() {
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   guarantee(has_overflown() ||
             satb_mq_set.completed_buffers_num() == 0,
-            "Invariant: has_overflown = %s, num buffers = " SIZE_FORMAT,
+            "Invariant: has_overflown = %s, num buffers = %zu",
             BOOL_TO_STR(has_overflown()),
             satb_mq_set.completed_buffers_num());
 
@@ -1898,7 +1901,7 @@ void G1ConcurrentMark::flush_all_task_caches() {
     misses += stats.second;
   }
   size_t sum = hits + misses;
-  log_debug(gc, stats)("Mark stats cache hits " SIZE_FORMAT " misses " SIZE_FORMAT " ratio %1.3lf",
+  log_debug(gc, stats)("Mark stats cache hits %zu misses %zu ratio %1.3lf",
                        hits, misses, percent_of(hits, sum));
 }
 
@@ -2123,9 +2126,9 @@ void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
   _concurrent_workers->threads_do(tc);
 }
 
-void G1ConcurrentMark::print_on_error(outputStream* st) const {
+void G1ConcurrentMark::print_on(outputStream* st) const {
   st->print_cr("Marking Bits: (CMBitMap*) " PTR_FORMAT, p2i(mark_bitmap()));
-  _mark_bitmap.print_on_error(st, " Bits: ");
+  _mark_bitmap.print_on(st, " Bits: ");
 }
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
@@ -2475,7 +2478,7 @@ void G1CMTask::print_stats() {
                        _step_times_ms.sum());
   size_t const hits = _mark_stats_cache.hits();
   size_t const misses = _mark_stats_cache.misses();
-  log_debug(gc, stats)("  Mark Stats Cache: hits " SIZE_FORMAT " misses " SIZE_FORMAT " ratio %.3f",
+  log_debug(gc, stats)("  Mark Stats Cache: hits %zu misses %zu ratio %.3f",
                        hits, misses, percent_of(hits, hits + misses));
 }
 
@@ -2976,15 +2979,20 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_TYPE_H_FORMAT          "   %4s"
 #define G1PPRL_STATE_FORMAT           "   %-5s"
 #define G1PPRL_STATE_H_FORMAT         "   %5s"
-#define G1PPRL_BYTE_FORMAT            "  " SIZE_FORMAT_W(9)
+#define G1PPRL_BYTE_FORMAT            "  %9zu"
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
 #define G1PPRL_DOUBLE_FORMAT          "%14.1f"
 #define G1PPRL_GCEFF_FORMAT           "  %14s"
 #define G1PPRL_GCEFF_H_FORMAT         "  %14s"
+#define G1PPRL_GID_H_FORMAT           "  %9s"
+#define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(9)
+#define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
+#define G1PPRL_LEN_H_FORMAT           "  %14s"
+#define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
-#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  " tag ": " SIZE_FORMAT
+#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  " tag ": %zu"
 #define G1PPRL_SUM_MB_FORMAT(tag)      "  " tag ": %1.2f MB"
 #define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag) " / %1.2f %%"
 
@@ -2993,7 +3001,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   _total_capacity_bytes(0),
   _total_live_bytes(0),
   _total_remset_bytes(0),
-  _young_cardset_bytes_per_region(0),
   _total_code_roots_bytes(0)
 {
   if (!log_is_enabled(Trace, gc, liveness)) {
@@ -3003,13 +3010,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion reserved = g1h->reserved();
   double now = os::elapsedTime();
-
-  uint num_young_regions = g1h->young_regions_count();
-  size_t young_cardset_bytes = g1h->young_regions_cardset()->mem_size();
-
-  if (num_young_regions > 0) {
-    _young_cardset_bytes_per_region = young_cardset_bytes / num_young_regions;
-  }
 
   // Print the header of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
@@ -3024,25 +3024,24 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_ADDR_BASE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_GCEFF_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT,
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_GID_H_FORMAT,
                           "type", "address-range",
-                          "used", "live", "gc-eff",
-                          "remset", "state", "code-roots");
+                          "used", "live",
+                          "state", "code-roots",
+                          "group-id");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_TYPE_H_FORMAT
                           G1PPRL_ADDR_BASE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_GCEFF_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT,
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_GID_H_FORMAT,
                           "", "",
-                          "(bytes)", "(bytes)", "(bytes/ms)",
-                          "(bytes)", "", "(bytes)");
+                          "(bytes)", "(bytes)",
+                          "", "(bytes)", "");
 }
 
 bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
@@ -3056,14 +3055,13 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t capacity_bytes  = r->capacity();
   size_t used_bytes      = r->used();
   size_t live_bytes      = r->live_bytes();
-  double gc_eff          = r->calc_gc_efficiency();
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  FormatBuffer<16> gc_efficiency("");
+  uint cset_groud_gid     = 0;
 
-  if (r->is_young()) {
-    remset_bytes = _young_cardset_bytes_per_region;
+  if (r->rem_set()->is_added_to_cset_group()) {
+    cset_groud_gid = r->rem_set()->cset_group_id();
   }
 
   _total_used_bytes      += used_bytes;
@@ -3072,25 +3070,19 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   _total_remset_bytes    += remset_bytes;
   _total_code_roots_bytes += code_roots_bytes;
 
-  if(gc_eff < 0) {
-    gc_efficiency.append("-");
-  } else {
-    gc_efficiency.append(G1PPRL_DOUBLE_FORMAT, gc_eff);
-  }
-
   // Print a line for this particular region.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                         G1PPRL_TYPE_FORMAT
                         G1PPRL_ADDR_BASE_FORMAT
                         G1PPRL_BYTE_FORMAT
                         G1PPRL_BYTE_FORMAT
-                        G1PPRL_GCEFF_FORMAT
-                        G1PPRL_BYTE_FORMAT
                         G1PPRL_STATE_FORMAT
-                        G1PPRL_BYTE_FORMAT,
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_GID_FORMAT,
                         type, p2i(bottom), p2i(end),
-                        used_bytes, live_bytes, gc_efficiency.buffer(),
-                        remset_bytes, remset_type, code_roots_bytes);
+                        used_bytes, live_bytes,
+                        remset_type, code_roots_bytes,
+                        cset_groud_gid);
 
   return false;
 }
@@ -3104,6 +3096,9 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   _total_remset_bytes += g1h->card_set_freelist_pool()->mem_size();
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
+
+  do_cset_groups();
+
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
@@ -3120,4 +3115,78 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          percent_of(_total_live_bytes, _total_capacity_bytes),
                          bytes_to_mb(_total_remset_bytes),
                          bytes_to_mb(_total_code_roots_bytes));
+}
+
+void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collectionset Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young Regions, M=From Marking Regions, R=Retained Regions");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_H_FORMAT
+                          G1PPRL_LEN_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          "groud-id", "num-regions",
+                          "gc-eff", "liveness",
+                          "remset", "type");
+
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_H_FORMAT
+                          G1PPRL_LEN_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          "", "",
+                          "(bytes/ms)", "%",
+                          "(bytes)", "");
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CSetCandidateGroup* young_only_cset_group =g1h->young_regions_cset_group();
+
+  _total_remset_bytes += young_only_cset_group->card_set()->mem_size();
+
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_FORMAT
+                          G1PPRL_LEN_FORMAT
+                          G1PPRL_GCEFF_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          young_only_cset_group->group_id(), young_only_cset_group->length(),
+                          "-",
+                          size_t(0), young_only_cset_group->card_set()->mem_size(),
+                          "Y");
+
+  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
+    _total_remset_bytes += group->card_set()->mem_size();
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                            G1PPRL_GID_FORMAT
+                            G1PPRL_LEN_FORMAT
+                            G1PPRL_GID_GCEFF_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_TYPE_H_FORMAT,
+                            group->group_id(), group->length(),
+                            group->gc_efficiency(),
+                            group->liveness(), group->card_set()->mem_size(),
+                            "M");
+  }
+
+  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
+    _total_remset_bytes += group->card_set()->mem_size();
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                            G1PPRL_GID_FORMAT
+                            G1PPRL_LEN_FORMAT
+                            G1PPRL_GID_GCEFF_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_TYPE_H_FORMAT,
+                            group->group_id(), group->length(),
+                            group->gc_efficiency(),
+                            group->liveness(), group->card_set()->mem_size(),
+                            "R");
+  }
 }

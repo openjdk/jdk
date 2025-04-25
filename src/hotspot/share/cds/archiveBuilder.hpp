@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
@@ -94,9 +96,6 @@ class ArchiveBuilder : public StackObj {
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
-  address _last_verified_top;
-  int _num_dump_regions_used;
-  size_t _other_region_used_bytes;
 
   // These are the addresses where we will request the static and dynamic archives to be
   // mapped at run time. If the request fails (due to ASLR), we will map the archives at
@@ -210,6 +209,12 @@ private:
   ReservedSpace _shared_rs;
   VirtualSpace _shared_vs;
 
+  // The "pz" region is used only during static dumps to reserve an unused space between SharedBaseAddress and
+  // the bottom of the rw region. During runtime, this space will be filled with a reserved area that disallows
+  // read/write/exec, so we can track for bad CompressedKlassPointers encoding.
+  // Note: this region does NOT exist in the cds archive.
+  DumpRegion _pz_region;
+
   DumpRegion _rw_region;
   DumpRegion _ro_region;
 
@@ -270,17 +275,7 @@ private:
 
 protected:
   virtual void iterate_roots(MetaspaceClosure* it) = 0;
-
-  // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
-  size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
-
-  static const int _total_dump_regions = 2;
-
-  size_t estimate_archive_size();
-
   void start_dump_region(DumpRegion* next);
-  void verify_estimate_size(size_t estimate, const char* which);
 
 public:
   address reserve_buffer();
@@ -343,8 +338,18 @@ public:
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
+    assert(p != nullptr, "must not be null");
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
+  }
+
+  template <typename T>
+  u4 any_or_null_to_offset_u4(T p) const {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return any_to_offset_u4<T>(p);
+    }
   }
 
   template <typename T>
@@ -364,6 +369,7 @@ public:
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
   static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
+  DumpRegion* pz_region() { return &_pz_region; }
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
 

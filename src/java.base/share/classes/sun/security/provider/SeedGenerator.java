@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,6 @@ abstract class SeedGenerator {
     /**
      * Retrieve some system information, hashed.
      */
-    @SuppressWarnings("removal")
     static byte[] getSystemEntropy() {
         final MessageDigest md;
 
@@ -164,57 +163,48 @@ abstract class SeedGenerator {
         byte b =(byte)System.currentTimeMillis();
         md.update(b);
 
-        java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<>() {
-                @Override
-                public Void run() {
-                    try {
-                        // System properties can change from machine to machine
-                        Properties p = System.getProperties();
-                        for (String s: p.stringPropertyNames()) {
-                            md.update(s.getBytes());
-                            md.update(p.getProperty(s).getBytes());
-                        }
+        try {
+            // System properties can change from machine to machine
+            Properties p = System.getProperties();
+            for (String s: p.stringPropertyNames()) {
+                md.update(s.getBytes());
+                md.update(p.getProperty(s).getBytes());
+            }
 
-                        // Include network adapter names (and a Mac address)
-                        addNetworkAdapterInfo(md);
+            // Include network adapter names (and a Mac address)
+            addNetworkAdapterInfo(md);
 
-                        // The temporary dir
-                        File f = new File(p.getProperty("java.io.tmpdir"));
-                        int count = 0;
-                        try (
-                            DirectoryStream<Path> stream =
-                                Files.newDirectoryStream(f.toPath())) {
-                            // We use a Random object to choose what file names
-                            // should be used. Otherwise, on a machine with too
-                            // many files, the same first 1024 files always get
-                            // used. Any, We make sure the first 512 files are
-                            // always used.
-                            Random r = new Random();
-                            for (Path entry: stream) {
-                                if (count < 512 || r.nextBoolean()) {
-                                    md.update(entry.getFileName()
-                                        .toString().getBytes());
-                                }
-                                if (count++ > 1024) {
-                                    break;
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        md.update((byte)ex.hashCode());
+            // The temporary dir
+            File f = new File(p.getProperty("java.io.tmpdir"));
+            int count = 0;
+            try (DirectoryStream<Path> stream =
+                    Files.newDirectoryStream(f.toPath())) {
+                // We use a Random object to choose what file names
+                // should be used. Otherwise, on a machine with too
+                // many files, the same first 1024 files always get
+                // used. Any, We make sure the first 512 files are
+                // always used.
+                Random r = new Random();
+                for (Path entry: stream) {
+                    if (count < 512 || r.nextBoolean()) {
+                        md.update(entry.getFileName().toString().getBytes());
                     }
-
-                    // get Runtime memory stats
-                    Runtime rt = Runtime.getRuntime();
-                    byte[] memBytes = longToByteArray(rt.totalMemory());
-                    md.update(memBytes, 0, memBytes.length);
-                    memBytes = longToByteArray(rt.freeMemory());
-                    md.update(memBytes, 0, memBytes.length);
-
-                    return null;
+                    if (count++ > 1024) {
+                        break;
+                    }
                 }
-            });
+            }
+        } catch (Exception ex) {
+            md.update((byte)ex.hashCode());
+        }
+
+        // get Runtime memory stats
+        Runtime rt = Runtime.getRuntime();
+        byte[] memBytes = longToByteArray(rt.totalMemory());
+        md.update(memBytes, 0, memBytes.length);
+        memBytes = longToByteArray(rt.freeMemory());
+        md.update(memBytes, 0, memBytes.length);
+
         return md.digest();
     }
 
@@ -293,29 +283,19 @@ abstract class SeedGenerator {
                         , e);
             }
 
-            final ThreadGroup[] finalsg = new ThreadGroup[1];
-            @SuppressWarnings("removal")
-            Thread t = java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction<>() {
-                        @Override
-                        public Thread run() {
-                            ThreadGroup parent, group =
-                                Thread.currentThread().getThreadGroup();
-                            while ((parent = group.getParent()) != null) {
-                                group = parent;
-                            }
-                            finalsg[0] = new ThreadGroup
-                                (group, "SeedGenerator ThreadGroup");
-                            Thread newT = new Thread(finalsg[0],
-                                ThreadedSeedGenerator.this,
-                                "SeedGenerator Thread",
-                                0,
-                                false);
-                            newT.setPriority(Thread.MIN_PRIORITY);
-                            newT.setDaemon(true);
-                            return newT;
-                        }
-                    });
+            ThreadGroup[] finalsg = new ThreadGroup[1];
+            ThreadGroup parent, group = Thread.currentThread().getThreadGroup();
+            while ((parent = group.getParent()) != null) {
+                group = parent;
+            }
+            finalsg[0] = new ThreadGroup(group, "SeedGenerator ThreadGroup");
+            Thread t = new Thread(finalsg[0],
+                ThreadedSeedGenerator.this,
+                "SeedGenerator Thread",
+                0,
+                false);
+            t.setPriority(Thread.MIN_PRIORITY);
+            t.setDaemon(true);
             seedGroup = finalsg[0];
             t.start();
         }
@@ -502,34 +482,25 @@ abstract class SeedGenerator {
             init();
         }
 
-        @SuppressWarnings("removal")
         private void init() throws IOException {
             @SuppressWarnings("deprecation")
-            final URL device = new URL(deviceName);
+            URL device = new URL(deviceName);
             try {
-                seedStream = java.security.AccessController.doPrivileged
-                    (new java.security.PrivilegedExceptionAction<>() {
-                        @Override
-                        public InputStream run() throws IOException {
-                            /*
-                             * return a shared InputStream for file URLs and
-                             * avoid buffering.
-                             * The URL.openStream() call wraps InputStream in a
-                             * BufferedInputStream which
-                             * can buffer up to 8K bytes. This read is a
-                             * performance issue for entropy sources which
-                             * can be slow to replenish.
-                             */
-                            if (device.getProtocol().equalsIgnoreCase("file")) {
-                                File deviceFile =
-                                    SunEntries.getDeviceFile(device);
-                                return FileInputStreamPool
-                                    .getInputStream(deviceFile);
-                            } else {
-                                return device.openStream();
-                            }
-                        }
-                    });
+                /*
+                 * return a shared InputStream for file URLs and
+                 * avoid buffering.
+                 * The URL.openStream() call wraps InputStream in a
+                 * BufferedInputStream which
+                 * can buffer up to 8K bytes. This read is a
+                 * performance issue for entropy sources which
+                 * can be slow to replenish.
+                 */
+                if (device.getProtocol().equalsIgnoreCase("file")) {
+                    File deviceFile = SunEntries.getDeviceFile(device);
+                    seedStream = FileInputStreamPool.getInputStream(deviceFile);
+                } else {
+                    seedStream = device.openStream();
+                }
             } catch (Exception e) {
                 throw new IOException(
                     "Failed to open " + deviceName, e.getCause());

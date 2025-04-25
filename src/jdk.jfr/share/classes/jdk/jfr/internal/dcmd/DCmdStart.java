@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,13 +48,12 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
+import jdk.jfr.internal.query.Report;
 import jdk.jfr.internal.util.Utils;
 
 /**
@@ -86,6 +85,7 @@ final class DCmdStart extends AbstractDCmd {
         Long flush = parser.getOption("flush-interval");
         Boolean dumpOnExit = parser.getOption("dumponexit");
         Boolean pathToGcRoots = parser.getOption("path-to-gc-roots");
+        List<String> reports = parser.getOption("report-on-exit");
 
         if (name != null) {
             try {
@@ -154,12 +154,13 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         recording.setSettings(s);
-        SafePath safePath = null;
+        Path dumpPath = null;
 
         // Generate dump filename if user has specified a time-bound recording
         if (duration != null && path == null) {
             path = resolvePath(recording, null).toString();
         }
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
 
         if (path != null) {
             try {
@@ -172,11 +173,10 @@ final class DCmdStart extends AbstractDCmd {
                     // Decide destination filename at dump time
                     // Purposely avoid generating filename in Recording#setDestination due to
                     // security concerns
-                    PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-                    pr.setDumpDirectory(new SafePath(p));
+                    pr.setDumpDirectory(p);
                 } else {
-                    safePath = resolvePath(recording, path);
-                    recording.setDestination(safePath.toPath());
+                    dumpPath = resolvePath(recording, path);
+                    recording.setDestination(dumpPath);
                 }
             } catch (IOException | InvalidPathException e) {
                 recording.close();
@@ -189,8 +189,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (flush != null) {
-            PlatformRecording p = PrivateAccess.getInstance().getPlatformRecording(recording);
-            p.setFlushInterval(Duration.ofNanos(flush));
+            pr.setFlushInterval(Duration.ofNanos(flush));
         }
 
         if (maxSize != null) {
@@ -203,6 +202,10 @@ final class DCmdStart extends AbstractDCmd {
 
         if (dumpOnExit != null) {
             recording.setDumpOnExit(dumpOnExit);
+        }
+
+        if (reports != null) {
+            addReports(pr, reports);
         }
 
         if (delay != null) {
@@ -221,10 +224,10 @@ final class DCmdStart extends AbstractDCmd {
             recording.setMaxSize(250*1024L*1024L);
         }
 
-        if (safePath != null && duration != null) {
+        if (dumpPath != null && duration != null) {
             println(" The result will be written to:");
             println();
-            printPath(safePath);
+            printPath(dumpPath);
         } else {
             println();
             println();
@@ -240,6 +243,20 @@ final class DCmdStart extends AbstractDCmd {
         }
     }
 
+    // Add report-on-exit for -XX:StartFlightRecording
+    @Override
+    protected Argument[] getParseArguments(String source) {
+        Argument[] argumentInfo = getArgumentInfos();;
+        if (!"internal".equals(source)) {
+            return argumentInfo;
+        }
+        Argument[] newArray = Arrays.copyOf(argumentInfo, argumentInfo.length + 1);
+        newArray[argumentInfo.length] = new Argument("report-on-exit",
+                "Display views on exit. See 'jfr help view' for available views to report.",
+                "STRING SET", false, true, null, true);
+        return newArray;
+    }
+
     private LinkedHashMap<String, String> configureStandard(String[] settings) throws DCmdException {
         LinkedHashMap<String, String> s = LinkedHashMap.newLinkedHashMap(settings.length);
         for (String configName : settings) {
@@ -252,11 +269,29 @@ final class DCmdStart extends AbstractDCmd {
         return s;
     }
 
+    private void addReports(PlatformRecording recording, List<String> reportNames) throws DCmdException {
+        if (!recording.isToDisk()) {
+            throw new DCmdException("Option report-on-exit can only be used when recording to disk.");
+        }
+        Map<String, Report> reportLookup = new HashMap<>();
+        for (Report report : Report.getReports()) {
+            reportLookup.put(report.name(), report);
+        }
+        for (String name : reportNames) {
+            Report report = reportLookup.get(name);
+            if (report != null) {
+                recording.addReport(report);
+            } else {
+                throw new DCmdException("Unknown view '" + name + "' specified for report-on-exit. Use 'jfr help view' to see a list of available views.");
+            }
+        }
+    }
+
     private LinkedHashMap<String, String> configureExtended(String[] settings, ArgumentParser parser) throws DCmdException {
         JFCModel model = new JFCModel(l -> logWarning(l));
         for (String setting : settings) {
             try {
-                model.parse(JFC.createSafePath(setting));
+                model.parse(JFC.ofPath(setting));
             } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
                 throw new DCmdException(JFC.formatException("Could not", e, setting), e);
             }
@@ -326,6 +361,7 @@ final class DCmdStart extends AbstractDCmd {
             "$DELIMITER", ",",
             "$DELIMITER_NAME", "comma",
             "$DIRECTORY", exampleDirectory(),
+            "$REPORT_ON_EXIT", reportOnExit(),
             "$JFC_OPTIONS", jfcOptions()
         );
         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
@@ -340,6 +376,7 @@ final class DCmdStart extends AbstractDCmd {
            "$DELIMITER", " ",
            "$DELIMITER_NAME", "whitespace",
            "$DIRECTORY", exampleDirectory(),
+           "$REPORT_ON_EXIT", "",
            "$JFC_OPTIONS", jfcOptions()
         );
         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
@@ -408,7 +445,7 @@ final class DCmdStart extends AbstractDCmd {
                                   'profile', then the information collected includes the stack
                                   trace from where the potential leaking object was allocated.
                                   (BOOLEAN, false)
-
+                 $REPORT_ON_EXIT
                  settings         (Optional) Name of the settings file that identifies which events
                                   to record. To specify more than one file, use the settings
                                   parameter repeatedly. Include the path if the file is not in
@@ -460,11 +497,22 @@ final class DCmdStart extends AbstractDCmd {
                """;
     }
 
+    private static String reportOnExit() {
+        return
+        """
+
+          report-on-exit   Specifies the name of the view to display when the Java Virtual
+                           Machine (JVM) shuts down. This option is not available if the
+                           disk option is set to false. For a list of available views,
+                           see 'jfr help view'. By default, no report is generated.
+        """;
+    }
+
     private static String jfcOptions() {
         try {
             StringBuilder sb = new StringBuilder();
-            for (SafePath s : SecuritySupport.getPredefinedJFCFiles()) {
-                String name = JFC.nameFromPath(s.toPath());
+            for (Path s : JFC.getPredefined()) {
+                String name = JFC.nameFromPath(s);
                 JFCModel model = JFCModel.create(s, l -> {});
                 sb.append('\n');
                 sb.append("Options for ").append(name).append(":\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -474,11 +473,9 @@ public:
       _remset_table_iterator(remembered)  {
     _mark->prepare_work();
     _remembered->_page_allocator->enable_safe_destroy();
-    _remembered->_page_allocator->enable_safe_recycle();
   }
 
   ~ZRememberedScanMarkFollowTask() {
-    _remembered->_page_allocator->disable_safe_recycle();
     _remembered->_page_allocator->disable_safe_destroy();
     _mark->finish_work();
     // We are done scanning the set of old pages.
@@ -551,7 +548,7 @@ public:
     // publish such marking stacks to prevent that generation from getting a mark continue.
     // We also flush in case of a resize where a new worker thread continues the marking
     // work, causing a mark continue for the collected generation.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 
   virtual void resize_workers(uint nworkers) {

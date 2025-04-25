@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,11 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -119,10 +119,6 @@ public class ClassReader {
      */
     boolean allowRecords;
 
-   /** Lint option: warn about classfile issues
-     */
-    boolean lintClassfile;
-
     /** Switch: warn (instead of error) on illegal UTF-8
      */
     boolean warnOnIllegalUtf8;
@@ -142,6 +138,9 @@ public class ClassReader {
 
     /** The symbol table. */
     Symtab syms;
+
+    /** The root Lint config. */
+    Lint lint;
 
     Types types;
 
@@ -304,7 +303,7 @@ public class ClassReader {
 
         typevars = WriteableScope.create(syms.noSymbol);
 
-        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
+        lint = Lint.instance(context);
 
         initAttributeReaders();
     }
@@ -852,11 +851,11 @@ public class ClassReader {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
 
-                if (lintClassfile && !warnedAttrs.contains(name)) {
+                if (!warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        lint.logIfEnabled(
+                                    LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1609,9 +1608,7 @@ public class ClassReader {
         } else if (parameterAnnotations.length != numParameters) {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
-            if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
-            }
+            lint.logIfEnabled(LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
             }
@@ -2076,14 +2073,12 @@ public class ClassReader {
             // The method wasn't found: emit a warning and recover
             JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
             try {
-                if (lintClassfile) {
-                    if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
-                    } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                if (failure == null) {
+                    lint.logIfEnabled(LintWarnings.AnnotationMethodNotFound(container, name));
+                } else {
+                    lint.logIfEnabled(LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
-                    }
                 }
             } finally {
                 log.useSource(prevSource);
@@ -2959,9 +2954,7 @@ public class ClassReader {
 
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
-        if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
-        }
+        lint.logIfEnabled(LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
     }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.

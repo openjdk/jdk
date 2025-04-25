@@ -26,7 +26,6 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
- * @enablePreview
  * @run testng ProhibitedMethods
  */
 

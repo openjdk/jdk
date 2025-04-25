@@ -245,6 +245,11 @@ inline void Assembler::z_stcm (Register r1, int64_t m3, int64_t d2, Register b2)
 inline void Assembler::z_stcmy(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMY_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
 inline void Assembler::z_stcmh(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMH_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
 
+// load halfword immediate on condition
+inline void Assembler::z_lochi(Register r1, int64_t i2, branch_condition m3) { emit_48( LOCHI_ZOPC | reg(r1, 8, 48) | simm16(i2, 16, 48) | uimm4(m3, 12, 48)); }
+inline void Assembler::z_lochhi(Register r1, int64_t i2, branch_condition m3) { emit_48( LOCHHI_ZOPC | reg(r1, 8, 48) | simm16(i2, 16, 48) | uimm4(m3, 12, 48)); }
+inline void Assembler::z_locghi(Register r1, int64_t i2, branch_condition m3) { emit_48( LOCGHI_ZOPC | reg(r1, 8, 48) | simm16(i2, 16, 48) | uimm4(m3, 12, 48)); }
+
 // memory-immediate instructions (8-bit immediate)
 inline void Assembler::z_cli( int64_t d1, Register b1, int64_t i2) { emit_32( CLI_ZOPC  | rsmask_32( d1, b1) | uimm8(i2, 8, 32)); }
 inline void Assembler::z_mvi( int64_t d1, Register b1, int64_t i2) { emit_32( MVI_ZOPC  | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }

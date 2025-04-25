@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.StringSupport;
 import org.testng.annotations.*;
 
@@ -52,6 +53,20 @@ import static org.testng.Assert.*;
  */
 
 public class TestStringEncoding {
+
+    @Test
+    public void emptySegment() {
+        for (Charset charset : standardCharsets()) {
+            for (Arena arena : arenas()) {
+                try (arena) {
+                    var segment = arena.allocate(0);
+                    var e = expectThrows(IndexOutOfBoundsException.class, () ->
+                            segment.getString(0, charset));
+                    assertTrue(e.getMessage().contains("No null terminator found"));
+                }
+            }
+        }
+    }
 
     @Test(dataProvider = "strings")
     public void testStrings(String testString) {
@@ -86,7 +101,6 @@ public class TestStringEncoding {
             }
         }
     }
-
 
     @Test(dataProvider = "strings")
     public void testStringsHeap(String testString) {
@@ -198,8 +212,9 @@ public class TestStringEncoding {
                 try (arena) {
                     MemorySegment inSegment = arena.allocateFrom(testString, charset);
                     for (int i = 0; i < 3; i++) {
+                        String expected = testString.substring(i);
                         String actual = inSegment.getString(i, charset);
-                        assertEquals(actual, testString.substring(i));
+                        assertEquals(actual, expected);
                     }
                 }
             }
@@ -249,6 +264,32 @@ public class TestStringEncoding {
         }
     }
 
+    // This test ensures that we do not address outside the segment even though there
+    // are odd bytes at the end.
+    @Test(dataProvider = "strings")
+    public void offBoundaryTrailingBytes(String testString) {
+        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
+            return;
+        }
+        for (var charset : standardCharsets()) {
+            for (var arena: arenas()) {
+                try (arena) {
+                    MemorySegment strSegment = arena.allocateFrom(testString, charset);
+                    // Add an odd byte at the end
+                    MemorySegment inSegment = arena.allocate(strSegment.byteSize() + 1);
+                    // Make sure there are no null-terminators so that we will try to scan
+                    // the entire segment.
+                    inSegment.fill((byte) 1);
+                    for (int i = 0; i < 4; i++) {
+                        final int offset = i;
+                        var e = expectThrows(IndexOutOfBoundsException.class, () -> inSegment.getString(offset, charset));
+                        assertTrue(e.getMessage().contains("No null terminator found"));
+                    }
+                }
+            }
+        }
+    }
+
     private static final int TEST_LENGTH_MAX = 277;
 
     private Random deterministicRandom() {
@@ -271,8 +312,14 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_BYTE, len, (byte) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.chunkedStrlenByte(segment, j);
+                        int actual = StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
                         assertEquals(actual, len - j);
+                    }
+                    // Test end offset
+                    for (int j = 0; j < len - 1; j++) {
+                        final long toOffset = j;
+                        expectThrows(IndexOutOfBoundsException.class, () ->
+                                StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, 0, toOffset));
                     }
                 }
             }
@@ -295,7 +342,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_SHORT, len, (short) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.chunkedStrlenShort(segment, j * Short.BYTES);
+                        int actual = StringSupport.strlenShort((AbstractMemorySegmentImpl) segment, j * Short.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Short.BYTES);
                     }
                 }
@@ -319,7 +366,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_INT, len, 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.strlenInt(segment, j * Integer.BYTES);
+                        int actual = StringSupport.strlenInt((AbstractMemorySegmentImpl) segment, j * Integer.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Integer.BYTES);
                     }
                 }

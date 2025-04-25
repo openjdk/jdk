@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -551,7 +552,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   setutxent();
   while ((ent = getutxent())) {
     if (!strcmp("system boot", ent->ut_line)) {
-      bootsec = ent->ut_tv.tv_sec;
+      bootsec = (int)ent->ut_tv.tv_sec;
       break;
     }
   }
@@ -854,6 +855,12 @@ void os::dll_unload(void *lib) {
   LINUX_ONLY(os::free(l_pathdup));
 }
 
+void* os::lookup_function(const char* name) {
+  // This returns the global symbol in the main executable and its dependencies,
+  // as well as shared objects dynamically loaded with RTLD_GLOBAL flag.
+  return dlsym(RTLD_DEFAULT, name);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }
@@ -924,60 +931,15 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  ALLOW_C_FUNCTION(::exit, ::exit(num);)
+  permit_forbidden_function::exit(num);
 }
 
 void os::_exit(int num) {
-  ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
+  permit_forbidden_function::_exit(num);
 }
 
 void os::naked_yield() {
   sched_yield();
-}
-
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "/a/b/libL.so"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      }
-      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
@@ -1011,7 +973,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
   LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
-  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+  jio_snprintf(buf, buflen, "stacksize: %zuk, guardsize: %zuk, %s",
     stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
@@ -1030,7 +992,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
+  char* p = permit_forbidden_function::realpath(filename, nullptr);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -1038,7 +1000,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -1047,7 +1009,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
+      p = permit_forbidden_function::realpath(filename, outbuf);
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
@@ -1511,12 +1473,9 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
@@ -2111,7 +2070,7 @@ void os::shutdown() {
 // easily trigger secondary faults in those threads. To reduce the likelihood
 // of that we use _exit rather than exit, so that no atexit hooks get run.
 // But note that os::shutdown() could also trigger secondary faults.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
@@ -2185,4 +2144,43 @@ char* os::pd_map_memory(int fd, const char* unused,
 // Unmap a block of memory. Uses munmap.
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
+}
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static ucontext_t _saved_assert_context;
+static bool _has_saved_context = false;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+void os::save_assert_context(const void* ucVoid) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  memcpy(&_saved_assert_context, ucVoid, sizeof(ucontext_t));
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
+  *((void**)&_saved_assert_context.uc_mcontext.regs) = &(_saved_assert_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents.
+  // Sanity check: fpregs should point into the context.
+  if ((address)((const ucontext_t*)ucVoid)->uc_mcontext.fpregs > (address)ucVoid) {
+    size_t fpregs_offset = pointer_delta(((const ucontext_t*)ucVoid)->uc_mcontext.fpregs, ucVoid, 1);
+    if (fpregs_offset < sizeof(ucontext_t)) {
+      // Preserve the offset.
+      *((void**)&_saved_assert_context.uc_mcontext.fpregs) = (void*)((address)(void*)&_saved_assert_context + fpregs_offset);
+    }
+  }
+#endif
+  _has_saved_context = true;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(sigInfo != nullptr, "invariant");
+  *sigInfo = nullptr;
+  return _has_saved_context ? &_saved_assert_context : nullptr;
+#endif
+  *sigInfo = nullptr;
+  return nullptr;
 }

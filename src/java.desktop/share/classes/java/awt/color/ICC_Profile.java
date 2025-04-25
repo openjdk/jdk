@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -108,6 +107,14 @@ public sealed class ICC_Profile implements Serializable
      */
     private transient volatile ProfileDeferralInfo deferralInfo;
 
+
+    /**
+     * Set to {@code true} for {@code BuiltInProfile}, {@code false} otherwise.
+     * This flag is used in {@link #setData(int, byte[])} to prevent modifying
+     * built-in profiles.
+     */
+    private final transient boolean builtIn;
+
     /**
      * The lazy registry of singleton profile objects for specific built-in
      * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
@@ -115,8 +122,8 @@ public sealed class ICC_Profile implements Serializable
      */
     private interface BuiltInProfile {
         /*
-         * Deferral is only used for standard profiles. Enabling the appropriate
-         * access privileges is handled at a lower level.
+         * ProfileDeferralInfo is used for built-in profile creation only,
+         * and all built-in profiles should be constructed using it.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
@@ -757,20 +764,27 @@ public sealed class ICC_Profile implements Serializable
      */
     public static final int icXYZNumberX = 8;
 
+    private static final int HEADER_SIZE = 128;
 
     /**
      * Constructs an {@code ICC_Profile} object with a given ID.
      */
     ICC_Profile(Profile p) {
         cmmProfile = p;
+        builtIn = false;
     }
 
     /**
      * Constructs an {@code ICC_Profile} object whose loading will be deferred.
      * The ID will be 0 until the profile is loaded.
+     *
+     * <p>
+     * Note: {@code ProfileDeferralInfo} is used for built-in profile
+     * creation only, and all built-in profiles should be constructed using it.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;
+        builtIn = true;
     }
 
     /**
@@ -787,10 +801,15 @@ public sealed class ICC_Profile implements Serializable
         ProfileDataVerifier.verify(data);
         Profile p;
         try {
+            byte[] theHeader = new byte[HEADER_SIZE];
+            System.arraycopy(data, 0, theHeader, 0, HEADER_SIZE);
+            verifyHeader(theHeader);
+
             p = CMSManager.getModule().loadProfile(data);
         } catch (CMMException c) {
             throw new IllegalArgumentException("Invalid ICC Profile Data");
         }
+
         try {
             if (getColorSpaceType(p) == ColorSpace.TYPE_GRAY
                     && getData(p, icSigMediaWhitePointTag) != null
@@ -973,6 +992,10 @@ public sealed class ICC_Profile implements Serializable
             return info.profileClass;
         }
         byte[] theHeader = getData(icSigHead);
+        return getProfileClass(theHeader);
+    }
+
+    private static int getProfileClass(byte[] theHeader) {
         int theClassSig = intFromBigEndian(theHeader, icHdrDeviceClass);
         return switch (theClassSig) {
             case icSigInputClass -> CLASS_INPUT;
@@ -1014,6 +1037,11 @@ public sealed class ICC_Profile implements Serializable
         return iccCStoJCS(theColorSpaceSig);
     }
 
+    private static int getColorSpaceType(byte[] theHeader) {
+        int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
+        return iccCStoJCS(theColorSpaceSig);
+    }
+
     /**
      * Returns the color space type of the Profile Connection Space (PCS).
      * Returns one of the color space type constants defined by the ColorSpace
@@ -1031,6 +1059,21 @@ public sealed class ICC_Profile implements Serializable
         byte[] theHeader = getData(icSigHead);
         int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
         return iccCStoJCS(thePCSSig);
+    }
+
+    private static int getPCSType(byte[] theHeader) {
+        int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
+        int theDeviceClass = intFromBigEndian(theHeader, icHdrDeviceClass);
+
+        if (theDeviceClass == icSigLinkClass) {
+            return iccCStoJCS(thePCSSig);
+        } else {
+            return switch (thePCSSig) {
+                case icSigXYZData -> ColorSpace.TYPE_XYZ;
+                case icSigLabData -> ColorSpace.TYPE_Lab;
+                default -> throw new IllegalArgumentException("Unexpected PCS type");
+            };
+        }
     }
 
     /**
@@ -1102,18 +1145,68 @@ public sealed class ICC_Profile implements Serializable
      * This method is useful for advanced applications which need to access
      * profile data directly.
      *
+     * <p>
+     * Note: JDK built-in ICC Profiles cannot be updated using this method
+     * as it will result in {@code IllegalArgumentException}. JDK built-in
+     * profiles are those obtained by {@code ICC_Profile.getInstance(int colorSpaceID)}
+     * where {@code colorSpaceID} is one of the following:
+     * {@link ColorSpace#CS_sRGB}, {@link ColorSpace#CS_LINEAR_RGB},
+     * {@link ColorSpace#CS_PYCC}, {@link ColorSpace#CS_GRAY} or
+     * {@link ColorSpace#CS_CIEXYZ}.
+     *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set
      * @param  tagData the data to set for the specified tag signature
      * @throws IllegalArgumentException if {@code tagSignature} is not a
      *         signature as defined in the ICC specification.
-     * @throws IllegalArgumentException if a content of the {@code tagData}
+     * @throws IllegalArgumentException if the content of the {@code tagData}
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
+     * @throws IllegalArgumentException if this is a built-in profile for one
+     *         of the pre-defined color spaces, that is those which can be obtained
+     *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
+     * @see ColorSpace
      */
     public void setData(int tagSignature, byte[] tagData) {
+        if (builtIn) {
+            throw new IllegalArgumentException("Built-in profile cannot be modified");
+        }
+
+        if (tagSignature == ICC_Profile.icSigHead) {
+            verifyHeader(tagData);
+        }
         CMSManager.getModule().setTagData(cmmProfile(), tagSignature, tagData);
+    }
+
+    private static void verifyHeader(byte[] data) {
+        if (data == null || data.length < HEADER_SIZE) {
+            throw new IllegalArgumentException("Invalid header data");
+        }
+        getProfileClass(data);
+        getColorSpaceType(data);
+        getPCSType(data);
+        checkRenderingIntent(data);
+    }
+
+    private static boolean checkRenderingIntent(byte[] header) {
+        int index = ICC_Profile.icHdrRenderingIntent;
+
+        /* According to ICC spec, only the least-significant 16 bits shall be
+         * used to encode the rendering intent. The most significant 16 bits
+         * shall be set to zero. Thus, we are ignoring two most significant
+         * bytes here. Please refer ICC Spec Document for more details.
+         */
+        int renderingIntent = ((header[index+2] & 0xff) <<  8) |
+                              (header[index+3] & 0xff);
+
+        switch (renderingIntent) {
+            case icPerceptual, icMediaRelativeColorimetric,
+                    icSaturation, icAbsoluteColorimetric -> {
+                return true;
+            }
+            default -> throw new IllegalArgumentException("Unknown Rendering Intent");
+        }
     }
 
     /**

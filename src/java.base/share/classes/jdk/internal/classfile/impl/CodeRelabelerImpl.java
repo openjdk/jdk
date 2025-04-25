@@ -27,7 +27,7 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.Label;
-import java.lang.classfile.components.CodeRelabeler;
+import jdk.internal.classfile.components.CodeRelabeler;
 import java.lang.classfile.instruction.*;
 import java.util.function.BiFunction;
 

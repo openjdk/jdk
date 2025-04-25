@@ -555,8 +555,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     static class FifoWaitQueue extends WaitQueue {
         private static final long serialVersionUID = -3623113410248163686L;
     }
+    /** @serial */
     private ReentrantLock qlock;
+    /** @serial */
     private WaitQueue waitingProducers;
+    /** @serial */
     private WaitQueue waitingConsumers;
 
     /**

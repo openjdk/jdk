@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,6 @@ enum DCmdSource {
   DCmd_Source_Internal  = 0x01U,  // invocation from the JVM
   DCmd_Source_AttachAPI = 0x02U,  // invocation via the attachAPI
   DCmd_Source_MBean     = 0x04U   // invocation via a MBean
-};
-
-// Warning: strings referenced by the JavaPermission struct are passed to
-// the native part of the JDK. Avoid use of dynamically allocated strings
-// that could be de-allocated before the JDK native code had time to
-// convert them into Java Strings.
-struct JavaPermission {
-  const char* _class;
-  const char* _name;
-  const char* _action;
 };
 
 // CmdLine is the class used to handle a command line containing a single
@@ -127,23 +117,20 @@ protected:
   const char* const _name;           /* Name of the diagnostic command */
   const char* const _description;    /* Short description */
   const char* const _impact;         /* Impact on the JVM */
-  const JavaPermission _permission;  /* Java Permission required to execute this command if any */
   const int         _num_arguments;  /* Number of supported options or arguments */
   const bool        _is_enabled;     /* True if the diagnostic command can be invoked, false otherwise */
 public:
   DCmdInfo(const char* name,
           const char* description,
           const char* impact,
-          JavaPermission permission,
           int num_arguments,
           bool enabled)
-  : _name(name), _description(description), _impact(impact), _permission(permission),
+  : _name(name), _description(description), _impact(impact),
     _num_arguments(num_arguments), _is_enabled(enabled) {}
   const char* name() const          { return _name; }
   bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
-  const JavaPermission& permission() const { return _permission; }
   int num_arguments() const         { return _num_arguments; }
   bool is_enabled() const           { return _is_enabled; }
 };
@@ -261,19 +248,6 @@ public:
   // impact depends on the heap size.
   static const char* impact()       { return "Low: No impact"; }
 
-  // The permission() method returns the description of Java Permission. This
-  // permission is required when the diagnostic command is invoked via the
-  // DiagnosticCommandMBean. The rationale for this permission check is that
-  // the DiagnosticCommandMBean can be used to perform remote invocations of
-  // diagnostic commands through the PlatformMBeanServer. The (optional) Java
-  // Permission associated with each diagnostic command should ease the work
-  // of system administrators to write policy files granting permissions to
-  // execute diagnostic commands to remote users. Any diagnostic command with
-  // a potential impact on security should overwrite this method.
-  static const JavaPermission permission() {
-    JavaPermission p = {nullptr, nullptr, nullptr};
-    return p;
-  }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
   // All subclasses should override this to report the actual number of arguments.
   static int num_arguments()        { return 0; }
@@ -303,6 +277,19 @@ public:
     GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo*>(0);
     return array;
   }
+
+  // helper class to invoke the framework
+  class Executor : public StackObj {
+    DCmdSource _source;
+    outputStream* _out;
+  public:
+    Executor(DCmdSource source, outputStream* out): _source(source), _out(out) {}
+
+    void parse_and_execute(const char* cmdline, char delim, TRAPS);
+
+  protected:
+    virtual void execute(DCmd* command, TRAPS);
+  };
 
   // main method to invoke the framework
   static void parse_and_execute(DCmdSource source, outputStream* out, const char* cmdline,
@@ -387,7 +374,6 @@ public:
   virtual const char* name() const = 0;
   virtual const char* description() const = 0;
   virtual const char* impact() const = 0;
-  virtual const JavaPermission permission() const = 0;
   virtual const char* disabled_message() const = 0;
   // Register a DCmdFactory to make a diagnostic command available.
   // Once registered, a diagnostic command must not be unregistered.
@@ -430,9 +416,6 @@ public:
   }
   const char* impact() const {
     return DCmdClass::impact();
-  }
-  const JavaPermission permission() const {
-    return DCmdClass::permission();
   }
   const char* disabled_message() const {
      return DCmdClass::disabled_message();

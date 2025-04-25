@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl.verifier;
 
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

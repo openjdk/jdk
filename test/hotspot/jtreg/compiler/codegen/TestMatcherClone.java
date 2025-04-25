@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class TestMatcherClone {
     }
 
     @Test(compLevel = CompLevel.C2)
-    @IR(counts = {IRNode.ADD_P_OF, "reg_imm", "<200"},
+    @IR(counts = {IRNode.ADD_P_OF, "reg_imm", "<400"},
         phase = CompilePhase.MATCHING)
     public void test() {
         iArr = new int[] {x % 2};

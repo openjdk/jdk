@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
@@ -1280,7 +1279,6 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 }
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
-  ResourceMark rm;
   LogStream ls(Log(monitormismatch)::info());
   ls.print("Monitor mismatch in method ");
   method()->print_short_name(&ls);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifndef _WINDOWS
 #include "alloca.h"
 #endif
@@ -102,24 +101,23 @@ class RegisterSaver {
     ymm_off = xmm_off + (XSAVE_AREA_YMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
-    // 2..15 are implied in range usage
-    r31_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
-    r31H_off,
-    r30_off, r30H_off,
-    r29_off, r29H_off,
-    r28_off, r28H_off,
-    r27_off, r27H_off,
-    r26_off, r26H_off,
-    r25_off, r25H_off,
-    r24_off, r24H_off,
-    r23_off, r23H_off,
-    r22_off, r22H_off,
-    r21_off, r21H_off,
-    r20_off, r20H_off,
-    r19_off, r19H_off,
-    r18_off, r18H_off,
+    r16_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r16H_off,
     r17_off, r17H_off,
-    r16_off, r16H_off,
+    r18_off, r18H_off,
+    r19_off, r19H_off,
+    r20_off, r20H_off,
+    r21_off, r21H_off,
+    r22_off, r22H_off,
+    r23_off, r23H_off,
+    r24_off, r24H_off,
+    r25_off, r25H_off,
+    r26_off, r26H_off,
+    r27_off, r27H_off,
+    r28_off, r28H_off,
+    r29_off, r29H_off,
+    r30_off, r30H_off,
+    r31_off, r31H_off,
     opmask_off   = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_OPMASK_OFFS(0),
     DEF_OPMASK_OFFS(1),
@@ -266,7 +264,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   if (UseAPX) {
       int base_addr = XSAVE_AREA_EGPRS;
       off = 0;
-      for(int n = 16; n < Register::number_of_registers; n++) {
+      for (int n = 16; n < Register::number_of_registers; n++) {
         __ movq(Address(rsp, base_addr+(off++*8)), as_Register(n));
       }
   }
@@ -1099,14 +1097,14 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     { // Bypass the barrier for non-static methods
       Register flags = rscratch1;
-      __ movl(flags, Address(method, Method::access_flags_offset()));
+      __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
       __ testl(flags, JVM_ACC_STATIC);
       __ jcc(Assembler::zero, L_skip_barrier); // non-static
     }
 
     Register klass = rscratch1;
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -1901,7 +1899,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
@@ -2006,7 +2003,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Label L_skip_barrier;
     Register klass = r10;
     __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -2099,15 +2096,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
 
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(rbx->as_VMReg());
-
   for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
     arg_order.push(i);
     arg_order.push(c_arg);
   }
 
-  int temploc = -1;
   for (int ai = 0; ai < arg_order.length(); ai += 2) {
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
@@ -2287,7 +2280,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ inc_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(lock_reg, obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
+      __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
     }
 
     // Slow path will re-enter here
@@ -2326,8 +2319,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   default       : ShouldNotReachHere();
   }
 
-  Label after_transition;
-
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
   // state is not atomic w.r.t. GC, as this scenario demonstrates:
@@ -2349,7 +2340,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Label Continue;
     Label slow_path;
 
-    __ safepoint_poll(slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
+    __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -2377,7 +2368,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // change thread state
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
-  __ bind(after_transition);
 
   if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
     // Check preemption for Object.wait()
@@ -2441,7 +2431,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ dec_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_unlock(obj_reg, swap_reg, r15_thread, lock_reg, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
     }
 
     // slow path re-enters here
@@ -2466,7 +2456,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Unbox oop result, e.g. JNIHandles::resolve value.
   if (is_reference_type(ret_type)) {
     __ resolve_jobject(rax /* value */,
-                       r15_thread /* thread */,
                        rcx /* tmp */);
   }
 
@@ -3028,7 +3017,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 
   // Allocate space for the code.  Setup code generation tools.
   const char* name = SharedRuntime::stub_name(id);
-  CodeBuffer buffer(name, 2348, 1024);
+  CodeBuffer buffer(name, 2548, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   address start   = __ pc();
@@ -3094,11 +3083,11 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   Label bail;
 #endif
   if (!cause_return) {
-    Label no_prefix, not_special;
+    Label no_prefix, not_special, check_rex_prefix;
 
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ cmpptr(rbx, Address(rbp, wordSize));
-    __ jccb(Assembler::notEqual, no_adjust);
+    __ jcc(Assembler::notEqual, no_adjust);
 
     // Skip over the poll instruction.
     // See NativeInstruction::is_safepoint_poll()
@@ -3121,9 +3110,29 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     //   41 85 04 24    test   %eax,(%r12)
     //      85 45 00    test   %eax,0x0(%rbp)
     //   41 85 45 00    test   %eax,0x0(%r13)
+    //
+    // Notes:
+    //  Format of legacy MAP0 test instruction:-
+    //  [REX/REX2] [OPCODE] [ModRM] [SIB] [DISP] [IMM32]
+    //  o  For safepoint polling instruction "test %eax,(%rax)", encoding of first register
+    //     operand and base register of memory operand is b/w [0-8), hence we do not require
+    //     additional REX prefix where REX.B bit stores MSB bit of register encoding, which
+    //     is why two bytes encoding is sufficient here.
+    //  o  For safepoint polling instruction like "test %eax,(%r8)", register encoding of BASE
+    //     register of memory operand is 1000, thus we need additional REX prefix in this case,
+    //     there by adding additional byte to instruction encoding.
+    //  o  In case BASE register is one of the 32 extended GPR registers available only on targets
+    //     supporting Intel APX extension, then we need to emit two bytes REX2 prefix to hold
+    //     most significant two bits of 5 bit register encoding.
 
+    if (VM_Version::supports_apx_f()) {
+      __ cmpb(Address(rbx, 0), Assembler::REX2);
+      __ jccb(Assembler::notEqual, check_rex_prefix);
+      __ addptr(rbx, 2);
+      __ bind(check_rex_prefix);
+    }
     __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_rex_b_prefix);
-    __ jcc(Assembler::notEqual, no_prefix);
+    __ jccb(Assembler::notEqual, no_prefix);
     __ addptr(rbx, 1);
     __ bind(no_prefix);
 #ifdef ASSERT
@@ -3136,7 +3145,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     __ andptr(rcx, 0x07); // looking for 0x04 .. 0x05
     __ subptr(rcx, 4);    // looking for 0x00 .. 0x01
     __ cmpptr(rcx, 1);
-    __ jcc(Assembler::above, not_special);
+    __ jccb(Assembler::above, not_special);
     __ addptr(rbx, 1);
     __ bind(not_special);
 #ifdef ASSERT
@@ -3224,7 +3233,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rbx, r15_thread);
+  __ get_vm_result_metadata(rbx);
   __ movptr(Address(rsp, RegisterSaver::rbx_offset_in_bytes()), rbx);
 
   __ movptr(Address(rsp, RegisterSaver::rax_offset_in_bytes()), rax);
@@ -3243,7 +3252,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
 
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -3651,7 +3660,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   __ reset_last_Java_frame(true);
 
   // rax is jobject handle result, unpack and process it through a barrier.
-  __ resolve_global_jobject(rax, r15_thread, c_rarg0);
+  __ resolve_global_jobject(rax, c_rarg0);
 
   __ leave();
   __ ret(0);

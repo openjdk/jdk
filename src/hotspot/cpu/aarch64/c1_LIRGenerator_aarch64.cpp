@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -277,18 +276,20 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-
-  if (is_power_of_2(c - 1)) {
-    __ shift_left(left, exact_log2(c - 1), tmp);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, exact_log2(u_value - 1), tmp);
     __ add(tmp, left, result);
     return true;
-  } else if (is_power_of_2(c + 1)) {
-    __ shift_left(left, exact_log2(c + 1), tmp);
+  } else if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, exact_log2(u_value + 1), tmp);
     __ sub(tmp, left, result);
     return true;
-  } else {
-    return false;
+  } else if (c == -1) {
+    __ negate(left, result);
+    return true;
   }
+  return false;
 }
 
 void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp) {
@@ -406,7 +407,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
 
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _ladd, _lmul, _lsub, _ldiv, _lrem
@@ -777,13 +778,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_floatToFloat16: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ f2hf(src, dst, tmp);
           break;
         }
         case vmIntrinsics::_float16ToFloat: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ hf2f(src, dst, tmp);
           break;
         }
@@ -1315,6 +1314,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {

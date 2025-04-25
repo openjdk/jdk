@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2146,42 +2146,54 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         return getRowSelectionAllowed() && getColumnSelectionAllowed();
     }
 
+    private void selectRows(int rowCount) {
+        ListSelectionModel selModel = selectionModel;
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
+
+        setRowSelectionInterval(0, rowCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
+    private void selectColumns(int columnCount) {
+        ListSelectionModel selModel = columnModel.getSelectionModel();
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
+
+        setColumnSelectionInterval(0, columnCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
     /**
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
+        int rowCount = getRowCount();
+        int columnCount = getColumnCount();
+
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
         }
-        if (getRowCount() > 0 && getColumnCount() > 0) {
-            int oldLead;
-            int oldAnchor;
-            ListSelectionModel selModel;
-
-            selModel = selectionModel;
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
-
-            setRowSelectionInterval(0, getRowCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
-
-            selModel = columnModel.getSelectionModel();
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
-
-            setColumnSelectionInterval(0, getColumnCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
+        if (rowCount > 0 && columnCount > 0) {
+            selectRows(rowCount);
+            selectColumns(columnCount);
+        } else if (rowCount > 0 && columnCount == 0
+                   && getRowSelectionAllowed()) {
+            selectRows(rowCount);
+        } else if (columnCount > 0  && rowCount == 0
+                   && getColumnSelectionAllowed()) {
+            selectColumns(columnCount);
         }
     }
 
@@ -5560,7 +5572,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                     return super.stopCellEditing();
                 }
 
-                SwingUtilities2.checkAccess(constructor.getModifiers());
                 value = constructor.newInstance(new Object[]{s});
             }
             catch (Exception e) {
@@ -5584,7 +5595,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (type == Object.class) {
                     type = String.class;
                 }
-                SwingUtilities2.checkAccess(type.getModifiers());
                 constructor = type.getConstructor(argTypes);
             }
             catch (Exception e) {
@@ -6366,9 +6376,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             }
         }
 
-        // Get a PrinterJob.
-        // Do this before anything with side-effects since it may throw a
-        // security exception - in which case we don't want to do anything else.
         final PrinterJob job = PrinterJob.getPrinterJob();
 
         if (isEditing()) {

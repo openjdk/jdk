@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ class Method;
 class Symbol;
 
 class DumpTimeClassInfo: public CHeapObj<mtClass> {
-  bool                         _excluded;
-  bool                         _is_early_klass;
-  bool                         _has_checked_exclusion;
-  bool                         _is_required_hidden_class;
-  bool                         _has_scanned_constant_pool;
+  bool _excluded;
+  bool _is_aot_tooling_class;
+  bool _is_early_klass;
+  bool _has_checked_exclusion;
+
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -123,7 +123,7 @@ public:
   InstanceKlass*               _klass;
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
-  bool                         _is_archived_lambda_proxy;
+  bool                         _is_registered_lambda_proxy;
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
@@ -136,14 +136,13 @@ public:
     _klass = nullptr;
     _nest_host = nullptr;
     _failed_verification = false;
-    _is_archived_lambda_proxy = false;
+    _is_registered_lambda_proxy = false;
     _has_checked_exclusion = false;
-    _is_required_hidden_class = false;
-    _has_scanned_constant_pool = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
     _excluded = false;
+    _is_aot_tooling_class = false;
     _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = nullptr;
     _verifier_constraint_flags = nullptr;
@@ -203,6 +202,14 @@ public:
     return _excluded || _failed_verification;
   }
 
+  bool is_aot_tooling_class() {
+    return _is_aot_tooling_class;
+  }
+
+  void set_is_aot_tooling_class() {
+    _is_aot_tooling_class = true;
+  }
+
   // Was this class loaded while JvmtiExport::is_early_phase()==true
   bool is_early_klass() {
     return _is_early_klass;
@@ -216,11 +223,6 @@ public:
   void set_failed_verification()                    { _failed_verification = true; }
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
-
-  bool is_required_hidden_class() const             { return _is_required_hidden_class; }
-  void set_is_required_hidden_class()               { _is_required_hidden_class = true; }
-  bool has_scanned_constant_pool() const            { return _has_scanned_constant_pool; }
-  void set_has_scanned_constant_pool()              { _has_scanned_constant_pool = true; }
 
   size_t runtime_info_bytesize() const;
 };

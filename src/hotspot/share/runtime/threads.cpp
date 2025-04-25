@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -171,7 +171,7 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
 
   DEBUG_ONLY(int64_t main_thread_tid = java_lang_Thread::thread_id(thread_oop());)
   assert(main_thread_tid == ThreadIdentifier::initial(), "");
-  assert(main_thread_tid == thread->lock_id(), "");
+  assert(main_thread_tid == thread->monitor_owner_id(), "");
   JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(main_thread_tid), "initial tid mismatch");)
 
   // Set thread status to running since main thread has
@@ -425,6 +425,19 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
   }
 }
 
+// One-shot PeriodicTask subclass for reading the release file
+class ReadReleaseFileTask : public PeriodicTask {
+ public:
+  ReadReleaseFileTask() : PeriodicTask(100) {}
+
+  virtual void task() {
+    os::read_image_release_file();
+
+    // Reclaim our storage and disenroll ourself.
+    delete this;
+  }
+};
+
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
@@ -542,15 +555,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JavaThread* main_thread = new JavaThread();
   main_thread->set_thread_state(_thread_in_vm);
   main_thread->initialize_thread_current();
+  // Once mutexes and main_thread are ready, we can use NmtVirtualMemoryLocker.
+  MemTracker::NmtVirtualMemoryLocker::set_safe_to_use();
   // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
 
-  // Set the lock_id now since we will run Java code before the Thread instance
+  // Set the _monitor_owner_id now since we will run Java code before the Thread instance
   // is even created. The same value will be assigned to the Thread instance on init.
-  main_thread->set_lock_id(ThreadIdentifier::next());
+  main_thread->set_monitor_owner_id(ThreadIdentifier::next());
 
   if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
@@ -577,6 +592,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
+
+  // Have the WatcherThread read the release file in the background.
+  ReadReleaseFileTask* read_task = new ReadReleaseFileTask();
+  read_task->enroll();
 
   // Create WatcherThread as soon as we can since we need it in case
   // of hangs during error reporting.
@@ -797,21 +816,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
 
-#if INCLUDE_CDS
-  // capture the module path info from the ModuleEntryTable
-  ClassLoader::initialize_module_path(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    vm_exit_during_initialization("ClassLoader::initialize_module_path() failed unexpectedly");
-  }
-#endif
-
-#if INCLUDE_JVMCI
-  if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler(CHECK_JNI_ERR);
-  }
-#endif
-
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
   }
@@ -825,6 +829,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
+
+#if INCLUDE_JVMCI
+  if (force_JVMCI_initialization) {
+    JVMCI::initialize_compiler(CHECK_JNI_ERR);
+  }
+#endif
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
@@ -860,7 +870,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   _vm_complete = true;
 #endif
 
-  if (CDSConfig::is_dumping_static_archive()) {
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // Classic -Xshare:dump, aka "old workflow"
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+  } else if (CDSConfig::is_dumping_final_static_archive()) {
+    tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
   }
 
@@ -1034,6 +1048,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
 void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
   assert(Threads_lock->owned_by_self(), "must have threads lock");
+  assert(p->monitor_owner_id() != 0, "should be set");
 
   BarrierSet::barrier_set()->on_thread_attach(p);
 
@@ -1167,8 +1182,8 @@ void Threads::change_thread_claim_token() {
 static void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
   const uintx token = t->threads_do_token();
   assert(token == expected,
-         "%s " PTR_FORMAT " has incorrect value " UINTX_FORMAT " != "
-         UINTX_FORMAT, kind, p2i(t), token, expected);
+         "%s " PTR_FORMAT " has incorrect value %zu != %zu",
+         kind, p2i(t), token, expected);
 }
 
 void Threads::assert_all_threads_claimed() {
@@ -1360,8 +1375,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {
-          // _lock_id is the thread ID of the mounted virtual thread
-          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, p->lock_id());
+          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(p->vthread()));
           p->print_vthread_stack_on(st);
         }
       }

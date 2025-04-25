@@ -41,7 +41,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.PrivilegedAction;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangReflectAccess;
@@ -73,22 +72,6 @@ public class ReflectionFactory {
 
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
-    }
-
-    /**
-     * A convenience class for acquiring the capability to instantiate
-     * reflective objects.  Use this instead of a raw call to {@link
-     * #getReflectionFactory} in order to avoid being limited by the
-     * permissions of your callers.
-     *
-     * <p>An instance of this class can be used as the argument of
-     * <code>AccessController.doPrivileged</code>.
-     */
-    public static final class GetReflectionFactoryAction
-        implements PrivilegedAction<ReflectionFactory> {
-        public ReflectionFactory run() {
-            return getReflectionFactory();
-        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public final class WGLGraphicsConfig
      * This is a small helper class that allows us to execute
      * getWGLConfigInfo() on the queue flushing thread.
      */
-    private static class WGLGetConfigInfo implements Runnable {
+    private static final class WGLGetConfigInfo implements Runnable {
         private int screen;
         private int pixfmt;
         private long cfginfo;
@@ -184,21 +184,21 @@ public final class WGLGraphicsConfig
      * See OGLContext.java for a list of supported capabilities.
      */
     @Override
-    public final boolean isCapPresent(int cap) {
+    public boolean isCapPresent(int cap) {
         return ((oglCaps.getCaps() & cap) != 0);
     }
 
     @Override
-    public final long getNativeConfigInfo() {
+    public long getNativeConfigInfo() {
         return pConfigInfo;
     }
 
     @Override
-    public final OGLContext getContext() {
+    public OGLContext getContext() {
         return context;
     }
 
-    private static class WGLGCDisposerRecord implements DisposerRecord {
+    private static final class WGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
         public WGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
@@ -374,7 +374,7 @@ public final class WGLGraphicsConfig
         }
     }
 
-    private static class WGLBufferCaps extends BufferCapabilities {
+    private static final class WGLBufferCaps extends BufferCapabilities {
         public WGLBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -390,7 +390,7 @@ public final class WGLGraphicsConfig
         return bufferCaps;
     }
 
-    private static class WGLImageCaps extends ImageCapabilities {
+    private static final class WGLImageCaps extends ImageCapabilities {
         private WGLImageCaps() {
             super(true);
         }

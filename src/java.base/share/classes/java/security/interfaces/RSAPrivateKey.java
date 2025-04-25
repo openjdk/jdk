@@ -50,7 +50,6 @@ public interface RSAPrivateKey extends java.security.PrivateKey, RSAKey
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 5187144804936595022L;
 

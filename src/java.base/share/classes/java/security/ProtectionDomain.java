@@ -25,9 +25,6 @@
 
 package java.security;
 
-import jdk.internal.access.JavaSecurityAccess;
-import jdk.internal.access.SharedSecrets;
-
 /**
  * The {@code ProtectionDomain} class encapsulates the characteristics of a
  * domain, which encloses a set of classes whose instances are granted a set
@@ -50,39 +47,6 @@ import jdk.internal.access.SharedSecrets;
  */
 
 public class ProtectionDomain {
-
-    private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
-
-        private JavaSecurityAccessImpl() {
-        }
-
-        @SuppressWarnings("removal")
-        @Override
-        public <T> T doIntersectionPrivilege(
-                PrivilegedAction<T> action,
-                final AccessControlContext stack,
-                final AccessControlContext context) {
-            if (action == null) {
-                throw new NullPointerException();
-            }
-
-            return AccessController.doPrivileged(action);
-        }
-
-        @SuppressWarnings("removal")
-        @Override
-        public <T> T doIntersectionPrivilege(
-                PrivilegedAction<T> action,
-                AccessControlContext context) {
-            return doIntersectionPrivilege(action,
-                AccessController.getContext(), context);
-        }
-    }
-
-    static {
-        // Set up JavaSecurityAccess in SharedSecrets
-        SharedSecrets.setJavaSecurityAccess(new JavaSecurityAccessImpl());
-    }
 
     /* CodeSource */
     private final CodeSource codesource ;

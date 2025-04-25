@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.StringSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,14 +45,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.*;
-import static jdk.internal.foreign.StringSupport.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED", "--enable-preview"})
+@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED",
+                            "--enable-native-access=ALL-UNNAMED"})
 public class InternalStrLen {
 
     private MemorySegment singleByteSegment;
@@ -65,7 +67,6 @@ public class InternalStrLen {
     public void setup() {
         var arena = Arena.ofAuto();
         singleByteSegment = arena.allocate((size + 1L) * Byte.BYTES);
-        singleByteSegmentMisaligned = arena.allocate((size + 1L) * Byte.BYTES);
         doubleByteSegment = arena.allocate((size + 1L) * Short.BYTES);
         quadByteSegment = arena.allocate((size + 1L) * Integer.BYTES);
         Stream.of(singleByteSegment, doubleByteSegment, quadByteSegment)
@@ -105,22 +106,22 @@ public class InternalStrLen {
 
     @Benchmark
     public int chunkedSingle() {
-        return chunkedStrlenByte(singleByteSegment, 0);
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegment, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedSingleMisaligned() {
-        return chunkedStrlenByte(singleByteSegmentMisaligned, 0);
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedDouble() {
-        return chunkedStrlenShort(doubleByteSegment, 0);
+        return StringSupport.strlenShort((AbstractMemorySegmentImpl) doubleByteSegment, 0, doubleByteSegment.byteSize());
     }
 
     @Benchmark
     public int changedElementQuad() {
-        return strlenInt(quadByteSegment, 0);
+        return StringSupport.strlenInt((AbstractMemorySegmentImpl) quadByteSegment, 0, quadByteSegment.byteSize());
     }
 
     // These are the legacy methods

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,12 @@ protected:
     assert(is_aligned(left, sizeof(T)), "Must be");
 
     size_t elements = left / sizeof(T);
-    assert(elements <= (size_t)INT_MAX, "number of elements " SIZE_FORMAT "doesn't fit into an int.", elements);
+    assert(elements <= (size_t)INT_MAX, "number of elements %zu doesn't fit into an int.", elements);
 
     int length = (int)elements;
 
     assert((size_t)size(length) * BytesPerWord == (size_t)bytes,
-           "Expected: " SIZE_FORMAT " got: " SIZE_FORMAT,
+           "Expected: %zu got: %zu",
            bytes, (size_t)size(length) * BytesPerWord);
 
     return length;
@@ -135,7 +135,7 @@ protected:
     size_t bytes = align_up(byte_sizeof(length), BytesPerWord);
     size_t words = bytes / BytesPerWord;
 
-    assert(words <= INT_MAX, "Overflow: " SIZE_FORMAT, words);
+    assert(words <= INT_MAX, "Overflow: %zu", words);
 
     return (int)words;
   }

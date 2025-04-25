@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptD3DWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptD3DWindowPainter extends VIOptWindowPainter {
 
         protected VIOptD3DWindowPainter(WWindowPeer peer) {
             super(peer);
@@ -370,7 +370,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptWGLWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptWGLWindowPainter extends VIOptWindowPainter {
 
         protected VIOptWGLWindowPainter(WWindowPeer peer) {
             super(peer);

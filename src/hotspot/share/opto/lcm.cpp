@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
@@ -493,6 +492,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
         insert_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }
@@ -1362,6 +1364,9 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       map_node_to_block(clone, sb);
       if (clone->needs_anti_dependence_check()) {
         insert_anti_dependences(sb, clone);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }

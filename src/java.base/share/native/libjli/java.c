@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,17 @@
 #define USE_STDERR JNI_TRUE     /* we usually print to stderr */
 #define USE_STDOUT JNI_FALSE
 
+enum HelpKind {
+    HELP_NONE,
+    HELP_CONCISE,
+    HELP_FULL,
+    HELP_EXTRA
+};
+
 static jboolean printVersion = JNI_FALSE; /* print and exit */
 static jboolean showVersion = JNI_FALSE;  /* print but continue */
-static jboolean printUsage = JNI_FALSE;   /* print and exit*/
+static enum HelpKind printUsageKind = HELP_NONE; /* if not NONE, print specified usage and exit*/
 static jboolean printTo = USE_STDERR;     /* where to print version/usage */
-static jboolean printXUsage = JNI_FALSE;  /* print and exit*/
 static jboolean dryRun = JNI_FALSE;       /* initialize VM and exit */
 static char     *showSettings = NULL;     /* print but continue */
 static jboolean showResolvedModules = JNI_FALSE;
@@ -120,7 +126,7 @@ static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, 
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
 
 static void PrintJavaVersion(JNIEnv *env);
-static void PrintUsage(JNIEnv* env, jboolean doXUsage);
+static void PrintUsage(JNIEnv* env, enum HelpKind printUsageKind);
 static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
 static void ListModules(JNIEnv* env);
@@ -179,7 +185,7 @@ static jboolean IsWildCardEnabled();
     do { \
         if (!AC_ok) { \
             JLI_ReportErrorMessage(AC_failure_message, AC_questionable_arg); \
-            printUsage = JNI_FALSE; \
+            printUsageKind = HELP_NONE; \
             *pret = 1; \
             return JNI_FALSE; \
         } \
@@ -189,7 +195,7 @@ static jboolean IsWildCardEnabled();
     do { \
         if (AC_arg_count < 1) { \
             JLI_ReportErrorMessage(AC_failure_message, AC_questionable_arg); \
-            printUsage = JNI_TRUE; \
+            printUsageKind = HELP_FULL; \
             *pret = 1; \
             return JNI_TRUE; \
         } \
@@ -537,8 +543,8 @@ JavaMain(void* _args)
     }
 
     /* If the user specified neither a class name nor a JAR file */
-    if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
-        PrintUsage(env, printXUsage);
+    if (printUsageKind != HELP_NONE) {
+        PrintUsage(env, printUsageKind);
         CHECK_EXCEPTION_LEAVE(1);
         LEAVE();
     }
@@ -660,7 +666,14 @@ JavaMain(void* _args)
         ret = 1;
     }
     LEAVE();
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#endif
 }
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 /*
  * Test if the given name is one of the class path options.
@@ -1012,6 +1025,8 @@ SetClassPath(const char *s)
     if (s == NULL)
         return;
     s = JLI_WildcardExpandClasspath(s);
+    if (s == NULL)
+        return;
     if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
         // s is became corrupted after expanding wildcards
         return;
@@ -1235,10 +1250,10 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "-help") == 0 ||
                    JLI_StrCmp(arg, "-h") == 0 ||
                    JLI_StrCmp(arg, "-?") == 0) {
-            printUsage = JNI_TRUE;
+            printUsageKind = HELP_FULL;
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--help") == 0) {
-            printUsage = JNI_TRUE;
+            printUsageKind = HELP_FULL;
             printTo = USE_STDOUT;
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-version") == 0) {
@@ -1256,10 +1271,10 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "--dry-run") == 0) {
             dryRun = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "-X") == 0) {
-            printXUsage = JNI_TRUE;
+            printUsageKind = HELP_EXTRA;
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--help-extra") == 0) {
-            printXUsage = JNI_TRUE;
+            printUsageKind = HELP_EXTRA;
             printTo = USE_STDOUT;
             return JNI_TRUE;
 /*
@@ -1350,6 +1365,7 @@ ParseArguments(int *pargc, char ***pargv,
         /* LM_UNKNOWN okay for options that exit */
         if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces) {
             *pret = 1;
+            printUsageKind = HELP_CONCISE;
         }
     } else if (mode == LM_UNKNOWN) {
         if (!_have_classpath) {
@@ -1365,6 +1381,8 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
+        // communicate the launcher mode to runtime
+        AddOption("-Dsun.java.launcher.mode=source", NULL);
         AddOption("--add-modules=ALL-DEFAULT", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
@@ -1919,58 +1937,68 @@ DescribeModule(JNIEnv *env, char *optString)
  * Prints default usage or the Xusage message, see sun.launcher.LauncherHelper.java
  */
 static void
-PrintUsage(JNIEnv* env, jboolean doXUsage)
+PrintUsage(JNIEnv* env, enum HelpKind printUsageKind)
 {
-  jmethodID initHelp, vmSelect, vmSynonym, printHelp, printXUsageMessage;
+  jmethodID initHelp, vmSelect, vmSynonym;
+  jmethodID printHelp, printConciseUsageMessage, printXUsageMessage;
   jstring jprogname, vm1, vm2;
   int i;
   jclass cls = GetLauncherHelperClass(env);
   NULL_CHECK(cls);
-  if (doXUsage) {
-    NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
-                                        "printXUsageMessage", "(Z)V"));
-    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, printTo);
-  } else {
-    NULL_CHECK(initHelp = (*env)->GetStaticMethodID(env, cls,
-                                        "initHelpMessage", "(Ljava/lang/String;)V"));
+  switch (printUsageKind) {
+    case HELP_NONE: break;
+    case HELP_CONCISE:
+      NULL_CHECK(printConciseUsageMessage = (*env)->GetStaticMethodID(env, cls,
+                                          "printConciseUsageMessage", "(Z)V"));
+      (*env)->CallStaticVoidMethod(env, cls, printConciseUsageMessage, printTo);
+      break;
+    case HELP_EXTRA:
+      NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
+                                          "printXUsageMessage", "(Z)V"));
+      (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, printTo);
+      break;
+    case HELP_FULL:
+      NULL_CHECK(initHelp = (*env)->GetStaticMethodID(env, cls,
+                                          "initHelpMessage", "(Ljava/lang/String;)V"));
 
-    NULL_CHECK(vmSelect = (*env)->GetStaticMethodID(env, cls, "appendVmSelectMessage",
-                                        "(Ljava/lang/String;Ljava/lang/String;)V"));
+      NULL_CHECK(vmSelect = (*env)->GetStaticMethodID(env, cls, "appendVmSelectMessage",
+                                          "(Ljava/lang/String;Ljava/lang/String;)V"));
 
-    NULL_CHECK(vmSynonym = (*env)->GetStaticMethodID(env, cls,
-                                        "appendVmSynonymMessage",
-                                        "(Ljava/lang/String;Ljava/lang/String;)V"));
+      NULL_CHECK(vmSynonym = (*env)->GetStaticMethodID(env, cls,
+                                          "appendVmSynonymMessage",
+                                          "(Ljava/lang/String;Ljava/lang/String;)V"));
 
-    NULL_CHECK(printHelp = (*env)->GetStaticMethodID(env, cls,
-                                        "printHelpMessage", "(Z)V"));
+      NULL_CHECK(printHelp = (*env)->GetStaticMethodID(env, cls,
+                                          "printHelpMessage", "(Z)V"));
 
-    NULL_CHECK(jprogname = (*env)->NewStringUTF(env, _program_name));
+      NULL_CHECK(jprogname = (*env)->NewStringUTF(env, _program_name));
 
-    /* Initialize the usage message with the usual preamble */
-    (*env)->CallStaticVoidMethod(env, cls, initHelp, jprogname);
-    CHECK_EXCEPTION_RETURN();
+      /* Initialize the usage message with the usual preamble */
+      (*env)->CallStaticVoidMethod(env, cls, initHelp, jprogname);
+      CHECK_EXCEPTION_RETURN();
 
 
-    /* Assemble the other variant part of the usage */
-    for (i=1; i<knownVMsCount; i++) {
-      if (knownVMs[i].flag == VM_KNOWN) {
-        NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
-        NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].name+1));
-        (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
-        CHECK_EXCEPTION_RETURN();
+      /* Assemble the other variant part of the usage */
+      for (i=1; i<knownVMsCount; i++) {
+        if (knownVMs[i].flag == VM_KNOWN) {
+          NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
+          NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].name+1));
+          (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
+          CHECK_EXCEPTION_RETURN();
+        }
       }
-    }
-    for (i=1; i<knownVMsCount; i++) {
-      if (knownVMs[i].flag == VM_ALIASED_TO) {
-        NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
-        NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].alias+1));
-        (*env)->CallStaticVoidMethod(env, cls, vmSynonym, vm1, vm2);
-        CHECK_EXCEPTION_RETURN();
+      for (i=1; i<knownVMsCount; i++) {
+        if (knownVMs[i].flag == VM_ALIASED_TO) {
+          NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
+          NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].alias+1));
+          (*env)->CallStaticVoidMethod(env, cls, vmSynonym, vm1, vm2);
+          CHECK_EXCEPTION_RETURN();
+        }
       }
-    }
 
-    /* Complete the usage message and print to stderr*/
-    (*env)->CallStaticVoidMethod(env, cls, printHelp, printTo);
+      /* Complete the usage message and print to stderr*/
+      (*env)->CallStaticVoidMethod(env, cls, printHelp, printTo);
+      break;
   }
   return;
 }

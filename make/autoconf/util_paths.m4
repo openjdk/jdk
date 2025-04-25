@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,10 @@ AC_DEFUN([UTIL_FIXUP_PATH],
           imported_path=""
         fi
       fi
-      if test "x$imported_path" != "x$path"; then
+      [ imported_path_lower=`$ECHO $imported_path | $TR '[:upper:]' '[:lower:]'` ]
+      [ orig_path_lower=`$ECHO $path | $TR '[:upper:]' '[:lower:]'` ]
+      # If only case differs, keep original path
+      if test "x$imported_path_lower" != "x$orig_path_lower"; then
         $1="$imported_path"
       fi
     else
@@ -357,6 +360,8 @@ AC_DEFUN([UTIL_SETUP_TOOL],
           fi
           $1="$tool_command"
         fi
+        # Make sure we add fixpath if needed
+        UTIL_FIXUP_EXECUTABLE($1)
         if test "x$tool_args" != x; then
           # If we got arguments, re-append them to the command after the fixup.
           $1="[$]$1 $tool_args"

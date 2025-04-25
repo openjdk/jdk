@@ -37,7 +37,7 @@ import java.util.UUID;
  */
 public abstract class DynamicLauncher {
 
-    private static final int MAX_RETRY_ATTEMPTS = 10;
+    private static final int MAX_PORT_RETRY_ATTEMPTS = 10;
 
     final String jdpName = UUID.randomUUID().toString();
     OutputAnalyzer output;
@@ -54,7 +54,7 @@ public abstract class DynamicLauncher {
             try {
                 output.shouldNotContain("Port already in use");
             } catch (RuntimeException e) {
-                if (retries < MAX_RETRY_ATTEMPTS) {
+                if (retries < MAX_PORT_RETRY_ATTEMPTS) {
                     retries++;
                     tryAgain = true;
                 }
@@ -77,8 +77,4 @@ public abstract class DynamicLauncher {
     }
 
     protected abstract String[] options();
-
-    protected OutputAnalyzer getProcessOutpoutAnalyzer() {
-        return output;
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,15 @@
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
+
+  void string_compare_long_same_encoding(Register result, Register str1, Register str2,
+                                  const bool isLL, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE);
+  void string_compare_long_different_encoding(Register result, Register str1, Register str2,
+                                  bool isLU, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -98,7 +107,6 @@
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
-  static const int neg_cond_bits = 2;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
   static const int double_branch_mask = 1 << bool_test_bits;
 
@@ -120,6 +128,10 @@
   void enc_cmove(int cmpFlag,
                  Register op1, Register op2,
                  Register dst, Register src);
+
+  void enc_cmove_cmp_fp(int cmpFlag,
+                        FloatRegister op1, FloatRegister op2,
+                        Register dst, Register src, bool is_single);
 
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
@@ -164,9 +176,15 @@
     }
   }
 
+  enum class FLOAT_TYPE {
+    half_precision,
+    single_precision,
+    double_precision
+  };
+
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
-                 bool is_double, bool is_min);
+                 FLOAT_TYPE ft, bool is_min);
 
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
@@ -239,6 +257,10 @@
                         VectorRegister src2, VectorRegister tmp,
                         int opc, BasicType bt, uint vector_length,
                         VectorMask vm = Assembler::unmasked);
+
+  void reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
+                             VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
+                             uint vector_length, VectorMask vm = Assembler::unmasked);
 
   void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
 
 # :hotspot_compiler
 
-compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
@@ -56,8 +55,7 @@ compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
-compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
@@ -74,6 +72,11 @@ compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
+
+compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
+compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
+
+compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 #############################################################################
 
@@ -94,7 +97,8 @@ gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
-gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
+gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
+gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
 #############################################################################
 
@@ -112,12 +116,7 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
-runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-
-# Fails with +UseCompactObjectHeaders on aarch64
-runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
-runtime/cds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -138,18 +137,14 @@ serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-serviceability/dcmd/vm/SystemDumpMapTest.java 8340401 windows-all
-serviceability/dcmd/vm/SystemMapTest.java 8340401 windows-all
 
-serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPmap.java#core            8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#core          8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCore.java               8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java      8267433,8318754 macosx-x64,macosx-aarch64
-
-serviceability/attach/ConcAttachTest.java 8290043 linux-all
+serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
+serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
@@ -174,9 +169,6 @@ vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
-
-vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
-vmTestbase/gc/memory/Nio/Nio.java 8340728 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

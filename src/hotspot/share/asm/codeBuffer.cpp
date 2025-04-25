@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
@@ -889,6 +888,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Create a new (temporary) code buffer to hold all the new data
   CodeBuffer cb(name(), new_total_cap, 0);
+  cb.set_const_section_alignment(_const_section_alignment);
   if (cb.blob() == nullptr) {
     // Failed to allocate in code cache.
     free_blob();
@@ -980,6 +980,7 @@ void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
 
 void CodeBuffer::verify_section_allocation() {
   address tstart = _total_start;
+  if (tstart == nullptr) return;  // ignore not fully initialized buffer
   if (tstart == badAddress)  return;  // smashed by set_blob(nullptr)
   address tend   = tstart + _total_size;
   if (_blob != nullptr) {

@@ -1742,7 +1742,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("sub  sp, sp, rscratch1");
   }
-  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() == nullptr) {
     st->print("\n\t");
     st->print("ldr  rscratch1, [guard]\n\t");
     st->print("dmb ishld\n\t");
@@ -1792,25 +1792,23 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
-      // Dummy labels for just measuring the code size
-      Label dummy_slow_path;
-      Label dummy_continuation;
-      Label dummy_guard;
-      Label* slow_path = &dummy_slow_path;
-      Label* continuation = &dummy_continuation;
-      Label* guard = &dummy_guard;
-      if (!Compile::current()->output()->in_scratch_emit_size()) {
-        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-        Compile::current()->output()->add_stub(stub);
-        slow_path = &stub->entry();
-        continuation = &stub->continuation();
-        guard = &stub->guard();
-      }
-      // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
-      bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
+    // Dummy labels for just measuring the code size
+    Label dummy_slow_path;
+    Label dummy_continuation;
+    Label dummy_guard;
+    Label* slow_path = &dummy_slow_path;
+    Label* continuation = &dummy_continuation;
+    Label* guard = &dummy_guard;
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+      Compile::current()->output()->add_stub(stub);
+      slow_path = &stub->entry();
+      continuation = &stub->continuation();
+      guard = &stub->guard();
     }
+    // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+    bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
   }
 
   if (VerifyStackAtCalls) {
@@ -4541,6 +4539,7 @@ operand immByteMapBase()
 %{
   // Get base of card map
   predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
+            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
             (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
@@ -8145,6 +8144,7 @@ instruct castPP(iRegPNoSp dst)
 
 instruct castII(iRegI dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastII dst));
 
   size(0);
@@ -8154,8 +8154,22 @@ instruct castII(iRegI dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castII_checked(iRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+  effect(KILL cr);
+
+  format %{ "# castII_checked of $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL(iRegL dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastLL dst));
 
   size(0);
@@ -8163,6 +8177,19 @@ instruct castLL(iRegL dst)
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(pipe_class_empty);
+%}
+
+instruct castLL_checked(iRegL dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastLL dst));
+  effect(KILL cr);
+
+  format %{ "# castLL_checked of $dst" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct castFF(vRegF dst)
@@ -16298,7 +16325,8 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
 

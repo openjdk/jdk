@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +52,22 @@ bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   // no need to subtract the bottom of the heap from p,
   // _biased_cset_map is biased
   return _biased_cset_map[index] == 1;
+}
+
+size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
+  return _old_bytes_to_evacuate;
+}
+
+size_t ShenandoahCollectionSet::get_young_bytes_reserved_for_evacuation() {
+  return _young_bytes_to_evacuate - _young_bytes_to_promote;
+}
+
+size_t ShenandoahCollectionSet::get_young_bytes_to_be_promoted() {
+  return _young_bytes_to_promote;
+}
+
+size_t ShenandoahCollectionSet::get_old_garbage() {
+  return _old_garbage;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_INLINE_HPP

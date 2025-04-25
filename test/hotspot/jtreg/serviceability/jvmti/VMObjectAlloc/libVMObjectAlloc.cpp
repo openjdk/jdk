@@ -108,6 +108,10 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    return JNI_ERR;
+  }
 
   return JNI_OK;
 }

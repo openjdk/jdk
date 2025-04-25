@@ -380,13 +380,6 @@ public class JFrame  extends Frame implements WindowConstants,
                     + " DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
         }
 
-        if (operation == EXIT_ON_CLOSE) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkExit(0);
-            }
-        }
         if (this.defaultCloseOperation != operation) {
             int oldValue = this.defaultCloseOperation;
             this.defaultCloseOperation = operation;

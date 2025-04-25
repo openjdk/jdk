@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -707,12 +707,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
 
         /* add the user name to the job */
-        String userName = "";
-        try {
-          userName = System.getProperty("user.name");
-        } catch (SecurityException se) {
-        }
-
+        String userName = System.getProperty("user.name");
         if (userName == null || userName.isEmpty()) {
             RequestingUserName ruName =
                 (RequestingUserName)reqSet.get(RequestingUserName.class);
@@ -791,17 +786,6 @@ public class UnixPrintJob implements CancelablePrintJob {
                     } catch (Exception e) {
                         throw new PrintException(e);
                     }
-                    // check write access
-                    @SuppressWarnings("removal")
-                    SecurityManager security = System.getSecurityManager();
-                    if (security != null) {
-                      try {
-                        security.checkWrite(mDestination);
-                      } catch (SecurityException se) {
-                        notifyEvent(PrintJobEvent.JOB_FAILED);
-                        throw new PrintException(se);
-                      }
-                    }
                 }
             } else if (category == JobSheets.class) {
                 if ((JobSheets)attr == JobSheets.NONE) {
@@ -852,7 +836,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
         if (options != null && !options.isEmpty()) {
             pFlags |= OPTIONS;
-            ncomps+=1;
+            ncomps+=options.trim().split(" ").length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -887,7 +871,9 @@ public class UnixPrintJob implements CancelablePrintJob {
             execCmd[n++] = "-o job-sheets=standard";
         }
         if ((pFlags & OPTIONS) != 0) {
-            execCmd[n++] = "-o" + options;
+            for (String option : options.trim().split(" ")) {
+                execCmd[n++] = "-o " + option;
+            }
         }
         execCmd[n++] = spoolFile;
         if (IPPPrintService.debugPrint) {

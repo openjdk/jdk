@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,6 +308,158 @@ public class TCKInstantPrinterParser {
             assertEquals(parsed.query(Instant::from), expected);
             assertEquals(parsed.query(DateTimeFormatter.parsedExcessDays()), Period.ZERO);
             assertEquals(parsed.query(DateTimeFormatter.parsedLeapSecond()), Boolean.TRUE);
+        }
+    }
+
+    @Test
+    public void test_print_instant() {
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant().toFormatter();
+        DateTimeFormatter formatter0 = new DateTimeFormatterBuilder().appendInstant(0).toFormatter();
+        DateTimeFormatter formatter1 = new DateTimeFormatterBuilder().appendInstant(1).toFormatter();
+        DateTimeFormatter formatter2 = new DateTimeFormatterBuilder().appendInstant(2).toFormatter();
+        DateTimeFormatter formatter3 = new DateTimeFormatterBuilder().appendInstant(3).toFormatter();
+        DateTimeFormatter formatter4 = new DateTimeFormatterBuilder().appendInstant(4).toFormatter();
+        DateTimeFormatter formatter5 = new DateTimeFormatterBuilder().appendInstant(5).toFormatter();
+        DateTimeFormatter formatter6 = new DateTimeFormatterBuilder().appendInstant(6).toFormatter();
+        DateTimeFormatter formatter7 = new DateTimeFormatterBuilder().appendInstant(7).toFormatter();
+        DateTimeFormatter formatter8 = new DateTimeFormatterBuilder().appendInstant(8).toFormatter();
+        DateTimeFormatter formatter9 = new DateTimeFormatterBuilder().appendInstant(9).toFormatter();
+        DateTimeFormatter formatterN1 = new DateTimeFormatterBuilder().appendInstant(-1).toFormatter();
+
+        {
+            Instant instant = Instant.ofEpochSecond(1111721337984L, 1);
+            assertEquals("+37199-01-18T02:46:24.000000001Z", formatter.format(instant));
+            assertEquals("+37199-01-18T02:46:24Z", formatter0.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0Z", formatter1.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00Z", formatter2.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000Z", formatter3.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000Z", formatter4.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000Z", formatter5.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000Z", formatter6.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000000Z", formatter7.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000000Z", formatter8.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000001Z", formatter9.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(1111721337984L, 10);
+            assertEquals("+37199-01-18T02:46:24.000000010Z", formatter.format(instant));
+            assertEquals("+37199-01-18T02:46:24Z", formatter0.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0Z", formatter1.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00Z", formatter2.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000Z", formatter3.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000Z", formatter4.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000Z", formatter5.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000Z", formatter6.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000000Z", formatter7.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000001Z", formatter8.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000010Z", formatter9.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(1111721337984L, 100);
+            assertEquals("+37199-01-18T02:46:24.000000100Z", formatter.format(instant));
+            assertEquals("+37199-01-18T02:46:24Z", formatter0.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0Z", formatter1.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00Z", formatter2.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000Z", formatter3.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000Z", formatter4.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000Z", formatter5.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000Z", formatter6.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000001Z", formatter7.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000010Z", formatter8.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000000100Z", formatter9.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(1111721337984L, 1_000);
+            assertEquals("+37199-01-18T02:46:24.000001Z", formatter.format(instant));
+            assertEquals("+37199-01-18T02:46:24Z", formatter0.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0Z", formatter1.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00Z", formatter2.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000Z", formatter3.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000Z", formatter4.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000Z", formatter5.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000001Z", formatter6.format(instant));
+            assertEquals("+37199-01-18T02:46:24.0000010Z", formatter7.format(instant));
+            assertEquals("+37199-01-18T02:46:24.00000100Z", formatter8.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000001000Z", formatter9.format(instant));
+            assertEquals("+37199-01-18T02:46:24.000001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(1721337984L, 10_000);
+            assertEquals("2024-07-18T21:26:24.000010Z", formatter.format(instant));
+            assertEquals("2024-07-18T21:26:24Z", formatter0.format(instant));
+            assertEquals("2024-07-18T21:26:24.0Z", formatter1.format(instant));
+            assertEquals("2024-07-18T21:26:24.00Z", formatter2.format(instant));
+            assertEquals("2024-07-18T21:26:24.000Z", formatter3.format(instant));
+            assertEquals("2024-07-18T21:26:24.0000Z", formatter4.format(instant));
+            assertEquals("2024-07-18T21:26:24.00001Z", formatter5.format(instant));
+            assertEquals("2024-07-18T21:26:24.000010Z", formatter6.format(instant));
+            assertEquals("2024-07-18T21:26:24.0000100Z", formatter7.format(instant));
+            assertEquals("2024-07-18T21:26:24.00001000Z", formatter8.format(instant));
+            assertEquals("2024-07-18T21:26:24.000010000Z", formatter9.format(instant));
+            assertEquals("2024-07-18T21:26:24.00001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(-1721337984L, 100_000);
+            assertEquals("1915-06-16T02:33:36.000100Z", formatter.format(instant));
+            assertEquals("1915-06-16T02:33:36Z", formatter0.format(instant));
+            assertEquals("1915-06-16T02:33:36.0Z", formatter1.format(instant));
+            assertEquals("1915-06-16T02:33:36.00Z", formatter2.format(instant));
+            assertEquals("1915-06-16T02:33:36.000Z", formatter3.format(instant));
+            assertEquals("1915-06-16T02:33:36.0001Z", formatter4.format(instant));
+            assertEquals("1915-06-16T02:33:36.00010Z", formatter5.format(instant));
+            assertEquals("1915-06-16T02:33:36.000100Z", formatter6.format(instant));
+            assertEquals("1915-06-16T02:33:36.0001000Z", formatter7.format(instant));
+            assertEquals("1915-06-16T02:33:36.00010000Z", formatter8.format(instant));
+            assertEquals("1915-06-16T02:33:36.000100000Z", formatter9.format(instant));
+            assertEquals("1915-06-16T02:33:36.0001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(-51721337984L, 1_000_000);
+            assertEquals("0331-01-07T09:40:16.001Z", formatter.format(instant));
+            assertEquals("0331-01-07T09:40:16Z", formatter0.format(instant));
+            assertEquals("0331-01-07T09:40:16.0Z", formatter1.format(instant));
+            assertEquals("0331-01-07T09:40:16.00Z", formatter2.format(instant));
+            assertEquals("0331-01-07T09:40:16.001Z", formatter3.format(instant));
+            assertEquals("0331-01-07T09:40:16.0010Z", formatter4.format(instant));
+            assertEquals("0331-01-07T09:40:16.00100Z", formatter5.format(instant));
+            assertEquals("0331-01-07T09:40:16.001000Z", formatter6.format(instant));
+            assertEquals("0331-01-07T09:40:16.0010000Z", formatter7.format(instant));
+            assertEquals("0331-01-07T09:40:16.00100000Z", formatter8.format(instant));
+            assertEquals("0331-01-07T09:40:16.001000000Z", formatter9.format(instant));
+            assertEquals("0331-01-07T09:40:16.001Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.ofEpochSecond(11337984L, 100_000_000);
+            assertEquals("1970-05-12T05:26:24.100Z", formatter.format(instant));
+            assertEquals("1970-05-12T05:26:24Z", formatter0.format(instant));
+            assertEquals("1970-05-12T05:26:24.1Z", formatter1.format(instant));
+            assertEquals("1970-05-12T05:26:24.10Z", formatter2.format(instant));
+            assertEquals("1970-05-12T05:26:24.100Z", formatter3.format(instant));
+            assertEquals("1970-05-12T05:26:24.1000Z", formatter4.format(instant));
+            assertEquals("1970-05-12T05:26:24.10000Z", formatter5.format(instant));
+            assertEquals("1970-05-12T05:26:24.100000Z", formatter6.format(instant));
+            assertEquals("1970-05-12T05:26:24.1000000Z", formatter7.format(instant));
+            assertEquals("1970-05-12T05:26:24.10000000Z", formatter8.format(instant));
+            assertEquals("1970-05-12T05:26:24.100000000Z", formatter9.format(instant));
+            assertEquals("1970-05-12T05:26:24.1Z", formatterN1.format(instant));
+        }
+        {
+            Instant instant = Instant.MAX;
+            assertEquals("+1000000000-12-31T23:59:59.999999999Z", formatter.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59Z", formatter0.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.9Z", formatter1.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.99Z", formatter2.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.999Z", formatter3.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.9999Z", formatter4.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.99999Z", formatter5.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.999999Z", formatter6.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.9999999Z", formatter7.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.99999999Z", formatter8.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.999999999Z", formatter9.format(instant));
+            assertEquals("+1000000000-12-31T23:59:59.999999999Z", formatterN1.format(instant));
         }
     }
 

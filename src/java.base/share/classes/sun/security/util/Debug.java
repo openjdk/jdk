@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.HexFormat;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Locale;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class for debugging.
@@ -54,10 +53,9 @@ public class Debug {
     private static final String THREAD_OPTION = "+thread";
 
     static {
-        args = GetPropertyAction.privilegedGetProperty("java.security.debug");
+        args = System.getProperty("java.security.debug");
 
-        String args2 = GetPropertyAction
-                .privilegedGetProperty("java.security.auth.debug");
+        String args2 = System.getProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;
@@ -106,7 +104,6 @@ public class Debug {
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
-        System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
         System.err.println("x509          X.509 certificate debugging");

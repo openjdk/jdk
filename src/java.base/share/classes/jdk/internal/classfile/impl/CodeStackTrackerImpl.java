@@ -29,7 +29,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 import java.lang.classfile.instruction.*;
 import java.util.*;
 import java.util.function.Consumer;

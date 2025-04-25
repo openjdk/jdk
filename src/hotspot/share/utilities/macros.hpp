@@ -358,6 +358,21 @@
 #define NOT_CHECK_UNHANDLED_OOPS(code)  code
 #endif // CHECK_UNHANDLED_OOPS
 
+// Enable collection of TaskQueue statistics.
+// Enabled by default in debug builds.  Otherwise, disabled by default.
+#ifndef TASKQUEUE_STATS
+#ifdef ASSERT
+#define TASKQUEUE_STATS 1
+#else
+#define TASKQUEUE_STATS 0
+#endif // ASSERT
+#endif // TASKQUEUE_STATS
+#if TASKQUEUE_STATS
+#define TASKQUEUE_STATS_ONLY(code) code
+#else
+#define TASKQUEUE_STATS_ONLY(code)
+#endif // TASKQUEUE_STATS
+
 #ifdef ASSERT
 #define DEBUG_ONLY(code) code
 #define NOT_DEBUG(code)
@@ -456,18 +471,6 @@
 #else
 #define IA32_ONLY(code)
 #define NOT_IA32(code) code
-#endif
-
-// This is a REALLY BIG HACK, but on AIX <sys/systemcfg.h> unconditionally defines IA64.
-// At least on AIX 7.1 this is a real problem because 'systemcfg.h' is indirectly included
-// by 'pthread.h' and other common system headers.
-
-#if defined(IA64) && !defined(AIX)
-#define IA64_ONLY(code) code
-#define NOT_IA64(code)
-#else
-#define IA64_ONLY(code)
-#define NOT_IA64(code) code
 #endif
 
 #ifdef AMD64

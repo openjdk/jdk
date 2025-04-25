@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,7 +391,7 @@ class InstanceKlass: public Klass {
 
  public:
   int     field_offset      (int index) const { return field(index).offset(); }
-  int     field_access_flags(int index) const { return field(index).access_flags().as_int(); }
+  int     field_access_flags(int index) const { return field(index).access_flags().as_field_flags(); }
   FieldInfo::FieldFlags field_flags(int index) const { return field(index).field_flags(); }
   FieldStatus field_status(int index)   const { return fields_status()->at(index); }
   inline Symbol* field_name        (int index) const;
@@ -456,8 +456,10 @@ public:
   // Check if this klass is a nestmate of k - resolves this nest-host and k's
   bool has_nestmate_access_to(InstanceKlass* k, TRAPS);
 
-  // Called to verify that k is a permitted subclass of this class
-  bool has_as_permitted_subclass(const InstanceKlass* k) const;
+  // Called to verify that k is a permitted subclass of this class.
+  // The incoming stringStream is used for logging, and for the caller to create
+  // a detailed exception message on failure.
+  bool has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const;
 
   enum InnerClassAttributeOffset {
     // From http://mirror.eng/products/jdk/1.1/docs/guide/innerclasses/spec/innerclasses.doc10.html#18814
@@ -680,8 +682,6 @@ public:
 
 #if INCLUDE_JVMTI
   // Redefinition locking.  Class can only be redefined by one thread at a time.
-  // The flag is in access_flags so that it can be set and reset using atomic
-  // operations, and not be reset by other misc_flag settings.
   bool is_being_redefined() const          { return _misc_flags.is_being_redefined(); }
   void set_is_being_redefined(bool value)  { _misc_flags.set_is_being_redefined(value); }
 
@@ -1125,7 +1125,7 @@ public:
   void compute_has_loops_flag_for_methods();
 #endif
 
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
 public:
   // JVMTI support

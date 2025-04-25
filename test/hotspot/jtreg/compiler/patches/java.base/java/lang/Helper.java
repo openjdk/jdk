@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package java.lang;
+
+import jdk.internal.util.DecimalDigits;
 
 /**
  * A helper class to get access to package-private members
@@ -117,11 +119,17 @@ public class Helper {
     }
 
     public static int getChars(int i, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(i, begin, end, value);
+        StringUTF16.checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(i, end, value);
+        assert begin == pos;
+        return pos;
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(l, begin, end, value);
+        StringUTF16.checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(l, end, value);
+        assert begin == pos;
+        return pos;
     }
 
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
@@ -133,17 +141,11 @@ public class Helper {
     }
 
     public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
-        int end = i + 4;
-        StringUTF16.checkBoundsBeginEnd(i, end, value);
-        StringUTF16.putCharsAt(value, i, c1, c2, c3, c4);
-        return end;
+        return StringUTF16.putCharsAt(value, i, c1, c2, c3, c4);
     }
 
     public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
-        int end = i + 5;
-        StringUTF16.checkBoundsBeginEnd(i, end, value);
-        StringUTF16.putCharsAt(value, i, c1, c2, c3, c4, c5);
-        return end;
+        return StringUTF16.putCharsAt(value, i, c1, c2, c3, c4, c5);
     }
 
     public static char charAt(byte[] value, int index) {

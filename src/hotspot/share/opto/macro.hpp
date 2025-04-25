@@ -111,7 +111,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = nullptr);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent = nullptr);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
@@ -171,7 +171,7 @@ private:
                                    Node* src,  Node* src_offset,
                                    Node* dest, Node* dest_offset,
                                    Node* copy_length, bool dest_uninitialized);
-  bool generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+  void generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                     const TypePtr* adr_type,
                                     BasicType basic_elem_type,
                                     bool disjoint_bases,

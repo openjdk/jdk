@@ -31,9 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.security.AccessController;
 import java.security.KeyStore;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -359,21 +357,15 @@ public class HttpsParametersClientAuthTest {
     }
 
     private static KeyStore loadTestKeyStore() throws Exception {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<KeyStore>() {
-                    @Override
-                    public KeyStore run() throws Exception {
-                        final String testKeys = System.getProperty("test.src")
-                                + "/"
-                                + "../../../../../../test/lib/jdk/test/lib/net/testkeys";
-                        try (final FileInputStream fis = new FileInputStream(testKeys)) {
-                            final char[] passphrase = "passphrase".toCharArray();
-                            final KeyStore ks = KeyStore.getInstance("PKCS12");
-                            ks.load(fis, passphrase);
-                            return ks;
-                        }
-                    }
-                });
+        final String testKeys = System.getProperty("test.src")
+                + "/"
+                + "../../../../../../test/lib/jdk/test/lib/net/testkeys";
+        try (final FileInputStream fis = new FileInputStream(testKeys)) {
+            final char[] passphrase = "passphrase".toCharArray();
+            final KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(fis, passphrase);
+            return ks;
+        }
     }
 
     // no-op implementations of the abstract methods of HttpsParameters

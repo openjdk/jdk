@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,6 @@ public interface AudioSynthesizer extends Synthesizer {
      *
      * @throws MidiUnavailableException thrown if the synthesizer cannot be
      * opened due to resource restrictions.
-     * @throws SecurityException thrown if the synthesizer cannot be
-     * opened due to security restrictions.
      *
      * @see #close
      * @see #isOpen
@@ -119,8 +117,6 @@ public interface AudioSynthesizer extends Synthesizer {
      *
      * @throws MidiUnavailableException thrown if the synthesizer cannot be
      * opened due to resource restrictions.
-     * @throws SecurityException thrown if the synthesizer cannot be
-     * opened due to security restrictions.
      *
      * @see #close
      * @see #isOpen

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +22,9 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -37,14 +38,6 @@ size_t ShenandoahController::reset_allocs_seen() {
   return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 }
 
-void ShenandoahController::prepare_for_graceful_shutdown() {
-  _graceful_shutdown.set();
-}
-
-bool ShenandoahController::in_graceful_shutdown() {
-  return _graceful_shutdown.is_set();
-}
-
 void ShenandoahController::update_gc_id() {
   Atomic::inc(&_gc_id);
 }
@@ -53,60 +46,38 @@ size_t ShenandoahController::get_gc_id() {
   return Atomic::load(&_gc_id);
 }
 
-void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, bool block) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
+void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
   assert(current()->is_Java_thread(), "expect Java thread here");
-  bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
 
-  if (try_set_alloc_failure_gc(is_humongous)) {
-    // Only report the first allocation failure
-    log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
-                 req.type_string(),
-                 byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
+  const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
+  const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
-    // Now that alloc failure GC is scheduled, we can abort everything else
-    heap->cancel_gc(GCCause::_allocation_failure);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->cancel_gc(cause)) {
+    log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
+    request_gc(cause);
   }
-
 
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
-    while (is_alloc_failure_gc()) {
+    while (!should_terminate() && ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
       ml.wait();
     }
   }
 }
 
 void ShenandoahController::handle_alloc_failure_evac(size_t words) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
 
-  if (try_set_alloc_failure_gc(is_humongous)) {
-    // Only report the first allocation failure
-    log_info(gc)("Failed to allocate " SIZE_FORMAT "%s for evacuation",
-                 byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  const bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
+  const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_shenandoah_allocation_failure_evac;
+
+  if (heap->cancel_gc(cause)) {
+    log_info(gc)("Failed to allocate " PROPERFMT " for evacuation", PROPERFMTARGS(words * HeapWordSize));
   }
-
-  // Forcefully report allocation failure
-  heap->cancel_gc(GCCause::_shenandoah_allocation_failure_evac);
 }
 
 void ShenandoahController::notify_alloc_failure_waiters() {
-  _alloc_failure_gc.unset();
-  _humongous_alloc_failure_gc.unset();
   MonitorLocker ml(&_alloc_failure_waiters_lock);
   ml.notify_all();
 }
-
-bool ShenandoahController::try_set_alloc_failure_gc(bool is_humongous) {
-  if (is_humongous) {
-    _humongous_alloc_failure_gc.try_set();
-  }
-  return _alloc_failure_gc.try_set();
-}
-
-bool ShenandoahController::is_alloc_failure_gc() {
-  return _alloc_failure_gc.is_set();
-}
-

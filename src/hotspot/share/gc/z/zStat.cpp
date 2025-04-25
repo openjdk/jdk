@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
-#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
@@ -46,12 +45,14 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-#define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
+#include <limits>
+
+#define ZSIZE_FMT                       "%zuM(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
 
 #define ZTABLE_ARGS_NA                  "%9s", "-"
-#define ZTABLE_ARGS(size)               SIZE_FORMAT_W(8) "M (%.0f%%)", \
+#define ZTABLE_ARGS(size)               "%8zuM (%.0f%%)", \
                                         ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
 
 //
@@ -1423,8 +1424,7 @@ ZStatMark::ZStatMark()
     _nproactiveflush(),
     _nterminateflush(),
     _ntrycomplete(),
-    _ncontinue(),
-    _mark_stack_usage() {}
+    _ncontinue() {}
 
 void ZStatMark::at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1440,24 +1440,18 @@ void ZStatMark::at_mark_end(size_t nproactiveflush,
   _ncontinue = ncontinue;
 }
 
-void ZStatMark::at_mark_free(size_t mark_stack_usage) {
-  _mark_stack_usage = mark_stack_usage;
-}
-
 void ZStatMark::print() {
   log_info(gc, marking)("Mark: "
-                        SIZE_FORMAT " stripe(s), "
-                        SIZE_FORMAT " proactive flush(es), "
-                        SIZE_FORMAT " terminate flush(es), "
-                        SIZE_FORMAT " completion(s), "
-                        SIZE_FORMAT " continuation(s) ",
+                        "%zu stripe(s), "
+                        "%zu proactive flush(es), "
+                        "%zu terminate flush(es), "
+                        "%zu completion(s), "
+                        "%zu continuation(s) ",
                         _nstripes,
                         _nproactiveflush,
                         _nterminateflush,
                         _ntrycomplete,
                         _ncontinue);
-
-  log_info(gc, marking)("Mark Stack Usage: " SIZE_FORMAT "M", _mark_stack_usage / M);
 }
 
 //
@@ -1542,7 +1536,7 @@ void ZStatRelocation::print_page_summary() {
   }
   print_summary("Large", large_summary, 0 /* in_place_count */);
 
-  lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
+  lt.print("Forwarding Usage: %zuM", _forwarding_usage / M);
 }
 
 void ZStatRelocation::print_age_table() {
@@ -1608,13 +1602,13 @@ void ZStatRelocation::print_age_table() {
 
     lt.print("%s", create_age_table()
               .left(ZTABLE_ARGS(total[i] - live[i]))
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left("%7zu / %zu",
                     _selector_stats.small(age).npages_candidates(),
                     _selector_stats.small(age).npages_selected())
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left("%7zu / %zu",
                     _selector_stats.medium(age).npages_candidates(),
                     _selector_stats.medium(age).npages_selected())
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left("%7zu / %zu",
                     _selector_stats.large(age).npages_candidates(),
                     _selector_stats.large(age).npages_selected())
               .end());
@@ -1625,7 +1619,7 @@ void ZStatRelocation::print_age_table() {
 // Stat nmethods
 //
 void ZStatNMethods::print() {
-  log_info(gc, nmethod)("NMethods: " SIZE_FORMAT " registered, " SIZE_FORMAT " unregistered",
+  log_info(gc, nmethod)("NMethods: %zu registered, %zu unregistered",
                         ZNMethodTable::registered_nmethods(),
                         ZNMethodTable::unregistered_nmethods());
 }
@@ -1636,8 +1630,8 @@ void ZStatNMethods::print() {
 void ZStatMetaspace::print() {
   const MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
-                          SIZE_FORMAT "M used, "
-                          SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
+                          "%zuM used, "
+                          "%zuM committed, %zuM reserved",
                           stats.used() / M,
                           stats.committed() / M,
                           stats.reserved() / M);
@@ -1849,8 +1843,9 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_st
   }
 }
 
-size_t ZStatHeap::reclaimed_avg() {
-  return (size_t)_reclaimed_bytes.davg();
+double ZStatHeap::reclaimed_avg() {
+  // Make sure the reclaimed average is greater than 0.0 to avoid division by zero.
+  return _reclaimed_bytes.davg() + std::numeric_limits<double>::denorm_min();
 }
 
 size_t ZStatHeap::max_capacity() {

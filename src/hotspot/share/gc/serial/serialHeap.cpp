@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -63,6 +62,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -95,11 +95,13 @@ SerialHeap::SerialHeap() :
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
+    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
+  GCLocker::initialize();
 }
 
 void SerialHeap::initialize_serviceability() {
@@ -166,11 +168,11 @@ void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void SerialHeap::pin_object(JavaThread* thread, oop obj) {
-  GCLocker::lock_critical(thread);
+  GCLocker::enter(thread);
 }
 
 void SerialHeap::unpin_object(JavaThread* thread, oop obj) {
-  GCLocker::unlock_critical(thread);
+  GCLocker::exit(thread);
 }
 
 jint SerialHeap::initialize() {
@@ -186,10 +188,10 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
 
-  _rem_set = new CardTableRS(heap_rs.region());
+  _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -218,8 +220,7 @@ ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-         SIZE_FORMAT, total_reserved, alignment);
+         "Gen size; total_reserved=%zu, alignment=%zu", total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
   size_t used_page_size = heap_rs.page_size();
@@ -282,14 +283,11 @@ size_t SerialHeap::max_capacity() const {
 
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
-// . gc locker is occupied (jni critical section)
-// . heap memory is tight -- the most recent previous collection
-//   was a full collection because a partial collection (would
-//   have) failed and is likely to fail again
+// . heap memory is tight
 bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
   size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GCLocker::is_active_and_needs_gc();
+         || _is_heap_almost_full;
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
@@ -307,14 +305,11 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   return result;
 }
 
-HeapWord* SerialHeap::mem_allocate_work(size_t size,
-                                        bool is_tlab) {
-
+HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   // Loop until the allocation is satisfied, or unsatisfied after GC.
-  for (uint try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
-
+  for (uint try_count = 1; /* return or throw */; try_count += 1) {
     // First allocation attempt is lock-free.
     DefNewGeneration *young = _young_gen;
     if (young->should_allocate(size, is_tlab)) {
@@ -338,45 +333,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
         return result;
       }
 
-      if (GCLocker::is_active_and_needs_gc()) {
-        if (is_tlab) {
-          return nullptr;  // Caller will retry allocating individual object.
-        }
-        if (!is_maximal_no_gc()) {
-          // Try and expand heap to satisfy request.
-          result = expand_heap_and_allocate(size, is_tlab);
-          // Result could be null if we are out of space.
-          if (result != nullptr) {
-            return result;
-          }
-        }
-
-        if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
-          return nullptr; // We didn't get to do a GC and we didn't get any memory.
-        }
-
-        // If this thread is not in a jni critical section, we stall
-        // the requestor until the critical section has cleared and
-        // GC allowed. When the critical section clears, a GC is
-        // initiated by the last thread exiting the critical section; so
-        // we retry the allocation sequence from the beginning of the loop,
-        // rather than causing more, now probably unnecessary, GC attempts.
-        JavaThread* jthr = JavaThread::current();
-        if (!jthr->in_critical()) {
-          MutexUnlocker mul(Heap_lock);
-          // Wait for JNI critical section to be exited
-          GCLocker::stall_until_clear();
-          gclocker_stalled_count += 1;
-          continue;
-        } else {
-          if (CheckJNICalls) {
-            fatal("Possible deadlock due to allocating while"
-                  " in jni critical section");
-          }
-          return nullptr;
-        }
-      }
-
       // Read the gc count while the heap lock is held.
       gc_count_before = total_collections();
     }
@@ -385,10 +341,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     VMThread::execute(&op);
     if (op.prologue_succeeded()) {
       result = op.result();
-      if (op.gc_locked()) {
-         assert(result == nullptr, "must be null if gc_locked() is true");
-         continue;  // Retry and/or stall as necessary.
-      }
 
       assert(result == nullptr || is_in_reserved(result),
              "result not in heap");
@@ -398,8 +350,8 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-          log_warning(gc, ergo)("SerialHeap::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+      log_warning(gc, ergo)("SerialHeap::mem_allocate_work retries %d times,"
+                            " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -461,7 +413,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     prepare_for_verify();
     Universe::verify("Before GC");
   }
-  gc_prologue(false);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
   save_marks();
@@ -518,16 +470,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
 
   HeapWord* result = nullptr;
 
-  GCLocker::check_active_before_gc();
-  if (GCLocker::is_active_and_needs_gc()) {
-    // GC locker is active; instead of a collection we will attempt
-    // to expand the heap, if there's room for expansion.
-    if (!is_maximal_no_gc()) {
-      result = expand_heap_and_allocate(size, is_tlab);
-    }
-    return result;   // Could be null if we are out of space.
-  }
-
   // If young-gen can handle this allocation, attempt young-gc firstly.
   bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
   collect_at_safepoint(!should_run_young_gc);
@@ -551,7 +493,7 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   {
     UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
     const bool clear_all_soft_refs = true;
-    do_full_collection_no_gc_locker(clear_all_soft_refs);
+    do_full_collection(clear_all_soft_refs);
   }
 
   result = attempt_allocation(size, is_tlab, false /* first_only */);
@@ -633,14 +575,6 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
-void SerialHeap::try_collect_at_safepoint(bool full) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  if (GCLocker::check_active_before_gc()) {
-    return;
-  }
-  collect_at_safepoint(full);
-}
-
 void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = must_clear_all_soft_refs();
@@ -652,7 +586,7 @@ void SerialHeap::collect_at_safepoint(bool full) {
     }
     // Upgrade to Full-GC if young-gc fails
   }
-  do_full_collection_no_gc_locker(clear_soft_refs);
+  do_full_collection(clear_soft_refs);
 }
 
 // public collection interfaces
@@ -670,12 +604,7 @@ void SerialHeap::collect(GCCause::Cause cause) {
     full_gc_count_before = total_full_collections();
   }
 
-  if (GCLocker::should_discard(cause, gc_count_before)) {
-    return;
-  }
-
   bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
-                           || (cause == GCCause::_gc_locker)
                 DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
 
   while (true) {
@@ -684,7 +613,6 @@ void SerialHeap::collect(GCCause::Cause cause) {
                           full_gc_count_before,
                           cause);
     VMThread::execute(&op);
-
     if (!GCCause::is_explicit_full_gc(cause)) {
       return;
     }
@@ -696,22 +624,10 @@ void SerialHeap::collect(GCCause::Cause cause) {
         return;
       }
     }
-
-    if (GCLocker::is_active_and_needs_gc()) {
-      // If GCLocker is active, wait until clear before retrying.
-      GCLocker::stall_until_clear();
-    }
   }
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
-  if (GCLocker::check_active_before_gc()) {
-    return;
-  }
-  do_full_collection_no_gc_locker(clear_all_soft_refs);
-}
-
-void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
   IsSTWGCActiveMark gc_active_mark;
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   GCIdMark gc_id_mark;
@@ -729,7 +645,7 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
     Universe::verify("Before GC");
   }
 
-  gc_prologue(true);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
@@ -884,14 +800,19 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
   rem_set()->verify();
 }
 
-void SerialHeap::print_on(outputStream* st) const {
+void SerialHeap::print_heap_on(outputStream* st) const {
   assert(_young_gen != nullptr, "precondition");
   assert(_old_gen   != nullptr, "precondition");
 
   _young_gen->print_on(st);
   _old_gen->print_on(st);
+}
 
-  MetaspaceUtils::print_on(st);
+void SerialHeap::print_gc_on(outputStream* st) const {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 }
 
 void SerialHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -935,7 +856,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-void SerialHeap::gc_prologue(bool full) {
+void SerialHeap::gc_prologue() {
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
@@ -951,6 +872,19 @@ void SerialHeap::gc_epilogue(bool full) {
 
   _young_gen->gc_epilogue(full);
   _old_gen->gc_epilogue();
+
+  if (_is_heap_almost_full) {
+    // Reset the emergency state if eden is empty after a young/full gc
+    if (_young_gen->eden()->is_empty()) {
+      _is_heap_almost_full = false;
+    }
+  } else {
+    if (full && !_young_gen->eden()->is_empty()) {
+      // Usually eden should be empty after a full GC, so heap is probably too
+      // full now; entering emergency state.
+      _is_heap_almost_full = true;
+    }
+  }
 
   MetaspaceCounters::update_performance_counters();
 };

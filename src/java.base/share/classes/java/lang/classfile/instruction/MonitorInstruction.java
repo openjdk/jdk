@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -33,9 +34,17 @@ import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a {@code monitorenter} or {@code monitorexit} instruction in the
- * {@code code} array of a {@code Code} attribute.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * Models a {@link Opcode#MONITORENTER monitorenter} or {@link Opcode#MONITOREXIT
+ * monitorexit} instruction in the {@code code} array of a {@code Code} attribute.
+ * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link
+ * Opcode.Kind#MONITOR}.  Delivered as a {@link CodeElement} when traversing the
+ * elements of a {@link CodeModel}.
+ * <p>
+ * A monitor instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="MonitorInstruction" target="#of(Opcode)" :
+ * MonitorInstruction(Opcode opcode) // @link substring="opcode" target="#opcode"
+ * }
  *
  * @since 24
  */

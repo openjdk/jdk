@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.invoke.MhUtil;
-import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 
@@ -194,7 +193,6 @@ class DatagramChannelImpl
         FileDescriptor fd = null;
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = interruptible;
@@ -217,7 +215,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 if (fd != null) nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -232,7 +229,6 @@ class DatagramChannelImpl
 
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = true;
@@ -257,7 +253,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -1761,22 +1756,7 @@ class DatagramChannelImpl
                 registry.invalidateAll();
 
             if (!tryClose()) {
-                long reader = readerThread;
-                long writer = writerThread;
-                if (reader != 0 || writer != 0) {
-                    if (NativeThread.isVirtualThread(reader)
-                            || NativeThread.isVirtualThread(writer)) {
-                        Poller.stopPoll(fdVal);
-                    }
-                    if (NativeThread.isNativeThread(reader)
-                            || NativeThread.isNativeThread(writer)) {
-                        nd.preClose(fd);
-                        if (NativeThread.isNativeThread(reader))
-                            NativeThread.signal(reader);
-                        if (NativeThread.isNativeThread(writer))
-                            NativeThread.signal(writer);
-                    }
-                }
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }
@@ -1909,8 +1889,7 @@ class DatagramChannelImpl
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             } finally {
-                // decrement socket count and release memory
-                ResourceManager.afterUdpClose();
+                // release memory
                 NativeSocketAddress.freeAll(sockAddrs);
             }
         };

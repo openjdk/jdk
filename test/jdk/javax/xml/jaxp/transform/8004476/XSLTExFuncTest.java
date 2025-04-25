@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
 
 /**
  * @test
- * @bug 8004476
+ * @bug 8004476 8343001
  * @summary test XSLT extension functions
  * @run main/othervm XSLTExFuncTest
  */
@@ -77,18 +77,18 @@ public class XSLTExFuncTest extends TestBase {
     }
 
     /**
-     * by default, extension function is enabled
+     * As of JDK-8343001, extension function is disabled by default.
      */
     public void testExtFunc() {
         TransformerFactory factory = TransformerFactory.newInstance();
 
         try {
             transform(factory);
-            System.out.println("testExtFunc: OK");
         } catch (TransformerConfigurationException e) {
             fail(e.getMessage());
         } catch (TransformerException ex) {
-            fail(ex.getMessage());
+            //expected since extension function is disallowed
+            System.out.println("testExtFunc: OK");
         }
     }
 

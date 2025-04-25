@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,12 @@ public final class SSLLogger {
         System.err.println("\trecord       enable per-record tracing");
         System.err.println("\trespmgr      print OCSP response tracing");
         System.err.println("\tsession      print session activity");
+        System.err.println("\tdefaultctx   print default SSL initialization");
         System.err.println("\tsslctx       print SSLContext tracing");
+        System.err.println("\tsessioncache print session cache tracing");
+        System.err.println("\tkeymanager   print key manager tracing");
         System.err.println("\ttrustmanager print trust manager tracing");
+        System.err.println("\tpluggability print pluggability tracing");
         System.err.println();
         System.err.println("\thandshake debugging can be widened with:");
         System.err.println("\tverbose   verbose handshake message printing");
@@ -175,6 +179,7 @@ public final class SSLLogger {
                 return false;
             }
         }
+
         return true;
     }
 

@@ -26,14 +26,14 @@
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
@@ -84,8 +84,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
-  PartialArrayStateAllocator* _partial_array_state_allocator;
-  PartialArrayTaskStepper _partial_array_stepper;
+  PartialArraySplitter _partial_array_splitter;
   StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
@@ -124,8 +123,7 @@ public:
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
-                       G1EvacFailureRegions* evac_failure_regions,
-                       PartialArrayStateAllocator* partial_array_state_allocator);
+                       G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -164,9 +162,13 @@ public:
   // HeapWords copied.
   size_t flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* buffer_log);
 
+#if TASKQUEUE_STATS
+  PartialArrayTaskStats* partial_array_task_stats();
+#endif // TASKQUEUE_STATS
+
 private:
-  void do_partial_array(PartialArrayState* state);
-  void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
+  void do_partial_array(PartialArrayState* state, bool stolen);
+  void start_partial_objarray(oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                Klass* klass,
@@ -181,6 +183,12 @@ private:
 
   void update_bot_after_copying(oop obj, size_t word_sz);
 
+  void do_iterate_object(oop const obj,
+                         oop const old,
+                         Klass* const klass,
+                         G1HeapRegionAttr const region_attr,
+                         G1HeapRegionAttr const dest_attr,
+                         uint age);
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
                                 markWord old_mark);
@@ -188,7 +196,7 @@ private:
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> void do_oop_evac(T* p);
 
-  void dispatch_task(ScannerTask task);
+  void dispatch_task(ScannerTask task, bool stolen);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
@@ -226,8 +234,9 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
+  void record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned);
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
+  oop handle_evacuation_failure_par(oop obj, markWord m, Klass* klass, G1HeapRegionAttr attr, size_t word_sz, bool cause_pinned);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -247,7 +256,6 @@ class G1ParScanThreadStateSet : public StackObj {
   uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
-  PartialArrayStateAllocator _partial_array_state_allocator;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
@@ -261,6 +269,9 @@ class G1ParScanThreadStateSet : public StackObj {
 
   void flush_stats();
   void record_unused_optional_region(G1HeapRegion* hr);
+#if TASKQUEUE_STATS
+  void print_partial_array_task_stats();
+#endif // TASKQUEUE_STATS
 
   G1ParScanThreadState* state_for_worker(uint worker_id);
   uint num_workers() const { return _num_workers; }

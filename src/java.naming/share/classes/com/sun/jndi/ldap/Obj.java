@@ -57,8 +57,19 @@ final class Obj {
 
     private Obj () {}; // Make sure no one can create one
 
-    // package private; used by Connection
-    static VersionHelper helper = VersionHelper.getVersionHelper();
+    /**
+     * Determines whether objects may be deserialized or reconstructed from a content of
+     * 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' LDAP attributes.
+     */
+    private static final boolean trustSerialData;
+
+    static {
+        // System property to control whether classes are allowed to be loaded from
+        // 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' attributes.
+        String trustSerialDataSp = System.getProperty(
+                "com.sun.jndi.ldap.object.trustSerialData", "false");
+        trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
+    }
 
     // LDAP attributes used to support Java objects.
     static final String[] JAVA_ATTRIBUTES = {
@@ -233,14 +244,14 @@ final class Obj {
         String[] codebases = getCodebases(attrs.get(JAVA_ATTRIBUTES[CODEBASE]));
         try {
             if ((attr = attrs.get(JAVA_ATTRIBUTES[SERIALIZED_DATA])) != null) {
-                if (!VersionHelper.isSerialDataAllowed()) {
+                if (!trustSerialData) {
                     throw new NamingException("Object deserialization is not allowed");
                 }
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 return deserializeObject((byte[])attr.get(), cl);
             } else if ((attr = attrs.get(JAVA_ATTRIBUTES[REMOTE_LOC])) != null) {
                  // javaRemoteLocation attribute (RMI stub will be created)
-                 if (!VersionHelper.isSerialDataAllowed()) {
+                 if (!trustSerialData) {
                      throw new NamingException("Object deserialization is not allowed");
                  }
                 // For backward compatibility only
@@ -471,7 +482,7 @@ final class Obj {
                 } else if (val.charAt(start) == separator) {
                     // Check if deserialization of binary RefAddr is allowed from
                     // 'javaReferenceAddress' LDAP attribute.
-                    if (!VersionHelper.isSerialDataAllowed()) {
+                    if (!trustSerialData) {
                         throw new NamingException("Object deserialization is not allowed");
                     }
 

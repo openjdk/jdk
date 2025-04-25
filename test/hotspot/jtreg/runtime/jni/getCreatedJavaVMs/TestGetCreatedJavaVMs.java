@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib
  * @requires os.family != "Windows"
+ * @requires !jdk.static
  * @run driver TestGetCreatedJavaVMs
  */
 import jdk.test.lib.Utils;

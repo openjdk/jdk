@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4894125 7054918 8130181
- * @library ../testlibrary /test/lib
+ * @library /test/lib
  * @summary test that failover for KeyFactory works
  * @author Andreas Sterbenz
  */
@@ -32,8 +32,8 @@
 import java.util.*;
 
 import java.security.*;
-import java.security.interfaces.*;
 import java.security.spec.*;
+import jdk.test.lib.security.ProvidersSnapshot;
 import jdk.test.lib.security.SecurityUtils;
 
 public class Failover {

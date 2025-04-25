@@ -36,10 +36,11 @@ import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.io.InputStream;
+import java.lang.Override;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
-
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
@@ -52,12 +53,15 @@ import javax.net.ssl.SSLSocket;
  * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during
  * TLSv1.3 handshake) with SSLSockets we use an SSLSocket on the server side
  * and a plain TCP socket backed by SSLEngine on the client side.
+ * Using SSLEngine allows the client to force the generation of the plaintext
+ * alert messages.
  */
 public class SSLSocketNoServerHelloClientShutdown
     extends SSLEngineNoServerHelloClientShutdown {
 
     private volatile Exception clientException;
     private volatile Exception serverException;
+    private final CountDownLatch serverLatch;
 
     public static void main(String[] args) throws Exception {
         new SSLSocketNoServerHelloClientShutdown().runTest();
@@ -65,6 +69,7 @@ public class SSLSocketNoServerHelloClientShutdown
 
     public SSLSocketNoServerHelloClientShutdown() throws Exception {
         super();
+        serverLatch = new CountDownLatch(1);
     }
 
     private void runTest() throws Exception {
@@ -84,7 +89,6 @@ public class SSLSocketNoServerHelloClientShutdown
             try {
                 // Server-side SSL socket that will read.
                 SSLSocket socket = (SSLSocket) serverSocket.accept();
-                socket.setSoTimeout(2000);
                 InputStream is = socket.getInputStream();
                 byte[] inbound = new byte[512];
 
@@ -96,10 +100,12 @@ public class SSLSocketNoServerHelloClientShutdown
                 serverException = e;
                 log(e.toString());
             } finally {
+                serverLatch.countDown();
                 thread.join();
             }
         } finally {
             if (serverException != null) {
+                serverException.printStackTrace();
                 assertEquals(
                     SSLProtocolException.class, serverException.getClass());
                 assertEquals(GeneralSecurityException.class,
@@ -125,7 +131,6 @@ public class SSLSocketNoServerHelloClientShutdown
                         new InetSocketAddress("localhost", port))) {
 
                     SSLEngineResult clientResult;
-                    clientSocketChannel.socket().setSoTimeout(500);
 
                     log("=================");
 
@@ -162,9 +167,7 @@ public class SSLSocketNoServerHelloClientShutdown
                     log("---Client sends unencrypted alerts---");
                     int len = clientSocketChannel.write(cTOs);
 
-                    // Give server a chance to read before we shutdown via
-                    // the try-with-resources block.
-                    Thread.sleep(2000);
+                    serverLatch.await();
                 } catch (Exception e) {
                     clientException = e;
                 }

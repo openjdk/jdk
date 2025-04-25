@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Objects;
  * "{@docRoot}/../specs/security/standard-names.html#namedparameterspec">
  *          Java Security Standard Algorithm Names Specification</a>.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 11
  *
  */
@@ -92,6 +93,30 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
     public static final NamedParameterSpec ML_DSA_87
         = new NamedParameterSpec("ML-DSA-87");
 
+    /**
+     * The ML-KEM-512 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_512
+            = new NamedParameterSpec("ML-KEM-512");
+
+    /**
+     * The ML-KEM-768 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_768
+            = new NamedParameterSpec("ML-KEM-768");
+
+    /**
+     * The ML-KEM-1024 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_1024
+            = new NamedParameterSpec("ML-KEM-1024");
+
     private final String name;
 
     /**
@@ -107,6 +132,7 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
      *        Java Security Standard Algorithm Names Specification</a> for
      *        information about standard names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code stdName} is null.
      */
     public NamedParameterSpec(String stdName) {

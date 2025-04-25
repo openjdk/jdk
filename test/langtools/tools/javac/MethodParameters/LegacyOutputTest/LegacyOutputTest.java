@@ -26,8 +26,6 @@
  * @test
  * @bug 8190452
  * @summary javac should not add MethodParameters attributes to v51 and earlier class files
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build LegacyOutputTest
  * @run main LegacyOutputTest
  */

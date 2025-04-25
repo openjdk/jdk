@@ -160,12 +160,12 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private transient Comparator<? super E> comparator;
 
     /**
-     * Lock used for all public operations.
+     * @serial Lock used for all public operations.
      */
     private final ReentrantLock lock = new ReentrantLock();
 
     /**
-     * Condition for blocking when empty.
+     * @serial Condition for blocking when empty.
      */
     @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notEmpty = lock.newCondition();
@@ -176,7 +176,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private transient volatile int allocationSpinLock;
 
     /**
-     * A plain PriorityQueue used only for serialization,
+     * @serial A plain PriorityQueue used only for serialization,
      * to maintain compatibility with previous versions
      * of this class. Non-null only during serialization/deserialization.
      */

@@ -26,9 +26,7 @@
  * @bug 8025087
  * @summary Verify that pre-JDK8 classfiles with default and/or static methods
  *          are refused correctly.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.jvm

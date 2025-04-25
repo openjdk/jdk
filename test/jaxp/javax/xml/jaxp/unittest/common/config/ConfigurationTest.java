@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import org.testng.annotations.DataProvider;
  *     any settings in a custom configuration file override those in the default
  * configuration.
  */
-public class ConfigurationTest {
+public class ConfigurationTest extends ImplProperties {
     // system property for custom configuration file
     static final String SP_CONFIG = "java.xml.config.file";
     // Impl-Specific Property: entity expansion
@@ -79,14 +79,14 @@ public class ConfigurationTest {
         return new Object[][]{
             // default value is expected for property (PARAMETER_ENTITY) not
             // set in the default and custom configuration files
-            {null, ISP_PARAMETER_ENTITY, "1000000"},
+            {null, ISP_PARAMETER_ENTITY, PROPERTY_VALUE[PROPERTY_VALUE_JDK24][INDEX_PE]},
             // this property is set in the default (jaxp.properties),
             // but not the custom configuration file. Expects readings from the
             // default config
-            {null, ISP_NAME_LIMIT, "1000"},
+            {null, ISP_NAME_LIMIT, PROPERTY_VALUE[PROPERTY_VALUE_JDK24][INDEX_NAME]},
             // the property in the default configuration file (jaxp.properties)
             // will be read and used as the default value of the property
-            {null, ISP_ENTITY_EXPANSION, "64000"},
+            {null, ISP_ENTITY_EXPANSION, PROPERTY_VALUE[PROPERTY_VALUE_JDK24][INDEX_EE]},
         };
     }
 

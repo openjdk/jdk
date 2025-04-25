@@ -72,7 +72,7 @@ public @interface PreviewFeature {
         IMPLICIT_CLASSES,
         @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
-        @JEP(number=480, title="Structured Concurrency", status="Third Preview")
+        @JEP(number=499, title="Structured Concurrency", status="Fourth Preview")
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.internal;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -65,7 +66,7 @@ final class ChunkInputStream extends InputStream {
             return false;
         }
 
-        stream = new BufferedInputStream(SecuritySupport.newFileInputStream(currentChunk.getFile()));
+        stream = new BufferedInputStream(Files.newInputStream(currentChunk.getFile()));
         unstreamedSize -= currentChunk.getSize();
         return true;
     }

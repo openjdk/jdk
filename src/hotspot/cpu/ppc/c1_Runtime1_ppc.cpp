@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -70,23 +69,23 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
   // Check for pending exceptions.
   {
     ld(R0, in_bytes(Thread::pending_exception_offset()), R16_thread);
-    cmpdi(CCR0, R0, 0);
+    cmpdi(CR0, R0, 0);
 
     // This used to conditionally jump to forward_exception however it is
     // possible if we relocate that the branch will not reach. So we must jump
     // around so we can always reach.
 
     Label ok;
-    beq(CCR0, ok);
+    beq(CR0, ok);
 
     // Make sure that the vm_results are cleared.
     if (oop_result1->is_valid() || metadata_result->is_valid()) {
       li(R0, 0);
       if (oop_result1->is_valid()) {
-        std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+        std(R0, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
       }
       if (metadata_result->is_valid()) {
-        std(R0, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+        std(R0, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
       }
     }
 
@@ -113,10 +112,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
 
   // Get oop results if there are any and reset the values in the thread.
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   return (int)(return_pc - code_section()->start());
@@ -369,7 +368,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   int call_offset = __ call_RT(noreg, noreg, target);
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpdi(CR0, R3_RET, 0);
 
   // Re-execute the patched instruction or, if the nmethod was deoptmized,
   // return to the deoptimization handler entry that will cause re-execution
@@ -383,7 +382,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   restore_live_registers(sasm, noreg, noreg);
   // Return if patching routine returned 0.
-  __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+  __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
 
   address stub = deopt_blob->unpack_with_reexecution();
   //__ load_const_optimized(R0, stub);
@@ -449,8 +448,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
           Label ok;
           __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R4_ARG2);
           __ srawi(R0, R0, Klass::_lh_array_tag_shift);
-          __ cmpwi(CCR0, R0, tag);
-          __ beq(CCR0, ok);
+          __ cmpwi(CR0, R0, tag);
+          __ beq(CR0, ok);
           __ stop("assert(is an array klass)");
           __ should_not_reach_here();
           __ bind(ok);
@@ -486,9 +485,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         // Load the klass and check the has finalizer flag.
         __ load_klass(t, R3_ARG1);
         __ lbz(t, in_bytes(Klass::misc_flags_offset()), t);
-        __ testbitdi(CCR0, R0, t, exact_log2(KlassFlags::_misc_has_finalizer));
+        __ testbitdi(CR0, R0, t, exact_log2(KlassFlags::_misc_has_finalizer));
         // Return if has_finalizer bit == 0 (CR0.eq).
-        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
 
         __ mflr(R0);
         __ std(R0, _abi0(lr), R1_SP);
@@ -603,10 +602,76 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       { // Support for uint StubRoutine::partial_subtype_check( Klass sub, Klass super );
         const Register sub_klass = R5,
                        super_klass = R4,
-                       temp1_reg = R6,
-                       temp2_reg = R0;
-        __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1_reg, temp2_reg); // returns with CR0.eq if successful
-        __ crandc(CCR0, Assembler::equal, CCR0, Assembler::equal); // failed: CR0.ne
+                       temp1_reg = R6;
+        __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1_reg, noreg);
+        // Result is in CR0.
+        __ blr();
+      }
+      break;
+
+    case C1StubId::is_instance_of_id:
+      {
+        // Called like a C function, but without FunctionDescriptor (see LIR_Assembler::rt_call).
+
+        // Arguments and return value.
+        Register mirror = R3_ARG1;
+        Register obj    = R4_ARG2;
+        Register result = R3_RET;
+
+        // Other argument registers can be used as temp registers.
+        Register klass  = R5;
+        Register offset = R6;
+        Register sub_klass = R7;
+
+        Label is_secondary, success;
+
+        // Get the Klass*.
+        __ ld(klass, java_lang_Class::klass_offset(), mirror);
+
+        // Return false if obj or klass is null.
+        mirror = noreg; // killed by next instruction
+        __ li(result, 0); // assume result is false
+        __ cmpdi(CR0, obj, 0);
+        __ cmpdi(CR1, klass, 0);
+        __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
+        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+
+        __ lwz(offset, in_bytes(Klass::super_check_offset_offset()), klass);
+        __ load_klass(sub_klass, obj);
+        __ cmpwi(CR0, offset, in_bytes(Klass::secondary_super_cache_offset()));
+        __ beq(CR0, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ ldx(R0, sub_klass, offset);
+        __ cmpd(CR0, klass, R0);
+        if (VM_Version::has_brw()) {
+          // Power10 can set the result by one instruction. No need for a branch.
+          __ setbc(result, CR0, Assembler::equal);
+        } else {
+          __ beq(CR0, success);
+        }
+        __ blr();
+
+        __ bind(is_secondary);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmpd(CR0, sub_klass, klass);
+        __ beq(CR0, success);
+
+        __ lookup_secondary_supers_table_var(sub_klass, klass,
+                                             /*temps*/R9, R10, R11, R12,
+                                             /*result*/R8);
+        __ cmpdi(CR0, R8, 0); // 0 means is subclass
+        if (VM_Version::has_brw()) {
+          // Power10 can set the result by one instruction. No need for a branch.
+          __ setbc(result, CR0, Assembler::equal);
+        } else {
+          __ beq(CR0, success);
+        }
+        __ blr();
+
+        __ bind(success);
+        __ li(result, 1);
         __ blr();
       }
       break;
@@ -807,10 +872,10 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm)
   // Check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them.
   __ ld(R0, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
-  __ cmpdi(CCR0, R0, 0);
+  __ cmpdi(CR0, R0, 0);
   __ asm_assert_eq("exception oop already set");
   __ ld(R0, in_bytes(JavaThread::exception_pc_offset() ), R16_thread);
-  __ cmpdi(CCR0, R0, 0);
+  __ cmpdi(CR0, R0, 0);
   __ asm_assert_eq("exception pc already set");
 #endif
 

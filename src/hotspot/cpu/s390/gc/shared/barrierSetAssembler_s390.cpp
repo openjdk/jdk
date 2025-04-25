@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -172,10 +171,6 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:

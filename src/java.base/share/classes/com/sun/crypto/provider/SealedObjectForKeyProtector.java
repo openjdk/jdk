@@ -81,7 +81,6 @@ final class SealedObjectForKeyProtector extends SealedObject {
                 .getExtObjectInputStream(this, c)) {
                 ois.setObjectInputFilter(new DeserializationChecker(maxLength));
             try {
-                @SuppressWarnings("unchecked")
                 Key t = (Key) ois.readObject();
                 return t;
             } catch (InvalidClassException ice) {

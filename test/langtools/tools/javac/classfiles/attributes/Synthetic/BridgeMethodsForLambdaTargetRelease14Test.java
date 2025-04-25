@@ -32,11 +32,10 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager
  *        ExpectedClass ExpectedClasses
- * @compile --enable-preview --source ${jdk.version} --target ${jdk.version}
- *          SyntheticTestDriver.java
+ * @compile SyntheticTestDriver.java
  *          ../lib/TestResult.java ../lib/TestBase.java
  * @compile --source 14 -target 14 -XDdeduplicateLambdas=false BridgeMethodsForLambdaTargetRelease14Test.java
- * @run main/othervm --enable-preview SyntheticTestDriver BridgeMethodsForLambdaTargetRelease14Test
+ * @run main SyntheticTestDriver BridgeMethodsForLambdaTargetRelease14Test
  */
 
 import java.util.Comparator;

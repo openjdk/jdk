@@ -96,7 +96,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
             this.keyBytes = key.getBytes();
             this.keyType = key.getEType();
         } catch (KrbException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException("key creation error", e);
         }
     }
 

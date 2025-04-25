@@ -34,10 +34,17 @@ import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a stack manipulation instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#STACK}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A stack manipulation instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="StackInstruction" target="#of" :
+ * StackInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"
+ * }
  *
+ * @see Opcode.Kind#STACK
  * @since 24
  */
 public sealed interface StackInstruction extends Instruction

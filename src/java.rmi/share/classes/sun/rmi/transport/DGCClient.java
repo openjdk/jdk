@@ -41,7 +41,7 @@ import java.rmi.dgc.VMID;
 import java.rmi.server.ObjID;
 
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.Util;
 
@@ -237,8 +237,7 @@ final class DGCClient {
                 throw new Error("internal error creating DGC stub");
             }
             renewCleanThread =
-                new NewThreadAction(new RenewCleanThread(),
-                                    "RenewClean-" + endpoint, true).run();
+                RuntimeUtil.newSystemThread(new RenewCleanThread(), "RenewClean-" + endpoint, true);
             renewCleanThread.start();
         }
 

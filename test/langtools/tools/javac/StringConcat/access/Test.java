@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.List;
  * @test
  * @bug     8151223
  * @summary String concatenation fails with implicit toString() on package-private class
- * @enablePreview
  *
  * @clean *
  * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java

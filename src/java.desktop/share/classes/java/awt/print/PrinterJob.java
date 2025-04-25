@@ -64,11 +64,6 @@ public abstract class PrinterJob {
      * @return a new {@code PrinterJob}.
      */
     public static PrinterJob getPrinterJob() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         return sun.print.PlatformPrinterJobProxy.getPrinterJob();
     }
 

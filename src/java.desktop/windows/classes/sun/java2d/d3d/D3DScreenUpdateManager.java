@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import sun.java2d.windows.WindowsFlags;
  * There are some restrictions to which windows we would use this for.
  * @see #createScreenSurface
  */
-public class D3DScreenUpdateManager extends ScreenUpdateManager
+public final class D3DScreenUpdateManager extends ScreenUpdateManager
     implements Runnable
 {
     /**
@@ -401,6 +401,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
         }
     }
 
+    @Override
     public void run() {
         while (!done) {
             synchronized (runLock) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ class BitMap {
   constexpr static void verify_size(idx_t size_in_bits) {
 #ifdef ASSERT
     assert(size_in_bits <= max_size_in_bits(),
-           "out of bounds: " SIZE_FORMAT, size_in_bits);
+           "out of bounds: %zu", size_in_bits);
 #endif
   }
 
@@ -393,7 +393,7 @@ class BitMap {
   void write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const;
 
   // Printing
-  void print_on_error(outputStream* st, const char* prefix) const;
+  void print_range_on(outputStream* st, const char* prefix) const;
   void print_on(outputStream* st) const;
 };
 

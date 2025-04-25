@@ -28,14 +28,9 @@ package javax.management;
 import com.sun.jmx.defaults.JmxProperties;
 import static com.sun.jmx.defaults.JmxProperties.JMX_INITIAL_BUILDER;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-import java.security.AccessController;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.lang.System.Logger.Level;
 import javax.management.loading.ClassLoaderRepository;
-import sun.reflect.misc.ReflectUtil;
-
 
 /**
  * <p>Provides MBean server references.  There are no instances of
@@ -101,38 +96,6 @@ public class MBeanServerFactory {
     private static MBeanServerBuilder builder = null;
 
     /**
-     * Provide a new {@link javax.management.MBeanServerBuilder}.
-     * @param builder The new MBeanServerBuilder that will be used to
-     *        create {@link javax.management.MBeanServer}s.
-     * @exception IllegalArgumentException if the given builder is null.
-     *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("setMBeanServerBuilder")</code>.
-     *
-     **/
-    // public static synchronized void
-    //    setMBeanServerBuilder(MBeanServerBuilder builder) {
-    //    checkPermission("setMBeanServerBuilder");
-    //    MBeanServerFactory.builder = builder;
-    // }
-
-    /**
-     * Get the current {@link javax.management.MBeanServerBuilder}.
-     *
-     * @return the current {@link javax.management.MBeanServerBuilder}.
-     *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("getMBeanServerBuilder")</code>.
-     *
-     **/
-    // public static synchronized MBeanServerBuilder getMBeanServerBuilder() {
-    //     checkPermission("getMBeanServerBuilder");
-    //     return builder;
-    // }
-
-    /**
      * Remove internal MBeanServerFactory references to a created
      * MBeanServer. This allows the garbage collector to remove the
      * MBeanServer object.
@@ -146,8 +109,6 @@ public class MBeanServerFactory {
      *
      */
     public static void releaseMBeanServer(MBeanServer mbeanServer) {
-        checkPermission("releaseMBeanServer");
-
         removeMBeanServer(mbeanServer);
     }
 
@@ -215,8 +176,6 @@ public class MBeanServerFactory {
      * MBeanServerBuilder}.
      */
     public static MBeanServer createMBeanServer(String domain)  {
-        checkPermission("createMBeanServer");
-
         final MBeanServer mBeanServer = newMBeanServer(domain);
         addMBeanServer(mBeanServer);
         return mBeanServer;
@@ -290,8 +249,6 @@ public class MBeanServerFactory {
      * MBeanServerBuilder}.
      */
     public static MBeanServer newMBeanServer(String domain)  {
-        checkPermission("newMBeanServer");
-
         // Get the builder. Creates a new one if necessary.
         //
         final MBeanServerBuilder mbsBuilder = getNewMBeanServerBuilder();
@@ -335,8 +292,6 @@ public class MBeanServerFactory {
     public static synchronized
             ArrayList<MBeanServer> findMBeanServer(String agentId) {
 
-        checkPermission("findMBeanServer");
-
         if (agentId == null)
             return new ArrayList<>(mBeanServerList);
 
@@ -379,16 +334,6 @@ public class MBeanServerFactory {
         }
     }
 
-    private static void checkPermission(String action)
-    throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanServerPermission(action);
-            sm.checkPermission(perm);
-        }
-    }
-
     private static synchronized void addMBeanServer(MBeanServer mbs) {
         mBeanServerList.add(mbs);
     }
@@ -420,7 +365,7 @@ public class MBeanServerFactory {
         }
 
         // No context class loader? Try with Class.forName()
-        return ReflectUtil.forName(builderClassName);
+        return Class.forName(builderClassName);
     }
 
     /**
@@ -450,10 +395,7 @@ public class MBeanServerFactory {
      **/
     private static synchronized void checkMBeanServerBuilder() {
         try {
-            GetPropertyAction act =
-                    new GetPropertyAction(JMX_INITIAL_BUILDER);
-            @SuppressWarnings("removal")
-            String builderClassName = AccessController.doPrivileged(act);
+            String builderClassName = System.getProperty(JMX_INITIAL_BUILDER);
 
             try {
                 final Class<?> newBuilderClass;
@@ -499,9 +441,6 @@ public class MBeanServerFactory {
      *
      * @return the new current {@link javax.management.MBeanServerBuilder}.
      *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not make it possible to instantiate
-     * a new builder.
      * @exception JMRuntimeException if the builder instantiation
      *   fails with a checked exception -
      *   {@link java.lang.ClassNotFoundException} etc...

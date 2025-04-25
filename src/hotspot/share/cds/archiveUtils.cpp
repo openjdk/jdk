@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
@@ -32,6 +31,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -45,6 +45,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
@@ -73,34 +74,39 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 }
 
 void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
-  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
-  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+  address* buff_bottom = (address*)ArchiveBuilder::current()->buffer_bottom();
+  address* rw_bottom   = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom   = (address*)ArchiveBuilder::current()->ro_region()->base();
+
+  // The bit in _ptrmap that cover the very first word in the rw/ro regions.
+  size_t rw_start = rw_bottom - buff_bottom;
+  size_t ro_start = ro_bottom - buff_bottom;
+
+  // The number of bits used by the rw/ro ptrmaps. We might have lots of zero
+  // bits at the bottom and top of rw/ro ptrmaps, but these zeros will be
+  // removed by FileMapInfo::write_bitmap_region().
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+
+  // The last (exclusive) bit in _ptrmap that covers the rw/ro regions.
+  // Note: _ptrmap is dynamically expanded only when an actual pointer is written, so
+  // it may not be as large as we want.
+  size_t rw_end = MIN2<size_t>(rw_start + rw_size, _ptrmap->size());
+  size_t ro_end = MIN2<size_t>(ro_start + ro_size, _ptrmap->size());
+
+  rw_ptrmap->initialize(rw_size);
+  ro_ptrmap->initialize(ro_size);
+
+  for (size_t rw_bit = rw_start; rw_bit < rw_end; rw_bit++) {
+    rw_ptrmap->at_put(rw_bit - rw_start, _ptrmap->at(rw_bit));
+  }
+
+  for(size_t ro_bit = ro_start; ro_bit < ro_end; ro_bit++) {
+    ro_ptrmap->at_put(ro_bit - ro_start, _ptrmap->at(ro_bit));
+  }
 
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
-
-  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
-  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
-  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
-  // E.g., if rw_bottom = (address*)100
-  //          ro_bottom = (address*)116
-  //       then for 64-bit platform:
-  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
-  size_t ro_start = ro_bottom - rw_bottom;
-
-  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
-  // See ArchivePtrMarker::compact()
-  _rw_ptrmap->initialize(rw_size);
-  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
-
-  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
-    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
-  }
-
-  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
-    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
-  }
-  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
@@ -123,7 +129,7 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
       }
       assert(idx < _ptrmap->size(), "must be");
       _ptrmap->set_bit(idx);
-      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
+      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
     }
   }
 }
@@ -137,7 +143,7 @@ void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
   size_t idx = ptr_loc - ptr_base();
   assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
   _ptrmap->clear_bit(idx);
-  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
+  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
 }
 
 class ArchivePtrBitmapCleaner: public BitMapClosure {
@@ -162,7 +168,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
     }
 
     return true;
@@ -227,7 +233,7 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
+    log_error(cds)("Failed to expand shared space to %zu bytes",
                     need_committed_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
@@ -238,7 +244,7 @@ void DumpRegion::commit_to(char* newtop) {
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+  log_debug(cds)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
@@ -264,7 +270,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
                  p2i(ArchiveBuilder::current()->to_requested(_base)));
 }
@@ -351,7 +357,7 @@ void ReadClosure::do_tag(int tag) {
 
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
-    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+    if (LambdaProxyClassDictionary::is_supported_invokedynamic(bootstrap_specifier)) {
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.
@@ -399,3 +405,162 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
+ArchiveWorkers::ArchiveWorkers() :
+        _end_semaphore(0),
+        _num_workers(max_workers()),
+        _started_workers(0),
+        _finish_tokens(0),
+        _state(UNUSED),
+        _task(nullptr) {}
+
+ArchiveWorkers::~ArchiveWorkers() {
+  assert(Atomic::load(&_state) != WORKING, "Should not be working");
+}
+
+int ArchiveWorkers::max_workers() {
+  // The pool is used for short-lived bursty tasks. We do not want to spend
+  // too much time creating and waking up threads unnecessarily. Plus, we do
+  // not want to overwhelm large machines. This is why we want to be very
+  // conservative about the number of workers actually needed.
+  return MAX2(0, log2i_graceful(os::active_processor_count()));
+}
+
+bool ArchiveWorkers::is_parallel() {
+  return _num_workers > 0;
+}
+
+void ArchiveWorkers::start_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_started_workers);
+    if (cur >= _num_workers) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
+      new ArchiveWorkerThread(this);
+      return;
+    }
+  }
+}
+
+void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
+  assert(Atomic::load(&_state) == UNUSED, "Should be unused yet");
+  assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
+  Atomic::store(&_state, WORKING);
+
+  if (is_parallel()) {
+    run_task_multi(task);
+  } else {
+    run_task_single(task);
+  }
+
+  assert(Atomic::load(&_state) == WORKING, "Should be working");
+  Atomic::store(&_state, SHUTDOWN);
+}
+
+void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
+  // Single thread needs no chunking.
+  task->configure_max_chunks(1);
+
+  // Execute the task ourselves, as there are no workers.
+  task->work(0, 1);
+}
+
+void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
+  // Multiple threads can work with multiple chunks.
+  task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
+
+  // Set up the run and publish the task. Issue one additional finish token
+  // to cover the semaphore shutdown path, see below.
+  Atomic::store(&_finish_tokens, _num_workers + 1);
+  Atomic::release_store(&_task, task);
+
+  // Kick off pool startup by starting a single worker, and proceed
+  // immediately to executing the task locally.
+  start_worker_if_needed();
+
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
+  task->run();
+
+  // Done executing task locally, wait for any remaining workers to complete.
+  // Once all workers report, we can proceed to termination. To do this safely,
+  // we need to make sure every worker has left. A spin-wait alone would suffice,
+  // but we do not want to burn cycles on it. A semaphore alone would not be safe,
+  // since workers can still be inside it as we proceed from wait here. So we block
+  // on semaphore first, and then spin-wait for all workers to terminate.
+  _end_semaphore.wait();
+  SpinYield spin;
+  while (Atomic::load(&_finish_tokens) != 0) {
+    spin.wait();
+  }
+
+  OrderAccess::fence();
+
+  assert(Atomic::load(&_finish_tokens) == 0, "All tokens are consumed");
+}
+
+void ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
+
+  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  task->run();
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
+  // Signal the pool the work is complete, and we are exiting.
+  // Worker cannot do anything else with the pool after this.
+  if (Atomic::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
+    // Last worker leaving. Notify the pool it can unblock to spin-wait.
+    // Then consume the last token and leave.
+    _end_semaphore.signal();
+    int last = Atomic::sub(&_finish_tokens, 1, memory_order_relaxed);
+    assert(last == 0, "Should be");
+  }
+}
+
+void ArchiveWorkerTask::run() {
+  while (true) {
+    int chunk = Atomic::load(&_chunk);
+    if (chunk >= _max_chunks) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+      assert(0 <= chunk && chunk < _max_chunks, "Sanity");
+      work(chunk, _max_chunks);
+    }
+  }
+}
+
+void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
+  if (_max_chunks == 0) {
+    _max_chunks = max_chunks;
+  }
+}
+
+ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
+  set_name("ArchiveWorkerThread");
+  if (os::create_thread(this, os::os_thread)) {
+    os::start_thread(this);
+  } else {
+    vm_exit_during_initialization("Unable to create archive worker",
+                                  os::native_thread_creation_failed_msg());
+  }
+}
+
+void ArchiveWorkerThread::run() {
+  // Avalanche startup: each worker starts two others.
+  _pool->start_worker_if_needed();
+  _pool->start_worker_if_needed();
+
+  // Set ourselves up.
+  os::set_priority(this, NearMaxPriority);
+
+  // Work.
+  _pool->run_as_worker();
+}
+
+void ArchiveWorkerThread::post_run() {
+  this->NamedThread::post_run();
+  delete this;
+}

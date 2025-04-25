@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -68,12 +67,7 @@ inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key
 static OffsetCompactHashtable<
   const char*, Symbol*,
   symbol_equals_compact_hashtable_entry
-> _shared_table;
-
-static OffsetCompactHashtable<
-  const char*, Symbol*,
-  symbol_equals_compact_hashtable_entry
-> _dynamic_shared_table;
+> _shared_table, _dynamic_shared_table, _shared_table_for_dumping;
 
 // --------------------------------------------------------------------------
 
@@ -214,7 +208,7 @@ private:
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = log2i_ceil(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
-  log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(symboltable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);
   _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
 
@@ -573,23 +567,35 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   return sym;
 }
 
-struct SizeFunc : StackObj {
-  size_t operator()(Symbol* value) {
+TableStatistics SymbolTable::get_table_statistics() {
+  static TableStatistics ts;
+  auto sz = [&](Symbol* value) {
     assert(value != nullptr, "expected valid value");
     return (value)->size() * HeapWordSize;
   };
+
+  Thread* jt = Thread::current();
+  SymbolTableHash::StatisticsTask sts(_local_table);
+  if (!sts.prepare(jt)) {
+    return ts;  // return old table statistics
+  }
+  {
+    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, symboltable, perf));
+    while (sts.do_task(jt, sz)) {
+      sts.pause(jt);
+      if (jt->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(jt));
+      }
+      sts.cont(jt);
+    }
+  }
+  ts = sts.done(jt);
+  return ts;
 };
 
-TableStatistics SymbolTable::get_table_statistics() {
-  static TableStatistics ts;
-  SizeFunc sz;
-  ts = _local_table->statistics_get(Thread::current(), sz, ts);
-  return ts;
-}
-
 void SymbolTable::print_table_statistics(outputStream* st) {
-  SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, "SymbolTable");
+  TableStatistics ts = get_table_statistics();
+  ts.print(st, "SymbolTable");
 
   if (!_shared_table.empty()) {
     _shared_table.print_table_statistics(st, "Shared Symbol Table");
@@ -694,39 +700,27 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   }
 }
 
-size_t SymbolTable::estimate_size_for_archive() {
-  if (_items_count > (size_t)max_jint) {
-    fatal("Too many symbols to be archived: %zu", _items_count);
-  }
-  return CompactHashtableWriter::estimate_size(int(_items_count));
-}
-
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
-  if (CDSConfig::is_dumping_static_archive()) {
-    _shared_table.reset();
-    writer.dump(&_shared_table, "symbol");
-  } else {
-    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
-    _dynamic_shared_table.reset();
-    writer.dump(&_dynamic_shared_table, "symbol");
-  }
+  _shared_table_for_dumping.reset();
+  writer.dump(&_shared_table_for_dumping, "symbol");
 }
 
 void SymbolTable::serialize_shared_table_header(SerializeClosure* soc,
                                                 bool is_static_archive) {
   OffsetCompactHashtable<const char*, Symbol*, symbol_equals_compact_hashtable_entry> * table;
-  if (is_static_archive) {
-    table = &_shared_table;
+  if (soc->reading()) {
+    if (is_static_archive) {
+      table = &_shared_table;
+    } else {
+      table = &_dynamic_shared_table;
+    }
   } else {
-    table = &_dynamic_shared_table;
+    table = &_shared_table_for_dumping;
   }
+
   table->serialize_header(soc);
-  if (soc->writing()) {
-    // Sanity. Make sure we don't use the shared table at dump time
-    table->reset();
-  }
 }
 #endif //INCLUDE_CDS
 
@@ -749,7 +743,7 @@ void SymbolTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_debug(symboltable)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_debug(symboltable)("Grown to size:%zu", _current_size);
 }
 
 struct SymbolTableDoDelete : StackObj {
@@ -798,7 +792,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   Atomic::add(&_symbols_counted, stdc._processed);
 
-  log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
+  log_debug(symboltable)("Cleaned %zu of %zu",
                          stdd._deleted, stdc._processed);
 }
 
@@ -931,29 +925,29 @@ void SymbolTable::print_histogram() {
   HistogramIterator hi;
   _local_table->do_scan(Thread::current(), hi);
   tty->print_cr("Symbol Table Histogram:");
-  tty->print_cr("  Total number of symbols  " SIZE_FORMAT_W(7), hi.total_count);
-  tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K", (hi.total_size * wordSize) / K);
-  tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), _symbols_counted);
-  tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
+  tty->print_cr("  Total number of symbols  %7zu", hi.total_count);
+  tty->print_cr("  Total size in memory     %7zuK", (hi.total_size * wordSize) / K);
+  tty->print_cr("  Total counted            %7zu", _symbols_counted);
+  tty->print_cr("  Total removed            %7zu", _symbols_removed);
   if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
           ((double)_symbols_removed / (double)_symbols_counted) * 100);
   }
-  tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
-  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
-  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
-  tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
-  tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
+  tty->print_cr("  Reference counts         %7zu", Symbol::_total_count);
+  tty->print_cr("  Symbol arena used        %7zuK", arena()->used() / K);
+  tty->print_cr("  Symbol arena size        %7zuK", arena()->size_in_bytes() / K);
+  tty->print_cr("  Total symbol length      %7zu", hi.total_length);
+  tty->print_cr("  Maximum symbol length    %7zu", hi.max_length);
   tty->print_cr("  Average symbol length    %7.2f", ((double)hi.total_length / (double)hi.total_count));
   tty->print_cr("  Symbol length histogram:");
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (size_t i = 0; i < hi.results_length; i++) {
     if (hi.counts[i] > 0) {
-      tty->print_cr("    " SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K",
+      tty->print_cr("    %6zu %10zu %10zuK",
                     i, hi.counts[i], (hi.sizes[i] * wordSize) / K);
     }
   }
-  tty->print_cr("  >=" SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K\n",
+  tty->print_cr("  >= %6zu %10zu %10zuK\n",
                 hi.results_length, hi.out_of_range_count, (hi.out_of_range_size*wordSize) / K);
 }
 #endif // PRODUCT

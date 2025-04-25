@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,11 +511,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
 
     public DocPrintJob createPrintJob() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         // REMIND: create IPPPrintJob
         return new UnixPrintJob(this);
     }
@@ -577,8 +572,15 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
                 !isIPPSupportedImages(flavor.getMimeType())) {
-                Chromaticity[]arr = new Chromaticity[1];
-                arr[0] = Chromaticity.COLOR;
+                Chromaticity[] arr;
+                if (PrintServiceLookupProvider.isMac()) {
+                    arr = new Chromaticity[2];
+                    arr[0] = Chromaticity.COLOR;
+                    arr[1] = Chromaticity.MONOCHROME;
+                } else {
+                    arr = new Chromaticity[1];
+                    arr[0] = Chromaticity.COLOR;
+                }
                 return (arr);
             } else {
                 return null;
@@ -587,15 +589,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (flavor == null ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-                try {
                     return new Destination((new File("out.ps")).toURI());
-                } catch (SecurityException se) {
-                    try {
-                        return new Destination(new URI("file:out.ps"));
-                    } catch (URISyntaxException e) {
-                        return null;
-                    }
-                }
             }
             return null;
         } else if (category == Fidelity.class) {
@@ -797,11 +791,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return null;
             }
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == Sides.class) {
             // The printer takes care of Sides so if short-edge
@@ -1417,7 +1407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
                 !isIPPSupportedImages(flavor.getMimeType())) {
-                return attr == Chromaticity.COLOR;
+                return PrintServiceLookupProvider.isMac() || attr == Chromaticity.COLOR;
             } else {
                 return false;
             }
@@ -1574,15 +1564,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         } else if (category == Chromaticity.class) {
             return Chromaticity.COLOR;
         } else if (category == Destination.class) {
-            try {
-                return new Destination((new File("out.ps")).toURI());
-            } catch (SecurityException se) {
-                try {
-                    return new Destination(new URI("file:out.ps"));
-                } catch (URISyntaxException e) {
-                    return null;
-                }
-            }
+            return new Destination((new File("out.ps")).toURI());
         } else if (category == Fidelity.class) {
             return Fidelity.FIDELITY_FALSE;
         } else if (category == Finishings.class) {
@@ -1674,11 +1656,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return new PageRanges(1, Integer.MAX_VALUE);
             }
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == SheetCollate.class) {
             return SheetCollate.UNCOLLATED;

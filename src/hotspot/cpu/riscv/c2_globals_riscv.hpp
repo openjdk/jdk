@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ define_pd_global(bool, TieredCompilation,            COMPILER1_PRESENT(true) NOT
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
-define_pd_global(intx, ConditionalMoveLimit,         0);
+define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, InteriorEntryAlignment,       16);

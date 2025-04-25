@@ -104,7 +104,7 @@ public abstract sealed class AbstractPoolEntry {
         return hash;
     }
 
-    public abstract byte tag();
+    public abstract int tag();
 
     public int width() {
         return 1;
@@ -181,7 +181,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_UTF8;
         }
 
@@ -522,7 +522,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_CLASS;
         }
 
@@ -582,7 +582,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_PACKAGE;
         }
 
@@ -613,7 +613,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_MODULE;
         }
 
@@ -645,7 +645,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_NAME_AND_TYPE;
         }
 
@@ -719,7 +719,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_FIELDREF;
         }
 
@@ -737,7 +737,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHODREF;
         }
 
@@ -755,7 +755,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INTERFACE_METHODREF;
         }
 
@@ -849,7 +849,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INVOKE_DYNAMIC;
         }
 
@@ -874,7 +874,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_DYNAMIC;
         }
 
@@ -905,7 +905,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHOD_HANDLE;
         }
 
@@ -964,7 +964,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHOD_TYPE;
         }
 
@@ -1002,7 +1002,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_STRING;
         }
 
@@ -1054,7 +1054,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INTEGER;
         }
 
@@ -1100,7 +1100,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_FLOAT;
         }
 
@@ -1145,7 +1145,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_LONG;
         }
 
@@ -1195,7 +1195,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_DOUBLE;
         }
 

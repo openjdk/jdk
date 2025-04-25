@@ -28,7 +28,6 @@ package jdk.internal.vm;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.security.action.GetPropertyAction;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class Continuation {
 
         StackChunk.init(); // ensure StackChunk class is initialized
 
-        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopedValueCache");
+        String value = System.getProperty("jdk.preserveScopedValueCache");
         PRESERVE_SCOPED_VALUE_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
@@ -503,7 +502,7 @@ public class Continuation {
     }
 
     private static boolean isEmptyOrTrue(String property) {
-        String value = GetPropertyAction.privilegedGetProperty(property);
+        String value = System.getProperty(property);
         if (value == null)
             return false;
         return value.isEmpty() || Boolean.parseBoolean(value);

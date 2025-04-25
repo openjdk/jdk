@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -70,6 +69,7 @@
 #include "gc/shared/workerUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -210,8 +210,8 @@ void SplitInfo::verify_clear()
 #endif  // #ifdef ASSERT
 
 
-void PSParallelCompact::print_on_error(outputStream* st) {
-  _mark_bitmap.print_on_error(st);
+void PSParallelCompact::print_on(outputStream* st) {
+  _mark_bitmap.print_on(st);
 }
 
 ParallelCompactData::ParallelCompactData() :
@@ -240,27 +240,38 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
+  const size_t rs_align = MAX2(page_sz, granularity);
 
-  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
-    MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  _reserved_byte_size = align_up(raw_bytes, rs_align);
+
+  ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
+                                             rs_align,
+                                             page_sz);
+
+  if (!rs.is_reserved()) {
+    // Failed to reserve memory.
+    return nullptr;
+  }
+
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
-  if (vspace != nullptr) {
-    if (vspace->expand_by(_reserved_byte_size)) {
-      return vspace;
-    }
+
+  if (!vspace->expand_by(_reserved_byte_size)) {
+    // Failed to commit memory.
+
     delete vspace;
+
     // Release memory reserved in the space.
-    rs.release();
+    MemoryReserver::release(rs);
+
+    return nullptr;
   }
 
-  return nullptr;
+  return vspace;
 }
 
 bool ParallelCompactData::initialize_region_data(size_t heap_size)
@@ -362,8 +373,9 @@ HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
 
     split_info.record(split_region, overflowing_obj, preceding_live_words);
 
-    HeapWord* src_region_start = region_to_addr(src_region);
-    HeapWord* new_top = destination - pointer_delta(src_region_start, overflowing_obj);
+    // The [overflowing_obj, src_region_start) part has been accounted for, so
+    // must move back the new_top, now that this overflowing obj is deferred.
+    HeapWord* new_top = destination - pointer_delta(region_to_addr(src_region), overflowing_obj);
 
     // If the overflowing obj was relocated to its original destination,
     // those destination regions would have their source_region set. Now that
@@ -576,16 +588,16 @@ bool PSParallelCompact::initialize_aux_data() {
 
   if (!_mark_bitmap.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB bitmaps for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB card tables for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
@@ -890,7 +902,7 @@ void PSParallelCompact::summary_phase()
       _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
-    // Compacting objs inn [dense_prefix_end, old_space->top())
+    // Compacting objs in [dense_prefix_end, old_space->top())
     _summary_data.summarize(_space_info[id].split_info(),
                             dense_prefix_end, old_space->top(), nullptr,
                             dense_prefix_end, old_space->end(),
@@ -981,10 +993,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
-  if (GCLocker::check_active_before_gc()) {
-    return false;
-  }
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCIdMark gc_id_mark;
@@ -1067,7 +1075,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     if (UseAdaptiveSizePolicy) {
       log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
-      log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+      log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                           old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
       // Don't check if the size_policy is ready here.  Let
@@ -1202,12 +1210,9 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
   do {
-    oop obj = nullptr;
-    ObjArrayTask task;
-    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
-      cm->follow_array((objArrayOop)task.obj(), task.index());
-    } else if (ParCompactionManager::steal(worker_id, obj)) {
-      cm->follow_contents(obj);
+    ScannerTask task;
+    if (ParCompactionManager::steal(worker_id, task)) {
+      cm->follow_contents(task, true);
     }
     cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
@@ -1223,7 +1228,7 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _terminator(active_workers, ParCompactionManager::oop_task_queues()),
+      _terminator(active_workers, ParCompactionManager::marking_stacks()),
       _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
@@ -1261,7 +1266,7 @@ class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelCompactRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
-      _terminator(_max_workers, ParCompactionManager::oop_task_queues()) {}
+      _terminator(_max_workers, ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -1371,8 +1376,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
 #if TASKQUEUE_STATS
-  ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
-  ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+  ParCompactionManager::print_and_reset_taskqueue_stats();
 #endif
 }
 
@@ -1596,9 +1600,9 @@ void PSParallelCompact::forward_to_new_addr() {
                                  &start_region, &end_region);
         for (size_t cur_region = start_region; cur_region < end_region; ++cur_region) {
           RegionData* region_ptr = _summary_data.region(cur_region);
-          size_t live_words = region_ptr->partial_obj_size();
+          size_t partial_obj_size = region_ptr->partial_obj_size();
 
-          if (live_words == ParallelCompactData::RegionSize) {
+          if (partial_obj_size == ParallelCompactData::RegionSize) {
             // No obj-start
             continue;
           }
@@ -1606,19 +1610,18 @@ void PSParallelCompact::forward_to_new_addr() {
           HeapWord* region_start = _summary_data.region_to_addr(cur_region);
           HeapWord* region_end = region_start + ParallelCompactData::RegionSize;
 
-
           if (split_info.is_split(cur_region)) {
             // Part 1: will be relocated to space-1
             HeapWord* preceding_destination = split_info.preceding_destination();
             HeapWord* split_point = split_info.split_point();
-            forward_objs_in_range(cm, region_start + live_words, split_point, preceding_destination + live_words);
+            forward_objs_in_range(cm, region_start + partial_obj_size, split_point, preceding_destination + partial_obj_size);
 
             // Part 2: will be relocated to space-2
             HeapWord* destination = region_ptr->destination();
             forward_objs_in_range(cm, split_point, region_end, destination);
           } else {
             HeapWord* destination = region_ptr->destination();
-            forward_objs_in_range(cm, region_start + live_words, region_end, destination + live_words);
+            forward_objs_in_range(cm, region_start + partial_obj_size, region_end, destination + partial_obj_size);
           }
         }
       }
@@ -1681,7 +1684,7 @@ private:
 public:
   FillableRegionLogger() : _next_index(0), _enabled(log_develop_is_enabled(Trace, gc, compaction)), _total_regions(0) { }
   ~FillableRegionLogger() {
-    log.trace(SIZE_FORMAT " initially fillable regions", _total_regions);
+    log.trace("%zu initially fillable regions", _total_regions);
   }
 
   void print_line() {
@@ -1690,7 +1693,7 @@ public:
     }
     FormatBuffer<> line("Fillable: ");
     for (int i = 0; i < _next_index; i++) {
-      line.append(" " SIZE_FORMAT_W(7), _regions[i]);
+      line.append(" %7zu", _regions[i]);
     }
     log.trace("%s", line.buffer());
     _next_index = 0;
@@ -1984,11 +1987,11 @@ HeapWord* PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_
   }
 }
 
-// On filling a destination region (dest-region), we need to know the location
-// of the word that will be at the start of the dest-region after compaction.
-// A dest-region can have one or more source regions, but only the first
-// source-region contains this location. This location is retrieved by calling
-// `first_src_addr` on a dest-region.
+// On starting to fill a destination region (dest-region), we need to know the
+// location of the word that will be at the start of the dest-region after
+// compaction. A dest-region can have one or more source regions, but only the
+// first source-region contains this location. This location is retrieved by
+// calling `first_src_addr` on a dest-region.
 // Conversely, a source-region has a dest-region which holds the destination of
 // the first live word on this source-region, based on which the destination
 // for the rest of live words can be derived.
@@ -2017,9 +2020,9 @@ HeapWord* PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_
 //              ^                  ^
 //              | old-space-end    | eden-space-start
 //
-// Therefore, in this example, region-n will have two dest-regions, one for
-// the final region in old-space and the other for the first region in
-// eden-space.
+// Therefore, in this example, region-n will have two dest-regions:
+// 1. the final region in old-space
+// 2. the first region in eden-space.
 // To handle this special case, we introduce the concept of split-region, whose
 // contents are relocated to two spaces. `SplitInfo` captures all necessary
 // info about the split, the first part, spliting-point, and the second part.
@@ -2137,13 +2140,9 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
   }
 
   if (src_region_ptr < top_region_ptr) {
-    // The next source region is in the current space.  Update src_region_idx
-    // and the source address to match src_region_ptr.
+    // Found the first non-empty region in the same space.
     src_region_idx = sd.region(src_region_ptr);
-    HeapWord* const src_region_addr = sd.region_to_addr(src_region_idx);
-    if (src_region_addr > closure.source()) {
-      closure.set_source(src_region_addr);
-    }
+    closure.set_source(sd.region_to_addr(src_region_idx));
     return src_region_idx;
   }
 
@@ -2167,13 +2166,10 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
       RegionData* cur = sd.region(cur_region);
       if (cur->live_obj_size() > 0) {
         HeapWord* region_start_addr = sd.region_to_addr(cur_region);
-        HeapWord* region_end_addr = region_start_addr + ParallelCompactData::RegionSize;
-        HeapWord* first_live_word = mark_bitmap()->find_obj_beg(region_start_addr, region_end_addr);
-        assert(first_live_word < region_end_addr, "inv");
 
         src_space_id = SpaceId(space_id);
         src_space_top = top;
-        closure.set_source(first_live_word);
+        closure.set_source(region_start_addr);
         return cur_region;
       }
     }
@@ -2478,4 +2474,3 @@ void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallel
     ParCompactionManager::push_shadow_region_mt_safe(_shadow);
   }
 }
-

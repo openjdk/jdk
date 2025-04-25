@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -47,6 +47,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedKlass.inline.hpp"
@@ -152,9 +153,6 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
-  _last_verified_top(nullptr),
-  _num_dump_regions_used(0),
-  _other_region_used_bytes(0),
   _requested_static_archive_bottom(nullptr),
   _requested_static_archive_top(nullptr),
   _requested_dynamic_archive_bottom(nullptr),
@@ -162,6 +160,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _mapped_static_archive_bottom(nullptr),
   _mapped_static_archive_top(nullptr),
   _buffer_to_requested_delta(0),
+  _pz_region("pz", MAX_SHARED_DELTA), // protection zone -- used only during dumping; does NOT exist in cds archive.
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
@@ -171,9 +170,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _total_heap_region_size(0),
-  _estimated_metaspaceobj_bytes(0),
-  _estimated_hashtable_bytes(0)
+  _total_heap_region_size(0)
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
@@ -193,8 +190,10 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   if (_shared_rs.is_reserved()) {
-    _shared_rs.release();
+    MemoryReserver::release(_shared_rs);
   }
+
+  AOTArtifactFinder::dispose();
 }
 
 // Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
@@ -232,13 +231,8 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
       _klasses->append(klass);
       if (klass->is_hidden()) {
         assert(klass->is_instance_klass(), "must be");
-        assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
       }
     }
-    // See RunTimeClassInfo::get_for(): make sure we have enough space for both maximum
-    // Klass alignment as well as the RuntimeInfo* pointer we will embed in front of a Klass.
-    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, CompressedKlassPointers::klass_alignment_in_bytes()) +
-        align_up(sizeof(void*), SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
@@ -246,14 +240,15 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     _symbols->append(sym);
   }
 
-  int bytes = ref->size() * BytesPerWord;
-  _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
-
   return true; // recurse
 }
 
 void ArchiveBuilder::gather_klasses_and_symbols() {
   ResourceMark rm;
+
+  AOTArtifactFinder::initialize();
+  AOTArtifactFinder::find_artifacts();
+
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
@@ -287,10 +282,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     log_info(cds)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
-
-    // TODO -- we need a proper estimate for the archived modules, etc,
-    // but this should be enough for now
-    _estimated_metaspaceobj_bytes += 200 * 1024 * 1024;
   }
 
   AOTClassLinker::add_candidates();
@@ -314,57 +305,30 @@ void ArchiveBuilder::sort_klasses() {
   _klasses->sort(compare_klass_by_name);
 }
 
-size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeClassInfo's
-  size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
-  size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
-  _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
-
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
-    // This is difficult to estimate when dumping the dynamic archive, as the
-    // AOTLinkedClassTable may need to contain classes in the static archive as well.
-    //
-    // Just give a generous estimate for now. We will remove estimate_archive_size()
-    // in JDK-8340416
-    _estimated_hashtable_bytes += 20 * 1024 * 1024;
-  }
-
-  size_t total = 0;
-
-  total += _estimated_metaspaceobj_bytes;
-  total += _estimated_hashtable_bytes;
-
-  // allow fragmentation at the end of each dump region
-  total += _total_dump_regions * MetaspaceShared::core_region_alignment();
-
-  log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
-                symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
-  log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
-  log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
-
-  return align_up(total, MetaspaceShared::core_region_alignment());
-}
-
 address ArchiveBuilder::reserve_buffer() {
-  size_t buffer_size = estimate_archive_size();
-  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
+  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M);
+  ReservedSpace rs = MemoryReserver::reserve(buffer_size,
+                                             MetaspaceShared::core_region_alignment(),
+                                             os::vm_page_size());
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
+    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
+  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
   _buffer_bottom = buffer_bottom;
-  _last_verified_top = buffer_bottom;
-  _current_dump_region = &_rw_region;
-  _num_dump_regions_used = 1;
-  _other_region_used_bytes = 0;
+
+  if (CDSConfig::is_dumping_static_archive()) {
+    _current_dump_region = &_pz_region;
+  } else {
+    _current_dump_region = &_rw_region;
+  }
   _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
@@ -406,7 +370,8 @@ address ArchiveBuilder::reserve_buffer() {
   if (CDSConfig::is_dumping_static_archive()) {
     // We don't want any valid object to be at the very bottom of the archive.
     // See ArchivePtrMarker::mark_pointer().
-    rw_region()->allocate(16);
+    _pz_region.allocate(MetaspaceShared::protection_zone_size());
+    start_dump_region(&_rw_region);
   }
 
   return buffer_bottom;
@@ -547,9 +512,8 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (MetaspaceShared::is_shared_static(bottom)) {
+    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_shared_static(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
-      assert(CDSConfig::is_dumping_dynamic_archive(), "sanity");
       return false;
     } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
@@ -561,7 +525,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
 
 ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref *ref) {
   address obj = ref->obj();
-  if (MetaspaceShared::is_in_shared_metaspace(obj)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
@@ -583,28 +547,8 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
 }
 
 void ArchiveBuilder::start_dump_region(DumpRegion* next) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  _other_region_used_bytes += size_t(top - bottom);
-
   current_dump_region()->pack(next);
   _current_dump_region = next;
-  _num_dump_regions_used ++;
-
-  _last_verified_top = (address)(current_dump_region()->top());
-}
-
-void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  size_t used = size_t(top - bottom) + _other_region_used_bytes;
-  int diff = int(estimate) - int(used);
-
-  log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
-  assert(diff >= 0, "Estimate is too small");
-
-  _last_verified_top = top;
-  _other_region_used_bytes = 0;
 }
 
 char* ArchiveBuilder::ro_strdup(const char* s) {
@@ -846,6 +790,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* aotlinked_msg = "";
     const char* inited_msg = "";
     Klass* k = get_buffered_addr(klasses()->at(i));
+    bool inited = false;
     k->remove_java_mirror();
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
@@ -870,7 +815,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       InstanceKlass* src_ik = get_source_addr(ik);
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
-      bool inited = ik->has_aot_initialized_mirror();
+      inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
       if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
@@ -893,7 +838,7 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
-        if (CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_method_handles()) {
           assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
@@ -951,7 +896,11 @@ void ArchiveBuilder::make_klasses_shareable() {
         aotlinked_msg = " aot-linked";
       }
       if (inited) {
-        inited_msg = " inited";
+        if (InstanceKlass::cast(k)->static_field_size() == 0) {
+          inited_msg = " inited (no static fields)";
+        } else {
+          inited_msg = " inited";
+        }
       }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
@@ -1242,7 +1191,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
+      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1262,7 +1211,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     size_t size = top - base;
     base = requested_base;
     top = requested_base + size;
-    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " " SIZE_FORMAT_W(9) " bytes]",
+    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
 
@@ -1294,11 +1243,16 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       if (source_oop != nullptr) {
         // This is a regular oop that got archived.
-        print_oop_with_requested_addr_cr(&st, source_oop, false);
+        // Don't print the requested addr again as we have just printed it at the beginning of the line.
+        // Example:
+        // 0x00000007ffd27938: @@ Object (0xfffa4f27) java.util.HashMap
+        print_oop_info_cr(&st, source_oop, /*print_requested_addr=*/false);
         byte_size = source_oop->size() * BytesPerWord;
       } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
-        st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
+        // Example:
+        // 0x00000007ffc3ffd8: @@ Object filler 40 bytes
+        st.print_cr("filler %zu bytes", byte_size);
       } else {
         ShouldNotReachHere();
       }
@@ -1315,7 +1269,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   // ArchivedFieldPrinter is used to print the fields of archived objects. We can't
   // use _source_obj->print_on(), because we want to print the oop fields
-  // in _source_obj with their requested addresses using print_oop_with_requested_addr_cr().
+  // in _source_obj with their requested addresses using print_oop_info_cr().
   class ArchivedFieldPrinter : public FieldClosure {
     ArchiveHeapInfo* _heap_info;
     outputStream* _st;
@@ -1331,8 +1285,14 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       switch (ft) {
       case T_ARRAY:
       case T_OBJECT:
-        fd->print_on(_st); // print just the name and offset
-        print_oop_with_requested_addr_cr(_st, _source_obj->obj_field(fd->offset()));
+        {
+          fd->print_on(_st); // print just the name and offset
+          oop obj = _source_obj->obj_field(fd->offset());
+          if (java_lang_Class::is_instance(obj)) {
+            obj = HeapShared::scratch_java_mirror(obj);
+          }
+          print_oop_info_cr(_st, obj);
+        }
         break;
       default:
         if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
@@ -1388,14 +1348,54 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         objArrayOop source_obj_array = objArrayOop(source_oop);
         for (int i = 0; i < source_obj_array->length(); i++) {
           st.print(" -%4d: ", i);
-          print_oop_with_requested_addr_cr(&st, source_obj_array->obj_at(i));
+          oop obj = source_obj_array->obj_at(i);
+          if (java_lang_Class::is_instance(obj)) {
+            obj = HeapShared::scratch_java_mirror(obj);
+          }
+          print_oop_info_cr(&st, obj);
         }
       } else {
-        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
+        st.print_cr(" - fields (%zu words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
+
+        if (java_lang_Class::is_instance(source_oop)) {
+          oop scratch_mirror = source_oop;
+          st.print(" - signature: ");
+          print_class_signature_for_mirror(&st, scratch_mirror);
+          st.cr();
+
+          Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
+          if (src_klass != nullptr && src_klass->is_instance_klass()) {
+            oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
+            st.print(" - archived_resolved_references: ");
+            print_oop_info_cr(&st, rr);
+
+            // We need to print the fields in the scratch_mirror, not the original mirror.
+            // (if a class is not aot-initialized, static fields in its scratch mirror will be cleared).
+            assert(scratch_mirror == HeapShared::scratch_java_mirror(src_klass->java_mirror()), "sanity");
+            st.print_cr("- ---- static fields (%d):", java_lang_Class::static_oop_field_count(scratch_mirror));
+            InstanceKlass::cast(src_klass)->do_local_static_fields(&print_field);
+          }
+        }
       }
     }
+  }
+
+  static void print_class_signature_for_mirror(outputStream* st, oop scratch_mirror) {
+    assert(java_lang_Class::is_instance(scratch_mirror), "sanity");
+    if (java_lang_Class::is_primitive(scratch_mirror)) {
+      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+        BasicType bt = (BasicType)i;
+        if (!is_reference_type(bt) && scratch_mirror == HeapShared::scratch_java_mirror(bt)) {
+          oop orig_mirror = Universe::java_mirror(bt);
+          java_lang_Class::print_signature(orig_mirror, st);
+          return;
+        }
+      }
+      ShouldNotReachHere();
+    }
+    java_lang_Class::print_signature(scratch_mirror, st);
   }
 
   static void log_heap_roots() {
@@ -1403,22 +1403,23 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     if (st.is_enabled()) {
       for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
         st.print("roots[%4d]: ", i);
-        print_oop_with_requested_addr_cr(&st, HeapShared::pending_roots()->at(i));
+        print_oop_info_cr(&st, HeapShared::pending_roots()->at(i));
       }
     }
   }
 
-  // The output looks like this. The first number is the requested address. The second number is
-  // the narrowOop version of the requested address.
-  //     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class
+  // Example output:
+  // - The first number is the requested address (if print_requested_addr == true)
+  // - The second number is the narrowOop version of the requested address (if UseCompressedOops == true)
+  //     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class Ljava/util/Array;
   //     0x00000007ffc000f8 (0xfff8001f) [B length: 11
-  static void print_oop_with_requested_addr_cr(outputStream* st, oop source_oop, bool print_addr = true) {
+  static void print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr = true) {
     if (source_oop == nullptr) {
       st->print_cr("null");
     } else {
       ResourceMark rm;
       oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(source_oop);
-      if (print_addr) {
+      if (print_requested_addr) {
         st->print(PTR_FORMAT " ", p2i(requested_obj));
       }
       if (UseCompressedOops) {
@@ -1428,7 +1429,27 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         int array_len = arrayOop(source_oop)->length();
         st->print_cr("%s length: %d", source_oop->klass()->external_name(), array_len);
       } else {
-        st->print_cr("%s", source_oop->klass()->external_name());
+        st->print("%s", source_oop->klass()->external_name());
+
+        if (java_lang_String::is_instance(source_oop)) {
+          st->print(" ");
+          java_lang_String::print(source_oop, st);
+        } else if (java_lang_Class::is_instance(source_oop)) {
+          oop scratch_mirror = source_oop;
+
+          st->print(" ");
+          print_class_signature_for_mirror(st, scratch_mirror);
+
+          Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
+          if (src_klass != nullptr && src_klass->is_instance_klass()) {
+            InstanceKlass* buffered_klass =
+              ArchiveBuilder::current()->get_buffered_addr(InstanceKlass::cast(src_klass));
+            if (buffered_klass->has_aot_initialized_mirror()) {
+              st->print(" (aot-inited)");
+            }
+          }
+        }
+        st->cr();
       }
     }
   }
@@ -1523,6 +1544,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   mapinfo->close();
 
   if (log_is_enabled(Info, cds)) {
+    log_info(cds)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
     print_stats();
   }
 
@@ -1559,12 +1581,12 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
     print_heap_region_stats(heap_info, total_reserved);
   }
 
-  log_debug(cds)("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
+  log_debug(cds)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used]",
+  log_debug(cds)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
                  size, size/double(total_size)*100.0, size);
 }
 
@@ -1572,7 +1594,7 @@ void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total
   char* start = info->buffer_start();
   size_t size = info->buffer_byte_size();
   char* top = start + size;
-  log_debug(cds)("hp space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));
 }
 

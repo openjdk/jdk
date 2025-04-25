@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451 8044009 8044010
  * @summary Test population of reference info for nested types
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java NestedTypes.java
  * @run main Driver NestedTypes

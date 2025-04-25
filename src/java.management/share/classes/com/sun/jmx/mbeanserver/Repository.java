@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public class Repository {
 
         // Set domain to default if domain is empty and not already set
         if (dom.length() == 0)
-            name = Util.newObjectName(domain + name.toString());
+            name = sun.management.Util.newObjectName(domain + name.toString());
 
         // Do we have default domain ?
         if (dom == domain) {  // ES: OK (dom & domain are interned)
@@ -438,10 +438,9 @@ public class Repository {
                 if (allNames)
                     result.addAll(moiTb.values());
                 else
-                    addAllMatching(moiTb, result, Util.newObjectName(domain + name.getCanonicalName()));
+                    addAllMatching(moiTb, result, sun.management.Util.newObjectName(domain + name.getCanonicalName()));
                 return result;
             }
-
             if (!name.isDomainPattern()) {
                 final Map<String,NamedObject> moiTb = domainTb.get(dom2Match);
                 if (moiTb == null) return Collections.emptySet();

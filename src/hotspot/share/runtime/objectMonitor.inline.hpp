@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "runtime/objectMonitor.hpp"
 
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
@@ -39,16 +40,14 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline int64_t ObjectMonitor::owner_from(JavaThread* thread) {
-  int64_t tid = thread->lock_id();
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
+  return thread->monitor_owner_id();
 }
 
-inline int64_t ObjectMonitor::owner_from(oop vthread) {
-  int64_t tid = java_lang_Thread::thread_id(vthread);
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
+  int64_t id = java_lang_Thread::thread_id(vthread);
+  ThreadIdentifier::verify_id(id);
+  return id;
 }
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
@@ -151,9 +150,14 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
   _recursions = checked_cast<intx>(recursions);
 }
 
+inline void ObjectMonitor::increment_recursions(JavaThread* current) {
+  assert(has_owner(current), "must be the owner");
+  _recursions++;
+}
+
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
-  int64_t old_value = owner_from(old_owner);
+  int64_t old_value = owner_id_from(old_owner);
 #ifdef ASSERT
   int64_t prev = Atomic::load(&_owner);
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
@@ -182,7 +186,7 @@ inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_val
 }
 
 inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current) {
-  set_owner_from_raw(old_value, owner_from(current));
+  set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 // Try to set _owner field to new_value if the current value matches
@@ -201,7 +205,7 @@ inline int64_t ObjectMonitor::try_set_owner_from_raw(int64_t old_value, int64_t 
 }
 
 inline int64_t ObjectMonitor::try_set_owner_from(int64_t old_value, JavaThread* current) {
-  return try_set_owner_from_raw(old_value, owner_from(current));
+  return try_set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 inline bool ObjectMonitor::has_successor() const {
@@ -209,11 +213,11 @@ inline bool ObjectMonitor::has_successor() const {
 }
 
 inline bool ObjectMonitor::has_successor(JavaThread* thread) const {
-  return owner_from(thread) == Atomic::load(&_succ);
+  return owner_id_from(thread) == Atomic::load(&_succ);
 }
 
 inline void ObjectMonitor::set_successor(JavaThread* thread) {
-  Atomic::store(&_succ, owner_from(thread));
+  Atomic::store(&_succ, owner_id_from(thread));
 }
 
 inline void ObjectMonitor::set_successor(oop vthread) {
@@ -249,7 +253,7 @@ inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* m
   // contended enter protocol, which prevents the deflater thread from
   // winning the last part of the 2-part async deflation
   // protocol. See: ObjectMonitor::deflate_monitor() and
-  // ObjectMonitor::TryLockWithContentionMark().
+  // ObjectMonitor::try_lock_with_contention_mark().
   _monitor->add_to_contentions(1);
 }
 
@@ -261,7 +265,7 @@ inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
 }
 
 inline void ObjectMonitorContentionMark::extend() {
-  // Used by ObjectMonitor::TryLockWithContentionMark() to "extend the
+  // Used by ObjectMonitor::try_lock_with_contention_mark() to "extend the
   // lifetime" of the contention mark.
   assert(!_extended, "extending twice is probably a bad design");
   _monitor->add_to_contentions(1);
@@ -284,6 +288,12 @@ inline bool ObjectMonitor::object_refers_to(oop obj) const {
     return false;
   }
   return _object.peek() == obj;
+}
+
+inline bool ObjectMonitor::is_jfr_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jdk_jfr_internal_management_HiddenWait() == monitor_klass->name();)
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

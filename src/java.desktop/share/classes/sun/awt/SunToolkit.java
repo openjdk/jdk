@@ -701,7 +701,6 @@ public abstract class SunToolkit extends Toolkit
 
     static Image getImageFromHash(Toolkit tk,
                                                String filename) {
-        checkPermissions(filename);
         synchronized (fileImgCache) {
             Image img = (Image)fileImgCache.get(filename);
             if (img == null) {
@@ -757,7 +756,6 @@ public abstract class SunToolkit extends Toolkit
 
     @Override
     public Image createImage(String filename) {
-        checkPermissions(filename);
         return createImage(new FileImageSource(filename));
     }
 
@@ -870,7 +868,6 @@ public abstract class SunToolkit extends Toolkit
 
     protected static boolean imageExists(String filename) {
         if (filename != null) {
-            checkPermissions(filename);
             return new File(filename).exists();
         }
         return false;
@@ -886,14 +883,6 @@ public abstract class SunToolkit extends Toolkit
             }
         }
         return false;
-    }
-
-    private static void checkPermissions(String filename) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
     }
 
     /**
@@ -1082,22 +1071,9 @@ public abstract class SunToolkit extends Toolkit
 
     /**
      * Returns whether popup is allowed to be shown above the task bar.
-     * This is a default implementation of this method, which checks
-     * corresponding security permission.
      */
     public boolean canPopupOverlapTaskBar() {
-        boolean result = true;
-        try {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
-            }
-        } catch (SecurityException se) {
-            // There is no permission to show popups over the task bar
-            result = false;
-        }
-        return result;
+        return true;
     }
 
     /**

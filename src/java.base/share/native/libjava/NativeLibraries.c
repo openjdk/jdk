@@ -64,45 +64,31 @@ static jboolean initIDs(JNIEnv *env)
  */
 static void *findJniFunction(JNIEnv *env, void *handle,
                                     const char *cname, jboolean isLoad) {
-    const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
-    const char *onUnloadSymbols[] = JNI_ONUNLOAD_SYMBOLS;
-    const char **syms;
-    int symsLen;
+    const char *sym;
     void *entryName = NULL;
     char *jniFunctionName;
-    int i;
     size_t len;
 
     // Check for JNI_On(Un)Load<_libname> function
-    if (isLoad) {
-        syms = onLoadSymbols;
-        symsLen = sizeof(onLoadSymbols) / sizeof(char *);
-    } else {
-        syms = onUnloadSymbols;
-        symsLen = sizeof(onUnloadSymbols) / sizeof(char *);
+    sym = isLoad ? "JNI_OnLoad" : "JNI_OnUnload";
+
+    // sym + '_' + cname + '\0'
+    if ((len = strlen(sym) + (cname != NULL ? (strlen(cname) + 1) : 0) + 1) >
+        FILENAME_MAX) {
+        goto done;
     }
-    for (i = 0; i < symsLen; i++) {
-        // cname + sym + '_' + '\0'
-        if ((len = (cname != NULL ? strlen(cname) : 0) + strlen(syms[i]) + 2) >
-            FILENAME_MAX) {
-            goto done;
-        }
-        jniFunctionName = malloc(len);
-        if (jniFunctionName == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-            goto done;
-        }
-        strcpy(jniFunctionName, syms[i]);
-        if (cname != NULL) {
-            strcat(jniFunctionName, "_");
-            strcat(jniFunctionName, cname);
-        }
-        entryName = JVM_FindLibraryEntry(handle, jniFunctionName);
-        free(jniFunctionName);
-        if(entryName) {
-            break;
-        }
+    jniFunctionName = malloc(len);
+    if (jniFunctionName == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        goto done;
     }
+    strcpy(jniFunctionName, sym);
+    if (cname != NULL) {
+        strcat(jniFunctionName, "_");
+        strcat(jniFunctionName, cname);
+    }
+    entryName = JVM_FindLibraryEntry(handle, jniFunctionName);
+    free(jniFunctionName);
 
  done:
     return entryName;

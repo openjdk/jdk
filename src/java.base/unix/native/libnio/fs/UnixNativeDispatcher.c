@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <sys/xattr.h>
+#endif
+
+#if defined(_AIX)
+#include <sys/ea.h>
 #endif
 
 /* For POSIX-compliant getpwuid_r */
@@ -250,23 +254,6 @@ static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
 }
 #endif
 
-#if defined(__linux__) && defined(__arm__)
-/**
- * Lookup functions with time_t parameter. Try to use 64 bit symbol
- * if sizeof(time_t) exceeds 32 bit.
- */
-static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
-    void *func_ptr = NULL;
-    if (sizeof(time_t) > 4) {
-        func_ptr = dlsym(RTLD_DEFAULT, symbol64);
-    }
-    if (func_ptr == NULL) {
-        return dlsym(RTLD_DEFAULT, symbol);
-    }
-    return func_ptr;
-}
-#endif
-
 /**
  * Call this to throw an internal UnixException when a system/library
  * call fails
@@ -404,7 +391,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports extended attributes */
 
-#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_)
+#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_) || defined(_AIX)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
@@ -1398,6 +1385,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     res = fgetxattr(fd, name, value, valueLen);
 #elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fgetea(fd, name, value, valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1419,6 +1408,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
     res = fsetxattr(fd, name, value, valueLen, 0);
 #elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fsetea(fd, name, value, valueLen, 0);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1438,6 +1429,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
     res = fremovexattr(fd, name);
 #elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
+#elif defined(_AIX)
+    res = fremoveea(fd, name);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1457,6 +1450,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     res = flistxattr(fd, list, (size_t)size);
 #elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
+#elif defined(_AIX)
+    res = flistea(fd, list, (size_t)size);
 #else
     throwUnixException(env, ENOTSUP);
 #endif

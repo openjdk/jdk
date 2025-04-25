@@ -134,8 +134,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+Note: The 32-bit x86 port is deprecated and may be removed in a future release.
 
 ### Building on aarch64
 
@@ -191,8 +190,7 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
-removed in a future release.)
+build the JDK.
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -394,7 +392,7 @@ issues.
 
 | Operating system   | Toolchain version                           |
 | ------------------ | ------------------------------------------- |
-| Linux              | gcc 13.2.0                                  |
+| Linux              | gcc 14.2.0                                  |
 | macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
 | Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
 
@@ -406,7 +404,7 @@ C, and C++14 for C++.
 The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
-The JDK is currently known to compile successfully with gcc version 13.2 or
+The JDK is currently known to compile successfully with gcc version 14.2 or
 newer.
 
 In general, any version between these two should be usable.
@@ -682,9 +680,9 @@ At least version 3.2 of GNU Bash must be used.
 
 ### Graphviz and Pandoc
 
-In order to build the full docs (see the `--enable-full-docs`
-configure option) [Graphviz](https://www.graphviz.org) and
-[Pandoc](https://pandoc.org) are required. Any recent versions should
+In order to build man pages and the full docs (see the `--enable-full-docs`
+configure option) [Pandoc](https://pandoc.org) is required. For full docs also
+[Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
 9.0.0 and Pandoc 2.19.2.
 
@@ -1458,6 +1456,24 @@ sh ./configure --with-jvm-variants=server \
 ```
 
 and run `make` normally.
+
+#### Building for Windows AArch64
+The Visual Studio Build Tools can be used for building the JDK without a full
+Visual Studio installation. To set up the Visual Studio 2022 Build Tools on a
+Windows AArch64 machine for a native build, launch the installer as follows
+in a Windows command prompt:
+
+```
+vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools" ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
+you must set the proper target platform by adding
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
 
 ## Build Performance
 

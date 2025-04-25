@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <a href="BaseClass.html#pubField">""",
                 // Public method should be inherited
                 """
-                    <a href="BaseClass.html#pubMethod()">""",
+                    <a href="BaseClass.html#pubMethod()" title="pubMethod()">""",
                 // Public inner class should be inherited.
                 """
                     <a href="BaseClass.pubInnerClass.html" title="class in pkg">""",
@@ -65,16 +65,17 @@ public class TestMemberInheritance extends JavadocTester {
                     <a href="BaseClass.html#proField">""",
                 // Protected method should be inherited
                 """
-                    <a href="BaseClass.html#proMethod()">""",
+                    <a href="BaseClass.html#proMethod()" title="proMethod()">""",
                 // Protected inner class should be inherited.
                 """
                     <a href="BaseClass.proInnerClass.html" title="class in pkg">""",
                 // New labels as of 1.5.0
                 """
-                    Nested classes/interfaces inherited from class&nbsp;pkg.<a href="BaseClass.html" title="class in pkg">BaseClass</a>""",
+                    Nested classes/interfaces inherited from class&nbsp;<a href="BaseClass.html#nest\
+                    ed-class-summary" title="class in pkg">BaseClass</a>""",
                 """
-                    Nested classes/interfaces inherited from interface&nbsp;pkg.<a href="BaseInterfa\
-                    ce.html" title="interface in pkg">BaseInterface</a>""");
+                    Nested classes/interfaces inherited from interface&nbsp;<a href="BaseInterface.h\
+                    tml#nested-class-summary" title="interface in pkg">BaseInterface</a>""");
 
         checkOutput("pkg/BaseClass.html", true,
                 // Test overriding/implementing methods with generic parameters.
@@ -89,7 +90,7 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("diamond/Z.html", true,
                 // Test diamond inheritance member summary (6256068)
                 """
-                    <code><a href="A.html#aMethod()">aMethod</a></code>""");
+                    <code><a href="A.html#aMethod()" title="aMethod()">aMethod</a></code>""");
 
         checkOutput("inheritDist/C.html", true,
                 // Test that doc is inherited from closed parent (6270645)
@@ -112,7 +113,8 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg1/Implementer.html", false,
                 """
-                    <h3>Methods inherited from interface&nbsp;pkg1.<a href="Interface.html" title="interface in pkg1">Interface</a></h3>
+                    <h3>Methods inherited from interface&nbsp;<a href="Interface.html#method-summary\
+                    " title="interface in pkg1">Interface</a></h3>
                     <code><a href="Interface.html#between(java.time.chrono.ChronoLocalDate,java.time\
                     .chrono.ChronoLocalDate)">between</a></code>"""
         );
@@ -214,7 +216,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).
@@ -263,7 +265,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).

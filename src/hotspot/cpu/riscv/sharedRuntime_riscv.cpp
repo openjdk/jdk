@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -641,7 +640,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ lwu(t0, Address(xmethod, Method::access_flags_offset()));
+      __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
       __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
       __ beqz(t1, L_skip_barrier); // non-static
     }
@@ -802,7 +801,7 @@ static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegP
     if (args[i].first()->is_Register()) {
       x = x + args[i].first()->as_Register();
     } else if (args[i].first()->is_FloatRegister()) {
-      __ addi(sp, sp, -2 * wordSize);
+      __ subi(sp, sp, 2 * wordSize);
       __ fsd(args[i].first()->as_FloatRegister(), Address(sp, 0));
     }
   }
@@ -824,7 +823,7 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
       ;
     } else if (args[i].first()->is_FloatRegister()) {
       __ fld(args[i].first()->as_FloatRegister(), Address(sp, 0));
-      __ add(sp, sp, 2 * wordSize);
+      __ addi(sp, sp, 2 * wordSize);
     }
   }
 }
@@ -1364,7 +1363,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
@@ -1548,15 +1546,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(x9->as_VMReg());
 
   for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
     arg_order.push(i);
     arg_order.push(c_arg);
   }
 
-  int temploc = -1;
   for (int ai = 0; ai < arg_order.length(); ai += 2) {
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
@@ -1719,7 +1714,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
       __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
+      __ mv(t0, 3 - (int)os::vm_page_size());
+      __ andr(swap_reg, swap_reg, t0);
 
       // Save the test result, for recursive case, the result is zero
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
@@ -1760,7 +1756,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   Label safepoint_in_progress, safepoint_in_progress_done;
-  Label after_transition;
 
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
@@ -1799,7 +1794,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ mv(t0, _thread_in_Java);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
-  __ bind(after_transition);
 
   if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
     // Check preemption for Object.wait()
@@ -2342,7 +2336,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop deoptimized frame
   __ lwu(x12, Address(x15, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
-  __ sub(x12, x12, 2 * wordSize);
+  __ subi(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
   __ ld(fp, Address(sp, 0));
   __ ld(ra, Address(sp, wordSize));
@@ -2385,7 +2379,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ bind(loop);
   __ ld(x9, Address(x14, 0));          // Load frame size
   __ addi(x14, x14, wordSize);
-  __ sub(x9, x9, 2 * wordSize);        // We'll push pc and fp by hand
+  __ subi(x9, x9, 2 * wordSize);       // We'll push pc and fp by hand
   __ ld(ra, Address(x12, 0));          // Load pc
   __ addi(x12, x12, wordSize);
   __ enter();                          // Save old & set new fp
@@ -2394,7 +2388,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ sd(sender_sp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize)); // Make it walkable
   __ mv(sender_sp, sp);                // Pass sender_sp to next frame
-  __ addi(x13, x13, -1);               // Decrement counter
+  __ subi(x13, x13, 1);                // Decrement counter
   __ bnez(x13, loop);
 
     // Re-push self-frame
@@ -2559,19 +2553,20 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     // Verify the correct encoding of the poll we're about to skip.
     // See NativeInstruction::is_lwu_to_zr()
     __ lwu(t0, Address(x18));
-    __ andi(t1, t0, 0b0000011);
+    __ andi(t1, t0, 0b1111111);
     __ mv(t2, 0b0000011);
     __ bne(t1, t2, bail); // 0-6:0b0000011
     __ srli(t1, t0, 7);
-    __ andi(t1, t1, 0b00000);
+    __ andi(t1, t1, 0b11111);
     __ bnez(t1, bail);    // 7-11:0b00000
     __ srli(t1, t0, 12);
-    __ andi(t1, t1, 0b110);
+    __ andi(t1, t1, 0b111);
     __ mv(t2, 0b110);
     __ bne(t1, t2, bail); // 12-14:0b110
 #endif
+
     // Adjust return pc forward to step over the safepoint poll instruction
-    __ add(x18, x18, NativeInstruction::instruction_size);
+    __ addi(x18, x18, NativeInstruction::instruction_size);
     __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
   }
 
@@ -2651,7 +2646,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ bnez(t1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(xmethod, xthread);
+  __ get_vm_result_metadata(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
   // x10 is where we want to jump, overwrite t1 which is saved and temporary
@@ -2669,7 +2664,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ sd(zr, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(zr, Address(xthread, JavaThread::vm_result_oop_offset()));
 
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -2741,7 +2736,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
   assert(is_even(framesize / 2), "sp not 16-byte aligned");
 
   // ra and fp are already in place
-  __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
+  __ subi(sp, fp, (unsigned)framesize << LogBytesPerInt); // prolog
 
   int frame_complete = __ pc() - start;
 
