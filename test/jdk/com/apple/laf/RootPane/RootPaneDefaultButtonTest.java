@@ -113,7 +113,9 @@ public class RootPaneDefaultButtonTest extends JDialog {
         System.out.println("Test passed successfully");
     }
 
-    private static void test(Robot robot, AbstractButton buttonToClick, ButtonRenderingExpectation... expectations) throws Exception {
+    private static void test(Robot robot, AbstractButton buttonToClick,
+                             ButtonRenderingExpectation... expectations)
+            throws Exception {
         robot.delay(100);
 
         robot.mouseMove(buttonToClick.getLocationOnScreen().x + buttonToClick.getSize().width/2,
