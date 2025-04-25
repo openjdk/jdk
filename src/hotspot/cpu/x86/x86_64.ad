@@ -8579,7 +8579,6 @@ instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
 
 instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulI (LoadI src) imm));
   effect(KILL cr);
 
@@ -8587,20 +8586,6 @@ instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
   format %{ "imull   $dst, $src, $imm\t# int" %}
   ins_encode %{
     __ imull($dst$$Register, $src$$Address, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
-instruct mulI_rReg_mem_imm(rRegI dst, memory src1, immI src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulI (LoadI src1) src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
-  ins_encode %{
-    __ eimull($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8645,7 +8630,6 @@ instruct mulL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 
 instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulL src imm));
   effect(KILL cr);
 
@@ -8653,20 +8637,6 @@ instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
   format %{ "imulq   $dst, $src, $imm\t# long" %}
   ins_encode %{
     __ imulq($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulL src1 src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8701,7 +8671,6 @@ instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
 
 instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
   match(Set dst (MulL (LoadL src) imm));
   effect(KILL cr);
 
@@ -8709,20 +8678,6 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
   format %{ "imulq   $dst, $src, $imm\t# long" %}
   ins_encode %{
     __ imulq($dst$$Register, $src$$Address, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
-instruct mulL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
-%{
-  predicate(UseAPX);
-  match(Set dst (MulL (LoadL src1) src2));
-  effect(KILL cr);
-
-  ins_cost(300);
-  format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
-  ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
