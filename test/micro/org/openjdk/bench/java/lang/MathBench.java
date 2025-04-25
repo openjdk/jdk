@@ -63,11 +63,7 @@ public class MathBench {
     public long long1 = 1L, long2 = 2L, long747 = 747L, long13 = 13L;
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
     public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
-
-    public static final double tanhConstInputs[] = {-2.0, -1.0, -0.5, -0.1, 0.0, 0.1, 0.5, 1.0, 2.0};
-
-    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8"})
-    public int tanhConstIndex;
+    public static final double constDoubleNegative2 = -2.0d, constDoubleNegative1 = -1.0d, constDouble0 = 0.0d, constDouble1 = 1.0d, constDouble2 = 2.0d;
 
     @Param("2048")
     public int tanhInputCount;
@@ -554,7 +550,32 @@ public class MathBench {
 
     @Benchmark
     public double  tanhDouble() {
-        return  Math.tanh(tanhConstInputs[tanhConstIndex]);
+        return  Math.tanh(double1);
+    }
+
+    @Benchmark
+    public double  tanhConstDoubleNegative2() {
+        return  Math.tanh(constDoubleNegative2);
+    }
+
+    @Benchmark
+    public double  tanhConstDoubleNegative1() {
+        return  Math.tanh(constDoubleNegative1);
+    }
+
+    @Benchmark
+    public double  tanhConstDouble0() {
+        return  Math.tanh(constDouble0);
+    }
+
+    @Benchmark
+    public double  tanhConstDouble1() {
+        return  Math.tanh(constDouble1);
+    }
+
+    @Benchmark
+    public double  tanhConstDouble2() {
+        return  Math.tanh(constDouble2);
     }
 
     @Benchmark
