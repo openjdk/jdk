@@ -40,7 +40,6 @@ class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
   outputStream* const _output;  // destination
-  StreamAutoIndentor _auto_indentor;
 
  public:
 
