@@ -794,16 +794,15 @@ public class Throwable implements Serializable {
                 sb.setLength(prefixAndAtLength);
             }
             printer.println(trace[i]
-                            .appendTo(sb)
-                            .toString());
+                            .appendTo(sb));
         }
 
         if (framesInCommon != 0) {
             sb.setLength(prefix == null ? 0 : prefix.length());
-            sb.append("\t... ")
-              .append(framesInCommon)
-              .append(" more");
-            printer.println(sb.toString());
+            printer.println(
+                    sb.append("\t... ")
+                      .append(framesInCommon)
+                      .append(" more"));
         }
     }
 
