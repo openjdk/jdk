@@ -61,26 +61,12 @@ public class AESExtraBench extends AESBench {
         outBuffer = new byte[dataSize + 128]; // extra space for tag, etc
     }
 
-//    @Benchmark
-//    public byte[] encrypt() throws BadPaddingException, IllegalBlockSizeException {
-//        byte[] d = data[index];
-//        index = (index +1) % SET_SIZE;
-//        return encryptCipher.doFinal(d);
-//    }
-
     @Benchmark
     public int encrypt2() throws GeneralSecurityException {
         byte[] d = data[index];
         index = (index +1) % SET_SIZE;
         return encryptCipher.doFinal(d, 0, d.length, outBuffer);
     }
-//
-//    @Benchmark
-//    public byte[] decrypt() throws BadPaddingException, IllegalBlockSizeException {
-//        byte[] e = encryptedData[index];
-//        index = (index +1) % SET_SIZE;
-//        return decryptCipher.doFinal(e);
-//    }
 
     @Benchmark
     public int decrypt2() throws GeneralSecurityException {
