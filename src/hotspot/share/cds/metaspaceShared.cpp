@@ -963,25 +963,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     ArchiveHeapWriter::init();
-    AOTReferenceObjSupport::initialize(CHECK);
+
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_method_handles()) {
-      // This assert means that the MethodType and MethodTypeForm tables won't be
-      // updated concurrently, so we can remove GC'ed entries ...
-      assert(CDSConfig::allow_only_single_java_thread(), "Required");
-
-      TempNewSymbol method_name = SymbolTable::new_symbol("prepareForAOTCache");
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
-                             method_name,
-                             vmSymbols::void_method_signature(),
-                             CHECK);
-    }
-
+    AOTReferenceObjSupport::initialize(CHECK);
+    AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
     if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field

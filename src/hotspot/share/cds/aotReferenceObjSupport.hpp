@@ -35,6 +35,7 @@ class AOTReferenceObjSupport : AllStatic {
 
 public:
   static void initialize(TRAPS);
+  static void stabilize_cached_reference_objects(TRAPS);
   static bool check_if_ref_obj(oop obj);
   static bool skip_field(int field_offset);
 };

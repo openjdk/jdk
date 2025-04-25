@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/javaCalls.hpp"
 
 // Handling of java.lang.ref.Reference objects in the AOT cache
 // ============================================================
@@ -61,11 +62,10 @@
 //
 // As of this version, the only oops in group [2] that can be found by AOTArtifactFinder are
 // the keys used by ReferencedKeyMap in the implementation of MethodType::internTable.
-// ReferencedKeyMap::prepareForAOTCache ensures that all keys found by AOTArtifactFinder are eligible.
+// stabilize_cached_reference_objects() ensures that all keys found by AOTArtifactFinder are eligible.
 //
 // The purpose of the error check in check_if_ref_obj() is to guard against changes in the JDK core
 // libs that might introduce new types of oops in group [2] into the AOT cache.
-//
 //
 // Reasons for the eligibility restrictions
 // ========================================
@@ -76,6 +76,8 @@
 // We intent to evolve the implementation in the future by
 // -- implementing more prepareForAOTCache() operations for other use cases, and/or
 // -- relaxing the eligibility restrictions.
+
+#if INCLUDE_CDS_JAVA_HEAP
 
 static OopHandle _null_queue;
 
@@ -92,6 +94,22 @@ void AOTReferenceObjSupport::initialize(TRAPS) {
   precond(fd.is_static());
 
   _null_queue = OopHandle(Universe::vm_global(), ik->java_mirror()->obj_field(fd.offset()));
+}
+
+// Ensure that all group [2] references found by AOTArtifactFinder are eligible.
+void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
+  if (CDSConfig::is_dumping_method_handles()) {
+    // This assert means that the MethodType and MethodTypeForm tables won't be
+    // updated concurrently, so we can remove GC'ed entries ...
+    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+
+    TempNewSymbol method_name = SymbolTable::new_symbol("prepareForAOTCache");
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+                           method_name,
+                           vmSymbols::void_method_signature(),
+                           CHECK);
+  }
 }
 
 bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
@@ -146,3 +164,5 @@ bool AOTReferenceObjSupport::skip_field(int field_offset) {
   return (field_offset == java_lang_ref_Reference::next_offset() ||
           field_offset == java_lang_ref_Reference::discovered_offset());
 }
+
+#endif // INCLUDE_CDS_JAVA_HEAP
