@@ -162,7 +162,6 @@ public final class ModuleBootstrap {
             bootLayer = archivedBootLayer.bootLayer();
             BootLoader.getUnnamedModule(); // trigger <clinit> of BootLoader.
             CDS.defineArchivedModules(ClassLoaders.platformClassLoader(), ClassLoaders.appClassLoader());
-            addExtraExportsAndOpens(bootLayer);
 
             // assume boot layer has at least one module providing a service
             // that is mapped to the application class loader.
