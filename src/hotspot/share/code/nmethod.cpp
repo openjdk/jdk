@@ -1518,6 +1518,8 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   //   - Stub code
   //   - OOP table
   memcpy(consts_begin(), nm->consts_begin(), nm->data_end() - nm->consts_begin());
+
+  post_init();
 }
 
 nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
@@ -1563,8 +1565,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
   ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
 
-  nm_copy->post_init();
-
   // Update corresponding Java method to point to this nmethod
   if (nm_copy->method() != nullptr && nm_copy->method()->code() == this && nm_copy->make_in_use()) {
     methodHandle mh(Thread::current(), nm_copy->method());
@@ -1576,10 +1576,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 }
 
 bool nmethod::is_relocatable() {
-  if (is_not_entrant()) {
-    return false;
-  }
-
   if (is_marked_for_deoptimization()) {
     return false;
   }
