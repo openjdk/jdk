@@ -111,7 +111,11 @@ public class Field {
     int numJavaFields = crs.readInt();     // read num_java_fields
     int numInjectedFields = crs.readInt(); // read num_injected_fields;
     int numFields = numJavaFields + numInjectedFields;
-    crs.skipBytes(numJavaFields > 16 ? 4 : 0);
+    // JumpTable is generated only for classes with > 16 (non-injected) fields
+    if (numJavaFields > 16) {
+      // JumpTable offset (is not variable-size encoded)
+      crs.skipBytes(4);
+    }
     Field[] fields = new Field[numFields];
     for (int i = 0; i < numFields; i++) {
       FieldInfoValues values = readFieldInfoValues(crs);
