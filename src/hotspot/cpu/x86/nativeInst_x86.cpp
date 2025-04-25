@@ -140,7 +140,7 @@ bool NativeCall::is_displacement_aligned() {
 // Used in the runtime linkage of calls; see class CompiledIC.
 // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
 void NativeCall::set_destination_mt_safe(address dest) {
-  debug_only(verify());
+  DEBUG_ONLY(verify());
   // Make sure patching code is locked.  No two threads can patch at the same
   // time but one may be executing this code.
   assert(CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint() ||
