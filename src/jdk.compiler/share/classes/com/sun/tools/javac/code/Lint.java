@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -37,60 +36,13 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
-import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 /**
- * A class for handling {@code -Xlint} suboptions and {@code @SuppressWarnings} annotations.
- *
- * <p>
- * Each lint category can be in one of three states: enabled, suppressed, or neither. The "neither"
- * state means it's effectively up to the code doing the check to determine the default behavior, by
- * warning when enabled (i.e., default suppressed) or not warning when suppressed (i.e., default enabled).
- * Some categories default to enabled; most default to neither and the code warns when enabled.
- *
- * <p>
- * A lint category can be explicitly enabled via the command line flag {@code -Xlint:key}, or explicitly
- * disabled via the command line flag {@code -Xlint:-key}. Some lint categories warn at specific
- * locations in the code and can be suppressed within the scope of a symbol declaration via the
- * {@code @SuppressWarnings} annotation; see {@link LintCategory#annotationSuppression}.
- *
- * <p>
- * The meta-categories {@code "suppression-option"} and {@code "suppression"} warn about unnecessary
- * {@code -Xlint:-key} flags and {@code @SuppressWarnings} annotations (respectively), i.e., they warn
- * about explicit suppressions that don't actually suppress anything. In order for this calculation
- * to be correct, <i>code that generates a warning must execute even when the corresponding category
- * is disabled or suppressed</i>.
- *
- * <p>
- * To ensure this happens, code should use {@link #isActive} to determine whether to bother performing
- * a warning calculation (if the calculation is non-trivial), and it should use {@code Log.warning()}
- * to actually log any warnings found. Even if the warning is suppressed, {@code Log.warning()} will note
- * that any suppression in effect is actually doing something useful. This is termed the <i>validation</i>
- * of the suppression.
- *
- * <p>
- * Further details:
- * <ul>
- *  <li>To build an instance augmented with any new suppressions from {@code @SuppressWarnings} and/or
- *      {@code @Deprecated} annotations on a symbol declaration, use {@link #augment} to establish a
- *      new symbol "scope".
- *  <li>Any category for which {@link #isActive} returns true must be checked; this is true even if
- *      {@link #isEnabled} returns false and/or {@link #isSuppressed} returns true. Use of {@link #isActive}
- *      is optional; it simply allows you to skip unnecessary work. For trivial checks, it's not needed.
- *  <li>When a warnable condition is found, invoke {@code Log.warning()}. If the warning is suppressed,
- *      it won't actually be logged, but the category will still be validated. All lint warnings that would
- *      have been generated but aren't because of suppression must still validate the corresponding category.
- *  <li>You can manually check whether a category {@link #isEnabled} or {@link #isSuppressed}. These methods
- *      include a boolean parameter to optionally also validate any suppression of the category; <i>always
- *      do so if a warning will actually be generated if the method returns a certain value</i>.
- *  <li>If needed, you can validate suppressions manually via {@link #validateSuppression}.
- *  <li>The root {@link Lint} singleton initializes itself lazily, so it can be used safely during startup.
- * </ul>
+ * A class for handling -Xlint suboptions and @SuppressWarnings.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -99,10 +51,10 @@ import com.sun.tools.javac.util.Options;
  */
 public class Lint {
 
-    /** The context key for the root {@link Lint} singleton. */
+    /** The context key for the root Lint object. */
     protected static final Context.Key<Lint> lintKey = new Context.Key<>();
 
-    /** Get the root {@link Lint} singleton. */
+    /** Get the root Lint instance. */
     public static Lint instance(Context context) {
         Lint instance = context.get(lintKey);
         if (instance == null)
@@ -112,7 +64,7 @@ public class Lint {
 
     /**
      * Obtain an instance with additional warning supression applied from any
-     * {@code @SuppressWarnings} and/or {@code @Deprecated} annotations on the given symbol.
+     * @SuppressWarnings and/or @Deprecated annotations on the given symbol.
      *
      * <p>
      * The returned instance will be different from this instance if and only if
@@ -122,70 +74,55 @@ public class Lint {
      * @return lint instance with new warning suppressions applied, or this instance if none
      */
     public Lint augment(Symbol sym) {
-        EnumSet<LintCategory> suppressions = suppressionsFrom(sym, false);
+        EnumSet<LintCategory> suppressions = suppressionsFrom(sym);
+        suppressions.removeIf(lc -> !lc.annotationSuppression);     // ignore categories that don't support @SuppressWarnings
         if (!suppressions.isEmpty()) {
             Lint lint = new Lint(this, sym);
-            lint.enabled.removeAll(suppressions);
-            lint.suppressed.addAll(suppressions);
+            lint.values.removeAll(suppressions);
+            lint.suppressedValues.addAll(suppressions);
             return lint;
         }
         return this;
     }
 
     /**
-     * Returns a new Lint that has the given {@link LintCategory}s enabled.
-     *
+     * Returns a new Lint that has the given LintCategorys enabled.
      * @param lc one or more categories to be enabled
      */
     public Lint enable(LintCategory... lc) {
-        Lint l = new Lint(this, symbolInScope);
-        l.enabled.addAll(Arrays.asList(lc));
-        l.suppressed.removeAll(Arrays.asList(lc));
+        Lint l = new Lint(this, symbol);
+        l.values.addAll(Arrays.asList(lc));
+        l.suppressedValues.removeAll(Arrays.asList(lc));
         return l;
     }
 
     /**
-     * Returns a new Lint that has the given {@link LintCategory}s suppressed.
-     *
+     * Returns a new Lint that has the given LintCategorys suppressed.
      * @param lc one or more categories to be suppressed
      */
     public Lint suppress(LintCategory... lc) {
-        Lint l = new Lint(this, symbolInScope);
-        l.enabled.removeAll(Arrays.asList(lc));
-        l.suppressed.addAll(Arrays.asList(lc));
+        Lint l = new Lint(this, symbol);
+        l.values.removeAll(Arrays.asList(lc));
+        l.suppressedValues.addAll(Arrays.asList(lc));
         return l;
     }
 
-    // Information shared by all Lint instances
-    private static class Common {
+    private final Context context;
+    private final LintMapper lintMapper;
 
-        // Compiler context
-        private final Context context;
-        private final Log log;
-        private final LintMapper lintMapper;
+    // These are initialized lazily to avoid dependency loops
+    private Symtab syms;
+    private Names names;
 
-        private Symtab syms;                                // initialized lazily by initializeSymbolsIfNeeded()
-        private Names names;                                // initialized lazily by initializeSymbolsIfNeeded()
+    // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
+    private EnumSet<LintCategory> values;
+    private EnumSet<LintCategory> suppressedValues;
 
-        // "Xlint" suppression info
-        private EnumSet<LintCategory> optionFlagSuppressions;   // categories for which a "-Xlint:-key" flag exists
+    // The symbol corresponding to some declaration, or null for the root instance
+    private final Symbol symbol;
 
-        Common(Context context) {
-            this.context = context;
-            log = Log.instance(context);
-            lintMapper = LintMapper.instance(context);
-        }
-    }
-
-    // Shared state
-    private final Common common;
-
-    // The current symbol in scope (having @SuppressWarnings or @Deprecated), or null for global scope
-    private final Symbol symbolInScope;
-
-    // For the root instance only, these are initialized lazily by initializeRootIfNeeded()
-    private EnumSet<LintCategory> enabled;              // categories enabled in this instance
-    private EnumSet<LintCategory> suppressed;           // categories suppressed by augment() or suppress() (but not "-Xlint:-key")
+    // Lint categories for which a "-Xlint:-foo" flag was specified
+    private final EnumSet<LintCategory> optionFlagSuppressions;
 
     // LintCategory lookup by option string
     private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(40);
@@ -193,80 +130,83 @@ public class Lint {
     // Instantiate the root instance
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
+        this.context = context;
         context.put(lintKey, this);
-        common = new Common(context);
-        symbolInScope = null;
+        symbol = null;
+        lintMapper = LintMapper.instance(context);
+        optionFlagSuppressions = LintCategory.newEmptySet();
     }
 
     // Instantiate a non-root ("symbol scoped") instance
-    protected Lint(Lint other, Symbol symbolInScope) {
-        Assert.check(symbolInScope != null);
-        other.initializeRootIfNeeded();
-        this.common = other.common;
-        this.symbolInScope = symbolInScope;
-        this.enabled = other.enabled.clone();
-        this.suppressed = other.suppressed.clone();
+    protected Lint(Lint other, Symbol symbol) {
+        Assert.check(symbol != null);
+        this.symbol = symbol;
+        this.context = other.context;
+        this.lintMapper = other.lintMapper;
+        this.syms = other.syms;
+        this.names = other.names;
+        this.values = other.values.clone();
+        this.suppressedValues = other.suppressedValues.clone();
+        this.optionFlagSuppressions = other.optionFlagSuppressions;
     }
 
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
 
         // Already initialized?
-        if (enabled != null)
+        if (values != null)
             return;
 
         // Initialize enabled categories based on "-Xlint" flags
-        Options options = Options.instance(common.context);
+        Options options = Options.instance(context);
         if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
-            enabled = EnumSet.allOf(LintCategory.class);
+            values = EnumSet.allOf(LintCategory.class);
         } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
             // if -Xlint:none is given, disable all categories by default
-            enabled = LintCategory.newEmptySet();
+            values = LintCategory.newEmptySet();
         } else {
             // otherwise, enable on-by-default categories
-            enabled = LintCategory.newEmptySet();
+            values = LintCategory.newEmptySet();
 
-            Source source = Source.instance(common.context);
+            Source source = Source.instance(context);
             if (source.compareTo(Source.JDK9) >= 0) {
-                enabled.add(LintCategory.DEP_ANN);
+                values.add(LintCategory.DEP_ANN);
             }
             if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-                enabled.add(LintCategory.STRICTFP);
+                values.add(LintCategory.STRICTFP);
             }
-            enabled.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-            enabled.add(LintCategory.OPENS);
-            enabled.add(LintCategory.MODULE);
-            enabled.add(LintCategory.REMOVAL);
+            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
+            values.add(LintCategory.OPENS);
+            values.add(LintCategory.MODULE);
+            values.add(LintCategory.REMOVAL);
             if (!options.isSet(Option.PREVIEW)) {
-                enabled.add(LintCategory.PREVIEW);
+                values.add(LintCategory.PREVIEW);
             }
-            enabled.add(LintCategory.SYNCHRONIZATION);
-            enabled.add(LintCategory.INCUBATING);
+            values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.INCUBATING);
         }
 
-        // Look for specific overrides via "-Xlint" flags
-        common.optionFlagSuppressions = LintCategory.newEmptySet();
+        // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
             if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
-                enabled.add(lc);
+                values.add(lc);
             } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
-                common.optionFlagSuppressions.add(lc);
-                enabled.remove(lc);
+                values.remove(lc);
+                optionFlagSuppressions.add(lc);
             }
         }
 
-        // Categories suppressed by @SuppressWarnings is initially empty
-        suppressed = LintCategory.newEmptySet();
+        suppressedValues = LintCategory.newEmptySet();
     }
 
     @Override
     public String toString() {
         initializeRootIfNeeded();
         return "Lint["
-          + (symbolInScope != null ? "sym=" + symbolInScope : "ROOT")
-          + ",enable" + enabled
-          + ",suppress" + suppressed
+          + (symbol != null ? "sym=" + symbol : "ROOT")
+          + ",enable" + values
+          + ",suppress" + suppressedValues
           + "]";
     }
 
@@ -275,8 +215,8 @@ public class Lint {
      */
     public enum LintCategory {
         /**
-         * Warn when code refers to an auxiliary class that is hidden in a source file (i.e., the source file
-         * name is different from the class name, and the type is not properly nested) and the referring code
+         * Warn when code refers to a auxiliary class that is hidden in a source file (ie source file name is
+         * different from the class name, and the type is not properly nested) and the referring code
          * is not located in the same source file.
          */
         AUXILIARYCLASS("auxiliaryclass"),
@@ -307,7 +247,7 @@ public class Lint {
 
         /**
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
-         * comment, but which do not have the {@code @Deprecated} annotation.
+         * comment, but which do not have {@code @Deprecated} annotation.
          */
         DEP_ANN("dep-ann"),
 
@@ -473,7 +413,7 @@ public class Lint {
         THIS_ESCAPE("this-escape"),
 
         /**
-         * Warn about issues relating to use of try blocks (i.e., try-with-resources).
+         * Warn about issues relating to use of try blocks (i.e. try-with-resources)
          */
         TRY("try"),
 
@@ -522,14 +462,11 @@ public class Lint {
             return Optional.ofNullable(map.get(option));
         }
 
-        /**
-         * Create a new, empty, mutable set of {@link LintCategory}.
-         */
         public static EnumSet<LintCategory> newEmptySet() {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in {@code @SuppressWarnings} and {@code -Xlint:key} flags. */
+        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
@@ -548,20 +485,20 @@ public class Lint {
      */
     public boolean isActive(LintCategory lc) {
         initializeRootIfNeeded();
-        return enabled.contains(lc) || needsSuppressionTracking(lc);
+        return values.contains(lc) || needsSuppressionTracking(lc);
     }
 
     /**
      * Checks if a warning category is enabled. A warning category may be enabled
      * on the command line, or by default, and can be temporarily disabled with
-     * the {@code @SuppressWarnings} annotation.
+     * the SuppressWarnings annotation.
      *
      * <p>
      * This method also optionally validates any warning suppressions currently in scope.
      * If you just want to know the configuration of this instance, set {@code validate} to false.
      * If you are using the result of this method to control whether a warning is actually
-     * generated, then set {@code validate} to true to ensure that any suppression of the category
-     * in scope is validated (i.e., determined to actually be suppressing something).
+     * generated, then set {@code validate} to true to ensure that any suppression of the
+     * category in scope is validated (i.e., determined to actually be suppressing something).
      *
      * @param lc lint category
      * @param validateSuppression true to also validate any suppression of the category
@@ -570,20 +507,21 @@ public class Lint {
         initializeRootIfNeeded();
         if (validateSuppression)
             validateSuppression(lc);
-        return enabled.contains(lc);
+        return values.contains(lc);
     }
 
     /**
-     * Checks if a warning category has been specifically suppressed, by means of
-     * {@code @SuppressWarnings}, {@code @Deprecated}, or {@link #suppress}.
-     * Note: this does not detect suppressions via {@code -Xlint:-key} flags.
+     * Checks is a warning category has been specifically suppressed, by means
+     * of the SuppressWarnings annotation, or, in the case of the deprecated
+     * category, whether it has been implicitly suppressed by virtue of the
+     * current entity being itself deprecated.
      *
      * <p>
      * This method also optionally validates any warning suppressions currently in scope.
      * If you just want to know the configuration of this instance, set {@code validate} to false.
      * If you are using the result of this method to control whether a warning is actually
-     * generated, then set {@code validate} to true to ensure that any suppression of the category
-     * in scope is validated (i.e., determined to actually be suppressing something).
+     * generated, then set {@code validate} to true to ensure that any suppression of the
+     * category in scope is validated (i.e., determined to actually be suppressing something).
      *
      * @param lc lint category
      * @param validateSuppression true to also validate any suppression of the category
@@ -592,7 +530,7 @@ public class Lint {
         initializeRootIfNeeded();
         if (validateSuppression)
             validateSuppression(lc);
-        return suppressed.contains(lc);
+        return suppressedValues.contains(lc);
     }
 
     /**
@@ -601,8 +539,7 @@ public class Lint {
      * @return categories for which a {@code -Xlint:-key} flag was specified
      */
     public EnumSet<LintCategory> getOptionFlagSuppressions() {
-        initializeRootIfNeeded();
-        return EnumSet.copyOf(common.optionFlagSuppressions);
+        return EnumSet.copyOf(optionFlagSuppressions);
     }
 
     /**
@@ -610,59 +547,50 @@ public class Lint {
      *
      * <p>
      * This set can be non-empty only if the symbol is annotated with either
-     * {@code @SuppressWarnings} or {@code @Deprecated}.
+     * @SuppressWarnings or @Deprecated.
      *
      * @param symbol symbol corresponding to a possibly-annotated declaration
-     * @param includeAll true to include all categories, false to filter out those not supporting {@code @SuppressWarnings}
      * @return new warning suppressions applied to sym
      */
-    public EnumSet<LintCategory> suppressionsFrom(Symbol symbol, boolean includeAll) {
-        EnumSet<LintCategory> suppressions = suppressionsFrom(symbol.getDeclarationAttributes().stream(), includeAll);
+    public EnumSet<LintCategory> suppressionsFrom(Symbol symbol) {
+        EnumSet<LintCategory> suppressions = suppressionsFrom(symbol.getDeclarationAttributes().stream());
         if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
             suppressions.add(LintCategory.DEPRECATION);
         return suppressions;
     }
 
     /**
-     * Retrieve the recognized lint categories suppressed by the given {@code @SuppressWarnings} annotation.
+     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
      *
-     * @param annotation {@code @SuppressWarnings} annotation, or null
-     * @param includeAll true to include all categories, false to filter out those not supporting {@code @SuppressWarnings}
+     * @param annotation @SuppressWarnings annotation, or null
      * @return set of lint categories, possibly empty but never null
      */
-    public EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation, boolean includeAll) {
+    public EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
         initializeSymbolsIfNeeded();
         if (annotation == null)
             return LintCategory.newEmptySet();
-        Assert.check(annotation.attribute.type.tsym == common.syms.suppressWarningsType.tsym);
-        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute), includeAll);
+        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
+        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
     }
 
-    /**
-     * Retrieve the recognized lint categories suppressed by the {@code @SuppressWarnings} annotation in the stream, if any.
-     *
-     * @param attributes annotations
-     * @param includeAll true to include all categories, false to filter out those not supporting {@code @SuppressWarnings}
-     * @return set of lint categories, possibly empty but never null
-     */
-    public EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes, boolean includeAll) {
+    // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
+    private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
         initializeSymbolsIfNeeded();
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
         attributes
-          .filter(attribute -> attribute.type.tsym == common.syms.suppressWarningsType.tsym)
-          .map(attribute -> suppressionsFrom(attribute, includeAll))
+          .filter(attribute -> attribute.type.tsym == syms.suppressWarningsType.tsym)
+          .map(this::suppressionsFrom)
           .forEach(result::addAll);
         return result;
     }
 
     // Given a @SuppressWarnings annotation, extract the recognized suppressions
-    private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings, boolean includeAll) {
+    private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings) {
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
-        Attribute.Array values = (Attribute.Array)suppressWarnings.member(common.names.value);
+        Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
         for (Attribute value : values.values) {
             Optional.of((String)((Attribute.Constant)value).value)
               .flatMap(LintCategory::get)
-              .filter(lc -> includeAll || lc.annotationSuppression)
               .ifPresent(result::add);
         }
         return result;
@@ -680,7 +608,7 @@ public class Lint {
      */
     public Lint validateSuppression(LintCategory lc) {
         if (needsSuppressionTracking(lc))
-            common.lintMapper.validateSuppression(symbolInScope, lc);
+            lintMapper.validateSuppression(symbol, lc);
         return this;
     }
 
@@ -697,13 +625,13 @@ public class Lint {
     private boolean needsSuppressionTracking(LintCategory lc) {
         initializeRootIfNeeded();
         return lc.suppressionTracking &&
-            (enabled.contains(LintCategory.SUPPRESSION) || enabled.contains(LintCategory.SUPPRESSION_OPTION));
+            (values.contains(LintCategory.SUPPRESSION) || values.contains(LintCategory.SUPPRESSION_OPTION));
     }
 
     private void initializeSymbolsIfNeeded() {
-        if (common.syms == null) {
-            common.syms = Symtab.instance(common.context);
-            common.names = Names.instance(common.context);
+        if (syms == null) {
+            syms = Symtab.instance(context);
+            names = Names.instance(context);
         }
     }
 }

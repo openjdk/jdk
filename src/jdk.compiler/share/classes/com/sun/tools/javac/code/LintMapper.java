@@ -594,7 +594,7 @@ public class LintMapper {
 
             // Get the lint categories explicitly suppressed at this symbol's declaration by @SuppressedWarnings
             EnumSet<LintCategory> suppressed = Optional.ofNullable(annotation)
-              .map(anno -> rootLint.suppressionsFrom(anno, true))
+              .map(anno -> rootLint.suppressionsFrom(anno))
               .orElseGet(LintCategory::newEmptySet);
 
             // Merge validation sets for variables that share the same declaration (and therefore the same @SuppressedWarnings)
