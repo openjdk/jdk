@@ -37,7 +37,7 @@ import jdk.test.lib.Asserts;
  * @bug 8353551
  * @summary Test that ReverseBytes operations constant-fold.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ReverseBytesConstantsTests
+ * @run driver compiler.c2.gvn.ReverseBytesConstantsTests
  */
 public class ReverseBytesConstantsTests {
 
