@@ -316,33 +316,14 @@ public:
     rbtree.upsert(2, 0);
     rbtree.upsert(5, 0);
 
-    rbtree.visit_range_in_order(0, 0, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(0, 1, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(1, 1, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(3, 3, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(3, 4, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(4, 4, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(6,6, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(6, 7, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
-    rbtree.visit_range_in_order(7, 7, [&](const Node* x) {
-      EXPECT_TRUE(false) << "Range should not visit nodes";
-    });
+    constexpr int test_cases[9][2] = {{0, 0}, {0, 1}, {1, 1}, {3, 3}, {3, 4},
+                                      {4, 4}, {6, 6}, {6, 7}, {7, 7}};
+
+    for (const int (&test_case)[2] : test_cases) {
+      rbtree.visit_range_in_order(test_case[0], test_case[1], [&](const Node* x) {
+        FAIL() << "Range should not visit nodes";
+      });
+    }
   }
 
   void test_closest_leq() {

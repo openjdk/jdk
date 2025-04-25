@@ -550,19 +550,19 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   new_node->_parent = old_node->_parent;
 
   if (new_node->is_left_child()) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->parent()), "new node not < parent");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->parent())), "new node not < parent");
   } else if (new_node->is_right_child()) {
-    assert(cmp((const NodeType*)new_node->parent(), (const NodeType*)new_node), "new node not > parent");
+    assert(cmp(static_cast<const NodeType*>(new_node->parent()), static_cast<const NodeType*>(new_node)), "new node not > parent");
   }
 
   new_node->_left = old_node->_left;
   new_node->_right = old_node->_right;
   if (new_node->_left != nullptr) {
-    assert(cmp((const NodeType*)new_node->_left, (const NodeType*)new_node), "left child not < new node");
+    assert(cmp(static_cast<const NodeType*>(new_node->_left), static_cast<const NodeType*>(new_node)), "left child not < new node");
     new_node->_left->set_parent(new_node);
   }
   if (new_node->_right != nullptr) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->_right), "right child not > new node");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->_right)), "right child not > new node");
     new_node->_right->set_parent(new_node);
   }
 
