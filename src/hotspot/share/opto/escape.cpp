@@ -4155,9 +4155,11 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         // which contains this memory slice, otherwise skip over it.
         if (alloc == nullptr || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
-        } else {
-          result = get_map(proj_in->_idx);
+        } else if (C->get_alias_index(result->adr_type()) != alias_idx) {
+          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->adr_type()), "");
+          result = get_map(result->_idx);
           assert(result != nullptr, "");
+          break;
         }
       } else if (proj_in->is_MemBar()) {
         // Check if there is an array copy for a clone
@@ -4465,7 +4467,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             if (adr_type != new_adr_type) {
               DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
               assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
-              NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, tinst);
+              NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
               Node* existing = igvn->hash_find_insert(new_proj);
               if (existing != nullptr) {
                 ShouldNotReachHere();
@@ -4884,7 +4886,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
         mem = mem->in(MemNode::Memory);
       }
-      if (mem->is_NarrowMemProj()) {
+      if (mem->is_NarrowMemProj() && 0) {
         const TypePtr* at = mem->adr_type();
         uint alias_idx = (uint) _compile->get_alias_index(at->is_ptr());
         if (alias_idx == i) {
@@ -4903,7 +4905,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           mem = alloc->in(TypeFunc::Memory);
         }
       }
-        nmm->set_memory_at(i, (cur != nullptr) ? cur : mem);
+      nmm->set_memory_at(i, (cur != nullptr) ? cur : mem);
       record_for_optimizer(nmm);
       // Find any instance of the current type if we haven't encountered
       // already a memory slice of the instance along the memory chain.
@@ -5008,7 +5010,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       record_for_optimizer(n);
     } else {
       assert(n->is_Allocate() || n->is_CheckCastPP() ||
-             n->is_AddP() || n->is_Phi(), "unknown node used for set_map()");
+             n->is_AddP() || n->is_Phi() || n->is_NarrowMemProj(), "unknown node used for set_map()");
     }
   }
 #if 0 // ifdef ASSERT
