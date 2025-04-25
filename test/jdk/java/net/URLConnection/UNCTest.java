@@ -44,26 +44,27 @@ public class UNCTest {
         // Get the "computer name" for this host
         String hostName = InetAddress.getLocalHost().getHostName();
 
-        // UNC path which always exist with Administrative Shares enabled
+        // UNC path which always exists with Administrative Shares enabled
         String path = "\\\\" + hostName + "\\C$\\Windows";
 
         // Skip test if Administrative Shares is disabled
         if (! new File(path).exists()) {
-            throw new SkippedException("Administrative shares not enabled");
+            throw new SkippedException("Administrative Shares not enabled");
         }
 
         // File URL for the UNC path
         URL url = new URI("file://" + hostName + "/C$/Windows").toURL();
 
-        // Should return an UNCFileURLConnection
+        // Should open a FileURLConnection for the UNC path
         URLConnection conn = url.openConnection();
 
-        // Sanity check that the UNC path resulted in a FileURLConnection
+        // Sanity check that the connection is a FileURLConnection
         if (! (conn instanceof FileURLConnection)) {
-            throw new Exception("Expected FileURLConnection for UNC path, instead got " + conn.getClass().getName());
+            throw new Exception("Expected FileURLConnection, instead got "
+                    + conn.getClass().getName());
         }
 
-        // Verify that the connection is not already connected
+        // Verify that the connection is not in an already connected state
         conn.setRequestProperty( "User-Agent", "Java" );
     }
 }
