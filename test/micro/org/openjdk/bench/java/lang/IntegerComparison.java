@@ -42,12 +42,8 @@ public class IntegerComparison {
     int[] i2;
     int[] res;
     long[] resLong;
-    Object[] resObject;
-    Object ro1;
-    Object ro2;
-    Object[] resClass;
-    Class rc1;
-    Class rc2;
+    float[] resFloat;
+    double[] resDouble;
 
     @Setup
     public void setup() {
@@ -56,12 +52,8 @@ public class IntegerComparison {
         i2 = new int[INVOCATIONS];
         res = new int[INVOCATIONS];
         resLong = new long[INVOCATIONS];
-        resObject = new Object[INVOCATIONS];
-        ro1 = new Object();
-        ro2 = new Object();
-        resClass = new Class[INVOCATIONS];
-        rc1 = Float.class;
-        rc2 = Double.class;
+        resFloat = new float[INVOCATIONS];
+        resDouble = new double[INVOCATIONS];
         for (int i = 0; i < INVOCATIONS; i++) {
             i1[i] = random.nextInt(INVOCATIONS);
             i2[i] = random.nextInt(INVOCATIONS);
@@ -112,6 +104,7 @@ public class IntegerComparison {
 
     // --------- result: long ---------
 
+    @Benchmark
     public void equalIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] == i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -125,6 +118,7 @@ public class IntegerComparison {
         }
     }
 
+    @Benchmark
     public void lessIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] < i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -138,6 +132,7 @@ public class IntegerComparison {
         }
     }
 
+    @Benchmark
     public void greaterIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] > i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -148,6 +143,94 @@ public class IntegerComparison {
     public void greaterEqualIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] >= i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    // --------- result: float ---------
+
+    @Benchmark
+    public void equalIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] == i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] != i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] < i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] <= i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] > i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] >= i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    // --------- result: double ---------
+
+    @Benchmark
+    public void equalIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] == i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] != i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] < i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] <= i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] > i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] >= i2[i]) ? 0.1 : 0.2;
         }
     }
 }
