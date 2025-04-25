@@ -473,13 +473,11 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 }
 
 #ifndef SYS_gettid
-// i386: 224, amd64: 186, sparc: 143
+// i386: 224, amd64: 186
   #if defined(__i386__)
     #define SYS_gettid 224
   #elif defined(__amd64__)
     #define SYS_gettid 186
-  #elif defined(__sparc__)
-    #define SYS_gettid 143
   #else
     #error "Define SYS_gettid for this architecture"
   #endif
@@ -2675,8 +2673,6 @@ const char* search_string = "CPU";
 const char* search_string = "cpu";
 #elif defined(S390)
 const char* search_string = "machine =";
-#elif defined(SPARC)
-const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
 #endif
@@ -2728,8 +2724,6 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, LP64_ONLY("RISCV64") NOT_LP64("RISCV32"), length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
-#elif defined(SPARC)
-  strncpy(cpuinfo, "sparcv9", length);
 #elif defined(ZERO_LIBARCH)
   strncpy(cpuinfo, ZERO_LIBARCH, length);
 #else
