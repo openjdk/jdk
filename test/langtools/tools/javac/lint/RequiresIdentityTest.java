@@ -72,4 +72,10 @@ public class RequiresIdentityTest extends RequiresIdentityHelper<Integer> // sho
     void m6() {
         m5(new Run<Object>()::<Integer>run);
     }
+
+    void m7(Integer i, Object o) {
+        RequiresIdentityHelper<Object> var1 = new <Object>RequiresIdentityHelper<Object>(i);
+        RequiresIdentityHelper<Object> var2 = new <Integer>RequiresIdentityHelper<Object>(o);
+        RequiresIdentityHelper<Integer> var3 = new <Object>RequiresIdentityHelper<Integer>(o);
+    }
 }

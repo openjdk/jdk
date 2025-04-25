@@ -5720,16 +5720,11 @@ public class Check {
             }
             case JCMemberReference mref : {
                 checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
-                if (mref.typeargs != null) {
-                    ListBuffer<Type> lbTypes = new ListBuffer<>();
-                    for (JCExpression targ : mref.typeargs) {
-                        lbTypes.add(targ.type);
-                    }
-                    checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), lbTypes.toList(), mref.pos(), lint, true);
-                }
+                checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), mref.typeargs, lint);
                 break;
             }
-            case JCPolyExpression poly when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation): {
+            case JCPolyExpression poly
+                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) : {
                 if (poly instanceof JCNewClass newClass) {
                     checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
                 }
@@ -5756,15 +5751,12 @@ public class Check {
                             argExps = argExps.tail;
                         }
                     }
-                    ListBuffer<Type> typeParamTypes = new ListBuffer<>();
-                    List<JCExpression> typeargs = poly instanceof JCNewClass ?
-                                                      ((JCNewClass)poly).typeargs :
-                                                      ((JCMethodInvocation)poly).typeargs;
-                    for (JCExpression targ: typeargs) {
-                        checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
-                        typeParamTypes.add(targ.type);
-                    }
-                    checkIfTypeParamsRequiresIdentity(msym.getMetadata(), typeParamTypes.toList(), tree.pos(), lint, true);
+                    checkIfTypeParamsRequiresIdentity(
+                            msym.getMetadata(),
+                            poly instanceof JCNewClass ?
+                                ((JCNewClass)poly).typeargs :
+                                ((JCMethodInvocation)poly).typeargs,
+                            lint);
                 }
                 break;
             }
@@ -5842,24 +5834,35 @@ public class Check {
     } // RequiresIdentityVisitor
 
     private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
-        return checkIfTypeParamsRequiresIdentity(sm, typeParams, null, null, false);
-    }
-
-    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
-                                                     List<Type> typeParams,
-                                                     JCDiagnostic.DiagnosticPosition pos,
-                                                     Lint lint,
-                                                     boolean warn) {
         boolean result = false;
         if (sm != null && !typeParams.isEmpty()) {
             for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
                 if (ta.type.tsym == syms.requiresIdentityType.tsym) {
                     if (typeParams.get(ta.position.parameter_index).isValueBased()) {
-                        if (warn) {
-                            lint.logIfEnabled(pos,
-                                    CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                        }
                         result = true;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+                                                     List<JCExpression> typeParamTrees,
+                                                     Lint lint) {
+        boolean result = false;
+        if (typeParamTrees != null && !typeParamTrees.isEmpty()) {
+            for (JCExpression targ: typeParamTrees) {
+                checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
+            }
+            if (sm != null) {
+                for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
+                    if (ta.type.tsym == syms.requiresIdentityType.tsym) {
+                        if (typeParamTrees.get(ta.position.parameter_index).type.isValueBased()) {
+                            lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
+                                    CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            result = true;
+                        }
                     }
                 }
             }

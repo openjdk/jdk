@@ -4,7 +4,7 @@ package java.lang;
 
 public class RequiresIdentityHelper<@jdk.internal.RequiresIdentity T> {
     public RequiresIdentityHelper() {}
-    public RequiresIdentityHelper(@jdk.internal.RequiresIdentity Object o) {}
+    public <@jdk.internal.RequiresIdentity TT> RequiresIdentityHelper(@jdk.internal.RequiresIdentity Object o) {}
 
     class RequiresIdentity2<TT> {
         public RequiresIdentity2() {}
