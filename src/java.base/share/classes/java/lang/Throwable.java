@@ -687,45 +687,35 @@ public class Throwable implements Serializable {
     }
 
     private void printStackTrace(PrintStreamOrWriter s) {
-        /*
-         * Guard against malicious overrides of Throwable.equals by
-         * using a Set with identity equality semantics.
-         */
-        Set<Throwable> dejaVu = null;
-
         synchronized(s.lock()) {
             // Print our stack trace
             s.println(this);
             StackTraceElement[] trace = getOurStackTrace();
             printStackTrace0(s, trace);
 
-            // Print suppressed exceptions, if any
             java.lang.Throwable[] suppressed = getSuppressed();
-            if (suppressed.length > 0) {
-                dejaVu = dejaVu();
+            Throwable ourCause = getCause();
+
+            /*
+             * Guard against malicious overrides of Throwable.equals by
+             * using a Set with identity equality semantics.
+             */
+            Set<Throwable> dejaVu = null;
+            if (suppressed.length > 0 || ourCause != null) {
+                dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
+                dejaVu.add(this);
             }
+
+            // Print suppressed exceptions, if any
             for (Throwable se : suppressed)
                 se.printEnclosedStackTrace(s, trace, "\t".concat(SUPPRESSED_CAPTION), "\t", dejaVu);
 
             // Print cause, if any
-            Throwable ourCause = getCause();
+
             if (ourCause != null) {
-                if (dejaVu == null) {
-                    dejaVu = dejaVu();
-                }
                 ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
             }
         }
-    }
-
-    /**
-     * Guard against malicious overrides of Throwable.equals by
-     * using a Set with identity equality semantics.
-     */
-    private Set<Throwable> dejaVu() {
-        Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
-        dejaVu.add(this);
-        return dejaVu;
     }
 
     /**
