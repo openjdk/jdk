@@ -59,9 +59,8 @@ public class bug8033699 {
 
     public static void main(String[] args) throws Throwable {
         robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> {
-            focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        });
+        SwingUtilities.invokeAndWait(() ->
+                focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager());
 
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo laf : lafs) {
