@@ -1,38 +1,38 @@
-RequiresIdentityTest.java:10:65: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:11:88: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
-RequiresIdentityTest.java:14:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:15:36: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>[]
-RequiresIdentityTest.java:16:8: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityTest.Box<? extends java.lang.RequiresIdentityHelper<java.lang.Integer>>
-RequiresIdentityTest.java:17:8: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityTest.Box<? super java.lang.RequiresIdentityHelper<java.lang.Integer>>
-RequiresIdentityTest.java:18:72: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:18:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:22:15: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:25:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>.RequiresIdentity2<java.lang.Object>
-RequiresIdentityTest.java:26:31: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:27:40: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>[]
-RequiresIdentityTest.java:29:16: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:30:16: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:12:65: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:13:88: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
+RequiresIdentityTest.java:16:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:17:36: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>[]
+RequiresIdentityTest.java:18:8: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityTest.Box<? extends java.lang.RequiresIdentityHelper<java.lang.Integer>>
+RequiresIdentityTest.java:19:8: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityTest.Box<? super java.lang.RequiresIdentityHelper<java.lang.Integer>>
+RequiresIdentityTest.java:20:72: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:20:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:24:15: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:27:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>.RequiresIdentity2<java.lang.Object>
+RequiresIdentityTest.java:28:31: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:29:40: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>[]
 RequiresIdentityTest.java:31:16: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:32:15: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:35:67: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
-RequiresIdentityTest.java:38:63: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:41:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:46:6: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
-RequiresIdentityTest.java:46:49: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
-RequiresIdentityTest.java:48:21: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
-RequiresIdentityTest.java:50:36: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:53:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
-RequiresIdentityTest.java:54:46: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
-RequiresIdentityTest.java:58:54: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:63:37: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:66:37: compiler.warn.has.been.deprecated.for.removal: java.lang.Integer(int), java.lang.Integer
-RequiresIdentityTest.java:66:37: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.MyIntFunction<java.lang.Integer>
-RequiresIdentityTest.java:66:18: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.MyIntFunction<java.lang.Integer>
-RequiresIdentityTest.java:73:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:77:90: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:78:52: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
-RequiresIdentityTest.java:79:82: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
-RequiresIdentityTest.java:79:31: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:32:16: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:33:16: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:34:15: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:37:67: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
+RequiresIdentityTest.java:40:63: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:43:27: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:48:6: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
+RequiresIdentityTest.java:48:49: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
+RequiresIdentityTest.java:50:21: compiler.warn.attempt.to.use.value.based.where.identity.expected: T
+RequiresIdentityTest.java:52:36: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:55:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
+RequiresIdentityTest.java:56:46: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.RequiresIdentityInt<java.lang.Integer>
+RequiresIdentityTest.java:60:54: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:65:37: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:68:37: compiler.warn.has.been.deprecated.for.removal: java.lang.Integer(int), java.lang.Integer
+RequiresIdentityTest.java:68:37: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.MyIntFunction<java.lang.Integer>
+RequiresIdentityTest.java:68:18: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper.MyIntFunction<java.lang.Integer>
+RequiresIdentityTest.java:75:32: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:79:90: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:80:52: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.Integer
+RequiresIdentityTest.java:81:82: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
+RequiresIdentityTest.java:81:31: compiler.warn.attempt.to.use.value.based.where.identity.expected: java.lang.RequiresIdentityHelper<java.lang.Integer>
 - compiler.err.warnings.and.werror
 - compiler.note.unchecked.filename: RequiresIdentityTest.java
 - compiler.note.unchecked.recompile

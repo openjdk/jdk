@@ -2,6 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8354556
  * @summary Expand value-based class warnings to java.lang.ref API
+ * @compile --patch-module java.base=${test.src} RequiresIdentityHelper.java
+ * @compile/fail/ref=RequiresIdentityTest.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:identity RequiresIdentityTest.java
  * @compile/fail/ref=RequiresIdentityTest.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:identity RequiresIdentityHelper.java RequiresIdentityTest.java
  */
 

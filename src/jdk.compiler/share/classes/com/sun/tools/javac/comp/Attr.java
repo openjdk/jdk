@@ -2555,7 +2555,6 @@ public class Attr extends JCTree.Visitor {
             methName == names._this || methName == names._super;
 
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
-        Symbol msym = null;
         if (isConstructorCall) {
 
             // Attribute arguments, yielding list of argument types.
@@ -2622,17 +2621,17 @@ public class Attr extends JCTree.Visitor {
                 boolean selectSuperPrev = localEnv.info.selectSuper;
                 localEnv.info.selectSuper = true;
                 localEnv.info.pendingResolutionPhase = null;
-                msym = rs.resolveConstructor(
+                Symbol sym = rs.resolveConstructor(
                     tree.meth.pos(), localEnv, site, argtypes, typeargtypes);
                 localEnv.info.selectSuper = selectSuperPrev;
 
                 // Set method symbol to resolved constructor...
-                TreeInfo.setSymbol(tree.meth, msym);
+                TreeInfo.setSymbol(tree.meth, sym);
 
                 // ...and check that it is legal in the current context.
                 // (this will also set the tree's type)
                 Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
-                checkId(tree.meth, site, msym, localEnv,
+                checkId(tree.meth, site, sym, localEnv,
                         new ResultInfo(kind, mpt));
             } else if (site.hasTag(ERROR) && tree.meth.hasTag(SELECT)) {
                 attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
@@ -2661,7 +2660,7 @@ public class Attr extends JCTree.Visitor {
             Type qualifier = (tree.meth.hasTag(SELECT))
                     ? ((JCFieldAccess) tree.meth).selected.type
                     : env.enclClass.sym.type;
-            msym = TreeInfo.symbol(tree.meth);
+            Symbol msym = TreeInfo.symbol(tree.meth);
             restype = adjustMethodReturnType(msym, qualifier, methName, argtypes, restype);
 
             chk.checkRefTypes(tree.typeargs, typeargtypes);
