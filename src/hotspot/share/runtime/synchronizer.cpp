@@ -423,8 +423,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     // Case: TLE inimical operations such as nested/recursive synchronization
 
     if (m->has_owner(current)) {
-      int recursions = m->recursions();
-      m->set_recursions(++recursions);
+      m->increment_recursions(current);
       current->inc_held_monitor_count();
       return true;
     }

@@ -169,7 +169,7 @@ public class Log extends AbstractLog {
 
                 // Gather information
                 LintCategory category = diag.getLintCategory();
-                boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?   // is the warning not enabled by default?
+                boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
                   lint.isEnabled(category, false) :                     // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
                     !lint.isSuppressed(category, false) :                   // ...suppression happens via @SuppressWarnings
