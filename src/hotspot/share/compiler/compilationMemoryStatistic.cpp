@@ -1000,8 +1000,7 @@ void CompilationMemoryStatistic::print_error_report(outputStream* st) {
   if (!check_before_reporting(st)) {
     return;
   }
-  StreamAutoIndentor sai(tty);
-  streamIndentor si(tty, 4);
+  StreamAutoIndentor sai(tty, 4);
   const ArenaStatCounter* const oom_stats = Atomic::load(&_arenastat_oom_crash);
   if (oom_stats != nullptr) {
     // we crashed due to a compiler limit hit. Lead with a printout of the offending stats
@@ -1021,8 +1020,7 @@ void CompilationMemoryStatistic::print_final_report(outputStream* st) {
     return;
   }
   st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamAutoIndentor sai(st, 4);
   print_all_by_size(st, false, false, 0, 10);
 }
 
@@ -1031,8 +1029,7 @@ void CompilationMemoryStatistic::print_jcmd_report(outputStream* st, bool verbos
     return;
   }
   st->print_cr("Compiler Memory Statistic");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamAutoIndentor sai(st, 4);
   print_all_by_size(st, verbose, legend, minsize, -1);
 }
 
