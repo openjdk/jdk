@@ -1939,7 +1939,7 @@ bool FileMapHeader::validate() {
 
   if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::stop_using_optimized_module_handling();
-    MetaspaceShared::report_loading_error("optimized module handling: disabled because archive was created without optimized module handling");
+    log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static()) {
