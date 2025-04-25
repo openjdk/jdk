@@ -91,6 +91,7 @@ public class ComboPopupBug {
         frame.getContentPane().add(comboBox, "North");
         frame.getContentPane().add(closeButton, "South");
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
