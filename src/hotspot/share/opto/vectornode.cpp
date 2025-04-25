@@ -2209,9 +2209,10 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Transformations for predicated IRs are not supported for now.
+  bool with_predicated = false;
   if (is_predicated_vector() || in1->is_predicated_vector() ||
       in2->is_predicated_vector()) {
-    return VectorNode::Ideal(phase, can_reshape);
+    with_predicated = true;
   }
 
   // For integer types:
@@ -2240,7 +2241,8 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     vmcast_vt = in1->as_Vector()->vect_type();
     in1 = in1->in(1);
   }
-  if (in1->Opcode() != Op_VectorMaskCmp || in1->outcnt() > 1 ||
+  if (with_predicated || in1->Opcode() != Op_VectorMaskCmp ||
+      in1->outcnt() > 1 ||
       !((VectorMaskCmpNode*) in1)->predicate_can_be_inverted() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return VectorNode::Ideal(phase, can_reshape);

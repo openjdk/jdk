@@ -1217,12 +1217,11 @@ bool Node::has_special_unique_user() const {
     // See IfNode::fold_compares
     return true;
   } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
-    // Condition for removing the unnecessary not() following compare(...) operation.
-    // The predecessor of XorV/XorVMask may be used by an useless VectorBox node,
-    // making it's not single used by XorV/XorVMask. The VectorBox node will be
-    // eliminated by the phase RemoveUseless, but the XorV/XorVMask node may not
-    // be added to the IGVN worklist, then the optimization will not be applied.
-    // Therefore, add this node into IGVN worklist to make the optimization happen.
+    // Condition for removing an unnecessary not() following a compare(...)
+    // operation. The predecessor of n (this XorV or XorVMask) may also be used
+    // by a useless VectorBox node which will later be eliminated by
+    // RemoveUseless. Return true to ensure that subgraph transformations are
+    // performed on n.
     return true;
   } else {
     return false;
