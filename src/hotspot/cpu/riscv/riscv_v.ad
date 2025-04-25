@@ -89,6 +89,8 @@ source %{
         return UseZvbb;
       case Op_LoadVectorGather:
       case Op_LoadVectorGatherMasked:
+      case Op_StoreVectorScatter:
+      case Op_StoreVectorScatterMasked:
         if (is_subword_type(bt)) {
           return false;
         }
