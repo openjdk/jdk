@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -50,22 +51,23 @@ public class NonLocalFtpFallbackDisabled {
      * is rejected with a MalformedURLException.
      *
      * @throws MalformedURLException if an unexpected URL exception occurs
+     * @throws URISyntaxException if an unexpected URI exception occurs
      */
     @Test
-    public void verifyNonLocalFileURLRejected() throws MalformedURLException {
+    public void verifyNonLocalFileURLRejected() throws MalformedURLException, URISyntaxException {
         // We can use a fake host name here, no actual FTP request will be made
         String hostname = "remotehost";
 
+        URL local = file.toUri().toURL();
+
+        URL nonLocal = new URI("file", hostname, local.getFile(), "").toURL();
         assertThrows(MalformedURLException.class, () -> {
-            // Non-empty path
-            URL localURL = file.toUri().toURL();
-            URL nonLocalURL = new URI("file", hostname, localURL.getFile(), "").toURL();
-            nonLocalURL.openConnection();
+            nonLocal.openConnection();
         });
+
+        URL nonLocalEmptyPath = new URI("file", hostname, "", "").toURL();
         assertThrows(MalformedURLException.class, () -> {
-            // Empty path
-            URL nonLocalURL = new URI("file", hostname, "", "").toURL();
-            nonLocalURL.openConnection();
+            nonLocalEmptyPath.openConnection();
         });
     }
 }
