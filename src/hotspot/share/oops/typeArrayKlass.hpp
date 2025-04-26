@@ -76,23 +76,19 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  // Oop iterators. Since there are no oops in TypeArrayKlasses,
-  // these functions only return the size of the object.
-
- private:
-  // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
-  static inline void oop_oop_iterate_impl(oop obj, OopIterateClosure* closure);
-
  public:
 
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  // Oop iterators are dummy methods for TypeArrayKlass:
+  // - there are no oops to iterate
+  // - there are no metadata to iterate either since TypeArrayKlass is guaranteed
+  //   to be loaded by the boot class loader.
 
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
-
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {}
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {}
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {}
 
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));

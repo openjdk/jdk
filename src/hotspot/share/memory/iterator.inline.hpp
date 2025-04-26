@@ -41,7 +41,7 @@
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/objLayout.inline.hpp"
-#include "oops/typeArrayKlass.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "utilities/debug.hpp"
 
 // Defaults to strong claiming.
@@ -418,17 +418,17 @@ public:
 
 template <typename OopClosureType>
 class OopOopIterateDispatchRange : public DispatchBase {
-  typedef void (*FunctionType) (oop obj, OopClosureType* cl, int start, int end);
+  typedef void (*FunctionType) (objArrayOop obj, OopClosureType* cl, int start, int end);
 
   struct Table {
     FunctionType _function; // only for ObjArrayKlass
 
     template <HeaderMode mode, typename OopType>
-    static void invoke(oop obj, OopClosureType* cl, int start, int end) {
+    static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
       ObjArrayKlass::oop_oop_iterate_range<mode, OopType, OopClosureType>(obj, cl, start, end);
     }
 
-    static void init_and_execute(oop obj, OopClosureType* cl, int start, int end) {
+    static void init_and_execute(objArrayOop obj, OopClosureType* cl, int start, int end) {
       _table.resolve();
       _table._function(obj, cl, start, end);
     }
@@ -459,7 +459,7 @@ class OopOopIterateDispatchRange : public DispatchBase {
 
 public:
 
-  static void invoke(oop obj, OopClosureType* cl, int start, int end) {
+  static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
     _table._function(obj, cl, start, end);
   }
 };
