@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,16 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-abstract class MethodHandleFieldAccessorImpl extends FieldAccessorImpl {
+abstract sealed class MethodHandleFieldAccessorImpl extends FieldAccessorImpl
+        permits MethodHandleBooleanFieldAccessorImpl,
+                MethodHandleCharacterFieldAccessorImpl,
+                MethodHandleByteFieldAccessorImpl,
+                MethodHandleShortFieldAccessorImpl,
+                MethodHandleIntegerFieldAccessorImpl,
+                MethodHandleLongFieldAccessorImpl,
+                MethodHandleFloatFieldAccessorImpl,
+                MethodHandleDoubleFieldAccessorImpl,
+                MethodHandleObjectFieldAccessorImpl {
     private static final int IS_READ_ONLY_BIT = 0x0001;
     private static final int IS_STATIC_BIT = 0x0002;
     private static final int NONZERO_BIT = 0x8000;

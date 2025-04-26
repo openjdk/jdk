@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.internal.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-abstract class FieldAccessorImpl implements FieldAccessor {
+abstract sealed class FieldAccessorImpl implements FieldAccessor permits MethodHandleFieldAccessorImpl {
     protected final Field field;
 
     FieldAccessorImpl(Field field) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Set;
     Currently this is needed to provide reflective access to annotations
     but may be used by other internal subsystems in the future. */
 
-public class ConstantPool {
+public final class ConstantPool {
   // Number of entries in this constant pool (= maximum valid constant pool index)
   public int      getSize()                      { return getSize0            (constantPoolOop);        }
   public Class<?> getClassAt         (int index) { return getClassAt0         (constantPoolOop, index); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
 
-class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
+final class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     static ConstructorAccessorImpl constructorAccessor(Constructor<?> ctor, MethodHandle target) {
         return new DirectConstructorHandleAccessor(ctor, target);
     }
@@ -94,7 +94,7 @@ class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     /**
      * Invoke the constructor via native VM reflection
      */
-    static class NativeAccessor extends ConstructorAccessorImpl {
+    static final class NativeAccessor extends ConstructorAccessorImpl {
         private final Constructor<?> ctor;
         NativeAccessor(Constructor<?> ctor) {
             this.ctor = ctor;

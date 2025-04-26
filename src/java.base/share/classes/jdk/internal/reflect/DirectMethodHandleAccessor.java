@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.lang.reflect.Modifier;
 import static java.lang.invoke.MethodType.genericMethodType;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.JLIA;
 
-class DirectMethodHandleAccessor extends MethodAccessorImpl {
+final class DirectMethodHandleAccessor extends MethodAccessorImpl {
     /**
      * Creates a MethodAccessorImpl for a non-native method.
      */
@@ -203,7 +203,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     /**
      * Invoke the method via native VM reflection
      */
-    static class NativeAccessor extends MethodAccessorImpl {
+    static final class NativeAccessor extends MethodAccessorImpl {
         private final Method method;
         private final Method csmAdapter;
         private final boolean callerSensitive;

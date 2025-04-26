@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,8 @@ import java.lang.reflect.InvocationTargetException;
     methods for java.lang.reflect.Method.invoke(). </P>
 */
 
-abstract class MethodAccessorImpl implements MethodAccessor {
+abstract sealed class MethodAccessorImpl implements MethodAccessor
+        permits DirectMethodHandleAccessor, DirectMethodHandleAccessor.NativeAccessor, CsMethodAccessorAdapter {
     /** Matches specification in {@link java.lang.reflect.Method} */
     public abstract Object invoke(Object obj, Object[] args)
         throws IllegalArgumentException, InvocationTargetException;

@@ -41,7 +41,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 /** Common utility routines used by both java.lang and
     java.lang.reflect */
 
-public class Reflection {
+public final class Reflection {
 
     /** Used to filter out fields and methods from certain classes from public
         view, where they are sensitive or they may contain VM-internal objects.
