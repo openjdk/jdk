@@ -738,7 +738,7 @@ sealed class DirectMethodHandle extends MethodHandle {
             case OBJECT -> "Reference";
             case VOID -> throw new InternalError();
         };
-        StringBuilder sb = new StringBuilder(3 + name.length() + (isVolatile ? 8 : 0))
+        var sb = new StringBuilder(3 + name.length() + (isVolatile ? 8 : 0))
                 .append(isGetter ? "get" : "put")
                 .append(name);
         if (isVolatile) {
