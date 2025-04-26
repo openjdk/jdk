@@ -192,50 +192,47 @@ public class PrintStackTrace {
         PrintStream printStream = new PrintStream(byteout, true, charset);
         error.printStackTrace(printStream);
 
-        String expect =
-                """
-                        java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException
-                        	at PrintStackTrace.xn(PrintStackTrace.java:139)
-                        	at PrintStackTrace.x9(PrintStackTrace.java:144)
-                        	at PrintStackTrace.x8(PrintStackTrace.java:148)
-                        	at PrintStackTrace.x7(PrintStackTrace.java:152)
-                        	at PrintStackTrace.x6(PrintStackTrace.java:156)
-                        	at PrintStackTrace.x5(PrintStackTrace.java:160)
-                        	at PrintStackTrace.x4(PrintStackTrace.java:164)
-                        	at PrintStackTrace.x3(PrintStackTrace.java:168)
-                        	at PrintStackTrace.x2(PrintStackTrace.java:172)
-                        	at PrintStackTrace.x1(PrintStackTrace.java:176)
-                        	at PrintStackTrace.x0(PrintStackTrace.java:180)
-                        	at PrintStackTrace.main(PrintStackTrace.java:186)
-                        Caused by: java.lang.RuntimeException: java.lang.RuntimeException
-                        	at PrintStackTrace.yn(PrintStackTrace.java:91)
-                        	at PrintStackTrace.y9(PrintStackTrace.java:96)
-                        	at PrintStackTrace.y8(PrintStackTrace.java:100)
-                        	at PrintStackTrace.y7(PrintStackTrace.java:104)
-                        	at PrintStackTrace.y6(PrintStackTrace.java:108)
-                        	at PrintStackTrace.y5(PrintStackTrace.java:112)
-                        	at PrintStackTrace.y4(PrintStackTrace.java:116)
-                        	at PrintStackTrace.y3(PrintStackTrace.java:120)
-                        	at PrintStackTrace.y2(PrintStackTrace.java:124)
-                        	at PrintStackTrace.y1(PrintStackTrace.java:128)
-                        	at PrintStackTrace.y0(PrintStackTrace.java:132)
-                        	at PrintStackTrace.xn(PrintStackTrace.java:137)
-                        	... 11 more
-                        Caused by: java.lang.RuntimeException
-                        	at PrintStackTrace.fn(PrintStackTrace.java:43)
-                        	at PrintStackTrace.f9(PrintStackTrace.java:47)
-                        	at PrintStackTrace.f8(PrintStackTrace.java:51)
-                        	at PrintStackTrace.f7(PrintStackTrace.java:55)
-                        	at PrintStackTrace.f6(PrintStackTrace.java:59)
-                        	at PrintStackTrace.f5(PrintStackTrace.java:63)
-                        	at PrintStackTrace.f4(PrintStackTrace.java:67)
-                        	at PrintStackTrace.f3(PrintStackTrace.java:71)
-                        	at PrintStackTrace.f2(PrintStackTrace.java:75)
-                        	at PrintStackTrace.f1(PrintStackTrace.java:79)
-                        	at PrintStackTrace.f0(PrintStackTrace.java:83)
-                        	at PrintStackTrace.yn(PrintStackTrace.java:89)
-                        	... 22 more
-                        """;
+        String expect = "java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException\n" +
+                "\tat PrintStackTrace.xn(PrintStackTrace.java:139)\n" +
+                "\tat PrintStackTrace.x9(PrintStackTrace.java:144)\n" +
+                "\tat PrintStackTrace.x8(PrintStackTrace.java:148)\n" +
+                "\tat PrintStackTrace.x7(PrintStackTrace.java:152)\n" +
+                "\tat PrintStackTrace.x6(PrintStackTrace.java:156)\n" +
+                "\tat PrintStackTrace.x5(PrintStackTrace.java:160)\n" +
+                "\tat PrintStackTrace.x4(PrintStackTrace.java:164)\n" +
+                "\tat PrintStackTrace.x3(PrintStackTrace.java:168)\n" +
+                "\tat PrintStackTrace.x2(PrintStackTrace.java:172)\n" +
+                "\tat PrintStackTrace.x1(PrintStackTrace.java:176)\n" +
+                "\tat PrintStackTrace.x0(PrintStackTrace.java:180)\n" +
+                "\tat PrintStackTrace.main(PrintStackTrace.java:186)\n" +
+                "Caused by: java.lang.RuntimeException: java.lang.RuntimeException\n" +
+                "\tat PrintStackTrace.yn(PrintStackTrace.java:91)\n" +
+                "\tat PrintStackTrace.y9(PrintStackTrace.java:96)\n" +
+                "\tat PrintStackTrace.y8(PrintStackTrace.java:100)\n" +
+                "\tat PrintStackTrace.y7(PrintStackTrace.java:104)\n" +
+                "\tat PrintStackTrace.y6(PrintStackTrace.java:108)\n" +
+                "\tat PrintStackTrace.y5(PrintStackTrace.java:112)\n" +
+                "\tat PrintStackTrace.y4(PrintStackTrace.java:116)\n" +
+                "\tat PrintStackTrace.y3(PrintStackTrace.java:120)\n" +
+                "\tat PrintStackTrace.y2(PrintStackTrace.java:124)\n" +
+                "\tat PrintStackTrace.y1(PrintStackTrace.java:128)\n" +
+                "\tat PrintStackTrace.y0(PrintStackTrace.java:132)\n" +
+                "\tat PrintStackTrace.xn(PrintStackTrace.java:137)\n" +
+                "\t... 11 more\n" +
+                "Caused by: java.lang.RuntimeException\n" +
+                "\tat PrintStackTrace.fn(PrintStackTrace.java:43)\n" +
+                "\tat PrintStackTrace.f9(PrintStackTrace.java:47)\n" +
+                "\tat PrintStackTrace.f8(PrintStackTrace.java:51)\n" +
+                "\tat PrintStackTrace.f7(PrintStackTrace.java:55)\n" +
+                "\tat PrintStackTrace.f6(PrintStackTrace.java:59)\n" +
+                "\tat PrintStackTrace.f5(PrintStackTrace.java:63)\n" +
+                "\tat PrintStackTrace.f4(PrintStackTrace.java:67)\n" +
+                "\tat PrintStackTrace.f3(PrintStackTrace.java:71)\n" +
+                "\tat PrintStackTrace.f2(PrintStackTrace.java:75)\n" +
+                "\tat PrintStackTrace.f1(PrintStackTrace.java:79)\n" +
+                "\tat PrintStackTrace.f0(PrintStackTrace.java:83)\n" +
+                "\tat PrintStackTrace.yn(PrintStackTrace.java:89)\n" +
+                "\t... 22 more\n";
         String s = byteout.toString();
         if (!expect.equals(s)) {
             System.err.println(s);
