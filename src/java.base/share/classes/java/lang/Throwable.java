@@ -719,7 +719,6 @@ public class Throwable implements Serializable {
                     se.printEnclosedStackTrace(s, lineBuffer, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
                 // Print cause, if any
-
                 if (ourCause != null) {
                     ourCause.printEnclosedStackTrace(s, lineBuffer, trace, CAUSE_CAPTION, "", dejaVu);
                 }
