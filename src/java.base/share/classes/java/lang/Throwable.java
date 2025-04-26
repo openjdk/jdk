@@ -690,11 +690,21 @@ public class Throwable implements Serializable {
         synchronized(s.lock()) {
             // Print our stack trace
             s.println(this);
-            StackTraceElement[] trace = getOurStackTrace();
-            printStackTrace0(s, trace);
+            var lineBuffer = new StringBuilder(128); // arbitrary size
+            lineBuffer.append("\tat ");
+            int prefixLen = lineBuffer.length();
 
-            Throwable[] suppressed = getSuppressed();
-            Throwable ourCause = getCause();
+            StackTraceElement[] trace = getOurStackTrace();
+            for (int i = 0; i < trace.length; i++) {
+                if (i != 0) {
+                    lineBuffer.setLength(prefixLen);
+                }
+                trace[i].appendTo(lineBuffer);
+                s.println(lineBuffer.toString());
+            }
+
+            var suppressed = getSuppressed();
+            var ourCause = getCause();
 
             if (suppressed.length > 0 || ourCause != null) {
                 /*
@@ -706,12 +716,12 @@ public class Throwable implements Serializable {
 
                 // Print suppressed exceptions, if any
                 for (Throwable se : suppressed)
-                    se.printEnclosedStackTrace(s, trace, "\t" + SUPPRESSED_CAPTION, "\t", dejaVu);
+                    se.printEnclosedStackTrace(s, lineBuffer, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
                 // Print cause, if any
 
                 if (ourCause != null) {
-                    ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+                    ourCause.printEnclosedStackTrace(s, lineBuffer, trace, CAUSE_CAPTION, "", dejaVu);
                 }
             }
         }
@@ -722,13 +732,16 @@ public class Throwable implements Serializable {
      * stack trace.
      */
     private void printEnclosedStackTrace(PrintStreamOrWriter s,
+                                         StringBuilder lineBuffer,
                                          StackTraceElement[] enclosingTrace,
-                                         String prefixCaption,
+                                         String caption,
                                          String prefix,
                                          Set<Throwable> dejaVu) {
         assert Thread.holdsLock(s.lock());
+        lineBuffer.setLength(0);
         if (dejaVu.contains(this)) {
-            s.println(prefixCaption + "[CIRCULAR REFERENCE: " + this + "]");
+            s.println(
+                    lineBuffer.append(prefix).append(caption).append("[CIRCULAR REFERENCE: ").append(this).append("]"));
         } else {
             dejaVu.add(this);
             // Compute number of frames in common between this and enclosing trace
@@ -738,20 +751,36 @@ public class Throwable implements Serializable {
             while (m >= 0 && n >=0 && trace[m].equals(enclosingTrace[n])) {
                 m--; n--;
             }
+            int framesInCommon = trace.length - 1 - m;
 
             // Print our stack trace
-            s.println(prefixCaption.concat(this.toString()));
-            printStackTrace0(s, prefix, trace, m);
+            s.println(
+                    lineBuffer.append(prefix).append(caption).append(this));
+            lineBuffer.setLength(prefix.length());
+            lineBuffer.append("\tat ");
+            int indent = lineBuffer.length();
+            for (int i = 0; i <= m; i++) {
+                if (i != 0) {
+                    lineBuffer.setLength(indent);
+                }
+                s.println(
+                        trace[i].appendTo(lineBuffer));
+            }
+            if (framesInCommon != 0) {
+                lineBuffer.setLength(prefix.length());
+                s.println(
+                        lineBuffer.append("\t... ").append(framesInCommon).append(" more"));
+            }
 
             // Print suppressed exceptions, if any
             for (Throwable se : getSuppressed())
-                se.printEnclosedStackTrace(s, trace, prefix.concat("\t" + SUPPRESSED_CAPTION),
+                se.printEnclosedStackTrace(s, lineBuffer, trace, SUPPRESSED_CAPTION,
                         prefix.concat("\t"), dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
             if (ourCause != null)
-                ourCause.printEnclosedStackTrace(s, trace, prefix.concat(CAUSE_CAPTION), prefix, dejaVu);
+                ourCause.printEnclosedStackTrace(s, lineBuffer, trace, CAUSE_CAPTION, prefix, dejaVu);
         }
     }
 
@@ -764,45 +793,6 @@ public class Throwable implements Serializable {
      */
     public void printStackTrace(PrintWriter s) {
         printStackTrace(new WrappedPrintWriter(s));
-    }
-
-    /**
-     * Use a StringBuilder to print multiple StackTraceElements
-     */
-    private static void printStackTrace0(PrintStreamOrWriter printer, StackTraceElement[] trace) {
-        printStackTrace0(printer, null, trace, trace.length - 1);
-    }
-
-    /**
-     * Use a StringBuilder to print multiple StackTraceElements
-     */
-    private static void printStackTrace0(
-            PrintStreamOrWriter printer,
-            String prefix,
-            StackTraceElement[] trace,
-            int traceEnd) {
-        var sb = new StringBuilder(128);
-        if (prefix != null) {
-            sb.append(prefix);
-        }
-        sb.append("\tat ");
-        int prefixAndAtLength = sb.length();
-        for (int i = 0; i <= traceEnd; i++) {
-            if (i != 0) {
-                sb.setLength(prefixAndAtLength);
-            }
-            printer.println(trace[i]
-                            .appendTo(sb));
-        }
-
-        int framesInCommon = trace.length - 1 - traceEnd;
-        if (framesInCommon != 0) {
-            sb.setLength(prefix == null ? 0 : prefix.length());
-            printer.println(
-                    sb.append("\t... ")
-                      .append(framesInCommon)
-                      .append(" more"));
-        }
     }
 
     /**
