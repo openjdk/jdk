@@ -35,9 +35,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -51,10 +49,12 @@ public class Throwables {
 
     @Setup
     public void setup() {
-        byteArrayOutputStream = new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {}
-        };
+        try {
+            File file = new File(File.createTempFile("PrintStackTrace", ".tmp").getAbsolutePath());
+            byteArrayOutputStream = new FileOutputStream(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Benchmark
