@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package org.openjdk.bench.java.lang;
 
 import java.util.concurrent.TimeUnit;
-
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -35,7 +34,6 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -63,21 +61,6 @@ public class MathBench {
     public long long1 = 1L, long2 = 2L, long747 = 747L, long13 = 13L;
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
     public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
-    public static final double constDoubleNegative2 = -2.0d, constDoubleNegative1 = -1.0d, constDouble0 = 0.0d, constDouble1 = 1.0d, constDouble2 = 2.0d;
-
-    @Param("2048")
-    public int tanhInputCount;
-
-    @Param({"0", "1", "2", "3"})
-    public int tanhRangeIndex;
-
-    public double [] tanhPosRandInputs;
-    public double [] tanhNegRandInputs;
-    public int tanhInputIndex = 0;
-    public double tanhRangeInputs[][] = { {0.0, 0x1.0P-55},
-                                          {0x1.0P-55, 1.0},
-                                          {1.0, 22.0},
-                                          {22.0, 1.7976931348623157E308} };
 
     @Setup
     public void setupValues() {
@@ -86,22 +69,6 @@ public class MathBench {
         divisor  = Math.abs(random.nextInt(dividend) + 17);
         longDividend = Math.abs(random.nextLong() + 4711L);
         longDivisor  = Math.abs(random.nextLong() + longDividend);
-
-        // Fill the positive and negative tanh vectors with random values
-        tanhPosRandInputs = new double[tanhInputCount];
-        tanhNegRandInputs = new double[tanhInputCount];
-        for (int i = 0; i < tanhInputCount; i++) {
-            double tanhLowerBound = tanhRangeInputs[tanhRangeIndex][0];
-            double tanhUpperBound = tanhRangeInputs[tanhRangeIndex][1];
-            tanhPosRandInputs[i] = random.nextDouble(tanhLowerBound, tanhUpperBound);
-            tanhNegRandInputs[i] = random.nextDouble(-tanhUpperBound, -tanhLowerBound);
-        }
-    }
-
-    @Setup(Level.Invocation)
-    public void updateIndices() {
-        // Update the tanh index for the next invocation
-        tanhInputIndex = (tanhInputIndex + 1) % tanhInputCount;
     }
 
     @Benchmark
@@ -551,38 +518,6 @@ public class MathBench {
     @Benchmark
     public double  tanhDouble() {
         return  Math.tanh(double1);
-    }
-
-    @Benchmark
-    public double  tanhConstDoubleNegative2() {
-        return  Math.tanh(constDoubleNegative2);
-    }
-
-    @Benchmark
-    public double  tanhConstDoubleNegative1() {
-        return  Math.tanh(constDoubleNegative1);
-    }
-
-    @Benchmark
-    public double  tanhConstDouble0() {
-        return  Math.tanh(constDouble0);
-    }
-
-    @Benchmark
-    public double  tanhConstDouble1() {
-        return  Math.tanh(constDouble1);
-    }
-
-    @Benchmark
-    public double  tanhConstDouble2() {
-        return  Math.tanh(constDouble2);
-    }
-
-    @Benchmark
-    public double  tanhRangeDouble() {
-        double posResult = Math.tanh(tanhPosRandInputs[tanhInputIndex]);
-        double negResult = Math.tanh(tanhNegRandInputs[tanhInputIndex]);
-        return  (posResult + negResult);
     }
 
     @Benchmark
