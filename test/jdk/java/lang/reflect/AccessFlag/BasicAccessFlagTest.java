@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266670 8293626
+ * @bug 8266670 8293626 8297271
  * @summary Basic tests of AccessFlag
  * @run junit BasicAccessFlagTest
  */

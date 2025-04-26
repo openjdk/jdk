@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,14 +277,14 @@ public class CodeWriter extends BasicWriter {
         writeVerboseHeader(attr);
         writeInstrs(attr);
         writeExceptionTable(attr);
-        attrWriter.write(attr.attributes(), attr);
+        attrWriter.write(attr.attributes(), attr, classWriter.cffv());
     }
 
     private void writeLineAndLocalVariableTables(CodeAttribute attr) {
         attr.findAttribute(Attributes.lineNumberTable())
-            .ifPresent(a -> attrWriter.write(a, attr));
+            .ifPresent(a -> attrWriter.write(a, attr, classWriter.cffv()));
         attr.findAttribute(Attributes.localVariableTable())
-            .ifPresent(a -> attrWriter.write(a, attr));
+            .ifPresent(a -> attrWriter.write(a, attr, classWriter.cffv()));
     }
 
     private AttributeWriter attrWriter;

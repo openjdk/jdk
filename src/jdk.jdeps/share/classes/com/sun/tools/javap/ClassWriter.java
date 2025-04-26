@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javap;
 
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.Collection;
@@ -110,6 +111,16 @@ public class ClassWriter extends BasicWriter {
 
     protected void setMethod(MethodModel m) {
         method = m;
+    }
+
+    protected ClassFileFormatVersion cffv() {
+        var major = classModel.majorVersion();
+        if (major < JAVA_1_VERSION || major > ClassFile.latestMajorVersion())
+            return null;
+        if (major >= JAVA_12_VERSION && classModel.minorVersion() != 0) {
+            return null;
+        }
+        return ClassFileFormatVersion.fromMajor(major);
     }
 
     public boolean write(ClassModel cm) {
@@ -249,7 +260,7 @@ public class ClassWriter extends BasicWriter {
         println("}");
 
         if (options.verbose) {
-            attrWriter.write(classModel.attributes());
+            attrWriter.write(classModel.attributes(), cffv());
         }
 
         if (options.verify) {
@@ -419,7 +430,7 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = f.flags();
-        writeModifiers(flagsReportUnknown(flags).stream().filter(fl -> fl.sourceModifier())
+        writeModifiers(flagsReportUnknown(flags, cffv()).stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
                 f.findAttribute(Attributes.signature())
@@ -448,11 +459,11 @@ public class ClassWriter extends BasicWriter {
 
         if (options.verbose)
             writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
-                    flagsReportUnknown(flags).stream().map(fl -> "ACC_" + fl.name()).toList(),
+                    flagsReportUnknown(flags, cffv()).stream().map(fl -> "ACC_" + fl.name()).toList(),
                     "\n");
 
         if (options.showAllAttrs) {
-            attrWriter.write(f.attributes());
+            attrWriter.write(f.attributes(), cffv());
             showBlank = true;
         }
 
@@ -480,7 +491,7 @@ public class ClassWriter extends BasicWriter {
         int flags = m.flags().flagsMask();
 
         var modifiers = new ArrayList<String>();
-        for (var f : flagsReportUnknown(m.flags()))
+        for (var f : flagsReportUnknown(m.flags(), cffv()))
             if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
 
         String name = "???";
@@ -563,7 +574,7 @@ public class ClassWriter extends BasicWriter {
             StringBuilder sb = new StringBuilder();
             String sep = "";
             sb.append(String.format("flags: (0x%04x) ", flags));
-            for (var f : flagsReportUnknown(m.flags())) {
+            for (var f : flagsReportUnknown(m.flags(), cffv())) {
                 sb.append(sep).append("ACC_").append(f.name());
                 sep = ", ";
             }
@@ -573,7 +584,7 @@ public class ClassWriter extends BasicWriter {
         var code = (CodeAttribute)m.code().orElse(null);
 
         if (options.showAllAttrs) {
-            attrWriter.write(m.attributes());
+            attrWriter.write(m.attributes(), cffv());
         } else if (code != null && options.showDisassembled) {
             codeWriter.writeMinimal(code);
         }
@@ -786,7 +797,7 @@ public class ClassWriter extends BasicWriter {
     }
 
     private Set<String> getClassModifiers(AccessFlags flags) {
-        var flagSet = flagsReportUnknown(flags);
+        var flagSet = flagsReportUnknown(flags, cffv());
         Set<AccessFlag> set;
         if (flagSet.contains(AccessFlag.INTERFACE)) {
             set = EnumSet.copyOf(flagSet);
@@ -805,7 +816,7 @@ public class ClassWriter extends BasicWriter {
     }
 
     private Set<String> getClassFlags(AccessFlags flags) {
-        return getFlags(flags.flagsMask(), flagsReportUnknown(flags));
+        return getFlags(flags.flagsMask(), flagsReportUnknown(flags, cffv()));
     }
 
     private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {

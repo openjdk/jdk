@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javap;
 
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -63,21 +64,21 @@ public class AttributeWriter extends BasicWriter {
         options = Options.instance(context);
     }
 
-    public void write(List<Attribute<?>> attrs) {
-        write(attrs, null);
+    public void write(List<Attribute<?>> attrs, ClassFileFormatVersion cffv) {
+        write(attrs, null, cffv);
     }
 
-    public void write(List<Attribute<?>> attrs, CodeAttribute lr) {
+    public void write(List<Attribute<?>> attrs, CodeAttribute lr, ClassFileFormatVersion cffv) {
         if (attrs != null) {
             for (var attr : attrs) try {
-                write(attr, lr);
+                write(attr, lr, cffv);
             } catch (IllegalArgumentException e) {
                 report(e);
             }
         }
     }
 
-    public void write(Attribute<?> a, CodeAttribute lr) {
+    public void write(Attribute<?> a, CodeAttribute lr, ClassFileFormatVersion cffv) {
         switch (a) {
             case UnknownAttribute attr -> {
                 byte[] data = attr.contents();
@@ -209,7 +210,7 @@ public class AttributeWriter extends BasicWriter {
                             indent(+1);
                             first = false;
                         }
-                        for (var flag : maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS)) {
+                        for (var flag : maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS, cffv)) {
                             if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT
                                     || !info.has(AccessFlag.INTERFACE))) {
                                 print(Modifier.toString(flag.mask()) + " ");
@@ -494,7 +495,7 @@ public class AttributeWriter extends BasicWriter {
                         println("descriptor: " + componentInfo.descriptor().stringValue());
                     }
                     if (options.showAllAttrs) {
-                        write(componentInfo.attributes());
+                        write(componentInfo.attributes(), cffv);
                         println();
                     }
                     indent(-1);
