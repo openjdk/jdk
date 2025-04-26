@@ -85,6 +85,9 @@ bool LogSelection::superset_of(const LogSelection& other) const {
   return true;
 }
 
+// quick-and-dirty -- to be refactored properly.
+int _cds_tag_specified = 0;
+
 static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Parse the level, if specified
   LogLevelType level = LogLevel::Unspecified;
@@ -166,7 +169,34 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     }
   }
 
-  return LogSelection(tags, wildcard, level);
+  LogSelection ls = LogSelection(tags, wildcard, level);
+  if (ls.tag_sets_selected() == 0) {
+    // Make "aot" an alias for "cds. E.g.,
+    // -Xlog:aot -> -Xlog:cds
+    // -Xlog:aot+class -> -Xlog:cds+class
+    if (tags[0] == LogTag::_aot) {
+      LogTagType aliased_tags[LogTag::MaxTags];
+      memcpy(aliased_tags, tags, sizeof(tags));
+      aliased_tags[0] = LogTag::_cds;
+      LogSelection aliased_ls = LogSelection(aliased_tags, wildcard, level);
+      if (aliased_ls.tag_sets_selected() > 0) {
+        return aliased_ls;
+      }
+    }
+  } else {
+    if (tags[0] == LogTag::_cds) {
+      // If the user has specified ONLY -Xlog:aot, then all "cds" logs will be printed with an "aot" decoration.
+      //
+      // [0.022s][info][aot] full module graph: enabled
+      // [2.335s][debug][aot,class] klasses[ 1587] = ...
+      //
+      // For backwards compatibility (until we convert all "cds" logs to "aot" logs, if
+      // the user has specifed at least one log of the "cds" type, then we will
+      // revert to the "cds" decoration.
+      _cds_tag_specified ++;
+    }
+  }
+  return ls;
 }
 
 LogSelection LogSelection::parse(const char* str, outputStream* error_stream) {

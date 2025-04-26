@@ -28,6 +28,8 @@
 
 static const char* DefaultExpressionString = "all";
 
+extern int _cds_tag_specified;
+
 bool LogSelectionList::verify_selections(outputStream* out) const {
   bool valid = true;
 
@@ -67,6 +69,8 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
+  char* extra_copy = nullptr;
+
   // Split string on commas
   for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
@@ -83,6 +87,16 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       *comma_pos = '\0';
     }
 
+    if (strncmp(cur, "aot*", 4) == 0 && extra_copy == nullptr) {
+      size_t len = strlen(cur);
+      extra_copy = (char*)os::malloc(len+10, mtLogging);
+      strcpy(extra_copy + 1, cur);
+      extra_copy[0] = ',';
+      extra_copy[1] = 'c';
+      extra_copy[2] = 'd';
+      extra_copy[3] = 's';
+      _cds_tag_specified --;
+    }
     LogSelection selection = LogSelection::parse(cur, errstream);
     if (selection == LogSelection::Invalid) {
       success = false;
@@ -91,7 +105,14 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     _selections[_nselections++] = selection;
 
     if (comma_pos == nullptr) {
-      break;
+      if (extra_copy != nullptr) {
+        os::free(copy);
+        copy = extra_copy;
+        comma_pos = copy;
+        extra_copy = nullptr;
+      } else {
+        break;
+      }
     }
   }
 
