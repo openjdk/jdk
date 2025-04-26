@@ -192,47 +192,49 @@ public class PrintStackTrace {
         PrintStream printStream = new PrintStream(byteout, true, charset);
         error.printStackTrace(printStream);
 
+        var lineSeparator = System.lineSeparator();
+
         String expect = "java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException\n" +
-                "\tat PrintStackTrace.xn(PrintStackTrace.java:139)\n" +
-                "\tat PrintStackTrace.x9(PrintStackTrace.java:144)\n" +
-                "\tat PrintStackTrace.x8(PrintStackTrace.java:148)\n" +
-                "\tat PrintStackTrace.x7(PrintStackTrace.java:152)\n" +
-                "\tat PrintStackTrace.x6(PrintStackTrace.java:156)\n" +
-                "\tat PrintStackTrace.x5(PrintStackTrace.java:160)\n" +
-                "\tat PrintStackTrace.x4(PrintStackTrace.java:164)\n" +
-                "\tat PrintStackTrace.x3(PrintStackTrace.java:168)\n" +
-                "\tat PrintStackTrace.x2(PrintStackTrace.java:172)\n" +
-                "\tat PrintStackTrace.x1(PrintStackTrace.java:176)\n" +
-                "\tat PrintStackTrace.x0(PrintStackTrace.java:180)\n" +
-                "\tat PrintStackTrace.main(PrintStackTrace.java:186)\n" +
-                "Caused by: java.lang.RuntimeException: java.lang.RuntimeException\n" +
-                "\tat PrintStackTrace.yn(PrintStackTrace.java:91)\n" +
-                "\tat PrintStackTrace.y9(PrintStackTrace.java:96)\n" +
-                "\tat PrintStackTrace.y8(PrintStackTrace.java:100)\n" +
-                "\tat PrintStackTrace.y7(PrintStackTrace.java:104)\n" +
-                "\tat PrintStackTrace.y6(PrintStackTrace.java:108)\n" +
-                "\tat PrintStackTrace.y5(PrintStackTrace.java:112)\n" +
-                "\tat PrintStackTrace.y4(PrintStackTrace.java:116)\n" +
-                "\tat PrintStackTrace.y3(PrintStackTrace.java:120)\n" +
-                "\tat PrintStackTrace.y2(PrintStackTrace.java:124)\n" +
-                "\tat PrintStackTrace.y1(PrintStackTrace.java:128)\n" +
-                "\tat PrintStackTrace.y0(PrintStackTrace.java:132)\n" +
-                "\tat PrintStackTrace.xn(PrintStackTrace.java:137)\n" +
-                "\t... 11 more\n" +
-                "Caused by: java.lang.RuntimeException\n" +
-                "\tat PrintStackTrace.fn(PrintStackTrace.java:43)\n" +
-                "\tat PrintStackTrace.f9(PrintStackTrace.java:47)\n" +
-                "\tat PrintStackTrace.f8(PrintStackTrace.java:51)\n" +
-                "\tat PrintStackTrace.f7(PrintStackTrace.java:55)\n" +
-                "\tat PrintStackTrace.f6(PrintStackTrace.java:59)\n" +
-                "\tat PrintStackTrace.f5(PrintStackTrace.java:63)\n" +
-                "\tat PrintStackTrace.f4(PrintStackTrace.java:67)\n" +
-                "\tat PrintStackTrace.f3(PrintStackTrace.java:71)\n" +
-                "\tat PrintStackTrace.f2(PrintStackTrace.java:75)\n" +
-                "\tat PrintStackTrace.f1(PrintStackTrace.java:79)\n" +
-                "\tat PrintStackTrace.f0(PrintStackTrace.java:83)\n" +
-                "\tat PrintStackTrace.yn(PrintStackTrace.java:89)\n" +
-                "\t... 22 more\n";
+                "\tat PrintStackTrace.xn(PrintStackTrace.java:139)" + lineSeparator +
+                "\tat PrintStackTrace.x9(PrintStackTrace.java:144)" + lineSeparator +
+                "\tat PrintStackTrace.x8(PrintStackTrace.java:148)" + lineSeparator +
+                "\tat PrintStackTrace.x7(PrintStackTrace.java:152)" + lineSeparator +
+                "\tat PrintStackTrace.x6(PrintStackTrace.java:156)" + lineSeparator +
+                "\tat PrintStackTrace.x5(PrintStackTrace.java:160)" + lineSeparator +
+                "\tat PrintStackTrace.x4(PrintStackTrace.java:164)" + lineSeparator +
+                "\tat PrintStackTrace.x3(PrintStackTrace.java:168)" + lineSeparator +
+                "\tat PrintStackTrace.x2(PrintStackTrace.java:172)" + lineSeparator +
+                "\tat PrintStackTrace.x1(PrintStackTrace.java:176)" + lineSeparator +
+                "\tat PrintStackTrace.x0(PrintStackTrace.java:180)" + lineSeparator +
+                "\tat PrintStackTrace.main(PrintStackTrace.java:186)" + lineSeparator +
+                "Caused by: java.lang.RuntimeException: java.lang.RuntimeException" + lineSeparator +
+                "\tat PrintStackTrace.yn(PrintStackTrace.java:91)" + lineSeparator +
+                "\tat PrintStackTrace.y9(PrintStackTrace.java:96)" + lineSeparator +
+                "\tat PrintStackTrace.y8(PrintStackTrace.java:100)" + lineSeparator +
+                "\tat PrintStackTrace.y7(PrintStackTrace.java:104)" + lineSeparator +
+                "\tat PrintStackTrace.y6(PrintStackTrace.java:108)" + lineSeparator +
+                "\tat PrintStackTrace.y5(PrintStackTrace.java:112)" + lineSeparator +
+                "\tat PrintStackTrace.y4(PrintStackTrace.java:116)" + lineSeparator +
+                "\tat PrintStackTrace.y3(PrintStackTrace.java:120)" + lineSeparator +
+                "\tat PrintStackTrace.y2(PrintStackTrace.java:124)" + lineSeparator +
+                "\tat PrintStackTrace.y1(PrintStackTrace.java:128)" + lineSeparator +
+                "\tat PrintStackTrace.y0(PrintStackTrace.java:132)" + lineSeparator +
+                "\tat PrintStackTrace.xn(PrintStackTrace.java:137)" + lineSeparator +
+                "\t... 11 more" + lineSeparator +
+                "Caused by: java.lang.RuntimeException" + lineSeparator +
+                "\tat PrintStackTrace.fn(PrintStackTrace.java:43)" + lineSeparator +
+                "\tat PrintStackTrace.f9(PrintStackTrace.java:47)" + lineSeparator +
+                "\tat PrintStackTrace.f8(PrintStackTrace.java:51)" + lineSeparator +
+                "\tat PrintStackTrace.f7(PrintStackTrace.java:55)" + lineSeparator +
+                "\tat PrintStackTrace.f6(PrintStackTrace.java:59)" + lineSeparator +
+                "\tat PrintStackTrace.f5(PrintStackTrace.java:63)" + lineSeparator +
+                "\tat PrintStackTrace.f4(PrintStackTrace.java:67)" + lineSeparator +
+                "\tat PrintStackTrace.f3(PrintStackTrace.java:71)" + lineSeparator +
+                "\tat PrintStackTrace.f2(PrintStackTrace.java:75)" + lineSeparator +
+                "\tat PrintStackTrace.f1(PrintStackTrace.java:79)" + lineSeparator +
+                "\tat PrintStackTrace.f0(PrintStackTrace.java:83)" + lineSeparator +
+                "\tat PrintStackTrace.yn(PrintStackTrace.java:89)" + lineSeparator +
+                "\t... 22 more" + lineSeparator;
         String s = byteout.toString();
         if (!expect.equals(s)) {
             System.err.println(s);
