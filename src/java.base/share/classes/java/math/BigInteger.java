@@ -2762,7 +2762,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                         long xToExpAdj = expAdj == 1 ? x :
                                         (expAdj == 2 ? x*x : (long) Math.pow(x, expAdj));
 
-                        xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
+                        xToExp = new BigInteger(xToExpAdj, 1);
                         powerCache[expAdj] = xToExp;
                     }
                     xToExp = xToExp.multiply(xToExp);
