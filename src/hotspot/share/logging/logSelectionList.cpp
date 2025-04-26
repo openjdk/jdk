@@ -69,7 +69,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
-  char* extra_copy = nullptr;
+  char* injected_copy = nullptr;
 
   // Split string on commas
   for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
@@ -87,14 +87,20 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       *comma_pos = '\0';
     }
 
-    if (strncmp(cur, "aot*", 4) == 0 && extra_copy == nullptr) {
+    if (strncmp(cur, "aot*", 4) == 0 && injected_copy == nullptr) {
+      // Special case: because -Xlog:aot* matches with (unaliased) aot logs, we
+      // need to inject an "cds*" tag as well.
+      //
+      // This is not necessary for -Xlog:aot+mirror*, because this will not
+      // match any aot logs, and the aliasing will be done inside LogSelection::parse().
+
       size_t len = strlen(cur);
-      extra_copy = (char*)os::malloc(len+10, mtLogging);
-      strcpy(extra_copy + 1, cur);
-      extra_copy[0] = ',';
-      extra_copy[1] = 'c';
-      extra_copy[2] = 'd';
-      extra_copy[3] = 's';
+      injected_copy = (char*)os::malloc(len+10, mtLogging);
+      strcpy(injected_copy + 1, cur);
+      injected_copy[0] = ','; // will be skipped
+      injected_copy[1] = 'c';
+      injected_copy[2] = 'd';
+      injected_copy[3] = 's';
       _cds_tag_specified --;
     }
     LogSelection selection = LogSelection::parse(cur, errstream);
@@ -105,11 +111,11 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     _selections[_nselections++] = selection;
 
     if (comma_pos == nullptr) {
-      if (extra_copy != nullptr) {
+      if (injected_copy != nullptr) {
         os::free(copy);
-        copy = extra_copy;
+        copy = injected_copy;
         comma_pos = copy;
-        extra_copy = nullptr;
+        injected_copy = nullptr;
       } else {
         break;
       }
