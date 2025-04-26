@@ -194,7 +194,7 @@ public class PrintStackTrace {
 
         var lineSeparator = System.lineSeparator();
 
-        String expect = "java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException\n" +
+        String expect = "java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException" + lineSeparator +
                 "\tat PrintStackTrace.xn(PrintStackTrace.java:139)" + lineSeparator +
                 "\tat PrintStackTrace.x9(PrintStackTrace.java:144)" + lineSeparator +
                 "\tat PrintStackTrace.x8(PrintStackTrace.java:148)" + lineSeparator +
