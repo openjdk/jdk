@@ -30,6 +30,7 @@
 #include "oops/klass.hpp"
 #include "oops/klassInfoLUT.inline.hpp"
 #include "oops/klassInfoLUTEntry.inline.hpp"
+#include "oops/klassKind.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -170,13 +171,13 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 
   // update register stats
   switch (k->kind()) {
-  case Klass::InstanceKlassKind:             inc_registered_IK(); break;
-  case Klass::InstanceRefKlassKind:          inc_registered_IRK(); break;
-  case Klass::InstanceMirrorKlassKind:       inc_registered_IMK(); break;
-  case Klass::InstanceClassLoaderKlassKind:  inc_registered_ICLK(); break;
-  case Klass::InstanceStackChunkKlassKind:   inc_registered_ISCK(); break;
-  case Klass::TypeArrayKlassKind:            inc_registered_TAK(); break;
-  case Klass::ObjArrayKlassKind:             inc_registered_OAK(); break;
+  case InstanceKlassKind:             inc_registered_IK(); break;
+  case InstanceRefKlassKind:          inc_registered_IRK(); break;
+  case InstanceMirrorKlassKind:       inc_registered_IMK(); break;
+  case InstanceClassLoaderKlassKind:  inc_registered_ICLK(); break;
+  case InstanceStackChunkKlassKind:   inc_registered_ISCK(); break;
+  case TypeArrayKlassKind:            inc_registered_TAK(); break;
+  case ObjArrayKlassKind:             inc_registered_OAK(); break;
   default: ShouldNotReachHere();
   };
   if (k->is_abstract() || k->is_interface()) {
@@ -268,7 +269,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 
   st->print_cr("   Registered classes, total: " UINT64_FORMAT, registered_all);
 #define XX(name, shortname) PRINT_WITH_PERCENTAGE("Registered, " #shortname, counter_registered_##shortname, registered_all);
-  ALL_KLASS_KINDS_DO(XX)
+  KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
 
   const uint64_t registered_AK = counter_registered_OAK - counter_registered_TAK;
@@ -284,7 +285,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 
   st->print_cr("   Hits, total: " UINT64_FORMAT, hits);
 #define XX(name, shortname) PRINT_WITH_PERCENTAGE("Hits, " #shortname, counter_hits_##shortname, hits);
-  ALL_KLASS_KINDS_DO(XX)
+  KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
 
   const uint64_t hits_ak = counter_hits_OAK + counter_hits_TAK;
@@ -339,15 +340,15 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
 void KlassInfoLUT::update_hit_stats(KlassLUTEntry klute) {
   switch (klute.kind()) {
-#define XX(name, shortname) case Klass::name ## Kind: inc_hits_ ## shortname(); break;
-  ALL_KLASS_KINDS_DO(XX)
+#define XX(name, shortname) case name ## Kind: inc_hits_ ## shortname(); break;
+  KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
   default: ShouldNotReachHere();
   };
   if (klute.is_instance() && !klute.ik_carries_infos()) {
     switch (klute.kind()) {
-      case Klass::InstanceClassLoaderKlassKind: inc_noinfo_ICLK(); break;
-      case Klass::InstanceMirrorKlassKind: inc_noinfo_IMK(); break;
+      case InstanceClassLoaderKlassKind: inc_noinfo_ICLK(); break;
+      case InstanceMirrorKlassKind: inc_noinfo_IMK(); break;
       default: inc_noinfo_IK_other(); break;
     }
   }

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_INSTANCECLASSLOADERKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
 #include "utilities/macros.hpp"
 

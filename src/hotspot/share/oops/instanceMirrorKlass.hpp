@@ -26,8 +26,9 @@
 #define SHARE_OOPS_INSTANCEMIRRORKLASS_HPP
 
 #include "classfile/vmClasses.hpp"
-#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 

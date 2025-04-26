@@ -27,6 +27,7 @@
 
 #include "oops/arrayKlass.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 
 class ClassLoaderData;
 
@@ -78,7 +79,7 @@ class TypeArrayKlass : public ArrayKlass {
 
  public:
 
-  // Oop iterators are dummy methods for TypeArrayKlass:
+  // Oop iterators are dummy methods for TypeArrayKlass since:
   // - there are no oops to iterate
   // - there are no metadata to iterate either since TypeArrayKlass is guaranteed
   //   to be loaded by the boot class loader.

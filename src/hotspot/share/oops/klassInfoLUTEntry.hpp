@@ -28,6 +28,7 @@
 
 // Included by oop.hpp and klass.hpp, keep includes short
 #include "memory/allStatic.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/objLayout.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -130,26 +131,6 @@ class typeArrayOopDesc;
 
 class KlassLUTEntry {
 
-#define ALL_KLASS_KINDS_DO(what) \
-    what(InstanceKlass, IK) \
-    what(InstanceRefKlass, IRK) \
-    what(InstanceMirrorKlass, IMK) \
-    what(InstanceClassLoaderKlass, ICLK) \
-    what(InstanceStackChunkKlass, ISCK) \
-    what(TypeArrayKlass, TAK) \
-    what(ObjArrayKlass, OAK) \
-
-  // Todo: move KlassKind out of Klass
-  // Don't want to include it here for all the baggage it brings
-  enum LocalKlassKind {
-#define XX(name, ignored) name ## Kind,
-    ALL_KLASS_KINDS_DO(XX)
-#undef XX
-    UnknownKlassKind,
-    LastKlassKind = ObjArrayKlassKind,
-    FirstArrayKlassKind = TypeArrayKlassKind
-  };
-
   static constexpr int bits_total      = 32;
 
   // All valid entries:  KKKB ---- ---- ---- ---- ---- ---- ----
@@ -251,7 +232,7 @@ public:
   // returns loader index (0 for unknown)
   inline int loader_index() const { return _v.common.loader; }
 
-  bool is_array() const     { return _v.common.kind >= FirstArrayKlassKind; }
+  bool is_array() const     { return _v.common.kind >= TypeArrayKlassKind; }
   bool is_instance() const  { return !is_array(); }
 
   bool is_obj_array() const  { return _v.common.kind == ObjArrayKlassKind; }

@@ -33,6 +33,7 @@
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassInfoLUT.hpp"
+#include "oops/klassKind.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"

@@ -27,9 +27,9 @@
 #define SHARE_OOPS_KLASSINFOLUTENTRY_INLINE_HPP
 
 #include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp" // for KlassKind
 #include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objLayout.inline.hpp"
+#include "oops/arrayOop.hpp"
 #include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 

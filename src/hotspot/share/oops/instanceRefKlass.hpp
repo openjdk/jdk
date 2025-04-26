@@ -27,6 +27,7 @@
 
 #include "oops/klassInfoLUTEntry.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassKind.hpp"
 #include "utilities/macros.hpp"
 
 class ClassFileParser;

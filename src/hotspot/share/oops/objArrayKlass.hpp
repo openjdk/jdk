@@ -27,6 +27,7 @@
 
 #include "oops/arrayKlass.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/objLayout.hpp"
 #include "utilities/macros.hpp"
 

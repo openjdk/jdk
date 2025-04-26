@@ -29,6 +29,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/klassInfoLUT.hpp"
 #include "oops/klassInfoLUTEntry.inline.hpp"
+#include "oops/klassKind.hpp"
 #include "utilities/debug.hpp"
 
 // See klass.hpp
@@ -195,11 +196,7 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   STATIC_ASSERT(sizeof(U) == sizeof(uint32_t));
 
   // Kind must fit into 3 bits
-  STATIC_ASSERT(Klass::KLASS_KIND_COUNT < nth_bit(bits_kind));
-
-#define XX(name, ignored) STATIC_ASSERT((int)name ## Kind == (int)Klass::name ## Kind);
-  ALL_KLASS_KINDS_DO(XX)
-#undef XX
+  STATIC_ASSERT(KlassKindCount < nth_bit(bits_kind));
 
   assert(is_valid(), "klute should be valid (%x)", _v.raw);
 
@@ -228,8 +225,8 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
     const LayoutHelperHelper lhu = { (unsigned) real_lh };
     assert(lhu.bytes.lh_esz == ak_log2_elem_size() &&
            lhu.bytes.lh_hsz == ak_first_element_offset_in_bytes() &&
-           ( (lhu.bytes.lh_tag == 0xC0 && real_kind == Klass::TypeArrayKlassKind) ||
-             (lhu.bytes.lh_tag == 0x80 && real_kind == Klass::ObjArrayKlassKind) ),
+           ( (lhu.bytes.lh_tag == 0xC0 && real_kind == TypeArrayKlassKind) ||
+             (lhu.bytes.lh_tag == 0x80 && real_kind == ObjArrayKlassKind) ),
              "layouthelper mismatch (layouthelper: 0x%x, klute: 0x%x)", real_lh, _v.raw);
 
   } else {

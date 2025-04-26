@@ -33,6 +33,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
@@ -123,15 +124,15 @@ protected:
     assert(MinObjAlignmentInBytes == BytesPerWord, "Bad call");
 
     size_t s;
-    constexpr Klass::KlassKind kind = KlassType::Kind;
+    constexpr KlassKind kind = KlassType::Kind;
     assert(kind == obj->klass<mode>()->kind(), "Bad call");
     assert(kind == klute.kind(), "Bad call");
     switch (kind) {
-      case Klass::ObjArrayKlassKind: {
+      case ObjArrayKlassKind: {
         s = klute.oak_calculate_wordsize_given_oop_fast<mode, OopType>((objArrayOop)obj);
         break;
       }
-      case Klass::TypeArrayKlassKind: {
+      case TypeArrayKlassKind: {
         s = klute.tak_calculate_wordsize_given_oop_fast<mode>((typeArrayOop)obj);
         break;
       }
@@ -165,7 +166,7 @@ class OopOopIterateDispatch : public DispatchBase {
   typedef void (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
 
   struct Table {
-    FunctionType _function [Klass::KLASS_KIND_COUNT];
+    FunctionType _function [KLASS_KIND_COUNT];
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
@@ -187,7 +188,7 @@ class OopOopIterateDispatch : public DispatchBase {
 
     Table() {
 #define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
-      ALL_KLASS_KINDS_DO(WHAT)
+      KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
     }
   };
@@ -210,7 +211,7 @@ class OopOopIterateDispatchReverse : public DispatchBase {
   typedef void (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
 
   struct Table {
-    FunctionType _function [Klass::KLASS_KIND_COUNT];
+    FunctionType _function [KLASS_KIND_COUNT];
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
@@ -232,7 +233,7 @@ class OopOopIterateDispatchReverse : public DispatchBase {
 
     Table() {
 #define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
-      ALL_KLASS_KINDS_DO(WHAT)
+      KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
     }
   };
@@ -255,7 +256,7 @@ class OopOopIterateDispatchBounded : public DispatchBase {
   typedef void (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
 
   struct Table {
-    FunctionType _function [Klass::KLASS_KIND_COUNT];
+    FunctionType _function [KLASS_KIND_COUNT];
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
@@ -277,7 +278,7 @@ class OopOopIterateDispatchBounded : public DispatchBase {
 
     Table() {
 #define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
-      ALL_KLASS_KINDS_DO(WHAT)
+      KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
     }
   };
@@ -300,7 +301,7 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
   typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
 
   struct Table {
-    FunctionType _function [Klass::KLASS_KIND_COUNT];
+    FunctionType _function [KLASS_KIND_COUNT];
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
@@ -341,7 +342,7 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
 
     Table() {
 #define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
-      ALL_KLASS_KINDS_DO(WHAT)
+      KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
     }
   };
@@ -364,7 +365,7 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
   typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
 
   struct Table {
-    FunctionType _function [Klass::KLASS_KIND_COUNT];
+    FunctionType _function[KlassKindCount];
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
@@ -406,7 +407,7 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
 
     Table() {
 #define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
-      ALL_KLASS_KINDS_DO(WHAT)
+      KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
     }
   };

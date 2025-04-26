@@ -27,6 +27,7 @@
 
 #include "oops/instanceKlass.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

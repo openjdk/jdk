@@ -27,6 +27,7 @@
 
 #include "oops/klassFlags.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -67,29 +68,12 @@ class Klass : public Metadata {
   friend class JVMCIVMStructs;
  public:
 
-#define KLASS_ALL_KINDS_DO(what)        \
-  what(InstanceKlass, IK)               \
-  what(InstanceRefKlass, IRK)           \
-  what(InstanceMirrorKlass, IMK)        \
-  what(InstanceClassLoaderKlass, ICLK)  \
-  what(InstanceStackChunkKlass, ISCK)   \
-  what(TypeArrayKlass, TAK)             \
-  what(ObjArrayKlass, OAK)
-
-  enum KlassKind : u2 {
-#define WHAT(name, shortname) name ## Kind,
-    KLASS_ALL_KINDS_DO(WHAT)
-#undef WHAT
-    UnknownKlassKind
-  };
-  static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
-
   // Define a set of handy cast functions (e.g. "as_InstanceStackChunkKlass")
 #define WHAT(name, shortname)                       \
   name* as_##name() {                               \
     assert(_kind == name ## Kind, "not a " #name ); \
     return (name*) this; }
-  KLASS_ALL_KINDS_DO(WHAT)
+  KLASSKIND_ALL_KINDS_DO(WHAT)
 #undef WHAT
 
  protected:
