@@ -36,7 +36,8 @@ import sun.java2d.SurfaceData;
 
 public class XRGraphicsConfig extends X11GraphicsConfig implements
         SurfaceManager.ProxiedGraphicsConfig, SurfaceManager.Factory {
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     private XRGraphicsConfig(X11GraphicsDevice device, int visualnum,
             int depth, int colormap, boolean doubleBuffer) {

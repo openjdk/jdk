@@ -218,7 +218,8 @@ public abstract class SurfaceManager {
     }
 
     public static class ProxyCache {
-        private final Map<SurfaceManager, SurfaceDataProxy> map = Collections.synchronizedMap(new WeakHashMap<>());
+        private final Map<SurfaceManager, SurfaceDataProxy> map =
+                Collections.synchronizedMap(new WeakHashMap<>());
 
         /**
          * Return a cached SurfaceDataProxy object for a given SurfaceManager.
@@ -269,7 +270,8 @@ public abstract class SurfaceManager {
 
     void flush(boolean deaccelerate) {
         synchronized (weakCache) {
-            Iterator<WeakReference<SurfaceDataProxy>> i = weakCache.values().iterator();
+            Iterator<WeakReference<SurfaceDataProxy>> i =
+                    weakCache.values().iterator();
             while (i.hasNext()) {
                 SurfaceDataProxy sdp = i.next().get();
                 if (sdp == null || sdp.flush(deaccelerate)) {
