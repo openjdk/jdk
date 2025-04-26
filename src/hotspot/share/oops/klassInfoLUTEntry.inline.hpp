@@ -82,7 +82,7 @@ static void check_header_mode() {
 
 // calculates word size given header size, element size, and array length
 template <HeaderMode mode, class OopType>
-inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(objArrayOopDesc* obj) const {
   check_header_mode<mode>();
   assert(sizeof(OopType) == (UseCompressedOops ? 4 : 8), "bad call");
   assert(is_obj_array(), "Bad call");
@@ -98,7 +98,7 @@ inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj)
   // Load length from object
   const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
   const unsigned array_length = (unsigned) (*array_len_addr);
-  assert(array_length == (unsigned)((typeArrayOop)obj)->length(), "sanity");
+  assert(array_length == (unsigned)obj->length(), "sanity");
 
   // Calculate size
   const unsigned size_in_bytes = (array_length << log2_oopsize) + first_element_offset;
@@ -107,7 +107,7 @@ inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj)
 
 // calculates word size given header size, element size, and array length
 template <HeaderMode mode>
-inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(typeArrayOopDesc* obj) const {
   check_header_mode<mode>();
   // The purpose of this function is to hard-code as much as we can via template parameters.
   assert(is_type_array(), "Bad call");
@@ -122,7 +122,7 @@ inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(oopDesc* obj)
   // Load length from object
   const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
   const unsigned array_length = (unsigned) (*array_len_addr);
-  assert(array_length == (unsigned)((typeArrayOop)obj)->length(), "sanity");
+  assert(array_length == (unsigned)obj->length(), "sanity");
 
   // Calculate size
   const unsigned size_in_bytes = (array_length << log2_elemsize) + first_element_offset;

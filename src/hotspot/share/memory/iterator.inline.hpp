@@ -117,11 +117,11 @@ protected:
     assert(kind == klute.kind(), "Bad call");
     switch (kind) {
       case Klass::ObjArrayKlassKind: {
-        s = klute.oak_calculate_wordsize_given_oop_fast<mode, OopType>(obj);
+        s = klute.oak_calculate_wordsize_given_oop_fast<mode, OopType>((objArrayOop)obj);
         break;
       }
       case Klass::TypeArrayKlassKind: {
-        s = klute.tak_calculate_wordsize_given_oop_fast<mode>(obj);
+        s = klute.tak_calculate_wordsize_given_oop_fast<mode>((typeArrayOop)obj);
         break;
       }
       default: {

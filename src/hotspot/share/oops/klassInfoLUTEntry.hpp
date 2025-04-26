@@ -35,8 +35,10 @@ class ArrayKlass;
 class InstanceKlass;
 class Klass;
 class oopDesc;
+class objArrayOopDesc;
 class OopMapBlock;
 class outputStream;
+class typeArrayOopDesc;
 
 // A Klass Info Lookup Table Entry (klute) is a 32-bit value carrying, in a very condensed form, some of the most
 // important information about a Klass.
@@ -288,11 +290,11 @@ public:
 
   // for an oak, calculates word size given header size, element size, and array length
   template <HeaderMode mode, class OopType>
-  inline size_t oak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
+  inline size_t oak_calculate_wordsize_given_oop_fast(objArrayOopDesc* obj) const;
 
   // for a tak, calculates word size given header size, element size, and array length
   template <HeaderMode mode>
-  inline size_t tak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
+  inline size_t tak_calculate_wordsize_given_oop_fast(typeArrayOopDesc* obj) const;
 
   // Helper function, prints current limits
   static void print_limits(outputStream* st);
