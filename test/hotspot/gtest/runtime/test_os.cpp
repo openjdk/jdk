@@ -1120,7 +1120,7 @@ TEST_VM(os, commit_memory_or_exit) {
   const size_t size = 16 * page_sz;
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  char* base = os::reserve_memory(size, false, mtTest);
+  char* base = os::reserve_memory(size, mtTest, false);
   ASSERT_NOT_NULL(base);
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
@@ -1158,7 +1158,7 @@ TEST_VM(os, map_unmap_memory) {
   ::close(fd);
 
   fd = os::open(path, O_RDONLY, 0666);
-  char* result = os::map_memory(fd, path, 0, nullptr, size, true, false, mtTest);
+  char* result = os::map_memory(fd, path, 0, nullptr, size, mtTest, true, false);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
   EXPECT_TRUE(os::unmap_memory(result, size));
