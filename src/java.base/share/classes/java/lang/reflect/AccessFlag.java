@@ -307,9 +307,9 @@ public enum AccessFlag {
     private final int mask;
     private final boolean sourceModifier;
 
-    // immutable; may differ when preview is on
+    // immutable
     private final Set<Location> locations;
-    // historical locations up to a given version; immutable, same when preview on
+    // historical locations up to a given version; immutable
     private final List<Map.Entry<ClassFileFormatVersion, Set<Location>>> historicalLocations;
 
     private AccessFlag(int mask,
@@ -340,17 +340,9 @@ public enum AccessFlag {
     /**
      * {@return kinds of constructs the flag can be applied to in the
      * current class file format version}
-     *
-     * {@previewNote 0 When preview features are enabled:}
-     * Returns kinds constructs the flag can be applied to in class
-     * files that depend on the preview features of the current Java SE
-     * release.
-     * {@previewNote}
-     *
-     * @apiNote
-     * {@link #locations(ClassFileFormatVersion)
-     * locations(ClassFileFormatVersion.latest())} is not affected by
-     * whether preview features are enabled.
+     * <p>
+     * This method may return an empty set if the flag is not defined in
+     * the current class file format version.
      */
     public Set<Location> locations() {
         return locations;
@@ -359,6 +351,10 @@ public enum AccessFlag {
     /**
      * {@return kinds of constructs the flag can be applied to in the
      * given class file format version}
+     * <p>
+     * This method may return an empty set if the flag is not defined in
+     * the given {@code cffv}.
+     *
      * @param cffv the class file format version to use
      * @throws NullPointerException if the parameter is {@code null}
      */
@@ -368,23 +364,18 @@ public enum AccessFlag {
 
     /**
      * {@return an unmodifiable set of access flags for the given mask value
-     * appropriate for the location in the current class file format version}
-     *
-     * {@previewNote 0 When preview features are enabled:}
-     * Returns an unmodifiable set of access flags for the given mask value
-     * appropriate for the location in class files that depend on the preview
-     * features of the current Java SE release.
-     * {@previewNote}
+     * appropriate for the location in question}
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not defined for the location in question
-     * @throws NullPointerException if {@code location} is {@code null}
+     * positions not support for the location in question
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
         var definition = findDefinition(location);
-        int unmatchedMask = mask & (~location.parsingMask()); // flagMask rejects strictfp
+        int flagsMask = location.flagsMask();
+        int parsingMask = location == Location.METHOD ? flagsMask | ACC_STRICT : flagsMask; // flagMask lacks strictfp
+        int unmatchedMask = mask & (~parsingMask);
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
                     Integer.toHexString(unmatchedMask) +
@@ -598,10 +589,10 @@ public enum AccessFlag {
         // These 2 utilities reside in Location because Location must be initialized before AccessFlag
         private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
                 List<Map.Entry<ClassFileFormatVersion, T>> history) {
-            ClassFileFormatVersion lastVersion = null; // represents preview
+            ClassFileFormatVersion lastVersion = ClassFileFormatVersion.latest();
             for (var e : history) {
                 var historyVersion = e.getKey();
-                if (lastVersion != null && lastVersion.compareTo(historyVersion) <= 0) {
+                if (lastVersion.compareTo(historyVersion) <= 0) {
                     throw new IllegalArgumentException("Versions out of order");
                 }
                 lastVersion = historyVersion;
@@ -624,20 +615,10 @@ public enum AccessFlag {
 
         /**
          * {@return the union of integer masks of all access flags defined for
-         * this location in the latest class file format version}  If {@code
-         * mask & ~location.flagsMask() != 0}, then a bit mask {@code mask} has
-         * one or more undefined bits set for {@code location}.  This union of
-         * access flags mask may not itself be a valid flag value.
-         *
-         * {@previewNote 0 When preview features are enabled:}
-         * Returns the union of integer masks of all access flags defined for
-         * this location in class files that depend on the preview features of
-         * the current Java SE release.
-         * {@previewNote}
-         *
-         * @apiNote
-         * {@link #flagsMask(ClassFileFormatVersion) flagsMask(ClassFileFormatVersion.latest())}
-         * is not affected by whether preview features are enabled.
+         * this location in the current class file format version}
+         * <p>
+         * This method may return {@code 0} if the structure does not exist in
+         * the current class file format version.
          *
          * @since 25
          */
@@ -645,20 +626,11 @@ public enum AccessFlag {
             return flagsMask;
         }
 
-        // Temporary shortcut to allow strict to be parsed
-        private int parsingMask() {
-            return this == METHOD ? flagsMask | ACC_STRICT : flagsMask;
-        }
-
         /**
          * {@return the union of integer masks of all access flags defined for
-         * this location in the given class file format version}  If {@code
-         * mask & ~location.flagsMask(cffv) != 0}, then a bit mask {@code mask}
-         * has one or more undefined bits set for {@code location} in {@code
-         * cffv}.  This union of access flags mask may not itself be a valid
-         * flag value.
+         * this location in the given class file format version}
          * <p>
-         * This method may return {@code 0} if the structure did not exist in
+         * This method may return {@code 0} if the structure does not exist in
          * the given {@code cffv}.
          *
          * @param cffv the class file format version
@@ -671,16 +643,10 @@ public enum AccessFlag {
 
         /**
          * {@return all access flags defined for this location, as a set of
-         * flag enums}  This set may include mutually exclusive flags.
-         *
-         * {@previewNote 0 When preview features are enabled:}
-         * Returns all access flags defined for the location in class files
-         * that depend on the preview features of the current Java SE release.
-         * {@previewNote}
-         *
-         * @apiNote
-         * {@link #flags(ClassFileFormatVersion) flags(ClassFileFormatVersion.latest())}
-         * is not affected by whether preview features are enabled.
+         * flag enums, in the current class file format version}
+         * <p>
+         * This method may return an empty set if the structure does not exist
+         * in the current class file format version.
          *
          * @since 25
          */
@@ -690,10 +656,10 @@ public enum AccessFlag {
 
         /**
          * {@return all access flags defined for this location, as a set of flag
-         * enums}  This set may include mutually exclusive flags.
+         * enums, in the given class file format version}
          * <p>
-         * This method may return an empty set if the structure did not exist in
-         * the given {@code cffv}.
+         * This method may return an empty set if the structure does not exist
+         * in the given {@code cffv}.
          *
          * @param cffv the class file format version
          * @throws NullPointerException if {@code cffv} is {@code null}
@@ -732,7 +698,7 @@ public enum AccessFlag {
     }
 
     private static final @Stable AccessFlag[] // Can use stable array and lazy init in the future
-            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, AccessFlag.MODULE),
+            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, MODULE),
             FIELD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, VOLATILE, TRANSIENT, SYNTHETIC, ENUM),
             METHOD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, SYNCHRONIZED, BRIDGE, VARARGS, NATIVE, ABSTRACT, STRICT, SYNTHETIC),
             INNER_CLASS_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM),
