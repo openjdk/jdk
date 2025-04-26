@@ -793,6 +793,9 @@ public enum AccessFlag {
             @Override
             public AccessFlag next() {
                 int flagBit = Integer.lowestOneBit(remainingMask);
+                if (flagBit == 0) {
+                    throw new NoSuchElementException();
+                }
                 remainingMask &= ~flagBit;
                 return definition[Integer.numberOfTrailingZeros(flagBit)];
             }
