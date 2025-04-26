@@ -1247,6 +1247,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Constructs a BigInteger with magnitude specified by the long,
+     * which may not be zero, and the signum specified by the int.
+     */
+    private BigInteger(long mag, int signum) {
+        assert mag != 0 && signum != 0;
+        this.signum = signum;
+        this.mag = toMagArray(mag);
+    }
+
+    /**
      * Constructs a BigInteger with the specified value, which may not be zero.
      */
     private BigInteger(long val) {
@@ -1256,16 +1266,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else {
             signum = 1;
         }
+        mag = toMagArray(val);
+    }
 
-        int highWord = (int)(val >>> 32);
-        if (highWord == 0) {
-            mag = new int[1];
-            mag[0] = (int)val;
-        } else {
-            mag = new int[2];
-            mag[0] = highWord;
-            mag[1] = (int)val;
-        }
+    private static int[] toMagArray(long mag) {
+        int highWord = (int) (mag >>> 32);
+        return highWord == 0
+                ? new int[] { (int) mag }
+                : new int[] { highWord, (int) mag };
     }
 
     /**
@@ -2638,22 +2646,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         long scaleFactor = (long)remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
-        // See if the result will safely fit into a long. (Largest 2^63-1)
-        if (base.mag.length == 1 && scaleFactor <= 62) {
-            // Small number algorithm.  Everything fits into a long.
+        // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
+        if (base.mag.length == 1 && scaleFactor <= Long.SIZE) {
+            // Small number algorithm.  Everything fits into an unsigned long.
             int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
             long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
-            if (powersOfTwo > 0) {
-                if (bitsToShift + scaleFactor <= 62) { // Fits in long?
-                    return valueOf((result << bitsToShift) * newSign);
-                } else {
-                    return valueOf(result*newSign).shiftLeft(bitsToShift);
-                }
-            } else {
-                return valueOf(result*newSign);
-            }
+            return powersOfTwo == 0
+                    ? new BigInteger(result, newSign)
+                    : (bitsToShift + scaleFactor <= Long.SIZE  // Fits in long?
+                            ? new BigInteger(result << bitsToShift, newSign)
+                            : new BigInteger(result, newSign).shiftLeft(bitsToShift));
         } else {
             if ((long)bitLength() * exponent / Integer.SIZE > MAX_MAG_LENGTH) {
                 reportOverflow();
@@ -2714,7 +2718,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger pow = ONE;
         int blockLen;
         for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
-            blockLen = maxExpLen < nLen ? maxExpLen : nLen;
+            blockLen = Math.min(maxExpLen, nLen);
             // compute pow^(2^blockLen)
             if (!pow.equals(ONE)) {
                 for (int i = 0; i < blockLen; i++)
@@ -2798,7 +2802,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         long pow = 1L;
         int blockLen;
         for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
-            blockLen = maxExpLen < nLen ? maxExpLen : nLen;
+            blockLen = Math.min(maxExpLen, nLen);
             // compute pow^(2^blockLen)
             if (pow != 1L) {
                 for (int i = 0; i < blockLen; i++)
