@@ -2666,22 +2666,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // Large number algorithm.  This is basically identical to
             // the algorithm above, but calls multiply()
             // which may use more efficient algorithms for large numbers.
-            BigInteger answer;
-            if (base.mag.length == 1) {
-                answer = unsignedIntPow(base.mag[0], exponent);
-            } else {
-                answer = ONE;
+            BigInteger answer = ONE;
 
-                final int expZeros = Integer.numberOfLeadingZeros(exponent);
-                int workingExp = exponent << expZeros;
-                // Perform exponentiation using repeated squaring trick
-                for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
-                    answer = answer.multiply(answer);
-                    if (workingExp < 0) // leading bit is set
-                        answer = answer.multiply(base);
+            final int expZeros = Integer.numberOfLeadingZeros(exponent);
+            int workingExp = exponent << expZeros;
+            // Perform exponentiation using repeated squaring trick
+            for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
+                answer = answer.multiply(answer);
+                if (workingExp < 0) // leading bit is set
+                    answer = answer.multiply(base);
 
-                    workingExp <<= 1;
-                }
+                workingExp <<= 1;
             }
 
             // Multiply back the (exponentiated) powers of two (quickly,
@@ -2696,87 +2691,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return answer;
             }
         }
-    }
-
-    /**
-     * Computes {@code x^n} using repeated squaring trick.
-     * Assumes {@code x != 0}.
-     */
-    private static BigInteger unsignedIntPow(int x, int n) {
-        if (x == 1)
-            return ONE;
-        // Double.PRECISION / bitLength(x) is the largest integer e
-        // such that x^e fits into a double. If e <= 2, we won't use fp arithmetic.
-        // This allows to use fp arithmetic in computePower(), where possible.
-        final int maxExp = Math.max(2, Double.PRECISION / bitLengthForInt(x));
-        final int maxExpLen = bitLengthForInt(maxExp);
-        final BigInteger[] powerCache = new BigInteger[1 << maxExpLen];
-
-        final int nZeros = Integer.numberOfLeadingZeros(n);
-        n <<= nZeros;
-
-        BigInteger pow = ONE;
-        int blockLen;
-        for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
-            blockLen = Math.min(maxExpLen, nLen);
-            // compute pow^(2^blockLen)
-            if (!pow.equals(ONE)) {
-                for (int i = 0; i < blockLen; i++)
-                    pow = pow.multiply(pow);
-            }
-
-            // add exp to power's exponent
-            int exp = n >>> -blockLen;
-            if (exp > 0)
-                pow = pow.multiply(computePower(powerCache, x & LONG_MASK, exp, maxExp));
-
-            n <<= blockLen; // shift to next block of bits
-        }
-
-        return pow;
-    }
-
-    /**
-     * Returns {@code x^exp}. This method is used by {@code unsignedIntPow(int, int)}.
-     * Assumes {@code maxExp == max(2, Double.PRECISION / bitLength(x))}.
-     */
-    private static BigInteger computePower(BigInteger[] powerCache, long x, int exp, int maxExp) {
-        BigInteger xToExp = powerCache[exp];
-        if (xToExp == null) {
-            if (exp <= maxExp) {
-                // don't use fp arithmetic if exp <= 2
-                long pow = exp == 1 ? x :
-                          (exp == 2 ? x*x : (long) Math.pow(x, exp));
-
-                xToExp = new BigInteger(1, new int[] { (int) (pow >>> 32), (int) pow });
-                powerCache[exp] = xToExp;
-            } else {
-                // adjust exp to fit x^expAdj into a double
-                final int expAdj = exp >>> 1;
-
-                xToExp = powerCache[expAdj << 1];
-                if (xToExp == null) { // compute x^(expAdj << 1)
-                    xToExp = powerCache[expAdj];
-                    if (xToExp == null) { // compute x^expAdj
-                        // don't use fp arithmetic if expAdj <= 2
-                        long xToExpAdj = expAdj == 1 ? x :
-                                        (expAdj == 2 ? x*x : (long) Math.pow(x, expAdj));
-
-                        xToExp = new BigInteger(xToExpAdj, 1);
-                        powerCache[expAdj] = xToExp;
-                    }
-                    xToExp = xToExp.multiply(xToExp);
-                    powerCache[expAdj << 1] = xToExp;
-                }
-
-                // append exp's rightmost bit to expAdj
-                if ((exp & 1) == 1) {
-                    xToExp = xToExp.multiply(x);
-                    powerCache[exp] = xToExp;
-                }
-            }
-        }
-        return xToExp;
     }
 
     /**
