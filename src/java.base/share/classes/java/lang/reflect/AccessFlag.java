@@ -307,10 +307,9 @@ public enum AccessFlag {
     private final int mask;
     private final boolean sourceModifier;
 
-    // Intentionally using Set rather than EnumSet since EnumSet is
-    // mutable.
+    // immutable
     private final Set<Location> locations;
-    // historical locations up to a given version
+    // historical locations up to a given version; immutable
     private final List<Map.Entry<ClassFileFormatVersion, Set<Location>>> historicalLocations;
 
     private AccessFlag(int mask,
@@ -340,7 +339,10 @@ public enum AccessFlag {
 
     /**
      * {@return kinds of constructs the flag can be applied to in the
-     * latest class file format version}
+     * current class file format version}
+     * <p>
+     * This method may return an empty set if the flag is not defined in
+     * the current class file format version.
      */
     public Set<Location> locations() {
         return locations;
@@ -349,6 +351,10 @@ public enum AccessFlag {
     /**
      * {@return kinds of constructs the flag can be applied to in the
      * given class file format version}
+     * <p>
+     * This method may return an empty set if the flag is not defined in
+     * the given {@code cffv}.
+     *
      * @param cffv the class file format version to use
      * @throws NullPointerException if the parameter is {@code null}
      */
@@ -605,7 +611,7 @@ public enum AccessFlag {
         // These 2 utilities reside in Location because Location must be initialized before AccessFlag
         private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
                 List<Map.Entry<ClassFileFormatVersion, T>> history) {
-            var lastVersion = ClassFileFormatVersion.latest();
+            ClassFileFormatVersion lastVersion = ClassFileFormatVersion.latest();
             for (var e : history) {
                 var historyVersion = e.getKey();
                 if (lastVersion.compareTo(historyVersion) <= 0) {
@@ -631,10 +637,10 @@ public enum AccessFlag {
 
         /**
          * {@return the union of integer masks of all access flags defined for
-         * this location in the latest class file format version}  If {@code
-         * mask & ~location.flagsMask() != 0}, then a bit mask {@code mask} has
-         * one or more undefined bits set for {@code location}.  This union of
-         * access flags mask may not itself be a valid flag value.
+         * this location in the current class file format version}
+         * <p>
+         * This method may return {@code 0} if the structure does not exist in
+         * the current class file format version.
          *
          * @since 25
          */
@@ -644,13 +650,9 @@ public enum AccessFlag {
 
         /**
          * {@return the union of integer masks of all access flags defined for
-         * this location in the given class file format version}  If {@code
-         * mask & ~location.flagsMask(cffv) != 0}, then a bit mask {@code mask}
-         * has one or more undefined bits set for {@code location} in {@code
-         * cffv}.  This union of access flags mask may not itself be a valid
-         * flag value.
+         * this location in the given class file format version}
          * <p>
-         * This method may return {@code 0} if the structure did not exist in
+         * This method may return {@code 0} if the structure does not exist in
          * the given {@code cffv}.
          *
          * @param cffv the class file format version
@@ -663,7 +665,10 @@ public enum AccessFlag {
 
         /**
          * {@return all access flags defined for this location, as a set of
-         * flag enums}  This set may include mutually exclusive flags.
+         * flag enums, in the current class file format version}
+         * <p>
+         * This method may return an empty set if the structure does not exist
+         * in the current class file format version.
          *
          * @since 25
          */
@@ -673,10 +678,10 @@ public enum AccessFlag {
 
         /**
          * {@return all access flags defined for this location, as a set of flag
-         * enums}  This set may include mutually exclusive flags.
+         * enums, in the given class file format version}
          * <p>
-         * This method may return an empty set if the structure did not exist in
-         * the given {@code cffv}.
+         * This method may return an empty set if the structure does not exist
+         * in the given {@code cffv}.
          *
          * @param cffv the class file format version
          * @throws NullPointerException if {@code cffv} is {@code null}
@@ -715,7 +720,7 @@ public enum AccessFlag {
     }
 
     private static final @Stable AccessFlag[] // Can use stable array and lazy init in the future
-            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, AccessFlag.MODULE),
+            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, MODULE),
             FIELD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, VOLATILE, TRANSIENT, SYNTHETIC, ENUM),
             METHOD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, SYNCHRONIZED, BRIDGE, VARARGS, NATIVE, ABSTRACT, STRICT, SYNTHETIC),
             INNER_CLASS_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM),
