@@ -31,7 +31,7 @@
 
 /*
  * Test that trying to create a sub-type of a 'magic' jdk.internal.reflect
- * class should fail with an IllegalAccessError exception.
+ * class should fail with an IncompatibleClassChangeError exception.
 */
 public class FakeMethodAcc {
     public static void main(String args[]) throws Throwable {
@@ -40,8 +40,8 @@ public class FakeMethodAcc {
         try {
             Class newClass = Class.forName("fakeMethodAccessor");
             throw new RuntimeException(
-                "Missing expected IllegalAccessError exception");
-        } catch (java.lang.IllegalAccessError e) {
+                "Missing expected IncompatibleClassChangeError exception");
+        } catch (java.lang.IncompatibleClassChangeError e) {
         }
     }
 }
