@@ -393,6 +393,7 @@ public enum AccessFlag {
      * @throws IllegalArgumentException if the mask contains bit
      * positions not defined for the location for {@code cffv}
      * @throws NullPointerException if {@code location} or {@code cffv} is {@code null}
+     * @since 25
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
         var definition = findDefinition(location);
