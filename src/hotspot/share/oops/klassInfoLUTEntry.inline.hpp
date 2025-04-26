@@ -70,20 +70,9 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
   return _v.ike.omb_offset_2;
 }
 
-template <HeaderMode mode>
-static void check_header_mode() {
-  assert(mode != HeaderMode::Uncompressed, "bad call");
-  assert(UseCompressedClassPointers, "bad call");
-  if (mode == HeaderMode::Compact) {
-    assert(UseCompactObjectHeaders, "bad call");
-  }
-  assert(MinObjAlignmentInBytes == BytesPerWord, "Bad call");
-}
-
 // calculates word size given header size, element size, and array length
 template <HeaderMode mode, class OopType>
 inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(objArrayOopDesc* obj) const {
-  check_header_mode<mode>();
   assert(sizeof(OopType) == (UseCompressedOops ? 4 : 8), "bad call");
   assert(is_obj_array(), "Bad call");
   assert(obj->is_objArray(), "Bad call");
@@ -108,7 +97,6 @@ inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(objArrayOopDe
 // calculates word size given header size, element size, and array length
 template <HeaderMode mode>
 inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(typeArrayOopDesc* obj) const {
-  check_header_mode<mode>();
   // The purpose of this function is to hard-code as much as we can via template parameters.
   assert(is_type_array(), "Bad call");
   assert(obj->is_typeArray(), "Bad call");

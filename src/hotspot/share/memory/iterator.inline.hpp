@@ -108,9 +108,20 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
 class DispatchBase {
 protected:
 
-  // Return the size of an object; uses as much hard-coded information as possible
+  // Return the size of an object; by templatizing over HeaderMode and OopType, we
+  // can move most of the decisions (compressed/compact mode etc) from run time to
+  // build time.
+  // This variant does not work for uncompressed klass pointers or for non-standard
+  // values of ObjAlignmentInBytes.
   template <class KlassType, HeaderMode mode, class OopType>
   static inline size_t calculate_size_for_object_fast(KlassLUTEntry klute, oop obj) {
+    assert(mode != HeaderMode::Uncompressed && UseCompressedClassPointers,
+           "Not for uncompressed class pointer mode");
+    assert((UseCompactObjectHeaders == true) == (mode == HeaderMode::Compact), "HeaderMode mismatch");
+    assert(sizeof(OopType) == 4 || sizeof(OopType) == 8, "odd OopType");
+    assert((UseCompressedOops == true) == (sizeof(OopType) == 4), "OopType mismatch");
+    assert(MinObjAlignmentInBytes == BytesPerWord, "Bad call");
+
     size_t s;
     constexpr Klass::KlassKind kind = KlassType::Kind;
     assert(kind == obj->klass<mode>()->kind(), "Bad call");
@@ -140,10 +151,10 @@ protected:
     return s;
   }
 
+  // Returns true if calculate_size_for_object_fast cannot be used
   static inline bool should_use_slowpath_getsize() {
     return !UseCompressedClassPointers || ObjectAlignmentInBytes != BytesPerWord;
   }
-
 };
 
 ////////////////////////////////////////////////
@@ -386,7 +397,8 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
               &invoke<KlassType, HeaderMode::Compact, oop>;
         } else {
           _function[KlassType::Kind] = UseCompressedOops ?
-              &invoke<KlassType, HeaderMode::Compressed, narrowOop> :
+              //&invoke<KlassType, HeaderMode::Compressed, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compressed, oop> :
               &invoke<KlassType, HeaderMode::Compressed, oop>;
         }
       }
