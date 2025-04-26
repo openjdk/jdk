@@ -40,7 +40,6 @@
 
 class NMT_LogRecorder : public StackObj {
 protected:
-  static Mutex* _lock;
   long int _limit  = 0;
   long int _count  = 0;
   int _log_fd;
