@@ -23,15 +23,18 @@
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Annotations.Parameters;
-import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
 
 /*
  * @test usage of scripts from resource dir
@@ -46,29 +49,56 @@ import jdk.jpackage.test.JPackageCommand;
 
 public class WinScriptTest {
 
-    public WinScriptTest(PackageType type) {
-        this.packageType = type;
+    @Test
+    public static void test8355651() {
+        new PackageTest()
+                .configureHelloApp()
+                .addInitializer(JPackageCommand::setFakeRuntime)
+                .addInitializer(cmd -> {
+                    final var expectedConfigFiles = Stream.concat(
+                            Stream.of("bundle.wxf", "ui.wxf", "overrides.wxi", "main.wxs"),
+                            Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
+                                return "MsiInstallerStrings_" + loc + ".wxl";
+                            })
+                    );
 
-        test = new PackageTest()
-        .forTypes(type)
-        .configureHelloApp()
-        .addInitializer(cmd -> {
-            cmd.setFakeRuntime().saveConsoleOutput(true);
-        });
+                    final var resourceDir = TKit.createTempDirectory("resources");
+                    cmd.addArguments("--resource-dir", resourceDir);
+
+                    createScript(cmd, "post-image", Stream.concat(
+                            Stream.of(
+                                    "var fs = new ActiveXObject('Scripting.FileSystemObject')",
+                                    "var configDir = fs.GetParentFolderName(WScript.ScriptFullName)"
+                            ),
+                            expectedConfigFiles.map(str -> {
+                                return String.format("WScript.Echo('Probe: ' + configDir + '\\\\%s'); fs.GetFile(configDir + '\\\\%s')", str, str);
+                            })
+                    ).toList());
+                }).run(Action.CREATE);
     }
 
     @Parameters
-    public static List<Object[]> data() {
-        return List.of(new Object[][]{
-            {PackageType.WIN_MSI},
-            {PackageType.WIN_EXE}
-        });
+    public static List<Object[]> test() {
+        final List<Object[]> data = new ArrayList<>();
+        for (final var type : PackageType.WINDOWS) {
+            for (final var exitCode : List.of(0, 10)) {
+                data.add(new Object[] {type, exitCode});
+            }
+        }
+        return data;
     }
 
     @Test
-    @Parameter("0")
-    @Parameter("10")
-    public void test(int wsfExitCode) throws IOException {
+    @ParameterSupplier
+    public static void test(PackageType packageType, int wsfExitCode) throws IOException {
+
+        final var test = new PackageTest()
+                .forTypes(packageType)
+                .configureHelloApp()
+                .addInitializer(cmd -> {
+                    cmd.setFakeRuntime().saveConsoleOutput(true);
+                });
+
         final ScriptData appImageScriptData;
         if (wsfExitCode != 0 && packageType == PackageType.WIN_EXE) {
             appImageScriptData = new ScriptData(PackageType.WIN_MSI, 0);
@@ -107,7 +137,7 @@ public class WinScriptTest {
                 throw new UnsupportedOperationException();
         }
 
-        test.run();
+        test.run(Action.CREATE);
     }
 
     private static class ScriptData {
@@ -149,22 +179,13 @@ public class WinScriptTest {
         }
 
         void createScript(JPackageCommand cmd) throws IOException {
-           XmlUtils.createXml(Path.of(cmd.getArgumentValue("--resource-dir"),
-                    String.format("%s-%s.wsf", cmd.name(), scriptSuffixName)), xml -> {
-                xml.writeStartElement("job");
-                xml.writeAttribute("id", "main");
-                xml.writeStartElement("script");
-                xml.writeAttribute("language", "JScript");
-                xml.writeCData(String.join("\n", List.of(
+            WinScriptTest.createScript(cmd, scriptSuffixName, List.of(
                     "var shell = new ActiveXObject('WScript.Shell')",
                     "WScript.Echo('jp: " + envVarName + "=' + shell.ExpandEnvironmentStrings('%" + envVarName + "%'))",
                     "WScript.Echo('jp: CWD(" + envVarName + ")=' + shell.CurrentDirectory)",
                     String.format("WScript.Echo('jp: %s')", echoText),
                     String.format("WScript.Quit(%d)", wsfExitCode)
-                )));
-                xml.writeEndElement();
-                xml.writeEndElement();
-            });
+            ));
         }
 
         private final int wsfExitCode;
@@ -173,6 +194,16 @@ public class WinScriptTest {
         private final String envVarName;
     }
 
-    private final PackageType packageType;
-    private PackageTest test;
+    private static void createScript(JPackageCommand cmd, String scriptSuffixName, List<String> js) throws IOException {
+        XmlUtils.createXml(Path.of(cmd.getArgumentValue("--resource-dir"),
+                String.format("%s-%s.wsf", cmd.name(), scriptSuffixName)), xml -> {
+            xml.writeStartElement("job");
+            xml.writeAttribute("id", "main");
+            xml.writeStartElement("script");
+            xml.writeAttribute("language", "JScript");
+            xml.writeCData(String.join("\n", js));
+            xml.writeEndElement();
+            xml.writeEndElement();
+        });
+    }
 }
