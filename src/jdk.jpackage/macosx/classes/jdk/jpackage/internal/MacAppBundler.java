@@ -74,7 +74,7 @@ public class MacAppBundler extends AppImageBundler {
                     }
 
                     if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result);
+                        MacCertificate certificate = new MacCertificate(result, keychain);
 
                         if (!certificate.isValid()) {
                             Log.error(MessageFormat.format(I18N.getString(
