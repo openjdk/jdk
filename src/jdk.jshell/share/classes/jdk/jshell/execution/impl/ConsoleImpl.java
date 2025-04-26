@@ -395,7 +395,9 @@ public class ConsoleImpl {
                 buffer = Arrays.copyOf(buffer, 2 * buffer.length);
             }
 
-            buffer[bp++] = b;
+            // Can be negative because directly casted from byte.
+            // java.io.OutputStream.write(int b) stipulates "The 24 high-order bits of b are ignored."
+            buffer[bp++] = b & 0xff;
 
             switch (Task.values()[buffer[0]]) {
                 case WRITE_CHARS -> {
