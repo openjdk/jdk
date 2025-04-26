@@ -310,7 +310,8 @@ public final class D3DGraphicsConfig
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new D3DVolatileSurfaceManager(image, context);
     }
 }

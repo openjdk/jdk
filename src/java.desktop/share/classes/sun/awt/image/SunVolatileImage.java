@@ -157,11 +157,13 @@ public class SunVolatileImage extends VolatileImage
         return forcedAccelSurfaceType;
     }
 
-    private VolatileSurfaceManager createSurfaceManager(Object context,
-                                                        ImageCapabilities caps) {
-        // GraphicsConfig may provide some specific surface manager implementation.
-        // In case it doesn't, or we were specifically requested to use an unaccelerated
-        // surface, fall back to the buffered image surface manager.
+    private VolatileSurfaceManager createSurfaceManager(
+            Object context, ImageCapabilities caps) {
+        // GraphicsConfig may provide some specific surface manager
+        // implementation.
+        // In case it doesn't, or we were specifically requested to use
+        // an unaccelerated surface, fall back to the buffered image
+        // surface manager.
         if ((caps == null || caps.isAccelerated()) &&
             graphicsConfig instanceof SurfaceManager.Factory factory) {
             return factory.createVolatileManager(this, context);

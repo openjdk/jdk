@@ -63,7 +63,8 @@ public class XRGraphicsConfig extends X11GraphicsConfig implements
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new XRVolatileSurfaceManager(image, context);
     }
 }

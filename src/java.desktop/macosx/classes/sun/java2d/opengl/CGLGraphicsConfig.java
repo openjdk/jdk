@@ -390,7 +390,8 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new CGLVolatileSurfaceManager(image, context);
     }
 }

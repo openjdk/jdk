@@ -416,7 +416,8 @@ public final class GLXGraphicsConfig
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new GLXVolatileSurfaceManager(image, context);
     }
 }

@@ -191,11 +191,13 @@ public abstract class SurfaceManager {
 
         /**
          * Creates a new instance of a VolatileSurfaceManager given a
-         * compatible SunVolatileImage. An optional context Object can be supplied
-         * as a way for the caller to pass pipeline-specific context data to
-         * the VolatileSurfaceManager (such as a backbuffer handle, for example).
+         * compatible SunVolatileImage.
+         * An optional context Object can be supplied as a way for the caller
+         * to pass pipeline-specific context data to the VolatileSurfaceManager
+         * (such as a backbuffer handle, for example).
          */
-        VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context);
+        VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                     Object context);
     }
 
     /**

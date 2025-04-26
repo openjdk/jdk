@@ -376,7 +376,8 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new MTLVolatileSurfaceManager(image, context);
     }
 }

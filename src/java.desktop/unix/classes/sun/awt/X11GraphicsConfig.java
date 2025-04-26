@@ -504,7 +504,8 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     private native boolean isTranslucencyCapable(long x11ConfigData);
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new X11VolatileSurfaceManager(image, context);
     }
 }

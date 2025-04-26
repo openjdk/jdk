@@ -435,7 +435,8 @@ public final class WGLGraphicsConfig
     }
 
     @Override
-    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
         return new WGLVolatileSurfaceManager(image, context);
     }
 }
