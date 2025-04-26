@@ -2703,7 +2703,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ONE;
         // Double.PRECISION / bitLength(x) is the largest integer e
         // such that x^e fits into a double. If e <= 2, we won't use fp arithmetic.
-        // This allows to use fp arithmetic where possible.
+        // This allows to use fp arithmetic in computePower(), where possible.
         final int maxExp = Math.max(2, Double.PRECISION / bitLengthForInt(x));
         final int maxExpLen = bitLengthForInt(maxExp);
         final BigInteger[] powerCache = new BigInteger[1 << maxExpLen];
@@ -2723,36 +2723,56 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             // add exp to power's exponent
             int exp = n >>> -blockLen;
-            if (exp > 0) {
-                BigInteger xToExp = powerCache[exp];
-                if (xToExp == null) {
-                    // adjust exp to fit x^expAdj into a double
-                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
+            if (exp > 0)
+                pow = pow.multiply(computePower(powerCache, x & LONG_MASK, exp, maxExp));
 
-                    long xLong = x & LONG_MASK;
-                    // don't use fp arithmetic if expAdj <= 2
-                    long xToExpAdj = expAdj == 1 ? xLong :
-                                    (expAdj == 2 ? xLong*xLong : (long) Math.pow(xLong, expAdj));
-
-                    xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
-                    powerCache[expAdj] = xToExp;
-                    // append exp's rightmost bit to expAdj
-                    if (expAdj != exp) {
-                        xToExp = xToExp.multiply(xToExp);
-                        powerCache[expAdj << 1] = xToExp;
-
-                        if ((exp & 1) == 1) {
-                            xToExp = xToExp.multiply(xLong);
-                            powerCache[exp] = xToExp;
-                        }
-                    }
-                }
-                pow = pow.multiply(xToExp);
-            }
             n <<= blockLen; // shift to next block of bits
         }
 
         return pow;
+    }
+
+    /**
+     * Returns {@code x^exp}. This method is used by {@code unsignedIntPow(int, int)}.
+     * Assumes {@code maxExp == max(2, Double.PRECISION / bitLength(x))}.
+     */
+    private static BigInteger computePower(BigInteger[] powerCache, long x, int exp, int maxExp) {
+        BigInteger xToExp = powerCache[exp];
+        if (xToExp == null) {
+            if (exp <= maxExp) {
+                // don't use fp arithmetic if exp <= 2
+                long pow = exp == 1 ? x :
+                          (exp == 2 ? x*x : (long) Math.pow(x, exp));
+
+                xToExp = new BigInteger(1, new int[] { (int) (pow >>> 32), (int) pow });
+                powerCache[exp] = xToExp;
+            } else {
+                // adjust exp to fit x^expAdj into a double
+                final int expAdj = exp >>> 1;
+
+                xToExp = powerCache[expAdj << 1];
+                if (xToExp == null) { // compute x^(expAdj << 1)
+                    xToExp = powerCache[expAdj];
+                    if (xToExp == null) { // compute x^expAdj
+                        // don't use fp arithmetic if expAdj <= 2
+                        long xToExpAdj = expAdj == 1 ? x :
+                                        (expAdj == 2 ? x*x : (long) Math.pow(x, expAdj));
+
+                        xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
+                        powerCache[expAdj] = xToExp;
+                    }
+                    xToExp = xToExp.multiply(xToExp);
+                    powerCache[expAdj << 1] = xToExp;
+                }
+
+                // append exp's rightmost bit to expAdj
+                if ((exp & 1) == 1) {
+                    xToExp = xToExp.multiply(x);
+                    powerCache[exp] = xToExp;
+                }
+            }
+        }
+        return xToExp;
     }
 
     /**
@@ -2767,7 +2787,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 1L << n;
         // Double.PRECISION / bitLength(x) is the largest integer e
         // such that x^e fits into a double. If e <= 3, we won't use fp arithmetic.
-        // This allows to use fp arithmetic where possible.
+        // This allows to use fp arithmetic in computePower(), where possible.
         final int maxExp = Math.max(3, Double.PRECISION / bitLengthForLong(x));
         final int maxExpLen = bitLengthForInt(maxExp);
         final long[] powerCache = new long[1 << maxExpLen];
@@ -2787,35 +2807,54 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             // add exp to power's exponent
             int exp = n >>> -blockLen;
-            if (exp > 0) {
-                long xToExp = powerCache[exp];
-                if (xToExp == 0) {
-                    // adjust exp to fit x^expAdj into a double
-                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
+            if (exp > 0)
+                pow *= computePower(powerCache, x, exp, maxExp);
 
-                    // don't use fp arithmetic if expAdj <= 3
-                    xToExp = expAdj == 1 ? x :
-                            (expAdj == 2 ? x*x :
-                            (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
-                    powerCache[expAdj] = xToExp;
-
-                    // append exp's rightmost bit to expAdj
-                    if (expAdj != exp) {
-                        xToExp *= xToExp;
-                        powerCache[expAdj << 1] = xToExp;
-
-                        if ((exp & 1) == 1) {
-                            xToExp *= x;
-                            powerCache[exp] = xToExp;
-                        }
-                    }
-                }
-                pow *= xToExp;
-            }
             n <<= blockLen; // shift to next block of bits
         }
 
         return pow;
+    }
+
+    /**
+     * Returns {@code x^exp}. This method is used by {@code unsignedLongPow(long, int)}.
+     * Assumes {@code maxExp == max(3, Double.PRECISION / bitLength(x))}.
+     */
+    private static long computePower(long[] powerCache, long x, int exp, int maxExp) {
+        long xToExp = powerCache[exp];
+        if (xToExp == 0) {
+            if (exp <= maxExp) {
+                // don't use fp arithmetic if exp <= 3
+                xToExp = exp == 1 ? x :
+                        (exp == 2 ? x*x :
+                        (exp == 3 ? x*x*x : (long) Math.pow(x, exp)));
+                powerCache[exp] = xToExp;
+            } else {
+                // adjust exp to fit x^expAdj into a double
+                final int expAdj = exp >>> 1;
+
+                xToExp = powerCache[expAdj << 1];
+                if (xToExp == 0) { // compute x^(expAdj << 1)
+                    xToExp = powerCache[expAdj];
+                    if (xToExp == 0) {  // compute x^expAdj
+                        // don't use fp arithmetic if expAdj <= 3
+                        xToExp = expAdj == 1 ? x :
+                                (expAdj == 2 ? x*x :
+                                (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
+                        powerCache[expAdj] = xToExp;
+                    }
+                    xToExp *= xToExp;
+                    powerCache[expAdj << 1] = xToExp;
+                }
+
+                // append exp's rightmost bit to expAdj
+                if ((exp & 1) == 1) {
+                    xToExp *= x;
+                    powerCache[exp] = xToExp;
+                }
+            }
+        }
+        return xToExp;
     }
 
     /**
