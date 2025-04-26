@@ -1302,7 +1302,7 @@ public final class PassFailJFrame {
      * feature isn't supported, throw {@code jtreg.SkippedException} instead.
      *
      * <p>A sample usage can be found in
-     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java">{@code
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
      * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
