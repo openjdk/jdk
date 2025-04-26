@@ -810,7 +810,7 @@ public final class TKit {
         public DirectoryContentVerifier(Path baseDir) {
             this(baseDir, ThrowingSupplier.toSupplier(() -> {
                 try (var files = Files.list(baseDir)) {
-                    return files.map(Path::getFileName).collect(toSet());
+                    return files.map(baseDir::relativize).collect(toSet());
                 }
             }).get());
         }
