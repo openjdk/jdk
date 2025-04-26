@@ -364,12 +364,12 @@ public enum AccessFlag {
 
     /**
      * {@return an unmodifiable set of access flags for the given mask value
-     * appropriate for the location in question}
+     * appropriate for the location in the current class file format version}
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not defined for the location
+     * positions not defined for the location in the current class file format
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
@@ -385,13 +385,13 @@ public enum AccessFlag {
 
     /**
      * {@return an unmodifiable set of access flags for the given mask value
-     * appropriate for the location for the class file format}
+     * appropriate for the location for the given {@code cffv}}
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @param cffv the class file format to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not defined for the location for the class file format
+     * positions not defined for the location for {@code cffv}
      * @throws NullPointerException if {@code location} or {@code cffv} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
