@@ -37,11 +37,11 @@ class ReservedSpace;
 
 class AOTCacheAccess : AllStatic {
 public:
-  static void* allocate_aot_code(size_t size) NOT_CDS_RETURN_(nullptr);
+  static void* allocate_aot_code_region(size_t size) NOT_CDS_RETURN_(nullptr);
 
-  static size_t get_aot_code_size() NOT_CDS_RETURN_(0);
+  static size_t get_aot_code_region_size() NOT_CDS_RETURN_(0);
 
-  static bool map_aot_code(ReservedSpace rs) NOT_CDS_RETURN_(false);
+  static bool map_aot_code_region(ReservedSpace rs) NOT_CDS_RETURN_(false);
 };
 
 #endif // SHARE_CDS_AOTCACHEACCESS_HPP

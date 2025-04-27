@@ -26,6 +26,8 @@
  * @test
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.flagless
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/lib /test/setup_aot
@@ -68,8 +70,8 @@ public class AOTCodeFlags {
                 return new String[] {
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:" + (flag_sign == 0 ? "-" : "+") + "AOTAdapterCaching",
-                    "-Xlog:aot+codecache+init",
-                    "-Xlog:aot+codecache+exit",
+                    "-Xlog:aot+codecache+init=debug",
+                    "-Xlog:aot+codecache+exit=debug",
                 };
             }
             return new String[] {};
@@ -87,20 +89,16 @@ public class AOTCodeFlags {
             if (flag_sign == 0) {
                 switch (runMode) {
                 case RunMode.ASSEMBLY:
-                    out.shouldNotContain("Adapters:  total");
-                    break;
                 case RunMode.PRODUCTION:
-                    out.shouldNotContain("entries table at offset");
+                    out.shouldNotContain("Adapters:  total");
                     break;
                 }
 
             } else {
                 switch (runMode) {
                 case RunMode.ASSEMBLY:
-                    out.shouldContain("Adapters:  total");
-                    break;
                 case RunMode.PRODUCTION:
-                    out.shouldContain("entries table at offset");
+                    out.shouldContain("Adapters:  total");
                     break;
                 }
             }

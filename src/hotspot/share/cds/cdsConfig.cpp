@@ -403,13 +403,7 @@ void CDSConfig::check_aot_flags() {
   CHECK_SINGLE_PATH(AOTConfiguration);
 
   if (FLAG_IS_DEFAULT(AOTCache) && AOTAdapterCaching) {
-    log_info(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
-  }
-  if (!FLAG_IS_DEFAULT(AOTCodeMaxSize)) {
-    if (!is_aligned(AOTCodeMaxSize, os::vm_allocation_granularity())) {
-      AOTCodeMaxSize = align_up(AOTCodeMaxSize, os::vm_allocation_granularity());
-      log_info(aot,codecache,init)("AOTCodeMaxSize is aligned up to %dK", (int)(AOTCodeMaxSize/K));
-    }
+    log_debug(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
   }
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {

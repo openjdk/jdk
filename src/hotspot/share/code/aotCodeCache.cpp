@@ -36,6 +36,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -56,6 +57,7 @@ static void exit_vm_on_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
+  log_info(aot, codecache, init)("Unable to use AOT Code Cache.");
   AOTAdapterCaching = false;
 }
 
@@ -64,16 +66,18 @@ static void exit_vm_on_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
+  log_info(aot, codecache, exit)("Unable to create AOT Code Cache.");
   AOTAdapterCaching = false;
 }
 
+static uint _max_aot_code_size = 0;
 uint AOTCodeCache::max_aot_code_size() {
-  return (uint)AOTCodeMaxSize;
+  return _max_aot_code_size;
 }
 
 void AOTCodeCache::initialize() {
   if (FLAG_IS_DEFAULT(AOTCache)) {
-    log_info(aot, codecache, init)("AOT Cache is not used");
+    log_info(aot, codecache, init)("AOT Code Cache is not used: AOTCache is not specified.");
     return; // AOTCache must be specified to dump and use AOT code
   }
 
@@ -86,13 +90,20 @@ void AOTCodeCache::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
     is_using = true;
   } else {
-    log_info(aot, codecache, init)("AOT Cache is not used");
+    log_info(aot, codecache, init)("AOT Code Cache is not used: AOT Class Linking is not used.");
     return; // nothing to do
   }
   if (!AOTAdapterCaching) {
     return; // AOT code caching disabled on command line
   }
-  size_t aot_code_size = is_using ? AOTCacheAccess::get_aot_code_size() : 0;
+  _max_aot_code_size = AOTCodeMaxSize;
+  if (!FLAG_IS_DEFAULT(AOTCodeMaxSize)) {
+    if (!is_aligned(AOTCodeMaxSize, os::vm_allocation_granularity())) {
+      _max_aot_code_size = align_up(AOTCodeMaxSize, os::vm_allocation_granularity());
+      log_debug(aot,codecache,init)("Max AOT Code Cache size is aligned up to %uK", (int)(max_aot_code_size()/K));
+    }
+  }
+  size_t aot_code_size = is_using ? AOTCacheAccess::get_aot_code_region_size() : 0;
   if (is_using && aot_code_size == 0) {
     log_info(aot, codecache, init)("AOT Code Cache is empty");
     return;
@@ -170,14 +181,14 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   // Read header at the begining of cache
   if (_for_use) {
     // Read cache
-    size_t load_size = AOTCacheAccess::get_aot_code_size();
+    size_t load_size = AOTCacheAccess::get_aot_code_region_size();
     ReservedSpace rs = MemoryReserver::reserve(load_size, mtCode);
     if (!rs.is_reserved()) {
       log_warning(aot, codecache, init)("Failed to reserved %u bytes of memory for mapping AOT code region into AOT Code Cache", (uint)load_size);
       set_failed();
       return;
     }
-    if (!AOTCacheAccess::map_aot_code(rs)) {
+    if (!AOTCacheAccess::map_aot_code_region(rs)) {
       log_warning(aot, codecache, init)("Failed to read/mmap cached code region into AOT Code Cache");
       set_failed();
       return;
@@ -186,14 +197,18 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     _load_size = (uint)load_size;
     _load_buffer = (char*)rs.base();
     assert(is_aligned(_load_buffer, DATA_ALIGNMENT), "load_buffer is not aligned");
-    log_info(aot, codecache, init)("Mapped %u bytes at address " INTPTR_FORMAT " at AOT Code Cache", _load_size, p2i(_load_buffer));
+    log_debug(aot, codecache, init)("Mapped %u bytes at address " INTPTR_FORMAT " at AOT Code Cache", _load_size, p2i(_load_buffer));
 
     _load_header = (Header*)addr(0);
     if (!_load_header->verify_config(_load_size)) {
       set_failed();
       return;
     }
-    log_info(aot, codecache, init)("Read header from AOT Code Cache");
+    log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", _load_header->entries_count());
+    log_debug(aot, codecache, init)("  Adapters:  total=%u", _load_header->adapters_count());
+    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->blobs_count());
+    log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", _load_header->cache_size());
+
     // Read strings
     load_strings();
   }
@@ -202,7 +217,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     _store_buffer = align_up(_C_store_buffer, DATA_ALIGNMENT);
     // Entries allocated at the end of buffer in reverse (as on stack).
     _store_entries = (AOTCodeEntry*)align_up(_C_store_buffer + max_aot_code_size(), DATA_ALIGNMENT);
-    log_info(aot, codecache, init)("Allocated store buffer at address " INTPTR_FORMAT " of size %d", p2i(_store_buffer), max_aot_code_size());
+    log_debug(aot, codecache, init)("Allocated store buffer at address " INTPTR_FORMAT " of size %u", p2i(_store_buffer), max_aot_code_size());
   }
   _table = new AOTCodeAddressTable();
 }
@@ -280,62 +295,62 @@ void AOTCodeCache::Config::record() {
 bool AOTCodeCache::Config::verify() const {
 #ifdef ASSERT
   if ((_flags & debugVM) == 0) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
     return false;
   }
 #else
   if ((_flags & debugVM) != 0) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
     return false;
   }
 #endif
 
   CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
   if (aot_gc != Universe::heap()->kind()) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
     return false;
   }
 
   if (((_flags & compressedOops) != 0) != UseCompressedOops) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     return false;
   }
   if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
     return false;
   }
 
   if (((_flags & systemClassAssertions) != 0) != JavaAssertions::systemClassDefault()) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
     return false;
   }
   if (((_flags & userClassAssertions) != 0) != JavaAssertions::userClassDefault()) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
     return false;
   }
 
   if (((_flags & enableContendedPadding) != 0) != EnableContended) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s", EnableContended ? "false" : "true");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s", EnableContended ? "false" : "true");
     return false;
   }
   if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
     return false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
   }
   if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
     return false;
   }
   if (_objectAlignment != (uint)ObjectAlignmentInBytes) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
     return false;
   }
   return true;
@@ -343,11 +358,11 @@ bool AOTCodeCache::Config::verify() const {
 
 bool AOTCodeCache::Header::verify_config(uint load_size) const {
   if (_version != AOT_CODE_VERSION) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
     return false;
   }
   if (load_size < _cache_size) {
-    log_info(aot, codecache, init)("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
     return false;
   }
   return true;
@@ -490,7 +505,7 @@ AOTCodeEntry* AOTCodeCache::find_entry(AOTCodeEntry::Kind kind, uint id) {
     // Read it
     _search_entries = (uint*)addr(_load_header->entries_offset()); // [id, index]
     _load_entries = (AOTCodeEntry*)(_search_entries + 2 * count);
-    log_info(aot, codecache, init)("Read %d entries table at offset %d from AOT Code Cache", count, _load_header->entries_offset());
+    log_debug(aot, codecache, init)("Read %d entries table at offset %d from AOT Code Cache", count, _load_header->entries_offset());
   }
   // Binary search
   int l = 0;
@@ -555,13 +570,13 @@ bool AOTCodeCache::finish_write() {
     // Create ordered search table for entries [id, index];
     uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
     // Allocate in AOT Cache buffer
-    char* buffer = (char *)AOTCacheAccess::allocate_aot_code(total_size + DATA_ALIGNMENT);
+    char* buffer = (char *)AOTCacheAccess::allocate_aot_code_region(total_size + DATA_ALIGNMENT);
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
 
     AOTCodeEntry* entries_address = _store_entries; // Pointer to latest entry
     uint adapters_count = 0;
-    uint total_blobs_count = 0;
+    uint blobs_count = 0;
     uint max_size = 0;
     // AOTCodeEntry entries were allocated in reverse in store buffer.
     // Process them in reverse order to cache first code first.
@@ -586,7 +601,7 @@ bool AOTCodeCache::finish_write() {
       if (kind == AOTCodeEntry::Adapter) {
         adapters_count++;
       } else if (kind == AOTCodeEntry::Blob) {
-        total_blobs_count++;
+        blobs_count++;
       }
     }
     if (entries_count == 0) {
@@ -614,18 +629,20 @@ bool AOTCodeCache::finish_write() {
     entries_size = entries_count * sizeof(AOTCodeEntry); // New size
     copy_bytes((_store_buffer + entries_offset), (address)current, entries_size);
     current += entries_size;
-    log_info(aot, codecache, exit)("Wrote %d AOTCodeEntry entries (%d max size) to AOT Code Cache", entries_count, max_size);
-    log_info(aot, codecache, exit)("  Adapters:  total=%d", adapters_count);
-    log_info(aot, codecache, exit)("  All Blobs: total=%d", total_blobs_count);
-
     uint size = (current - start);
     assert(size <= total_size, "%d > %d", size , total_size);
+
+    log_debug(aot, codecache, exit)("  Adapters:  total=%u", adapters_count);
+    log_debug(aot, codecache, exit)("  All Blobs: total=%u", blobs_count);
+    log_debug(aot, codecache, exit)("  AOT code cache size: %u bytes, max entry's size: %u bytes", size, max_size);
 
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size, (uint)strings_count, strings_offset,
-                 entries_count, new_entries_offset);
-    log_info(aot, codecache, exit)("Wrote %d bytes to AOT Code Cache", size);
+                 entries_count, new_entries_offset,
+                 adapters_count, blobs_count);
+
+    log_info(aot, codecache, exit)("Wrote %d AOT code entries to AOT Code Cache", entries_count);
   }
   return true;
 }
@@ -642,11 +659,10 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
     return false;
   }
-  log_info(aot, codecache, stubs)("Writing blob '%s' to AOT Code Cache", name);
+  log_debug(aot, codecache, stubs)("Writing blob '%s' to AOT Code Cache", name);
 
 #ifdef ASSERT
-
-  LogStreamHandle(Debug, aot, codecache, stubs) log;
+  LogStreamHandle(Trace, aot, codecache, stubs) log;
   if (log.is_enabled()) {
     FlagSetting fs(PrintRelocations, true);
     blob.print_on(&log);
@@ -713,7 +729,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, id,
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps, blob.content_begin());
-  log_info(aot, codecache, stubs)("Wrote code blob '%s(id=%d)' to AOT Code Cache", name, id);
+  log_debug(aot, codecache, stubs)("Wrote code blob '%s(id=%d)' to AOT Code Cache", name, id);
   return true;
 }
 
@@ -727,7 +743,7 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
     return nullptr;
   }
-  log_info(aot, codecache, stubs)("Reading blob '%s' from AOT Code Cache", name);
+  log_debug(aot, codecache, stubs)("Reading blob '%s' from AOT Code Cache", name);
 
   AOTCodeEntry* entry = cache->find_entry(entry_kind, id);
   if (entry == nullptr) {
@@ -784,14 +800,14 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     uint32_t off = *(uint32_t*)addr(offset);
     offset += sizeof(uint32_t);
     const char* entry_name = (_entry->kind() == AOTCodeEntry::Adapter) ? AdapterHandlerEntry::entry_name(i) : "";
-    log_debug(aot, codecache, stubs)("Reading adapter '%s:%s' (0x%x) offset: 0x%x from AOT Code Cache",
+    log_trace(aot, codecache, stubs)("Reading adapter '%s:%s' (0x%x) offset: 0x%x from AOT Code Cache",
                                       stored_name, entry_name, _entry->id(), off);
     entry_offsets[i] = off;
   }
 
-  log_info(aot, codecache, stubs)("Read blob '%s' from AOT Code Cache", name);
+  log_debug(aot, codecache, stubs)("Read blob '%s' from AOT Code Cache", name);
 #ifdef ASSERT
-  LogStreamHandle(Debug, aot, codecache, stubs) log;
+  LogStreamHandle(Trace, aot, codecache, stubs) log;
   if (log.is_enabled()) {
     FlagSetting fs(PrintRelocations, true);
     code_blob->print_on(&log);
@@ -805,7 +821,7 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
 bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
   GrowableArray<uint> reloc_data;
   RelocIterator iter(&code_blob);
-  LogStreamHandle(Info, aot, codecache, reloc) log;
+  LogStreamHandle(Trace, aot, codecache, reloc) log;
   while (iter.next()) {
     int idx = reloc_data.append(0); // default value
     switch (iter.type()) {
@@ -859,7 +875,7 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
 }
 
 void AOTCodeReader::fix_relocations(CodeBlob* code_blob) {
-  LogStreamHandle(Info, aot, reloc) log;
+  LogStreamHandle(Trace, aot, reloc) log;
   uint offset = read_position();
   int count = *(int*)addr(offset);
   offset += sizeof(int);
@@ -1003,7 +1019,7 @@ void AOTCodeAddressTable::init_extrs() {
 #endif // ZERO
 
   _extrs_complete = true;
-  log_info(aot, codecache, init)("External addresses recorded");
+  log_debug(aot, codecache, init)("External addresses recorded");
 }
 
 static bool initializing_shared_blobs = false;
@@ -1020,7 +1036,7 @@ void AOTCodeAddressTable::init_shared_blobs() {
   SET_ADDRESS(_blobs, SharedRuntime::get_ic_miss_stub());
 
   _shared_blobs_complete = true;
-  log_info(aot, codecache, init)("Early shared blobs recorded");
+  log_debug(aot, codecache, init)("Early shared blobs recorded");
   _complete = true;
 }
 
@@ -1075,7 +1091,7 @@ void AOTCodeCache::load_strings() {
   assert((uint)(p - _C_strings_buf) <= strings_size, "(" INTPTR_FORMAT " - " INTPTR_FORMAT ") = %d > %d ", p2i(p), p2i(_C_strings_buf), (uint)(p - _C_strings_buf), strings_size);
   _C_strings_count = strings_count;
   _C_strings_used  = strings_count;
-  log_info(aot, codecache, init)("Loaded %d C strings at offset %d from AOT Code Cache", _C_strings_count, strings_offset);
+  log_debug(aot, codecache, init)("  Loaded %d C strings of total length %d at offset %d from AOT Code Cache", _C_strings_count, strings_size, strings_offset);
 }
 
 int AOTCodeCache::store_strings() {
@@ -1097,40 +1113,48 @@ int AOTCodeCache::store_strings() {
         return -1;
       }
     }
-    log_info(aot, codecache, exit)("Wrote %d C strings of total length %d at offset %d to AOT Code Cache",
+    log_debug(aot, codecache, exit)("  Wrote %d C strings of total length %d at offset %d to AOT Code Cache",
                                    _C_strings_used, length, offset);
   }
   return _C_strings_used;
 }
 
 const char* AOTCodeCache::add_C_string(const char* str) {
-  if (is_on_for_dump()) {
+  if (is_on_for_dump() && str != nullptr) {
     return _cache->_table->add_C_string(str);
   }
   return str;
 }
 
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
-  if (str != nullptr && _extrs_complete) {
+  if (_extrs_complete) {
+    LogStreamHandle(Trace, aot, codecache, stringtable) log; // ctor outside lock
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
       if (_C_strings[i] == str) {
         return str; // Found existing one
-      } else if (!strcmp(_C_strings[i], str)) {
+      } else if (strcmp(_C_strings[i], str) == 0) {
         return _C_strings[i];
       }
     }
     // Add new one
     if (_C_strings_count < MAX_STR_COUNT) {
-      log_trace(aot, codecache)("add_C_string: [%d] " INTPTR_FORMAT " %s", _C_strings_count, p2i(str), str);
       _C_strings_id[_C_strings_count] = -1; // Init
       _C_strings[_C_strings_count++] = str;
+      if (log.is_enabled()) {
+        log.print_cr("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(str), str);
+      }
     }
   }
   return str;
 }
 
 int AOTCodeAddressTable::id_for_C_string(address str) {
+  if (str == nullptr) {
+    return -1;
+  }
+  MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
   for (int i = 0; i < _C_strings_count; i++) {
     if (_C_strings[i] == (const char*)str) { // found
       int id = _C_strings_id[i];
@@ -1235,18 +1259,20 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
           if (offset > 0) {
             // Could be address of C string
             uint dist = (uint)pointer_delta(addr, (address)os::init, 1);
-            log_info(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
-                          p2i(addr), dist, (const char*)addr);
+            log_debug(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
+                                      p2i(addr), dist, (const char*)addr);
             assert(dist > (uint)(_all_max + MAX_STR_COUNT), "change encoding of distance");
             return dist;
           }
+          reloc.print_current_on(tty);
+          code_blob->print_on(tty);
+          code_blob->print_code_on(tty);
           fatal("Address " INTPTR_FORMAT " for runtime target '%s+%d' is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
         } else {
           reloc.print_current_on(tty);
-          os::print_location(tty, p2i(addr), true);
-#ifndef PRODUCT
           code_blob->print_on(tty);
-#endif
+          code_blob->print_code_on(tty);
+          os::find(addr, tty);
           fatal("Address " INTPTR_FORMAT " for <unknown> is missing in AOT Code Cache addresses table", p2i(addr));
         }
       } else {

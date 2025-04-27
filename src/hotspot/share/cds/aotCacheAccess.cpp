@@ -36,19 +36,19 @@
 #include "memory/virtualspace.hpp"
 #include "oops/instanceKlass.hpp"
 
-void* AOTCacheAccess::allocate_aot_code(size_t size) {
+void* AOTCacheAccess::allocate_aot_code_region(size_t size) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
 
-size_t AOTCacheAccess::get_aot_code_size() {
+size_t AOTCacheAccess::get_aot_code_region_size() {
   assert(CDSConfig::is_using_archive(), "must be");
   FileMapInfo* mapinfo = FileMapInfo::current_info();
   assert(mapinfo != nullptr, "must be");
   return mapinfo->region_at(MetaspaceShared::ac)->used_aligned();
 }
 
-bool AOTCacheAccess::map_aot_code(ReservedSpace rs) {
+bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   return static_mapinfo->map_aot_code_region(rs);

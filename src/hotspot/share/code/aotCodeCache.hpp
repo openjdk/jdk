@@ -174,18 +174,23 @@ protected:
     uint   _strings_offset;  // offset to recorded C strings
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
+    uint   _adapters_count;
+    uint   _blobs_count;
     Config _config;
 
 public:
     void init(uint cache_size,
-              uint strings_count, uint strings_offset,
-              uint entries_count, uint entries_offset) {
+              uint strings_count,  uint strings_offset,
+              uint entries_count,  uint entries_offset,
+              uint adapters_count, uint blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
       _strings_offset = strings_offset;
       _entries_count  = entries_count;
       _entries_offset = entries_offset;
+      _adapters_count = adapters_count;
+      _blobs_count    = blobs_count;
 
       _config.record();
     }
@@ -196,6 +201,8 @@ public:
     uint strings_offset() const { return _strings_offset; }
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
+    uint adapters_count() const { return _adapters_count; }
+    uint blobs_count()    const { return _blobs_count; }
 
     bool verify_config(uint load_size)  const;
     bool verify_vm_config() const { // Called after Universe initialized
@@ -329,6 +336,8 @@ public:
   static bool is_using_adapters()   { return is_on_for_use() && _cache->adapter_caching(); }
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
+
+static const char* add_C_string2(const char* str) NOT_CDS_RETURN_(str);
 
   static void print_on(outputStream* st) NOT_CDS_RETURN;
 };
