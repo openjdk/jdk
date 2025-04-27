@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,8 +232,8 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
         mainScreen = 0 < index && index < numScreens ? index : 0;
 
         for (int id = 0; id < numScreens; ++id) {
-            devices.put(id, old.containsKey(id) ? old.remove(id) :
-                                                  new X11GraphicsDevice(id));
+            X11GraphicsDevice d = old.remove(id);
+            devices.put(id, d != null ? d : new X11GraphicsDevice(id));
         }
         // if a device was not reused it should be invalidated
         for (X11GraphicsDevice gd : old.values()) {
