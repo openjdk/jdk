@@ -126,7 +126,6 @@ class MethodCounters : public Metadata {
   int highest_osr_comp_level() const             { return _highest_osr_comp_level;  }
   void set_highest_osr_comp_level(int level)     { _highest_osr_comp_level = (u1)level; }
 
-
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }
   InvocationCounter* backedge_counter()   { return &_backedge_counter; }

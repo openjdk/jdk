@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,14 +51,17 @@ int TrainingData::TrainingDataLocker::_lock_mode;
 volatile bool TrainingData::TrainingDataLocker::_snapshot = false;
 
 MethodTrainingData::MethodTrainingData() {
+  // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
 
 KlassTrainingData::KlassTrainingData() {
+  // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
 
 CompileTrainingData::CompileTrainingData() : _level(-1), _compile_id(-1) {
+  // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
 

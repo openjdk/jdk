@@ -53,9 +53,12 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 }
 
+#if INCLUDE_CDS
 MethodCounters::MethodCounters() {
+  // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
+#endif
 
 MethodCounters* MethodCounters::allocate_no_exception(const methodHandle& mh) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
