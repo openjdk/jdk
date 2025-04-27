@@ -2000,7 +2000,7 @@ class MutableBigInteger {
             int removedBits = rootShift * n;
             x.rightShift(removedBits);
             if (removedBits > trailingZeros)
-                x.add(ONE); // round up to ensure r1 is an upper bound of the root
+                x.add(ONE); // round up to ensure r is an upper bound of the root
 
             MutableBigInteger rToN1 = new MutableBigInteger(r.toBigInteger().pow(n - 1).mag);
             MutableBigInteger dividend = new MutableBigInteger();
