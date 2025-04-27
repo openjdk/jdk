@@ -249,6 +249,9 @@ public class WinMsiBundler  extends AbstractBundler {
 
         WinPackagingPipeline.build()
                 .excludeDirFromCopying(outputParentDir)
+                .task(PackagingPipeline.PackageTaskID.CREATE_CONFIG_FILES)
+                        .packageAction(this::prepareConfigFiles)
+                        .add()
                 .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
                         .packageAction(this::buildPackage)
                         .add()
@@ -257,19 +260,141 @@ public class WinMsiBundler  extends AbstractBundler {
         return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
     }
 
-    private void buildPackage(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
+    private void prepareConfigFiles(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
         prepareProto(env.pkg(), env.env(), env.resolvedLayout());
         for (var wixFragment : wixFragments) {
             wixFragment.initFromParams(env.env(), env.pkg());
             wixFragment.addFilesToConfigRoot();
         }
 
-        Map<String, String> wixVars = prepareMainProjectFile(env);
+        final var msiOut = env.outputDir().resolve(env.pkg().packageFileNameWithSuffix());
 
-        buildMSI(env.env(), env.pkg(), wixVars, env.outputDir());
+        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
+
+        final var wixVars = createWixVars(env);
+
+        final var wixObjDir = env.env().buildRoot().resolve("wixobj");
+
+        final var configDir = env.env().configDir();
+
+        final var wixPipelineBuilder = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
+                .setWorkDir(env.env().appImageDir())
+                .addSource(configDir.resolve("main.wxs"), wixVars);
+
+        for (var wixFragment : wixFragments) {
+            wixFragment.configureWixPipeline(wixPipelineBuilder);
+        }
+
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipelineBuilder.addLightOptions("-sice:ICE27");
+
+                if (!env.pkg().isSystemWideInstall()) {
+                    wixPipelineBuilder.addLightOptions("-sice:ICE91");
+                }
+            }
+            case Wix4 -> {
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
+            return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
+        }).toList();
+
+        var wixResources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
+
+        // Copy standard l10n files.
+        for (var path : primaryWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(env.env().createResource(name).setPublicName(name).setCategory(
+                    I18N.getString("resource.wxl-file")), path);
+        }
+
+        wixResources.addResource(env.env().createResource("main.wxs").setPublicName("main.wxs").
+                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
+
+        wixResources.addResource(env.env().createResource("overrides.wxi").setPublicName(
+                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
+                configDir.resolve("overrides.wxi"));
+
+        // Filter out custom l10n files that were already used to
+        // override primary l10n files. Ignore case filename comparison,
+        // both lists are expected to be short.
+        List<Path> customWxlFiles = env.env().resourceDir()
+                .map(WinMsiBundler::getWxlFilesFromDir)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
+                        primary.getFileName().toString().equalsIgnoreCase(
+                                custom.getFileName().toString())))
+                .peek(custom -> Log.verbose(I18N.format(
+                        "message.using-custom-resource", String.format("[%s]",
+                                I18N.getString("resource.wxl-file")),
+                        custom.getFileName()))).toList();
+
+        // Copy custom l10n files.
+        for (var path : customWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(env.env().createResource(name).setPublicName(name).
+                    setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
+                    getString("resource.wxl-file")), configDir.resolve(name));
+        }
+
+        // Save all WiX resources into config dir.
+        wixResources.saveResources();
+
+        // All l10n files are supplied to WiX with "-loc", but only
+        // Cultures from custom files and a single primary Culture are
+        // included into "-cultures" list
+        for (var wxl : primaryWxlFiles) {
+            wixPipelineBuilder.addLightOptions("-loc", wxl.toString());
+        }
+
+        List<String> cultures = new ArrayList<>();
+        for (var wxl : customWxlFiles) {
+            wxl = configDir.resolve(wxl.getFileName());
+            wixPipelineBuilder.addLightOptions("-loc", wxl.toString());
+            cultures.add(getCultureFromWxlFile(wxl));
+        }
+
+        // Append a primary culture bases on runtime locale.
+        final Path primaryWxlFile = configDir.resolve(
+                I18N.getString("resource.wxl-file-name"));
+        cultures.add(getCultureFromWxlFile(primaryWxlFile));
+
+        // Build ordered list of unique cultures.
+        Set<String> uniqueCultures = new LinkedHashSet<>();
+        uniqueCultures.addAll(cultures);
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipelineBuilder.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
+            }
+            case Wix4 -> {
+                uniqueCultures.forEach(culture -> {
+                    wixPipelineBuilder.addLightOptions("-culture", culture);
+                });
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        Files.createDirectories(wixObjDir);
+        wixPipeline = wixPipelineBuilder.create(wixToolset);
     }
 
-    private Map<String, String> prepareMainProjectFile(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws IOException {
+    private void buildPackage(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
+        final var msiOut = env.outputDir().resolve(env.pkg().packageFileNameWithSuffix());
+        Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
+        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+    }
+
+    private Map<String, String> createWixVars(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws IOException {
         Map<String, String> data = new HashMap<>();
 
         final var pkg = env.pkg();
@@ -315,133 +440,6 @@ public class WinMsiBundler  extends AbstractBundler {
         }
 
         return data;
-    }
-
-    private Path buildMSI(BuildEnv env, WinMsiPackage pkg,
-            Map<String, String> wixVars, Path outdir)
-            throws IOException {
-
-        Path msiOut = outdir.resolve(pkg.packageFileNameWithSuffix());
-
-        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
-
-        final var wixObjDir = env.buildRoot().resolve("wixobj");
-
-        final var wixPipeline = WixPipeline.build()
-                .setWixObjDir(wixObjDir)
-                .setWorkDir(env.appImageDir())
-                .addSource(env.configDir().resolve("main.wxs"), wixVars);
-
-        for (var wixFragment : wixFragments) {
-            wixFragment.configureWixPipeline(wixPipeline);
-        }
-
-        Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
-
-        switch (wixToolset.getType()) {
-            case Wix3 -> {
-                wixPipeline.addLightOptions("-sice:ICE27");
-
-                if (!pkg.isSystemWideInstall()) {
-                    wixPipeline.addLightOptions("-sice:ICE91");
-                }
-            }
-            case Wix4 -> {
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
-
-        final Path configDir = env.configDir();
-
-        var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
-            return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
-        }).toList();
-
-        var wixResources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
-
-        // Copy standard l10n files.
-        for (var path : primaryWxlFiles) {
-            var name = path.getFileName().toString();
-            wixResources.addResource(env.createResource(name).setPublicName(name).setCategory(
-                    I18N.getString("resource.wxl-file")), path);
-        }
-
-        wixResources.addResource(env.createResource("main.wxs").setPublicName("main.wxs").
-                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
-
-        wixResources.addResource(env.createResource("overrides.wxi").setPublicName(
-                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
-                configDir.resolve("overrides.wxi"));
-
-        // Filter out custom l10n files that were already used to
-        // override primary l10n files. Ignore case filename comparison,
-        // both lists are expected to be short.
-        List<Path> customWxlFiles = env.resourceDir()
-                .map(WinMsiBundler::getWxlFilesFromDir)
-                .orElseGet(Collections::emptyList)
-                .stream()
-                .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
-                        primary.getFileName().toString().equalsIgnoreCase(
-                                custom.getFileName().toString())))
-                .peek(custom -> Log.verbose(I18N.format(
-                        "message.using-custom-resource", String.format("[%s]",
-                                I18N.getString("resource.wxl-file")),
-                        custom.getFileName()))).toList();
-
-        // Copy custom l10n files.
-        for (var path : customWxlFiles) {
-            var name = path.getFileName().toString();
-            wixResources.addResource(env.createResource(name).setPublicName(name).
-                    setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
-                    getString("resource.wxl-file")), configDir.resolve(name));
-        }
-
-        // Save all WiX resources into config dir.
-        wixResources.saveResources();
-
-        // All l10n files are supplied to WiX with "-loc", but only
-        // Cultures from custom files and a single primary Culture are
-        // included into "-cultures" list
-        for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toString());
-        }
-
-        List<String> cultures = new ArrayList<>();
-        for (var wxl : customWxlFiles) {
-            wxl = configDir.resolve(wxl.getFileName());
-            wixPipeline.addLightOptions("-loc", wxl.toString());
-            cultures.add(getCultureFromWxlFile(wxl));
-        }
-
-        // Append a primary culture bases on runtime locale.
-        final Path primaryWxlFile = env.configDir().resolve(
-                I18N.getString("resource.wxl-file-name"));
-        cultures.add(getCultureFromWxlFile(primaryWxlFile));
-
-        // Build ordered list of unique cultures.
-        Set<String> uniqueCultures = new LinkedHashSet<>();
-        uniqueCultures.addAll(cultures);
-        switch (wixToolset.getType()) {
-            case Wix3 -> {
-                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
-                        "-cultures:", "")));
-            }
-            case Wix4 -> {
-                uniqueCultures.forEach(culture -> {
-                    wixPipeline.addLightOptions("-culture", culture);
-                });
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
-
-        Files.createDirectories(wixObjDir);
-        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
-
-        return msiOut;
     }
 
     private static List<Path> getWxlFilesFromDir(Path dir) {
@@ -557,5 +555,6 @@ public class WinMsiBundler  extends AbstractBundler {
 
     private Path installerIcon;
     private WixToolset wixToolset;
+    private WixPipeline wixPipeline;
     private final List<WixFragmentBuilder> wixFragments;
 }
