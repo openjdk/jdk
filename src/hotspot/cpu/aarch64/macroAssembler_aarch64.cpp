@@ -2041,7 +2041,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
   // Fast path check: class is fully initialized
   lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
   ldarb(scratch, scratch);
-  subs(zr, scratch, InstanceKlass::fully_initialized);
+  cmp(scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
   // Fast path check: current thread is initializer thread
