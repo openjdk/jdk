@@ -33,12 +33,12 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
-import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 
+import helpers.CodeBuilderType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -168,21 +168,10 @@ class InstructionValidationTest {
             action.accept(cob);
             fail("Bad slot access did not fail fast: "  + value);
         };
-        var cf = ClassFile.of();
-        CodeTransform noopCodeTransform = CodeBuilder::with;
-        // Direct builders
-        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, checkedAction)));
-        // Chained builders
-        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, cob -> cob
-                        .transforming(CodeTransform.ACCEPT_ALL, checkedAction))));
-        var classTemplate = cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, CodeBuilder::return_));
-        // Indirect builders
-        assertThrows(IllegalArgumentException.class, () -> cf.transformClass(cf.parse(classTemplate),
-                ClassTransform.transformingMethodBodies(CodeTransform.endHandler(checkedAction)
-                        .andThen(noopCodeTransform))));
+        for (var builderType : CodeBuilderType.values()) {
+            assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(ClassDesc.of("Test"),
+                    builderType.asClassHandler("test", MTD_void, ACC_STATIC, checkedAction)), builderType.name());
+        }
     }
 
     static void check(boolean fails, Executable exec) {

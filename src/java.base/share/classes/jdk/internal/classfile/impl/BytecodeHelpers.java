@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,8 +54,12 @@ public class BytecodeHelpers {
         return new IllegalArgumentException(String.format("convert %s -> %s", from, to));
     }
 
+    public static IllegalArgumentException u2OutOfBounds(int u2) {
+        return new IllegalArgumentException("Invalid value for u2:".concat(Integer.toString(u2)));
+    }
+
     public static IllegalArgumentException slotOutOfBounds(int slot) {
-        return new IllegalArgumentException("Invalid slot index :".concat(Integer.toString(slot)));
+        return new IllegalArgumentException("Invalid slot index:".concat(Integer.toString(slot)));
     }
 
     public static IllegalArgumentException slotOutOfBounds(Opcode opcode, int slot) {
@@ -435,6 +439,11 @@ public class BytecodeHelpers {
     public static void validateSlot(int slot) {
         if ((slot & ~0xFFFF) != 0)
             throw slotOutOfBounds(slot);
+    }
+
+    public static void validateU2(int u2) {
+        if ((u2 & ~0xFFFF) != 0)
+            throw u2OutOfBounds(u2);
     }
 
     public static boolean validateAndIsWideIinc(int slot, int val) {

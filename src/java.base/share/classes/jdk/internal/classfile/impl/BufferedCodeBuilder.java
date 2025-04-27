@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ public final class BufferedCodeBuilder
     private final MethodInfo methodInfo;
     private boolean finished;
     private int maxLocals;
+    private int maxStackHint = -1;
+    private int maxLocalsHint = -1;
 
     public BufferedCodeBuilder(MethodInfo methodInfo,
                                SplitConstantPool constantPool,
@@ -127,6 +129,17 @@ public final class BufferedCodeBuilder
     }
 
     @Override
+    public CodeBuilder withExplicitStackAndLocals(int maxStack, int maxLocals) {
+        BytecodeHelpers.validateU2(maxStack);
+        BytecodeHelpers.validateU2(maxLocals);
+        if (context.dropStackMaps()) {
+            this.maxStackHint = maxStack;
+            this.maxLocalsHint = maxLocals;
+        }
+        return this;
+    }
+
+    @Override
     public String toString() {
         return String.format("CodeModel[id=%d]", System.identityHashCode(this));
     }
@@ -174,7 +187,17 @@ public final class BufferedCodeBuilder
 
         @Override
         public void writeTo(DirectMethodBuilder builder) {
-            builder.withCode(Util.writingAll(this));
+            if (maxStackHint != -1 && maxLocalsHint != -1) {
+                builder.withCode(new Consumer<>() {
+                    @Override
+                    public void accept(CodeBuilder cob) {
+                        Model.this.forEach(cob);
+                        cob.withExplicitStackAndLocals(maxStackHint, maxLocalsHint);
+                    }
+                });
+            } else {
+                builder.withCode(Util.writingAll(this));
+            }
         }
 
         @Override

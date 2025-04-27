@@ -511,8 +511,8 @@ public final class SwitchBootstraps {
             if (labelConstants.length == 0) {
                 cb.loadConstant(0)
                   .ireturn()
-                  .with(StackMapTableAttribute.of(stackMapFrames));
-                DirectCodeBuilder.withMaxs(cb, 2, locals.size()); // checkIndex uses 2
+                  .with(StackMapTableAttribute.of(stackMapFrames))
+                  .withExplicitStackAndLocals(2, locals.size()); // checkIndex uses 2
                 return;
             }
             cb.iload(RESTART_IDX);
@@ -712,8 +712,8 @@ public final class SwitchBootstraps {
             cb.labelBinding(dflt)
               .loadConstant(labelConstants.length)
               .ireturn()
-              .with(StackMapTableAttribute.of(stackMapFrames));
-            DirectCodeBuilder.withMaxs(cb, 3, locals.size()); // enum labels use 3 stack, others use 2
+              .with(StackMapTableAttribute.of(stackMapFrames))
+              .withExplicitStackAndLocals(3, locals.size()); // enum labels use 3 stack, others use 2
         };
     }
 

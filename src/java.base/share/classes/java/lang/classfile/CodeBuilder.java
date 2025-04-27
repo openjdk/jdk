@@ -3416,4 +3416,32 @@ public sealed interface CodeBuilder
         }
         return tableswitch(low, high, defaultTarget, cases);
     }
+
+    // advanced user hints
+
+    /**
+     * Provides this builder with explicit {@code max_stack} and {@code
+     * max_locals} values when {@link StackMapsOption#DROP_STACK_MAPS} is set.
+     * No automatic counting for the two max values will be done; the resulting
+     * {@code Code} attribute will instead use the provided values.
+     * <p>
+     * This call does not affect the two max values if any of the following is
+     * true:
+     * <ul>
+     * <li>{@code DROP_STACK_MAPS} is not set;
+     * <li>this builder does not build a complete {@code Code} attribute;
+     * <li>this builder's output is redirected to a {@link CodeTransform};
+     * <li>the built {@code Code} attribute is subsequently inflated in a
+     * transformation;
+     * </ul>
+     * <p>
+     * This call always validates the provided max values.
+     *
+     * @param maxStack the max stack slots used by this method body
+     * @param maxLocals the max local variable slots used by this method body
+     * @return this builder
+     * @throws IllegalArgumentException if any of the values is not a {@code u2}
+     * @since 25
+     */
+    CodeBuilder withExplicitStackAndLocals(int maxStack, int maxLocals);
 }

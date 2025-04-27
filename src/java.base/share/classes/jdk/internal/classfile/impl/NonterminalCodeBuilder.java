@@ -62,4 +62,11 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     public Label newLabel() {
         return terminal.newLabel();
     }
+
+    @Override
+    public CodeBuilder withExplicitStackAndLocals(int maxStack, int maxLocals) {
+        BytecodeHelpers.validateU2(maxStack);
+        BytecodeHelpers.validateU2(maxLocals);
+        return this;
+    }
 }

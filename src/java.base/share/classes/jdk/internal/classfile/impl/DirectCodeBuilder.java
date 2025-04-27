@@ -174,10 +174,15 @@ public final class DirectCodeBuilder
         return methodInfo;
     }
 
-    public static void withMaxs(CodeBuilder cob, int stacks, int locals) {
-        var dcb = (DirectCodeBuilder) cob;
-        dcb.maxStackHint = stacks;
-        dcb.maxLocalsHint = locals;
+    @Override
+    public CodeBuilder withExplicitStackAndLocals(int maxStack, int maxLocals) {
+        BytecodeHelpers.validateU2(maxStack);
+        BytecodeHelpers.validateU2(maxLocals);
+        if (context.dropStackMaps()) {
+            this.maxStackHint = maxStack;
+            this.maxLocalsHint = maxLocals;
+        }
+        return this;
     }
 
     private UnboundAttribute<CodeAttribute> content = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import java.lang.classfile.ClassFile;
-import org.junit.jupiter.api.Test;
 
-import static java.lang.constant.ConstantDescs.CD_void;
+import helpers.CodeBuilderType;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,27 +42,22 @@ import static org.junit.jupiter.api.Assertions.*;
  * BuilderParamTest
  */
 class BuilderParamTest {
-    @Test
-    void testDirectBuilder() {
+    @EnumSource
+    @ParameterizedTest
+    void test(CodeBuilderType type) {
         var cc = ClassFile.of();
-        cc.build(ClassDesc.of("Foo"), cb -> {
-            cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0,
-                          mb -> mb.withCode(xb -> {
-                assertEquals(xb.receiverSlot(), 0);
-                assertEquals(xb.parameterSlot(0), 1);
-                assertEquals(xb.parameterSlot(1), 2);
-                assertEquals(xb.parameterSlot(2), 4);
-                xb.return_();
-            }));
-        });
-        cc.build(ClassDesc.of("Foo"), cb -> {
-            cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC,
-                          mb -> mb.withCode(xb -> {
-                              assertEquals(xb.parameterSlot(0), 0);
-                              assertEquals(xb.parameterSlot(1), 1);
-                              assertEquals(xb.parameterSlot(2), 3);
-                              xb.return_();
-                          }));
-        });
+        cc.build(ClassDesc.of("Foo"), type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0, xb -> {
+            assertEquals(0, xb.receiverSlot(), "this");
+            assertEquals(1, xb.parameterSlot(0), "int");
+            assertEquals(2, xb.parameterSlot(1), "long");
+            assertEquals(4, xb.parameterSlot(2), "int");
+            xb.return_();
+        }));
+        cc.build(ClassDesc.of("Foo"), type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC, xb -> {
+            assertEquals(0, xb.parameterSlot(0), "int");
+            assertEquals(1, xb.parameterSlot(1), "long");
+            assertEquals(3, xb.parameterSlot(2), "int");
+            xb.return_();
+        }));
     }
 }
