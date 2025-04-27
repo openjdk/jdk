@@ -685,30 +685,30 @@ instruct vand_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate and (unpredicated)
 
-instruct vandI_vi(vReg dst_src, immI5 con) %{
+instruct vandI_vi(vReg dst, vReg src1, immI5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandI_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src1 (Replicate con)));
+  format %{ "vandI_vi $dst, $src1, $con" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vand_vi(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
+    __ vand_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
                $con$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi(vReg dst_src, immL5 con) %{
+instruct vandL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandL_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src1 (Replicate con)));
+  format %{ "vandL_vi $dst, $src1, $con" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vand_vi(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
+    __ vand_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
                $con$$constant);
   %}
   ins_pipe(pipe_slow);
@@ -716,31 +716,31 @@ instruct vandL_vi(vReg dst_src, immL5 con) %{
 
 // vector-scalar and (unpredicated)
 
-instruct vandI_vx(vReg dst_src, iRegIorL2I src) %{
+instruct vandI_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (AndV dst_src (Replicate src)));
-  format %{ "vandI_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (AndV src1 (Replicate src2)));
+  format %{ "vandI_vx $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vand_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src$$reg));
+    __ vand_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vx(vReg dst_src, iRegL src) %{
+instruct vandL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (AndV dst_src (Replicate src)));
-  format %{ "vandL_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (AndV src1 (Replicate src2)));
+  format %{ "vandL_vx $dst, $src1, $src2" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vand_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src$$reg));
+    __ vand_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -841,30 +841,30 @@ instruct vor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate or (unpredicated)
 
-instruct vorI_vi(vReg dst_src, immI5 con) %{
+instruct vorI_vi(vReg dst, vReg src1, immI5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorI_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src1 (Replicate con)));
+  format %{ "vorI_vi $dst, $src1, $con" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vor_vi(as_VectorRegister($dst_src$$reg),
-              as_VectorRegister($dst_src$$reg),
+    __ vor_vi(as_VectorRegister($dst$$reg),
+              as_VectorRegister($src1$$reg),
               $con$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi(vReg dst_src, immL5 con) %{
+instruct vorL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorL_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src1 (Replicate con)));
+  format %{ "vorL_vi $dst, $src1, $con" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vor_vi(as_VectorRegister($dst_src$$reg),
-              as_VectorRegister($dst_src$$reg),
+    __ vor_vi(as_VectorRegister($dst$$reg),
+              as_VectorRegister($src1$$reg),
               $con$$constant);
   %}
   ins_pipe(pipe_slow);
@@ -872,31 +872,31 @@ instruct vorL_vi(vReg dst_src, immL5 con) %{
 
 // vector-scalar or (unpredicated)
 
-instruct vorI_vx(vReg dst_src, iRegIorL2I src) %{
+instruct vorI_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (OrV dst_src (Replicate src)));
-  format %{ "vorI_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (OrV src1 (Replicate src2)));
+  format %{ "vorI_vx $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vor_vx(as_VectorRegister($dst_src$$reg),
-              as_VectorRegister($dst_src$$reg),
-              as_Register($src$$reg));
+    __ vor_vx(as_VectorRegister($dst$$reg),
+              as_VectorRegister($src1$$reg),
+              as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vx(vReg dst_src, iRegL src) %{
+instruct vorL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (OrV dst_src (Replicate src)));
-  format %{ "vorL_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (OrV src1 (Replicate src2)));
+  format %{ "vorL_vx $dst, $src1, $src2" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vor_vx(as_VectorRegister($dst_src$$reg),
-              as_VectorRegister($dst_src$$reg),
-              as_Register($src$$reg));
+    __ vor_vx(as_VectorRegister($dst$$reg),
+              as_VectorRegister($src1$$reg),
+              as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -997,30 +997,30 @@ instruct vxor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate xor (unpredicated)
 
-instruct vxorI_vi(vReg dst_src, immI5 con) %{
+instruct vxorI_vi(vReg dst, vReg src1, immI5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorI_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src1 (Replicate con)));
+  format %{ "vxorI_vi $dst, $src1, $con" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vxor_vi(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
+    __ vxor_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
                $con$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi(vReg dst_src, immL5 con) %{
+instruct vxorL_vi(vReg dst, vReg src1, immL5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorL_vi $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src1 (Replicate con)));
+  format %{ "vxorL_vi $dst, $src1, $con" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vxor_vi(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
+    __ vxor_vi(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
                $con$$constant);
   %}
   ins_pipe(pipe_slow);
@@ -1028,31 +1028,31 @@ instruct vxorL_vi(vReg dst_src, immL5 con) %{
 
 // vector-scalar xor (unpredicated)
 
-instruct vxorI_vx(vReg dst_src, iRegIorL2I src) %{
+instruct vxorI_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (XorV dst_src (Replicate src)));
-  format %{ "vxorI_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (XorV src1 (Replicate src2)));
+  format %{ "vxorI_vx $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vxor_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src$$reg));
+    __ vxor_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vx(vReg dst_src, iRegL src) %{
+instruct vxorL_vx(vReg dst, vReg src1, iRegL src2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (XorV dst_src (Replicate src)));
-  format %{ "vxorL_vx $dst_src, $dst_src, $src" %}
+  match(Set dst (XorV src1 (Replicate src2)));
+  format %{ "vxorL_vx $dst, $src1, $src2" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vxor_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src$$reg));
+    __ vxor_vx(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_Register($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
