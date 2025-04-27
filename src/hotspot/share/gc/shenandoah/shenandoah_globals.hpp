@@ -572,7 +572,7 @@
           "Log cumulative card stats every so many remembered set or "      \
           "update refs scans")                                              \
                                                                             \
-  product(uintx, ShenandoahMinimumOldTimeMs, 100, EXPERIMENTAL,             \
+  product(uintx, ShenandoahMinimumOldTimeMs, 50, EXPERIMENTAL,              \
          "Minimum amount of time in milliseconds to run old collections "   \
          "before a young collection is allowed to run. This is intended "   \
          "to prevent starvation of the old collector. Setting this to "     \
