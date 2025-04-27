@@ -1954,7 +1954,7 @@ class MutableBigInteger {
                 do {
                     rLong = r1;
                     long rToN1 = BigInteger.unsignedLongPow(rLong, n - 1);
-                    r1 = ((n - 1) * rLong + x / rToN1) / n;
+                    r1 = ((n - 1) * rLong + Long.divideUnsigned(x, rToN1)) / n;
                 } while (r1 < rLong); // Terminate when non-decreasing.
 
                 return new MutableBigInteger(rLong);
