@@ -25,30 +25,35 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/allStatic.hpp"
 
 class ShenandoahWorkerPolicy : AllStatic {
+private:
+  static uint calc_workers_for_any_concurrent_phase(ShenandoahHeuristics* heuristics);
+
 public:
   // Calculate the number of workers for initial marking
   static uint calc_workers_for_init_marking();
 
   // Calculate the number of workers for concurrent marking
-  static uint calc_workers_for_conc_marking();
+  static uint calc_workers_for_conc_marking(ShenandoahGeneration* generation);
 
   // Calculate the number of workers for remembered set scanning
-  static uint calc_workers_for_rs_scanning();
+  static uint calc_workers_for_rs_scanning(ShenandoahGeneration* generation);
 
   // Calculate the number of workers for final marking
   static uint calc_workers_for_final_marking();
 
   // Calculate workers for concurrent root processing
-  static uint calc_workers_for_conc_root_processing();
+  static uint calc_workers_for_conc_root_processing(ShenandoahGeneration* generation);
 
   // Calculate workers for concurrent refs processing
-  static uint calc_workers_for_conc_refs_processing();
+  static uint calc_workers_for_conc_refs_processing(ShenandoahGeneration* generation);
 
   // Calculate workers for concurrent evacuation (concurrent GC)
-  static uint calc_workers_for_conc_evac();
+  static uint calc_workers_for_conc_evac(ShenandoahGeneration* generation);
 
   // Calculate workers for parallel full gc
   static uint calc_workers_for_fullgc();
@@ -57,16 +62,16 @@ public:
   static uint calc_workers_for_stw_degenerated();
 
   // Calculate workers for concurrent reference update
-  static uint calc_workers_for_conc_update_ref();
+  static uint calc_workers_for_conc_update_ref(ShenandoahGeneration* generation);
 
   // Calculate workers for parallel/final reference update
   static uint calc_workers_for_final_update_ref();
 
   // Calculate workers for concurrent reset
-  static uint calc_workers_for_conc_reset();
+  static uint calc_workers_for_conc_reset(ShenandoahGeneration* generation);
 
   // Calculate workers for concurrent cleanup
-  static uint calc_workers_for_conc_cleanup();
+  static uint calc_workers_for_conc_cleanup(ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

@@ -95,6 +95,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   _allow_preemption.set();
 
   // Continue concurrent mark, do not reset regions, do not mark roots, do not collect $200.
+  _old_generation->heuristics()->should_surge();
   entry_mark();
 
   // If we failed to unset the preemption flag, it means another thread has already unset it.

@@ -95,12 +95,19 @@ void ShenandoahArguments::initialize() {
 
   // Set up default number of parallel threads. We want to have decent pauses performance
   // which would use parallel threads, but we also do not want to do too many threads
-  // that will overwhelm the OS scheduler. Using 1/2 of available threads seems to be a fair
+  // that will overwhelm the OS scheduler. Using 3/4 of available threads seems to be a fair
   // compromise here. Due to implementation constraints, it should not be lower than
   // the number of concurrent threads.
+  //
+  // Consider a maximum default on number of ParallelGCThreads, e.g. no more than 24.  Because of contention
+  // for shared resources during STW GC activities, there are diminishing returns for increased numbers of threads.
+  // If we put maximum default on ParallelGCThreads, we should do the same for ConcGCThreads, eg. 8.
+  //
+  // Also consider very small hosts.  Should we special-case this?  If active_processor_count is 2, maybe
+  // make set ParallelGCThreads to 2.
   bool ergo_parallel = FLAG_IS_DEFAULT(ParallelGCThreads);
   if (ergo_parallel) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, MAX2(1, os::initial_active_processor_count() / 2));
+    FLAG_SET_DEFAULT(ParallelGCThreads, MAX2(1, 3 * os::initial_active_processor_count() / 4));
   }
 
   if (ParallelGCThreads == 0) {

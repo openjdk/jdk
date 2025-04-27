@@ -49,6 +49,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/vmThread.hpp"
@@ -120,6 +121,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   bool is_generational = heap->mode()->is_generational();
   ShenandoahYoungHeuristics* young_heuristics = is_generational ? heap->young_generation()->heuristics(): nullptr;
 
+  double start_gc_time = os::elapsedTime();
+  heuristics->should_surge_phase(ShenandoahMajorGCPhase::_mark, start_gc_time);
 
   // Reset for upcoming marking
   entry_reset();
@@ -164,11 +167,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     return false;
   }
 
-  if (is_generational) {
-    double start_evac_or_final_roots_time = os::elapsedTime();
-    size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
-    young_heuristics->record_mark_end(start_evac_or_final_roots_time, live_young_words_after_mark);
-  }
   assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
 
   // Concurrent stack processing
@@ -205,19 +203,33 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
   if (heap->is_evacuation_in_progress()) {
+
+    double start_evac_time = os::elapsedTime();
+    size_t live_young_words_after_mark = (is_generational?
+                                          young_heuristics->get_young_live_words_after_most_recent_mark():
+                                          heuristics->get_live_words_after_most_recent_mark());
+    young_heuristics->record_mark_end(start_evac_time, live_young_words_after_mark);
+    heuristics->should_surge_phase(ShenandoahMajorGCPhase::_evac, start_evac_time);
+
     // Concurrently evacuate
     entry_evacuate();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
       return false;
     }
 
+    double start_update_time = os::elapsedTime();
+
     if (is_generational) {
-      double start_update_time = os::elapsedTime();
-      size_t evacuated_words =
-	young_heuristics->get_young_words_most_recently_evacuated() + young_heuristics->get_old_words_most_recently_evacuated();
+      size_t evacuated_words = (young_heuristics->get_young_words_most_recently_evacuated()
+                                + young_heuristics->get_old_words_most_recently_evacuated());
       size_t pip_words = young_heuristics->get_live_words_most_recently_promoted_in_place();
       young_heuristics->record_evac_end(start_update_time, evacuated_words, pip_words);
+    } else {
+      size_t evacuated_words = heuristics->get_words_most_recently_evacuated();
+      heuristics->record_evac_end(start_update_time, evacuated_words, 0);
     }
+
+    heuristics->should_surge_phase(ShenandoahMajorGCPhase::_update, start_update_time);
 
     entry_concurrent_update_refs_prepare(heap);
     // Perform update-refs phase.
@@ -257,8 +269,16 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 	young_heuristics->record_update_end(gc_finish_time, updated_words);
       }
     }
+
   } else {
     _abbreviated = true;
+
+    double start_final_roots_time = os::elapsedTime();
+    size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
+    young_heuristics->record_mark_end(start_final_roots_time, live_young_words_after_mark);
+    heuristics->should_surge_phase(ShenandoahMajorGCPhase::_evac, start_final_roots_time);
+
+    heuristics->should_surge_phase(ShenandoahMajorGCPhase::_final_roots, start_final_roots_time);
 
     if (!entry_final_roots()) {
       assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
@@ -457,7 +477,7 @@ void ShenandoahConcurrentGC::entry_reset() {
     EventMark em("%s", msg);
 
     ShenandoahWorkerScope scope(heap->workers(),
-                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(_generation),
                                 msg);
     op_reset();
   }
@@ -476,7 +496,7 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
     EventMark em("%s", msg);
 
     ShenandoahWorkerScope scope(heap->workers(),
-                                ShenandoahWorkerPolicy::calc_workers_for_rs_scanning(),
+                                ShenandoahWorkerPolicy::calc_workers_for_rs_scanning(_generation),
                                 msg);
 
     heap->try_inject_alloc_failure();
@@ -492,7 +512,7 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(_generation),
                               "concurrent marking roots");
 
   heap->try_inject_alloc_failure();
@@ -507,7 +527,7 @@ void ShenandoahConcurrentGC::entry_mark() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(_generation),
                               "concurrent marking");
 
   heap->try_inject_alloc_failure();
@@ -521,7 +541,7 @@ void ShenandoahConcurrentGC::entry_thread_roots() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(_generation),
                               msg);
 
   heap->try_inject_alloc_failure();
@@ -535,7 +555,7 @@ void ShenandoahConcurrentGC::entry_weak_refs() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing(_generation),
                               "concurrent weak references");
 
   heap->try_inject_alloc_failure();
@@ -550,7 +570,7 @@ void ShenandoahConcurrentGC::entry_weak_roots() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(_generation),
                               "concurrent weak root");
 
   heap->try_inject_alloc_failure();
@@ -565,7 +585,7 @@ void ShenandoahConcurrentGC::entry_class_unloading() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(_generation),
                               "concurrent class unloading");
 
   heap->try_inject_alloc_failure();
@@ -582,7 +602,7 @@ void ShenandoahConcurrentGC::entry_strong_roots() {
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_strong_roots);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(_generation),
                               "concurrent strong root");
 
   heap->try_inject_alloc_failure();
@@ -610,7 +630,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(_generation),
                               "concurrent evacuation");
 
   heap->try_inject_alloc_failure();
@@ -648,7 +668,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(_generation),
                               "concurrent reference update");
 
   heap->try_inject_alloc_failure();
@@ -1163,7 +1183,7 @@ void ShenandoahConcurrentGC::op_strong_roots() {
 
 void ShenandoahConcurrentGC::op_cleanup_early() {
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(_generation),
                               "cleanup early.");
   ShenandoahHeap::heap()->recycle_trash();
 }
@@ -1288,7 +1308,7 @@ bool ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
   EventMark em("%s", msg);
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(_generation),
                               msg);
 
   if (!heap->mode()->is_generational()) {
@@ -1309,14 +1329,14 @@ void ShenandoahConcurrentGC::op_verify_final_roots() {
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(_generation),
                               "cleanup complete.");
   ShenandoahHeap::heap()->recycle_trash();
 }
 
 void ShenandoahConcurrentGC::op_reset_after_collect() {
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
-                          ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                          ShenandoahWorkerPolicy::calc_workers_for_conc_reset(_generation),
                           "reset after collection.");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();

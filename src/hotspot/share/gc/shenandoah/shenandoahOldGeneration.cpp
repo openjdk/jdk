@@ -411,7 +411,7 @@ bool ShenandoahOldGeneration::entry_coalesce_and_fill() {
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(this),
                               msg);
 
   return coalesce_and_fill();

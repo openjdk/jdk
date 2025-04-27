@@ -397,6 +397,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(const 
 
 void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const ShenandoahGCRequest& request) {
   ShenandoahOldGeneration* old_generation = _heap->old_generation();
+  ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
   ShenandoahYoungGeneration* young_generation = _heap->young_generation();
   ShenandoahOldGeneration::State original_state = old_generation->state();
 
@@ -406,6 +407,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
     case ShenandoahOldGeneration::FILLING: {
       ShenandoahGCSession session(request.cause, old_generation);
       assert(gc_mode() == servicing_old, "Filling should be servicing old");
+      old_heuristics->should_surge();
       _allow_old_preemption.set();
       old_generation->entry_coalesce_and_fill();
       _allow_old_preemption.unset();

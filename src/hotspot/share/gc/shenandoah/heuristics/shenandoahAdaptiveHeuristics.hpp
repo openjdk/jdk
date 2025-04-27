@@ -49,6 +49,7 @@ class ShenandoahPhaseTimeEstimator {
   double _y_values[MaxSamples];
   double _most_recent_prediction_x_value;
   double _most_recent_prediction;
+  double _most_recent_bytes_allocated;
 
  public:
   explicit ShenandoahPhaseTimeEstimator(const char *name);
@@ -68,6 +69,14 @@ class ShenandoahPhaseTimeEstimator {
   double get_most_recent_start_time() {
     return _most_recent_start;
   }
+
+  void set_most_recent_bytes_allocated(size_t bytes) {
+    _most_recent_bytes_allocated = bytes;
+  }
+
+  size_t get_most_recent_bytes_allocated() {
+    return _most_recent_bytes_allocated;
+  }
 };
 
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
@@ -78,6 +87,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   double sample(size_t allocated);
 
   double upper_bound(double sds) const;
+  double average_rate(double sds) const;
   bool is_spiking(double rate, double threshold) const;
  private:
 
@@ -122,6 +132,17 @@ public:
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
 
+  virtual void record_phase_duration(ShenandoahMajorGCPhase p, double x, double duration) override;
+
+  void record_mark_end(double now, size_t marked_words) override;
+  // In non-generational mode, supply pip_words as zero
+  void record_evac_end(double now, size_t evacuated_words, size_t pip_words) override;
+  void record_update_end(double now, size_t updated_words) override;
+  // In non-generational mode, supply pip_words as zero
+  void record_final_roots_end(double now, size_t pip_words) override;
+
+  uint should_surge_phase(ShenandoahMajorGCPhase phase, double now) override;
+
  private:
   // These are used to adjust the margin of error and the spike threshold
   // in response to GC cycle outcomes. These values are shared, but the
@@ -142,6 +163,12 @@ public:
   void adjust_spike_threshold(double amount);
 
 protected:
+  // Use this to estimate how much time will be required for future mark, evac, update, final-roots phases.
+  ShenandoahPhaseTimeEstimator _phase_stats[ShenandoahMajorGCPhase::_num_phases] = {
+    ShenandoahPhaseTimeEstimator("mark"),
+    ShenandoahPhaseTimeEstimator("evac"),
+    ShenandoahPhaseTimeEstimator("update"),
+    ShenandoahPhaseTimeEstimator("final-roots") };
 
   // Used to record the last trigger that signaled to start a GC.
   // This itself is used to decide whether or not to adjust the margin of
@@ -179,6 +206,46 @@ protected:
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
 
+  // How many total words were evacuated in the most recently completed GC?
+  size_t _words_most_recently_evacuated;
+
+  // How many words do we expect to mark in the next GC?
+  // (aka how many words did we evacuate from most recently completed GC?)
+  size_t _anticipated_mark_words;
+
+  // How many words do we expect to evacuate in the next GC?
+  // (aka how many words did we evacuate from most recently completed GC?)
+  size_t _anticipated_evac_words;
+
+  // How many words do we expect to update in the next GC?
+  size_t _anticipated_update_words;
+
+  double predict_mark_time(size_t anticipated_marked_words) override;
+  double predict_evac_time(size_t anticipated_evac_words);
+  double predict_update_time(size_t anticipated_update_words);
+  double predict_final_roots_time();
+  
+  double predict_gc_time() override;
+
+  inline size_t get_anticipated_mark_words() {
+    return _anticipated_mark_words;
+  }
+
+  inline void set_anticipated_evac_words(size_t words) {
+    _anticipated_evac_words = words;
+  }
+
+  inline size_t get_anticipated_evac_words() {
+    return _anticipated_evac_words;
+  }
+
+  inline void set_anticipated_update_words(size_t words) {
+    _anticipated_update_words =  words;
+  }
+
+  inline size_t get_anticipated_update_words() {
+    return _anticipated_update_words;
+  }
 
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below

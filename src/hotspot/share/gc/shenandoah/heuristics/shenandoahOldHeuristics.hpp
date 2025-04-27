@@ -105,6 +105,8 @@ private:
   size_t _fragmentation_first_old_region;
   size_t _fragmentation_last_old_region;
 
+  size_t _consecutive_concurrent_old_cycles;
+
   // State variables involved in construction of a mixed-evacuation collection set.  These variables are initialized
   // when client code invokes prime_collection_set().  They are consulted, and sometimes modified, when client code
   // calls top_off_collection_set() to possibly expand the number old-gen regions in a mixed evacuation cset, and by
@@ -238,6 +240,8 @@ public:
 
   // Returns true if the old generation needs to prepare for marking, or continue marking.
   bool should_resume_old_cycle();
+
+  uint should_surge();
 
   void record_success_concurrent() override;
 

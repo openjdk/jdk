@@ -66,7 +66,6 @@ typedef enum {
   _final_roots,
   _num_phases
 } ShenandoahMajorGCPhase;
-
 /*
  * Shenandoah heuristics are primarily responsible for deciding when to start
  * a collection cycle and choosing which regions will be evacuated during the
@@ -89,6 +88,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
+  static const uint Min_Surge_Level        =  1; // 0 denotes no surge, 1 denotes surge of 25%
+  static const uint Max_Surge_Level        =  8; // 8 denotes surge of 200%
+
   bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
                                           //  heuristic has answered false to should_start_gc().
@@ -100,6 +102,12 @@ protected:
                                           //  in delaying the trigger vs. degeneration for other reasons (such as the
                                           //  most recent GC triggered "immediately" after previous GC finished, but the
                                           //  free headroom has already been depleted).
+
+  // Remember how much data was live after most recent mark
+  size_t _live_words_after_most_recent_mark;
+
+  // Remember how much data was evacuated in most recent evacuation
+  size_t _words_most_recently_evacuated;
 
   class RegionData {
     private:
@@ -186,6 +194,9 @@ protected:
   intx _gc_time_penalties;
   TruncatedSeq* _gc_cycle_time_history;
 
+  uint _surge_level;
+  uint _previous_cycle_max_surge_level;
+
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
 
@@ -244,6 +255,106 @@ public:
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
+
+  virtual void record_phase_duration(ShenandoahMajorGCPhase p, double x, double duration) {
+    // Only adaptive heuristics will care to record phase durations
+  }
+
+  inline void set_live_words_after_most_recent_mark(size_t live_words) {
+    _live_words_after_most_recent_mark = live_words;
+  }
+
+  inline size_t get_live_words_after_most_recent_mark() {
+    return _live_words_after_most_recent_mark;
+  }
+
+  inline void set_words_most_recently_evacuated(size_t evacuated_words) {
+    _words_most_recently_evacuated = evacuated_words;
+  }
+
+  inline size_t get_words_most_recently_evacuated() {
+    return _words_most_recently_evacuated;
+  }
+
+  virtual void record_mark_end(double now, size_t marked_words) {
+    // Do nothing.
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+  }
+
+  virtual void record_evac_end(double now, size_t evacuated_words, size_t pip_words) {
+    // Do nothing.
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+  }
+
+  virtual void record_update_end(double now, size_t updated_words) {
+    // Do nothing.
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+  }
+
+  virtual void record_final_roots_end(double now, size_t pip_words) {
+    // Do nothing.
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+  }
+
+  virtual double predict_mark_time(size_t anticipated_marked_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  // Young-gen version takes an anticipated_pip_words parameter
+  double predict_evac_time(size_t anticipated_evac_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  double predict_update_time(size_t anticipated_update_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  // In non-generational mode, supply pip_words as zero
+  double predict_final_roots_time(size_t pip_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  virtual double predict_gc_time() {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  // Returns 0 if no surge necessary, returns surge level (1-4) if surge is appropriate.
+  //  1:  25% surge (e.g. 4 concurrent worker threads becomes 5)
+  //  2:  50% surge (e.g. 4 concurrent worker threads becomes 6)
+  //  3:  75% surge (e.g. 4 concurrent worker threads becomes 7)
+  //  4: 100% surge (e.g. 4 concurrent worker threads becomes 8)
+  //  5: 125% surge (e.g. 4 concurrent worker threads becomes 9)
+  //  6: 150% surge (e.g. 4 concurrent worker threads becomes 10)
+  //  7: 175% surge (e.g. 4 concurrent worker threads becomes 11)
+  //  8: 200% surge (e.g. 4 concurrent worker threads becomes 12)
+  virtual uint should_surge_phase(ShenandoahMajorGCPhase phase, double now) {
+    // Do nothing.
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0;
+  }
+
+  static inline uint max_surge_level() {
+    return Max_Surge_Level;
+  }
+
+  inline uint get_surge_level() {
+    return _surge_level;
+  }
 
   // This indicates whether or not the current cycle should unload classes.
   // It does NOT indicate that a cycle should be started.

@@ -35,18 +35,7 @@ class ShenandoahYoungGeneration;
  * designed to expedite mixed collections and promotions.
  */
 class ShenandoahYoungHeuristics : public ShenandoahGenerationalHeuristics {
-
 protected:
-  // Use this to estimate how much time will be required for future mark, evac, update, final-roots phases.
-  ShenandoahPhaseTimeEstimator _phase_stats[ShenandoahMajorGCPhase::_num_phases] = {
-    ShenandoahPhaseTimeEstimator("mark"),
-    ShenandoahPhaseTimeEstimator("evac"),
-    ShenandoahPhaseTimeEstimator("update"),
-    ShenandoahPhaseTimeEstimator("final-roots") };
-
-  // How many total words were evacuated in the most recently completed GC?
-  size_t _words_most_recently_evacuated;
-
   // For the most recently completed GC (global, young, old), how many live words from the young generation were not included
   // in the collection set at time collection set was built.  This represents the amount of young memory that will need to be 
   // updated.
@@ -78,27 +67,11 @@ protected:
   // How many live words were promoted in place during most recent GC?
   size_t _live_words_most_recently_promoted_in_place;
 
-  // How many words do we expect to mark in the next GC?
-  // (aka how many words did we evacuate from most recently completed GC?)
-  size_t _anticipated_mark_words;
-
-  // How many words do we expect to evacuate in the next GC?
-  // (aka how many words did we evacuate from most recently completed GC?)
-  size_t _anticipated_evac_words;
-
   // How many words do we expect to promote-in-place in the next GC?
   // (aka how many live words in tenure-aged regions at end of most recently completed GC?)
   size_t _anticipated_pip_words;
 
-  // How many words do we expect to update in the next GC?
-  size_t _anticipated_update_words;
 
-  double predict_mark_time(size_t anticipated_marked_words);
-  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words);
-  double predict_update_time(size_t anticipated_update_words);
-  double predict_final_roots_time(size_t anticipated_pip_words);
-  
-  double predict_gc_time();
 
 public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
@@ -110,19 +83,16 @@ public:
 
   bool should_start_gc() override;
 
+  uint should_surge_phase(ShenandoahMajorGCPhase phase, double now) override;
+
   size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed);
-
-  virtual void record_cycle_start() override;
-
-  void record_mark_end(double now, size_t marked_words);
-  void record_evac_end(double now, size_t evacuated_words, size_t pip_words);
-  void record_update_end(double now, size_t updated_words);
-  void record_final_roots_end(double now, size_t pip_words);
 
   void adjust_old_evac_ratio(size_t old_cset_regions, size_t young_cset_regions, ShenandoahOldGeneration* old_gen,
 			     ShenandoahYoungGeneration* young_gen, size_t promo_potential_words,
 			     size_t pip_potential_words, size_t mixed_candidate_live_words,
 			     size_t mixed_candidate_garbage_words);
+
+
 
   inline void set_young_words_most_recently_evacuated(size_t words) {
     _young_words_most_recently_evacuated = words;
@@ -208,21 +178,14 @@ public:
     return _live_words_most_recently_promoted_in_place;
   }
 
+  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words);
+  double predict_final_roots_time(size_t anticipated_pip_words);
+
+  double predict_gc_time() override;
+
   // Setting this value to zero denotes current GC cycle to be "traditional young", so average GC cycle tine is best predictor.
   inline void set_anticipated_mark_words(size_t words) {
     _anticipated_mark_words = words;
-  }
-
-  inline size_t get_anticipated_mark_words() {
-    return _anticipated_mark_words;
-  }
-
-  inline void set_anticipated_evac_words(size_t words) {
-    _anticipated_evac_words = words;
-  }
-
-  inline size_t get_anticipated_evac_words() {
-    return _anticipated_evac_words;
   }
 
   inline void set_anticipated_pip_words(size_t words) {
@@ -231,14 +194,6 @@ public:
 
   inline size_t get_anticipated_pip_words() {
     return _anticipated_pip_words;
-  }
-
-  inline void set_anticipated_update_words(size_t words) {
-    _anticipated_update_words =  words;
-  }
-
-  inline size_t get_anticipated_update_words() {
-    return _anticipated_update_words;
   }
 
 private:

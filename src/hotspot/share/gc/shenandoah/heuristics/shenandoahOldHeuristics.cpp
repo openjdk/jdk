@@ -73,7 +73,8 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
   _growth_trigger(false),
   _fragmentation_density(0.0),
   _fragmentation_first_old_region(0),
-  _fragmentation_last_old_region(0)
+  _fragmentation_last_old_region(0),
+  _consecutive_concurrent_old_cycles(0)
 {
 }
 
@@ -741,12 +742,14 @@ bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   if (_old_generation->is_concurrent_mark_in_progress()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
     log_trigger("Resume marking old");
+    _consecutive_concurrent_old_cycles++;
     return true;
   }
 
   if (_old_generation->is_preparing_for_mark()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
     log_trigger("Resume preparing to mark old");
+    _consecutive_concurrent_old_cycles++;
     return true;
   }
 
@@ -771,6 +774,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const double percent = percent_of(old_gen_capacity, heap_capacity);
     log_trigger("Expansion failure, current size: %zu%s which is %.1f%% of total heap size",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
+    _consecutive_concurrent_old_cycles = 1;
     return true;
   }
 
@@ -793,6 +797,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                 "%zu to %zu (%zu), density: %.1f%%",
                 byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
                 first_old_region, last_old_region, span_of_old_regions, density * 100);
+    _consecutive_concurrent_old_cycles = 1;
     return true;
   }
 
@@ -820,6 +825,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                   "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
                   byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
+      _consecutive_concurrent_old_cycles = 1;
       return true;
     } else {
       // Mixed evacuations have decreased current_usage such that old-growth trigger is no longer relevant.
@@ -828,8 +834,35 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   }
 
   // Otherwise, defer to inherited heuristic for gc trigger.
-  return this->ShenandoahHeuristics::should_start_gc();
+  if (this->ShenandoahHeuristics::should_start_gc()) {
+    _consecutive_concurrent_old_cycles = 1;
+    return true;
+  } else {
+    return false;
+  }
 }
+
+uint ShenandoahOldHeuristics::should_surge() {
+  // If it takes more than IdealMaxConcurrentOldCycles to complete old GC, old is being starved. Surge the
+  // concurrent old GC workers.
+  static const uint IdealMaxConcurrentOldCycles = 8;
+  uint surge;
+  if (_consecutive_concurrent_old_cycles > IdealMaxConcurrentOldCycles) {
+    surge = _consecutive_concurrent_old_cycles - 8;
+    if (surge > max_surge_level()) {
+      surge = max_surge_level();
+    }
+    if (ConcGCThreads * (1 + surge * 0.25) > ParallelGCThreads) {
+      surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
+    }
+  } else {
+    surge = 0;
+  }
+
+  _surge_level = surge;
+  return surge;
+}
+
 
 void ShenandoahOldHeuristics::record_success_concurrent() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.

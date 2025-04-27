@@ -59,6 +59,8 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _gc_times_learned(0),
   _gc_time_penalties(0),
   _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
+  _surge_level(0),
+  _previous_cycle_max_surge_level(0),
   _metaspace_oom()
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
@@ -98,6 +100,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free = 0;
   size_t free_regions = 0;
 
+  size_t live_words_after_mark = 0;
+
   ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
 
   for (size_t i = 0; i < num_regions; i++) {
@@ -115,6 +119,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_garbage += garbage;
         region->make_trash_immediate();
       } else {
+        live_words_after_mark += region->get_live_data_words();
         // This is our candidate for later consideration.
         candidates[cand_idx].set_region_and_garbage(region, garbage);
         cand_idx++;
@@ -134,6 +139,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         // Count only the start. Continuations would be counted on "trash" path
         immediate_regions++;
         immediate_garbage += garbage;
+      } else {
+        oop humongous_obj = cast_to_oop(region->bottom());
+        live_words_after_mark += humongous_obj->size();
       }
     } else if (region->is_trash()) {
       // Count in just trashed collection set, during coalesced CM-with-UR
@@ -141,6 +149,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       immediate_garbage += garbage;
     }
   }
+
+  set_live_words_after_most_recent_mark(live_words_after_mark);
 
   // Step 2. Look back at garbage statistics, and decide if we want to collect anything,
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
@@ -154,6 +164,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+    size_t evacuated_words = collection_set->get_young_bytes_reserved_for_evacuation() / HeapWordSize;
+    set_words_most_recently_evacuated(evacuated_words);
   }
 
   size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
