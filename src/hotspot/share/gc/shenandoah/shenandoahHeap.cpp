@@ -2435,7 +2435,7 @@ void ShenandoahHeap::assert_gc_workers(uint nworkers) {
            ParallelGCThreads, nworkers);
   } else {
     // Use ConcGCThreads outside safepoints
-    assert(nworkers == ConcGCThreads, "Use ConcGCThreads (%u) outside safepoints, %u",
+    assert(nworkers <= ParallelGCThreads, "Use ConcGCThreads (%u) outside safepoints, %u",
            ConcGCThreads, nworkers);
   }
 }

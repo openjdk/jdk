@@ -205,10 +205,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (heap->is_evacuation_in_progress()) {
 
     double start_evac_time = os::elapsedTime();
-    size_t live_young_words_after_mark = (is_generational?
-                                          young_heuristics->get_young_live_words_after_most_recent_mark():
-                                          heuristics->get_live_words_after_most_recent_mark());
-    young_heuristics->record_mark_end(start_evac_time, live_young_words_after_mark);
+    if (is_generational) {
+      size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
+      young_heuristics->record_mark_end(start_evac_time, live_young_words_after_mark);
+    } else {
+      size_t live_words_after_mark = heuristics->get_live_words_after_most_recent_mark();
+      heuristics->record_mark_end(start_evac_time, live_words_after_mark);
+    }
     heuristics->should_surge_phase(ShenandoahMajorGCPhase::_evac, start_evac_time);
 
     // Concurrently evacuate
@@ -274,10 +277,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     _abbreviated = true;
 
     double start_final_roots_time = os::elapsedTime();
-    size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
-    young_heuristics->record_mark_end(start_final_roots_time, live_young_words_after_mark);
-    heuristics->should_surge_phase(ShenandoahMajorGCPhase::_evac, start_final_roots_time);
-
+    if (is_generational) {
+      size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
+      young_heuristics->record_mark_end(start_final_roots_time, live_young_words_after_mark);
+    } else {
+      size_t live_words_after_mark = heuristics->get_live_words_after_most_recent_mark();
+      heuristics->record_mark_end(start_final_roots_time, live_words_after_mark);
+    }
     heuristics->should_surge_phase(ShenandoahMajorGCPhase::_final_roots, start_final_roots_time);
 
     if (!entry_final_roots()) {
