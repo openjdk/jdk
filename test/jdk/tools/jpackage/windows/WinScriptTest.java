@@ -62,18 +62,26 @@ public class WinScriptTest {
                             })
                     );
 
+                    final var expectedCurrentDirFiles = Stream.of(
+                            new JPackageCommand(cmd).setPackageType(PackageType.IMAGE).setArgumentValue("--dest", "").appLauncherPath());
+
                     final var resourceDir = TKit.createTempDirectory("resources");
                     cmd.addArguments("--resource-dir", resourceDir);
 
-                    createScript(cmd, "post-image", Stream.concat(
+                    createScript(cmd, "post-image", Stream.of(
                             Stream.of(
                                     "var fs = new ActiveXObject('Scripting.FileSystemObject')",
                                     "var configDir = fs.GetParentFolderName(WScript.ScriptFullName)"
                             ),
                             expectedConfigFiles.map(str -> {
                                 return String.format("WScript.Echo('Probe: ' + configDir + '\\\\%s'); fs.GetFile(configDir + '\\\\%s')", str, str);
+                            }),
+                            expectedCurrentDirFiles.map(Path::toString).map(str -> {
+                                return str.replace('\\', '/');
+                            }).map(str -> {
+                                return String.format("WScript.Echo('Probe: %s'); fs.GetFile('%s')", str, str);
                             })
-                    ).toList());
+                    ).flatMap(x -> x).toList());
                 }).run(Action.CREATE);
     }
 
