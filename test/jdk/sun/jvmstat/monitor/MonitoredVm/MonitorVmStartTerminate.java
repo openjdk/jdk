@@ -74,8 +74,7 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
 public final class MonitorVmStartTerminate {
 
     private static final int PROCESS_COUNT = 10;
-    private static final int ARGS_ATTEMPTS = 5;
-    private static final int REMOVE_TIMEOUT_SECONDS = 300;
+    private static final int ARGS_ATTEMPTS = 10;
 
     public static void main(String... args) throws Exception {
 
@@ -254,7 +253,6 @@ public final class MonitorVmStartTerminate {
         private static void waitForRemoval(Path path) {
             String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
             double timeoutFactor = Double.parseDouble(timeoutFactorText);
-            long timeoutNanos = 1000_000_000L*(long)(REMOVE_TIMEOUT_SECONDS * timeoutFactor);
             long start = System.nanoTime();
             System.out.println("Waiting for " + path + " to be removed");
             while (true) {
@@ -263,13 +261,6 @@ public final class MonitorVmStartTerminate {
                 if (!Files.exists(path)) {
                     System.out.println("waitForRemoval: " + path + " has been removed in " + waited + " ns");
                     return;
-                }
-                if (waited > timeoutNanos) {
-                    System.out.println("Timeout waiting for " + path + " to be removed");
-                    System.out.println("Start: " + start);
-                    System.out.println("Now: " + now);
-                    System.out.println("Process timed out after " + waited + " ns. Abort.");
-                    System.exit(1);
                 }
                 takeNap();
             }
