@@ -46,18 +46,20 @@ class BuilderParamTest {
     @ParameterizedTest
     void test(CodeBuilderType type) {
         var cc = ClassFile.of();
-        cc.build(ClassDesc.of("Foo"), type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0, xb -> {
-            assertEquals(0, xb.receiverSlot(), "this");
-            assertEquals(1, xb.parameterSlot(0), "int");
-            assertEquals(2, xb.parameterSlot(1), "long");
-            assertEquals(4, xb.parameterSlot(2), "int");
-            xb.return_();
-        }));
-        cc.build(ClassDesc.of("Foo"), type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC, xb -> {
-            assertEquals(0, xb.parameterSlot(0), "int");
-            assertEquals(1, xb.parameterSlot(1), "long");
-            assertEquals(3, xb.parameterSlot(2), "int");
-            xb.return_();
-        }));
+        cc.build(ClassDesc.of("Foo"),
+                 type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0, xb -> {
+                     assertEquals(0, xb.receiverSlot(), "this");
+                     assertEquals(1, xb.parameterSlot(0), "int");
+                     assertEquals(2, xb.parameterSlot(1), "long");
+                     assertEquals(4, xb.parameterSlot(2), "int");
+                     xb.return_();
+                 }));
+        cc.build(ClassDesc.of("Foo"),
+                 type.asClassHandler("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC, xb -> {
+                     assertEquals(0, xb.parameterSlot(0), "int");
+                     assertEquals(1, xb.parameterSlot(1), "long");
+                     assertEquals(3, xb.parameterSlot(2), "int");
+                     xb.return_();
+                 }));
     }
 }

@@ -64,9 +64,10 @@ class BuilderExplicitMaxsTest {
     @ParameterizedTest
     void testValidArgs(ClassFile.StackMapsOption stackMapsOption, CodeBuilderType builderType) {
         var cc = ClassFile.of(stackMapsOption);
-        var bytes = cc.build(ClassDesc.of("Foo"), builderType.asClassHandler("foo", MTD_void, 0, cob -> cob
-                .return_()
-                .withExplicitStackAndLocals(2, 3)));
+        var bytes = cc.build(ClassDesc.of("Foo"),
+                             builderType.asClassHandler("foo", MTD_void, 0, cob ->
+                                     cob.return_()
+                                        .withExplicitStackAndLocals(2, 3)));
         var clz = ClassFile.of().parse(bytes);
         var code = clz.methods().getFirst().findAttribute(Attributes.code()).orElseThrow();
         if (builderType.terminal && stackMapsOption == ClassFile.StackMapsOption.DROP_STACK_MAPS) {
@@ -82,11 +83,15 @@ class BuilderExplicitMaxsTest {
     @ParameterizedTest
     void testInvalidArgs(ClassFile.StackMapsOption stackMapsOption, CodeBuilderType builderType) {
         var cc = ClassFile.of(stackMapsOption);
-        assertThrows(IllegalArgumentException.class, () -> cc.build(ClassDesc.of("Foo"), builderType.asClassHandler("foo", MTD_void, 0, cob -> cob
-                .return_()
-                .withExplicitStackAndLocals(-1, 2))));
-        assertThrows(IllegalArgumentException.class, () -> cc.build(ClassDesc.of("Foo"), builderType.asClassHandler("foo", MTD_void, 0, cob -> cob
-                .return_()
-                .withExplicitStackAndLocals(2, 100000))));
+        assertThrows(IllegalArgumentException.class, () ->
+                cc.build(ClassDesc.of("Foo"),
+                         builderType.asClassHandler("foo", MTD_void, 0, cob ->
+                                 cob.return_()
+                                    .withExplicitStackAndLocals(-1, 2))));
+        assertThrows(IllegalArgumentException.class, () ->
+                cc.build(ClassDesc.of("Foo"),
+                         builderType.asClassHandler("foo", MTD_void, 0, cob ->
+                                 cob.return_()
+                                    .withExplicitStackAndLocals(2, 100000))));
     }
 }
