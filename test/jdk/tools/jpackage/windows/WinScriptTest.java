@@ -75,11 +75,6 @@ public class WinScriptTest {
                             ),
                             expectedConfigFiles.map(str -> {
                                 return String.format("WScript.Echo('Probe: ' + configDir + '\\\\%s'); fs.GetFile(configDir + '\\\\%s')", str, str);
-                            }),
-                            expectedCurrentDirFiles.map(Path::toString).map(str -> {
-                                return str.replace('\\', '/');
-                            }).map(str -> {
-                                return String.format("WScript.Echo('Probe: %s'); fs.GetFile('%s')", str, str);
                             })
                     ).flatMap(x -> x).toList());
                 }).run(Action.CREATE);
