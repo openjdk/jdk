@@ -821,6 +821,8 @@ public:
   MergeLoadInfo(LoadNode* load, Node* combine, jint shift) : _load(load), _combine(combine), _shift(shift) {
     assert(load != nullptr && combine != nullptr && shift != -1, "invalid value");
   }
+  // Copy constructor
+  MergeLoadInfo(const MergeLoadInfo& other) = default;
 
   MergeLoadInfo& operator=(const MergeLoadInfo& other) = default;
 

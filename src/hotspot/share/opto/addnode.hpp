@@ -82,6 +82,8 @@ public:
   bool is_merge_memops_checked()  const { return _merge_memops_checked; }
   void set_merge_memops_checked(bool v) { _merge_memops_checked = v;    }
 
+  virtual uint size_of() const { return sizeof(*this); }
+
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 
   // Utility function to check if the given node is a NOT operation,
