@@ -56,7 +56,6 @@ compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
-compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
@@ -76,6 +75,8 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
 compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
+
+compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 #############################################################################
 
