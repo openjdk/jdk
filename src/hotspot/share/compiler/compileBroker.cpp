@@ -39,15 +39,15 @@
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
@@ -1444,30 +1444,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
-#if defined(IA32) && !defined(ZERO)
-      // The following native methods:
-      //
-      // java.lang.Float.intBitsToFloat
-      // java.lang.Float.floatToRawIntBits
-      // java.lang.Double.longBitsToDouble
-      // java.lang.Double.doubleToRawLongBits
-      //
-      // are called through the interpreter even if interpreter native stubs
-      // are not preferred (i.e., calling through adapter handlers is preferred).
-      // The reason is that on x86_32 signaling NaNs (sNaNs) are not preserved
-      // if the version of the methods from the native libraries is called.
-      // As the interpreter and the C2-intrinsified version of the methods preserves
-      // sNaNs, that would result in an inconsistent way of handling of sNaNs.
-      if ((UseSSE >= 1 &&
-          (method->intrinsic_id() == vmIntrinsics::_intBitsToFloat ||
-           method->intrinsic_id() == vmIntrinsics::_floatToRawIntBits)) ||
-          (UseSSE >= 2 &&
-           (method->intrinsic_id() == vmIntrinsics::_longBitsToDouble ||
-            method->intrinsic_id() == vmIntrinsics::_doubleToRawLongBits))) {
-        return nullptr;
-      }
-#endif // IA32 && !ZERO
-
       // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
       // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).
       //

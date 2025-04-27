@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,9 @@ public class SignatureBench extends CryptoBase {
     public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         setupProvider();
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(getKeyPairGeneratorName());
-        kpg.initialize(keyLength);
+        if (keyLength > 0) { // not all key pair generators allow the use of key length
+            kpg.initialize(keyLength);
+        }
         KeyPair keys = kpg.generateKeyPair();
         this.privateKey = keys.getPrivate();
         this.publicKey = keys.getPublic();
@@ -134,6 +136,15 @@ public class SignatureBench extends CryptoBase {
         @Param({"255", "448"})
         private int keyLength;
 
+    }
+
+    public static class MLDSA extends SignatureBench {
+
+        @Param({"ML-DSA-44", "ML-DSA-65", "ML-DSA-87" })
+        private String algorithm;
+
+        @Param({"0"}) // ML-DSA key length is not supported
+        private int keyLength;
     }
 
 }
