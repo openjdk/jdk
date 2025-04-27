@@ -506,6 +506,17 @@ class frame {
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 #endif
 
+  // Static helper routines
+  static Method* interpreter_method(const intptr_t* fp);
+  static address interpreter_bcp(const intptr_t* fp);
+  static address interpreter_return_address(const intptr_t* fp);
+  static intptr_t* interpreter_sender_sp(const intptr_t* fp);
+  static bool is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp);
+  static intptr_t* sender_sp(intptr_t* fp);
+  static intptr_t* link(const intptr_t* fp);
+  static address return_address(const intptr_t* sp);
+  static intptr_t* fp(const intptr_t* sp);
+
 #include CPU_HEADER(frame)
 
 };

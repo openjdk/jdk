@@ -48,23 +48,13 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
   return is_interpreter(static_cast<address>(request._sample_pc));
 }
 
-static inline Method* interpreter_frame_method(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<Method*>(fp[frame::interpreter_frame_method_offset]);
-}
-
 static inline Method* interpreter_frame_method(const JfrSampleRequest& request) {
-  return interpreter_frame_method(static_cast<intptr_t*>(request._sample_bcp));
-}
-
-static inline address interpreter_frame_bcp(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<address>(fp[frame::interpreter_frame_bcp_offset]);
+  return frame::interpreter_method(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline address interpreter_frame_bcp(const JfrSampleRequest& request) {
   assert(is_interpreter(request), "invariant");
-  return interpreter_frame_bcp(static_cast<intptr_t*>(request._sample_bcp));
+  return frame::interpreter_bcp(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline bool in_stack(intptr_t* ptr, JavaThread* jt) {
@@ -80,29 +70,19 @@ static inline bool fp_in_stack(const JfrSampleRequest& request, JavaThread* jt) 
   return in_stack(static_cast<intptr_t*>(request._sample_bcp), jt);
 }
 
-static inline address interpreter_frame_return_address(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<address>(fp[frame::return_addr_offset]);
-}
-
-static inline void update_interpeter_frame_sender_pc(JfrSampleRequest& request, intptr_t* fp) {
-  request._sample_pc = interpreter_frame_return_address(fp);
+static inline void update_interpreter_frame_sender_pc(JfrSampleRequest& request, intptr_t* fp) {
+  request._sample_pc = frame::interpreter_return_address(fp);
 }
 
 static inline void update_interpreter_frame_pc(JfrSampleRequest& request, JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
   assert(is_interpreter(request), "invariant");
-  request._sample_pc = interpreter_frame_return_address(static_cast<intptr_t*>(request._sample_bcp));
+  request._sample_pc = frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline address interpreter_frame_return_address(const JfrSampleRequest& request) {
   assert(is_interpreter(request), "invariant");
-  return interpreter_frame_return_address(static_cast<intptr_t*>(request._sample_bcp));
-}
-
-static inline intptr_t* interpreter_frame_sender_sp(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<intptr_t*>(fp[frame::interpreter_frame_sender_sp_offset]);
+  return frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline intptr_t* continuation_frame_sender_fp(void* sp) {
@@ -123,14 +103,9 @@ static inline void update_continuation_frame_sender_sp(JfrSampleRequest& request
   request._sample_sp = static_cast<address>(request._sample_sp) + (ContinuationEntry::size() + 2 * wordSize);
 }
 
-static inline intptr_t* frame_sender_sp(intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return fp + frame::sender_sp_offset;
-}
-
 static inline intptr_t* frame_sender_sp(const JfrSampleRequest& request, JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
-  return frame_sender_sp(static_cast<intptr_t*>(request._sample_bcp));
+  return frame::sender_sp(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline void update_frame_sender_sp(JfrSampleRequest& request, JavaThread* jt) {
@@ -138,16 +113,11 @@ static inline void update_frame_sender_sp(JfrSampleRequest& request, JavaThread*
 }
 
 static inline void update_frame_sender_sp(JfrSampleRequest& request, intptr_t* fp) {
-  request._sample_sp = frame_sender_sp(fp);
-}
-
-static inline intptr_t* frame_link(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<intptr_t*>(fp[frame::link_offset]);
+  request._sample_sp = frame::sender_sp(fp);
 }
 
 static inline intptr_t* frame_link(const JfrSampleRequest& request) {
-  return frame_link(static_cast<intptr_t*>(request._sample_bcp));
+  return frame::link(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline void update_sp(JfrSampleRequest& request, int frame_size) {
@@ -157,20 +127,16 @@ static inline void update_sp(JfrSampleRequest& request, int frame_size) {
 
 static inline void update_pc(JfrSampleRequest& request) {
   assert(request._sample_sp != nullptr, "invariant");
-  request._sample_pc = address(static_cast<intptr_t**>(request._sample_sp)[-1]);
+  request._sample_pc = frame::return_address(static_cast<intptr_t*>(request._sample_sp));
 }
 
 static inline void update_fp(JfrSampleRequest& request) {
   assert(request._sample_sp != nullptr, "invariant");
-  request._sample_bcp = is_interpreter(request) ? static_cast<intptr_t**>(request._sample_sp)[-2] : nullptr;
-}
-
-static inline const intptr_t* frame_complete_offset(const JfrSampleRequest& request) {
-  return static_cast<intptr_t*>(request._sample_bcp) + frame::interpreter_frame_initial_sp_offset;
+  request._sample_bcp = is_interpreter(request) ? frame::fp(static_cast<intptr_t*>(request._sample_sp)) : nullptr;
 }
 
 static inline bool is_interpreter_frame_setup(const JfrSampleRequest& request) {
-  return frame_complete_offset(request) >= static_cast<intptr_t*>(request._sample_sp);
+  return frame::is_interpreter_frame_setup_at(static_cast<intptr_t*>(request._sample_bcp), request._sample_sp);
 }
 
 // Less extensive sanity checks for an interpreter frame.
@@ -285,12 +251,12 @@ static inline intptr_t* process_sender_Java_fp(JfrSampleRequest& request, intptr
   if (p2i(sender_Java_fp) == 1) {
     // A marker that the fp of the sender is undetermined, which implies
     // the sender is a compiled frame to be used instead.
-    update_interpeter_frame_sender_pc(request, last_fp); // pick up return address
+    update_interpreter_frame_sender_pc(request, last_fp); // pick up return address
     update_frame_sender_sp(request, last_fp); // sender sp
     return nullptr;
   }
   if (JfrThreadLocal::is_vthread(jt)) {
-    if (is_continuation_frame(interpreter_frame_return_address(last_fp))) {
+    if (is_continuation_frame(frame::interpreter_return_address(last_fp))) {
       update_continuation_frame_sender(request, last_fp);
     }
   }
@@ -305,7 +271,7 @@ static bool build_from_ljf(JfrSampleRequest& request,
   // Last Java frame is available, but might not be walkable, fix it.
   address last_pc = jt->last_Java_pc();
   if (last_pc == nullptr) {
-    last_pc = address(static_cast<intptr_t**>(request._sample_sp)[-1]);
+    last_pc = frame::return_address(static_cast<intptr_t*>(request._sample_sp));
     if (last_pc == nullptr) {
       return false;
     }
