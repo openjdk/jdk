@@ -25,8 +25,8 @@
 #define SHARE_GC_Z_ZHEAPITERATOR_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zRootsIterator.hpp"

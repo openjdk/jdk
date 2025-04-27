@@ -49,17 +49,15 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @test
  * @summary jpackage with --type pkg,dmg --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @library base
  * @key jpackagePlatformPackage
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageTest
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageTest {
 
@@ -128,8 +126,6 @@ public class SigningPackageTest {
     @Parameter({"false", "false", "true", "UNICODE_INDEX"})
     public static void test(boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
         final var certIndex = certEnum.value();
-
-        SigningCheck.checkCertificates(certIndex);
 
         new PackageTest()
                 .configureHelloApp()

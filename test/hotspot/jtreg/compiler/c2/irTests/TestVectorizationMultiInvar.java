@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import java.util.Random;
 /*
  * @test
  * @bug 8300257
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @summary C2: vectorization fails on some simple Memory Segment loops
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /

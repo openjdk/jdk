@@ -26,8 +26,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
@@ -347,9 +347,12 @@ private:
   //
   // Typical usage: During evacuation, the GC may find it needs more memory than had been reserved at the start of evacuation to
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
-  // the Mutator free set into the Collector or OldCollector free set.
+  // the Mutator free set into the Collector or OldCollector free set. The conditions to move this region are checked by
+  // the caller, so the given region is always moved.
   void flip_to_gc(ShenandoahHeapRegion* r);
-  void flip_to_old_gc(ShenandoahHeapRegion* r);
+
+  // Return true if and only if the given region is successfully flipped to the old partition
+  bool flip_to_old_gc(ShenandoahHeapRegion* r);
 
   // Handle allocation for mutator.
   HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);

@@ -300,12 +300,14 @@
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalMax, 10, EXPERIMENTAL,            \
           "The maximum sleep interval for control loop that drives "        \
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalAdjustPeriod, 1000, EXPERIMENTAL, \
           "The time period for one step in control loop interval "          \

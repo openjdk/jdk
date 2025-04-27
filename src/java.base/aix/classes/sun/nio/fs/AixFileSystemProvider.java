@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 
 package sun.nio.fs;
 
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.io.IOException;
 
 /**
@@ -48,5 +50,30 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
     @Override
     AixFileStore getFileStore(UnixPath path) throws IOException {
         return new AixFileStore(path);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <V extends FileAttributeView> V getFileAttributeView(Path obj,
+                                                                Class<V> type,
+                                                                LinkOption... options)
+    {
+        if (type == UserDefinedFileAttributeView.class) {
+            return (V) new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
+                    Util.followLinks(options));
+        }
+        return super.getFileAttributeView(obj, type, options);
+    }
+
+    @Override
+    public DynamicFileAttributeView getFileAttributeView(Path obj,
+                                                         String name,
+                                                         LinkOption... options)
+    {
+        if (name.equals("user")) {
+            return new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
+                    Util.followLinks(options));
+        }
+        return super.getFileAttributeView(obj, name, options);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  */
 
  /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631 8341833
  * @summary Testing startExCe-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
  * @run testng StartOptionTest
@@ -38,13 +39,16 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import jdk.jshell.JShell;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -89,16 +93,32 @@ public class StartOptionTest {
     }
 
     protected void check(ByteArrayOutputStream str, Consumer<String> checkOut, String label) {
-        byte[] bytes = str.toByteArray();
-        str.reset();
-        String out = new String(bytes, StandardCharsets.UTF_8);
-        out = stripAnsi(out);
-        out = out.replaceAll("[\r\n]+", "\n");
-        if (checkOut != null) {
-            checkOut.accept(out);
-        } else {
-            assertEquals(out, "", label + ": Expected empty -- ");
+        try {
+            byte[] bytes = str.toByteArray();
+            str.reset();
+            String out = new String(bytes, StandardCharsets.UTF_8);
+            out = stripAnsi(out);
+            out = out.replaceAll("[\r\n]+", "\n");
+            if (checkOut != null) {
+                checkOut.accept(out);
+            } else {
+                assertEquals(out, "", label + ": Expected empty -- ");
+            }
+        } catch (Throwable t) {
+            logOutput("cmdout", cmdout);
+            logOutput("cmderr", cmderr);
+            logOutput("console", console);
+            logOutput("userout", userout);
+            logOutput("usererr", usererr);
+
+            throw t;
         }
+    }
+
+    private void logOutput(String outName, ByteArrayOutputStream out) {
+        System.err.println(outName + ": " +
+                           new String(out.toByteArray(),
+                                      StandardCharsets.UTF_8));
     }
 
     protected void checkExit(int ec, Consumer<Integer> checkCode) {
@@ -130,6 +150,14 @@ public class StartOptionTest {
             String... args) {
         runShell(args);
         check(userout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckError(Consumer<String> checkError,
+            String... args) {
+        runShell(args);
+        check(cmderr, checkError, "userout");
+        check(userout, null, "userout");
         check(usererr, null, "usererr");
     }
 
@@ -410,6 +438,25 @@ public class StartOptionTest {
         startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
                              readPasswordPrompt);
     }
+
+    public void testErroneousFile() {
+        String code = """
+                      var v = (
+                      System.console().readLine("prompt: ");
+                      /exit
+                      """;
+        String readLinePrompt = writeToFile(code);
+        String expectedErrorFormat =
+                ResourceBundle.getBundle("jdk.internal.jshell.tool.resources.l10n",
+                                         Locale.getDefault(),
+                                         JShell.class.getModule())
+                              .getString("jshell.err.incomplete.input");
+        String expectedError =
+                new MessageFormat(expectedErrorFormat).format(new Object[] {code});
+        startCheckError(s -> assertEquals(s, expectedError),
+                        readLinePrompt);
+    }
+
 
     @AfterMethod
     public void tearDown() {

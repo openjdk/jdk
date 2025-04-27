@@ -4510,18 +4510,6 @@ instruct unnecessary_membar_volatile() %{
 %}
 
 //----------Register Move Instructions-----------------------------------------
-// instruct roundDouble_nop(regD dst) %{
-//   match(Set dst (RoundDouble dst));
-//   ins_pipe(empty);
-// %}
-
-
-// instruct roundFloat_nop(regF dst) %{
-//   match(Set dst (RoundFloat dst));
-//   ins_pipe(empty);
-// %}
-
-
 
 // Cast Index to Pointer for unsafe natives
 instruct castX2P(iRegX src, iRegP dst) %{
@@ -9004,7 +8992,8 @@ instruct ShouldNotReachHere( )
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(tail_call);

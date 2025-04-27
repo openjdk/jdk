@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.PackagerException;
 
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
@@ -87,11 +90,15 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             },
             (s, p) -> {
                 if (!RPM_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    String msgKey = "error.invalid-value-for-package-name";
-                    throw new IllegalArgumentException(
-                            new ConfigException(MessageFormat.format(
-                                    I18N.getString(msgKey), s),
-                                    I18N.getString(msgKey + ".advice")));
+                    try {
+                        throw new ConfigException(
+                            MessageFormat.format(I18N.getString(
+                            "error.rpm-invalid-value-for-package-name"), s),
+                            I18N.getString(
+                            "error.rpm-invalid-value-for-package-name.advice"));
+                    } catch (ConfigException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
 
                 return s;

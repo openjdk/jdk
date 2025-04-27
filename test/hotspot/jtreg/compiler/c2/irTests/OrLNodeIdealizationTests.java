@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8322077
+ * @bug 8322077 8353359
  * @summary Test that Ideal transformations of OrLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.OrLNodeIdealizationTests
@@ -38,7 +38,7 @@ public class OrLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1" })
+    @Run(test = { "test1", "test2", "test3" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -55,6 +55,8 @@ public class OrLNodeIdealizationTests {
     @DontCompile
     public void assertResult(long a, long b) {
         Asserts.assertEQ((~a) | (~b), test1(a, b));
+        Asserts.assertEQ((a | 3) | 6, test2(a));
+        Asserts.assertEQ((a | 3) | a, test3(a));
     }
 
     // Checks (~a) | (~b) => ~(a & b)
@@ -64,5 +66,20 @@ public class OrLNodeIdealizationTests {
                    IRNode.XOR, "1" })
     public long test1(long a, long b) {
         return (~a) | (~b);
+    }
+
+
+    // Checks (a | 3) | 6 => a | (3 | 6) => a | 7
+    @Test
+    @IR(counts = { IRNode.OR, "1"})
+    public long test2(long a) {
+        return (a | 3) | 6;
+    }
+
+    // Checks (a | 3) | a => (a | a) | 3 => a | 3
+    @Test
+    @IR(counts = { IRNode.OR, "1"})
+    public long test3(long a) {
+        return (a | 3) | a;
     }
 }

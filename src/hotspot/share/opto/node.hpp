@@ -155,6 +155,7 @@ class ParsePredicateNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
+class PhaseIdealLoop;
 class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseTransform;
@@ -1745,7 +1746,7 @@ public:
   Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  bool member(const Node* n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {
@@ -2044,12 +2045,17 @@ public:
     init_class_id(Class_Type);
   }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
+
+  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
+  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
+  void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const;
 };
 
 #include "opto/opcodes.hpp"
@@ -2064,6 +2070,7 @@ public:
 }
 
 Op_IL(Add)
+Op_IL(And)
 Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,31 @@
 
 #ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 #define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+
+#include "cds/archiveBuilder.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/resourceHash.hpp"
 
+// This file contains *legacy* optimization for lambdas before JEP 483. May be removed in the future.
+//
+// The functionalties in this file are used only when CDSConfig::is_dumping_lambdas_in_legacy_mode()
+// returns true during the creation of a CDS archive.
+//
+// With the legacy optimization, generated lambda proxy classes (with names such as
+// java.util.ResourceBundle$Control$$Lambda/0x80000001d) are stored inside the CDS archive, accessible
+// by LambdaProxyClassDictionary::find_proxy_class(). This saves part of the time for resolving a
+// lambda call site (proxy class generation). However, a significant portion of the cost of
+// the lambda call site resolution still remains in the production run.
+//
+// In contrast, with JEP 483, the entire lambda call site (starting from the constant pool entry), is
+// resolved in the AOT cache assembly phase. No extra resolution is needed in the production run.
+
 class InstanceKlass;
 class Method;
+class MetaspaceClosure;
 class Symbol;
 class outputStream;
 
@@ -243,9 +261,75 @@ public:
   int _count;
 };
 
+// *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
 class LambdaProxyClassDictionary : public OffsetCompactHashtable<
   RunTimeLambdaProxyClassKey*,
   const RunTimeLambdaProxyClassInfo*,
-  RunTimeLambdaProxyClassInfo::EQUALS> {};
+  RunTimeLambdaProxyClassInfo::EQUALS>
+{
+private:
+  class CleanupDumpTimeLambdaProxyClassTable;
+  static DumpTimeLambdaProxyClassDictionary* _dumptime_table;
+  static LambdaProxyClassDictionary _runtime_static_table; // for static CDS archive
+  static LambdaProxyClassDictionary _runtime_dynamic_table; // for dynamic CDS archive
+
+  static void add_to_dumptime_table(LambdaProxyClassKey& key,
+                                    InstanceKlass* proxy_klass);
+  static InstanceKlass* find_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info);
+  static InstanceKlass* find_lambda_proxy_class(InstanceKlass* caller_ik,
+                                                Symbol* invoked_name,
+                                                Symbol* invoked_type,
+                                                Symbol* method_type,
+                                                Method* member_method,
+                                                Symbol* instantiated_method_type);
+  static InstanceKlass* load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
+                                                         InstanceKlass* caller_ik, TRAPS);
+  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik);
+
+public:
+  static void dumptime_init();
+  static void dumptime_classes_do(MetaspaceClosure* it);
+  static void add_lambda_proxy_class(InstanceKlass* caller_ik,
+                                     InstanceKlass* lambda_ik,
+                                     Symbol* invoked_name,
+                                     Symbol* invoked_type,
+                                     Symbol* method_type,
+                                     Method* member_method,
+                                     Symbol* instantiated_method_type,
+                                     TRAPS);
+  static bool is_supported_invokedynamic(BootstrapInfo* bsi);
+  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
+  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* caller_ik,
+                                                       Symbol* invoked_name,
+                                                       Symbol* invoked_type,
+                                                       Symbol* method_type,
+                                                       Method* member_method,
+                                                       Symbol* instantiated_method_type,
+                                                       TRAPS);
+  static void write_dictionary(bool is_static_archive);
+  static void adjust_dumptime_table();
+  static void cleanup_dumptime_table();
+
+  static void reset_dictionary(bool is_static_archive) {
+    if (is_static_archive) {
+      _runtime_static_table.reset();
+    } else {
+      _runtime_dynamic_table.reset();
+    }
+  }
+
+  static void serialize(SerializeClosure* soc, bool is_static_archive) {
+    if (is_static_archive) {
+      _runtime_static_table.serialize_header(soc);
+    } else {
+      _runtime_dynamic_table.serialize_header(soc);
+    }
+  }
+
+  static void print_on(const char* prefix, outputStream* st,
+                       int start_index, bool is_static_archive);
+  static void print_statistics(outputStream* st,  bool is_static_archive);
+};
 
 #endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP

@@ -106,7 +106,6 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
-  LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify
 };
@@ -680,7 +679,7 @@ public:
 
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -1035,7 +1034,7 @@ public:
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
+  void disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints = nullptr);
 
   void              remove_useless_node(Node* dead);
 
@@ -1242,14 +1241,28 @@ public:
   static void print_intrinsic_statistics() PRODUCT_RETURN;
 
   // Graph verification code
-  // Walk the node list, verifying that there is a one-to-one
-  // correspondence between Use-Def edges and Def-Use edges
-  // The option no_dead_code enables stronger checks that the
-  // graph is strongly connected from root in both directions.
-  void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+  // Walk the node list, verifying that there is a one-to-one correspondence
+  // between Use-Def edges and Def-Use edges. The option no_dead_code enables
+  // stronger checks that the graph is strongly connected from starting points
+  // in both directions.
+  // root_and_safepoints is used to give the starting points for the traversal.
+  // If not supplied, only root is used. When this check is called after CCP,
+  // we need to start traversal from Root and safepoints, just like CCP does its
+  // own traversal (see PhaseCCP::transform for reasons).
+  //
+  // To call this function, there are 2 ways to go:
+  // - give root_and_safepoints to start traversal everywhere needed (like after CCP)
+  // - if the whole graph is assumed to be reachable from Root's input,
+  //   root_and_safepoints is not needed (like in PhaseRemoveUseless).
+  //
+  // Failure to specify root_and_safepoints in case the graph is not fully
+  // reachable from Root's input make this check unsound (can miss inconsistencies)
+  // and even incomplete (can make up non-existing problems) if no_dead_code is
+  // true.
+  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
-  void verify_bidirectional_edges(Unique_Node_List &visited);
+  void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
@@ -1286,21 +1299,6 @@ public:
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
-#ifdef IA32
- private:
-  bool _select_24_bit_instr;   // We selected an instruction with a 24-bit result
-  bool _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-
-  // Remember if this compilation changes hardware mode to 24-bit precision.
-  void set_24_bit_selection_and_mode(bool selection, bool mode) {
-    _select_24_bit_instr = selection;
-    _in_24_bit_fp_mode   = mode;
-  }
-
- public:
-  bool select_24_bit_instr() const { return _select_24_bit_instr; }
-  bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-#endif // IA32
 #ifdef ASSERT
   VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
