@@ -357,6 +357,7 @@ final class PackagingPipeline {
 
         builder.task(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                 .addDependencies(PrimaryTaskID.BUILD_APPLICATION_IMAGE, PrimaryTaskID.COPY_APP_IMAGE)
+                .addDependency(PackageTaskID.CREATE_CONFIG_FILES)
                 .addDependent(PackageTaskID.CREATE_PACKAGE_FILE)
                 .packageAction(PackagingPipeline::runPostAppImageUserScript).add();
 
