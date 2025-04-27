@@ -42,6 +42,55 @@ import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
  * table for each class encountered at a message send call site,
  * it can use a {@code ClassValue} to cache information needed to
  * perform the message send quickly, for each class encountered.
+ * <p>
+ * For any some specific pair of {@code ClassValue} and {@code Class}
+ * objects, there is an assignment state for the value accessed by
+ * {@code cv.get(c)}, and the state can be changed by method calls
+ * {@code get} and {@code remove}.
+ * <p>
+ * The {@code get} method assigns it a value if it as not assigned
+ * already, and otherwise returns the previously assigned value.  The
+ * {@code remove} method removes any assigned value.
+ * <p>
+ * For any specific pair of {@code ClassValue} and {@code Class}
+ * objects, all state changes are serialized in a simple linear order,
+ * within the Java Memory Model.  The initial assignment state, and
+ * the state after a {@code remove} call, is unassigned.  A call to
+ * {@code get} on an assigned state returns the assigned value.
+ * Thus, consecutive calls to {@code get} will return the same
+ * value, until the next {@code remove}.
+ * <p>
+ * If a call to {@code get} occurs on an unassigned state, the {@code
+ * computeValue} method is invoked.  If {@code computeValue} returns a
+ * value normally, that value is the new assignment state.  If {@code
+ * computeValue} throws an exception, an {@code Error} or {@code
+ * RuntimeException} is thrown, either the thrown exception itself, or
+ * an {@code Error} wrapping that exception as a cause.  If {@code
+ * computeValue} make a recursive call to {@code get} (on the same
+ * {@code Class}), a {@code StackOverflowError} is thrown.
+ * <p>
+ * If two or more racing calls are made to {@code get} on an
+ * unassigned state, {@code computeValue} may be invoked on any or all
+ * of them.  If one of those {@code computeValue} invocations returns
+ * or throws, the {@code ClassValue} chooses the corresponding {@code
+ * get} call to be the first in the linear order.  If the chosen
+ * {@code computeValue} call returned normally, that value is
+ * assigned, and other racing {@code computeValue} results will
+ * be discarded when those invocations return or throw.  If the chosen
+ * {@code computeValue} throws, that exception is thrown to the thread
+ * making the {@code get} call, the binding state remains unbound, and
+ * the remaining threads (if any) race to produce the bound value.
+ * If all {@code computeValue} invocations throw, the value is not
+ * bound after all.
+ * <p>
+ * Any {@code remove} call is given a place among a matching sequence
+ * of {@code get} calls.  If a {@code remove} call is made recursively
+ * during a {@code computeValue} call (on the same pair of operands),
+ * it is regarded as having taken effect already (since the {@code
+ * get} in process must have been triggered by a missing assignment).
+ * In other words, a recursive call to {@code remove} from {@code
+ * computeValue} has no effect at all.
+ *
  * @param <T> the type of the derived value
  * @author John Rose, JSR 292 EG
  * @since 1.7
@@ -192,21 +241,34 @@ public abstract class ClassValue<T> {
     private T getFromHashMap(Class<?> type) {
         // The fail-safe recovery is to fall back to the underlying classValueMap.
         ClassValueMap map = getMap(type);
-        for (;;) {
-            Entry<T> e = map.startEntry(this);
+        Throwable ex = null;
+        for (boolean isRetry = false; ; isRetry = true) {
+            Entry<T> e = map.startEntry(this, isRetry);
             if (!e.isPromise())
                 return e.value();
             try {
                 // Try to make a real entry for the promised version.
+                // e is real if computeValue finishes normally,
+                // otherwise it is still the old promise
                 e = makeEntry(e.version(), computeValue(type));
+            } catch (Throwable problem) {
+                ex = problem;
             } finally {
                 // Whether computeValue throws or returns normally,
                 // be sure to remove the empty entry.
+                //
                 e = map.finishEntry(this, e);
             }
-            if (e != null)
+            if (e != null)    // success, either here or in a racing thread
                 return e.value();
-            // else try again, in case a racing thread called remove (so e == null)
+            if (ex == null)   // a racing thread called remove, so try again
+                continue;
+            // report failure here, but allow other callers to try again
+            if (ex instanceof RuntimeException rte) {
+                throw rte;
+            } else {
+                throw ex instanceof Error err ? err : new Error(ex);
+            }
         }
     }
 
@@ -314,15 +376,16 @@ public abstract class ClassValue<T> {
 
         boolean isPromise() { return value instanceof PromiseInfo; }
 
-        void registerOwner() {
-            ((PromiseInfo) value).add();
+        boolean addPromiseByCurrentThread() {
+            return ((PromiseInfo) value).addCurrentThread();
         }
 
-        boolean hasOwnership() {
-            return ((PromiseInfo) value).contains();
+        boolean isPromisedByCurrentThread() {
+            return ((PromiseInfo) value).containsCurrentThread();
         }
 
-        // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads)
+        // The content of a promise is a non-empty set of threads working on that promise.
+        // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads).
         // Compared to ThreadTracker, this optimizes optimistically for
         // single-thread accessors and uses plain instead of concurrent data structures.
         static final class PromiseInfo {
@@ -333,7 +396,7 @@ public abstract class ClassValue<T> {
                 initialThread = Thread.currentThread();
             }
 
-            boolean add() {
+            boolean addCurrentThread() {
                 Thread t = Thread.currentThread();
                 if (initialThread == t) {
                     return false;
@@ -347,7 +410,7 @@ public abstract class ClassValue<T> {
                 return others.put(t, int.class) == null;
             }
 
-            boolean contains() {
+            boolean containsCurrentThread() {
                 Thread t = Thread.currentThread();
                 if (initialThread == t)
                     return true;
@@ -453,7 +516,7 @@ public abstract class ClassValue<T> {
 
         /** Initiate a query.  Store a promise (placeholder) if there is no value yet. */
         synchronized
-        <T> Entry<T> startEntry(ClassValue<T> classValue) {
+        <T> Entry<T> startEntry(ClassValue<T> classValue, boolean isRetry) {
             @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
             Entry<T> e = (Entry<T>) get(classValue.identity);
             Version<T> v = classValue.version();
@@ -468,10 +531,22 @@ public abstract class ClassValue<T> {
                 // Somebody else has asked the same question.
                 // Let the races begin!
                 if (e.version() != v) {
+                    // Somebody bumped the version, after resetting some state.
+                    // This means we have to start fresh.
                     e = v.createPromise();
                     put(classValue.identity, e);
                 } else {
-                    e.registerOwner();
+                    // Keep track of which threads observe this particular version.
+                    // All of them are equally racing to fulfill the promise.
+                    boolean isNewlyAdded = e.addPromiseByCurrentThread();
+                    if (!(isNewlyAdded | isRetry)) {
+                        // We get here if this thread is already working on a promise,
+                        // but we performed a fresh execution of CV::get inside a call
+                        // to computeValue, directly or indirectly.  That counts as
+                        // a stack overflow, since there's no way for computeValue
+                        // to obtain the value that it will return, until it returns.
+                        throw new StackOverflowError("recursive call to ClassValue::get");
+                    }
                 }
                 return e;
             } else {
@@ -500,11 +575,15 @@ public abstract class ClassValue<T> {
                 // Other threads can retry if successful or just propagate their exceptions.
                 remove(classValue.identity);
                 return null;
-            } else if (e0 != null && e0.isPromise() && e0.version() == e.version() && e0.hasOwnership()) {
+            } else if (e0 != null && e0.isPromise()) {
+                if (e0.version() != e.version() || !e0.isPromisedByCurrentThread()) {
+                    // e0 is created after e, whether e failed (promise) or succeeded
+                    return null;  // caller must try again
+                }
                 // If e0 matches the intended entry, there has not been a remove call
                 // between the previous startEntry and now.  So now overwrite e0.
                 Version<T> v = classValue.version();
-                if (e.version() != v)
+                if (e.version() != v)  // removal in unrelated associations
                     e = e.refreshVersion(v);
                 put(classValue.identity, e);
                 // Add to the cache, to enable the fast path, next time.
@@ -512,10 +591,11 @@ public abstract class ClassValue<T> {
                 addToCache(classValue, e);
                 return e;
             } else {
-                // Some sort of mismatch; caller must try again. This can happen when:
+                // Some sort of mismatch; caller must try again if e0=null.
+                // This can happen when:
                 // 1. Another thread computes and finishes exceptionally.
                 // 2. A remove() is issued after computation started.
-                return null;
+                return e0;
             }
         }
 
@@ -528,8 +608,9 @@ public abstract class ClassValue<T> {
             if (e != null) {
                 if (e.isPromise()) {
                     // Remove the outdated promise to force recomputation.
-                    if (e.hasOwnership()) {
-                        // Notify myself that I am still up-to-date. All other guys are stale
+                    if (e.isPromisedByCurrentThread()) {
+                        // Notify myself that I am still up-to-date. All other racers are stale.
+                        // That is, the fresh promise contains only this thread as promiser.
                         put(classValue.identity, classValue.version().createPromise());
                     }
                 } else {
