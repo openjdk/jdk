@@ -1991,8 +1991,7 @@ class MutableBigInteger {
         // Refine the estimate, avoiding to compute non-significant bits
         final int trailingZeros = this.getLowestSetBit();
         int rootShift = (int) (shift / n);
-        for (int rootBits = (int) r.bitLength(); rootShift >= rootBits
-                && rootBits > 0; rootBits <<= 1) { // avoid overflow
+        for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
             r.leftShift(rootBits);
             rootShift -= rootBits;
 
