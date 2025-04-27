@@ -34,6 +34,142 @@ const char* VMATree::statetype_strings[3] = {
   "reserved", "committed", "released",
 };
 
+NativeCallStackStorage::StackIndex VMATree::new_reserve_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
+  using SIndex = NativeCallStackStorage::StackIndex;
+  const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
+  const SIndex rq = req.callstack;
+  auto st_to_index = [&](StateType st) -> int {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
+  };
+  const int op = req.op_to_index();
+  assert(op >= 0 && op < 4, "should be");
+                            // existing state
+  SIndex result[4][3] = {// Rl  Rs   C
+                           {ES, ES, ES},   // op == Release
+                           {rq, rq, rq},   // op == Reserve
+                           {es, es, es},   // op == Commit
+                           {es, es, es}    // op == Uncommit
+                           };
+  return result[op][st_to_index(ex)];
+}
+
+NativeCallStackStorage::StackIndex VMATree::new_commit_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
+  using SIndex = NativeCallStackStorage::StackIndex;
+  const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
+  const SIndex rq = req.callstack;
+  auto st_to_index = [&](StateType st) -> int {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
+  };
+  const int op = req.op_to_index();
+  assert(op >= 0 && op < 4, "should be");
+                            // existing state
+  SIndex result[4][3] = {// Rl  Rs   C
+                           {ES, ES, ES},   // op == Release
+                           {ES, ES, ES},   // op == Reserve
+                           {rq, rq, rq},   // op == Commit
+                           {ES, ES, ES}    // op == Uncommit
+                           };
+  return result[op][st_to_index(ex)];
+}
+
+VMATree::StateType VMATree::new_state(StateType ex, const RequestInfo& req) {
+  const StateType Rl = StateType::Released;
+  const StateType Rs = StateType::Reserved;
+  const StateType C = StateType::Committed;
+  auto st_to_index = [&](StateType st) -> int {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
+  };
+  const int op = req.op_to_index();
+  assert(op >= 0 && op < 4, "should be");
+                            // existing state
+  StateType result[4][3] = {// Rl  Rs   C
+                              {Rl, Rl, Rl},   // op == Release
+                              {Rs, Rs, Rs},   // op == Reserve
+                              { C,  C,  C},   // op == Commit
+                              {Rl, Rs, Rs}    // op == Uncommit
+                           };
+  return result[op][st_to_index(ex)];
+}
+
+VMATree::SummaryDiff VMATree::register_mapping_new(position A, position B, StateType state,
+                                               const RegionData& metadata, bool use_tag_inplace) {
+
+  assert(A < B, "should be");
+  RequestInfo req{A, B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
+  SummaryDiff diff;
+  VMATreap::Range rA = _tree.find_enclosing_range(A);
+  VMATreap::Range rB = _tree.find_enclosing_range(B);
+  bool no_node_before_A = rA.start == nullptr;
+  bool no_node_before_B = rB.start == nullptr;
+  bool no_overlap_before = no_node_before_A && no_node_before_B;
+  bool no_node_after_A = rA.end == nullptr;
+  bool no_node_after_B = rB.end == nullptr;
+  bool no_overlap_after = no_node_after_A && no_node_after_B;
+  bool no_overlap = no_overlap_before || no_overlap_after;
+  // ...............X....Y.....Z.............
+  //   ^--^        ^--------------^  ^----^
+  //   no-overlap     with-overlap    no-overlap
+  if (no_overlap) {
+    // just insert A and B
+    return diff;
+  }
+  // finding the X....Y region that overlaps with A---B
+  // a--A--b---c---B---d
+  const position impossible = -1;
+  position X =   rA.start != nullptr ? rA.start->key()
+               : rA.end   != nullptr ? rA.end->key()
+               : rB.start != nullptr ? rB.start->key()
+               : rB.end   != nullptr ? rB.end->key() : impossible;
+  assert(X != impossible, "should not");
+  TreapNode* nY = _tree.closest_gt(X);
+  assert(nY != nullptr, "should not");
+  position Y = nY->key();
+
+  enum overlap_case {         //                      ........X..............Y......................
+                     A_B_X_Y, // A < B < X < Y           A--B
+                     A_BX__Y, // A < B = X < Y           A----B
+                     A_X_B_Y, // A < X < B < Y           A--------B
+                     A_X__BY, // A < X < Y = B           A-------------------B
+                     A_X_Y_B, // A < X < Y < B           A-----------------------B
+                     AX_B__Y, // A = X < B < Y                A----B
+                     AX___BY, // A = X < B = Y                A--------------B
+                     AX_Y__B, // A = X < Y < B                A--------------------B
+                     X_A_B_Y, // X < A < B < Y                    A---B
+                     X_A__BY, // X < A < B = Y                    A---------B
+                     X_A_Y_B  // X < A < Y < B                    A-------------------B
+  };
+  overlap_case oc;
+  if (B < X) oc = A_B_X_Y;
+  if (B == X) oc = A_BX__Y;
+  switch(oc) {    //                      ........X..............Y......................
+    case A_B_X_Y: // A < B < X < Y           A--B
+    case A_BX__Y: // A < B = X < Y           A----B
+    case A_X_B_Y: // A < X < B < Y           A--------B
+    case A_X__BY: // A < X < Y = B           A-------------------B
+    case A_X_Y_B: // A < X < Y < B           A-----------------------B
+      // decompose into A--Y and Y--B
+      // handle A--Y here and
+      // recursive call of the register_mapping(Y, B, ...)
+      break;
+    case AX_B__Y: // A = X < B < Y                A----B
+    case AX___BY: // A = X < B = Y                A--------------B
+    case AX_Y__B: // A = X < Y < B                A--------------------B
+    case X_A_B_Y: // X < A < B < Y                    A---B
+    case X_A__BY: // X < A < B = Y                    A---------B
+    case X_A_Y_B: // X < A < Y < B                    A-------------------B
+      break;
+  }
+  return diff;
+}
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
   assert(!use_tag_inplace || metadata.mem_tag == mtNone,
