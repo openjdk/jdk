@@ -1616,11 +1616,15 @@ public:
   void aes_round(FloatRegister input, FloatRegister subkey);
 
   // ChaCha20 functions support block
-  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
-          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
-          FloatRegister tbl);
-  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
-          FloatRegister dVec, bool colToDiag);
+  void cc20_qr_add4(FloatRegister (&addFirst)[4],
+          FloatRegister (&addSecond)[4]);
+  void cc20_qr_xor4(FloatRegister (&firstElem)[4],
+          FloatRegister (&secondElem)[4], FloatRegister (&result)[4]);
+  void cc20_qr_lrot4(FloatRegister (&sourceReg)[4],
+          FloatRegister (&destReg)[4], int bits, FloatRegister table);
+  void cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
+          const FloatRegister (&stateVectors)[16], int idx1, int idx2,
+          int idx3, int idx4);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

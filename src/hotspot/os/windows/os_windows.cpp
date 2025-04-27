@@ -76,6 +76,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -110,9 +111,6 @@
 #include <mmsystem.h>
 #include <winsock2.h>
 #include <versionhelpers.h>
-
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(-1)
 
 // For DLL loading/load error detection
 // Values of PE COFF
@@ -1224,16 +1222,16 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   if (freq < NANOSECS_PER_SEC) {
     // the performance counter is 64 bits and we will
     // be multiplying it -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   } else if (freq > NANOSECS_PER_SEC) {
     // use the max value the counter can reach to
     // determine the max value which could be returned
-    julong max_counter = (julong)ALL_64_BITS;
+    julong max_counter = (julong)all_bits_jlong;
     info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
   } else {
     // the performance counter is 64 bits and we will
     // be using it directly -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   }
 
   // using a counter, so no skipping
@@ -4358,9 +4356,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4812,14 +4810,14 @@ jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
@@ -5131,7 +5129,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5139,7 +5137,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }
