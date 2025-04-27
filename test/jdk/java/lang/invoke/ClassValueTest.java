@@ -357,4 +357,25 @@ final class ClassValueTest {
             }
         }
     }
+
+    @Test
+    void testRecursiveInitialization() {
+        record Holder() {
+            static final ClassValue<Object> clv = new ClassValue<>() {
+                @Override
+                protected Object computeValue(Class<?> type) {
+                    return new One();
+                }
+            };
+
+            record One() {
+                static {
+                    Holder.clv.get(One.class);
+                }
+            }
+
+        }
+
+        Holder.clv.get(Holder.One.class);
+    }
 }

@@ -242,8 +242,8 @@ public abstract class ClassValue<T> {
         // The fail-safe recovery is to fall back to the underlying classValueMap.
         ClassValueMap map = getMap(type);
         Throwable ex = null;
-        for (boolean isRetry = false; ; isRetry = true) {
-            Entry<T> e = map.startEntry(this, isRetry);
+        for (; ; ) {
+            Entry<T> e = map.startEntry(this);
             if (!e.isPromise())
                 return e.value();
             try {
@@ -516,7 +516,7 @@ public abstract class ClassValue<T> {
 
         /** Initiate a query.  Store a promise (placeholder) if there is no value yet. */
         synchronized
-        <T> Entry<T> startEntry(ClassValue<T> classValue, boolean isRetry) {
+        <T> Entry<T> startEntry(ClassValue<T> classValue) {
             @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
             Entry<T> e = (Entry<T>) get(classValue.identity);
             Version<T> v = classValue.version();
@@ -538,15 +538,10 @@ public abstract class ClassValue<T> {
                 } else {
                     // Keep track of which threads observe this particular version.
                     // All of them are equally racing to fulfill the promise.
-                    boolean isNewlyAdded = e.addPromiseByCurrentThread();
-                    if (!(isNewlyAdded | isRetry)) {
-                        // We get here if this thread is already working on a promise,
-                        // but we performed a fresh execution of CV::get inside a call
-                        // to computeValue, directly or indirectly.  That counts as
-                        // a stack overflow, since there's no way for computeValue
-                        // to obtain the value that it will return, until it returns.
-                        throw new StackOverflowError("recursive call to ClassValue::get");
-                    }
+                    e.addPromiseByCurrentThread();
+                    // Let the VM throw StackOverflowError: sometimes, a
+                    // computeValue can trigger class initialization, which
+                    // itself triggers another computeValue.
                 }
                 return e;
             } else {
