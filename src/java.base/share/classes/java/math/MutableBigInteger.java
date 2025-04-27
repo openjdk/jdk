@@ -2020,7 +2020,7 @@ class MutableBigInteger {
             MutableBigInteger dividend = new MutableBigInteger();
             r.mul(n - 1, dividend);
             MutableBigInteger xDivRToN1 = new MutableBigInteger();
-            this.divide(rToN1, xDivRToN1);
+            this.divide(rToN1, xDivRToN1, false);
             dividend.add(xDivRToN1);
             dividend.divideOneWord(n, r1);
         } while (r1.compare(r) < 0); // Terminate when non-decreasing.
