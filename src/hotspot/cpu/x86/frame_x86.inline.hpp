@@ -35,6 +35,8 @@
 
 // Inline functions for Intel frames:
 
+#if INCLUDE_JFR
+
 // Static helper routines
 inline Method* frame::interpreter_method(const intptr_t* fp) {
   assert(fp != nullptr, "invariant");
@@ -81,6 +83,8 @@ inline intptr_t* frame::fp(const intptr_t* sp) {
   assert(sp != nullptr, "invariant");
   return reinterpret_cast<intptr_t*>(sp[-2]);
 }
+
+#endif // INCLUDE_JFR
 
 // Constructors:
 
