@@ -6,7 +6,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @modules java.base/java.lang.ref:open
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
+ * @run main/othervm -ea -esa
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI
