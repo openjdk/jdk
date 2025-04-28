@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 8335912
- * @summary test extract jar with multpile manifest files
+ * @bug 8345431
+ * @summary test validator to report malformed jar file
  * @library /test/lib
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run junit/othervm MultipleManifestTest
+ * @run junit/othervm ValidatorTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -60,7 +60,7 @@ import java.util.zip.ZipOutputStream;
 import jdk.test.lib.util.FileUtils;
 
 @TestInstance(Lifecycle.PER_CLASS)
-class MultipleManifestTest {
+class ValidatorTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
@@ -100,7 +100,11 @@ class MultipleManifestTest {
      * @throws IOException if an error occurs
      */
     @BeforeAll
-    public void writeManifestAsFirstSecondAndFourthEntry() throws IOException {
+    public void beforeAll() throws IOException {
+        writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
+    }
+
+    private void writeManifestAsFirstSecondAndFourthEntry(Path path, boolean useCen, boolean useLoc) throws IOException {
         int locPosA, locPosB, cenPos;
         System.out.printf("%n%n*****Creating Jar with the Manifest as the 1st, 2nd and 4th entry*****%n%n");
         var out = new ByteArrayOutputStream(1024);
@@ -126,14 +130,54 @@ class MultipleManifestTest {
         // ISO_8859_1 to keep the 8-bit value
         var s = new String(template, StandardCharsets.ISO_8859_1);
         // change META-INF/AANIFEST.MF to META-INF/MANIFEST.MF
+        if (useCen) {
+            var cen = s.indexOf("AANIFEST.MF", cenPos);
+            template[cen] = (byte) 'M';
+            // change META-INF/BANIFEST.MF to META-INF/MANIFEST.MF
+            cen = s.indexOf("BANIFEST.MF", cenPos);
+            template[cen] = (byte) 'M';
+        }
+        if (useLoc) {
+            var loc = s.indexOf("AANIFEST.MF", locPosA);
+            template[loc] = (byte) 'M';
+            loc = s.indexOf("BANIFEST.MF", locPosB);
+            template[loc] = (byte) 'M';
+        }
+        Files.write(path, template);
+    }
+
+    private void createMismatchOrderJar(Path path) throws IOException {
+        int locPosA, locPosB;
+        System.out.printf("%n%n*****Creating Jar with the swap entry name*****%n%n");
+        var out = new ByteArrayOutputStream(1024);
+        try (var zos = new ZipOutputStream(out)) {
+            zos.putNextEntry(new ZipEntry(JarFile.MANIFEST_NAME));
+            zos.write(MANIFEST1.getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+            locPosA = out.size();
+            zos.putNextEntry(new ZipEntry(META_INF + "AANIFEST.MF"));
+            zos.write(MANIFEST2.getBytes(StandardCharsets.UTF_8));
+            zos.putNextEntry(new ZipEntry("entry1.txt"));
+            zos.write("entry1".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+            locPosB = out.size();
+            zos.putNextEntry(new ZipEntry(META_INF + "BANIFEST.MF"));
+            zos.write(MANIFEST3.getBytes(StandardCharsets.UTF_8));
+            zos.putNextEntry(new ZipEntry("entry2.txt"));
+            zos.write("hello entry2".getBytes(StandardCharsets.UTF_8));
+            zos.flush();
+        }
+        var template = out.toByteArray();
+        // ISO_8859_1 to keep the 8-bit value
+        var s = new String(template, StandardCharsets.ISO_8859_1);
+        // change META-INF/AANIFEST.MF to META-INF/BANIFEST.MF
         var loc = s.indexOf("AANIFEST.MF", locPosA);
-        var cen = s.indexOf("AANIFEST.MF", cenPos);
-        template[loc] = template[cen] = (byte) 'M';
-        // change META-INF/BANIFEST.MF to META-INF/MANIFEST.MF
+        template[loc] = (byte) 'B';
+        // change META-INF/BANIFEST.MF to META-INF/AANIFEST.MF
         loc = s.indexOf("BANIFEST.MF", locPosB);
-        cen = s.indexOf("BANIFEST.MF", cenPos);
-        template[loc] = template[cen] = (byte) 'M';
-        Files.write(zip, template);
+        template[loc] = (byte) 'A';
+
+        Files.write(path, template);
     }
 
     @AfterEach
@@ -141,36 +185,59 @@ class MultipleManifestTest {
         rm("META-INF entry1.txt entry2.txt");
     }
 
-    /**
-     * Extract by default should have the last manifest.
-     */
     @Test
-    public void testOverwrite() throws IOException {
-        jar("xvf " + zip.toString());
-        println();
-        Assertions.assertEquals("3.0", getManifestVersion());
-        String output = " inflated: META-INF/MANIFEST.MF" + nl +
-                " inflated: META-INF/MANIFEST.MF" + nl +
-                " inflated: entry1.txt" + nl +
-                " inflated: META-INF/MANIFEST.MF" + nl +
-                " inflated: entry2.txt" + nl;
-        assertOutputContains(output);
+    public void testValidate() {
+        try {
+            jar("--validate --file " + zip.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in local file header"));
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in central directory"));
+        }
     }
 
-    /**
-     * Extract with k option should have first manifest.
-     */
     @Test
-    public void testKeptOldFile() throws IOException {
-        jar("xkvf " + zip.toString());
-        println();
-        Assertions.assertEquals("1.0", getManifestVersion());
-        String output = " inflated: META-INF/MANIFEST.MF" + nl +
-                "  skipped: META-INF/MANIFEST.MF exists" + nl +
-                " inflated: entry1.txt" + nl +
-                "  skipped: META-INF/MANIFEST.MF exists" + nl +
-                " inflated: entry2.txt" + nl;
-        assertOutputContains(output);
+    public void testOnlyLocModified() throws IOException {
+        Path f = Path.of("LocHacked.jar");
+        writeManifestAsFirstSecondAndFourthEntry(f, false, true);
+        try {
+            jar("--validate --file " + f.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in local file header"));
+            Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in central directory is not in local file header"));
+            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in central directory is not in local file header"));
+        }
+    }
+
+    @Test
+    public void testOnlyCenModified() throws IOException {
+        Path f = Path.of("CenHacked.jar");
+        writeManifestAsFirstSecondAndFourthEntry(f, true, false);
+        try {
+            jar("--validate --file " + f.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in central directory"));
+            Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in local file header is not in central directory"));
+            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+        }
+    }
+
+    @Test
+    public void testMismatchOrder() throws IOException {
+        Path f = Path.of("SwappedEntry.jar");
+        createMismatchOrderJar(f);
+        try {
+            String err = jar("--validate --file " + f.toString());
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
+        } catch (IOException e) {
+            Assertions.fail("Ordering is not guaranteed by specification");
+        }
     }
 
     private String getManifestVersion() throws IOException {
@@ -180,7 +247,8 @@ class MultipleManifestTest {
         }
     }
 
-    private void jar(String cmdline) throws IOException {
+    // return stderr output
+    private String jar(String cmdline) throws IOException {
         System.out.println("jar " + cmdline);
         baos.reset();
 
@@ -193,6 +261,8 @@ class MultipleManifestTest {
             int rc = JAR_TOOL.run(jarOut, err, cmdline.split(" +"));
             if (rc != 0) {
                 throw new IOException(baes.toString());
+            } else {
+                return baes.toString();
             }
         } finally {
             System.setErr(saveErr);

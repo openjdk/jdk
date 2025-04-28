@@ -32,10 +32,10 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,8 +63,7 @@ final class Validator {
     private ModuleDescriptor md;
     private String mdName;
     private final ZipInputStream zis;
-    private final Set<String> entryNames = new HashSet<>();
-    private final List<String> duplicateEntries = new ArrayList<>();
+    private final LinkedHashSet<String> cenEntryNames = new LinkedHashSet<>();
 
     private Validator(Main main, ZipFile zf, ZipInputStream zis) {
         this.main = main;
@@ -77,30 +76,68 @@ final class Validator {
         return new Validator(main, zf, zis).validate();
     }
 
+    // Detect duplicates when iterate through CEN entries
     private void checkDuplicates(ZipEntry e) {
-        if (!entryNames.add(e.getName())) {
-            duplicateEntries.add(e.getName());
+        var cenEntryName = e.getName();
+        if (!cenEntryNames.add(cenEntryName)) {
+            warn(formatMsg("warn.validator.duplicate.cen.entry", cenEntryName));
+            isValid = false;
         }
     }
 
+    // Check if CEN contains the LOC entry by name
+    private boolean checkHasCenEntry(String locEntryName) {
+        var hasEntry = cenEntryNames.remove(locEntryName);
+        if (!hasEntry) {
+            warn(formatMsg("warn.validator.loc.only.entry", locEntryName));
+            isValid = false;
+        }
+        return hasEntry;
+    }
+
+    // Check next CEN entry is matching the specified name
+    private boolean checkNextCenEntry(String locEntryName) {
+        var nextCenEntryName = cenEntryNames.removeFirst();
+        if (nextCenEntryName.equals(locEntryName)) {
+            return true;
+        }
+
+        if (checkHasCenEntry(locEntryName)) {
+            warn(getMsg("warn.validator.order.mismatch"));
+            cenEntryNames.addFirst(nextCenEntryName);
+            // order mismatch is just a warning, still consider valid
+        }
+        return false;
+    }
+
+
+    /*
+     * Retrieve entries from the XipInputStream to verify local file headers(LOC)
+     * have same entries as the cental directory(CEN).
+     */
     private void checkZipInputStream() {
-        var locEntryNames = new HashSet<String>();
-        var missingEntryNames = new ArrayList<String>();
+        var locEntryNames = new LinkedHashSet<String>();
+        var outOfOrder = false;
+
         try {
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
-                var entryName = e.getName();
-                if (!locEntryNames.add(entryName)) {
+                var locEntryName = e.getName();
+                if (!locEntryNames.add(locEntryName)) {
                     isValid = false;
-                    warn(formatMsg("warn.validator.duplicate.entry", entryName));
+                    warn(formatMsg("warn.validator.duplicate.loc.entry", locEntryName));
+                    continue;
                 }
-                if (!entryNames.contains(entryName)) {
-                    missingEntryNames.add(entryName);
+
+                if (outOfOrder) {
+                    checkHasCenEntry(locEntryName);
+                } else {
+                    outOfOrder = !checkNextCenEntry(locEntryName);
                 }
             }
-            if (!missingEntryNames.isEmpty() || locEntryNames.size() != entryNames.size()) {
-                isValid = false;
-                warn(getMsg("warn.validator.inconsistent.content"));
+            // remaining entries in CEN not matching any in LOC
+            for (var cenEntryName: cenEntryNames) {
+                warn(formatMsg("warn.validator.cen.only.entry", cenEntryName));
             }
         } catch (IOException ioe) {
            throw new InvalidJarException(ioe.getMessage());
@@ -126,10 +163,6 @@ final class Validator {
                       else
                           validateVersioned(entries);
                   });
-            if (!duplicateEntries.isEmpty()) {
-                duplicateEntries.forEach(name -> warn(formatMsg("warn.validator.duplicate.entry", name)));
-                isValid = false;
-            }
             checkZipInputStream();
         } catch (InvalidJarException e) {
             errorAndInvalid(e.getMessage());
