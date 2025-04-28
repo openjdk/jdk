@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8303965 8354276
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
  * @summary This test verifies the behaviour of the HttpClient when presented
  *          with a HEADERS frame followed by CONTINUATION frames, and when presented
  *          with bad header fields.
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
  */
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
