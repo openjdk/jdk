@@ -38,30 +38,35 @@ class StableValue {
   DEBUG_ONLY(bool _initialized);
 
 public:
-  StableValue() {
-    DEBUG_ONLY(_initialized = false);
+  NONCOPYABLE(StableValue);
+
+  StableValue()
+  DEBUG_ONLY(: _initialized(false)) {
+    // Do not construct value, on purpose.
   }
 
   ~StableValue() {
+    // Do not destruct value, on purpose.
   }
 
   T* ptr() {
     assert(_initialized, "must be initialized before access");
-    return &this->_t;
+    return &_t;
+  }
+
+  T& operator*() {
+    return *ptr();
   }
 
   T* operator->() {
-    assert(_initialized, "must be initialized before access");
     return ptr();
   }
 
   template<typename... Ts>
   void initialize(Ts&... args) {
     DEBUG_ONLY(_initialized = true);
-    // If T has const and volatile, get rid of them and tack on a pointer *.
     using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
-    // Make _t into NCVP temporarily so that we can placement-new it.
-    new (const_cast<NCVP>(ptr())) T(args...);
+    ::new (const_cast<NCVP>(ptr())) T(args...);
   }
 };
 
