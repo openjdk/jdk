@@ -243,7 +243,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
 }
 
 OSReturn os::set_priority(Thread* thread, ThreadPriority p) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
+  DEBUG_ONLY(Thread::check_for_dangling_thread_pointer(thread);)
 
   if ((p >= MinPriority && p <= MaxPriority) ||
       (p == CriticalPriority && thread->is_ConcurrentGC_thread())) {
@@ -598,7 +598,7 @@ char *os::strdup(const char *str, MemTag mem_tag) {
   size_t size = strlen(str);
   char *dup_str = (char *)malloc(size + 1, mem_tag);
   if (dup_str == nullptr) return nullptr;
-  strcpy(dup_str, str);
+  memcpy(dup_str, str, size + 1);
   return dup_str;
 }
 
@@ -1168,7 +1168,7 @@ void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // We access the raw value here because the assert in the accessor will
   // fail if the crash occurs before initialization of this value.
   st->print(" (initial active %d)", _initial_active_processor_count);
-  st->print(" %s", VM_Version::features_string());
+  st->print(" %s", VM_Version::cpu_info_string());
   st->cr();
   pd_print_cpu_info(st, buf, buflen);
 }

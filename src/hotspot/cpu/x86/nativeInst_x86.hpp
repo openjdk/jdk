@@ -503,7 +503,7 @@ class NativeGeneralJump: public NativeInstruction {
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   NativeGeneralJump* jump = (NativeGeneralJump*)(address);
-  debug_only(jump->verify();)
+  DEBUG_ONLY(jump->verify();)
   return jump;
 }
 

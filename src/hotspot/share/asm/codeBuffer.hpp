@@ -121,8 +121,8 @@ class CodeSection {
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
-    debug_only(_index = -1);
-    debug_only(_outer = (CodeBuffer*)badAddress);
+    DEBUG_ONLY(_index = -1);
+    DEBUG_ONLY(_outer = (CodeBuffer*)badAddress);
   }
 
   void initialize_outer(CodeBuffer* outer, int8_t index) {
@@ -535,7 +535,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     assert(code_start != nullptr, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    debug_only(verify_section_allocation();)
+    DEBUG_ONLY(verify_section_allocation();)
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
