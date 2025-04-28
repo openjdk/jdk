@@ -96,8 +96,8 @@ public class DisplayNameTests {
             {Locale.US, loc5, ""},
 
             // invalid cases
-            {loc6, loc6, "\u4e2d\u6587 (\u4e2d\u56fd\uff0c\u65e5\u5386\uff1adddd\uff0c\u8d27\u5e01\uff1anull\uff0cfw\uff1amoq\uff0c\u6570\u5b57\uff1addd\uff0crg\uff1atwzz\uff0c\u65f6\u533a\uff1aunknown)"},
-            {Locale.US, loc6, "Chinese (China, Calendar: dddd, Currency: null, First day of week: moq, Numbers: ddd, Region For Supplemental Data: twzz, Time Zone: unknown)"},
+            {loc6, loc6, "\u4e2d\u6587 (\u4e2d\u56fd\uff0c\u65e5\u5386\uff1adddd\uff0c\u8d27\u5e01\uff1addd\uff0cfw\uff1amoq\uff0c\u6570\u5b57\uff1addd\uff0crg\uff1atwzz\uff0c\u65f6\u533a\uff1aunknown)"},
+            {Locale.US, loc6, "Chinese (China, Calendar: dddd, Currency: ddd, First day of week: moq, Numbers: ddd, Region For Supplemental Data: twzz, Time Zone: unknown)"},
         };
     }
 
