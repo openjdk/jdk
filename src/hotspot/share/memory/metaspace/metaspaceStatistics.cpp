@@ -150,8 +150,8 @@ InUseChunkStats ArenaStats::totals() const {
 }
 
 void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const {
-  StreamIndentor si(st, 2);
   if (detailed) {
+    StreamIndentor si(st, 2);
     st->cr();
     st->print("Usage by chunk level:");
     {
