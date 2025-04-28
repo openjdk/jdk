@@ -64,7 +64,7 @@ public class LotsOfSyntheticClasses {
         }
         out.add("}");
         for (int c = 0; c < NUM_NESTED_CLASSES; c++) {
-            out.add("public static class " + NESTED_CLASS_NAME  + c + " {}");
+            out.add("public static class " + NESTED_CLASS_NAME + c + " {}");
         }
         out.add("}");
         return out;
