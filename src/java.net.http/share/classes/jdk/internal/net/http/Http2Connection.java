@@ -90,7 +90,6 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
@@ -341,6 +340,7 @@ class Http2Connection  {
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
         PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+            super(Context.REQUEST);
             this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
