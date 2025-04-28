@@ -46,7 +46,7 @@
 //
 // - Otherwise, we store the oop into the AOT cache, but we unconditionally reset its
 //   "next" and "discovered" fields to null. Otherwise, if AOTArtifactFinder follows these
-//   fields, it may found unrelated objects that we don't intent to cache.
+//   fields, it may found unrelated objects that we don't intend to cache.
 //
 // Eligibility
 // ===========
@@ -73,7 +73,7 @@
 // Reference handling is complex. In this version, we implement only enough functionality to support
 // the use of Weak/Soft references used by java.lang.invoke.
 //
-// We intent to evolve the implementation in the future by
+// We intend to evolve the implementation in the future by
 // -- implementing more prepareForAOTCache() operations for other use cases, and/or
 // -- relaxing the eligibility restrictions.
 

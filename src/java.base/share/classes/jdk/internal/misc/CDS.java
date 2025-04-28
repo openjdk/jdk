@@ -90,10 +90,13 @@ public class CDS {
     private static native void logLambdaFormInvoker(String line);
 
 
+    // Used only when dumping static archive to keep weak references alive to
+    // ensure that Soft/Weak Reference objects can be reliably archived.
     private static ArrayList<Object> keepAliveList;
 
     public static void keepAlive(Object s) {
-        assert isSingleThreadVM();
+        assert isSingleThreadVM(); // no need for synchronization
+        assert isDumpingStaticArchive();
         if (keepAliveList == null) {
             keepAliveList = new ArrayList<>();
         }
