@@ -29,6 +29,9 @@
 
 // A memory area with adequate size and alignment for storage of a T.
 // May be initialized exactly once.
+// The purpose of this class is to defer initialization of a T to a later point in time,
+// and then to never deallocate it. This is mainly useful for deferring the initialization of
+// static fields in classes, in order to avoid "Static Initialization Order Fiasco".
 template<typename T>
 class StableValue {
   union {
@@ -49,24 +52,24 @@ public:
     // Do not destruct value, on purpose.
   }
 
-  T* ptr() {
+  T* get() {
     assert(_initialized, "must be initialized before access");
     return &_t;
   }
 
   T& operator*() {
-    return *ptr();
+    return *get();
   }
 
   T* operator->() {
-    return ptr();
+    return get();
   }
 
   template<typename... Ts>
   void initialize(Ts&... args) {
     DEBUG_ONLY(_initialized = true);
     using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
-    ::new (const_cast<NCVP>(ptr())) T(args...);
+    ::new (const_cast<NCVP>(get())) T(args...);
   }
 };
 
