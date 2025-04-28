@@ -530,19 +530,17 @@ public abstract class ClassValue<T> {
             } else if (e.isPromise()) {
                 // Somebody else has asked the same question.
                 // Let the races begin!
-                if (e.version() != v) {
-                    // Somebody bumped the version, after resetting some state.
-                    // This means we have to start fresh.
-                    e = v.createPromise();
-                    put(classValue.identity, e);
-                } else {
-                    // Keep track of which threads observe this particular version.
-                    // All of them are equally racing to fulfill the promise.
-                    e.addPromiseByCurrentThread();
-                    // Let the VM throw StackOverflowError: sometimes, a
-                    // computeValue can trigger class initialization, which
-                    // itself triggers another computeValue.
-                }
+                //
+                // Anything in the map is authentic - even if this promise may
+                // appear "outdated" by version, if it is truly outdated, it
+                // would have been removed or replaced from the map.
+                //
+                // Keep track of which threads observe this particular promise.
+                // All of them are equally racing to fulfill the promise.
+                e.addPromiseByCurrentThread();
+                // Let the VM throw StackOverflowError: sometimes, a
+                // computeValue can trigger class initialization, which
+                // itself triggers another computeValue.
                 return e;
             } else {
                 // there is already a completed entry here; report it
