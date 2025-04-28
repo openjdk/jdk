@@ -302,7 +302,7 @@ void NativeMovRegMem::print() {
 void NativeLoadAddress::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-  if (!((test_byte == lea_instruction_code) || (test_byte == mov64_instruction_code))) {
+  if ((test_byte != lea_instruction_code) && (test_byte != mov64_instruction_code)) {
     fatal ("not a lea reg, [reg+offs] instruction");
   }
 }
