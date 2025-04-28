@@ -23,6 +23,7 @@
  */
 
 #include "code/codeBehaviours.hpp"
+#include "code/nmethod.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -41,5 +42,5 @@ void DefaultICProtectionBehaviour::unlock(nmethod* method) {
 }
 
 bool DefaultICProtectionBehaviour::is_safe(nmethod* method) {
-  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self();
+  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self() || method->is_not_installed();
 }

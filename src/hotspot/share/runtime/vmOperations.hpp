@@ -82,25 +82,6 @@ class VM_ClearICs: public VM_Operation {
   VMOp_Type type() const { return VMOp_ClearICs; }
 };
 
-class VM_RelocateNMethod: public VM_Operation {
-  private:
-   methodHandle* _mh;
-   nmethod* _nm_copy;
-   CodeBlobType _code_blob_type;
-  public:
-   VM_RelocateNMethod(methodHandle* mh, CodeBlobType code_blob_type)
-     : _mh(mh), _nm_copy(nullptr), _code_blob_type(code_blob_type)
-   {
-    Compile_lock->lock();
-   }
-   ~VM_RelocateNMethod() {
-    Compile_lock->unlock();
-   }
-   void doit();
-   VMOp_Type type() const { return VMOp_RelocateNMethod; }
-   nmethod* getRelocatedNMethod() { return _nm_copy; }
- };
-
 // Base class for invoking parts of a gtest in a safepoint.
 // Derived classes provide the doit method.
 // Typically also need to transition the gtest thread from native to VM.

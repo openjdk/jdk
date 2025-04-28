@@ -1136,9 +1136,7 @@ void ciEnv::register_method(ciMethod* target,
 
   if (StressNMethodRelocation) {
     if (nm != nullptr) {
-      methodHandle mh(Thread::current(), nm->method());
-      VM_RelocateNMethod relocate(&mh, CodeBlobType::MethodNonProfiled);
-      VMThread::execute(&relocate);
+      nm = nm->relocate(CodeBlobType::MethodNonProfiled);
     }
   }
 }

@@ -372,12 +372,11 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
     // If the original call is to an address in the src CodeBuffer (such as a stub call)
     // the updated call should be to the corresponding address in dest CodeBuffer
     int offset = callee - orig_addr;
-    address new_addr = addr() + offset;
-    pd_set_call_destination(new_addr);
-  } else {
-    // Reassert the callee address, this time in the new copy of the code.
-    pd_set_call_destination(callee);
+    callee = addr() + offset;
   }
+
+  // Reassert the callee address, this time in the new copy of the code.
+  pd_set_call_destination(callee);
 }
 
 

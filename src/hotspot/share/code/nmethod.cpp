@@ -771,7 +771,7 @@ Method* nmethod::attached_method_before_pc(address pc) {
 }
 
 void nmethod::clear_inline_caches() {
-  assert(SafepointSynchronize::is_at_safepoint(), "clearing of IC's only allowed at safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || is_not_installed(), "clearing of IC's only allowed at safepoint");
   RelocIterator iter(this);
   while (iter.next()) {
     iter.reloc()->clear_inline_cache();
@@ -1523,9 +1523,16 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
 }
 
 nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-  assert_lock_strong(CodeCache_lock);
-  assert_lock_strong(NMethodState_lock);
+  if (!is_relocatable()) {
+    return nullptr;
+  }
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
+
+  MutexLocker ml(Compile_lock);
+  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
 
   run_nmethod_entry_barrier();
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(this);

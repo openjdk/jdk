@@ -100,17 +100,6 @@ void VM_ClearICs::doit() {
   }
 }
 
-void VM_RelocateNMethod::doit() {
-  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-  if (_mh != nullptr) {
-    nmethod* nm = (*_mh)()->code();
-    if (nm != nullptr && nm->is_relocatable()) {
-      _nm_copy = nm->relocate(_code_blob_type);
-    }
-  }
-}
-
 void VM_CleanClassLoaderDataMetaspaces::doit() {
   ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
 }
