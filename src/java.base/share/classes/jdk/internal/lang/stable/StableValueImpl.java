@@ -53,8 +53,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     private static final long CONTENT_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "contents");
+
     // Used to indicate a holder value is `null` (see field `value` below)
-    // A wrapper method `nullSentinel()` is used for generic type conversion.
     private static final Object NULL_SENTINEL = new Object();
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
@@ -77,13 +77,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T contents) {
-        if (wrappedContentAcquire() != null) {
+        if (wrappedContentsAcquire() != null) {
             return false;
         }
         // Prevent reentry via an orElseSet(supplier)
         preventReentry();
         // Mutual exclusion is required here as `orElseSet` might also
-        // attempt to modify the `wrappedValue`
+        // attempt to modify `this.contents`
         synchronized (this) {
             return wrapAndSet(contents);
         }
@@ -102,7 +102,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = wrappedContentAcquire();
+        final Object t = wrappedContentsAcquire();
         if (t == null) {
             throw new NoSuchElementException("No contents set");
         }
@@ -112,21 +112,21 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = wrappedContentAcquire();
+        final Object t = wrappedContentsAcquire();
         return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return wrappedContentAcquire() != null;
+        return wrappedContentsAcquire() != null;
     }
 
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        final Object t = wrappedContentAcquire();
+        final Object t = wrappedContentsAcquire();
         return (t == null) ? orElseSetSlowPath(supplier) : unwrap(t);
     }
 
@@ -149,7 +149,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = wrappedContentAcquire();
+        final Object t = wrappedContentsAcquire();
         return t == this
                 ? "(this StableValue)"
                 : renderWrapped(t);
@@ -158,7 +158,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Internal methods shared with other internal classes
 
     @ForceInline
-    public Object wrappedContentAcquire() {
+    public Object wrappedContentsAcquire() {
         return UNSAFE.getReferenceAcquire(this, CONTENT_OFFSET);
     }
 
@@ -185,7 +185,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
      * @return if the contents was set
      */
     @ForceInline
-    private boolean wrapAndSet(Object newValue) {
+    private boolean wrapAndSet(T newValue) {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
         if (contents == null) {

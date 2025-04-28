@@ -444,8 +444,6 @@ import java.util.function.Supplier;
 public sealed interface StableValue<T>
         permits StableValueImpl {
 
-    // Principal methods
-
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
      * The contents of this StableValue can only be set once, implying this method only
@@ -509,8 +507,6 @@ public sealed interface StableValue<T>
      */
     T orElseSet(Supplier<? extends T> supplier);
 
-    // Convenience methods
-
     /**
      * Sets the contents of this StableValue to the provided {@code contents}, or, if
      * already set, throws {@code IllegalStateException}.
@@ -519,6 +515,9 @@ public sealed interface StableValue<T>
      *
      * @param contents to set
      * @throws IllegalStateException if the contents was already set
+     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
+     *         recursively attempts to set this stable value by calling this method
+     *         directly or indirectly.
      */
     void setOrThrow(T contents);
 
@@ -573,8 +572,8 @@ public sealed interface StableValue<T>
      * at most once even in a multi-threaded environment. Competing threads invoking the
      * returned supplier's {@linkplain Supplier#get() get()} method when a value is
      * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread. The computing threads will then observe the newly
-     * computed value (if any) and will then never execute.
+     * thrown by the computing thread. The competing threads will then observe the newly
+     * computed value (if any) and will then never execute the {@code underlying} supplier.
      * <p>
      * If the provided {@code underlying} supplier throws an exception, it is rethrown
      * to the initial caller and no contents is recorded.
@@ -727,8 +726,8 @@ public sealed interface StableValue<T>
      * is rethrown to the initial caller and no value associated with the provided key
      * is recorded.
      * <p>
-     * Any direct {@link Map#values()} or {@link Map#entrySet()} views
-     * of the returned map are also stable.
+     * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
+     * also stable.
      * <p>
      * The returned map is unmodifiable and does not implement the
      * {@linkplain Collection##optional-operations optional operations} in the

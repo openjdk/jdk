@@ -137,9 +137,11 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
-                    return ImmutableCollections.stableList(size, mapper);
+                    // A stable list is not Serializable so, we cannot return `List.of()` if `size == 0`
+                    return new StableList<>(size, mapper);
                 }
                 public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+                    // A stable map is not Serializable so, we cannot return `Map.of()` if `keys.isEmpty()`
                     return new StableMap<>(keys, mapper);
                 }
             });
@@ -262,11 +264,6 @@ class ImmutableCollections {
         } else {
             return new ListN<>((E[])input, true);
         }
-    }
-
-    static <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
-        // A lazy list is not Serializable so, we cannot return `List.of()` if size == 0
-        return new StableList<>(size, mapper);
     }
 
     // ---------- List Implementations ----------
@@ -454,17 +451,17 @@ class ImmutableCollections {
         }
     }
 
-    static final class SubList<E> extends AbstractImmutableList<E>
+    static sealed class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess {
 
         @Stable
-        private final AbstractImmutableList<E> root;
+        final AbstractImmutableList<E> root;
 
         @Stable
-        private final int offset;
+        final int offset;
 
         @Stable
-        private final int size;
+        final int size;
 
         private SubList(AbstractImmutableList<E> root, int offset, int size) {
             assert root instanceof List12 || root instanceof ListN || root instanceof StableList;
@@ -518,8 +515,7 @@ class ImmutableCollections {
         }
 
         private boolean allowNulls() {
-            return root instanceof ListN<?> listN && listN.allowNulls
-                    || root instanceof StableList<E>;
+            return root instanceof ListN<?> listN && listN.allowNulls;
         }
 
         @Override
@@ -572,14 +568,6 @@ class ImmutableCollections {
             return array;
         }
 
-        @Override
-        public String toString() {
-            if (root instanceof StableList<E> stableList) {
-                return StableUtil.renderElements(root, "StableList", stableList.delegates, offset, size);
-            } else {
-                return super.toString();
-            }
-        }
     }
 
     @jdk.internal.ValueBased
@@ -879,8 +867,52 @@ class ImmutableCollections {
         }
 
         @Override
+        public List<E> subList(int fromIndex, int toIndex) {
+            int size = size();
+            subListRangeCheck(fromIndex, toIndex, size);
+            return StableSubList.fromList(this, fromIndex, toIndex);
+        }
+
+        @Override
         public String toString() {
             return StableUtil.renderElements(this, "StableList", delegates);
+        }
+
+        private static final class StableSubList<E> extends SubList<E> {
+
+            private StableSubList(AbstractImmutableList<E> root, int offset, int size) {
+                super(root, offset, size);
+            }
+
+            @Override
+            public List<E> reversed() {
+                return new StableReverseOrderListView<>(this);
+            }
+
+            @Override
+            public List<E> subList(int fromIndex, int toIndex) {
+                int size = size();
+                subListRangeCheck(fromIndex, toIndex, size);
+                return StableSubList.fromSubList(this, fromIndex, toIndex);
+            }
+
+            @Override
+            public String toString() {
+                final StableList<E> deepRoot = deepRoot(root);
+                final StableValueImpl<E>[] delegates = deepRoot.delegates;
+                // Todo: Provide a copy free solution
+                final StableValueImpl<E>[] reversed = Arrays.copyOfRange(delegates, this.offset, this.size - offset);
+                return StableUtil.renderElements(this, "StableCollection", reversed);
+            }
+
+            static <E> SubList<E> fromList(AbstractImmutableList<E> list, int fromIndex, int toIndex) {
+                return new StableSubList<>(list, fromIndex, toIndex - fromIndex);
+            }
+
+            static <E> SubList<E> fromSubList(SubList<E> parent, int fromIndex, int toIndex) {
+                return new StableSubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
+            }
+
         }
 
         private static final class StableReverseOrderListView<E> extends ReverseOrderListView.Rand<E> {
@@ -892,10 +924,12 @@ class ImmutableCollections {
             // This method does not evaluate the elements
             @Override
             public String toString() {
-                final StableValueImpl<E>[] delegates = ((StableList<E>)base).delegates;
+                final StableList<E> deepRoot = deepRoot(base);
+                final StableValueImpl<E>[] delegates = deepRoot.delegates;
+                // Todo: Provide a copy free solution
                 final StableValueImpl<E>[] reversed = ArraysSupport.reverse(
                         Arrays.copyOf(delegates, delegates.length));
-                return StableUtil.renderElements(base, "Collection", reversed);
+                return StableUtil.renderElements(this, "Collection", reversed);
             }
 
             @Override
@@ -903,6 +937,25 @@ class ImmutableCollections {
                 return base;
             }
 
+            @Override
+            public List<E> subList(int fromIndex, int toIndex) {
+                int size = base.size();
+                subListRangeCheck(fromIndex, toIndex, size);
+                return new StableReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex));
+            }
+
+        }
+
+        static <E> StableList<E> deepRoot(List<E> list) {
+            // Avoid spinning code for a pattern matching switch, instead use an if rake
+            if (list instanceof StableList<E> sl) {
+                return sl;
+            } else if (list instanceof StableList.StableReverseOrderListView<E> rev) {
+                return deepRoot(rev.base);
+            } else if (list instanceof StableList.StableSubList<E> sub) {
+                return deepRoot(sub.root);
+            }
+            throw new InternalError("Should not reach here: " + list.getClass().getName());
         }
 
     }
@@ -1560,7 +1613,7 @@ class ImmutableCollections {
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
         @Override public int                  size() { return delegate.size(); }
-        @Override public Set<Map.Entry<K, V>> entrySet() { return new StableMapEntrySet(); }
+        @Override public Set<Map.Entry<K, V>> entrySet() { return StableMapEntrySet.of(this); }
 
         @ForceInline
         @Override
@@ -1582,32 +1635,49 @@ class ImmutableCollections {
         }
 
         @jdk.internal.ValueBased
-        final class StableMapEntrySet extends AbstractImmutableSet<Map.Entry<K, V>> {
+        static final class StableMapEntrySet<K, V> extends AbstractImmutableSet<Map.Entry<K, V>> {
+
+            // Use a separate field for the outer class in order to facilitate
+            // a @Stable annotation.
+            @Stable
+            private final StableMap<K, V> outer;
 
             @Stable
             private final Set<Map.Entry<K, StableValueImpl<V>>> delegateEntrySet;
 
-            StableMapEntrySet() {
-                this.delegateEntrySet = delegate.entrySet();
+            private StableMapEntrySet(StableMap<K, V> outer) {
+                this.outer = outer;
+                this.delegateEntrySet = outer.delegate.entrySet();
             }
 
-            @Override public Iterator<Map.Entry<K, V>> iterator() { return new LazyMapIterator(); }
+            @Override public Iterator<Map.Entry<K, V>> iterator() { return LazyMapIterator.of(this); }
             @Override public int                       size() { return delegateEntrySet.size(); }
-            @Override public int                       hashCode() { return StableMap.this.hashCode(); }
+            @Override public int                       hashCode() { return outer.hashCode(); }
 
             @Override
             public String toString() {
                 return StableUtil.renderMappings(this, "StableSet", delegateEntrySet, false);
             }
 
+            // For @ValueBased
+            static private <K, V> StableMapEntrySet<K, V> of(StableMap<K, V> outer) {
+                return new StableMapEntrySet<>(outer);
+            }
+
             @jdk.internal.ValueBased
-            final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {
+            static final class LazyMapIterator<K, V> implements Iterator<Map.Entry<K, V>> {
+
+                // Use a separate field for the outer class in order to facilitate
+                // a @Stable annotation.
+                @Stable
+                private final StableMapEntrySet<K, V> outer;
 
                 @Stable
                 private final Iterator<Map.Entry<K, StableValueImpl<V>>> delegateIterator;
 
-                LazyMapIterator() {
-                    this.delegateIterator = delegateEntrySet.iterator();
+                private LazyMapIterator(StableMapEntrySet<K, V> outer) {
+                    this.outer = outer;
+                    this.delegateIterator = outer.delegateEntrySet.iterator();
                 }
 
                 @Override public boolean hasNext() { return delegateIterator.hasNext(); }
@@ -1617,7 +1687,7 @@ class ImmutableCollections {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
                     return new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
-                        @Override public V get() { return mapper.apply(k); }}));
+                        @Override public V get() { return outer.outer.mapper.apply(k); }}));
                 }
 
                 @Override
@@ -1628,24 +1698,41 @@ class ImmutableCollections {
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K k = inner.getKey();
                                     action.accept(new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
-                                        @Override public V get() { return mapper.apply(k); }})));
+                                        @Override public V get() { return outer.outer.mapper.apply(k); }})));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
                 }
+
+                // For @ValueBased
+                static private <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
+                    return new LazyMapIterator<>(outer);
+                }
+
             }
         }
 
         @Override
         public Collection<V> values() {
-            return new StableMapValues();
+            return StableMapValues.of(this);
         }
 
-        final class StableMapValues extends AbstractImmutableCollection<V> {
-            @Override public Iterator<V> iterator() { return new ValueIterator(); }
-            @Override public int size() { return StableMap.this.size(); }
-            @Override public boolean isEmpty() { return StableMap.this.isEmpty();}
-            @Override public boolean contains(Object v) { return StableMap.this.containsValue(v); }
+        @jdk.internal.ValueBased
+        static final class StableMapValues<V> extends AbstractImmutableCollection<V> {
+
+            // Use a separate field for the outer class in order to facilitate
+            // a @Stable annotation.
+            @Stable
+            private final StableMap<?, V> outer;
+
+            private StableMapValues(StableMap<?, V> outer) {
+                this.outer = outer;
+            }
+
+            @Override public Iterator<V> iterator() { return outer.new ValueIterator(); }
+            @Override public int size() { return outer.size(); }
+            @Override public boolean isEmpty() { return outer.isEmpty();}
+            @Override public boolean contains(Object v) { return outer.containsValue(v); }
 
             private static final IntFunction<StableValueImpl<?>[]> GENERATOR = new IntFunction<StableValueImpl<?>[]>() {
                 @Override
@@ -1656,9 +1743,15 @@ class ImmutableCollections {
 
             @Override
             public String toString() {
-                final StableValueImpl<?>[] values = delegate.values().toArray(GENERATOR);
-                return StableUtil.renderElements(StableMap.this, "StableMap", values);
+                final StableValueImpl<?>[] values = outer.delegate.values().toArray(GENERATOR);
+                return StableUtil.renderElements(this, "StableCollection", values);
             }
+
+            // For @ValueBased
+            private static <V> StableMapValues<V> of(StableMap<?, V> outer) {
+                return new StableMapValues<>(outer);
+            }
+
         }
 
         @Override

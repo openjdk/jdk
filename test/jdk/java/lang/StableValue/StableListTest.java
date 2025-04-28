@@ -35,7 +35,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -46,7 +45,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -242,18 +243,8 @@ final class StableListTest {
         assertEquals(eq.toString(), lazy.toString());
     }
 
-    @Test
-    void subListToString() {
-        subListToString0(newList());
-        subListToString0(newList().subList(1, SIZE));
-        subListToString0(newList().subList(1, SIZE).subList(0, SIZE - 2));
-    }
-
-    void subListToString0(List<Integer> subList) {
+    void assertUnevaluated(List<Integer> subList) {
         assertEquals(asString(".unset", subList), subList.toString());
-
-        var first = subList.getFirst();
-        assertEquals(asString(first.toString(), subList), subList.toString());
     }
 
     @Test
@@ -271,18 +262,30 @@ final class StableListTest {
         assertEquals("java.util.ImmutableCollections$StableList", reversed2.getClass().getName());
     }
 
+    // This test makes sure successive view operations retains the property
+    // of being a Stable view.
     @Test
-    void reversedToString() {
-        var reversed = newList().reversed();
-        subListToString0(reversed);
-    }
-
-    @Test
-    void subListReversedToString() {
-        var list = newList().subList(1, SIZE - 1).reversed();
-        // This combination is not lazy. There has to be a limit somewhere.
-        var regularList = newRegularList().subList(1, SIZE - 1).reversed();
-        assertEquals(regularList.toString(), list.toString());
+    void viewsStable() {
+        viewOperations().forEach(op0 -> {
+            viewOperations().forEach( op1 -> {
+                viewOperations().forEach(op2 -> {
+                    var list = newList();
+                    var view1 = op0.apply(list);
+                    var view2 = op1.apply(view1);
+                    var view3 = op2.apply(view2);
+                    var className3 = className(view3);
+                    var transitions = className(list) + ", " +
+                            op0 + " -> " + className(view1) + ", " +
+                            op1 + " -> " + className(view2) + ", " +
+                            op2 + " -> " + className3;
+                    assertTrue(className3.contains("Stable"), transitions);
+                    assertUnevaluated(list);
+                    assertUnevaluated(view1);
+                    assertUnevaluated(view2);
+                    assertUnevaluated(view3);
+                });
+            });
+        });
     }
 
     @Test
@@ -362,12 +365,76 @@ final class StableListTest {
         assertEquals(SIZE, idMap.size());
     }
 
+    @Test
+    void childObjectOpsLazy() {
+        viewOperations().forEach(op0 -> {
+            viewOperations().forEach(op1 -> {
+                viewOperations().forEach(op2 -> {
+                    childOperations().forEach(co -> {
+                        var list = newList();
+                        var view1 = op0.apply(list);
+                        var view2 = op1.apply(view1);
+                        var view3 = op2.apply(view2);
+                        var child = co.apply(view3);
+                        var childClassName = className(child);
+                        var transitions = className(list) + ", " +
+                                op0 + " -> " + className(view1) + ", " +
+                                op1 + " -> " + className(view2) + ", " +
+                                op2 + " -> " + className(view3) + ", " +
+                                co + " -> " + childClassName;
+
+                        // None of these operations should trigger evaluation
+                        var childToString = child.toString();
+                        int childHashCode = child.hashCode();
+                        boolean childEqualToNewObj = child.equals(new Object());
+
+                        assertUnevaluated(list);
+                        assertUnevaluated(view1);
+                        assertUnevaluated(view2);
+                        assertUnevaluated(view3);
+                    });
+                });
+            });
+        });
+        fail();
+    }
+
     // Support constructs
 
     record Operation(String name,
                      Consumer<List<Integer>> consumer) implements Consumer<List<Integer>> {
         @Override public void   accept(List<Integer> list) { consumer.accept(list); }
         @Override public String toString() { return name; }
+    }
+
+    record UnaryOperation(String name,
+                     UnaryOperator<List<Integer>> operator) implements UnaryOperator<List<Integer>> {
+        @Override public List<Integer> apply(List<Integer> list) { return operator.apply(list); }
+        @Override public String toString() { return name; }
+    }
+
+    record ListFunction(String name,
+                        Function<List<Integer>, Object> function) implements Function<List<Integer>, Object> {
+        @Override public Object apply(List<Integer> list) { return function.apply(list); }
+        @Override public String toString() { return name; }
+    }
+
+    static Stream<UnaryOperation> viewOperations() {
+        return Stream.of(
+                // We need identity to capture all combinations
+                new UnaryOperation("identity", l -> l),
+                new UnaryOperation("reversed", List::reversed),
+                new UnaryOperation("subList", l -> l.subList(0, l.size()))
+        );
+    }
+
+    static Stream<ListFunction> childOperations() {
+        return Stream.of(
+                // We need identity to capture all combinations
+                new ListFunction("iterator", List::iterator),
+                new ListFunction("listIterator", List::listIterator),
+                new ListFunction("listIterator", List::stream)
+        );
     }
 
     static Stream<Operation> nullAverseOperations() {
@@ -433,4 +500,7 @@ final class StableListTest {
                 .collect(Collectors.joining(", ")) + "]";
     }
 
+    static String className(Object o) {
+        return o.getClass().getName();
+    }
 }
