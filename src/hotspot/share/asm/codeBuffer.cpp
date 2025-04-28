@@ -92,7 +92,7 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
   // Provide code buffer with meaningful name
   initialize_misc(blob->name());
   initialize(blob->content_begin(), blob->content_size());
-  debug_only(verify_section_allocation();)
+  DEBUG_ONLY(verify_section_allocation();)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
@@ -120,7 +120,7 @@ void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
     _insts.initialize_locs(locs_size / sizeof(relocInfo));
   }
 
-  debug_only(verify_section_allocation();)
+  DEBUG_ONLY(verify_section_allocation();)
 }
 
 
@@ -494,7 +494,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
       prev_cs      = cs;
     }
 
-    debug_only(dest_cs->_start = nullptr);  // defeat double-initialization assert
+    DEBUG_ONLY(dest_cs->_start = nullptr);  // defeat double-initialization assert
     dest_cs->initialize(buf+buf_offset, csize);
     dest_cs->set_end(buf+buf_offset+csize);
     assert(dest_cs->is_allocated(), "must always be allocated");
@@ -505,7 +505,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
 
   // Done calculating sections; did it come out to the right end?
   assert(buf_offset == total_content_size(), "sanity");
-  debug_only(dest->verify_section_allocation();)
+  DEBUG_ONLY(dest->verify_section_allocation();)
 }
 
 // Append an oop reference that keeps the class alive.
@@ -939,11 +939,11 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   cb.set_blob(nullptr);
 
   // Zap the old code buffer contents, to avoid mistakenly using them.
-  debug_only(Copy::fill_to_bytes(bxp->_total_start, bxp->_total_size,
+  DEBUG_ONLY(Copy::fill_to_bytes(bxp->_total_start, bxp->_total_size,
                                  badCodeHeapFreeVal);)
 
   // Make certain that the new sections are all snugly inside the new blob.
-  debug_only(verify_section_allocation();)
+  DEBUG_ONLY(verify_section_allocation();)
 
 #ifndef PRODUCT
   _decode_begin = nullptr;  // sanity
