@@ -251,8 +251,6 @@ public final class MonitorVmStartTerminate {
         }
 
         private static void waitForRemoval(Path path) {
-            String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
-            double timeoutFactor = Double.parseDouble(timeoutFactorText);
             long start = System.nanoTime();
             System.out.println("Waiting for " + path + " to be removed");
             while (true) {
