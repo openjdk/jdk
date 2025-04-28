@@ -38,6 +38,23 @@
 #define MAXTHREADNAMESIZE 256
 #endif
 
+// see MemTracker::NmtVirtualMemoryLocker
+class NMTRecorder_Locker: StackObj {
+  static bool _safe_to_use;
+  ConditionalMutexLocker _cml;
+public:
+  NMTRecorder_Locker(): _cml(NMTRecorder_lock, _safe_to_use, Mutex::_no_safepoint_check_flag) {
+  }
+  ~NMTRecorder_Locker() {
+  }
+  static inline bool is_safe_to_use() {
+    return _safe_to_use;
+  }
+  static inline void set_safe_to_use() {
+    _safe_to_use = true;
+  }
+};
+
 class NMT_LogRecorder : public StackObj {
 protected:
   long int _limit  = 0;
