@@ -1695,13 +1695,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // Handle copies less than 8 bytes.
     Label L_fill_2, L_fill_4, L_exit2;
-    __ bind(L_fill_elements);
 
+    __ bind(L_fill_elements);
     __ beqz(count, L_exit2);
     __ sb(value, Address(to, 0));
     __ addi(to, to, 1);
     __ subiw(count, count, 1);
-    __ bind(L_fill_elements);
+    __ j(L_fill_elements);
 
     __ bind(L_exit2);
   }
