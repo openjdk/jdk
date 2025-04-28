@@ -43,8 +43,7 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) {
 
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   assert(method != nullptr, "Should be");
-  InstanceKlass* ik = method->method_holder();
-  oop klass_holder = ik->klass_holder();
+  oop klass_holder = method->method_holder()->klass_holder();
   if (klass_holder != nullptr) {
     // Normal class, return the holder that would block unloading.
     // This would be either classloader oop for non-hidden classes,
