@@ -10,12 +10,12 @@
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI
- *      WaitForRefProTest
+ *      WaitForRefProcTest
  */
 
 import jdk.test.whitebox.WhiteBox;
 
-public class WaitForRefProTest {
+public class WaitForRefProcTest {
 
     public static void main(String[] args) {
         WhiteBox.getWhiteBox().fullGC();
