@@ -353,7 +353,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     young_gen->eden_space()->accumulate_statistics();
   }
 
-  heap->print_heap_before_gc();
+  heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
   assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
@@ -588,7 +588,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     Universe::verify("After GC");
   }
 
-  heap->print_heap_after_gc();
+  heap->print_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());

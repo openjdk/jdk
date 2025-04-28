@@ -52,7 +52,8 @@ public class EventsTest {
         // Those are always printed even if the corresponding event log is empty.
         output.stdoutShouldMatch(buildHeaderPattern("Events"));
         output.stdoutShouldMatch(buildHeaderPattern("Compilation"));
-        output.stdoutShouldMatch(buildHeaderPattern("GC Heap History"));
+        output.stdoutShouldMatch(buildHeaderPattern("Metaspace Usage History"));
+        output.stdoutShouldMatch(buildHeaderPattern("GC Heap Usage History"));
         output.stdoutShouldMatch(buildHeaderPattern("Deoptimization"));
         output.stdoutShouldMatch(buildHeaderPattern("Classes unloaded"));
     }
@@ -64,7 +65,8 @@ public class EventsTest {
 
         output.stdoutShouldNotMatch(buildHeaderPattern("Events"));
         output.stdoutShouldNotMatch(buildHeaderPattern("Compilation"));
-        output.stdoutShouldNotMatch(buildHeaderPattern("GC Heap History"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("Metaspace Usage History"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("GC Heap Usage History"));
         output.stdoutShouldNotMatch(buildHeaderPattern("Classes unloaded"));
     }
 

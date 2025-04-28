@@ -404,7 +404,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   GCTraceTime(Info, gc) t("Pause Young", nullptr, gc_cause(), true);
   TraceCollectorStats tcs(_young_gen->counters());
   TraceMemoryManagerStats tmms(_young_gen->gc_manager(), gc_cause(), "end of minor GC");
-  print_heap_before_gc();
+  print_before_gc();
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
 
   increment_total_collections(false);
@@ -440,7 +440,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
 
   gc_epilogue(false);
 
-  print_heap_after_gc();
+  print_after_gc();
 
   return result;
 }
@@ -636,7 +636,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   TraceCollectorStats tcs(_old_gen->counters());
   TraceMemoryManagerStats tmms(_old_gen->gc_manager(), gc_cause(), "end of major GC");
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
-  print_heap_before_gc();
+  print_before_gc();
 
   increment_total_collections(true);
   const bool should_verify = total_collections() >= VerifyGCStartAt;
@@ -696,7 +696,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   // the initial value for "complete" flag.
   gc_epilogue(true);
 
-  print_heap_after_gc();
+  print_after_gc();
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");

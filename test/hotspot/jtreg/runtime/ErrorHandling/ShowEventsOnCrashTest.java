@@ -60,7 +60,8 @@ public class ShowEventsOnCrashTest {
         // Pattern match the hs_err_pid file.
         Pattern[] patterns = new Pattern[] {
             Pattern.compile("Compilation events \\([0-9]* events\\):"),
-            Pattern.compile("GC Heap History \\([0-9]* events\\):"),
+            Pattern.compile("Metaspace Usage History \\([0-9]* events\\):"),
+            Pattern.compile("GC Heap Usage History \\([0-9]* events\\):"),
             Pattern.compile("Dll operation events \\([0-9]* events\\):"),
             Pattern.compile("Deoptimization events \\([0-9]* events\\):"),
             Pattern.compile("Classes loaded \\([0-9]* events\\):"),
