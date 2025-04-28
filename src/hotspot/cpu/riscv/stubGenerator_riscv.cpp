@@ -1694,7 +1694,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Handle copies less than 8 bytes.
-    Label L_fill_2, L_fill_4, L_exit2;
+    Label L_exit2;
 
     __ bind(L_fill_elements);
     __ beqz(count, L_exit2);
