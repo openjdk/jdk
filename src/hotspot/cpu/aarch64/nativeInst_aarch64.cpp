@@ -359,6 +359,13 @@ bool NativeInstruction::is_stop() {
 
 //-------------------------------------------------------------------
 
+void NativeJump::insert(address code_pos, address entry) {
+  CodeBuffer cb(code_pos, instruction_size);
+  MacroAssembler a(&cb);
+
+  a.b(entry);
+}
+
 // MT-safe inserting of a jump over a jump or a nop (used by
 // nmethod::make_not_entrant)
 

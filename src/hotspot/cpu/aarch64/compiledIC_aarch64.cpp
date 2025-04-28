@@ -23,11 +23,12 @@
  *
  */
 
-#include "asm/macroAssembler.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "nativeInst_aarch64.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -90,13 +91,19 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
 
 #ifdef ASSERT
-  NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
+  NativeJump* jump = MacroAssembler::codestub_branch_needs_far_jump()
+                         ? nativeGeneralJump_at(method_holder->next_instruction_address())
+                         : nativeJump_at(method_holder->next_instruction_address());
   verify_mt_safe(callee, entry, method_holder, jump);
 #endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
-  NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
+  if (MacroAssembler::codestub_branch_needs_far_jump()) {
+    NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
+  } else {
+    NativeJump::insert(method_holder->next_instruction_address(), entry);
+  }
   ICache::invalidate_range(stub, to_interp_stub_size());
   // Update jump to call.
   set_destination_mt_safe(stub);
