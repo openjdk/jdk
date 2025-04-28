@@ -329,8 +329,6 @@ static bool is_excluded(Klass* k) {
     if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
       log_debug(cds)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
-    } else if (CDSConfig::is_dumping_dynamic_archive() && k->is_shared()) {
-      return false;
     } else {
       bool excluded = SystemDictionaryShared::should_be_excluded(k);
       if (excluded) {

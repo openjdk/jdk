@@ -649,6 +649,11 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
+    if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+      // ik is already part of the static archive, so it will never be considered as excluded.
+      return false;
+    }
+
     if (!SafepointSynchronize::is_at_safepoint()) {
       if (!ik->is_linked()) {
         // check_for_exclusion() below doesn't link unlinked classes. We come
