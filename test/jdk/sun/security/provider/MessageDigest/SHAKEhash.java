@@ -40,9 +40,9 @@ public class SHAKEhash {
     public static void main(String[] args) throws Exception {
         var random = SeededSecureRandom.one();
         var s1 = new SHA3.SHAKE128();
-        var m1 = MessageDigest.getInstance("SHAKE128-256");
+        var m1 = MessageDigest.getInstance("SHAKE128-256"); // use standard name
         var s2 = new SHA3.SHAKE256();
-        var m2 = MessageDigest.getInstance("SHAKE256-512");
+        var m2 = MessageDigest.getInstance("SHAKE256"); // use alias
         for (var i = 0; i < 1_000_000; i++) {
             var msg = random.nBytes(random.nextInt(100));
             s1.update(msg);
