@@ -12192,25 +12192,6 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (MaxI src1 src2));
-  ins_cost(DEFAULT_COST*6);
-
-  expand %{
-    iRegLdst src1s;
-    iRegLdst src2s;
-    iRegLdst diff;
-    iRegLdst sm;
-    iRegLdst doz; // difference or zero
-    convI2L_reg(src1s, src1); // Ensure proper sign extension.
-    convI2L_reg(src2s, src2); // Ensure proper sign extension.
-    subL_reg_reg(diff, src2s, src1s);
-    // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64L_regL(sm, diff);
-    andcL_reg_reg(doz, diff, sm); // >=0
-    addI_regL_regL(dst, doz, src1s);
-  %}
-%}
 
 instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MaxI src1 src2));
