@@ -373,7 +373,7 @@ public class LinkedBlockingDeque<E>
         if (e == null) throw new NullPointerException();
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             while (count >= capacity)
                 notFull.await();
@@ -391,7 +391,7 @@ public class LinkedBlockingDeque<E>
         if (e == null) throw new NullPointerException();
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             while (count >= capacity)
                 notFull.await();
@@ -491,7 +491,7 @@ public class LinkedBlockingDeque<E>
 
     public E takeFirst() throws InterruptedException {
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             E x;
             while ( (x = unlinkFirst()) == null)
@@ -504,7 +504,7 @@ public class LinkedBlockingDeque<E>
 
     public E takeLast() throws InterruptedException {
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             E x;
             while ( (x = unlinkLast()) == null)

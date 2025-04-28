@@ -43,8 +43,10 @@ import java.util.Queue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import junit.framework.Test;
@@ -1886,4 +1888,60 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         }
     }
 
+    public void testInterruptedExceptionThrownInBlockingMethods() throws InterruptedException {
+        // Ensure that putFirst(), putLast(), takeFirst(), and takeLast()
+        // immediately throw an InterruptedException if the thread is
+        // interrupted, to be consistent with other blocking queues such as
+        // ArrayBlockingQueue and LinkedBlockingQueue
+        try (var pool = Executors.newSingleThreadExecutor()) {
+            Future<Void> success = pool.submit(() -> {
+                var queue = new LinkedBlockingDeque<>();
+                Thread.currentThread().interrupt();
+                try {
+                    queue.putFirst(42);
+                    fail("Expected InterruptedException in putFirst()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                }
+
+                Thread.currentThread().interrupt();
+                try {
+                    queue.putLast(42);
+                    fail("Expected InterruptedException in putLast()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                }
+
+                queue.add(42);
+                Thread.currentThread().interrupt();
+                try {
+                    queue.takeFirst();
+                    fail("Expected InterruptedException in takeFirst()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                }
+
+                queue.add(42);
+                Thread.currentThread().interrupt();
+                try {
+                    queue.takeLast();
+                    fail("Expected InterruptedException in takeLast()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                }
+                return null;
+            });
+            try {
+                success.get();
+            } catch (ExecutionException e) {
+                try {
+                    throw e.getCause();
+                } catch (Error | RuntimeException unchecked) {
+                    throw unchecked;
+                } catch (Throwable cause) {
+                    throw new AssertionError(cause);
+                }
+            }
+        }
+    }
 }
