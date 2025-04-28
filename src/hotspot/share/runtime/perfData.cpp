@@ -416,33 +416,30 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
  * specified property matches
  */
 void PerfDataManager::assert_system_property(const char* name, const char* value, TRAPS) {
-  #ifdef ASSERT
-    ResourceMark rm(THREAD);
+#ifdef ASSERT
+  ResourceMark rm(THREAD);
 
-    // setup the arguments to getProperty
-    Handle key_str   = java_lang_String::create_from_str(name, CHECK);
+  // setup the arguments to getProperty
+  Handle key_str   = java_lang_String::create_from_str(name, CHECK);
 
-    // return value
-    JavaValue result(T_OBJECT);
+  // return value
+  JavaValue result(T_OBJECT);
 
-    // public static String getProperty(String key, String def);
-    JavaCalls::call_static(&result,
-                           vmClasses::System_klass(),
-                           vmSymbols::getProperty_name(),
-                           vmSymbols::string_string_signature(),
-                           key_str,
-                           CHECK);
+  // public static String getProperty(String key, String def);
+  JavaCalls::call_static(&result, vmClasses::System_klass(),
+                         vmSymbols::getProperty_name(),
+                         vmSymbols::string_string_signature(), key_str, CHECK);
 
-    oop value_oop = result.get_oop();
-    assert(value_oop != nullptr, "property must have a value");
+  oop value_oop = result.get_oop();
+  assert(value_oop != nullptr, "property must have a value");
 
-    // convert Java String to utf8 string
-    char* system_value = java_lang_String::as_utf8_string(value_oop);
+  // convert Java String to utf8 string
+  char *system_value = java_lang_String::as_utf8_string(value_oop);
 
-    assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty. Our value is: %s, System.getProperty is: %s",
-           value, system_value);
-  #endif // ASSERT
-  }
+  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty. Our value is: %s, System.getProperty is: %s",
+         value, system_value);
+#endif // ASSERT
+}
 
 /*
  * Adds a constant counter of the given property. Asserts the value does not
@@ -452,10 +449,9 @@ void PerfDataManager::add_property_constant(CounterNS name_space, const char* na
   // the property must exist
   assert(value != nullptr, "property name should be have a value: %s", name);
   assert_system_property(name, value, CHECK);
-  if (value != nullptr) {
-    // create the property counter
-    PerfDataManager::create_string_constant(name_space, name, value, CHECK);
-  }
+
+  // create the property counter
+  PerfDataManager::create_string_constant(name_space, name, value, CHECK);
 }
 
 /*

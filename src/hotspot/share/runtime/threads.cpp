@@ -849,7 +849,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // INCLUDE_MANAGEMENT
 
-  PerfDataManager::create_misc_perfdata();
+  if (UsePerfData)         PerfDataManager::create_misc_perfdata();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   call_postVMInitHook(THREAD);
