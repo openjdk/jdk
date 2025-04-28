@@ -107,7 +107,7 @@ public class StringBuilderRepeat {
 
         String expected = "repeat233333233333-2-3-3-3-3-3\u2461\u2462\u2462\u2462\u2462\u2462\u2461\u2462\u2462\u2462\u2462\u2462-\u2461-\u2462-\u2462-\u2462-\u2462-\u2462abcabcabc" +
                           "nullnullnullnullnullnullnullnullnullnullnullnull";
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
 
         // Codepoints
 
@@ -127,7 +127,7 @@ public class StringBuilderRepeat {
         sb.repeat(0x10FFFF, 5);
 
         expected = "\u0000\u0000\u0000\u0000\u0000\u0000\u0020\u0020\u0020\u0020\u0020\u0020\u2461\u2462\u2462\u2462\u2462\u2462\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff";
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
 
     }
 

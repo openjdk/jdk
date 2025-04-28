@@ -54,6 +54,10 @@ public class CompactStringBuilder {
         check(new StringBuilder(ORIGIN).append(new StringBuffer("\uFF21")),
                 "A\uFF21");
         check(new StringBuilder(ORIGIN).append("\uFF21"), "A\uFF21");
+        check(new StringBuilder(ORIGIN).append(new char[] { 'a', 'b', 'c'}),
+                "Aabc");
+        check(new StringBuilder(ORIGIN).append(new char[] { 'a', 'b', 'c'}, 1, 2),
+                "Abc");
         check(new StringBuilder(ORIGIN).append(new StringBuffer("\uFF21")),
                 "A\uFF21");
         check(new StringBuilder(ORIGIN).delete(0, 1), "");

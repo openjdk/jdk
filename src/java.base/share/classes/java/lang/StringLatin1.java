@@ -54,6 +54,10 @@ final class StringLatin1 {
         return cp >=0 && cp <= 0xff;
     }
 
+    public static byte coderFromChar(char cp) {
+        return (byte)((0xff - cp) >>> Integer.SIZE - 1);
+    }
+
     public static int length(byte[] value) {
         return value.length;
     }
@@ -740,10 +744,6 @@ final class StringLatin1 {
         }
         return new String(Arrays.copyOfRange(val, index, index + len),
                           LATIN1);
-    }
-
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index, end, (byte)0);
     }
 
     // inflatedCopy byte[] -> char[]

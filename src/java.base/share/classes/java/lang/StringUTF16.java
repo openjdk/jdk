@@ -1331,10 +1331,6 @@ final class StringUTF16 {
         return new String(Arrays.copyOfRange(val, index << 1, last << 1), UTF16);
     }
 
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index << 1, end << 1, (byte)0);
-    }
-
     static class CharsSpliterator implements Spliterator.OfInt {
         private final byte[] array;
         private int index;        // current index, modified on advance/split
