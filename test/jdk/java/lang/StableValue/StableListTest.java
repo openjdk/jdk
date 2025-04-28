@@ -396,7 +396,6 @@ final class StableListTest {
                 });
             });
         });
-        fail();
     }
 
     // Support constructs
