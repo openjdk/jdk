@@ -91,11 +91,29 @@ void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope
 //
 void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
-  for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
-    if (nm == b->get_nmethod()) {
-      return;
-    }
+  assert(nm->is_not_installed(), "Precondition");
+
+  // This method tries to add never before seen nmethod, possibly repeatedly,
+  // but holding the CodeCache_lock until all dependencies are added.
+  //
+  // This means the buckets list is guaranteed to be in either of two states:
+  //   1. The nmethod is not in the list, and can be added to the head.
+  //   2. The nmethod was already added, and thus it sits at the head of the list.
+  //
+  // This allows us not to re-scan the list. Walking the list is expensive
+  // when there are lots of dependencies.
+
+  nmethodBucket* head = dependencies();
+  if (head != nullptr && nm == head->get_nmethod()) {
+    return;
   }
+
+#ifdef ASSERT
+  for (nmethodBucket* b = dependencies(); b != nullptr; b = b->next()) {
+    assert(nm != b->get_nmethod(), "Should not be in the list yet");
+  }
+#endif
+
   nmethodBucket* new_head = new nmethodBucket(nm, nullptr);
   for (;;) {
     nmethodBucket* head = Atomic::load(_dependency_context_addr);
