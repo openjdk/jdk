@@ -338,10 +338,10 @@ public enum AccessFlag {
     }
 
     /**
-     * {@return kinds of constructs the flag can be applied to in the
+     * {@return kinds of constructs this flag can be applied to in the
      * current class file format version}
      * <p>
-     * This method may return an empty set if the flag is not defined in
+     * This method returns an empty set if this flag is not defined in
      * the current class file format version.
      */
     public Set<Location> locations() {
@@ -349,10 +349,10 @@ public enum AccessFlag {
     }
 
     /**
-     * {@return kinds of constructs the flag can be applied to in the
+     * {@return kinds of constructs this flag can be applied to in the
      * given class file format version}
      * <p>
-     * This method may return an empty set if the flag is not defined in
+     * This method returns an empty set if this flag is not defined in
      * the given {@code cffv}.
      *
      * @param cffv the class file format version to use
@@ -614,10 +614,10 @@ public enum AccessFlag {
         }
 
         /**
-         * {@return the union of integer masks of all access flags defined for
+         * {@return the union of masks of all access flags defined for
          * this location in the current class file format version}
          * <p>
-         * This method may return {@code 0} if the structure does not exist in
+         * This method returns {@code 0} if this location does not exist in
          * the current class file format version.
          *
          * @since 25
@@ -627,10 +627,10 @@ public enum AccessFlag {
         }
 
         /**
-         * {@return the union of integer masks of all access flags defined for
+         * {@return the union of masks of all access flags defined for
          * this location in the given class file format version}
          * <p>
-         * This method may return {@code 0} if the structure does not exist in
+         * This method returns {@code 0} if this location does not exist in
          * the given {@code cffv}.
          *
          * @param cffv the class file format version
@@ -642,10 +642,10 @@ public enum AccessFlag {
         }
 
         /**
-         * {@return all access flags defined for this location, as a set of
-         * flag enums, in the current class file format version}
+         * {@return the set of access flags defined for this location in the
+         * current class file format version}  The set is immutable.
          * <p>
-         * This method may return an empty set if the structure does not exist
+         * This method returns an empty set if this location does not exist
          * in the current class file format version.
          *
          * @since 25
@@ -655,10 +655,10 @@ public enum AccessFlag {
         }
 
         /**
-         * {@return all access flags defined for this location, as a set of flag
-         * enums, in the given class file format version}
+         * {@return the set of access flags defined for this location in the
+         * given class file format version}  The set is immutable.
          * <p>
-         * This method may return an empty set if the structure does not exist
+         * This method returns an empty set if this location does not exist
          * in the given {@code cffv}.
          *
          * @param cffv the class file format version
