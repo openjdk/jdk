@@ -78,7 +78,7 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
   assert(prefix_limit >= p, "must be a valid span of data");
   int plen = checked_cast<int>(prefix_limit - p);
   if (plen == 0) {
-    debug_only(_value = 0xFFFF);
+    DEBUG_ONLY(_value = 0xFFFF);
     return this;                         // no data: remove self completely
   }
   if (plen == 1 && fits_into_immediate(p[0])) {
@@ -342,7 +342,7 @@ address Relocation::old_addr_for(address newa,
 
 address Relocation::new_addr_for(address olda,
                                  const CodeBuffer* src, CodeBuffer* dest) {
-  debug_only(const CodeBuffer* src0 = src);
+  DEBUG_ONLY(const CodeBuffer* src0 = src);
   int sect = CodeBuffer::SECT_NONE;
   // Look for olda in the source buffer, and all previous incarnations
   // if the source buffer has been expanded.
