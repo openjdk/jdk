@@ -54,11 +54,13 @@ final class XRootWindow extends XBaseWindow {
                                                      EVENT_MASK, XConstants.StructureNotifyMask }));
     }
 
+    @Override
     public void postInit(XCreateWindowParams params){
         super.postInit(params);
         setWMClass(getWMClass());
     }
 
+    @Override
     protected String getWMName() {
         return XToolkit.getAWTAppClassName();
     }

@@ -58,6 +58,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
         XScrollPaneContentWindow(ScrollPane target, long parentWindow) {
             super(target, parentWindow);
         }
+        @Override
         public String getWMName() {
             return "ScrollPane content";
         }
@@ -108,11 +109,13 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
 
     }
 
+    @Override
     public long getContentWindow()
     {
         return (clip == null) ? window : clip.getWindow();
     }
 
+    @Override
     public void setBounds(int x, int y, int w, int h, int op) {
         super.setBounds(x, y, w, h, op);
 
@@ -122,18 +125,22 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
         repaint();
     }
 
+    @Override
     public Insets getInsets() {
         return new Insets(MARGIN, MARGIN, MARGIN+hsbSpace, MARGIN+vsbSpace);
     }
 
+    @Override
     public int getHScrollbarHeight() {
         return SCROLLBAR;
     }
 
+    @Override
     public int getVScrollbarWidth() {
         return SCROLLBAR;
     }
 
+    @Override
     public void childResized(int w, int h) {
         if (setScrollbarSpace()) {
             setViewportSize();
@@ -241,6 +248,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
                 height - (2*MARGIN) - hsbSpace);
     }
 
+    @Override
     public void setUnitIncrement(Adjustable adj, int u) {
         if (adj.getOrientation() == Adjustable.VERTICAL) {
             vsb.setUnitIncrement(u);
@@ -250,6 +258,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
         }
     }
 
+    @Override
     public void setValue(Adjustable adj, int v) {
         if (adj.getOrientation() == Adjustable.VERTICAL) {
             scroll(-1, v, VERTICAL);
@@ -259,6 +268,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
         }
     }
 
+    @Override
     public void setScrollPosition(int x, int y) {
         scroll(x, y, VERTICAL | HORIZONTAL);
     }
@@ -361,6 +371,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
             }
         }
     }
+    @Override
     public void repaintScrollbarRequest(XScrollbar sb) {
         Graphics g = getGraphics();
         Color[] colors = getGUIcolors();
@@ -376,6 +387,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
             }
         }
     }
+    @Override
     public void handleEvent(java.awt.AWTEvent e) {
         super.handleEvent(e);
 
@@ -467,6 +479,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
      * MouseEvent.MOUSE_EXITED
      * MouseEvent.MOUSE_DRAGGED
      */
+    @Override
     @SuppressWarnings("deprecation")
     public void handleJavaMouseEvent( MouseEvent mouseEvent ) {
         super.handleJavaMouseEvent(mouseEvent);
@@ -522,6 +535,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
     /**
      * return value from the scrollbar
      */
+    @Override
     public void notifyValue(XScrollbar obj, int type, int v, boolean isAdjusting) {
         if (obj == vsb) {
             scroll(-1, v, VERTICAL, type);
@@ -572,6 +586,7 @@ final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XS
      * ToDo(aim): needs to query native motif for more accurate size and
      * color information.
      */
+    @Override
     @SuppressWarnings("deprecation")
     public void print(Graphics g) {
         ScrollPane sp = (ScrollPane)target;

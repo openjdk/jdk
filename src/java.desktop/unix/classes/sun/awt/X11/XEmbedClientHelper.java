@@ -164,6 +164,7 @@ public final class XEmbedClientHelper extends XEmbedHelper implements XEventDisp
         }
     }
 
+    @Override
     public void dispatchEvent(XEvent xev) {
         switch(xev.get_type()) {
           case XConstants.ClientMessage:

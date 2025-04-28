@@ -74,6 +74,7 @@ public final class XCustomCursor extends X11CustomCursor {
         return d;
     }
 
+    @Override
     protected void createCursor(byte[] xorMask, byte[] andMask,
                                 int width, int height,
                                 int fcolor, int bcolor,

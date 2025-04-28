@@ -314,6 +314,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return aData;
     }
 
+    @Override
     public String toString() {
         return ("X11GraphicsConfig[dev="+device+
                 ",vis=0x"+Integer.toHexString(visual)+

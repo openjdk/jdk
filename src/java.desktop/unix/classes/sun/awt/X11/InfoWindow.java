@@ -78,6 +78,7 @@ public abstract class InfoWindow extends Window {
         closer = new Closer();
     }
 
+    @Override
     public Component add(Component c) {
         container.add(c, BorderLayout.CENTER);
         return c;
@@ -114,6 +115,7 @@ public abstract class InfoWindow extends Window {
         closer.schedule();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void hide() {
         closer.close();
@@ -123,6 +125,7 @@ public abstract class InfoWindow extends Window {
         Runnable action;
         int time;
 
+        @Override
         public void run() {
             doClose();
         }
@@ -422,6 +425,7 @@ public abstract class InfoWindow extends Window {
                 });
         }
 
+        @Override
         public void dispose() {
             displayer.thread.interrupt();
             super.dispose();
@@ -452,6 +456,7 @@ public abstract class InfoWindow extends Window {
         }
         @SuppressWarnings("deprecation")
         private final class ActionPerformer extends MouseAdapter {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 // hide the balloon by any click
                 hide();

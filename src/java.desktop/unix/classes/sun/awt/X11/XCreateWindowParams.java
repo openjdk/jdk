@@ -78,6 +78,7 @@ public final class XCreateWindowParams extends HashMap<Object, Object> {
         remove(key);
         return this;
     }
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         for (Entry<Object, Object> entry : entrySet()) {

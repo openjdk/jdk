@@ -120,6 +120,7 @@ public final class XEmbeddingContainer extends XEmbedHelper implements XEventDis
             }
         }
     }
+    @Override
     public void dispatchEvent(XEvent xev) {
         switch(xev.get_type()) {
           case XConstants.ClientMessage:

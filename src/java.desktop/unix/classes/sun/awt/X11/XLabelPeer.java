@@ -49,6 +49,7 @@ final class XLabelPeer extends XComponentPeer implements LabelPeer {
 
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         Label target = (Label) this.target;
@@ -66,6 +67,7 @@ final class XLabelPeer extends XComponentPeer implements LabelPeer {
     /**
      * Minimum size.
      */
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics();
         int w;

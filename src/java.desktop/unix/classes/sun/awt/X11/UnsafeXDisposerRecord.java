@@ -55,6 +55,7 @@ final class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
         }
     }
 
+    @Override
     public void dispose() {
         XToolkit.awtLock();
         try {

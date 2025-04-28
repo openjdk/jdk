@@ -34,6 +34,7 @@ final class XInputMethodDescriptor extends X11InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#createInputMethod
      */
+    @Override
     public InputMethod createInputMethod() throws Exception {
         return new XInputMethod();
     }

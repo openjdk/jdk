@@ -70,6 +70,7 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
         }
     }
 
+    @Override
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
         if (shouldDisableSystemTray) {
             return;
@@ -87,6 +88,7 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
         createTrayPeers();
     }
 
+    @Override
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
         if (shouldDisableSystemTray) {
             return;
@@ -102,9 +104,11 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
         }
     }
 
+    @Override
     public void selectionChanged(int screen, XMSelection sel, long owner, XPropertyEvent event) {
     }
 
+    @Override
     public Dimension getTrayIconSize() {
         return new Dimension(XTrayIconPeer.TRAY_ICON_HEIGHT, XTrayIconPeer.TRAY_ICON_WIDTH);
     }

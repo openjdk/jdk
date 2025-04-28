@@ -1235,6 +1235,7 @@ public class XBaseWindow {
         }
         return (XWindowPeer)bw;
     }
+    @Override
     public String toString() {
         return super.toString() + "(" + Long.toString(getWindow(), 16) + ")";
     }

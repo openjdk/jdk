@@ -60,6 +60,7 @@ public final class XIconWindow extends XBaseWindow {
             DELAYED, Boolean.TRUE}));
     }
 
+    @Override
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
         this.parent = (XDecoratedPeer)params.get(PARENT);

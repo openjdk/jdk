@@ -37,6 +37,7 @@ final class XHorizontalScrollbar extends XScrollbar {
         super(ALIGNMENT_HORIZONTAL, sb);
     }
 
+    @Override
     public void setSize(int width, int height) {
         super.setSize(width, height);
         this.barWidth = height;
@@ -44,16 +45,19 @@ final class XHorizontalScrollbar extends XScrollbar {
         calculateArrowWidth();
         rebuildArrows();
     }
+    @Override
     protected void rebuildArrows() {
         firstArrow = createArrowShape(false, true);
         secondArrow = createArrowShape(false, false);
     }
 
+    @Override
     boolean beforeThumb(int x, int y) {
         Rectangle pos = calculateThumbRect();
         return (x < pos.x);
     }
 
+    @Override
     protected Rectangle getThumbArea() {
         return new Rectangle(getArrowAreaWidth(), 2, width - 2*getArrowAreaWidth(), height-4);
     }

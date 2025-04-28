@@ -647,6 +647,7 @@ public final class XEmbedServerTester implements XEventDispatcher {
         xembed.sendMessage(parent, message, detail, data1, data2);
     }
 
+    @Override
     public void dispatchEvent(XEvent ev) {
         if (ev.get_type() == ClientMessage) {
             XClientMessageEvent msg = ev.get_xclient();

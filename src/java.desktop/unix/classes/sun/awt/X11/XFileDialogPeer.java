@@ -313,9 +313,11 @@ final class XFileDialogPeer extends XDialogPeer
 
     }
 
+    @Override
     public void updateMinimumSize() {
     }
 
+    @Override
     public void updateIconImages() {
         if (winAttr.icons == null){
             winAttr.iconsInherited = false;
@@ -544,6 +546,7 @@ final class XFileDialogPeer extends XDialogPeer
      * @see java.awt.event.ItemEvent
      * ItemEvent.ITEM_STATE_CHANGED
      */
+    @Override
     public void itemStateChanged(ItemEvent itemEvent){
         if (itemEvent.getID() != ItemEvent.ITEM_STATE_CHANGED ||
             itemEvent.getStateChange() == ItemEvent.DESELECTED) {
@@ -603,6 +606,7 @@ final class XFileDialogPeer extends XDialogPeer
         return parent;
     }
 
+    @Override
     public void actionPerformed( ActionEvent actionEvent ) {
         String actionCommand = actionEvent.getActionCommand();
         Object source = actionEvent.getSource();
@@ -639,6 +643,7 @@ final class XFileDialogPeer extends XDialogPeer
         }
     }
 
+    @Override
     public boolean dispatchKeyEvent(KeyEvent keyEvent) {
         int id = keyEvent.getID();
         int keyCode = keyEvent.getKeyCode();
@@ -673,6 +678,7 @@ final class XFileDialogPeer extends XDialogPeer
     /**
      * set the file
      */
+    @Override
     public void setFile(String file) {
 
         if (file == null) {
@@ -706,6 +712,7 @@ final class XFileDialogPeer extends XDialogPeer
      * since 'setDirectory' will be ignored
      * We can't update savedDir here now since it used very often
      */
+    @Override
     public void setDirectory(String dir) {
 
         if (dir == null) {
@@ -763,11 +770,13 @@ final class XFileDialogPeer extends XDialogPeer
      * set filenameFilter
      *
      */
+    @Override
     public void setFilenameFilter(FilenameFilter filter) {
         this.filter = filter;
     }
 
 
+    @Override
     public void dispose() {
         FileDialog fd = (FileDialog)fileDialog;
         if (fd != null) {
@@ -777,6 +786,7 @@ final class XFileDialogPeer extends XDialogPeer
     }
 
     // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
+    @Override
     public void setVisible(boolean b){
         if (fileDialog == null) {
             init(target);
@@ -823,6 +833,7 @@ final class XFileDialogPeer extends XDialogPeer
      * Refresh the unfurled choice at the time of the opening choice according to the text of the path field
      * See 6240074 for more information
      */
+    @Override
     public void unfurledChoiceOpening(ListHelper choiceHelper){
 
         // When the unfurled choice is opening the first time, we need only to add elements, otherwise we've got exception
@@ -843,6 +854,7 @@ final class XFileDialogPeer extends XDialogPeer
      * Refresh the file dialog at the time of the closing choice according to the selected item of the choice
      * See 6240074 for more information
      */
+    @Override
     public void unfurledChoiceClosing(){
           // This is the exactly same code as invoking later at the time of the itemStateChanged
           // Here is we restore Windows behaviour: change current directory if user press 'ESC'
@@ -869,6 +881,7 @@ final class Separator extends Canvas {
         }
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void paint(Graphics g) {
         int x1, y1, x2, y2;
@@ -914,6 +927,7 @@ final class FileDialogFilter implements FilenameFilter {
     /*
      * Tells whether or not the specified file should be included in a file list
      */
+    @Override
     public boolean accept(File dir, String fileName) {
 
         File f = new File(dir, fileName);

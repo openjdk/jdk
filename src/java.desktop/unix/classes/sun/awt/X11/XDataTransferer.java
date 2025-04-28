@@ -161,6 +161,7 @@ public final class XDataTransferer extends DataTransferer {
         return getTargetNameForAtom(format);
     }
 
+    @Override
     public ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler() {
         return XToolkitThreadBlockedHandler.getToolkitThreadBlockedHandler();
     }

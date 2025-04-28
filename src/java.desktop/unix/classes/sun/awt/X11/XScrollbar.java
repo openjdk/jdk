@@ -858,6 +858,7 @@ abstract class XScrollbar {
         return retVal;
     }
 
+    @Override
     public String toString() {
         return getClass() + "[" + width + "x" + height + "," + barWidth + "x" + barLength + "]";
     }
@@ -922,6 +923,7 @@ final class XScrollRepeater implements Runnable {
         newScroll = true;
     }
 
+    @Override
     public void run () {
         synchronized(this) {
             if (shouldSkip) {

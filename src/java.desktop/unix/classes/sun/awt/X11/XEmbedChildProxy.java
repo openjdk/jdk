@@ -38,6 +38,7 @@ public final class XEmbedChildProxy extends Component {
         this.container = container;
     }
 
+    @Override
     public void addNotify() {
         synchronized(getTreeLock()) {
             if (AWTAccessor.getComponentAccessor().getPeer(this) == null) {

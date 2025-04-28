@@ -49,6 +49,7 @@ final class XAWTLookAndFeel extends MotifLookAndFeel {
      * values, otherwise we create color objects whose values match
      * the default CDE/Motif colors.
      */
+    @Override
     protected void initSystemColorDefaults(UIDefaults table) {
         String[] defaultSystemColors = {
             "desktop", "#005C5C", /* Color of the desktop background */
@@ -83,6 +84,7 @@ final class XAWTLookAndFeel extends MotifLookAndFeel {
         loadSystemColors(table, defaultSystemColors, true);
     }
 
+    @Override
     protected void initComponentDefaults(UIDefaults table) {
         super.initComponentDefaults(table);
 
