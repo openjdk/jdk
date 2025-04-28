@@ -29,7 +29,7 @@ package sun.awt.X11;
 import java.awt.*;
 import sun.util.logging.PlatformLogger;
 
-class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
+final class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWINProtocol");
 
 /* Gnome WM spec  */

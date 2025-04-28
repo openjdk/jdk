@@ -31,7 +31,7 @@ import java.awt.*;
 * A simple horizontal scroll bar. The scrollbar is made horizontal
 * by taking a vertical scrollbar and swapping the x and y coordinates.
 */
-class XHorizontalScrollbar extends XScrollbar {
+final class XHorizontalScrollbar extends XScrollbar {
 
     public XHorizontalScrollbar(XScrollbarClient sb) {
         super(ALIGNMENT_HORIZONTAL, sb);

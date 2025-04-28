@@ -36,7 +36,7 @@ import java.awt.*;
  * @author      Bino George
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class XCustomCursor extends X11CustomCursor {
+public final class XCustomCursor extends X11CustomCursor {
 
     public XCustomCursor(Image cursor, Point hotSpot, String name)
       throws IndexOutOfBoundsException {

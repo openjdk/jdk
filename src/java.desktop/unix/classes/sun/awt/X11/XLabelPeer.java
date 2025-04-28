@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 
-class XLabelPeer extends XComponentPeer implements LabelPeer {
+final class XLabelPeer extends XComponentPeer implements LabelPeer {
     /**
      * Create the label
      */

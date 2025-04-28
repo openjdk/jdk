@@ -30,8 +30,8 @@ package sun.awt.X11;
  * Object of this class is singleton, all window reference it to have
  * common logical ancestor
  */
-class XRootWindow extends XBaseWindow {
-    private static class LazyHolder {
+final class XRootWindow extends XBaseWindow {
+    private static final class LazyHolder {
         private static final XRootWindow xawtRootWindow;
 
         static {

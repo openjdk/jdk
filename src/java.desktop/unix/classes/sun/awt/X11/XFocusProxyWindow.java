@@ -32,7 +32,7 @@ import java.awt.*;
  * it instead sets focus to this proxy. This proxy is mapped but invisible(it is kept at (-1,-1))
  * and therefore X doesn't control focus after we have set it to proxy.
  */
-public class XFocusProxyWindow extends XBaseWindow {
+public final class XFocusProxyWindow extends XBaseWindow {
     XWindowPeer owner;
 
     public XFocusProxyWindow(XWindowPeer owner) {

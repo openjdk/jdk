@@ -37,7 +37,7 @@ import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-class XFileDialogPeer extends XDialogPeer
+final class XFileDialogPeer extends XDialogPeer
         implements FileDialogPeer, ActionListener, ItemListener,
                    KeyEventDispatcher, XChoicePeerListener {
 
@@ -852,7 +852,7 @@ class XFileDialogPeer extends XDialogPeer
 }
 
 @SuppressWarnings("serial") // JDK-implementation class
-class Separator extends Canvas {
+final class Separator extends Canvas {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     int orientation;
@@ -903,7 +903,7 @@ class Separator extends Canvas {
  * are displayed in the dialog. This filter is generally specified as a regular
  * expression. The class is used to implement Motif-like filtering.
  */
-class FileDialogFilter implements FilenameFilter {
+final class FileDialogFilter implements FilenameFilter {
 
     String filter;
 

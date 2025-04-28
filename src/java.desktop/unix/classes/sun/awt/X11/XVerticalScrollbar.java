@@ -30,7 +30,7 @@ import java.awt.*;
 /**
 * A simple vertical scroll bar.
 */
-class XVerticalScrollbar extends XScrollbar {
+final class XVerticalScrollbar extends XScrollbar {
     public XVerticalScrollbar(XScrollbarClient sb) {
         super(ALIGNMENT_VERTICAL, sb);
     }

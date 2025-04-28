@@ -35,7 +35,7 @@ import sun.util.logging.PlatformLogger;
 import java.util.*;
 import static sun.awt.X11.XEmbedHelper.*;
 
-public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener, KeyEventPostProcessor, ModalityListener, WindowIDProvider {
+public final class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener, KeyEventPostProcessor, ModalityListener, WindowIDProvider {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedCanvasPeer");
 
     boolean applicationActive; // Whether the application is active(has focus)
@@ -681,7 +681,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private static class XEmbedDropTarget extends DropTarget {
+    private static final class XEmbedDropTarget extends DropTarget {
         public void addDropTargetListener(DropTargetListener dtl)
           throws TooManyListenersException {
             // Drop target listeners registered with this target will never be
@@ -730,7 +730,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    class XEmbedServer extends XEmbedHelper implements XEventDispatcher {
+    final class XEmbedServer extends XEmbedHelper implements XEventDispatcher {
         long handle; // Handle to XEmbed client
         long version;
         long flags;
@@ -830,7 +830,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    static class GrabbedKey {
+    static final class GrabbedKey {
         long keysym;
         long modifiers;
         GrabbedKey(long keysym, long modifiers) {

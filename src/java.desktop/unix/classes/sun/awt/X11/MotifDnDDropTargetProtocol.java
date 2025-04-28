@@ -40,7 +40,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
+final class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
     private long sourceWindow = 0;

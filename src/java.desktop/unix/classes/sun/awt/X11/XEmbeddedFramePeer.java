@@ -36,7 +36,7 @@ import sun.awt.SunToolkit;
 
 import static sun.awt.X11.XConstants.*;
 
-public class XEmbeddedFramePeer extends XFramePeer {
+public final class XEmbeddedFramePeer extends XFramePeer {
 
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbeddedFramePeer");
 

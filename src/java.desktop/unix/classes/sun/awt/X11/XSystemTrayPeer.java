@@ -33,7 +33,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.UNIXToolkit;
 import sun.util.logging.PlatformLogger;
 
-public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
+public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XSystemTrayPeer");
 
     SystemTray target;

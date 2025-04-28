@@ -35,7 +35,7 @@ import java.util.Objects;
 
 import sun.util.logging.PlatformLogger;
 
-class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
+final class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XCheckboxPeer");
 

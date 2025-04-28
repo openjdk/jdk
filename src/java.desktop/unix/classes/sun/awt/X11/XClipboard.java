@@ -174,7 +174,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
-    private static class CheckChangeTimerTask implements Runnable {
+    private static final class CheckChangeTimerTask implements Runnable {
         public void run() {
             for (XClipboard clpbrd : targetsAtom2Clipboard.values()) {
                 clpbrd.getTargetsDelayed();
@@ -188,7 +188,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
-    private static class SelectionNotifyHandler implements XEventDispatcher {
+    private static final class SelectionNotifyHandler implements XEventDispatcher {
         public void dispatchEvent(XEvent ev) {
             if (ev.get_type() == XConstants.SelectionNotify) {
                 final XSelectionEvent xse = ev.get_xselection();

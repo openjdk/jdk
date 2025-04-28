@@ -33,7 +33,7 @@ import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 import sun.util.logging.PlatformLogger;
 
-public class XTrayIconPeer implements TrayIconPeer,
+public final class XTrayIconPeer implements TrayIconPeer,
        InfoWindow.Balloon.LiveArguments,
        InfoWindow.Tooltip.LiveArguments
 {
@@ -435,7 +435,7 @@ public class XTrayIconPeer implements TrayIconPeer,
         return target.getActionCommand();
     }
 
-    static class TrayIconEventProxy implements MouseListener, MouseMotionListener {
+    static final class TrayIconEventProxy implements MouseListener, MouseMotionListener {
         XTrayIconPeer xtiPeer;
 
         TrayIconEventProxy(XTrayIconPeer xtiPeer) {
@@ -511,7 +511,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     // ***************************************
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private static class XTrayIconEmbeddedFrame extends XEmbeddedFrame {
+    private static final class XTrayIconEmbeddedFrame extends XEmbeddedFrame {
         public XTrayIconEmbeddedFrame(){
             super(XToolkit.getDefaultRootWindow(), true, true);
         }
@@ -538,7 +538,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     // ***************************************
 
     @SuppressWarnings("serial") // JDK-implementation class
-    static class TrayIconCanvas extends IconCanvas {
+    static final class TrayIconCanvas extends IconCanvas {
         TrayIcon target;
         boolean autosize;
 
@@ -627,7 +627,7 @@ public class XTrayIconPeer implements TrayIconPeer,
             }
         }
 
-        class IconObserver implements ImageObserver {
+        final class IconObserver implements ImageObserver {
             public boolean imageUpdate(final Image image, final int flags, int x, int y, int width, int height) {
                 if (image != IconCanvas.this.image || // if the image has been changed
                     !IconCanvas.this.isVisible())

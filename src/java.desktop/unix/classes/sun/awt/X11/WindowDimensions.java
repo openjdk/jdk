@@ -26,7 +26,7 @@ package sun.awt.X11;
 
 import java.awt.*;
 
-class WindowDimensions {
+final class WindowDimensions {
     private Point loc;
     private Dimension size;
     private Insets insets;

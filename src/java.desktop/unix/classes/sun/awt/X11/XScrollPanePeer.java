@@ -32,7 +32,7 @@ import java.lang.reflect.*;
 
 import sun.awt.AWTAccessor;
 
-class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollbarClient {
+final class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollbarClient {
 
     public static final int     MARGIN = 1;
     public static final int     SCROLLBAR;
@@ -54,7 +54,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
     int                         hsbSpace;
     int                         vsbSpace;
 
-    static class XScrollPaneContentWindow extends XWindow {
+    static final class XScrollPaneContentWindow extends XWindow {
         XScrollPaneContentWindow(ScrollPane target, long parentWindow) {
             super(target, parentWindow);
         }

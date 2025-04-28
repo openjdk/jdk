@@ -54,7 +54,7 @@ import java.awt.peer.ContainerPeer;
 
 import sun.java2d.pipe.Region;
 
-public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
+public final class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     XEmbeddingContainer container;
     XEmbedChildProxy proxy;
     long handle;

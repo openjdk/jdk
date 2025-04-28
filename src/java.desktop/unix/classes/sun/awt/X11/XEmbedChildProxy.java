@@ -30,7 +30,7 @@ import java.awt.Toolkit;
 import sun.awt.AWTAccessor;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class XEmbedChildProxy extends Component {
+public final class XEmbedChildProxy extends Component {
     long handle;
     XEmbeddingContainer container;
     public XEmbedChildProxy(XEmbeddingContainer container, long handle) {

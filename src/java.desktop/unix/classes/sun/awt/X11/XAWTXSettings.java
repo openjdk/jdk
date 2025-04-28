@@ -38,7 +38,7 @@ import sun.awt.XSettings;
 import sun.util.logging.PlatformLogger;
 
 
-class XAWTXSettings extends XSettings implements XMSelectionListener {
+final class XAWTXSettings extends XSettings implements XMSelectionListener {
 
     private final XAtom xSettingsPropertyAtom = XAtom.get("_XSETTINGS_SETTINGS");
 

@@ -50,7 +50,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * @see java.awt.dnd.DragSource
  */
 
-class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
+final class XMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
 
     /**
      * Use serialVersionUID from JDK 1.5 for interoperability.

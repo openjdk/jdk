@@ -33,7 +33,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.plaf.basic.*;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
-public class XButtonPeer extends XComponentPeer implements ButtonPeer {
+public final class XButtonPeer extends XComponentPeer implements ButtonPeer {
     private boolean pressed;
     private boolean armed;
     private Insets focusInsets;

@@ -32,7 +32,7 @@ import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
+public final class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
@@ -76,7 +76,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * XBaseMenuWindow's mappingData is extended with
      * desired height of menu bar
      */
-    static class MappingData extends XBaseMenuWindow.MappingData {
+    static final class MappingData extends XBaseMenuWindow.MappingData {
         int desiredHeight;
 
         MappingData(XMenuItemPeer[] items, int desiredHeight) {

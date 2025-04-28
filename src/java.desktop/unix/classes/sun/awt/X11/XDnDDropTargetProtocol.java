@@ -50,7 +50,7 @@ import sun.awt.X11GraphicsConfig;
  *
  * @since 1.5
  */
-class XDnDDropTargetProtocol extends XDropTargetProtocol {
+final class XDnDDropTargetProtocol extends XDropTargetProtocol {
     private static final PlatformLogger logger =
         PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDropTargetProtocol");
 

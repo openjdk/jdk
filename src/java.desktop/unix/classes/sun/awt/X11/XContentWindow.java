@@ -188,7 +188,7 @@ public final class XContentWindow extends XWindow {
         iconifiedExposeEvents.clear();
     }
 
-    private static class SavedExposeEvent {
+    private static final class SavedExposeEvent {
         Component target;
         int x, y, w, h;
         SavedExposeEvent(Component target, int x, int y, int w, int h) {

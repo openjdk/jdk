@@ -42,7 +42,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class XDnDDragSourceProtocol extends XDragSourceProtocol {
+final class XDnDDragSourceProtocol extends XDragSourceProtocol {
     private static final PlatformLogger logger =
         PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDragSourceProtocol");
 

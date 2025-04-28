@@ -38,7 +38,7 @@ import sun.util.logging.PlatformLogger;
 
 // TODO: some input actions should do nothing if Shift or Control are down
 
-class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
+final class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XListPeer");
 
@@ -1678,7 +1678,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      *     Painter -> awtLock
      * Since we can't guarantee the sequence, use awtLock.
      */
-    class ListPainter {
+    final class ListPainter {
         VolatileImage buffer;
         Color[] colors;
 

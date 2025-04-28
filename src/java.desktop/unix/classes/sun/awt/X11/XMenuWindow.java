@@ -81,7 +81,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      *
      ************************************************/
 
-    static class MappingData extends XBaseMenuWindow.MappingData {
+    static final class MappingData extends XBaseMenuWindow.MappingData {
         /**
          * Rectangle for the caption
          * Necessary to fix 6267144: PIT: Popup menu label is not shown, XToolkit

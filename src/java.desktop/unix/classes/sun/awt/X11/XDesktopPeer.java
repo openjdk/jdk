@@ -46,7 +46,7 @@ import java.util.List;
  *
  * @see DesktopPeer
  */
-public class XDesktopPeer implements DesktopPeer {
+public final class XDesktopPeer implements DesktopPeer {
 
     // supportedActions may be changed from native within an init() call
     private static final List<Action> supportedActions

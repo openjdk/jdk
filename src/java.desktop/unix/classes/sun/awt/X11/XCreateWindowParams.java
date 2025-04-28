@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.util.HashMap;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class XCreateWindowParams extends HashMap<Object, Object> {
+public final class XCreateWindowParams extends HashMap<Object, Object> {
     public XCreateWindowParams() {
     }
     public XCreateWindowParams(Object[] map) {

@@ -40,7 +40,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class MotifDnDDragSourceProtocol extends XDragSourceProtocol
+final class MotifDnDDragSourceProtocol extends XDragSourceProtocol
     implements XEventDispatcher {
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;

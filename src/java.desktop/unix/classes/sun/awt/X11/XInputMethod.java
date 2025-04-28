@@ -42,7 +42,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @author JavaSoft International
  */
-public class XInputMethod extends X11InputMethod {
+public final class XInputMethod extends X11InputMethod {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XInputMethod");
 
     public XInputMethod() throws AWTException {

@@ -39,7 +39,7 @@ import com.sun.java.swing.plaf.motif.*;
 import sun.awt.X11.XComponentPeer;
 
 @SuppressWarnings({"serial", "removal"}) // JDK-implementation class
-class XAWTLookAndFeel extends MotifLookAndFeel {
+final class XAWTLookAndFeel extends MotifLookAndFeel {
 
     /**
      * Load the SystemColors into the defaults table.  The keys

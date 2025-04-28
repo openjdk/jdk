@@ -864,7 +864,7 @@ abstract class XScrollbar {
 }
 
 
-class XScrollRepeater implements Runnable {
+final class XScrollRepeater implements Runnable {
     /**
      * Time to pause before the first scroll repeat.
      */

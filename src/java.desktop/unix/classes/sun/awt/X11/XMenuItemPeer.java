@@ -92,7 +92,7 @@ public class XMenuItemPeer implements MenuItemPeer {
      */
     private TextMetrics textMetrics;
 
-    static class TextMetrics implements Cloneable {
+    static final class TextMetrics implements Cloneable {
         /*
          * Calculated text size members
          */
