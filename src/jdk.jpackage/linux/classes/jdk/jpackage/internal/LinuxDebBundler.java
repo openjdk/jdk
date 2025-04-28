@@ -498,11 +498,11 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         PlatformPackage thePackage = createMetaPackage(params);
 
         new ScriptRunner()
-        .setDirectory(thePackage.sourceRoot())
-        .setResourceCategoryId("resource.post-app-image-script")
-        .setScriptNameSuffix("post-image")
-        .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
-        .run(params);
+              .setDirectory(thePackage.sourceRoot())
+              .setResourceCategoryId("resource.post-app-image-script")
+              .setScriptNameSuffix("post-image")
+              .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
+              .run(params);
 
         Path outFile = outdir.resolve(
                 FULL_PACKAGE_NAME.fetchFrom(params)+".deb");
