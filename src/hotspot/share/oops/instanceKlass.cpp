@@ -1322,6 +1322,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
     debug_only(vtable().verify(tty, true);)
+    CompilationPolicy::replay_training_at_init(this, THREAD);
   }
   else {
     // Step 10 and 11
@@ -2640,6 +2641,8 @@ void InstanceKlass::remove_unshareable_info() {
     // Remember this so we can avoid walking the hierarchy at runtime.
     set_verified_at_dump_time();
   }
+
+  _misc_flags.set_has_init_deps_processed(false);
 
   Klass::remove_unshareable_info();
 

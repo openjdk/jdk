@@ -78,6 +78,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -480,6 +481,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
   FinalImageRecipes::serialize(soc);
+  TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -564,6 +566,7 @@ public:
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
+    TrainingData::iterate_roots(it);
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -603,6 +606,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     FinalImageRecipes::record_recipes();
   }
+
+  TrainingData::dump_training_data();
+
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
@@ -672,6 +678,9 @@ void VM_PopulateDumpSharedSpace::doit() {
     log_info(cds)("Adjust lambda proxy class dictionary");
     LambdaProxyClassDictionary::adjust_dumptime_table();
   }
+
+  log_info(cds)("Make training data shareable");
+  _builder.make_training_data_shareable();
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -791,6 +800,13 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
+ HandleMark hm(THREAD);
+
+ if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
+   tty->print_cr("==================== archived_training_data ** before dumping ====================");
+   TrainingData::print_archived_training_data_on(tty);
+ }
+
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -954,6 +970,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   // are implemented by K are not verified.
   link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    assert(!AOTRecordTraining, "must be");
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
+      AOTRecordTraining = true;
+    }
+  }
+
+  TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
 
   if (CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
@@ -1822,7 +1846,7 @@ void MetaspaceShared::initialize_shared_spaces() {
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
-
+    TrainingData::print_archived_training_data_on(tty);
     // collect shared symbols and strings
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
