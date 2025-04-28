@@ -3643,23 +3643,13 @@ const char* InstanceKlass::init_state_name() const {
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
-  if (UseCompressedClassPointers) {
-    if (CompressedKlassPointers::is_encodable(this)) {
-      st->print(BULLET"narrow Klass:    %x", CompressedKlassPointers::encode(const_cast<InstanceKlass*>(this)));
-    } else {
-      st->print(BULLET"narrow Klass:    (not in class space)");
-    }
-  }
+
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
-  st->print(BULLET"klass header size: %d", header_size());                        st->cr();
-  st->print(BULLET"vtable size:       %d", itable_length());                      st->cr();
-  st->print(BULLET"itable size:       %d", vtable_length());                      st->cr();
-  st->print(BULLET"nonstatic_oopmap size: %d", nonstatic_oop_map_size());         st->cr();
-
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
   st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
+  st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");
   Klass* sub = subklass();
@@ -3783,7 +3773,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
-    st->print_cr("[@%d-@%d) (%d oops) ", map->offset(), map->offset() + heapOopSize * map->count(), map->count());
+    st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->count() - 1));
     map++;
   }
   st->cr();
