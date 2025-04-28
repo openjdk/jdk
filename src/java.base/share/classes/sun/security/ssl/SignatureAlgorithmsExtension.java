@@ -272,7 +272,8 @@ final class SignatureAlgorithmsExtension {
                 return;
             }
 
-            updateHandshakeContext(shc, spec.signatureSchemes);
+            updateHandshakeContext(shc, spec.signatureSchemes,
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT);
 
             if (!shc.isResumption &&
                     shc.negotiatedProtocol.useTLS13PlusSpec()) {
@@ -476,7 +477,8 @@ final class SignatureAlgorithmsExtension {
                 return;
             }
 
-            updateHandshakeContext(chc, spec.signatureSchemes);
+            updateHandshakeContext(chc, spec.signatureSchemes,
+                    SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
         }
     }
 
@@ -501,7 +503,8 @@ final class SignatureAlgorithmsExtension {
     }
 
     // Updates given HandshakeContext with peer signature schemes.
-    private static void updateHandshakeContext(HandshakeContext hc, int[] signatureSchemes)
+    private static void updateHandshakeContext(HandshakeContext hc,
+            int[] signatureSchemes, SSLExtension signatureAlgorithmsCertExt)
             throws SSLException {
         List<SignatureScheme> handshakeSS =
                 SignatureScheme.getSupportedAlgorithms(
@@ -522,8 +525,8 @@ final class SignatureAlgorithmsExtension {
         // the "signature_algorithms" extension also applies to
         // signatures appearing in certificates.
         SignatureSchemesSpec certSpec =
-                (SignatureSchemesSpec)hc.handshakeExtensions.get(
-                        SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
+                (SignatureSchemesSpec) hc.handshakeExtensions.get(
+                        signatureAlgorithmsCertExt);
 
         if (certSpec == null) {
             List<SignatureScheme> certSS =
