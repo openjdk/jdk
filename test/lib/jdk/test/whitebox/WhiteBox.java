@@ -569,7 +569,7 @@ public class WhiteBox {
       try {
         wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
         wfrp.setAccessible(true);
-        assert wfrp.getReturnType().equals(Class.forPrimitiveName("boolean"));
+        assert wfrp.getReturnType().equals(boolean.class);
         Class<?>[] ev = wfrp.getExceptionTypes();
         assert ev.length == 1;
         assert ev[0] == InterruptedException.class;
