@@ -542,7 +542,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_l2d: {
 
       FloatRegister rdst = dst->as_double_reg();
-      FloatRegister rsrc;
 
       // move src to dst register
       if (code == Bytecodes::_i2d) {
@@ -550,15 +549,13 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       } else {
         __ mtfprd(rdst, src->as_register_lo());
       }
-      rsrc = rdst;
 
-      __ fcfid(rdst, rsrc);
+      __ fcfid(rdst, rdst);
       break;
     }
     case Bytecodes::_i2f:
     case Bytecodes::_l2f: {
       FloatRegister rdst = dst->as_float_reg();
-      FloatRegister rsrc;
 
       // move src to dst register
       if (code == Bytecodes::_i2f) {
@@ -566,9 +563,8 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       } else {
         __ mtfprd(rdst, src->as_register_lo());
       }
-      rsrc = rdst;
       
-      __ fcfids(rdst, rsrc);
+      __ fcfids(rdst, rdst);
 
       break;
     }
@@ -1554,7 +1550,6 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     default:                    ShouldNotReachHere();
   }
 
-  // Try to use isel on >=Power7.
   if (result->is_cpu_register()) {
     bool o1_is_reg = opr1->is_cpu_register(), o2_is_reg = opr2->is_cpu_register();
     const Register result_reg = result->is_single_cpu() ? result->as_register() : result->as_register_lo();

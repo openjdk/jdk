@@ -1997,7 +1997,7 @@ class Assembler : public AbstractAssembler {
 
   // Wait instructions for polling. Attention: May result in SIGILL.
   inline void wait();
-  inline void waitrsv(); // >=Power7
+  inline void waitrsv();
 
   // atomics
   inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
@@ -2028,7 +2028,6 @@ class Assembler : public AbstractAssembler {
   inline void smt_prio_low();
   inline void smt_prio_medium_low();
   inline void smt_prio_medium();
-  // >= Power7
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();

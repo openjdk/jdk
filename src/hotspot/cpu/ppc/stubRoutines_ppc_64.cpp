@@ -77,8 +77,6 @@ static julong compute_inverse_poly(julong long_poly) {
 // Constants to fold n words as needed by macroAssembler.
 address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
-  // <= Power7 Little Endian: 4 tables for byte folding
-  // <= Power7 Big Endian: 1 table for single byte folding + 4 tables for multi-byte folding
   // >= Power8: 1 table for single byte folding + constants for fast vector implementation
   const int vector_size = 16 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
 

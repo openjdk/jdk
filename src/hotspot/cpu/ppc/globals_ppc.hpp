@@ -114,8 +114,9 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
   product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false, DIAGNOSTIC,\
           "Use static branch prediction hints for uncommon paths.")         \
                                                                             \
+  
   /* special instructions */                                                \
-  product(bool, SuperwordUseVSX, true,                                     \
+  product(bool, SuperwordUseVSX, true,                                      \
           "Use Power8 VSX instructions for superword optimization.")        \
                                                                             \
   product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \

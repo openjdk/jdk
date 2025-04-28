@@ -160,9 +160,8 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s",
-               (has_lxarxeh() ? " lxarxeh" : ""),
-               (has_vshasig() ? " sha"     : ""),
+               "ppc64%s%s%s",
+               (" sha"     : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
@@ -258,14 +257,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA))
-      warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
+  if (FLAG_IS_DEFAULT(UseSHA)) {
+    UseSHA = true;
   }
 
   if (UseSHA1Intrinsics) {
@@ -273,22 +266,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
-    }
-  } else if (UseSHA256Intrinsics) {
-    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-  }
 
-  if (UseSHA && has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
-    }
-  } else if (UseSHA512Intrinsics) {
-    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+  }
+  
+
+
+  if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
   }
 
   if (UseSHA3Intrinsics) {
