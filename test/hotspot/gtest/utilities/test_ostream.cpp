@@ -103,8 +103,9 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
   }
 }
 
-static void test_autoindent(bool on) {
+TEST_VM(ostream, streamIndentor) {
   stringStream ss;
+
   {
     StreamIndentor si(&ss, 5);
     ss.print("ABC");
@@ -124,30 +125,15 @@ static void test_autoindent(bool on) {
   }
   ss.print("end");
 
-  if (on) {
-    EXPECT_STREQ(ss.base(),
-        "     ABCDEF\n"
-        "     0123\n"
-        "          4567\n"
-        "          89ABCDEXYZ\n"
-        "     100KB\n"
-        "end"
-    );
-  } else {
-    // no autoindent: calls should work as always without indentation
-    EXPECT_STREQ(ss.base(),
-        "ABCDEF\n"
-        "0123\n"
-        "4567\n"
-        "89ABCDEXYZ\n"
-        "100KB\n"
-        "end"
-    );
-  }
+  EXPECT_STREQ(ss.base(),
+      "     ABCDEF\n"
+      "     0123\n"
+      "          4567\n"
+      "          89ABCDEXYZ\n"
+      "     100KB\n"
+      "end"
+  );
 }
-
-TEST_VM(ostream, autoindent_on)  { test_autoindent(true);  }
-TEST_VM(ostream, autoindent_off) { test_autoindent(false); }
 
 /* Activate to manually test bufferedStream dynamic cap.
 
