@@ -1599,6 +1599,17 @@ bool nmethod::is_relocatable() {
     return false;
   }
 
+  if (!is_in_use()) {
+    return false;
+  }
+
+  {
+    CompiledICLocker ic_locker(this);
+    if (has_evol_metadata()) {
+      return false;
+    }
+  }
+
   return true;
 }
 
