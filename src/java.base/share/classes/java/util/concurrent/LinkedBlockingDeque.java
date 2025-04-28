@@ -996,8 +996,8 @@ public class LinkedBlockingDeque<E>
             for (Node<E> f = first; f != null; ) {
                 f.item = null;
                 Node<E> n = f.next;
-                f.prev = null;
-                f.next = null;
+                f.prev = f;
+                f.next = f;
                 f = n;
             }
             first = last = null;

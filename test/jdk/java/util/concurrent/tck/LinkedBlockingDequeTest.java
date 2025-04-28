@@ -1944,4 +1944,22 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }
         }
     }
+
+    public void testWeaklyConsistentIterationWithClear() {
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>(3);
+        q.add(one);
+        q.add(two);
+        q.add(three);
+        final Iterator<Item> it = q.iterator();
+        mustEqual(one, it.next());
+        q.clear();
+        q.add(four);
+        q.add(five);
+        q.add(six);
+        mustEqual(two, it.next());
+        mustEqual(four, it.next());
+        mustEqual(five, it.next());
+        mustEqual(six, it.next());
+        mustEqual(3, q.size());
+    }
 }
