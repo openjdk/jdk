@@ -139,7 +139,7 @@ class RawBytecodeStream: public BaseBytecodeStream {
       if (INT_MAX - len <= _next_bci) { // Check for integer overflow
         code = Bytecodes::_illegal;
       } else {
-      _next_bci += len;
+        _next_bci += len;
       }
       _raw_code = code;
       return code;
