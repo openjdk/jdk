@@ -34,7 +34,6 @@ import java.util.concurrent.StructureViolationException;
 import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.ScopedValueContainer;
@@ -236,9 +235,8 @@ import jdk.internal.vm.ScopedValueContainer;
  * have to be regenerated after a blocking operation.
  *
  * @param <T> the type of the value
- * @since 21
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
 public final class ScopedValue<T> {
     private final int hash;
 
@@ -311,7 +309,6 @@ public final class ScopedValue<T> {
      *
      * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     public static final class Carrier {
         // Bit masks: a 1 in position n indicates that this set of bound values
         // hits that slot in the cache.
@@ -498,7 +495,6 @@ public final class ScopedValue<T> {
      * @param <X> type of the exception thrown by the operation
      * @since 23
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     @FunctionalInterface
     public interface CallableOp<T, X extends Throwable> {
         /**
