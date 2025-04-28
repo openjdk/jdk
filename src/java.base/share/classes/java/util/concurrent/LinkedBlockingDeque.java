@@ -860,7 +860,7 @@ public class LinkedBlockingDeque<E>
 
         // Copy c into a private chain of Nodes
         Node<E> beg = null, end = null;
-        int n = 0;
+        long n = 0;
         for (E e : c) {
             Objects.requireNonNull(e);
             n++;
@@ -887,7 +887,7 @@ public class LinkedBlockingDeque<E>
                 else
                     last.next = beg;
                 last = end;
-                count += n;
+                count = (int) (count + n);
                 notEmpty.signalAll();
                 return true;
             }
@@ -896,6 +896,7 @@ public class LinkedBlockingDeque<E>
         }
         // Fall back to historic non-atomic implementation, failing
         // with IllegalStateException when the capacity is exceeded.
+        beg = end = null; // help GC
         return super.addAll(c);
     }
 
