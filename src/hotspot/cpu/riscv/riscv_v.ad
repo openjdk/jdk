@@ -641,7 +641,7 @@ instruct vsub_vx_masked(vReg dst_src, iRegIorL2I src2, vRegMask_V0 v0) %{
 
 instruct vsubL_vx_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
   match(Set dst_src (SubVL (Binary dst_src (Replicate src2)) v0));
-  format %{ "vsub_vx_masked $dst_src, $dst_src, $src2, $v0" %}
+  format %{ "vsubL_vx_masked $dst_src, $dst_src, $src2, $v0" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vsub_vx(as_VectorRegister($dst_src$$reg),
