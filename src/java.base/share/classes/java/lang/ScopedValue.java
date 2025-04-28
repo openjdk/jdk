@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -611,10 +611,11 @@ public final class ScopedValue<T> {
      * Returns the value of this scoped value if bound in the current thread, otherwise
      * returns {@code other}.
      *
-     * @param other the value to return if not bound, can be {@code null}
+     * @param other the value to return if not bound
      * @return the value of the scoped value if bound, otherwise {@code other}
      */
     public T orElse(T other) {
+        Objects.requireNonNull(other);
         Object obj = findBinding();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
