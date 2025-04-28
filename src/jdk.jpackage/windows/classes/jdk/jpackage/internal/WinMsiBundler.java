@@ -592,7 +592,7 @@ public class WinMsiBundler  extends AbstractBundler {
         // Save all WiX resources into config dir.
         wixResources.saveResources();
 
-        final var imageDir = MSI_IMAGE_DIR.fetchFrom(params);
+        final var imageDir = WIN_APP_IMAGE.fetchFrom(params);
 
         new ScriptRunner()
         .setDirectory(imageDir)

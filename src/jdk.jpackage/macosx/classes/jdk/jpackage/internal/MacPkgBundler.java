@@ -54,9 +54,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
@@ -154,11 +151,12 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             Path appImageDir = prepareAppBundle(params);
 
             if (appImageDir != null && prepareConfigFiles(params)) {
-
-                Path configScript = getConfig_Script(params);
-                if (IOUtils.exists(configScript)) {
-                    IOUtils.run("bash", configScript);
-                }
+                new ScriptRunner()
+                .setDirectory(appImageDir)
+                .setResourceCategoryId("resource.post-app-image-script")
+                .setScriptNameSuffix("post-image")
+                .setEnvironmentVariable("JpAppImageDir", appImageDir.toAbsolutePath().toString())
+                .run(params);
 
                 return createPKG(params, outdir, appImageDir);
             }
@@ -360,17 +358,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         prepareDistributionXMLFile(params);
 
-        createResource(null, params)
-                .setCategory(I18N.getString("resource.post-install-script"))
-                .saveToFile(getConfig_Script(params));
-
         return true;
-    }
-
-    // name of post-image script
-    private Path getConfig_Script(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-post-image.sh");
     }
 
     private void patchCPLFile(Path cpl) throws IOException {
