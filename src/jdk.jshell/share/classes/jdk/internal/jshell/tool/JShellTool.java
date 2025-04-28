@@ -1316,6 +1316,9 @@ public class JShellTool implements MessageHandler {
                 continue;
             }
             if (line == null) {
+                if (!src.isEmpty()) {
+                    errormsg("jshell.err.incomplete.input", src);
+                }
                 //EOF
                 if (input.interactiveOutput()) {
                     // End after user ctrl-D

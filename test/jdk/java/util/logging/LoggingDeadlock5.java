@@ -25,10 +25,13 @@
  * @test
  * @bug     8349206
  * @summary j.u.l.Handler classes create deadlock risk via synchronized publish() method.
+ * @library /test/lib
  * @modules java.base/sun.util.logging
  *          java.logging
  * @run main/othervm LoggingDeadlock5
  */
+
+import jdk.test.lib.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -59,8 +62,12 @@ public class LoggingDeadlock5 {
         @Override
         public String format(LogRecord record) {
             // All we care about is that our formatter will invoke toString() on user arguments.
-            for (Object p : record.getParameters()) {
-                var unused = p.toString();
+            // This can be called without arguments in one of the threads.
+            Object[] parameters = record.getParameters();
+            if (parameters != null) {
+                for (Object p : parameters) {
+                    var unused = p.toString();
+                }
             }
             return "<formatted string>";
         }
@@ -111,7 +118,13 @@ public class LoggingDeadlock5 {
     }
 
     private static class DeadLocker {
-        private final static Duration JOIN_WAIT = Duration.ofMillis(500);
+        // Since this is used to self-test for an expected deadlock, it will
+        // delay the test by at least this duration (so being overly large is
+        // a potential issue). The deadlock is set up so it should occur almost
+        // immediately (if it occurs), but tests are run under very high loads
+        // in higher tiers, so it's necessary to be a bit pessimistic here.
+        private final static Duration JOIN_WAIT =
+                Duration.ofMillis(Utils.adjustTimeout(2000));
 
         private final Semaphore readyToDeadlock = new Semaphore(0);
         private final Semaphore userLockIsHeld = new Semaphore(0);

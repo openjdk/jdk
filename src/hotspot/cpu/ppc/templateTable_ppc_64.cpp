@@ -386,7 +386,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg  = R4_ARG2;
   __ li(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -3964,7 +3964,7 @@ void TemplateTable::checkcast() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 
@@ -4026,7 +4026,7 @@ void TemplateTable::instanceof() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 

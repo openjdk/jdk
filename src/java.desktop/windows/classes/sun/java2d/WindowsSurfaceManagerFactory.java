@@ -38,7 +38,7 @@ import sun.java2d.opengl.WGLVolatileSurfaceManager;
  * The SurfaceManagerFactory that creates VolatileSurfaceManager
  * implementations for the Windows volatile images.
  */
-public class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
+public final class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
 
     /**
      * Creates a new instance of a VolatileSurfaceManager given any
@@ -49,6 +49,7 @@ public class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
      * For Windows platforms, this method returns a Windows-specific
      * VolatileSurfaceManager.
      */
+    @Override
     public VolatileSurfaceManager createVolatileManager(SunVolatileImage vImg,
                                                         Object context)
     {
