@@ -36,6 +36,7 @@ import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -92,7 +93,7 @@ import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo
  * @since 24
  */
 public sealed interface CodeBuilder
-        extends ClassFileBuilder<CodeElement, CodeBuilder>
+        extends ClassFileBuilder<CodeTransform, CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
 
     /**
@@ -150,19 +151,16 @@ public sealed interface CodeBuilder
     int allocateLocal(TypeKind typeKind);
 
     /**
-     * Apply a transform to the code built by a handler, directing results to
-     * this builder.
+     * {@inheritDoc}
      *
-     * @apiNote
-     * This is similar to {@link #transform}, but this does not require the
-     * code elements to be viewed as a {@link CodeModel} first.
-     *
-     * @param transform the transform to apply to the code built by the handler
-     * @param handler the handler that receives a {@link CodeBuilder} to
-     * build the code
-     * @return this builder
-     */
-    default CodeBuilder transforming(CodeTransform transform, Consumer<CodeBuilder> handler) {
+     * @param transform {@inheritDoc}
+     * @param handler {@inheritDoc}
+     * @return {@inheritDoc}
+     */ // remove supertype incorrect since
+    @Override
+    default CodeBuilder transforming(CodeTransform transform, Consumer<? super CodeBuilder> handler) {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(transform);
         var resolved = TransformImpl.resolve(transform, this);
         resolved.startHandler().run();
         handler.accept(new ChainedCodeBuilder(this, resolved.consumer()));

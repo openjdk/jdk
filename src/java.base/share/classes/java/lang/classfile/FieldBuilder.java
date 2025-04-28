@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedFieldBuilder;
 import jdk.internal.classfile.impl.TerminalFieldBuilder;
+import jdk.internal.classfile.impl.TransformImpl;
 
 /**
  * A builder for fields.  The main way to obtain a field builder is via {@link
@@ -48,7 +49,7 @@ import jdk.internal.classfile.impl.TerminalFieldBuilder;
  * @since 24
  */
 public sealed interface FieldBuilder
-        extends ClassFileBuilder<FieldElement, FieldBuilder>
+        extends ClassFileBuilder<FieldTransform, FieldElement, FieldBuilder>
         permits TerminalFieldBuilder, ChainedFieldBuilder {
 
     /**
@@ -77,4 +78,17 @@ public sealed interface FieldBuilder
         return with(new AccessFlagsImpl(AccessFlag.Location.FIELD, flags));
     }
 
+    // Implementations
+
+    /**
+     * @since 25
+     */
+    @Override
+    default FieldBuilder transforming(FieldTransform transform, Consumer<? super FieldBuilder> handler) {
+        var resolved = TransformImpl.resolve(transform, this);
+        resolved.startHandler().run();
+        handler.accept(new ChainedFieldBuilder(this, resolved.consumer()));
+        resolved.endHandler().run();
+        return this;
+    }
 }

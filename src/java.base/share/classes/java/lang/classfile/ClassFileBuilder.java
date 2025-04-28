@@ -26,6 +26,7 @@ package java.lang.classfile;
 
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.impl.TransformImpl;
@@ -59,12 +60,13 @@ import jdk.internal.classfile.impl.TransformImpl;
  *
  * @param <E> the member element type
  * @param <B> the self type of this builder
+ * @param <C> the type of transform that runs on this builder
  * @see CompoundElement
  * @see ClassFileTransform
  * @sealedGraph
  * @since 24
  */
-public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
+public sealed interface ClassFileBuilder<C extends ClassFileTransform<C, E, B>, E extends ClassFileElement, B extends ClassFileBuilder<C, E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 
     /**
@@ -106,8 +108,12 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      * well as this builder for building the structure.  The transform is free
      * to preserve, remove, or replace elements as it sees fit.
      * <p>
+     * A {@linkplain #transforming(ClassFileTransform, Consumer) handler-based}
+     * version behaves similarly; the elements built by the handler are passed
+     * instead of elements from an existing structure.
+     * <p>
      * A builder can run multiple transforms against different compound
-     * structures, integrating member elements of different origins.
+     * structures and handlers, integrating member elements of different origins.
      *
      * @apiNote
      * Many subinterfaces have methods like {@link ClassBuilder#transformMethod}
@@ -122,8 +128,15 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      * @param transform the transform to apply
      * @return this builder
      * @see ClassFileTransform
+     * @see #transforming(ClassFileTransform, Consumer)
      */
-    default B transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
+    default B transform(CompoundElement<E> model, C transform) {
+        Objects.requireNonNull(model);
+        Objects.requireNonNull(transform);
+
+        // This can be as simple as:
+        // return transform(Util.writingAll(model), transform);
+        // but this version saves an additional builder
         @SuppressWarnings("unchecked")
         B builder = (B) this;
         var resolved = TransformImpl.resolve(transform, builder);
@@ -132,4 +145,42 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
         resolved.endHandler().run();
         return builder;
     }
+
+    /**
+     * Applies a transform to a structure built by a handler, directing results
+     * to this builder.  The builder passed to the handler is initialized with
+     * the same required arguments as this builder.
+     * <p>
+     * The transform will receive each element built by the handler, as well
+     * as this builder for building the structure.  The transform is free
+     * to preserve, remove, or replace elements as it sees fit.
+     * <p>
+     * A {@linkplain #transform(CompoundElement, ClassFileTransform)
+     * structure-based} version behaves similarly; the elements from an existing
+     * source are passed instead of elements built by a handler.
+     * <p>
+     * A builder can run multiple transforms against different compound
+     * structures and handlers, integrating member elements of different origins.
+     *
+     * @apiNote
+     * Many subinterfaces have methods like {@link ClassBuilder#transformMethod}
+     * or {@link MethodBuilder#transformCode}.  However, calling them is
+     * fundamentally different from calling this method: those methods call the
+     * {@code transform} on the child builders instead of on itself.  For
+     * example, {@code classBuilder.transformMethod} calls {@code
+     * methodBuilder.transform} with a new method builder instead of calling
+     * {@code classBuilder.transform} on itself.
+     * <p>
+     * If elements are sourced from a {@link CompoundElement}, the {@linkplain
+     * #transform(CompoundElement, ClassFileTransform) structure-based} version
+     * may be more efficient.
+     *
+     * @param transform the transform to apply
+     * @param handler the handler to produce elements to be transformed
+     * @return this builder
+     * @see ClassFileTransform
+     * @see #transform(CompoundElement, ClassFileTransform)
+     * @since 25
+     */
+    B transforming(C transform, Consumer<? super B> handler);
 }

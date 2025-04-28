@@ -26,10 +26,7 @@ package java.lang.classfile;
 
 import java.io.IOException;
 import java.lang.classfile.AttributeMapper.AttributeStability;
-import java.lang.classfile.attribute.CharacterRangeInfo;
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.attribute.LocalVariableInfo;
-import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
@@ -680,8 +677,8 @@ public sealed interface ClassFile
      * This is named {@code transformClass} instead of {@code transform} for
      * consistency with {@link ClassBuilder#transformField}, {@link
      * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
+     * and to distinguish from {@link ClassFileBuilder#transform} and {@link
+     * ClassFileBuilder#transforming}, which are more generic and powerful.
      *
      * @param model the class model to transform
      * @param transform the transform
@@ -704,8 +701,8 @@ public sealed interface ClassFile
      * This is named {@code transformClass} instead of {@code transform} for
      * consistency with {@link ClassBuilder#transformField}, {@link
      * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
+     * and to distinguish from {@link ClassFileBuilder#transform} and {@link
+     * ClassFileBuilder#transforming}, which are more generic and powerful.
      *
      * @param model the class model to transform
      * @param newClassName new class name
@@ -736,8 +733,8 @@ public sealed interface ClassFile
      * This is named {@code transformClass} instead of {@code transform} for
      * consistency with {@link ClassBuilder#transformField}, {@link
      * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
+     * and to distinguish from {@link ClassFileBuilder#transform} and {@link
+     * ClassFileBuilder#transforming}, which are more generic and powerful.
      *
      * @param model the class model to transform
      * @param newClassName new class name

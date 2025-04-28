@@ -101,10 +101,8 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Pair;
+
 import java.nio.file.DirectoryStream;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -966,14 +964,12 @@ public class CreateSymbols {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void addGenericAttributes(FeatureDescription desc, ClassFileBuilder<?, ?> builder) {
-        addGenericAttributes(desc, (Consumer<? super Attribute<?>>) builder, builder.constantPool());
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void addGenericAttributes(FeatureDescription desc, ClassFileBuilder builder) {
+        addGenericAttributes(desc, (Consumer<Attribute<?>>) builder, builder.constantPool());
     }
 
-    private void addGenericAttributes(FeatureDescription desc, Consumer<? super Attribute<?>> sink, ConstantPoolBuilder cpb) {
-        @SuppressWarnings("unchecked")
-        var builder = (Consumer<Attribute<?>>) sink;
+    private void addGenericAttributes(FeatureDescription desc, Consumer<Attribute<?>> builder, ConstantPoolBuilder cpb) {
         if (desc.deprecated) {
             builder.accept(DeprecatedAttribute.of());
         }

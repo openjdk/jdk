@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedMethodBuilder;
 import jdk.internal.classfile.impl.TerminalMethodBuilder;
+import jdk.internal.classfile.impl.TransformImpl;
 
 /**
  * A builder for methods.  The main way to obtain a method builder is via {@link
@@ -49,7 +50,7 @@ import jdk.internal.classfile.impl.TerminalMethodBuilder;
  * @since 24
  */
 public sealed interface MethodBuilder
-        extends ClassFileBuilder<MethodElement, MethodBuilder>
+        extends ClassFileBuilder<MethodTransform, MethodElement, MethodBuilder>
         permits ChainedMethodBuilder, TerminalMethodBuilder {
 
     /**
@@ -106,4 +107,18 @@ public sealed interface MethodBuilder
      * @see CodeTransform
      */
     MethodBuilder transformCode(CodeModel code, CodeTransform transform);
+
+    // Implementations
+
+    /**
+     * @since 25
+     */
+    @Override
+    default MethodBuilder transforming(MethodTransform transform, Consumer<? super MethodBuilder> handler) {
+        var resolved = TransformImpl.resolve(transform, this);
+        resolved.startHandler().run();
+        handler.accept(new ChainedMethodBuilder(this, resolved.consumer()));
+        resolved.endHandler().run();
+        return this;
+    }
 }

@@ -201,7 +201,7 @@ class InvokerBytecodeGenerator {
 
     record ClassData(FieldRefEntry field, Object value) {}
 
-    FieldRefEntry classData(ClassFileBuilder<?, ?> cfb, Object arg, ClassDesc desc) {
+    FieldRefEntry classData(ClassFileBuilder<?, ?, ?> cfb, Object arg, ClassDesc desc) {
         // unique static variable name
         String name;
         List<ClassData> classData = this.classData;

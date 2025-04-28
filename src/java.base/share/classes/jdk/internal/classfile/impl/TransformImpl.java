@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ public final class TransformImpl {
 
     private static final Runnable NOTHING = () -> { };
 
-    public static <E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
-            ResolvedTransform<E> resolve(ClassFileTransform<?, E, B> transform, B builder) {
+    public static <E extends ClassFileElement, B extends ClassFileBuilder<C, E, B>, C extends ClassFileTransform<C, E, B>>
+            ResolvedTransform<E> resolve(C transform, B builder) {
         if (transform instanceof ResolvableTransform) {
             @SuppressWarnings("unchecked")
-            var ut = (ResolvableTransform<E, B>) transform;
+            var ut = (ResolvableTransform<E, B, C>) transform;
             return ut.resolve(builder);
         }
         return new ResolvedTransform<>(e -> transform.accept(builder, e),
@@ -53,11 +53,11 @@ public final class TransformImpl {
             () -> transform.atStart(builder));
     }
 
-    interface ResolvableTransform<E extends ClassFileElement, B extends ClassFileBuilder<E, B>> {
+    interface ResolvableTransform<E extends ClassFileElement, B extends ClassFileBuilder<C, E, B>, C extends ClassFileTransform<C, E, B>> {
         ResolvedTransform<E> resolve(B builder);
     }
 
-    interface UnresolvedClassTransform extends ClassTransform, ResolvableTransform<ClassElement, ClassBuilder> {
+    interface UnresolvedClassTransform extends ClassTransform, ResolvableTransform<ClassElement, ClassBuilder, ClassTransform> {
         @Override
         default void accept(ClassBuilder builder, ClassElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -153,7 +153,7 @@ public final class TransformImpl {
 
     // MethodTransform
 
-    interface UnresolvedMethodTransform extends MethodTransform, ResolvableTransform<MethodElement, MethodBuilder> {
+    interface UnresolvedMethodTransform extends MethodTransform, ResolvableTransform<MethodElement, MethodBuilder, MethodTransform> {
         @Override
         default void accept(MethodBuilder builder, MethodElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -217,7 +217,7 @@ public final class TransformImpl {
 
     // FieldTransform
 
-    interface UnresolvedFieldTransform extends FieldTransform, ResolvableTransform<FieldElement, FieldBuilder> {
+    interface UnresolvedFieldTransform extends FieldTransform, ResolvableTransform<FieldElement, FieldBuilder, FieldTransform> {
         @Override
         default void accept(FieldBuilder builder, FieldElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -257,7 +257,7 @@ public final class TransformImpl {
 
     // CodeTransform
 
-    interface UnresolvedCodeTransform extends CodeTransform, ResolvableTransform<CodeElement, CodeBuilder> {
+    interface UnresolvedCodeTransform extends CodeTransform, ResolvableTransform<CodeElement, CodeBuilder, CodeTransform> {
         @Override
         default void accept(CodeBuilder builder, CodeElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");

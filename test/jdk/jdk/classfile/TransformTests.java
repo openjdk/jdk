@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,7 @@
  * @run junit TransformTests
  */
 
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.Label;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
+import java.lang.classfile.*;
 import java.lang.classfile.instruction.BranchInstruction;
 import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.classfile.instruction.LabelTarget;
@@ -57,6 +44,8 @@ import java.util.Set;
 
 import helpers.ByteArrayClassLoader;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
@@ -85,20 +74,62 @@ class TransformTests {
         };
     }
 
-    static ClassTransform transformCode(CodeTransform x) {
-        return (cb, ce) -> {
-            if (ce instanceof MethodModel mm) {
-                cb.transformMethod(mm, (mb, me) -> {
-                    if (me instanceof CodeModel xm) {
-                        mb.transformCode(xm, x);
+    enum CodeTransformLifter {
+        MB_TRANSFORM_CODE {
+            @Override
+            public ClassTransform transformCode(CodeTransform x) {
+                return (cb, ce) -> {
+                    if (ce instanceof MethodModel mm) {
+                        cb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel xm) {
+                                mb.transformCode(xm, x);
+                            }
+                            else
+                                mb.with(me);
+                        });
                     }
                     else
-                        mb.with(me);
-                });
+                        cb.with(ce);
+                };
             }
-            else
-                cb.with(ce);
+        },
+        COB_TRANSFORM_CODE_MODEL {
+            @Override
+            public ClassTransform transformCode(CodeTransform x) {
+                return (cb, ce) -> {
+                    if (ce instanceof MethodModel mm) {
+                        cb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel xm) {
+                                mb.withCode(cob -> cob.transform(xm, x));
+                            }
+                            else
+                                mb.with(me);
+                        });
+                    }
+                    else
+                        cb.with(ce);
+                };
+            }
+        },
+        COB_TRANSFORM_CODE_HANDLER {
+            @Override
+            public ClassTransform transformCode(CodeTransform x) {
+                return (cb, ce) -> {
+                    if (ce instanceof MethodModel mm) {
+                        cb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel xm) {
+                                mb.withCode(cob -> cob.transforming(x, xm::forEach));
+                            }
+                            else
+                                mb.with(me);
+                        });
+                    }
+                    else
+                        cb.with(ce);
+                };
+            }
         };
+        public abstract ClassTransform transformCode(CodeTransform x);
     }
 
     static String invoke(byte[] bytes) throws Exception {
@@ -108,41 +139,44 @@ class TransformTests {
                         .invoke(null);
     }
 
-    @Test
-    void testSingleTransform() throws Exception {
+    @EnumSource
+    @ParameterizedTest
+    void testSingleTransform(CodeTransformLifter lifter) throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
-        assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2foo))), "foo");
-        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar))), "bar");
+        assertEquals("foo", invoke(bytes));
+        assertEquals("foo", invoke(cc.transformClass(cm, lifter.transformCode(foo2foo))));
+        assertEquals("bar", invoke(cc.transformClass(cm, lifter.transformCode(foo2bar))));
     }
 
-    @Test
-    void testSeq2() throws Exception {
+    @EnumSource
+    @ParameterizedTest
+    void testSeq2(CodeTransformLifter lifter) throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
-        assertEquals(invoke(bytes), "foo");
-        ClassTransform transform = transformCode(foo2bar.andThen(bar2baz));
-        assertEquals(invoke(cc.transformClass(cm, transform)), "baz");
+        assertEquals("foo", invoke(bytes));
+        ClassTransform transform = lifter.transformCode(foo2bar.andThen(bar2baz));
+        assertEquals("baz", invoke(cc.transformClass(cm, transform)));
     }
 
-    @Test
-    void testSeqN() throws Exception {
+    @EnumSource
+    @ParameterizedTest
+    void testSeqN(CodeTransformLifter lifter) throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(bytes);
 
-        assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
-        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
-        assertEquals(invoke(cc.transformClass(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+        assertEquals("foo", invoke(bytes));
+        assertEquals("foo", invoke(cc.transformClass(cm, lifter.transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))));
+        assertEquals("quux", invoke(cc.transformClass(cm, lifter.transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))));
+        assertEquals("baz", invoke(cc.transformClass(cm, lifter.transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))));
     }
 
     /**
@@ -327,6 +361,65 @@ class TransformTests {
         cf.transformClass(cm, ct);
         cf.transformClass(cm, ct.andThen(ct));
         cf.transformClass(cm, ct.andThen(ct).andThen(ct));
+    }
+
+    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
+
+    @Test
+    void testHandlerTransforms() throws Exception {
+        var cf = ClassFile.of();
+        byte[] bytes;
+        // ClassBuilder
+        bytes = cf.build(ClassDesc.of(testClassName), clb -> clb
+                .transforming((clb2, cle) -> {
+                              if (cle instanceof MethodModel mm) {
+                                  assertEquals("bar", mm.methodName().stringValue());
+                                  assertEquals(MTD_String, mm.methodTypeSymbol());
+                                  assertEquals(0, mm.flags().flagsMask());
+                                  clb2.withMethod("foo", MTD_String, ACC_PUBLIC | ACC_STATIC, mm::forEach);
+                              } else {
+                                  clb2.with(cle);
+                              }
+                          }, clb2 -> clb2.withMethodBody("bar", MTD_String, 0, cob -> cob
+                                .loadConstant("foo")
+                                .areturn())));
+        assertEquals("foo", invoke(bytes));
+        // MethodBuilder
+        bytes = cf.build(ClassDesc.of(testClassName), clb -> clb
+                .withMethod("foo", MTD_String, ACC_PUBLIC | ACC_STATIC, mb -> mb
+                        .transforming((mb1, me) -> {
+                            if (me instanceof CodeModel cm) {
+                                var list = cm.elementList()
+                                        .stream()
+                                        .<Instruction>mapMulti((e, sink) -> {
+                                            if (e instanceof Instruction inst) {
+                                                sink.accept(inst);
+                                            }
+                                        }).toList();
+                                assertEquals(2, list.size());
+                                assertInstanceOf(ConstantInstruction.class, list.getFirst());
+                                assertEquals(Opcode.ARETURN, ((Instruction) list.get(1)).opcode());
+
+                                mb1.withCode(cob -> cob
+                                        .loadConstant("baz")
+                                        .areturn());
+                            } else {
+                                mb1.with(me);
+                            }
+                        }, mb1 -> mb1.withCode(cob -> cob.loadConstant("bar").areturn()))));
+        assertEquals("baz", invoke(bytes));
+        // CodeBuilder
+        bytes = cf.build(ClassDesc.of(testClassName), clb -> clb
+                .withMethodBody("foo", MTD_String, ACC_PUBLIC | ACC_STATIC, cob -> cob
+                        .transforming((cob1, coe) -> {
+                                    if (coe instanceof ConstantInstruction.LoadConstantInstruction inst) {
+                                        assertEquals("dub", inst.constantValue());
+                                        cob1.loadConstant("hot");
+                                    } else {
+                                        cob1.with(coe);
+                                    }
+                                }, cob1 -> cob1.loadConstant("dub").areturn())));
+        assertEquals("hot", invoke(bytes));
     }
 
     public static class TestClass {

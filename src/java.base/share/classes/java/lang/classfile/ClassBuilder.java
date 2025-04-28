@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
+import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.classfile.impl.Util;
 
 /**
@@ -57,7 +58,7 @@ import jdk.internal.classfile.impl.Util;
  * @since 24
  */
 public sealed interface ClassBuilder
-        extends ClassFileBuilder<ClassElement, ClassBuilder>
+        extends ClassFileBuilder<ClassTransform, ClassElement, ClassBuilder>
         permits ChainedClassBuilder, DirectClassBuilder {
 
     /**
@@ -360,4 +361,18 @@ public sealed interface ClassBuilder
      * @see MethodTransform
      */
     ClassBuilder transformMethod(MethodModel method, MethodTransform transform);
+
+    // Implementations
+
+    /**
+     * @since 25
+     */
+    @Override
+    default ClassBuilder transforming(ClassTransform transform, Consumer<? super ClassBuilder> handler) {
+        var resolved = TransformImpl.resolve(transform, this);
+        resolved.startHandler().run();
+        handler.accept(new ChainedClassBuilder(this, resolved.consumer()));
+        resolved.endHandler().run();
+        return this;
+    }
 }

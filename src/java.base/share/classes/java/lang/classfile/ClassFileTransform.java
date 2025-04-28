@@ -26,14 +26,14 @@ package java.lang.classfile;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * A transformation on a {@link CompoundElement} by processing its individual
  * member elements and sending the results to a {@link ClassFileBuilder},
- * through {@link ClassFileBuilder#transform}.  A subtype of {@code
- * ClassFileTransform} is defined for each subtype of {@link CompoundElement}
- * and {@link ClassFileBuilder}, as shown in the sealed class hierarchy below.
+ * through {@link ClassFileBuilder#transform} and {@link
+ * ClassFileBuilder#transforming}.  A subtype of {@code ClassFileTransform} is
+ * defined for each subtype of {@link CompoundElement} and {@link
+ * ClassFileBuilder}, as shown in the sealed class hierarchy below.
  * <p>
  * For example, this is a basic transformation of a {@link CodeModel} that
  * redirects all calls to static methods in the {@code Foo} class to the {@code
@@ -85,8 +85,9 @@ import java.util.function.Supplier;
  * transform the method body of select methods in the class it runs on.  This
  * allows users to write small transforms and apply to larger scales.
  * <p>
- * Besides {@link ClassFileBuilder#transform}, there are other methods that
- * accepts a transform conveniently, such as {@link ClassFile#transformClass},
+ * Besides {@link ClassFileBuilder#transform} and {@link
+ * ClassFileBuilder#transforming}, there are other methods that accepts a
+ * transform conveniently, such as {@link ClassFile#transformClass},
  * {@link ClassBuilder#transformField}, {@link ClassBuilder#transformMethod}, or
  * {@link MethodBuilder#transformCode}.  They are convenience methods that suit
  * the majority of transformation scenarios.
@@ -101,7 +102,7 @@ import java.util.function.Supplier;
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
         E extends ClassFileElement,
-        B extends ClassFileBuilder<E, B>>
+        B extends ClassFileBuilder<C, E, B>>
         permits ClassTransform, FieldTransform, MethodTransform, CodeTransform {
     /**
      * Transform an element by taking the appropriate actions on the builder.
