@@ -27,7 +27,6 @@ package java.util.prefs;
 
 import java.util.*;
 import java.io.*;
-import java.security.PrivilegedActionException;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -660,8 +659,7 @@ class FileSystemPreferences extends AbstractPreferences {
      * Called with file lock held (in addition to node locks).
      */
     protected void removeNodeSpi() throws BackingStoreException {
-        if (changeLog.contains(nodeCreate)) {
-            changeLog.remove(nodeCreate);
+        if (changeLog.remove(nodeCreate)) {
             nodeCreate = null;
             return;
         }
