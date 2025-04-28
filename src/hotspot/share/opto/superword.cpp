@@ -2681,7 +2681,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // prefer loads or stores.
     bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
     bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
-    if (vw > max_aw || (vw == max_aw && (prefer_load && prefer_store))) {
+    if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
       max_aw = vw;
       mem_ref = p0;
     }
@@ -2938,6 +2938,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   p.for_each_invar_summand([&] (const MemPointerSummand& s) {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
+    TRACE_ALIGN_VECTOR_NODE(invar_variable);
     if (igvn().type(invar_variable)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
@@ -2947,6 +2948,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
     Node* invar_scale_con = igvn().intcon(invar_scale);
+    TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(invar_summand);
