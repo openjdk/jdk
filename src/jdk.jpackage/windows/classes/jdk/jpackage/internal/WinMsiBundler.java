@@ -595,11 +595,11 @@ public class WinMsiBundler  extends AbstractBundler {
         final var imageDir = WIN_APP_IMAGE.fetchFrom(params);
 
         new ScriptRunner()
-        .setDirectory(imageDir)
-        .setResourceCategoryId("resource.post-app-image-script")
-        .setScriptNameSuffix("post-image")
-        .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-        .run(params);
+                .setDirectory(imageDir)
+                .setResourceCategoryId("resource.post-app-image-script")
+                .setScriptNameSuffix("post-image")
+                .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
+                .run(params);
 
         // All l10n files are supplied to WiX with "-loc", but only
         // Cultures from custom files and a single primary Culture are

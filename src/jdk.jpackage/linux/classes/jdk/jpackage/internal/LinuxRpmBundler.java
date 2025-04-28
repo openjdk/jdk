@@ -299,11 +299,11 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         PlatformPackage thePackage = createMetaPackage(params);
 
         new ScriptRunner()
-        .setDirectory(thePackage.sourceRoot())
-        .setResourceCategoryId("resource.post-app-image-script")
-        .setScriptNameSuffix("post-image")
-        .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
-        .run(params);
+                .setDirectory(thePackage.sourceRoot())
+                .setResourceCategoryId("resource.post-app-image-script")
+                .setScriptNameSuffix("post-image")
+                .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
+                .run(params);
 
         Path rpmFile = outdir.toAbsolutePath().resolve(String.format(
                 "%s-%s-%s.%s.rpm", PACKAGE_NAME.fetchFrom(params),

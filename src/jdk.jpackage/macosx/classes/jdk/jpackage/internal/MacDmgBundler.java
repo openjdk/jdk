@@ -81,11 +81,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
             if (appLocation != null && prepareConfigFiles(appLocation,params)) {
                 new ScriptRunner()
-                .setDirectory(appLocation)
-                .setResourceCategoryId("resource.post-app-image-script")
-                .setScriptNameSuffix("post-image")
-                .setEnvironmentVariable("JpAppImageDir", appLocation.toAbsolutePath().toString())
-                .run(params);
+                        .setDirectory(appLocation)
+                        .setResourceCategoryId("resource.post-app-image-script")
+                        .setScriptNameSuffix("post-image")
+                        .setEnvironmentVariable("JpAppImageDir", appLocation.toAbsolutePath().toString())
+                        .run(params);
 
                 return buildDMG(params, appLocation, outdir);
             }
