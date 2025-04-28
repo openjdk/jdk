@@ -1413,6 +1413,62 @@ instruct vmin_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector unsigned integer max/min
+
+instruct vmaxu(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (UMaxV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vmaxu $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmaxu_vv(as_VectorRegister($dst$$reg),
+                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vminu(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (UMinV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vminu $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vminu_vv(as_VectorRegister($dst$$reg),
+                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned integer max/min - predicated
+
+instruct vmaxu_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
+  match(Set dst_src1 (UMaxV (Binary dst_src1 src2) v0));
+  ins_cost(VEC_COST);
+  format %{ "vmaxu_masked $dst_src1, $dst_src1, $src2, $v0" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmaxu_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
+                as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vminu_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
+  match(Set dst_src1 (UMinV (Binary dst_src1 src2) v0));
+  ins_cost(VEC_COST);
+  format %{ "vminu_masked $dst_src1, $dst_src1, $src2, $v0" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vminu_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
+                as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector float-point max/min
 
 instruct vmax_fp(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
