@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ProtocolException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /*
@@ -38,7 +39,7 @@ public class ValidatingHeadersConsumer {
     private final Context context;
 
     public ValidatingHeadersConsumer(Context context) {
-        this.context = context;
+        this.context = Objects.requireNonNull(context);
     }
 
     public enum Context {
