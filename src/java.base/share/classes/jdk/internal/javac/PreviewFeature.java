@@ -70,7 +70,6 @@ public @interface PreviewFeature {
         //---
         @JEP(number=495, title="Simple Source Files and Instance Main Methods", status="Fourth Preview")
         IMPLICIT_CLASSES,
-        @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
         @JEP(number=499, title="Structured Concurrency", status="Fourth Preview")
         STRUCTURED_CONCURRENCY,
