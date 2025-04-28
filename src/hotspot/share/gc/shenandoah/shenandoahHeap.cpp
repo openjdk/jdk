@@ -1666,12 +1666,7 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   set_gc_cause(cause);
   set_gc_generation(generation);
 
-  if (mode()->is_generational()) {
-    // young-gen heuristics track young, bootstrap, and global GC cycle times
-    young_generation()->heuristics()->record_cycle_start();
-  } else {
-    generation->heuristics()->record_cycle_start();
-  }
+  generation->heuristics()->record_cycle_start();
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
