@@ -2709,6 +2709,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         final int maxExp = Math.max(3, Double.PRECISION / bitLengthForLong(x));
         final int maxExpLen = bitLengthForInt(maxExp);
         final long[] powerCache = new long[1 << maxExpLen];
+        powerCache[1] = x;
+        powerCache[2] = x * x;
+        powerCache[3] = x * x * x;
 
         final int nZeros = Integer.numberOfLeadingZeros(n);
         n <<= nZeros;
@@ -2742,10 +2745,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         long xToExp = powerCache[exp];
         if (xToExp == 0) {
             if (exp <= maxExp) {
-                // don't use fp arithmetic if exp <= 3
-                xToExp = exp == 1 ? x :
-                        (exp == 2 ? x*x :
-                        (exp == 3 ? x*x*x : (long) Math.pow(x, exp)));
+                xToExp = (long) Math.pow(x, exp); // don't use fp arithmetic if exp <= 3
                 powerCache[exp] = xToExp;
             } else {
                 // adjust exp to fit x^expAdj into a double
@@ -2755,10 +2755,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 if (xToExp == 0) { // compute x^(expAdj << 1)
                     xToExp = powerCache[expAdj];
                     if (xToExp == 0) {  // compute x^expAdj
-                        // don't use fp arithmetic if expAdj <= 3
-                        xToExp = expAdj == 1 ? x :
-                                (expAdj == 2 ? x*x :
-                                (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
+                        xToExp = (long) Math.pow(x, expAdj); // don't use fp arithmetic if expAdj <= 3
                         powerCache[expAdj] = xToExp;
                     }
                     xToExp *= xToExp;
