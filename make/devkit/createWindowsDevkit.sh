@@ -188,7 +188,11 @@ cp $DEVKIT_ROOT/VC/redist/arm64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/arm64
 ################################################################################
 # Copy SDK files
 
-SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+SDK_INSTALL_DIR=`${CMD_EXE} echo %WindowsSdkDir% | tr -d '\r'`
+SDK_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$SDK_INSTALL_DIR")"
+if [ ! -d "$SDK_INSTALL_DIR" ]; then
+    SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+fi
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
 SDK_FULL_VERSION="$(ls "$SDK_INSTALL_DIR/bin" | sort -r -n | head -n1)"
