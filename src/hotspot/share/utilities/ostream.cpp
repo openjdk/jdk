@@ -231,10 +231,6 @@ void outputStream::cr() {
   this->write("\n", 1);
 }
 
-void outputStream::cr_indent() {
-  cr(); indent();
-}
-
 void outputStream::stamp() {
   if (! _stamp.is_updated()) {
     _stamp.update(); // start at 0 on first call to stamp()

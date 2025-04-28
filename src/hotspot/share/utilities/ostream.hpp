@@ -132,7 +132,6 @@ class outputStream : public CHeapObjBase {
    void put(char ch);
    void sp(int count = 1);
    void cr();
-   void cr_indent();
    void bol() { if (_position > 0)  cr(); }
 
 
