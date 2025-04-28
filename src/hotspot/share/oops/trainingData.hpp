@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_TRAININGDATA_HPP
 #define SHARE_OOPS_TRAININGDATA_HPP
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -280,6 +281,7 @@ private:
 
   static bool have_data() { return AOTReplayTraining;  } // Going to read
   static bool need_data() { return AOTRecordTraining;  } // Going to write
+  static bool assembling_data() { return CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
 
   template<typename Function>
   static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
@@ -390,7 +392,6 @@ private:
   static void cleanup_training_data();
   static void serialize(SerializeClosure* soc);
   static void print_archived_training_data_on(outputStream* st);
-  static void write_training_data_dictionary(TrainingDataDictionary* dictionary);
   static TrainingData* lookup_archived_training_data(const Key* k);
 #endif
 

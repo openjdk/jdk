@@ -468,15 +468,15 @@ void KlassTrainingData::notice_fully_initialized() {
 }
 
 void TrainingData::init_dumptime_table(TRAPS) {
-  if (!need_data()) {
-    return;
-  }
-  _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  precond((!assembling_data() && !need_data()) || need_data() != assembling_data());
+  if (assembling_data()) {
+    _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     _archived_training_data_dictionary.iterate([&](TrainingData* record) {
       _dumptime_training_data_dictionary->append(record);
     });
-  } else {
+  }
+  if (need_data()) {
+    _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
     TrainingDataLocker::snapshot();
 
@@ -496,20 +496,33 @@ void TrainingData::init_dumptime_table(TRAPS) {
 }
 
 void TrainingData::iterate_roots(MetaspaceClosure* it) {
-  if (!need_data()) {
-    return;
-  }
-  assert(_dumptime_training_data_dictionary != nullptr, "");
-  for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
-    _dumptime_training_data_dictionary->at(i).metaspace_pointers_do(it);
+  if (_dumptime_training_data_dictionary != nullptr) {
+    for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
+      _dumptime_training_data_dictionary->at(i).metaspace_pointers_do(it);
+    }
   }
 }
 
 void TrainingData::dump_training_data() {
-  if (!need_data()) {
-    return;
+  if (_dumptime_training_data_dictionary != nullptr) {
+    CompactHashtableStats stats;
+    _archived_training_data_dictionary_for_dumping.reset();
+    CompactHashtableWriter writer(_dumptime_training_data_dictionary->length(), &stats);
+    for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
+      TrainingData* td = _dumptime_training_data_dictionary->at(i).training_data();
+#ifdef ASSERT
+      for (int j = i+1; j < _dumptime_training_data_dictionary->length(); j++) {
+        TrainingData* td1 = _dumptime_training_data_dictionary->at(j).training_data();
+        assert(!TrainingData::Key::equals(td1, td->key(), -1), "conflict");
+      }
+#endif // ASSERT
+      td = ArchiveBuilder::current()->get_buffered_addr(td);
+      uint hash = TrainingData::Key::cds_hash(td->key());
+      u4 delta = ArchiveBuilder::current()->buffer_to_offset_u4((address)td);
+      writer.add(hash, delta);
+    }
+    writer.dump(&_archived_training_data_dictionary_for_dumping, "training data dictionary");
   }
-  write_training_data_dictionary(&_archived_training_data_dictionary_for_dumping);
 }
 
 void TrainingData::cleanup_training_data() {
@@ -694,30 +707,6 @@ bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {
   return SystemDictionaryShared::hash_for_shared_dictionary((address)k->meta());
-}
-
-void TrainingData::write_training_data_dictionary(TrainingDataDictionary* dictionary) {
-  if (!need_data()) {
-    return;
-  }
-  assert(_dumptime_training_data_dictionary != nullptr, "");
-  CompactHashtableStats stats;
-  dictionary->reset();
-  CompactHashtableWriter writer(_dumptime_training_data_dictionary->length(), &stats);
-  for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
-    TrainingData* td = _dumptime_training_data_dictionary->at(i).training_data();
-#ifdef ASSERT
-    for (int j = i+1; j < _dumptime_training_data_dictionary->length(); j++) {
-      TrainingData* td1 = _dumptime_training_data_dictionary->at(j).training_data();
-      assert(!TrainingData::Key::equals(td1, td->key(), -1), "conflict");
-    }
-#endif // ASSERT
-    td = ArchiveBuilder::current()->get_buffered_addr(td);
-    uint hash = TrainingData::Key::cds_hash(td->key());
-    u4 delta = ArchiveBuilder::current()->buffer_to_offset_u4((address)td);
-    writer.add(hash, delta);
-  }
-  writer.dump(dictionary, "training data dictionary");
 }
 
 TrainingData* TrainingData::lookup_archived_training_data(const Key* k) {

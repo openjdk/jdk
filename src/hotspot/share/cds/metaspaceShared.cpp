@@ -970,13 +970,6 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   // are implemented by K are not verified.
   link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    assert(!AOTRecordTraining, "must be");
-    if (CDSConfig::is_dumping_aot_linked_classes()) {
-      AOTRecordTraining = true;
-    }
-  }
-
   TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
 
   if (CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
