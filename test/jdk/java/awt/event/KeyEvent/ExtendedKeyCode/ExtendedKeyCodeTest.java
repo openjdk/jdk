@@ -21,11 +21,11 @@
  * questions.
  */
 
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -45,7 +45,7 @@ public class ExtendedKeyCodeTest {
         robot.setAutoDelay(50);
 
         try {
-            SwingUtilities.invokeAndWait(() -> createTestGUI());
+            EventQueue.invokeAndWait(() -> createTestGUI());
             robot.waitForIdle();
             robot.delay(1000);
 
@@ -57,11 +57,11 @@ public class ExtendedKeyCodeTest {
                 throw new RuntimeException("Wrong extended key code!");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            EventQueue.invokeAndWait(() -> frame.dispose());
         }
 
         try {
-            SwingUtilities.invokeAndWait(() -> createTestGUI2());
+            EventQueue.invokeAndWait(() -> createTestGUI2());
             robot.waitForIdle();
             robot.delay(1000);
 
@@ -73,7 +73,7 @@ public class ExtendedKeyCodeTest {
                 throw new RuntimeException("Wrong extended key code");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            EventQueue.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -85,15 +85,17 @@ public class ExtendedKeyCodeTest {
             @Override
             public void keyPressed(KeyEvent e) {
                 eventsCount++;
-                setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                        == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
+                int keyCode = KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar());
+                setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode() == keyCode);
+                System.out.println("Test 1 keyPressed " + keyCode);
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
                 eventsCount++;
-                setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                        == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
+                int keyCode = KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar());
+                setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode() == keyCode);
+                System.out.println("Test 1 keyReleased " + keyCode);
             }
         });
 
@@ -108,7 +110,9 @@ public class ExtendedKeyCodeTest {
         frame.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                setExtendedKeyCode = e.getExtendedKeyCode() == KeyEvent.VK_LEFT;
+                int keyCode = e.getExtendedKeyCode();
+                setExtendedKeyCode = keyCode == KeyEvent.VK_LEFT;
+                System.out.println("Test 2 keyPressed " + keyCode);
             }
         });
 
