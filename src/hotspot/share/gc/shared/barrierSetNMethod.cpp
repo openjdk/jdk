@@ -35,8 +35,8 @@
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"

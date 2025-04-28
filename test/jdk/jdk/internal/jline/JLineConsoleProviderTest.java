@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8331535
+ * @bug 8331535 8351435
  * @summary Verify the jdk.internal.le's console provider works properly.
  * @modules jdk.internal.le
  * @library /test/lib
@@ -58,7 +58,7 @@ public class JLineConsoleProviderTest {
                           String input,
                           String expectedOut) throws Exception {
         ProcessBuilder builder =
-                ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName(),
+                ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", ConsoleTest.class.getName(),
                                                           testName);
         OutputAnalyzer output = ProcessTools.executeProcess(builder, input);
 

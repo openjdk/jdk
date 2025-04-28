@@ -25,11 +25,11 @@
 
 
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/ostream.hpp"
 
@@ -121,6 +121,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case conc_weak_refs:
     case conc_strong_roots:
     case conc_coalesce_and_fill:
+    case promote_in_place:
       return true;
     default:
       return false;

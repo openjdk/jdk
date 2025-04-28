@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 7159566
- * @summary The choice positioned in the top of applet when clicking the choice.
+ * @summary The choice positioned in the top of window when clicking the choice.
  * @author Petr Pchelko
  * @library ../../regtesthelpers
  * @build Util

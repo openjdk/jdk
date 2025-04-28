@@ -47,16 +47,14 @@ import jdk.jpackage.test.AdditionalLauncher;
  * @test
  * @summary jpackage with --type app-image --app-image "appImage" --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @library base
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTwoStepsTest
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTwoStepsTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningAppImageTwoStepsTest {
 
@@ -68,11 +66,7 @@ public class SigningAppImageTwoStepsTest {
     @Parameter({"true", "false"})
     // Unsigned
     @Parameter({"false", "true"})
-    public void test(String... testArgs) throws Exception {
-        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
-        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
-
-        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
+    public void test(boolean signAppImage, boolean signingKey) throws Exception {
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 

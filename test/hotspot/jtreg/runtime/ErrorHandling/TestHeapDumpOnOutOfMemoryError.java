@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,12 @@ public class TestHeapDumpOnOutOfMemoryError {
             }
         }
         test(args[1]);
+        System.out.println("PASSED");
     }
 
     static void test(String type) throws Exception {
-        String heapdumpFilename = type + ".hprof";
+        // Test using %p pid substitution in HeapDumpPath:
+        String heapdumpFilename = type + ".%p.hprof";
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + heapdumpFilename,
                 // Note: When trying to provoke a metaspace OOM we may generate a lot of classes. In debug VMs this
@@ -94,13 +96,10 @@ public class TestHeapDumpOnOutOfMemoryError {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.stdoutShouldNotBeEmpty();
-        output.shouldContain("Dumping heap to " + type + ".hprof");
-        File dump = new File(heapdumpFilename);
-        Asserts.assertTrue(dump.exists() && dump.isFile(),
-                "Could not find dump file " + dump.getAbsolutePath());
-
-        HprofParser.parse(new File(heapdumpFilename));
-        System.out.println("PASSED");
+        String expectedHeapdumpFilename = type + "." + output.pid() + ".hprof";
+        output.shouldContain("Dumping heap to " + expectedHeapdumpFilename);
+        File dump = new File(expectedHeapdumpFilename);
+        Asserts.assertTrue(dump.exists() && dump.isFile(), "Expected heap dump file " + dump.getAbsolutePath());
+        HprofParser.parse(new File(expectedHeapdumpFilename));
     }
-
 }

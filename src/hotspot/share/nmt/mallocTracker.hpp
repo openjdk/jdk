@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -145,7 +145,7 @@ class MallocMemory {
 class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
-// usage by types and memory used by tracking itself.
+// usage by tags and memory used by tracking itself.
 class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
@@ -155,12 +155,12 @@ class MallocMemorySnapshot {
 
 
  public:
-  inline MallocMemory* by_type(MemTag mem_tag) {
+  inline MallocMemory* by_tag(MemTag mem_tag) {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
 
-  inline const MallocMemory* by_type(MemTag mem_tag) const {
+  inline const MallocMemory* by_tag(MemTag mem_tag) const {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
@@ -220,25 +220,25 @@ class MallocMemorySummary : AllStatic {
    static void initialize();
 
    static inline void record_malloc(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_malloc(size);
+     as_snapshot()->by_tag(mem_tag)->record_malloc(size);
      as_snapshot()->_all_mallocs.allocate(size);
    }
 
    static inline void record_free(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_free(size);
+     as_snapshot()->by_tag(mem_tag)->record_free(size);
      as_snapshot()->_all_mallocs.deallocate(size);
    }
 
    static inline void record_new_arena(MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_new_arena();
+     as_snapshot()->by_tag(mem_tag)->record_new_arena();
    }
 
    static inline void record_arena_free(MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_arena_free();
+     as_snapshot()->by_tag(mem_tag)->record_arena_free();
    }
 
    static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_arena_size_change(size);
+     as_snapshot()->by_tag(mem_tag)->record_arena_size_change(size);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {

@@ -228,7 +228,7 @@ void GraphKit::gen_stub(address C_function,
   Node* target = map()->in(TypeFunc::Parms);
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
-    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_offset()));
+    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_oop_offset()));
     Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)

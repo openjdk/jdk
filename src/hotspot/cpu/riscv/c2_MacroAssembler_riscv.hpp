@@ -129,6 +129,10 @@
                  Register op1, Register op2,
                  Register dst, Register src);
 
+  void enc_cmove_cmp_fp(int cmpFlag,
+                        FloatRegister op1, FloatRegister op2,
+                        Register dst, Register src, bool is_single);
+
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
          : sw(r, Address(sp, offset));
@@ -172,9 +176,15 @@
     }
   }
 
+  enum class FLOAT_TYPE {
+    half_precision,
+    single_precision,
+    double_precision
+  };
+
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
-                 bool is_double, bool is_min);
+                 FLOAT_TYPE ft, bool is_min);
 
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);

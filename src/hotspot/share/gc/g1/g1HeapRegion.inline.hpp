@@ -156,6 +156,8 @@ inline void G1HeapRegion::reset_after_full_gc_common() {
 
   _garbage_bytes = 0;
 
+  _incoming_refs = 0;
+
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
     mangle_unused_area();
@@ -263,11 +265,12 @@ inline void G1HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes) {
+inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs) {
   assert_at_safepoint();
 
   if (top_at_mark_start != bottom()) {
     _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
+    _incoming_refs = incoming_refs;
   }
 
   if (needs_scrubbing()) {

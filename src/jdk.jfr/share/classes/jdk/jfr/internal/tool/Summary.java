@@ -152,7 +152,7 @@ final class Summary extends Command {
             println(typeHeader + " ".repeat(minWidth - typeHeader.length()) + header);
             println("=".repeat(minWidth + header.length()));
             for (Statistics s : statsList) {
-                System.out.printf(" %-" + minWidth + "s%10d  %12d\n", s.name, s.count, s.size);
+                printf(" %-" + minWidth + "s%10d  %12d\n", s.name, s.count, s.size);
             }
         }
     }

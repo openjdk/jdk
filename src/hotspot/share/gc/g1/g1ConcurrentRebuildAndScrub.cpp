@@ -23,10 +23,9 @@
  */
 
 
-#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/shared/gc_globals.hpp"

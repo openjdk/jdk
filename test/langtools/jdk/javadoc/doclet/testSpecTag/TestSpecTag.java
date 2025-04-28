@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,11 +132,10 @@ public class TestSpecTag extends JavadocTester {
                     <div class="sub-nav">
                     <div class="nav-content">
                     <ol class="sub-nav-list"></ol>
-                    <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off">
-                    <input type="reset" id="reset-search" disabled value="Reset">
-                    </div>
+                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
+                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
+                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
+                     value="Reset"></div>
                     </div>
                     </div>
                     <!-- ========= END OF TOP NAVBAR ========= -->

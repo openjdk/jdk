@@ -25,10 +25,10 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
@@ -93,6 +93,11 @@ bool VM_GC_Operation::skip_operation() const {
   return skip;
 }
 
+static bool should_use_gclocker() {
+  // Only Serial and Parallel use GCLocker to synchronize with threads in JNI critical-sections, in order to handle pinned objects.
+  return UseSerialGC || UseParallelGC;
+}
+
 bool VM_GC_Operation::doit_prologue() {
   assert(((_gc_cause != GCCause::_no_gc) &&
           (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
@@ -106,17 +111,21 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
+
+  if (should_use_gclocker()) {
+    GCLocker::block();
+  }
   VM_GC_Sync_Operation::doit_prologue();
 
   // Check invocations
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
+    if (should_use_gclocker()) {
+      GCLocker::unblock();
+    }
     _prologue_succeeded = false;
   } else {
-    if (UseSerialGC || UseParallelGC) {
-      GCLocker::block();
-    }
     _prologue_succeeded = true;
   }
   return _prologue_succeeded;
@@ -124,9 +133,6 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  if (UseSerialGC || UseParallelGC) {
-    GCLocker::unblock();
-  }
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
   OopMapCache::try_trigger_cleanup();
@@ -134,6 +140,9 @@ void VM_GC_Operation::doit_epilogue() {
     Heap_lock->notify_all();
   }
   VM_GC_Sync_Operation::doit_epilogue();
+  if (should_use_gclocker()) {
+    GCLocker::unblock();
+  }
 }
 
 bool VM_GC_HeapInspection::doit_prologue() {

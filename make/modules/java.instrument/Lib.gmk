@@ -35,14 +35,17 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
     OPTIMIZATION := LOW, \
+    CFLAGS := $(ICONV_CFLAGS), \
     CFLAGS_windows := -Dstrcasecmp=stricmp, \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
+    LDFLAGS := $(ICONV_LDFLAGS), \
     JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
+    LIBS := $(ICONV_LIBS), \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL) -liconv, \
-    LIBS_macosx := -liconv \
+    LIBS_aix := $(LIBDL), \
+    LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
         -framework Security, \

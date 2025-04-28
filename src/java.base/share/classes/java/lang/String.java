@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,11 +173,14 @@ public final class String
     private final byte coder;
 
     /** Cache the hash code for the string */
+    @Stable
     private int hash; // Default to 0
 
     /**
      * Cache if the hash has been calculated as actually being zero, enabling
-     * us to avoid recalculating this.
+     * us to avoid recalculating this. This field is _not_ annotated @Stable as
+     * the `hashCode()` method reads the field `hash` first anyhow and if `hash`
+     * is the default zero value, is not trusted.
      */
     private boolean hashIsZero; // Default to false;
 

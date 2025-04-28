@@ -72,7 +72,8 @@ final class JVMUpcalls {
                 }
                 boolean jdkClass = Utils.isJDKClass(clazz);
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding instrumentation to event class " + clazz.getName() + " using retransform");
-                EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, jdkClass, false);
+                ClassInspector c = new ClassInspector(clazz.getSuperclass(), oldBytes, jdkClass);
+                EventInstrumentation ei = new EventInstrumentation(c, traceId, false);
                 byte[] bytes = ei.buildInstrumented();
                 Bytecode.log(clazz.getName(), bytes);
                 return bytes;
@@ -105,9 +106,9 @@ final class JVMUpcalls {
         }
         String eventName = "<Unknown>";
         try {
-            EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
-            eventName = ei.getEventName();
-            if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+            ClassInspector c = new ClassInspector(superClass, oldBytes, bootClassLoader);
+            eventName = c.getEventName();
+            if (!JVMSupport.shouldInstrument(bootClassLoader,  c.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
                 return oldBytes;
             }
@@ -118,17 +119,18 @@ final class JVMUpcalls {
                 // No need to generate bytecode if:
                 // 1) Event class is disabled, and there is not an external configuration that overrides.
                 // 2) Event class has @Registered(false)
-                if (!mr.isEnabled(ei.getEventName()) && !ei.isEnabled() || !ei.isRegistered()) {
+                if (!mr.isEnabled(c.getEventName()) && !c.isEnabled() || !c.isRegistered()) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for event type " + eventName + " since event was disabled on class load");
                     return oldBytes;
                 }
             }
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            EventInstrumentation ei = new EventInstrumentation(c, traceId, true);
             byte[] bytes = ei.buildInstrumented();
-            Bytecode.log(ei.getClassName() + "(" + traceId + ")", bytes);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            Bytecode.log(c.getClassName() + "(" + traceId + ")", bytes);
             return bytes;
         } catch (Throwable t) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName + ". " + t.getMessage());
             return oldBytes;
         }
     }

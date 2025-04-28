@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ class BasicLock {
   static int metadata_offset_in_bytes() { return (int)offset_of(BasicLock, _metadata); }
 
  public:
+  BasicLock() : _metadata(0) {}
+
   // LM_MONITOR
   void set_bad_metadata_deopt() { set_metadata(badDispHeaderDeopt); }
 

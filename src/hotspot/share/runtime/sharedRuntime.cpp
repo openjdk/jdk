@@ -1439,7 +1439,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   JRT_BLOCK
     callee_method = SharedRuntime::handle_ic_miss_helper(CHECK_NULL);
     // Return Method* through TLS
-    current->set_vm_result_2(callee_method());
+    current->set_vm_result_metadata(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   return get_resolved_entry(current, callee_method);
@@ -1470,7 +1470,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
       caller_frame.is_upcall_stub_frame()) {
     Method* callee = current->callee_target();
     guarantee(callee != nullptr && callee->is_method(), "bad handshake");
-    current->set_vm_result_2(callee);
+    current->set_vm_result_metadata(callee);
     current->set_callee_target(nullptr);
     if (caller_frame.is_entry_frame() && VM_Version::supports_fast_class_init_checks()) {
       // Bypass class initialization checks in c2i when caller is in native.
@@ -1492,7 +1492,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   JRT_BLOCK
     // Force resolving of caller (if we called from compiled frame)
     callee_method = SharedRuntime::reresolve_call_site(CHECK_NULL);
-    current->set_vm_result_2(callee_method());
+    current->set_vm_result_metadata(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   return get_resolved_entry(current, callee_method);
@@ -1550,7 +1550,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* curren
   bool enter_special = false;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(false, false, CHECK_NULL);
-    current->set_vm_result_2(callee_method());
+    current->set_vm_result_metadata(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   return get_resolved_entry(current, callee_method);
@@ -1561,7 +1561,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_virtual_call_C(JavaThread* curre
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(true, false, CHECK_NULL);
-    current->set_vm_result_2(callee_method());
+    current->set_vm_result_metadata(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   return get_resolved_entry(current, callee_method);
@@ -1574,7 +1574,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_opt_virtual_call_C(JavaThread* c
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(true, true, CHECK_NULL);
-    current->set_vm_result_2(callee_method());
+    current->set_vm_result_metadata(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   return get_resolved_entry(current, callee_method);
@@ -3168,7 +3168,7 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* current) {
   // this object in the future without emitting card-marks, so
   // GC may take any compensating steps.
 
-  oop new_obj = current->vm_result();
+  oop new_obj = current->vm_result_oop();
   if (new_obj == nullptr) return;
 
   BarrierSet *bs = BarrierSet::barrier_set();

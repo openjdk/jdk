@@ -870,7 +870,8 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  void step(uint cycles) {\n");
   fprintf(fp_hpp, "    _used = 0;\n");
-  fprintf(fp_hpp, "    _mask <<= cycles;\n");
+  fprintf(fp_hpp, "    uint max_shift = 8 * sizeof(_mask) - 1;\n");
+  fprintf(fp_hpp, "    _mask <<= (cycles < max_shift) ? cycles : max_shift;\n");
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  friend class Pipeline_Use;\n");
   fprintf(fp_hpp, "};\n\n");

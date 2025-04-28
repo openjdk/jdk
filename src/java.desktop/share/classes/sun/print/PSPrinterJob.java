@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1224,120 +1224,123 @@ public class PSPrinterJob extends RasterPrinterJob {
         return (psFonts == null) ? 0 : psFonts.length;
     }
 
-     protected boolean textOut(Graphics g, String str, float x, float y,
-                               Font mLastFont, FontRenderContext frc,
-                               float width) {
-        boolean didText = true;
-
+    protected boolean textOut(Graphics g, String str, float x, float y,
+                              Font mLastFont, FontRenderContext frc,
+                              float width) {
+        /* If we don't have fonts, use 2D path instead. */
         if (mFontProps == null) {
             return false;
-        } else {
-            prepDrawing();
+        }
 
-            /* On-screen drawString renders most control chars as the missing
-             * glyph and have the non-zero advance of that glyph.
-             * Exceptions are \t, \n and \r which are considered zero-width.
-             * Postscript handles control chars mostly as a missing glyph.
-             * But we use 'ashow' specifying a width for the string which
-             * assumes zero-width for those three exceptions, and Postscript
-             * tries to squeeze the extra char in, with the result that the
-             * glyphs look compressed or even overlap.
-             * So exclude those control chars from the string sent to PS.
+        /* On-screen drawString renders most control chars as the missing
+         * glyph and have the non-zero advance of that glyph.
+         * Exceptions are \t, \n and \r which are considered zero-width.
+         * Postscript handles control chars mostly as a missing glyph.
+         * But we use 'ashow' specifying a width for the string which
+         * assumes zero-width for those three exceptions, and Postscript
+         * tries to squeeze the extra char in, with the result that the
+         * glyphs look compressed or even overlap.
+         * So exclude those control chars from the string sent to PS.
+         */
+        str = removeControlChars(str);
+        if (str.isEmpty()) {
+            return true;
+        }
+
+        /* If AWT can't convert all chars, use 2D path instead. */
+        FontAccess access = FontAccess.getFontAccess();
+        PlatformFont peer = (PlatformFont) access.getFontPeer(mLastFont);
+        CharsetString[] acs = peer.makeMultiCharsetString(str, false);
+        if (acs == null) {
+            return false;
+        }
+
+        /* Get an array of indices into our PostScript name
+         * table. If all of the runs can not be converted
+         * to PostScript fonts then null is returned and
+         * we'll want to fall back to printing the text
+         * as shapes.
+         */
+        int[] psFonts = getPSFontIndexArray(mLastFont, acs);
+        if (psFonts == null) {
+            return false;
+        }
+
+        /* Prepare graphics context, now that we know we can handle the text. */
+        prepDrawing();
+
+        /* Draw each string segment. */
+        for (int i = 0; i < acs.length; i++){
+            CharsetString cs = acs[i];
+            CharsetEncoder fontCS = cs.fontDescriptor.encoder;
+
+            StringBuilder nativeStr = new StringBuilder();
+            byte[] strSeg = new byte[cs.length * 2];
+            int len = 0;
+            try {
+                ByteBuffer bb = ByteBuffer.wrap(strSeg);
+                fontCS.encode(CharBuffer.wrap(cs.charsetChars,
+                                              cs.offset,
+                                              cs.length),
+                                              bb, true);
+                bb.flip();
+                len = bb.limit();
+            } catch (IllegalStateException | CoderMalfunctionError xx){
+                continue;
+            }
+            /* The width to fit to may either be specified,
+             * or calculated. Specifying by the caller is only
+             * valid if the text does not need to be decomposed
+             * into multiple calls.
              */
-            str = removeControlChars(str);
-            if (str.length() == 0) {
+            float desiredWidth;
+            if (acs.length == 1 && width != 0f) {
+                desiredWidth = width;
+            } else {
+                Rectangle2D r2d =
+                    mLastFont.getStringBounds(cs.charsetChars,
+                                              cs.offset,
+                                              cs.offset+cs.length,
+                                              frc);
+                desiredWidth = (float)r2d.getWidth();
+            }
+            /* unprintable chars had width of 0, causing a PS error
+             */
+            if (desiredWidth == 0) {
                 return true;
             }
-            PlatformFont peer = (PlatformFont) FontAccess.getFontAccess()
-                                                         .getFontPeer(mLastFont);
-            CharsetString[] acs = peer.makeMultiCharsetString(str, false);
-            if (acs == null) {
-                /* AWT can't convert all chars so use 2D path */
-                return false;
+            nativeStr.append('<');
+            for (int j = 0; j < len; j++){
+                byte b = strSeg[j];
+                // to avoid encoding conversion with println()
+                String hexS = Integer.toHexString(b);
+                int length = hexS.length();
+                if (length > 2) {
+                    hexS = hexS.substring(length - 2, length);
+                } else if (length == 1) {
+                    hexS = "0" + hexS;
+                } else if (length == 0) {
+                    hexS = "00";
+                }
+                nativeStr.append(hexS);
             }
-            /* Get an array of indices into our PostScript name
-             * table. If all of the runs can not be converted
-             * to PostScript fonts then null is returned and
-             * we'll want to fall back to printing the text
-             * as shapes.
-             */
-            int[] psFonts = getPSFontIndexArray(mLastFont, acs);
-            if (psFonts != null) {
-
-                for (int i = 0; i < acs.length; i++){
-                    CharsetString cs = acs[i];
-                    CharsetEncoder fontCS = cs.fontDescriptor.encoder;
-
-                    StringBuilder nativeStr = new StringBuilder();
-                    byte[] strSeg = new byte[cs.length * 2];
-                    int len = 0;
-                    try {
-                        ByteBuffer bb = ByteBuffer.wrap(strSeg);
-                        fontCS.encode(CharBuffer.wrap(cs.charsetChars,
-                                                      cs.offset,
-                                                      cs.length),
-                                      bb, true);
-                        bb.flip();
-                        len = bb.limit();
-                    } catch (IllegalStateException | CoderMalfunctionError xx){
-                        continue;
-                    }
-                    /* The width to fit to may either be specified,
-                     * or calculated. Specifying by the caller is only
-                     * valid if the text does not need to be decomposed
-                     * into multiple calls.
-                     */
-                    float desiredWidth;
-                    if (acs.length == 1 && width != 0f) {
-                        desiredWidth = width;
-                    } else {
-                        Rectangle2D r2d =
-                            mLastFont.getStringBounds(cs.charsetChars,
-                                                      cs.offset,
-                                                      cs.offset+cs.length,
-                                                      frc);
-                        desiredWidth = (float)r2d.getWidth();
-                    }
-                    /* unprintable chars had width of 0, causing a PS error
-                     */
-                    if (desiredWidth == 0) {
-                        return didText;
-                    }
-                    nativeStr.append('<');
-                    for (int j = 0; j < len; j++){
-                        byte b = strSeg[j];
-                        // to avoid encoding conversion with println()
-                        String hexS = Integer.toHexString(b);
-                        int length = hexS.length();
-                        if (length > 2) {
-                            hexS = hexS.substring(length - 2, length);
-                        } else if (length == 1) {
-                            hexS = "0" + hexS;
-                        } else if (length == 0) {
-                            hexS = "00";
-                        }
-                        nativeStr.append(hexS);
-                    }
-                    nativeStr.append('>');
-                    /* This comment costs too much in output file size */
+            nativeStr.append('>');
+            /* This comment costs too much in output file size */
 //                  mPSStream.println("% Font[" + mLastFont.getName() + ", " +
 //                             FontConfiguration.getStyleString(mLastFont.getStyle()) + ", "
 //                             + mLastFont.getSize2D() + "]");
-                    getGState().emitPSFont(psFonts[i], mLastFont.getSize2D());
+            getGState().emitPSFont(psFonts[i], mLastFont.getSize2D());
 
-                    // out String
-                    mPSStream.println(nativeStr.toString() + " " +
-                                      desiredWidth + " " + x + " " + y + " " +
-                                      DrawStringName);
-                    x += desiredWidth;
-                }
-            } else {
-                didText = false;
-            }
+            // out String
+            mPSStream.println(nativeStr.toString() + " " +
+                              desiredWidth + " " + x + " " + y + " " +
+                              DrawStringName);
+            x += desiredWidth;
         }
 
-        return didText;
-     }
+        return true;
+    }
+
     /**
      * Set the current path rule to be either
      * {@code FILL_EVEN_ODD} (using the
@@ -1576,7 +1579,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
         if (options != null && !options.isEmpty()) {
             pFlags |= OPTIONS;
-            ncomps+=1;
+            ncomps+=options.trim().split(" ").length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -1802,7 +1805,6 @@ public class PSPrinterJob extends RasterPrinterJob {
             return mClip == null || mClip.equals(clip);
         }
 
-
         void emitPSClip(Shape clip) {
             if (clip != null
                 && (mClip == null || mClip.equals(clip) == false)) {
@@ -1937,7 +1939,8 @@ public class PSPrinterJob extends RasterPrinterJob {
     protected void deviceFill(PathIterator pathIter, Color color,
                               AffineTransform tx, Shape clip) {
 
-        if (Double.isNaN(tx.getScaleX()) ||
+        if (pathIter.isDone() ||
+            Double.isNaN(tx.getScaleX()) ||
             Double.isNaN(tx.getScaleY()) ||
             Double.isNaN(tx.getShearX()) ||
             Double.isNaN(tx.getShearY()) ||

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,31 +26,34 @@ package com.sun.tools.jnativescan;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolvedModule;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 class JNativeScanTask {
 
     private final PrintWriter out;
+    private final PrintWriter err;
     private final List<Path> classPaths;
     private final List<Path> modulePaths;
     private final List<String> cmdRootModules;
     private final Runtime.Version version;
     private final Action action;
 
-    public JNativeScanTask(PrintWriter out, List<Path> classPaths, List<Path> modulePaths,
+    public JNativeScanTask(PrintWriter out, PrintWriter err, List<Path> classPaths, List<Path> modulePaths,
                            List<String> cmdRootModules, Runtime.Version version, Action action) {
         this.out = out;
+        this.err = err;
         this.classPaths = classPaths;
         this.modulePaths = modulePaths;
         this.version = version;
@@ -71,18 +74,36 @@ class JNativeScanTask {
             toScan.add(new ClassFileSource.Module(m.reference()));
         }
 
-        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
-        try(ClassResolver classesToScan = ClassResolver.forClassFileSources(toScan, version);
-            ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
-            NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
-            allRestrictedMethods = finder.findAll();
+        Set<String> errors = new LinkedHashSet<>();
+        Diagnostics diagnostics = (context, error) ->
+                errors.add("Error while processing method: " + context + ": " + error.getMessage());
+        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods
+                = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
+        try(SystemClassResolver systemClassResolver = SystemClassResolver.forRuntimeVersion(version)) {
+            NativeMethodFinder finder = NativeMethodFinder.create(diagnostics, systemClassResolver);
+
+            for (ClassFileSource source : toScan) {
+                SortedMap<ClassDesc, List<RestrictedUse>> perClass
+                        = new TreeMap<>(Comparator.comparing(JNativeScanTask::qualName));
+                try (Stream<ClassModel> stream = source.classModels()) {
+                    stream.forEach(classModel -> {
+                        List<RestrictedUse> restrictedUses = finder.find(classModel);
+                        if (!restrictedUses.isEmpty()) {
+                            perClass.put(classModel.thisClass().asSymbol(), restrictedUses);
+                        }
+                    });
+                }
+                if (!perClass.isEmpty()) {
+                    allRestrictedMethods.put(source, perClass);
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         switch (action) {
             case PRINT -> printNativeAccess(allRestrictedMethods);
-            case DUMP_ALL -> dumpAll(allRestrictedMethods);
+            case DUMP_ALL -> dumpAll(allRestrictedMethods, errors);
         }
     }
 
@@ -110,7 +131,7 @@ class JNativeScanTask {
                             jarsToScan.offer(otherJar);
                         }
                     }
-                    result.add(new ClassFileSource.ClassPathJar(jar));
+                    result.add(new ClassFileSource.ClassPathJar(jar, version));
                 }
             } else if (Files.isDirectory(path)) {
                 result.add(new ClassFileSource.ClassPathDirectory(path));
@@ -156,7 +177,7 @@ class JNativeScanTask {
         out.println(nativeAccess);
     }
 
-    private void dumpAll(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void dumpAll(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods, Set<String> errors) {
         if (allRestrictedMethods.isEmpty()) {
             out.println("  <no restricted methods>");
         } else {
@@ -177,6 +198,10 @@ class JNativeScanTask {
                 });
             });
         }
+        if (!errors.isEmpty()) {
+            err.println("Error(s) while processing classes:");
+            errors.forEach(error -> err.println("  " + error));
+        }
     }
 
     private static boolean isJarFile(Path path) throws JNativeScanFatalError {
@@ -191,5 +216,9 @@ class JNativeScanTask {
     public static String qualName(ClassDesc desc) {
         String packagePrefix = desc.packageName().isEmpty() ? "" : desc.packageName() + ".";
         return packagePrefix + desc.displayName();
+    }
+
+    interface Diagnostics {
+        void error(MethodRef context, JNativeScanFatalError error);
     }
 }

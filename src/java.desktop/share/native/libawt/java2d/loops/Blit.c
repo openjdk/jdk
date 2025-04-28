@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,14 +68,30 @@ Java_sun_java2d_loops_Blit_Blit
         return;
     }
 
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
     srcInfo.bounds.x1 = srcx;
     srcInfo.bounds.y1 = srcy;
+    if (UNSAFE_TO_ADD(srcx, width) ||
+        UNSAFE_TO_ADD(srcy, height) ||
+        UNSAFE_TO_ADD(dstx, width) ||
+        UNSAFE_TO_ADD(dsty, height)) {
+        return;
+    }
+
     srcInfo.bounds.x2 = srcx + width;
     srcInfo.bounds.y2 = srcy + height;
     dstInfo.bounds.x1 = dstx;
     dstInfo.bounds.y1 = dsty;
     dstInfo.bounds.x2 = dstx + width;
     dstInfo.bounds.y2 = dsty + height;
+    if (UNSAFE_TO_SUB(srcx, dstx) ||
+        UNSAFE_TO_SUB(srcy, dsty)) {
+        return;
+    }
+
     srcx -= dstx;
     srcy -= dsty;
     SurfaceData_IntersectBounds(&dstInfo.bounds, &clipInfo.bounds);

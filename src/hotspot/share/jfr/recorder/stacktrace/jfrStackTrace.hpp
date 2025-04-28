@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class JfrStackFrame {
 class JfrStackTrace : public JfrCHeapObj {
   friend class JfrNativeSamplerCallback;
   friend class JfrStackTraceRepository;
+  friend class LeakProfilerStackTraceWriter;
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class OSThreadSampler;
@@ -82,7 +83,6 @@ class JfrStackTrace : public JfrCHeapObj {
 
   const JfrStackTrace* next() const { return _next; }
 
-  bool should_write() const { return !_written; }
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
   bool equals(const JfrStackTrace& rhs) const;
@@ -107,6 +107,7 @@ class JfrStackTrace : public JfrCHeapObj {
  public:
   traceid hash() const { return _hash; }
   traceid id() const { return _id; }
+  bool should_write() const { return !_written; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

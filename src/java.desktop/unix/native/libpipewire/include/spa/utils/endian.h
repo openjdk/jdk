@@ -18,10 +18,6 @@
 #define bswap_16 _byteswap_ushort
 #define bswap_32 _byteswap_ulong
 #define bswap_64 _byteswap_uint64
-#elif defined(AIX)
-#include <sys/machine.h>
-#define __BIG_ENDIAN      BIG_ENDIAN
-#define __BYTE_ORDER      BIG_ENDIAN
 #else
 #include <endian.h>
 #include <byteswap.h>

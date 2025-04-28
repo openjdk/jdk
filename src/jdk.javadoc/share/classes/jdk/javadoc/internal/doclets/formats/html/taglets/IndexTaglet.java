@@ -58,10 +58,10 @@ public class IndexTaglet extends BaseTaglet {
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
             tagText = tagText.substring(1, tagText.length() - 1);
         }
-        tagText = tagText.replaceAll("\\s+", " ");
+        tagText = utils.normalizeWhitespace(tagText);
 
         Content desc = tagletWriter.htmlWriter.commentTagsToContent(element, indexTree.getDescription(), context.within(indexTree));
-        String descText = extractText(desc);
+        String descText = utils.normalizeWhitespace(extractText(desc));
 
         return tagletWriter.createAnchorAndSearchIndex(element, tagText, descText, tag);
     }

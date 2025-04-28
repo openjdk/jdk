@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8185151 8196200 8261976
+ * @bug 8185151 8196200 8261976 8350638
  * @summary test that navigation summary links are not linked when there are no dependencies
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -72,7 +72,7 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -98,7 +98,7 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -122,7 +122,7 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     </ol>""");

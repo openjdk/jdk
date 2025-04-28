@@ -28,6 +28,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "testutils.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -1113,3 +1114,70 @@ TEST_VM(os, free_without_uncommit) {
   os::release_memory(base, size);
 }
 #endif
+
+TEST_VM(os, commit_memory_or_exit) {
+  const size_t page_sz = os::vm_page_size();
+  const size_t size = 16 * page_sz;
+  const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  char* base = os::reserve_memory(size, false, mtTest);
+  ASSERT_NOT_NULL(base);
+  os::commit_memory_or_exit(base, size, false, "Commit failed.");
+  strcpy(base, letters);
+  ASSERT_TRUE(os::uncommit_memory(base, size, false));
+  os::commit_memory_or_exit(base, size, page_sz, false, "Commit with alignment hint failed.");
+  strcpy(base, letters);
+  ASSERT_TRUE(os::uncommit_memory(base, size, false));
+  EXPECT_TRUE(os::release_memory(base, size));
+}
+
+#if !defined(_AIX)
+
+TEST_VM(os, map_memory_to_file) {
+  const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const size_t size = strlen(letters) +1;
+
+  int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
+  EXPECT_TRUE(fd > 0);
+  EXPECT_TRUE(os::write(fd, letters, size));
+
+  char* result = os::map_memory_to_file(size, fd, mtTest);
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
+  EXPECT_TRUE(os::unmap_memory(result, size));
+  ::close(fd);
+}
+
+TEST_VM(os, map_unmap_memory) {
+  const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const char* path = "map_unmap_memory.txt";
+  const size_t size = strlen(letters) + 1;
+  int fd = os::open(path, O_RDWR | O_CREAT, 0666);
+  EXPECT_TRUE(fd > 0);
+  EXPECT_TRUE(os::write(fd, letters, size));
+  ::close(fd);
+
+  fd = os::open(path, O_RDONLY, 0666);
+  char* result = os::map_memory(fd, path, 0, nullptr, size, true, false, mtTest);
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
+  EXPECT_TRUE(os::unmap_memory(result, size));
+  ::close(fd);
+}
+
+TEST_VM(os, map_memory_to_file_aligned) {
+  const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const size_t size = strlen(letters) + 1;
+
+  int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
+  EXPECT_TRUE(fd > 0);
+  EXPECT_TRUE(os::write(fd, letters, size));
+
+  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
+  EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
+  ::close(fd);
+}
+
+#endif // !defined(_AIX)

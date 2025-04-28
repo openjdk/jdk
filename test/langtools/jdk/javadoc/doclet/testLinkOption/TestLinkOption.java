@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,13 +104,13 @@ public class TestLinkOption extends JavadocTester {
                     <dd>
                     <ul class="tag-list-long">
                     <li><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
-                     transformation format of ISO 10646</i></a></li>
+                    transformation format of ISO 10646</i></a></li>
                     <li><a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
-                     Architecture</i></a></li>
+                    Architecture</i></a></li>
                     <li><a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
-                     Resource Identifiers (URI): Generic Syntax</i></a></li>
+                    Resource Identifiers (URI): Generic Syntax</i></a></li>
                     <li><a href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
-                     Literal IPv6 Addresses in URLs</i></a></li>
+                    Literal IPv6 Addresses in URLs</i></a></li>
                     <li><a href="C.html">A nearby file</a></li>
                     </ul>
                     </dd>
@@ -167,11 +167,11 @@ public class TestLinkOption extends JavadocTester {
                     ass="element-name type-name-label">A</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
-                     <br>
-                     <a href="../../out2/pkg2/C2.html" title="class or interface in pkg2" class="ext\
+                    <br>
+                    <a href="../../out2/pkg2/C2.html" title="class or interface in pkg2" class="ext\
                     ernal-link"><code>link to pkg2.C2</code></a>
-                     <br>
-                     <a href="../../out1/mylib/lang/StringBuilderChild.html" title="class or interfa\
+                    <br>
+                    <a href="../../out1/mylib/lang/StringBuilderChild.html" title="class or interfa\
                     ce in mylib.lang" class="external-link"><code>link to mylib.lang.StringBuilderCh\
                     ild</code></a>.</div>
                     """
@@ -192,11 +192,11 @@ public class TestLinkOption extends JavadocTester {
                     ass="element-name type-name-label">A</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
-                     <br>
-                     <a href="../../copy/out2/pkg2/C2.html" title="class or interface in pkg2" class\
+                    <br>
+                    <a href="../../copy/out2/pkg2/C2.html" title="class or interface in pkg2" class\
                     ="external-link"><code>link to pkg2.C2</code></a>
-                     <br>
-                     <a href="../../copy/out1/mylib/lang/StringBuilderChild.html" title="class or in\
+                    <br>
+                    <a href="../../copy/out1/mylib/lang/StringBuilderChild.html" title="class or in\
                     terface in mylib.lang" class="external-link"><code>link to mylib.lang.StringBuil\
                     derChild</code></a>.</div>
                     """

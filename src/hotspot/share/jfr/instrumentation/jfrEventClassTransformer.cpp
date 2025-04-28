@@ -338,7 +338,7 @@ class AnnotationIterator : public StackObj {
                                                                      _buffer(_limit > 2 ? ar->adr_at(2) : nullptr),
                                                                      _current(0),
                                                                      _next(0) {
-    if (_buffer != nullptr) {
+    if (_limit >= 2) {
       _limit -= 2; // subtract sizeof(u2) number of annotations field
     }
   }

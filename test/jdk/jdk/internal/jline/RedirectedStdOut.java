@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8330998
+ * @bug 8330998 8351435
  * @summary Verify that even if the stdout is redirected java.io.Console will
  *          use it for writing.
  * @modules jdk.internal.le
@@ -61,7 +61,7 @@ public class RedirectedStdOut {
     //this test is weaker, but more reliable:
     void runRedirectAllTest() throws Exception {
         ProcessBuilder builder =
-                ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
+                ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", ConsoleTest.class.getName());
         OutputAnalyzer output = ProcessTools.executeProcess(builder);
 
         output.waitFor();
@@ -153,7 +153,7 @@ public class RedirectedStdOut {
         System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
         ProcessBuilder builder =
-            ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName());
+            ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", ConsoleTest.class.getName());
 
         builder.inheritIO();
         builder.redirectOutput(stdout.toFile());

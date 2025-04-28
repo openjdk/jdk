@@ -69,21 +69,22 @@ LOG_LEVEL_LIST
     log_debug(logging)("log_debug-test");
   }
 
-  // Caveat: BufferUpdater is not MT-safe. We use it only for testing.
-  // We would observe missing loglines if we interleaved buffers.
-  // Emit all logs between constructor and destructor of BufferUpdater.
   void test_asynclog_drop_messages() {
-    const size_t sz = 2000;
+    const size_t sz = AsyncLogBufferSize / 2;
+    const char* str = "a lot of log...";
+    const size_t str_size = strlen(str);
 
-    // shrink async buffer.
-    AsyncLogWriter::BufferUpdater saver(1024);
     test_asynclog_ls(); // roughly 200 bytes.
     LogMessage(logging) lm;
 
     // write more messages than its capacity in burst
-    for (size_t i = 0; i < sz; ++i) {
-      lm.debug("a lot of log...");
+    for (size_t i = 0; i < (sz / str_size); ++i) {
+      lm.debug("%s", str);
     }
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
     lm.flush();
   }
 
@@ -244,13 +245,34 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
-  if (AsyncLogWriter::instance() == nullptr) {
+  if (AsyncLogWriter::instance() == nullptr) return;
+  if (LogConfiguration::async_mode() != LogConfiguration::AsyncMode::Drop) {
+    FAIL() << "This test must be run in drop mode if async UL is activated";
     return;
   }
 
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  bool messages_dropped = file_contains_substring(TestLogFileName, "messages dropped due to async logging");
+  if (!messages_dropped) {
+    stringStream content;
+    FILE* fp = os::fopen(TestLogFileName, "r");
+    assert(fp != nullptr, "error opening file %s: %s", TestLogFileName, os::strerror(errno));
+    {
+      ResourceMark rm;
+      char* line = read_line(fp);
+      while (line != nullptr) {
+        ResourceMark rm;
+        content.print_raw(line);
+        line = read_line(fp);
+      }
+    }
+
+    // The thread is null and deattached.
+    // That means that UL degrades to synchronous logging for this thread, which means that no messages can be dropped.
+    EXPECT_NE(nullptr, Thread::current_or_null()) << "Thread was null";
+    EXPECT_TRUE(messages_dropped) << "Log file content:\n" << content.freeze();
+  }
 }
 
 TEST_VM_F(AsyncLogTest, stdoutOutput) {

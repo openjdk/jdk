@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6831794 6229811
+ * @bug 6831794 6229811 8343157
  * @summary Test EUC_TW charset
  * @modules java.base/sun.nio.cs
  */
@@ -131,25 +131,7 @@ public class TestEUC_TW {
         return bb;
     }
 
-    static CoderResult encodeCR(char[] cc, Charset cs, boolean testDirect)
-        throws Exception {
-        ByteBuffer bbf;
-        CharBuffer cbf;
-        CharsetEncoder enc = cs.newEncoder();
-        if (testDirect) {
-            bbf = ByteBuffer.allocateDirect(cc.length * 4);
-            cbf = ByteBuffer.allocateDirect(cc.length * 2).asCharBuffer();
-            cbf.put(cc).flip();
-        } else {
-            bbf = ByteBuffer.allocate(cc.length * 4);
-            cbf = CharBuffer.wrap(cc);
-        }
-        return enc.encode(cbf, bbf, true);
-    }
-
     static char[] getEUC_TWChars(boolean skipNR) {
-        //CharsetEncoder encOLD = Charset.forName("EUC_TW_OLD").newEncoder();
-        CharsetEncoder encOLD = new EUC_TW_OLD().newEncoder();
         CharsetEncoder enc = Charset.forName("EUC_TW").newEncoder();
         char[] cc = new char[0x20000];
         char[] c2 = new char[2];
@@ -160,12 +142,6 @@ public class TestEUC_TW {
             //SKIP these 3 NR codepoints if compared to EUC_TW
             if (skipNR && (i == 0x4ea0 || i == 0x51ab || i == 0x52f9))
                 continue;
-            if (encOLD.canEncode((char)i) != enc.canEncode((char)i)) {
-                System.out.printf("  Err i=%x:  old=%b new=%b%n", i,
-                                  encOLD.canEncode((char)i),
-                                  enc.canEncode((char)i));
-                throw new RuntimeException("canEncode() err!");
-            }
 
             if (enc.canEncode((char)i)) {
                 cc[pos++] = (char)i;
@@ -177,10 +153,6 @@ public class TestEUC_TW {
         for (i = 0x20000; i < 0x30000; i++) {
             Character.toChars(i, c2, 0);
             cb.clear();cb.put(c2[0]);cb.put(c2[1]);cb.flip();
-
-            if (encOLD.canEncode(cb) != enc.canEncode(cb)) {
-                throw new RuntimeException("canEncode() err!");
-            }
 
             if (enc.canEncode(cb)) {
                 //System.out.printf("cp=%x,  (%x, %x) %n", i, c2[0] & 0xffff, c2[1] & 0xffff);
@@ -225,91 +197,6 @@ public class TestEUC_TW {
             cs.newEncoder();
         t2 = System.nanoTime()/1000;
         System.out.printf("    new Encoder :%d%n", t2 - t1);
-    }
-
-    static void compare(Charset cs1, Charset cs2) throws Exception {
-        char[] cc = getEUC_TWChars(true);
-
-        String csn1 = cs1.name();
-        String csn2 = cs2.name();
-        System.out.printf("Diff     <%s> <%s>...%n", csn1, csn2);
-
-        Time t1 = new Time();
-        Time t2 = new Time();
-
-        byte[] bb1 = encode(cc, cs1, false, t1);
-        byte[] bb2 = encode(cc, cs2, false, t2);
-
-        System.out.printf("    Encoding TimeRatio %s/%s: %d,%d :%f%n",
-                          csn2, csn1,
-                          t2.t, t1.t,
-                          (double)(t2.t)/(t1.t));
-        if (!Arrays.equals(bb1, bb2)) {
-            System.out.printf("        encoding failed%n");
-        }
-
-        char[] cc2 = decode(bb1, cs2, false, t2);
-        char[] cc1 = decode(bb1, cs1, false, t1);
-        System.out.printf("    Decoding TimeRatio %s/%s: %d,%d :%f%n",
-                          csn2, csn1,
-                          t2.t, t1.t,
-                          (double)(t2.t)/(t1.t));
-        if (!Arrays.equals(cc1, cc2)) {
-            System.out.printf("        decoding failed%n");
-        }
-
-        bb1 = encode(cc, cs1, true, t1);
-        bb2 = encode(cc, cs2, true, t2);
-
-        System.out.printf("    Encoding(dir) TimeRatio %s/%s: %d,%d :%f%n",
-                          csn2, csn1,
-                          t2.t, t1.t,
-                          (double)(t2.t)/(t1.t));
-
-        if (!Arrays.equals(bb1, bb2))
-            System.out.printf("        encoding (direct) failed%n");
-
-        cc1 = decode(bb1, cs1, true, t1);
-        cc2 = decode(bb1, cs2, true, t2);
-        System.out.printf("    Decoding(dir) TimeRatio %s/%s: %d,%d :%f%n",
-                          csn2, csn1,
-                          t2.t, t1.t,
-                          (double)(t2.t)/(t1.t));
-        if (!Arrays.equals(cc1, cc2)) {
-            System.out.printf("        decoding (direct) failed%n");
-        }
-    }
-
-    // The first byte is the length of malformed bytes
-    static byte[][] malformed = {
-        //{5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0x80, (byte)0xC0 },
-    };
-
-    static void checkMalformed(Charset cs) throws Exception {
-        boolean failed = false;
-        String csn = cs.name();
-        System.out.printf("Check malformed <%s>...%n", csn);
-        for (boolean direct: new boolean[] {false, true}) {
-            for (byte[] bins : malformed) {
-                int mlen = bins[0];
-                byte[] bin = Arrays.copyOfRange(bins, 1, bins.length);
-                CoderResult cr = decodeCR(bin, cs, direct);
-                String ashex = "";
-                for (int i = 0; i < bin.length; i++) {
-                    if (i > 0) ashex += " ";
-                        ashex += Integer.toBinaryString((int)bin[i] & 0xff);
-                }
-                if (!cr.isMalformed()) {
-                    System.out.printf("        FAIL(direct=%b): [%s] not malformed.\n", direct, ashex);
-                    failed = true;
-                } else if (cr.length() != mlen) {
-                    System.out.printf("        FAIL(direct=%b): [%s] malformed[len=%d].\n", direct, ashex, cr.length());
-                    failed = true;
-                }
-            }
-        }
-        if (failed)
-            throw new RuntimeException("Check malformed failed " + csn);
     }
 
     static boolean check(CharsetDecoder dec, byte[] bytes, boolean direct, int[] flow) {
@@ -419,12 +306,9 @@ public class TestEUC_TW {
 
     public static void main(String[] args) throws Exception {
         // be the first one
-        //checkInit("EUC_TW_OLD");
         checkInit("EUC_TW");
         Charset euctw = Charset.forName("EUC_TW");
         checkRoundtrip(euctw);
-        compare(euctw, new EUC_TW_OLD());
-        checkMalformed(euctw);
         checkUnderOverflow(euctw);
     }
 }

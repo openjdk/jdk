@@ -28,9 +28,12 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include <regex>
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #include "unittest.hpp"

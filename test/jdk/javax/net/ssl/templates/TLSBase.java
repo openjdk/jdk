@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * This is a base setup for creating a server and clients.  All clients will
@@ -84,14 +81,16 @@ abstract public class TLSBase {
     byte[] read(SSLSocket sock) throws Exception {
         BufferedInputStream is = new BufferedInputStream(sock.getInputStream());
         byte[] b = is.readNBytes(5);
-        System.err.println("(read) " + Thread.currentThread().getName() + ": " + new String(b));
+        System.err.println("(read) " + Thread.currentThread().getName() + ": " +
+            new String(b));
         return b;
     }
 
     // Base write operation
     public void write(SSLSocket sock, byte[] data) throws Exception {
         sock.getOutputStream().write(data);
-        System.err.println("(write)" + Thread.currentThread().getName() + ": " + new String(data));
+        System.err.println("(write)" + Thread.currentThread().getName() + ": " +
+            new String(data));
     }
 
     private static KeyManager[] getKeyManager(boolean empty) throws Exception {
@@ -148,14 +147,9 @@ abstract public class TLSBase {
         // Clients sockets are kept in a hash table with the port as the key.
         ConcurrentHashMap<Integer, SSLSocket> clientMap =
                 new ConcurrentHashMap<>();
-        Thread t;
         List<Exception> exceptionList = new ArrayList<>();
-        ExecutorService threadPool = Executors.newFixedThreadPool(1,
-            r -> {
-                Thread t = Executors.defaultThreadFactory().newThread(r);
-                return t;
-            });
-
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
+        CountDownLatch serverLatch = new CountDownLatch(1);
         Server(ServerBuilder builder) {
             super();
             name = "server";
@@ -168,27 +162,28 @@ abstract public class TLSBase {
                 ssock.setReuseAddress(true);
                 ssock.setNeedClientAuth(builder.clientauth);
                 serverPort = ssock.getLocalPort();
-                System.out.println("Server Port: " + serverPort);
+                System.err.println("Server Port: " + serverPort);
             } catch (Exception e) {
                 System.err.println("Failure during server initialization");
                 e.printStackTrace();
             }
 
             // Thread to allow multiple clients to connect
-            t = new Thread(() -> {
+            new Thread(() -> {
                 try {
-                    while (true) {
+                    System.err.println("Server starting to accept");
+                    serverLatch.countDown();
+                    do {
                         SSLSocket sock = (SSLSocket)ssock.accept();
                         threadPool.submit(new ServerThread(sock));
-                    }
+                    } while (true);
                 } catch (Exception ex) {
                     System.err.println("Server Down");
                     ex.printStackTrace();
                 } finally {
                     threadPool.close();
                 }
-            });
-            t.start();
+            }).start();
         }
 
         class ServerThread extends Thread {
@@ -196,7 +191,8 @@ abstract public class TLSBase {
 
             ServerThread(SSLSocket s) {
                 this.sock = s;
-                System.err.println("ServerThread("+sock.getPort()+")");
+                System.err.println("(Server) client connection on port " +
+                    sock.getPort());
                 clientMap.put(sock.getPort(), sock);
             }
 
@@ -204,7 +200,7 @@ abstract public class TLSBase {
                 try {
                     write(sock, read(sock));
                 } catch (Exception e) {
-                    System.out.println("Caught " + e.getMessage());
+                    System.err.println("Caught " + e.getMessage());
                     e.printStackTrace();
                     exceptionList.add(e);
                 }
@@ -289,7 +285,8 @@ abstract public class TLSBase {
             this.tm = tm;
             try {
                 sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
+                sslContext.init(TLSBase.getKeyManager(km),
+                    TLSBase.getTrustManager(tm), null);
                 socket = createSocket();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -312,9 +309,12 @@ abstract public class TLSBase {
 
         public SSLSocket connect() {
             try {
-                socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
-                System.err.println("Client (" + Thread.currentThread().getName() + ") connected using port " +
-                    socket.getLocalPort() + " to " + socket.getPort());
+                socket.connect(new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), serverPort));
+                System.err.println("Client (" +
+                    Thread.currentThread().getName() +
+                    ") connected using port " + socket.getLocalPort() + " to " +
+                    socket.getPort());
                 writeRead();
             } catch (Exception ex) {
                 ex.printStackTrace();

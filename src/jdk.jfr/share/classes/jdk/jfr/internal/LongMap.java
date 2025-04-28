@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package jdk.jfr.internal;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
@@ -264,5 +266,16 @@ public final class LongMap<T> {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    public List<T> values() {
+        List<T> list = new ArrayList<>(count);
+        for (int i = 0; i < keys.length; i++) {
+            T o = objects[i];
+            if (o != null) {
+                list.add(o);
+            }
+        }
+        return list;
     }
 }

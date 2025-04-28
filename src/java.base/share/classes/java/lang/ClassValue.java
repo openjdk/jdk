@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,15 +500,15 @@ public abstract class ClassValue<T> {
         synchronized
         void removeEntry(ClassValue<?> classValue) {
             Entry<?> e = remove(classValue.identity);
-            if (e == null) {
-                // Uninitialized, and no pending calls to computeValue.  No change.
-            } else if (e.isPromise()) {
-                // State is uninitialized, with a pending call to finishEntry.
-                // Since remove is a no-op in such a state, keep the promise
-                // by putting it back into the map.
-                put(classValue.identity, e);
-            } else {
-                // In an initialized state.  Bump forward, and de-initialize.
+            // e == null: Uninitialized, and no pending calls to computeValue.
+            // remove(identity) didn't change anything.  No change.
+            // e.isPromise(): computeValue already used outdated values.
+            // remove(identity) discarded the outdated computation promise.
+            // finishEntry will retry when it discovers the promise is removed.
+            // No cache invalidation.  No further action needed.
+            if (e != null && !e.isPromise()) {
+                // Initialized.
+                // Bump forward to invalidate racy-read cached entries.
                 classValue.bumpVersion();
                 // Make all cache elements for this guy go stale.
                 removeStaleEntries(classValue);

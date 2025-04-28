@@ -115,9 +115,6 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Do floats take an entire double register or just half?
   //
   // A float occupies a ppc64 double register. For the allocator, a

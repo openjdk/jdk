@@ -40,6 +40,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
@@ -410,7 +411,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page, true /* allow_defragment */);
+    ZHeap::heap()->free_page(page);
   }
 }
 
@@ -559,12 +560,14 @@ public:
 template <typename Allocator>
 class ZRelocateWork : public StackObj {
 private:
-  Allocator* const   _allocator;
-  ZForwarding*       _forwarding;
-  ZPage*             _target[ZAllocator::_relocation_allocators];
-  ZGeneration* const _generation;
-  size_t             _other_promoted;
-  size_t             _other_compacted;
+  Allocator* const    _allocator;
+  ZForwarding*        _forwarding;
+  ZPage*              _target[ZAllocator::_relocation_allocators];
+  ZGeneration* const  _generation;
+  size_t              _other_promoted;
+  size_t              _other_compacted;
+  ZStringDedupContext _string_dedup_context;
+
 
   ZPage* target(ZPageAge age) {
     return _target[static_cast<uint>(age) - 1];
@@ -795,6 +798,13 @@ private:
     update_remset_promoted(to_addr);
   }
 
+  void maybe_string_dedup(zaddress to_addr) {
+    if (_forwarding->is_promotion()) {
+      // Only deduplicate promoted objects, and let short-lived strings simply die instead.
+      _string_dedup_context.request(to_oop(to_addr));
+    }
+  }
+
   bool try_relocate_object(zaddress from_addr) {
     const zaddress to_addr = try_relocate_object_inner(from_addr);
 
@@ -803,6 +813,8 @@ private:
     }
 
     update_remset_for_fields(from_addr, to_addr);
+
+    maybe_string_dedup(to_addr);
 
     return true;
   }
@@ -841,14 +853,12 @@ private:
     const bool promotion = _forwarding->is_promotion();
 
     // Promotions happen through a new cloned page
-    ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
+    ZPage* const to_page = promotion
+        ? from_page->clone_for_promotion()
+        : from_page->reset(to_age);
 
     // Reset page for in-place relocation
-    to_page->reset(to_age);
     to_page->reset_top_for_allocation();
-    if (promotion) {
-      to_page->remset_alloc();
-    }
 
     // Verify that the inactive remset is clear when resetting the page for
     // in-place relocation.
@@ -1011,7 +1021,7 @@ public:
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page, true /* allow_defragment */);
+      ZHeap::heap()->free_page(page);
     }
   }
 };
@@ -1178,10 +1188,15 @@ public:
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
+    ZStringDedupContext        string_dedup_context;
 
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
+        // Remap oops and add remset if needed
         ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
+
+        // String dedup
+        string_dedup_context.request(obj);
       });
 
       SuspendibleThreadSet::yield();
@@ -1260,14 +1275,12 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+      ZPage* const new_page = promotion
+          ? prev_page->clone_for_promotion()
+          : prev_page->reset(to_age);
 
       // Reset page for flip aging
-      new_page->reset(to_age);
       new_page->reset_livemap();
-      if (promotion) {
-        new_page->remset_alloc();
-      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

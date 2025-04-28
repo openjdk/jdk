@@ -509,6 +509,7 @@ final class FloatMaxVector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
@@ -528,6 +529,7 @@ final class FloatMaxVector extends FloatVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
 
     public NonterminalCodeBuilder(CodeBuilder parent) {
         this.parent = parent;
-        this.terminal = switch (parent) {
-            case NonterminalCodeBuilder cb -> cb.terminal;
-            case TerminalCodeBuilder cb -> cb;
-        };
+        this.terminal = findTerminal(parent);
+    }
+
+    static TerminalCodeBuilder findTerminal(CodeBuilder cob) {
+        return cob instanceof NonterminalCodeBuilder ncb ?
+                ncb.terminal : (TerminalCodeBuilder) cob;
     }
 
     @Override

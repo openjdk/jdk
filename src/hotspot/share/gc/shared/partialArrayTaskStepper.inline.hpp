@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+
+#include "gc/shared/partialArrayState.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"

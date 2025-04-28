@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1EVACSTATS_HPP
 #define SHARE_GC_G1_G1EVACSTATS_HPP
 
-#include "gc/shared/plab.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "gc/shared/plab.hpp"
 
 // Records various memory allocation statistics gathered during evacuation. All sizes
 // are in HeapWords.

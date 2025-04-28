@@ -97,6 +97,10 @@ ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
   JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
 endif
 
+ifneq ($(JLINK_USER_EXTRA_FLAGS), )
+  JLINK_JDK_EXTRA_OPTS += $(JLINK_USER_EXTRA_FLAGS)
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \

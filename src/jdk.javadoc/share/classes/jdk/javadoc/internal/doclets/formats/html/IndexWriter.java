@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,9 +200,6 @@ public class IndexWriter extends HtmlDocletWriter {
 
             case PACKAGE -> {
                 dt = HtmlTree.DT(getPackageLink((PackageElement) element, Text.of(label)));
-                if (configuration.showModules) {
-                    item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
                 dt.add(" - ").add(contents.package_).add(" " + label);
             }
 
@@ -259,7 +256,14 @@ public class IndexWriter extends HtmlDocletWriter {
         var labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
         var dt = HtmlTree.DT(labelLink.setStyle(HtmlStyles.searchTagLink));
         dt.add(" - ");
-        dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
+        var tagKindKey = switch (item.getKind()) {
+            case SEARCH_ITEM -> "doclet.Search_tag_in";
+            case SYSTEM_PROPERTY -> "doclet.System_property_in";
+            case SECTION -> "doclet.Section_in";
+            case EXTERNAL_SPEC -> "doclet.External_specification_in";
+            default -> throw new Error();
+        };
+        dt.add(contents.getContent(tagKindKey, item.getHolder()));
         target.add(dt);
         var dd = HtmlTree.DD();
         if (item.getDescription().isEmpty()) {

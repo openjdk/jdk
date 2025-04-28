@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.consumer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -35,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.EventType;
@@ -46,6 +48,7 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.consumer.ObjectContext;
 import jdk.jfr.internal.consumer.ObjectFactory;
+import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;
 import jdk.jfr.internal.tool.PrettyWriter;
 
 /**
@@ -147,6 +150,11 @@ public sealed class RecordedObject
             public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
                     List<Configuration> configurations) {
                 return new MetadataEvent(previous, current, configurations);
+            }
+
+            @Override
+            public List<RemovedEvents> write(RecordingFile file, Path output, Predicate<RecordedEvent> filter) throws IOException {
+                return file.write(output, filter, true);
             }
         };
         JdkJfrConsumer.setAccess(access);

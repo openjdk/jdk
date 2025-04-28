@@ -573,4 +573,54 @@ public class VectorCommutativeOperSharingTest {
             Verify.checkEQ(ir1[i], (mask ? ia[i] + ib[i] : ia[i]) + (mask ? ib[i] + ia[i] : ib[i]));
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.UMAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 "}, applyIfCPUFeatureOr = {"avx", "true"})
+    public void testVectorIRSharing20(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // UMax ((UMax vec1, vec2), (UMax vec2, vec1))
+        vec1.lanewise(VectorOperators.UMAX, vec2)
+            .lanewise(VectorOperators.UMAX, vec2.lanewise(VectorOperators.UMAX, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing20")
+    public void testVectorIRSharingDriver20() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing20(i);
+        }
+        checkVectorIRSharing20();
+    }
+
+    public void checkVectorIRSharing20() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], VectorMath.maxUnsigned(ia[i], ib[i]));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, IRNode.VECTOR_SIZE_ANY, " 1 "}, applyIfCPUFeatureOr = {"avx", "true"})
+    public void testVectorIRSharing21(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // UMin ((UMin vec1, vec2), (UMin vec2, vec1))
+        vec1.lanewise(VectorOperators.UMIN, vec2)
+            .lanewise(VectorOperators.UMIN, vec2.lanewise(VectorOperators.UMIN, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing21")
+    public void testVectorIRSharingDriver21() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing21(i);
+        }
+        checkVectorIRSharing21();
+    }
+
+    public void checkVectorIRSharing21() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], VectorMath.minUnsigned(ia[i], ib[i]));
+        }
+    }
 }

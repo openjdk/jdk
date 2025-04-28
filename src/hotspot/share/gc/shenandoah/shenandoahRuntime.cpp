@@ -26,8 +26,8 @@
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/copy.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))

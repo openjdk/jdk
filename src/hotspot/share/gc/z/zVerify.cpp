@@ -32,8 +32,8 @@
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
-#include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
@@ -53,6 +53,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/vmError.hpp"
 
 #ifdef ASSERT
 
@@ -60,6 +61,13 @@
 // with callers to this function. Typically used to verify that object oops
 // and headers are safe to access.
 void z_verify_safepoints_are_blocked() {
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    // The current thread has crashed and is creating an error report.
+    // This may occur from any thread state, skip the safepoint_are_blocked
+    // verification.
+    return;
+  }
+
   Thread* current = Thread::current();
 
   if (current->is_ConcurrentGC_thread()) {

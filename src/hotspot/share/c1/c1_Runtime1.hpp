@@ -85,7 +85,7 @@ public:
   // stub generation
  public:
   static CodeBlob*  generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
-  static void       generate_blob_for(BufferBlob* blob, C1StubId id);
+  static bool       generate_blob_for(BufferBlob* blob, C1StubId id);
   static OopMapSet* generate_code_for(C1StubId id, StubAssembler* sasm);
  private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
@@ -130,7 +130,7 @@ public:
 
  public:
   // initialization
-  static void initialize(BufferBlob* blob);
+  static bool initialize(BufferBlob* blob);
   static void initialize_pd();
 
   // return offset in words

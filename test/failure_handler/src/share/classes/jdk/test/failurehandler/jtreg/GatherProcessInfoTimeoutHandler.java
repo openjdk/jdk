@@ -36,19 +36,7 @@ import java.nio.file.Path;
  * A timeout handler for jtreg, which gathers information about the timed out
  * process and its children.
  */
-@SuppressWarnings("restricted")
 public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
-    private static final boolean HAS_NATIVE_LIBRARY;
-    static {
-        boolean value = true;
-        try {
-            System.loadLibrary("timeoutHandler");
-        } catch (UnsatisfiedLinkError ignore) {
-            // not all os need timeoutHandler native-library
-            value = false;
-        }
-        HAS_NATIVE_LIBRARY = value;
-    }
     private static final String LOG_FILENAME = "processes.log";
     private static final String OUTPUT_FILENAME = "processes.html";
 

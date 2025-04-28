@@ -74,7 +74,26 @@ public class TestDumpOnCrash {
         }
     }
 
+    /*
+     * We don't run if -esa is specified, because parser invariants are not
+     * guaranteed for emergency dumps, which are provided on a best-effort basis only.
+     */
+    private static boolean hasIncompatibleTestOptions() {
+        String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
+        for (String s : testVmOpts) {
+            if (s.equals("-esa")) {
+                System.out.println("Incompatible option: " + s + " specified. Skipping test.");
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void main(String[] args) throws Exception {
+        if (hasIncompatibleTestOptions()) {
+            return;
+        }
+
         // Test without dumppath
         test(CrasherIllegalAccess.class, "", true, null, true);
         test(CrasherIllegalAccess.class, "", false, null, true);

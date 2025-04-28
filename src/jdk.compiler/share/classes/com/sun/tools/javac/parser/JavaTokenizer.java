@@ -1265,6 +1265,21 @@ public class JavaTokenizer extends UnicodeReader {
             return null;
         }
 
+        /**
+         * Return a version of this comment with incidental whitespace removed,
+         * or this comment if the operation is not supported.
+         *
+         * @return comment with removed whitespace or this comment
+         */
+        public Comment stripIndent() {
+            return this;
+        }
+
+        /**
+         * Return the diagnostic position of this comment.
+         *
+         * @return diagnostic position
+         */
         public DiagnosticPosition getPos() {
             return pos;
         }

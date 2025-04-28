@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -725,7 +725,13 @@ final class DigitList implements Cloneable {
             char[] newDigits = new char[digits.length];
             System.arraycopy(digits, 0, newDigits, 0, digits.length);
             other.digits = newDigits;
+
+            // data and tempBuilder do not need to be copied because they do
+            // not carry significant information. They will be recreated on demand.
+            // Setting them to null is needed to avoid sharing across clones.
+            other.data = null;
             other.tempBuilder = null;
+
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);

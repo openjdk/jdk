@@ -433,7 +433,7 @@ void Method::set_itable_index(int index) {
     // itable index should be the same as the runtime index.
     assert(_vtable_index == itable_index_max - index,
            "archived itable index is different from runtime index");
-    return; // don’t write into the shared class
+    return; // don't write into the shared class
   } else {
     _vtable_index = itable_index_max - index;
   }
@@ -970,7 +970,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // If so, we have to make it not_entrant.
   nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
-    nm->make_not_entrant();
+    nm->make_not_entrant("set native function");
   }
 }
 

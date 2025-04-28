@@ -66,6 +66,10 @@ public abstract class AbstractAppImageBuilder {
     public abstract void prepareApplicationFiles(
             Map<String, ? super Object> params) throws IOException;
 
+    protected boolean withAppImageFile(Map<String, ? super Object> params) {
+        return true;
+    }
+
     protected void writeCfgFile(Map<String, ? super Object> params) throws
             IOException {
         new CfgFile().initFromParams(params).create(root);
@@ -96,7 +100,9 @@ public abstract class AbstractAppImageBuilder {
                     appLayout.appDirectory().toAbsolutePath(), excludes);
         }
 
-        AppImageFile.save(root, params);
+        if (withAppImageFile(params)) {
+            AppImageFile.save(root, params);
+        }
 
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {

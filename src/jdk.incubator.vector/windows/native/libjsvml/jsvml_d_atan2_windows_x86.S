@@ -2695,7 +2695,7 @@ _TEXT   ENDS
 
         ALIGN 004H
 _unwind___jsvml_atan28_ha_z0_B1_B10:
-        DD      1873409
+        DD      1611265
         DD      6018198
         DD      4614286
         DD      3569795
@@ -2707,8 +2707,6 @@ _unwind___jsvml_atan28_ha_z0_B1_B10:
         DD      5167169
         DD      5433398
         DD      4913195
-        DD      11356960
-        DD      11426583
         DD      11469067
 
 .xdata  ENDS
@@ -2725,7 +2723,7 @@ _unwind___jsvml_atan28_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_atan28_ha_z0_B12_B16:
-        DD      1604897
+        DD      1342753
         DD      3757181
         DD      3568754
         DD      3630184
@@ -2736,8 +2734,6 @@ _unwind___jsvml_atan28_ha_z0_B12_B16:
         DD      927797
         DD      1185834
         DD      1443871
-        DD      3439380
-        DD      3500811
         DD      imagerel _B7_1
         DD      imagerel _B7_12
         DD      imagerel _unwind___jsvml_atan28_ha_z0_B1_B10

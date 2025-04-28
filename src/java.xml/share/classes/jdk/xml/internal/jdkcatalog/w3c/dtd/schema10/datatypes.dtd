@@ -1,8 +1,10 @@
 <!--
         DTD for XML Schemas: Part 2: Datatypes
-        
-        Id: datatypes.dtd,v 1.1.2.4 2005/01/31 18:40:42 cmsmcq Exp 
-        Note this DTD is NOT normative, or even definitive.
+        $Id: datatypes.dtd,v 1.23 2001/03/16 17:36:30 ht Exp $
+        Note this DTD is NOT normative, or even definitive. - - the
+        prose copy in the datatypes REC is the definitive version
+        (which shouldn't differ from this one except for this comment
+        and entity expansions, but just in case)
   -->
 
 <!--
@@ -21,7 +23,6 @@
 <!ENTITY % minInclusive "%p;minInclusive">
 <!ENTITY % totalDigits "%p;totalDigits">
 <!ENTITY % fractionDigits "%p;fractionDigits">
-
 <!ENTITY % length "%p;length">
 <!ENTITY % minLength "%p;minLength">
 <!ENTITY % maxLength "%p;maxLength">
@@ -29,13 +30,8 @@
 <!ENTITY % whiteSpace "%p;whiteSpace">
 <!ENTITY % pattern "%p;pattern">
 
-<!ENTITY % assertion "%p;assertion">
-
-<!ENTITY % explicitTimezone "%p;explicitTimezone">
-
-
 <!--
-        Customization entities for the ATTLIST of each element
+        Customisation entities for the ATTLIST of each element
         type. Define one of these if your schema takes advantage
         of the anyAttribute='##other' in the schema for schemas
   -->
@@ -53,12 +49,9 @@
 <!ENTITY % lengthAttrs "">
 <!ENTITY % minLengthAttrs "">
 <!ENTITY % maxLengthAttrs "">
-
 <!ENTITY % enumerationAttrs "">
 <!ENTITY % whiteSpaceAttrs "">
 <!ENTITY % patternAttrs "">
-<!ENTITY % assertionAttrs "">
-<!ENTITY % explicitTimezoneAttrs "">
 
 <!-- Define some entities for informative use as attribute
         types -->
@@ -82,20 +75,18 @@
         length, maxLength, minLength within datatype,
         and the min- and max- variants of Inclusive and Exclusive
         are mutually exclusive. On the other hand,  pattern and
-        enumeration and assertion may repeat.
+        enumeration may repeat.
   -->
 <!ENTITY % minBound "(%minInclusive; | %minExclusive;)">
 <!ENTITY % maxBound "(%maxInclusive; | %maxExclusive;)">
 <!ENTITY % bounds "%minBound; | %maxBound;">
-<!ENTITY % numeric "%totalDigits; | %fractionDigits;"> 
+<!ENTITY % numeric "%totalDigits; | %fractionDigits;">
 <!ENTITY % ordered "%bounds; | %numeric;">
 <!ENTITY % unordered
    "%pattern; | %enumeration; | %whiteSpace; | %length; |
-   %maxLength; | %minLength; | %assertion;
-   | %explicitTimezone;">
-<!ENTITY % implementation-defined-facets "">
-<!ENTITY % facet "%ordered; | %unordered; %implementation-defined-facets;">
-<!ENTITY % facetAttr 
+   %maxLength; | %minLength;">
+<!ENTITY % facet "%ordered; | %unordered;">
+<!ENTITY % facetAttr
         "value CDATA #REQUIRED
         id ID #IMPLIED">
 <!ENTITY % fixedAttr "fixed %boolean; #IMPLIED">
@@ -210,13 +201,3 @@
 <!ATTLIST %pattern;
         %facetAttr;
         %patternAttrs;>
-
-<!ELEMENT %assertion; %facetModel;>
-<!ATTLIST %assertion;
-        %facetAttr;
-        %assertionAttrs;>
-
-<!ELEMENT %explicitTimezone; %facetModel;>
-<!ATTLIST %explicitTimezone;
-        %facetAttr;
-        %explicitTimezoneAttrs;>

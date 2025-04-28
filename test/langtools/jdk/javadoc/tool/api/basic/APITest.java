@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,11 +205,13 @@ class APITest {
             "pkg/package-summary.html",
             "pkg/package-tree.html",
             "resource-files/copy.svg",
-            "resource-files/glass.png",
+            "resource-files/glass.svg",
             "resource-files/jquery-ui.min.css",
+            "resource-files/left.svg",
             "resource-files/link.svg",
+            "resource-files/right.svg",
             "resource-files/stylesheet.css",
-            "resource-files/x.png",
+            "resource-files/x.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
@@ -248,9 +250,9 @@ class APITest {
             .filter(s ->
                             !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
-                         && !s.equals("resource-files/glass.png")
+                         && !s.equals("resource-files/glass.svg")
                          && !s.equals("resource-files/jquery-ui.min.css")
-                         && !s.equals("resource-files/x.png")
+                         && !s.equals("resource-files/x.svg")
                          && !s.startsWith("script-files/jquery-")
                          && !s.equals("script-files/search.js")
                          && !s.equals("script-files/search-page.js")

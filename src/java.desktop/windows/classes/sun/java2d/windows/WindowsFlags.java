@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.java2d.windows;
 import sun.awt.windows.WToolkit;
 import sun.java2d.opengl.WGLGraphicsConfig;
 
-public class WindowsFlags {
+public final class WindowsFlags {
 
     /**
      * Description of command-line flags.  All flags with [true|false]
@@ -55,16 +55,6 @@ public class WindowsFlags {
      *               This flag can force us to use d3d
      *               anyway in these situations.  Or, this flag can force us to
      *               not use d3d in a situation where we would use it otherwise.
-     *      offscreenSharingEnabled: usage: "-Dsun.java2d.offscreenSharing=true"
-     *               Turns on the ability to share a hardware-accelerated
-     *               offscreen surface through the JAWT interface.  See
-     *               src/windows/native/sun/windows/awt_DrawingSurface.* for
-     *               more information.  This capability is disabled by default
-     *               pending more testing and time to work out the right
-     *               solution; we do not want to expose more public JAWT api
-     *               without being very sure that we will be willing to support
-     *               that API in the future regardless of other native
-     *               rendering pipeline changes.
      *      magPresent: usage: "-Djavax.accessibility.screen_magnifier_present"
      *               This flag is set either on the command line or in the
      *               properties file.  It tells Swing whether the user is
@@ -101,7 +91,6 @@ public class WindowsFlags {
     private static boolean d3dOnScreenEnabled;
     private static boolean oglEnabled;
     private static boolean oglVerbose;
-    private static boolean offscreenSharingEnabled;
     private static boolean magPresent;
     private static boolean setHighDPIAware;
     // TODO: other flags, including nopixfmt
@@ -206,8 +195,6 @@ public class WindowsFlags {
         if (d3dSet) {
             d3dVerbose = isBooleanPropTrueVerbose("sun.java2d.d3d");
         }
-        offscreenSharingEnabled =
-            getBooleanProp("sun.java2d.offscreenSharing", false);
         String dpiOverride = System.getProperty("sun.java2d.dpiaware");
         if (dpiOverride != null) {
             setHighDPIAware = dpiOverride.equalsIgnoreCase("true");
@@ -218,16 +205,6 @@ public class WindowsFlags {
                 sunLauncherProperty.equalsIgnoreCase("SUN_STANDARD");
         }
         /*
-            // Output info based on some non-default flags:
-            if (offscreenSharingEnabled) {
-                System.out.println(
-                    "Warning: offscreenSharing has been enabled. " +
-                    "The use of this capability will change in future " +
-                    "releases and applications that depend on it " +
-                    "may not work correctly");
-            }
-        */
-        /*
         System.out.println("WindowsFlags (Java):");
         System.out.println("  ddEnabled: " + ddEnabled + "\n" +
                            "  ddOffscreenEnabled: " + ddOffscreenEnabled + "\n" +
@@ -235,8 +212,7 @@ public class WindowsFlags {
                            "  d3dSet: " + d3dSet + "\n" +
                            "  oglEnabled: " + oglEnabled + "\n" +
                            "  oglVerbose: " + oglVerbose + "\n" +
-                           "  gdiBlitEnabled: " + gdiBlitEnabled + "\n" +
-                           "  offscreenSharingEnabled: " + offscreenSharingEnabled);
+                           "  gdiBlitEnabled: " + gdiBlitEnabled);
         */
     }
 
@@ -258,10 +234,6 @@ public class WindowsFlags {
 
     public static boolean isGdiBlitEnabled() {
         return gdiBlitEnabled;
-    }
-
-    public static boolean isOffscreenSharingEnabled() {
-        return offscreenSharingEnabled;
     }
 
     public static boolean isMagPresent() {

@@ -147,9 +147,9 @@ public class TestCompilePhaseCollector {
                                     String simpleMethodName, CompilePhase... compilePhases) {
         String methodName = getFullMethodName(testClass, simpleMethodName);
         Set<CompilePhase> compilePhaseSet = methodToCompilePhases.get(methodName);
-        Assert.assertEquals("must be equal", compilePhases.length, compilePhaseSet.size());
+        Assert.assertEquals("In method " + simpleMethodName + ": must be equal", compilePhases.length, compilePhaseSet.size());
         for (CompilePhase compilePhase : compilePhases) {
-            Assert.assertTrue("did not find " + compilePhase + " for " + methodName,
+            Assert.assertTrue("In method " + simpleMethodName + ": did not find " + compilePhase + " for " + methodName,
                               methodToCompilePhases.get(methodName).contains(compilePhase));
         }
     }
@@ -193,44 +193,45 @@ public class TestCompilePhaseCollector {
     }
 
     static class Opto {
-        @Test
-        @IR(failOn = IRNode.ALLOC)
-        public void test1() {}
-
-
-        @Test
-        @IR(failOn = {IRNode.ALLOC_OF, "Foo"})
-        public void test2() {}
 
         @Test
         @IR(counts = {IRNode.SCOPE_OBJECT, "2"})
-        public void test3() {}
+        public void test1() {}
 
         @Test
-        @IR(counts = {IRNode.ALLOC_ARRAY_OF, "Foo", "!= 4"})
-        public void test4() {}
-
+        @IR(counts = {IRNode.OOPMAP_WITH, "Foo", "2"})
+        public void test2() {}
 
         @Test
         @IR(failOn = IRNode.FIELD_ACCESS)
         @IR(counts = {IRNode.CHECKCAST_ARRAY, "2"})
-        public void test5() {}
+        public void test3() {}
 
         @Test
         @IR(failOn = {IRNode.CHECKCAST_ARRAYCOPY, IRNode.CHECKCAST_ARRAY_OF, "Foo"})
-        @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_ARRAY_OF, "Foo", "> 1"})
+        @IR(counts = {IRNode.CBZ_HI, "> 1"})
+        public void test4() {}
+
+        @Test
+        @IR(failOn = {IRNode.CBNZW_HI})
+        @IR(counts = {IRNode.CBZ_LS, "2", IRNode.CBZW_LS, "> 1"})
+        public void test5() {}
+
+        @Test
+        @IR(failOn = {IRNode.CBNZW_HI})
+        @IR(counts = {IRNode.CBZW_LS, "> 1"})
         public void test6() {}
     }
 
     static class IdealAndOpto {
         @Test
-        @IR(failOn = IRNode.ALLOC)
+        @IR(failOn = IRNode.FIELD_ACCESS)
         @IR(failOn = IRNode.STORE)
         public void test1() {}
 
 
         @Test
-        @IR(failOn = {IRNode.ALLOC_OF, "Foo"})
+        @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "Foo"})
         @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld"})
         public void test2() {}
 
@@ -241,7 +242,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(counts = {IRNode.LOAD_OF_FIELD, "iFld", "!= 4"})
-        @IR(counts = {IRNode.ALLOC_ARRAY_OF, "Foo", "!= 4"})
+        @IR(counts = {IRNode.OOPMAP_WITH, "Foo", "!= 4"})
         public void test4() {}
 
 
@@ -254,7 +255,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = {IRNode.STORE, IRNode.CHECKCAST_ARRAY_OF, "Foo"})
-        @IR(counts = {IRNode.ALLOC, "2", IRNode.STORE_OF_FIELD, "iFld", "> 1"})
+        @IR(counts = {IRNode.FIELD_ACCESS, "2", IRNode.STORE_OF_FIELD, "iFld", "> 1"})
         public void test6() {}
     }
 
@@ -308,7 +309,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = IRNode.ALLOC, phase = AFTER_PARSING)
-        @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Foo"}, phase = DEFAULT)
+        @IR(failOn = {IRNode.OOPMAP_WITH, "Foo"}, phase = DEFAULT)
         public void test3() {}
 
         @Test
@@ -326,7 +327,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(failOn = IRNode.ALLOC, phase = DEFAULT)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = DEFAULT)
         @IR(failOn = IRNode.STORE, phase = {FINAL_CODE, OPTIMIZE_FINISHED})
         public void test7() {}
 
@@ -346,7 +347,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(counts = {IRNode.ALLOC, "< 3"}, phase = AFTER_PARSING)
-        @IR(counts = {IRNode.ALLOC_ARRAY_OF, "Foo", ">=3"}, phase = DEFAULT)
+        @IR(counts = {IRNode.OOPMAP_WITH, "Foo", ">=3"}, phase = DEFAULT)
         public void test3A() {}
 
         @Test
@@ -364,7 +365,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(counts = {IRNode.STORE, "3"}, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = DEFAULT)
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = DEFAULT)
         @IR(counts = {IRNode.STORE, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED})
         public void test7A() {}
 
@@ -386,13 +387,13 @@ public class TestCompilePhaseCollector {
         @Test
         @IR(failOn = IRNode.STORE, phase = AFTER_PARSING)
         @IR(counts = {IRNode.STORE, "3"}, phase = DEFAULT)
-        @IR(failOn = {IRNode.ALLOC_OF, "Foo"}, phase = DEFAULT)
+        @IR(failOn = {IRNode.OOPMAP_WITH, "Foo"}, phase = DEFAULT)
         public void mix3() {}
 
         @Test
         @IR(counts = {IRNode.STORE, "3"}, phase = AFTER_PARSING)
         @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "3"}, phase = DEFAULT)
-        @IR(failOn = IRNode.ALLOC, phase = DEFAULT)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = DEFAULT)
         public void mix4() {}
 
         @Test
@@ -402,7 +403,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = DEFAULT)
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = DEFAULT)
         @IR(failOn = IRNode.STORE, phase = {FINAL_CODE, OPTIMIZE_FINISHED})
         public void mix6() {}
 
@@ -413,7 +414,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, DEFAULT, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix8() {}
 
         @Test
@@ -425,13 +426,13 @@ public class TestCompilePhaseCollector {
         public void mix10() {}
 
         @Test
-        @IR(failOn = IRNode.ALLOC, phase = {PHASEIDEALLOOP1, PRINT_OPTO_ASSEMBLY, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = {PHASEIDEALLOOP1, PRINT_OPTO_ASSEMBLY, PHASEIDEALLOOP2})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix11() {}
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, PRINT_IDEAL, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix12() {}
 
         @Test
@@ -456,7 +457,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(counts = {"foo", "3"}, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(failOn = IRNode.ALLOC, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix17() {}
     }
 }

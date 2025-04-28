@@ -460,7 +460,7 @@ void TemplateTable::condy_helper(Label& Done) {
   __ mv(rarg, (int) bytecode());
   __ call_VM(obj, entry, rarg);
 
-  __ get_vm_result_2(flags, xthread);
+  __ get_vm_result_metadata(flags, xthread);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -1324,7 +1324,7 @@ void TemplateTable::idiv() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
+  __ divw(x10, x11, x10);
 }
 
 void TemplateTable::irem() {
@@ -1337,7 +1337,7 @@ void TemplateTable::irem() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
+  __ remw(x10, x11, x10);
 }
 
 void TemplateTable::lmul() {
@@ -1356,7 +1356,7 @@ void TemplateTable::ldiv() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
+  __ div(x10, x11, x10);
 }
 
 void TemplateTable::lrem() {
@@ -1369,7 +1369,7 @@ void TemplateTable::lrem() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
+  __ rem(x10, x11, x10);
 }
 
 void TemplateTable::lshl() {
@@ -3657,8 +3657,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(x10, xthread);
+  __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ j(resolved);
 
@@ -3712,8 +3711,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(x10, xthread);
+  __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ verify_oop(x13);
   __ load_klass(x13, x13);

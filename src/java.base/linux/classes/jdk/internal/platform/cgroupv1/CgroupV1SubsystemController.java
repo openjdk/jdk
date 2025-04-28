@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package jdk.internal.platform.cgroupv1;
 
+import java.lang.System.Logger.Level;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 
@@ -44,27 +47,36 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
 
     public void setPath(String cgroupPath) {
         if (root != null && cgroupPath != null) {
+            String path = mountPoint;
             if (root.equals("/")) {
+                // host processes and containers with cgroupns=private
                 if (!cgroupPath.equals("/")) {
-                    path = mountPoint + cgroupPath;
+                    path += cgroupPath;
                 }
-                else {
-                    path = mountPoint;
-                }
-            }
-            else {
-                if (root.equals(cgroupPath)) {
-                    path = mountPoint;
-                }
-                else {
-                    if (cgroupPath.startsWith(root)) {
-                        if (cgroupPath.length() > root.length()) {
-                            String cgroupSubstr = cgroupPath.substring(root.length());
-                            path = mountPoint + cgroupSubstr;
+            } else {
+                // containers with cgroupns=host, default setting is _root==cgroup_path
+                if (!cgroupPath.equals(root)) {
+                    if (!cgroupPath.equals("") && !cgroupPath.equals("/")) {
+                        // When moved to a subgroup, between subgroups, the path suffix will change.
+                        Path cgp = Path.of(cgroupPath);
+                        int nameCount = cgp.getNameCount();
+                        for (int i=0; i < nameCount; i++) {
+                            Path dir = Path.of(mountPoint, cgp.toString());
+                            if (Files.isDirectory(dir)) {
+                                path = dir.toString();
+                                if (i > 0) {
+                                    System.getLogger("jdk.internal.platform").log(Level.DEBUG, String.format(
+                                            "Cgroup v1 path reduced to: %s.", cgp));
+                                }
+                                break;
+                            }
+                            int currentNameCount = cgp.getNameCount();
+                            cgp = (currentNameCount > 1) ? cgp.subpath(1, currentNameCount) : Path.of("");
                         }
                     }
                 }
             }
+            this.path = path;
         }
     }
 

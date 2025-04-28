@@ -31,8 +31,6 @@ package test.java.awt.regtesthelpers;
      @build Util
      @run main YourTest
    </pre>
- * Note that if you are about to create a test based on
- * Applet-template, then put those lines into html-file, not in java-file.
  * <p> And put an
  * import test.java.awt.regtesthelpers.Util;
  * into the java source of test.

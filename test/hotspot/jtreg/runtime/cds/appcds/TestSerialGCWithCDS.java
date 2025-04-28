@@ -128,14 +128,14 @@ public class TestSerialGCWithCDS {
                               "Hello");
         out.shouldNotContain(errMsg);
 
-        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode");
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode=0");
         out = TestCommon.exec(helloJar,
                               execGC,
                               small1,
                               small2,
                               coops,
                               "-Xlog:cds,cds+heap",
-                              "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
                               "Hello");
         out.shouldNotContain(errMsg);
 

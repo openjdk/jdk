@@ -31,11 +31,12 @@
 
 static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
 
-ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator)
-  : _page_allocator(page_allocator),
+ZUncommitter::ZUncommitter(uint32_t id, ZPartition* partition)
+  : _id(id),
+    _partition(partition),
     _lock(),
     _stop(false) {
-  set_name("ZUncommitter");
+  set_name("ZUncommitter#%u", id);
   create_and_start();
 }
 
@@ -46,7 +47,7 @@ bool ZUncommitter::wait(uint64_t timeout) const {
   }
 
   if (!_stop && timeout > 0) {
-    log_debug(gc, heap)("Uncommit Timeout: " UINT64_FORMAT "s", timeout);
+    log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s", _id, timeout);
     _lock.wait(timeout * MILLIUNITS);
   }
 
@@ -63,27 +64,27 @@ void ZUncommitter::run_thread() {
 
   while (wait(timeout)) {
     EventZUncommit event;
-    size_t uncommitted = 0;
+    size_t total_uncommitted = 0;
 
     while (should_continue()) {
       // Uncommit chunk
-      const size_t flushed = _page_allocator->uncommit(&timeout);
-      if (flushed == 0) {
+      const size_t uncommitted = _partition->uncommit(&timeout);
+      if (uncommitted == 0) {
         // Done
         break;
       }
 
-      uncommitted += flushed;
+      total_uncommitted += uncommitted;
     }
 
-    if (uncommitted > 0) {
+    if (total_uncommitted > 0) {
       // Update statistics
-      ZStatInc(ZCounterUncommit, uncommitted);
-      log_info(gc, heap)("Uncommitted: %zuM(%.0f%%)",
-                         uncommitted / M, percent_of(uncommitted, ZHeap::heap()->max_capacity()));
+      ZStatInc(ZCounterUncommit, total_uncommitted);
+      log_info(gc, heap)("Uncommitter (%u) Uncommitted: %zuM(%.0f%%)",
+                         _id, total_uncommitted / M, percent_of(total_uncommitted, ZHeap::heap()->max_capacity()));
 
       // Send event
-      event.commit(uncommitted);
+      event.commit(total_uncommitted);
     }
   }
 }

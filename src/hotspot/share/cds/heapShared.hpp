@@ -234,7 +234,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static CachedOopInfo make_cached_oop_info(oop obj);
+  static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
@@ -314,7 +314,7 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-  static bool archive_object(oop obj, KlassSubGraphInfo* subgraph_info);
+  static bool archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info);
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -339,6 +339,30 @@ private:
   static void prepare_resolved_references();
   static void archive_strings();
   static void archive_subgraphs();
+
+  // PendingOop and PendingOopStack are used for recursively discovering all cacheable
+  // heap objects. The recursion is done using PendingOopStack so we won't overflow the
+  // C stack with deep reference chains.
+  class PendingOop {
+    oop _obj;
+    oop _referrer;
+    int _level;
+
+  public:
+    PendingOop() : _obj(nullptr), _referrer(nullptr), _level(-1) {}
+    PendingOop(oop obj, oop referrer, int level) : _obj(obj), _referrer(referrer), _level(level) {}
+
+    oop obj()      const { return _obj; }
+    oop referrer() const { return _referrer; }
+    int level()    const { return _level; }
+  };
+
+  class ReferentPusher;
+  using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
+
+  static PendingOop _object_being_archived;
+  static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
+                              oop orig_obj, oop referrer);
 
  public:
   static void reset_archived_object_states(TRAPS);

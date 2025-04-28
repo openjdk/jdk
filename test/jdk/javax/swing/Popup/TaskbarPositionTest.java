@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,11 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -337,11 +341,11 @@ public class TaskbarPositionTest implements ActionListener {
             }
         }
 
-        try {
-            // Use Robot to automate the test
-            Robot robot = new Robot();
-            robot.setAutoDelay(50);
+        // Use Robot to automate the test
+        Robot robot = new Robot();
+        robot.setAutoDelay(50);
 
+        try {
             SwingUtilities.invokeAndWait(TaskbarPositionTest::new);
 
             robot.waitForIdle();
@@ -442,12 +446,28 @@ public class TaskbarPositionTest implements ActionListener {
             hidePopup(robot);
 
             robot.waitForIdle();
+        } catch (Throwable t) {
+            saveScreenCapture(robot, screens);
+            throw t;
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
             });
+        }
+    }
+
+    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
+        for (int i = 0; i < screens.length; i++) {
+            Rectangle bounds = screens[i].getDefaultConfiguration()
+                    .getBounds();
+            BufferedImage image = robot.createScreenCapture(bounds);
+            try {
+                ImageIO.write(image, "png", new File("Screenshot.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

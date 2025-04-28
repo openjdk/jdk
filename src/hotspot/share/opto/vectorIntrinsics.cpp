@@ -366,38 +366,16 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
   int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
-  if ((opc != Op_CallLeafVector) && (sopc == 0)) {
-    log_if_needed("  ** operation not supported: opc=%s bt=%s", NodeClassNames[opc], type2name(elem_bt));
+  if (sopc == 0 || num_elem == 1) {
+    log_if_needed("  ** operation not supported: arity=%d opc=%s[%d] vlen=%d etype=%s",
+                    n, NodeClassNames[opc], opc, num_elem, type2name(elem_bt));
     return false; // operation not supported
-  }
-  if (num_elem == 1) {
-    if (opc != Op_CallLeafVector || elem_bt != T_DOUBLE) {
-      log_if_needed("  ** not a svml call: arity=%d opc=%d vlen=%d etype=%s",
-                      n, opc, num_elem, type2name(elem_bt));
-      return false;
-    }
   }
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   if (is_vector_mask(vbox_klass)) {
     assert(!is_masked_op, "mask operations do not need mask to control");
-  }
-
-  if (opc == Op_CallLeafVector) {
-    if (!UseVectorStubs) {
-      log_if_needed("  ** vector stubs support is disabled");
-      return false;
-    }
-    if (!Matcher::supports_vector_calling_convention()) {
-      log_if_needed("  ** no vector calling conventions supported");
-      return false;
-    }
-    if (!Matcher::vector_size_supported(elem_bt, num_elem)) {
-      log_if_needed("  ** vector size (vlen=%d, etype=%s) is not supported",
-                      num_elem, type2name(elem_bt));
-      return false;
-    }
   }
 
   // When using mask, mask use type needs to be VecMaskUseLoad.
@@ -464,30 +442,18 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   Node* operation = nullptr;
-  if (opc == Op_CallLeafVector) {
-    assert(UseVectorStubs, "sanity");
-    operation = gen_call_to_vector_math(opr->get_con(), elem_bt, num_elem, opd1, opd2);
-    if (operation == nullptr) {
-      log_if_needed("  ** Vector math call failed for %s_%s_%d",
-                         (elem_bt == T_FLOAT) ? "float" : "double",
-                         VectorSupport::mathname[opr->get_con() - VectorSupport::VECTOR_OP_MATH_START],
-                         num_elem * type2aelembytes(elem_bt));
-      return false;
-     }
-  } else {
-    const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
-    switch (n) {
-      case 1:
-      case 2: {
-        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), VectorNode::is_shift_opcode(opc), is_unsigned);
-        break;
-      }
-      case 3: {
-        operation = VectorNode::make(sopc, opd1, opd2, opd3, vt);
-        break;
-      }
-      default: fatal("unsupported arity: %d", n);
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
+  switch (n) {
+    case 1:
+    case 2: {
+      operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), VectorNode::is_shift_opcode(opc), is_unsigned);
+      break;
     }
+    case 3: {
+      operation = VectorNode::make(sopc, opd1, opd2, opd3, vt);
+      break;
+    }
+    default: fatal("unsupported arity: %d", n);
   }
 
   if (is_masked_op && mask != nullptr) {
@@ -510,6 +476,107 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 }
 
 // public static
+// <V extends Vector<E>, E>
+// V libraryUnaryOp(long address, Class<? extends V> vClass, Class<E> elementType, int length, String debugName,
+//                  V v,
+//                  UnaryOperation<V, ?> defaultImpl)
+//
+// public static
+// <V extends VectorPayload, E>
+// V libraryBinaryOp(long address, Class<? extends V> vClass, Class<E> elementType, int length, String debugName,
+//            V v1, V v2,
+//            BinaryOperation<V, ?> defaultImpl)
+bool LibraryCallKit::inline_vector_call(int arity) {
+  assert(Matcher::supports_vector_calling_convention(), "required");
+
+  const TypeLong*    entry          = gvn().type(argument(0))->isa_long();
+  const TypeInstPtr* vector_klass   = gvn().type(argument(2))->isa_instptr();
+  const TypeInstPtr* elem_klass     = gvn().type(argument(3))->isa_instptr();
+  const TypeInt*     vlen           = gvn().type(argument(4))->isa_int();
+  const TypeInstPtr* debug_name_oop = gvn().type(argument(5))->isa_instptr();
+
+  if (entry        == nullptr   || !entry->is_con() ||
+      vector_klass == nullptr   || vector_klass->const_oop() == nullptr ||
+      elem_klass   == nullptr   || elem_klass->const_oop() == nullptr ||
+      vlen         == nullptr   || !vlen->is_con() ||
+      debug_name_oop == nullptr || debug_name_oop->const_oop() == nullptr) {
+    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s debug_name=%s",
+                  NodeClassNames[argument(0)->Opcode()],
+                  NodeClassNames[argument(2)->Opcode()],
+                  NodeClassNames[argument(3)->Opcode()],
+                  NodeClassNames[argument(4)->Opcode()],
+                  NodeClassNames[argument(5)->Opcode()]);
+    return false; // not enough info for intrinsification
+  }
+
+  if (entry->get_con() == 0) {
+    log_if_needed("  ** missing entry point");
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+    return false; // should be primitive type
+  }
+  if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  BasicType elem_bt = elem_type->basic_type();
+  int num_elem = vlen->get_con();
+  if (!Matcher::vector_size_supported(elem_bt, num_elem)) {
+    log_if_needed("  ** vector size (vlen=%d, etype=%s) is not supported",
+                  num_elem, type2name(elem_bt));
+    return false;
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* opd1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(6)->Opcode()]);
+    return false;
+  }
+
+  Node* opd2 = nullptr;
+  if (arity > 1) {
+    opd2 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
+    if (opd2 == nullptr) {
+      log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(7)->Opcode()]);
+      return false;
+    }
+  }
+  assert(arity == 1 || arity == 2, "arity %d not supported", arity);
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(arity, vt, vt);
+  address entry_addr = (address)entry->get_con();
+
+  const char* debug_name = "<unknown>";
+  if (!debug_name_oop->const_oop()->is_null_object()) {
+    size_t buflen = 100;
+    char* buf = NEW_ARENA_ARRAY(C->comp_arena(), char, buflen);
+    debug_name = debug_name_oop->const_oop()->as_instance()->java_lang_String_str(buf, buflen);
+  }
+  Node* vcall = make_runtime_call(RC_VECTOR,
+                                  call_type,
+                                  entry_addr,
+                                  debug_name,
+                                  TypePtr::BOTTOM,
+                                  opd1,
+                                  opd2);
+
+  vcall = gvn().transform(new ProjNode(gvn().transform(vcall), TypeFunc::Parms));
+
+  // Wrap it up in VectorBox to keep object type information.
+  Node* vbox = box_vector(vcall, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
 // <E, M>
 // long maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass,
 //                          int length, M m, VectorMaskOp<M> defaultImpl)
@@ -1844,50 +1911,6 @@ bool LibraryCallKit::inline_vector_rearrange() {
   return true;
 }
 
-static address get_vector_math_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len) {
-  address addr = nullptr;
-  assert(UseVectorStubs, "sanity");
-  assert(name_ptr != nullptr, "unexpected");
-  assert((vop >= VectorSupport::VECTOR_OP_MATH_START) && (vop <= VectorSupport::VECTOR_OP_MATH_END), "unexpected");
-  int op = vop - VectorSupport::VECTOR_OP_MATH_START;
-
-  switch(bits) {
-    case 64:  //fallthough
-    case 128: //fallthough
-    case 256: //fallthough
-    case 512:
-      if (bt == T_FLOAT) {
-        snprintf(name_ptr, name_len, "vector_%s_float_%dbits_fixed", VectorSupport::mathname[op], bits);
-        addr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
-      } else {
-        assert(bt == T_DOUBLE, "must be FP type only");
-        snprintf(name_ptr, name_len, "vector_%s_double_%dbits_fixed", VectorSupport::mathname[op], bits);
-        addr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
-      }
-      break;
-    default:
-      if (!Matcher::supports_scalable_vector() || !Matcher::vector_size_supported(bt, bits/type2aelembytes(bt)) ) {
-        snprintf(name_ptr, name_len, "invalid");
-        addr = nullptr;
-        Unimplemented();
-      }
-      break;
-  }
-
-  if (addr == nullptr && Matcher::supports_scalable_vector()) {
-    if (bt == T_FLOAT) {
-      snprintf(name_ptr, name_len, "vector_%s_float_%dbits_scalable", VectorSupport::mathname[op], bits);
-      addr = StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op];
-    } else {
-      assert(bt == T_DOUBLE, "must be FP type only");
-      snprintf(name_ptr, name_len, "vector_%s_double_%dbits_scalable", VectorSupport::mathname[op], bits);
-      addr = StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op];
-    }
-  }
-
-  return addr;
-}
-
 //    public static
 //    <V extends Vector<E>,
 //     M  extends VectorMask<E>,
@@ -2042,32 +2065,6 @@ bool LibraryCallKit::inline_vector_select_from() {
 
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
-}
-
-Node* LibraryCallKit::gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2) {
-  assert(UseVectorStubs, "sanity");
-  assert(vector_api_op_id >= VectorSupport::VECTOR_OP_MATH_START && vector_api_op_id <= VectorSupport::VECTOR_OP_MATH_END, "need valid op id");
-  assert(opd1 != nullptr, "must not be null");
-  const TypeVect* vt = TypeVect::make(bt, num_elem);
-  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(opd2 != nullptr ? 2 : 1, vt, vt);
-  char name[100] = "";
-
-  // Get address for vector math method.
-  address addr = get_vector_math_address(vector_api_op_id, vt->length_in_bytes() * BitsPerByte, bt, name, 100);
-
-  if (addr == nullptr) {
-    return nullptr;
-  }
-
-  assert(name[0] != '\0', "name must not be null");
-  Node* operation = make_runtime_call(RC_VECTOR,
-                                      call_type,
-                                      addr,
-                                      name,
-                                      TypePtr::BOTTOM,
-                                      opd1,
-                                      opd2);
-  return gvn().transform(new ProjNode(gvn().transform(operation), TypeFunc::Parms));
 }
 
 //  public static

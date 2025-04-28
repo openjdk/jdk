@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Random;
@@ -56,12 +58,18 @@ public abstract class WriteBarrier {
     private Object[] theArrayLarge;
     private int[] indicesLarge;
 
+    private Object[] youngArraySmall;
+    private Object[] youngArrayLarge;
+
     private Object nullRef;
     private Object realRef;
+    private Object youngRef;
 
     // For field update tests
     public Referencer head = null;
     public Referencer tail = null;
+    public Referencer youngHead = null;
+    public Referencer youngTail = null;
 
     // For random number generation
     private int m_w;
@@ -81,7 +89,7 @@ public abstract class WriteBarrier {
         }
     }
 
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
         theArraySmall = new Object[NUM_REFERENCES_SMALL];
         indicesSmall = new int[NUM_REFERENCES_SMALL];
@@ -114,6 +122,16 @@ public abstract class WriteBarrier {
         System.gc();
     }
 
+    @Setup(Level.Iteration)
+    public void setupIteration() {
+        // Reallocate target objects each iteration to ensure they are in young gen.
+        youngArraySmall = new Object[NUM_REFERENCES_SMALL];
+        youngArrayLarge = new Object[NUM_REFERENCES_LARGE];
+        youngRef = new Object();
+        this.youngHead = new Referencer();
+        this.youngTail = new Referencer();
+    }
+
     private int get_random() {
         m_z = 36969 * (m_z & 65535) + (m_z >> 16);
         m_w = 18000 * (m_w & 65535) + (m_w >> 16);
@@ -130,6 +148,70 @@ public abstract class WriteBarrier {
     public void testArrayWriteBarrierFastPathRealSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathOldToYoungSmall() {
+        for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
+            youngArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathYoungToOldSmall() {
+        for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
+            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = youngRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathYoungToYoungSmall() {
+        for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
+            youngArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = youngRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathNullYoungSmall() {
+        for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
+            youngArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathOldToYoungLarge() {
+        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
+            youngArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathYoungToYoungLarge() {
+        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
+            youngArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = youngRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathNullYoungLarge() {
+        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
+            youngArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullRef;
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathYoungToOldLarge() {
+        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
+            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = youngRef;
         }
     }
 
@@ -163,6 +245,15 @@ public abstract class WriteBarrier {
         this.tail.append(this.head);
         this.head.clear();
         this.head.append(this.tail);
+        this.tail.clear();
+    }
+
+    @Benchmark()
+    public void testFieldWriteBarrierFastPathYoungRef() {
+        // Shuffle everything around
+        this.tail.append(this.youngHead);
+        this.head.clear();
+        this.head.append(this.youngTail);
         this.tail.clear();
     }
 

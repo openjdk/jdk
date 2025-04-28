@@ -509,6 +509,7 @@ final class DoubleMaxVector extends DoubleVector {
         return Double.longBitsToDouble(bits);
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
@@ -528,6 +529,7 @@ final class DoubleMaxVector extends DoubleVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public DoubleMaxVector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

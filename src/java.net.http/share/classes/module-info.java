@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,9 @@
  * simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system
- * default)<br>The HTTP client <a href="../java.base/java/net/StandardSocketOptions.html#SO_RCVBUF">
- * socket receive buffer size</a> in bytes.
+ * default)<br>The HTTP client {@linkplain java.nio.channels.SocketChannel socket}
+ * {@linkplain java.net.StandardSocketOptions#SO_RCVBUF receive buffer size} in bytes.
+ * Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.redirects.retrylimit}</b> (default: 5)<br>
  * The maximum number of attempts to send a HTTP request when redirected or any failure occurs
@@ -158,8 +159,8 @@
  * authentication.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.sendBufferSize}</b> (default: operating system
- * default)<br>The HTTP client socket
- * <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send buffer size</a>.
+ * default)<br>The HTTP client {@linkplain java.nio.channels.SocketChannel socket}
+ * {@linkplain java.net.StandardSocketOptions#SO_SNDBUF send buffer size} in bytes.
  * Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.internal.httpclient.disableHostnameVerification}</b> (default:

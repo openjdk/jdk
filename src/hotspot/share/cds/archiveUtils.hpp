@@ -106,7 +106,7 @@ public:
 // within the archive (e.g., InstanceKlass::_name points to a Symbol in the archive). During dumping, we
 // built a bitmap that marks the locations of all these pointers (using ArchivePtrMarker, see comments above).
 //
-// The contents of the archive assumes that it’s mapped at the default SharedBaseAddress (e.g. 0x800000000).
+// The contents of the archive assumes that it's mapped at the default SharedBaseAddress (e.g. 0x800000000).
 // If the archive ends up being mapped at a different address (e.g. 0x810000000), SharedDataRelocator
 // is used to shift each marked pointer by a delta (0x10000000 in this example), so that it points to
 // the actually mapped location of the target object.

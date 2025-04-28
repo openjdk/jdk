@@ -264,14 +264,15 @@ define SetupJavaCompilationBody
     $$(error Invalid value for COMPILER in SetupJavaCompilation for $1: '$$($1_COMPILER)')
   endif
 
-  # Allow overriding on the command line
-  JAVA_WARNINGS_ARE_ERRORS ?= -Werror
-
   # Tell javac to do exactly as told and no more
   PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
 
-  $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS) $$(JAVA_WARNINGS_ARE_ERRORS)
+  $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS)
   $1_FLAGS += $$($1_JAVAC_FLAGS)
+
+  ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
+    $1_FLAGS += -Werror
+  endif
 
   ifneq ($$($1_DISABLED_WARNINGS), )
     $1_FLAGS += -Xlint:$$(call CommaList, $$(addprefix -, $$($1_DISABLED_WARNINGS)))

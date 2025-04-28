@@ -67,7 +67,7 @@ int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
   return strcmp(*p1, *p2);
 }
 
-void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
+void ClassLoaderExt::record_result(s2 classpath_index, InstanceKlass* result, bool redefined) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // We need to remember where the class comes from during dumping.
@@ -80,9 +80,17 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
     classloader_type = ClassLoader::PLATFORM_LOADER;
     AOTClassLocationConfig::dumptime_set_has_platform_classes();
   }
+
+  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
+      classpath_index = -1;
+    }
+  }
+
   AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
   result->set_shared_class_loader_type(classloader_type);
+
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
       classpath_index < 0 && redefined) {

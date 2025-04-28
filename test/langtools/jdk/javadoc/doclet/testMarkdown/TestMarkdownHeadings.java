@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8298405
+ * @bug      8298405 8352511
  * @summary  Markdown support in the standard doclet
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -287,6 +287,10 @@ public class TestMarkdownHeadings extends JavadocTester {
                     ///
                     /// Lorem ipsum
                     ///
+                    /// ### ATX Level 3 Heading
+                    ///
+                    /// Lorem ipsum
+                    ///
                     /// Setext heading
                     /// ==============
                     ///
@@ -312,18 +316,21 @@ public class TestMarkdownHeadings extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C.html", true,
-                // note only the level 1 headings in the class description
+                // note only the level 1 and 2 headings in the class description
                 """
-                    <div class="toc-header">Contents&nbsp;
-                    <input type="text" class="filter-input" disabled placeholder="Filter" aria-label="Filter table of contents" autocomplete="off">
-                    <input type="reset" class="reset-filter" disabled value="Reset">
-                    </div>
-                    <button class="hide-sidebar"><span>Hide sidebar&nbsp;</span>&#10094;</button><button class="show-sidebar">&#10095;<span>&nbsp;Show sidebar</span></button>
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a>
                     <ol class="toc-list">
-                    <li><a href="#atx-heading-code-underline-text-heading" tabindex="0">ATX heading code underline text</a></li>
-                    <li><a href="#setext-heading-heading" tabindex="0">Setext heading</a></li>
+                    <li><a href="#atx-heading-code-underline-text-heading" tabindex="0">ATX heading code underline text</a>
+                    <ol class="toc-list">
+                    <li><a href="#atx-subheading-heading" tabindex="0">ATX Subheading</a></li>
+                    </ol>
+                    </li>
+                    <li><a href="#setext-heading-heading" tabindex="0">Setext heading</a>
+                    <ol class="toc-list">
+                    <li><a href="#setext-subheading-heading" tabindex="0">Setext subheading</a></li>
+                    </ol>
+                    </li>
                     </ol>
                     </li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>

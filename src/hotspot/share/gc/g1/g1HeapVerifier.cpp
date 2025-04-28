@@ -366,7 +366,6 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
     Log(gc, verify) log;
-    ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
 

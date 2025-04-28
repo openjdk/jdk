@@ -49,6 +49,13 @@
 
 #include <signal.h>
 
+#define SEGV_BNDERR_value 3
+
+#if defined(SEGV_BNDERR)
+STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+#else
+#define SEGV_BNDERR SEGV_BNDERR_value
+#endif
 
 static const char* get_signal_name(int sig, char* out, size_t outlen);
 
@@ -969,6 +976,9 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGFPE,  FPE_FLTSUB,   "FPE_FLTSUB",   "Subscript out of range." },
     { SIGSEGV, SEGV_MAPERR,  "SEGV_MAPERR",  "Address not mapped to object." },
     { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
+#if defined(LINUX)
+    { SIGSEGV, SEGV_BNDERR,  "SEGV_BNDERR",  "Failed address bound checks." },
+#endif
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },

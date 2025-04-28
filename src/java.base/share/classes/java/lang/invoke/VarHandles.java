@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import sun.invoke.util.Wrapper;
 
 import java.lang.foreign.MemoryLayout;
@@ -101,7 +102,7 @@ final class VarHandles {
         else {
             Class<?> decl = f.getDeclaringClass();
             var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
-            return maybeAdapt(UNSAFE.shouldBeInitialized(decl)
+            return maybeAdapt((UNSAFE.shouldBeInitialized(decl) || CDS.needsClassInitBarrier(decl))
                     ? new LazyInitializingVarHandle(vh, decl)
                     : vh);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public:
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();
 

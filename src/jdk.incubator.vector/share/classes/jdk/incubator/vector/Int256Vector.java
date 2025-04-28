@@ -528,6 +528,7 @@ final class Int256Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -554,6 +555,7 @@ final class Int256Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public Int256Vector withLaneHelper(int i, int e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

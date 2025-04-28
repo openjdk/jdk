@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,7 +459,7 @@ public class VMSupport {
      * @param <X> type of the object representing a decoded error
      * @return an immutable list of {@code A} objects
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public static <T, A, E, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, X> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);

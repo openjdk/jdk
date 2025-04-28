@@ -23,8 +23,8 @@
 
 /**
  * <pre>
- *\tThis source
- * \tis indented
+ * \tThis source
+ *  \tis indented
  * \twith tabs.
  * </pre>
  */

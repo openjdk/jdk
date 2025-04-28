@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -24,7 +24,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="az" draft="provisional">Atropatenica</language>
 			<language type="be" draft="provisional">Ruthenica Alba</language>
 			<language type="bg" draft="provisional">Bulgarica</language>
-			<language type="bh" draft="provisional">Bihari</language>
 			<language type="bn" draft="provisional">Bengalica</language>
 			<language type="bo" draft="provisional">Tibetana</language>
 			<language type="br" draft="provisional">Britonica</language>
@@ -58,20 +57,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gn" draft="provisional">Guaranica</language>
 			<language type="gu" draft="provisional">Gujaratensis</language>
 			<language type="gv" draft="provisional">Monensis</language>
+			<language type="he" draft="provisional">Hebraica</language>
 			<language type="hi" draft="provisional">Hindica</language>
 			<language type="hr" draft="provisional">Croatica</language>
 			<language type="ht" draft="provisional">Creolus Haitianus</language>
 			<language type="hu" draft="provisional">Hungarica</language>
 			<language type="hy" draft="provisional">Armenica</language>
 			<language type="ia" draft="provisional">Interlingua</language>
+			<language type="id" draft="provisional">Indonesia</language>
 			<language type="ie" draft="provisional">Interlingue</language>
 			<language type="ig" draft="provisional">Igbonica</language>
-			<language type="in" draft="provisional">Indonesia</language>
 			<language type="is" draft="provisional">Islandica</language>
 			<language type="it" draft="provisional">Italiana</language>
-			<language type="iw" draft="provisional">Hebraica</language>
 			<language type="ja" draft="provisional">Iaponica</language>
-			<language type="ji" draft="provisional">Iudaeogermanica</language>
 			<language type="jv" draft="provisional">Iavensis</language>
 			<language type="ka" draft="provisional">Georgiana</language>
 			<language type="kk" draft="provisional">Cazachica</language>
@@ -140,6 +138,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ur" draft="provisional">Urdu</language>
 			<language type="uz" draft="provisional">Uzbecica</language>
 			<language type="vi" draft="provisional">Vietnamica</language>
+			<language type="yi" draft="provisional">Iudaeogermanica</language>
 			<language type="zh" draft="provisional">Sinica</language>
 			<language type="zu" draft="provisional">Zuluana</language>
 		</languages>
@@ -213,7 +212,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BR" draft="provisional">Brasilia</territory>
 			<territory type="BS" draft="provisional">Insulae Bahamenses</territory>
 			<territory type="BT" draft="provisional">Butania</territory>
-			<territory type="BU" draft="provisional">Birmania</territory>
 			<territory type="BV" draft="provisional">Insula Bouvet</territory>
 			<territory type="BW" draft="provisional">Botswana</territory>
 			<territory type="BY" draft="provisional">Ruthenia Alba</territory>
@@ -237,7 +235,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CX" draft="provisional">Insula Christi Natalis</territory>
 			<territory type="CY" draft="provisional">Cyprus</territory>
 			<territory type="CZ" draft="provisional">Cechia</territory>
-			<territory type="DD" draft="provisional">Res publica Democratica Germanica</territory>
 			<territory type="DE" draft="provisional">Germania</territory>
 			<territory type="DJ" draft="provisional">Gibutum</territory>
 			<territory type="DK" draft="provisional">Dania</territory>
@@ -421,7 +418,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="XK" draft="provisional">Kosovia</territory>
 			<territory type="YE" draft="provisional">Iemenia</territory>
 			<territory type="YT" draft="provisional">Maiotta</territory>
-			<territory type="YU" draft="provisional">Iugoslavia</territory>
 			<territory type="ZA" draft="provisional">Africa Australis</territory>
 			<territory type="ZM" draft="provisional">Zambia</territory>
 			<territory type="ZW" draft="provisional">Zimbabua</territory>

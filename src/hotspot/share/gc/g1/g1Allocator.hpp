@@ -78,18 +78,15 @@ private:
   inline OldGCAllocRegion* old_gc_alloc_region();
 
   // Allocation attempt during GC for a survivor object / PLAB.
-  HeapWord* survivor_attempt_allocation(size_t min_word_size,
+  HeapWord* survivor_attempt_allocation(uint node_index,
+                                        size_t min_word_size,
                                         size_t desired_word_size,
-                                        size_t* actual_word_size,
-                                        uint node_index);
+                                        size_t* actual_word_size);
 
   // Allocation attempt during GC for an old object / PLAB.
   HeapWord* old_attempt_allocation(size_t min_word_size,
                                    size_t desired_word_size,
                                    size_t* actual_word_size);
-
-  // Node index of current thread.
-  inline uint current_node_index() const;
 
 public:
   G1Allocator(G1CollectedHeap* heap);
@@ -110,16 +107,20 @@ public:
   void abandon_gc_alloc_regions();
   bool is_retained_old_region(G1HeapRegion* hr);
 
+  // Node index of current thread.
+  inline uint current_node_index() const;
+
   // Allocate blocks of memory during mutator time.
 
   // Attempt allocation in the current alloc region.
-  inline HeapWord* attempt_allocation(size_t min_word_size,
+  inline HeapWord* attempt_allocation(uint node_index,
+                                      size_t min_word_size,
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
 
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.
-  inline HeapWord* attempt_allocation_locked(size_t word_size);
+  inline HeapWord* attempt_allocation_locked(uint node_index, size_t word_size);
 
   size_t unsafe_max_tlab_alloc();
   size_t used_in_alloc_regions();
@@ -129,14 +130,15 @@ public:
   // heap, and then allocate a block of the given size. The block
   // may not be a humongous - it must fit into a single heap region.
   HeapWord* par_allocate_during_gc(G1HeapRegionAttr dest,
-                                   size_t word_size,
-                                   uint node_index);
+                                   uint node_index,
+                                   size_t word_size
+                                   );
 
   HeapWord* par_allocate_during_gc(G1HeapRegionAttr dest,
+                                   uint node_index,
                                    size_t min_word_size,
                                    size_t desired_word_size,
-                                   size_t* actual_word_size,
-                                   uint node_index);
+                                   size_t* actual_word_size);
 };
 
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.

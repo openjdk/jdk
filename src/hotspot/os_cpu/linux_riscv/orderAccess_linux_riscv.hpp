@@ -54,13 +54,13 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  // From 3 “Zifencei” Instruction-Fetch Fence, Version 2.0
+  // From 3 "Zifencei" Instruction-Fetch Fence, Version 2.0
   // "RISC-V does not guarantee that stores to instruction memory will be made
   // visible to instruction fetches on a RISC-V hart until that hart executes a
   // FENCE.I instruction. A FENCE.I instruction ensures that a subsequent
   // instruction fetch on a RISC-V hart will see any previous data stores
   // already visible to the same RISC-V hart. FENCE.I does not ensure that other
-  // RISC-V harts’ instruction fetches will observe the local hart’s stores in a
+  // RISC-V harts' instruction fetches will observe the local hart's stores in a
   // multiprocessor system."
   //
   // Hence to be able to use fence.i directly we need a kernel that supports

@@ -65,8 +65,6 @@ public class TestMinAndInitialSurvivorRatioFlags {
         testSurvivorRatio(-1, 15, 3, options, true);
         testSurvivorRatio(-1, 15, 3, options, false);
         testSurvivorRatio(-1, 10, 10, options, true);
-        testSurvivorRatio(-1, 3, 15, options, true);
-        testSurvivorRatio(-1, 3, 15, options, false);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ map_info* add_map_info(struct ps_prochandle* ph, int fd, off_t offset,
                        uintptr_t vaddr, size_t memsz, uint32_t flags) {
   map_info* map;
   if ((map = allocate_init_map(fd, offset, vaddr, memsz, flags)) == NULL) {
+    print_error("failed to allocate map\n");
     return NULL;
   }
 
@@ -158,6 +159,7 @@ static map_info* add_class_share_map_info(struct ps_prochandle* ph, off_t offset
   map_info* map;
   if ((map = allocate_init_map(ph->core->classes_jsa_fd,
                                offset, vaddr, memsz, MAP_R_FLAG)) == NULL) {
+    print_debug("failed to allocate class share map\n");
     return NULL;
   }
 
@@ -265,7 +267,7 @@ bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t siz
 
 #ifdef LINUX
 // mangled name of CDSConfig::_static_archive_path
-#define SHARED_ARCHIVE_PATH_SYM "_ZN9CDSConfig20_static_archive_pathE"
+#define SHARED_ARCHIVE_PATH_SYM "_ZN9CDSConfig26_input_static_archive_pathE"
 #define USE_SHARED_SPACES_SYM "UseSharedSpaces"
 #define SHARED_BASE_ADDRESS_SYM "SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.so"
@@ -273,7 +275,7 @@ bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t siz
 
 #ifdef __APPLE__
 // mangled name of CDSConfig::_static_archive_path
-#define SHARED_ARCHIVE_PATH_SYM "__ZN9CDSConfig20_static_archive_pathE"
+#define SHARED_ARCHIVE_PATH_SYM "__ZN9CDSConfig26_input_static_archive_pathE"
 #define USE_SHARED_SPACES_SYM "_UseSharedSpaces"
 #define SHARED_BASE_ADDRESS_SYM "_SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.dylib"

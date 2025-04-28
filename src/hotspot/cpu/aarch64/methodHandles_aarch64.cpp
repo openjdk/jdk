@@ -93,14 +93,60 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {  }
 
+void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntrinsics::ID iid) {
+  BLOCK_COMMENT("verify_method {");
+  __ verify_method_ptr(method);
+  if (VerifyMethodHandles) {
+    Label L_ok;
+    assert_different_registers(method, rscratch1, rscratch2);
+    const Register method_holder = rscratch1;
+    __ load_method_holder(method_holder, method);
+
+    switch (iid) {
+      case vmIntrinsicID::_invokeBasic:
+        // Require compiled LambdaForm class to be fully initialized.
+        __ lea(rscratch2, Address(method_holder, InstanceKlass::init_state_offset()));
+        __ ldarb(rscratch2, rscratch2);
+        __ cmp(rscratch2, InstanceKlass::fully_initialized);
+        __ br(Assembler::EQ, L_ok);
+        break;
+
+      case vmIntrinsicID::_linkToStatic:
+        __ clinit_barrier(method_holder, rscratch2, &L_ok);
+        break;
+
+      case vmIntrinsicID::_linkToVirtual:
+      case vmIntrinsicID::_linkToSpecial:
+      case vmIntrinsicID::_linkToInterface:
+        // Class initialization check is too strong here. Just ensure that class initialization has been initiated.
+        __ lea(rscratch2, Address(method_holder, InstanceKlass::init_state_offset()));
+        __ ldarb(rscratch2, rscratch2);
+        __ cmp(rscratch2, InstanceKlass::being_initialized);
+        __ br(Assembler::GE, L_ok);
+
+        // init_state check failed, but it may be an abstract interface method
+        __ ldrh(rscratch2, Address(method, Method::access_flags_offset()));
+        __ tbnz(rscratch2, exact_log2(JVM_ACC_ABSTRACT), L_ok);
+        break;
+
+      default:
+        fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
+    }
+
+    // Method holder init state check failed for a concrete method.
+    __ stop("Method holder klass is not initialized");
+    __ bind(L_ok);
+  }
+  BLOCK_COMMENT("} verify_method");
+}
 #endif //ASSERT
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
-                                            bool for_compiler_entry) {
+                                            bool for_compiler_entry, vmIntrinsics::ID iid) {
   assert(method == rmethod, "interpreter calling convention");
   Label L_no_such_method;
   __ cbz(rmethod, L_no_such_method);
-  __ verify_method_ptr(method);
+  verify_method(_masm, method, iid);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
@@ -160,7 +206,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
     __ BIND(L);
   }
 
-  jump_from_method_handle(_masm, method_temp, temp2, for_compiler_entry);
+  jump_from_method_handle(_masm, method_temp, temp2, for_compiler_entry, vmIntrinsics::_invokeBasic);
   BLOCK_COMMENT("} jump_to_lambda_form");
 }
 
@@ -447,8 +493,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
     // But the compiled version will require that r2_recv be shifted out.
-    __ verify_method_ptr(rmethod);
-    jump_from_method_handle(_masm, rmethod, temp1, for_compiler_entry);
+    jump_from_method_handle(_masm, rmethod, temp1, for_compiler_entry, iid);
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
       __ far_jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));

@@ -39,6 +39,8 @@
 # Fix this...
 #
 
+uppercase = $(shell echo $1 | tr a-z A-Z)
+
 $(info TARGET=$(TARGET))
 $(info HOST=$(HOST))
 $(info BUILD=$(BUILD))
@@ -91,89 +93,28 @@ endif
 ################################################################################
 # Define external dependencies
 
-# Latest that could be made to work.
-GCC_VER := 13.2.0
-ifeq ($(GCC_VER), 13.2.0)
-  gcc_ver := gcc-13.2.0
-  binutils_ver := binutils-2.41
-  ccache_ver := ccache-3.7.12
-  mpfr_ver := mpfr-4.2.0
-  gmp_ver := gmp-6.3.0
-  mpc_ver := mpc-1.3.1
-  gdb_ver := gdb-13.2
-  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
-else ifeq ($(GCC_VER), 11.3.0)
-  gcc_ver := gcc-11.3.0
-  binutils_ver := binutils-2.39
-  ccache_ver := ccache-3.7.12
-  mpfr_ver := mpfr-4.1.1
-  gmp_ver := gmp-6.2.1
-  mpc_ver := mpc-1.2.1
-  gdb_ver := gdb-11.2
-  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
-else ifeq ($(GCC_VER), 11.2.0)
-  gcc_ver := gcc-11.2.0
-  binutils_ver := binutils-2.37
-  ccache_ver := ccache-3.7.12
-  mpfr_ver := mpfr-4.1.0
-  gmp_ver := gmp-6.2.1
-  mpc_ver := mpc-1.2.1
-  gdb_ver := gdb-11.1
-  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
-else ifeq ($(GCC_VER), 10.3.0)
-  gcc_ver := gcc-10.3.0
-  binutils_ver := binutils-2.36.1
-  ccache_ver := ccache-3.7.11
-  mpfr_ver := mpfr-4.1.0
-  gmp_ver := gmp-6.2.0
-  mpc_ver := mpc-1.1.0
-  gdb_ver := gdb-10.1
-  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
-else ifeq ($(GCC_VER), 10.2.0)
-  gcc_ver := gcc-10.2.0
-  binutils_ver := binutils-2.35
-  ccache_ver := ccache-3.7.11
-  mpfr_ver := mpfr-4.1.0
-  gmp_ver := gmp-6.2.0
-  mpc_ver := mpc-1.1.0
-  gdb_ver := gdb-9.2
-  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
-else ifeq ($(GCC_VER), 9.2.0)
-  gcc_ver := gcc-9.2.0
-  binutils_ver := binutils-2.34
-  ccache_ver := ccache-3.7.3
-  mpfr_ver := mpfr-3.1.5
-  gmp_ver := gmp-6.1.2
-  mpc_ver := mpc-1.0.3
-  gdb_ver := gdb-8.3
-else ifeq ($(GCC_VER), 8.3.0)
-  gcc_ver := gcc-8.3.0
-  binutils_ver := binutils-2.32
-  ccache_ver := ccache-3.7.3
-  mpfr_ver := mpfr-3.1.5
-  gmp_ver := gmp-6.1.2
-  mpc_ver := mpc-1.0.3
-  gdb_ver := gdb-8.3
-else ifeq ($(GCC_VER), 7.3.0)
-  gcc_ver := gcc-7.3.0
-  binutils_ver := binutils-2.30
-  ccache_ver := ccache-3.3.6
-  mpfr_ver := mpfr-3.1.5
-  gmp_ver := gmp-6.1.2
-  mpc_ver := mpc-1.0.3
-  gdb_ver := gdb-8.1
-else ifeq ($(GCC_VER), 4.9.2)
-  gcc_ver := gcc-4.9.2
-  binutils_ver := binutils-2.25
-  ccache_ver := ccache-3.2.1
-  mpfr_ver := mpfr-3.0.1
-  gmp_ver := gmp-4.3.2
-  mpc_ver := mpc-1.0.1
-  gdb_ver := gdb-7.12.1
-else
-  $(error Unsupported GCC version)
-endif
+gcc_ver_only := 14.2.0
+binutils_ver_only := 2.43
+ccache_ver_only := 4.10.2
+CCACHE_CMAKE_BASED := 1
+mpfr_ver_only := 4.2.1
+gmp_ver_only := 6.3.0
+mpc_ver_only := 1.3.1
+gdb_ver_only := 15.2
 
+dependencies := gcc binutils ccache mpfr gmp mpc gdb
+
+$(foreach dep,$(dependencies),$(eval $(dep)_ver := $(dep)-$($(dep)_ver_only)))
+
+GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
+BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
+CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
+MPFR := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
+GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
+MPC := http://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
+GDB := http://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
+
+REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
 ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
   MAKE_MAJOR_VERSION := $(word 1,$(subst ., ,$(MAKE_VERSION)))
   SUPPORTED_MAKE_VERSION := $(shell [ $(MAKE_MAJOR_VERSION) -ge $(REQUIRED_MIN_MAKE_MAJOR_VERSION) ] && echo true)
@@ -181,17 +122,6 @@ ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
     $(error "Make v$(MAKE_VERSION) is too old, must use v$(REQUIRED_MIN_MAKE_MAJOR_VERSION) or above")
   endif
 endif
-
-ccache_ver_only := $(patsubst ccache-%,%,$(ccache_ver))
-
-
-GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
-BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
-CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
-MPFR := https://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
-GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
-MPC := http://ftp.gnu.org/pub/gnu/mpc/${mpc_ver}.tar.gz
-GDB := http://ftp.gnu.org/gnu/gdb/${gdb_ver}.tar.xz
 
 # RPMs used by all BASE_OS
 RPM_LIST := \
@@ -262,10 +192,18 @@ define Download
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
-  $(1)_CFG = $$($(1)_DIR)/configure
+  ifeq ($$($(1)_CMAKE_BASED),)
+    $(1)_CFG = $$($(1)_DIR)/configure
+    $(1)_SRC_MARKER = $$($(1)_DIR)/configure
+    $(1)_CONFIG = $(CONFIG)
+  else
+    $(1)_CFG = cmake
+    $(1)_SRC_MARKER = $$($(1)_DIR)/CMakeLists.txt
+    $(1)_CONFIG = $$(CMAKE_CONFIG) $$($(1)_DIR)
+  endif
   $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
 
-  $$($(1)_CFG) : $$($(1)_FILE)
+  $$($(1)_SRC_MARKER) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
 	$$(foreach p,$$(abspath $$(wildcard patches/$$(ARCH)-$$(notdir $$($(1)_DIR)).patch)), \
@@ -279,7 +217,7 @@ define Download
 endef
 
 # Download and unpack all source packages
-$(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
+$(foreach dep,$(dependencies),$(eval $(call Download,$(call uppercase,$(dep)))))
 
 ################################################################################
 # Unpack RPMS
@@ -356,7 +294,7 @@ endif
 ################################################################################
 
 # Define marker files for each source package to be compiled
-$(foreach t,binutils mpfr gmp mpc gcc ccache gdb,$(eval $(t) = $(TARGETDIR)/$($(t)_ver).done))
+$(foreach dep,$(dependencies),$(eval $(dep) = $(TARGETDIR)/$($(dep)_ver).done))
 
 ################################################################################
 
@@ -364,6 +302,8 @@ $(foreach t,binutils mpfr gmp mpc gcc ccache gdb,$(eval $(t) = $(TARGETDIR)/$($(
 CONFIG = --target=$(TARGET) \
     --host=$(HOST) --build=$(BUILD) \
     --prefix=$(PREFIX)
+
+CMAKE_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 
 PATHEXT = $(PREFIX)/bin:
 
@@ -576,6 +516,8 @@ ifeq ($(HOST), $(TARGET))
 	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" $(GDB_CFG) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -591,13 +533,13 @@ endif
 ################################################################################
 # very straightforward. just build a ccache. it is only for host.
 $(BUILDDIR)/$(ccache_ver)/Makefile \
-    : $(CCACHE_CFG)
+    : $(CCACHE_SRC_MARKER)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	@( \
 	  cd $(@D) ; \
 	  $(PATHPRE) $(ENVS) $(CCACHE_CFG) \
-	      $(CONFIG) \
+	      $(CCACHE_CONFIG) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -699,9 +641,17 @@ ifeq ($(TARGET), $(HOST))
 	ln -s $(TARGET)-$* $@
 
   missing-links := $(addprefix $(PREFIX)/bin/, \
-      addr2line ar as c++ c++filt dwp elfedit g++ gcc gcc-$(GCC_VER) gprof ld ld.bfd \
+      addr2line ar as c++ c++filt dwp elfedit g++ gcc gcc-$(gcc_ver_only) gprof ld ld.bfd \
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
+
+# Add link to work around "plugin needed to handle lto object" (JDK-8344272)
+$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(gcc_ver_only)/liblto_plugin.so
+	@echo 'Creating missing $(@F) soft link'
+	@mkdir -p $(@D)
+	ln -s $$(realpath -s --relative-to=$(@D) $<) $@
+
+missing-links += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
 
 ################################################################################
 

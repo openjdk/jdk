@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,14 +157,6 @@ public class crstepreq003 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-/*
-        BreakpointRequest bpRequest = setBreakpoint( mainThread,
-                                                     debuggeeClass,
-                                                     "methodForCommunication",
-                                                     2,
-                                                     "breakpointForCommunication");
-*/
         BreakpointRequest bpRequest = setBreakpoint( null,
                                                      debuggeeClass,
                                                      "breakInThread",

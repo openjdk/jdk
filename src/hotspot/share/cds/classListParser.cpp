@@ -26,6 +26,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -657,7 +658,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
-      if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
+      if (!LambdaProxyClassDictionary::is_supported_invokedynamic(&bootstrap_specifier)) {
         log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
         continue;
       }

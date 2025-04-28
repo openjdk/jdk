@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ public class Parser implements GraphParser {
     public static final String EDGE_ELEMENT = "edge";
     public static final String NODE_ELEMENT = "node";
     public static final String NODES_ELEMENT = "nodes";
+    public static final String LIVE_RANGE_ELEMENT = "lrg";
+    public static final String LIVE_RANGES_ELEMENT = "liveRanges";
+    public static final String LIVE_RANGE_ID_PROPERTY = "id";
     public static final String VISIBLE_NODES_ELEMENT = "visibleNodes";
     public static final String ALL_PROPERTY = "all";
     public static final String REMOVE_EDGE_ELEMENT = "removeEdge";
@@ -89,6 +92,7 @@ public class Parser implements GraphParser {
     public static final String BLOCK_ELEMENT = "block";
     public static final String SUCCESSORS_ELEMENT = "successors";
     public static final String SUCCESSOR_ELEMENT = "successor";
+    public static final String LIVEOUT_ELEMENT = "liveOut";
     public static final String DIFFERENCE_PROPERTY = "difference";
     private final TopElementHandler<GraphDocument> xmlData = new TopElementHandler<>();
     private final Map<Group, Boolean> differenceEncoding = new HashMap<>();
@@ -150,6 +154,9 @@ public class Parser implements GraphParser {
             return graphContext;
         }
     };
+    // <liveRanges>
+    private final HandoverElementHandler<InputGraph> liveRangesHandler = new HandoverElementHandler<>(LIVE_RANGES_ELEMENT);
+    // <lrg>
     private final ElementHandler<GraphContext, GraphContext> visibleNodesHandler = new ElementHandler<>(VISIBLE_NODES_ELEMENT) {
 
         @Override
@@ -219,6 +226,41 @@ public class Parser implements GraphParser {
         protected InputBlock start() throws SAXException {
             String name = readRequiredAttribute(BLOCK_NAME_PROPERTY);
             blockConnections.add(new Pair<>(getParentObject().getName(), name));
+            return getParentObject();
+        }
+    };
+    // <liveOut>
+    private final HandoverElementHandler<InputBlock> liveOutHandler = new HandoverElementHandler<>(LIVEOUT_ELEMENT);
+    // <lrg>
+    private final ElementHandler<InputLiveRange, InputGraph> liveRangeHandler = new ElementHandler<>(LIVE_RANGE_ELEMENT) {
+
+        @Override
+        protected InputLiveRange start() throws SAXException {
+            String s = readRequiredAttribute(NODE_ID_PROPERTY);
+            int id;
+            try {
+                id = lookupID(s);
+            } catch (NumberFormatException e) {
+                throw new SAXException(e);
+            }
+            InputLiveRange lrg = new InputLiveRange(id);
+            getParentObject().addLiveRange(lrg);
+            return lrg;
+        }
+    };
+
+    private final ElementHandler<InputBlock, InputBlock> blockLiveRangeHandler = new ElementHandler<>(LIVE_RANGE_ELEMENT) {
+
+        @Override
+        protected InputBlock start() throws SAXException {
+            String s = readRequiredAttribute(LIVE_RANGE_ID_PROPERTY);
+            int liveRangeId;
+            try {
+                liveRangeId = Integer.parseInt(s);
+            } catch (Exception e) {
+                throw new SAXException(e);
+            }
+            getParentObject().addLiveOut(liveRangeId);
             return getParentObject();
         }
     };
@@ -482,6 +524,7 @@ public class Parser implements GraphParser {
         graphHandler.addChild(nodesHandler);
         graphHandler.addChild(edgesHandler);
         graphHandler.addChild(controlFlowHandler);
+        graphHandler.addChild(liveRangesHandler);
         graphHandler.addChild(graphStatesHandler);
 
         controlFlowHandler.addChild(blockHandler);
@@ -495,6 +538,10 @@ public class Parser implements GraphParser {
         successorsHandler.addChild(successorHandler);
         blockHandler.addChild(blockNodesHandler);
         blockNodesHandler.addChild(blockNodeHandler);
+        blockHandler.addChild(liveOutHandler);
+        liveOutHandler.addChild(blockLiveRangeHandler);
+
+        liveRangesHandler.addChild(liveRangeHandler);
 
         nodesHandler.addChild(nodeHandler);
         nodesHandler.addChild(removeNodeHandler);
@@ -509,6 +556,7 @@ public class Parser implements GraphParser {
         nodeHandler.addChild(propertiesHandler);
         propertiesHandler.addChild(propertyHandler);
         groupPropertiesHandler.addChild(propertyHandler);
+        liveRangeHandler.addChild(propertiesHandler);
     }
 
     private int lookupID(String i) {

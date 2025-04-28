@@ -527,6 +527,13 @@ void VMThread::execute(VM_Operation* op) {
     return;
   }
 
+  // The current thread must not belong to the SuspendibleThreadSet, because an
+  // on-the-fly safepoint can be waiting for the current thread, and the
+  // current thread will be blocked in wait_until_executed, resulting in
+  // deadlock.
+  assert(!t->is_suspendible_thread(), "precondition");
+  assert(!t->is_indirectly_suspendible_thread(), "precondition");
+
   // Avoid re-entrant attempts to gc-a-lot
   SkipGCALot sgcalot(t);
 

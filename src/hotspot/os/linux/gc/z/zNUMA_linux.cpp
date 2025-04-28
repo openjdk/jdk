@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,34 @@
  * questions.
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zErrno.hpp"
-#include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "os_linux.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
 void ZNUMA::pd_initialize() {
   _enabled = UseNUMA;
-}
 
-uint32_t ZNUMA::count() {
-  if (!_enabled) {
-    // NUMA support not enabled
-    return 1;
-  }
-
-  return os::Linux::numa_max_node() + 1;
+  // UseNUMA and is_faked() are mutually excluded in zArguments.cpp.
+  _count = UseNUMA
+      ? os::Linux::numa_max_node() + 1
+      : !FLAG_IS_DEFAULT(ZFakeNUMA)
+            ? ZFakeNUMA
+            : 1;  // No NUMA nodes
 }
 
 uint32_t ZNUMA::id() {
+  if (is_faked()) {
+    // ZFakeNUMA testing, ignores _enabled
+    return ZCPU::id() % ZFakeNUMA;
+  }
+
   if (!_enabled) {
     // NUMA support not enabled
     return 0;
@@ -65,7 +70,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }
 
-  assert(id < count(), "Invalid NUMA id");
+  assert(id < _count, "Invalid NUMA id");
 
   return id;
 }

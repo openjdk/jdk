@@ -22,8 +22,8 @@
  *
  */
 
-#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
+#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceCounters.hpp"

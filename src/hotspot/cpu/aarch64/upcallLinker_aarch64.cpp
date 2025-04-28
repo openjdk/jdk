@@ -172,7 +172,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -334,7 +333,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     blob->print_on(&ls);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,15 +316,15 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal" rowspan=3>{@code list}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code or}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code unit}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}}
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}{@code )}
  * </tbody>
  * </table>
  *

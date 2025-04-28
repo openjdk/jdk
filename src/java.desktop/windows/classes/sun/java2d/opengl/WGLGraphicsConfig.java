@@ -43,6 +43,7 @@ import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -73,7 +74,8 @@ public final class WGLGraphicsConfig
     private ContextCapabilities oglCaps;
     private final OGLContext context;
     private Object disposerReferent = new Object();
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     public static native int getDefaultPixFmt(int screennum);
     private static native boolean initWGL();
@@ -158,7 +160,7 @@ public final class WGLGraphicsConfig
      * This is a small helper class that allows us to execute
      * getWGLConfigInfo() on the queue flushing thread.
      */
-    private static class WGLGetConfigInfo implements Runnable {
+    private static final class WGLGetConfigInfo implements Runnable {
         private int screen;
         private int pixfmt;
         private long cfginfo;
@@ -184,21 +186,21 @@ public final class WGLGraphicsConfig
      * See OGLContext.java for a list of supported capabilities.
      */
     @Override
-    public final boolean isCapPresent(int cap) {
+    public boolean isCapPresent(int cap) {
         return ((oglCaps.getCaps() & cap) != 0);
     }
 
     @Override
-    public final long getNativeConfigInfo() {
+    public long getNativeConfigInfo() {
         return pConfigInfo;
     }
 
     @Override
-    public final OGLContext getContext() {
+    public OGLContext getContext() {
         return context;
     }
 
-    private static class WGLGCDisposerRecord implements DisposerRecord {
+    private static final class WGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
         public WGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
@@ -374,7 +376,7 @@ public final class WGLGraphicsConfig
         }
     }
 
-    private static class WGLBufferCaps extends BufferCapabilities {
+    private static final class WGLBufferCaps extends BufferCapabilities {
         public WGLBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -390,7 +392,7 @@ public final class WGLGraphicsConfig
         return bufferCaps;
     }
 
-    private static class WGLImageCaps extends ImageCapabilities {
+    private static final class WGLImageCaps extends ImageCapabilities {
         private WGLImageCaps() {
             super(true);
         }
@@ -431,5 +433,11 @@ public final class WGLGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new WGLVolatileSurfaceManager(image, context);
     }
 }

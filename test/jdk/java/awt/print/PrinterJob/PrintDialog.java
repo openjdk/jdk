@@ -42,9 +42,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.print.*;
 
-// This test is a "main" test as applets would need Runtime permission
-// "queuePrintJob".
-
 public class PrintDialog {
 
 

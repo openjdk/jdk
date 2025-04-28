@@ -648,8 +648,6 @@ void Parse::do_call() {
   orig_callee = callee = nullptr;
 
   // ---------------------
-  // Round double arguments before call
-  round_double_arguments(cg->method());
 
   // Feed profiling data for arguments to the type system so it can
   // propagate it as speculative types

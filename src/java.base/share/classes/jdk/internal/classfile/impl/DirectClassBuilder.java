@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ public final class DirectClassBuilder
         implements ClassBuilder {
 
     /** The value of default class access flags */
-    static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC;
+    static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER;
     static final Util.Writable[] EMPTY_WRITABLE_ARRAY = {};
     static final ClassEntry[] EMPTY_CLASS_ENTRY_ARRAY = {};
     final ClassEntry thisClassEntry;

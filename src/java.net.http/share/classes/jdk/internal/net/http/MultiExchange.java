@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.net.http;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
@@ -440,7 +441,9 @@ class MultiExchange<T> implements Cancelable {
                         try {
                             // 3. apply response filters
                             newrequest = responseFilters(response);
-                        } catch (IOException e) {
+                        } catch (Throwable t) {
+                            IOException e = t instanceof IOException io ? io : new IOException(t);
+                            exch.exchImpl.cancel(e);
                             return failedFuture(e);
                         }
                         // 4. check filter result and repeat or continue

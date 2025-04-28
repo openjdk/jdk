@@ -26,7 +26,7 @@
  * @test
  * @key headful
  * @bug 8041990
- * @summary Language specific keys does not work in applets when opened outside the browser
+ * @summary Language specific keys does not work in non-default AppContexts of top-level windows
  * @author Petr Pchelko
  * @modules java.desktop/sun.awt
  */

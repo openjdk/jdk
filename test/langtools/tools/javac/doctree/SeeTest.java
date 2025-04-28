@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8031212 8273244 8284908 8200337 8288619
+ * @bug 7021614 8031212 8273244 8284908 8200337 8288619 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -40,14 +40,14 @@ class SeeTest {
      */
     void quoted_text() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 1
-        Text[TEXT, pos:12, "String"]
+        Text[TEXT, pos:10, "String"]
     ]
 ]
 */
@@ -58,14 +58,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void at_sign_in_quoted_string() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, Test_'@'_in_quoted_string.]
+    Text[TEXT, pos:0, Test_'@'_in_quoted_string.]
   body: empty
   block tags: 1
-    See[SEE, pos:29
+    See[SEE, pos:27
       reference: 1
-        Text[TEXT, pos:34, "{@code}"]
+        Text[TEXT, pos:32, "{@code}"]
     ]
 ]
 */
@@ -78,14 +78,14 @@ DocComment[DOC_COMMENT, pos:1
     @PrettyCheck(false)
     void new_line_before_quoted_string() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, Test_new_line_before_quoted_string.]
+    Text[TEXT, pos:0, Test_new_line_before_quoted_string.]
   body: empty
   block tags: 1
-    See[SEE, pos:38
+    See[SEE, pos:36
       reference: 1
-        Text[TEXT, pos:47, "{@code}"]
+        Text[TEXT, pos:44, "{@code}"]
     ]
 ]
 */
@@ -96,25 +96,25 @@ DocComment[DOC_COMMENT, pos:1
      */
     void url() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 3
-        StartElement[START_ELEMENT, pos:12
+        StartElement[START_ELEMENT, pos:10
           name:a
           attributes: 1
-            Attribute[ATTRIBUTE, pos:15
+            Attribute[ATTRIBUTE, pos:13
               name: href
               vkind: DOUBLE
               value: 1
-                Text[TEXT, pos:21, url]
+                Text[TEXT, pos:19, url]
             ]
         ]
-        Text[TEXT, pos:26, url]
-        EndElement[END_ELEMENT, pos:29, a]
+        Text[TEXT, pos:24, url]
+        EndElement[END_ELEMENT, pos:27, a]
     ]
 ]
 */
@@ -125,15 +125,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void string() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 2
-        Reference[REFERENCE, pos:12, String]
-        Text[TEXT, pos:19, text]
+        Reference[REFERENCE, pos:10, String]
+        Text[TEXT, pos:17, text]
     ]
 ]
 */
@@ -144,15 +144,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void j_l_string() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String]
-        Text[TEXT, pos:29, text]
+        Reference[REFERENCE, pos:10, java.lang.String]
+        Text[TEXT, pos:27, text]
     ]
 ]
 */
@@ -163,15 +163,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void j_l_string_length() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String#length]
-        Text[TEXT, pos:36, text]
+        Reference[REFERENCE, pos:10, java.lang.String#length]
+        Text[TEXT, pos:34, text]
     ]
 ]
 */
@@ -182,15 +182,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void j_l_string_matches() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String#matches(String_regex)]
-        Text[TEXT, pos:51, text]
+        Reference[REFERENCE, pos:10, java.lang.String#matches(String_regex)]
+        Text[TEXT, pos:49, text]
     ]
 ]
 */
@@ -201,15 +201,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void j_l_string_anchor() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    See[SEE, pos:7
+    See[SEE, pos:5
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String##fragment]
-        Text[TEXT, pos:39, text]
+        Reference[REFERENCE, pos:10, java.lang.String##fragment]
+        Text[TEXT, pos:37, text]
     ]
 ]
 */
@@ -220,12 +220,12 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_numeric() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7, prefPos:19
+    Erroneous[ERRONEOUS, pos:5, prefPos:17
       code: compiler.err.dc.unexpected.content
       body: @see_123_text
     ]

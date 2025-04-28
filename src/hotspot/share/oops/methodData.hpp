@@ -56,8 +56,7 @@ class BytecodeStream;
 // counter overflow, multiprocessor races during data collection, space
 // limitations, missing MDO blocks, etc.  Bad or missing data will degrade
 // optimization quality but will not affect correctness.  Also, each MDO
-// is marked with its birth-date ("creation_mileage") which can be used
-// to assess the quality ("maturity") of its data.
+// can be checked for its "maturity" by calling is_mature().
 //
 // Short (<32-bit) counters are designed to overflow to a known "saturated"
 // state.  Also, certain recorded per-BCI events are given one-bit counters
@@ -2061,8 +2060,6 @@ private:
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
 
-  int               _creation_mileage; // method mileage at MDO creation
-
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
   // We need those because in tiered a method can be concurrently
@@ -2225,9 +2222,6 @@ public:
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
-  int      creation_mileage() const { return _creation_mileage; }
-  void set_creation_mileage(int x)  { _creation_mileage = x; }
-
   int invocation_count() {
     if (invocation_counter()->carry()) {
       return InvocationCounter::count_limit;
@@ -2280,8 +2274,7 @@ public:
   int num_blocks() const                      { return _num_blocks; }
   void set_num_blocks(short n)                { _num_blocks = n;    }
 
-  bool is_mature() const;  // consult mileage and ProfileMaturityPercentage
-  static int mileage_of(Method* m);
+  bool is_mature() const;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   enum EscapeFlag {

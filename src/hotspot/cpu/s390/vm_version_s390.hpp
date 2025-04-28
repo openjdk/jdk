@@ -148,7 +148,7 @@ class VM_Version: public Abstract_VM_Version {
 
   static bool test_feature_bit(unsigned long* featureBuffer, int featureNum, unsigned int bufLen);
   static int  get_model_index();
-  static void set_features_string();
+  static void set_cpu_info_string();
   static void print_features_internal(const char* text, bool print_anyway=false);
   static void determine_features();
   static long call_getFeatures(unsigned long* buffer, int buflen, int functionCode);

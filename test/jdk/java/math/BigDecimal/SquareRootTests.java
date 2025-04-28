@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4851777 8233452
+ * @bug 4851777 8233452 8341402
  * @summary Tests of BigDecimal.sqrt().
  */
 
@@ -60,6 +60,8 @@ public class SquareRootTests {
         failures += nearTen();
         failures += nearOne();
         failures += halfWay();
+        failures += exactResultTests();
+        failures += scaleOverflowTest();
 
         if (failures > 0 ) {
             throw new RuntimeException("Incurred " + failures + " failures" +
@@ -169,6 +171,93 @@ public class SquareRootTests {
     private static int compareSqrtImplementations(BigDecimal bd, MathContext mc) {
         return equalNumerically(BigSquareRoot.sqrt(bd, mc),
                                 bd.sqrt(mc), "sqrt(" + bd + ") under " + mc);
+    }
+
+    private static int exactResultTests() {
+        int failures = 0;
+        MathContext unnecessary = new MathContext(1, RoundingMode.UNNECESSARY);
+        MathContext arbitrary = new MathContext(0, RoundingMode.CEILING);
+
+        BigDecimal[] errCases = {
+                // (strippedScale & 1) != 0
+                BigDecimal.TEN,
+                // (strippedScale & 1) == 0 && !stripped.isPowerOfTen() && sqrtRem[1].signum != 0
+                BigDecimal.TWO,
+        };
+
+        for (BigDecimal input : errCases) {
+            BigDecimal result;
+            // mc.roundingMode == RoundingMode.UNNECESSARY
+            try {
+                result = input.sqrt(unnecessary);
+                System.err.println("Unexpected sqrt with UNNECESSARY RoundingMode: (" + input + ").sqrt() = " + result);
+                failures += 1;
+            } catch (ArithmeticException e) {
+                // Expected
+            }
+
+            // mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
+            try {
+                result = input.sqrt(arbitrary);
+                System.err.println("Unexpected sqrt with mc.precision == 0: (" + input + ").sqrt() = " + result);
+                failures += 1;
+            } catch (ArithmeticException e) {
+                // Expected
+            }
+        }
+
+        // (strippedScale & 1) == 0
+
+        // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0 && (mc.precision != 0 && result.precision() > mc.precision)
+        try {
+            BigDecimal input = BigDecimal.valueOf(121);
+            BigDecimal result = input.sqrt(unnecessary);
+            System.err.println("Unexpected sqrt with result.precision() > mc.precision: ("
+                    + input + ").sqrt() = " + result);
+            failures += 1;
+        } catch (ArithmeticException e) {
+            // Expected
+        }
+
+        BigDecimal four = BigDecimal.valueOf(4);
+        Object[][] cases = {
+                // stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
+                { BigDecimal.ONE, unnecessary, BigDecimal.ONE },
+                // stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
+                { BigDecimal.ONE, arbitrary, BigDecimal.ONE },
+                // !stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
+                // && sqrtRem[1].signum == 0 && mc.precision == 0
+                { four, new MathContext(0, RoundingMode.UNNECESSARY), BigDecimal.TWO },
+                // !stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY
+                // && sqrtRem[1].signum == 0 && mc.precision == 0
+                { four, arbitrary, BigDecimal.TWO },
+                // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0
+                // && (mc.precision != 0 && result.precision() <= mc.precision)
+                { four, unnecessary, BigDecimal.TWO },
+        };
+
+        for (Object[] testCase : cases) {
+            BigDecimal expected = (BigDecimal) testCase[2];
+            BigDecimal result = ((BigDecimal) testCase[0]).sqrt((MathContext) testCase[1]);
+            failures += compare(expected, result, true, "Exact results");
+        }
+
+        return failures;
+    }
+
+    private static int scaleOverflowTest() {
+        int failures = 0;
+
+        try {
+            BigDecimal.valueOf(1, -1).sqrt(new MathContext((1 << 30) + 1, RoundingMode.UP));
+            System.err.println("ArithmeticException expected: possible overflow undetected "
+                    + "or the range of supported values for the algorithm has extended.");
+            failures += 1;
+        } catch (ArithmeticException e) {
+            // Expected
+        }
+
+        return failures;
     }
 
     /**

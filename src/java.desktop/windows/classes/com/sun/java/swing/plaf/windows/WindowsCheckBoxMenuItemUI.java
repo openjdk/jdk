@@ -41,11 +41,12 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows check box menu item.
  */
-public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
+public final class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
 
+            @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
@@ -54,6 +55,7 @@ public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
 
+            @Override
             public Part getPart(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getPart(this, menuItem);
             }
@@ -80,6 +82,7 @@ public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
      * @param text String to render
      * @since 1.4
      */
+    @Override
     protected void paintText(Graphics g, JMenuItem menuItem,
                              Rectangle textRect, String text) {
         if (WindowsMenuItemUI.isVistaPainting()) {

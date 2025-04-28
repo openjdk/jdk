@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug      8292892
+ * @bug      8292892 8345555
  * @summary  Tests that members inherited from classes with package access are
  *           documented in the index as though they were declared in the
  *           inheriting class.
@@ -73,8 +73,8 @@ public class TestIndexInherited extends JavadocTester {
     private static final String[] SEARCH_INHERITED = {"""
         {"p":"pkg1","c":"ClassB","l":"methodA()"}""", """
         {"p":"pkg2","c":"ClassC","l":"methodA()"}""", """
-        {"p":"pkg1","c":"ClassB","l":"STRING_A"}""", """
-        {"p":"pkg2","c":"ClassC","l":"STRING_A"}"""};
+        {"p":"pkg1","c":"ClassB","l":"STRING_A","k":"2"}""", """
+        {"p":"pkg2","c":"ClassC","l":"STRING_A","k":"2"}"""};
 
     /**
      * Index entries for members declared by the superclass.
@@ -92,7 +92,7 @@ public class TestIndexInherited extends JavadocTester {
      */
     private static final String[] SEARCH_DECLARED = {"""
         {"p":"pkg1","c":"ClassA","l":"methodA()"}""", """
-        {"p":"pkg1","c":"ClassA","l":"STRING_A"}"""};
+        {"p":"pkg1","c":"ClassA","l":"STRING_A","k":"2"}"""};
 
     /**
      * Sole constructor.

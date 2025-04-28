@@ -24,7 +24,7 @@
 
 #include "systemMemoryBarrier_windows.hpp"
 
-#include <windows.h>
+#include <windows.h>  // do not reorder
 #include <processthreadsapi.h>
 
 bool WindowsSystemMemoryBarrier::initialize() {

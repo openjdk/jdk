@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ private:
   static GrowableArray<ObjArrayKlass*>* _array_klasses;
   static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
-  static void check_for_dynamic_dump();
   static void dump_for_jcmd(const char* archive_name, TRAPS);
-  static void dump_at_exit(JavaThread* current, const char* archive_name);
+  static void dump_at_exit(JavaThread* current);
+  static void dump_impl(bool jcmd_request, const char* archive_name, TRAPS);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != nullptr; }
   static bool validate(FileMapInfo* dynamic_info);
   static void dump_array_klasses();

@@ -572,6 +572,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         return $Type$.$bitstype$BitsTo$Fptype$(bits);
     }
 
+    @ForceInline
     public $bitstype$ laneHelper(int i) {
         return ($bitstype$) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
@@ -621,6 +622,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -723,6 +725,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $type$ laneHelper(int i) {
         return ($type$) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -824,6 +827,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

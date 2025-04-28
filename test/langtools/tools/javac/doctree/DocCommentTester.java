@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -989,12 +989,11 @@ public class DocCommentTester {
             if (annos.contains("@PrettyCheck(false)")) {
                 return;
             }
-            boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
             Elements.DocCommentKind ck = trees.getDocCommentKind(path);
             boolean isLineComment = ck == Elements.DocCommentKind.END_OF_LINE;
             String raw = trees.getDocComment(path).stripTrailing();
-            String normRaw = normalize(raw, isLineComment, normalizeTags);
+            String normRaw = normalize(raw, isLineComment);
 
             StringWriter out = new StringWriter();
             DocPretty dp = new DocPretty(out);
@@ -1014,65 +1013,21 @@ public class DocCommentTester {
 
         /**
          * Normalize whitespace in places where the tree does not preserve it.
-         * Maintain contents of inline tags unless {@code normalizeTags} is
-         * {@code false}. This should normally be {@code true}, but should be
-         * set to {@code false} when there is syntactically invalid content
-         * that might resemble an inline tag, but which is not so.
          *
          * @param s the comment text to be normalized
-         * @param normalizeTags whether to normalize inline tags
          * @return the normalized content
          */
-        String normalize(String s, boolean isLineComment, boolean normalizeTags) {
-            String s2 = (isLineComment ? s : s.trim())
-                    .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@"); // Between block tags
-            StringBuilder sb = new StringBuilder();
-            Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
-            Matcher m = p.matcher(s2);
-            int start = 0;
-            if (normalizeTags) {
-                while (m.find(start)) {
-                    sb.append(normalizeFragment(s2.substring(start, m.start())));
-                    sb.append(m.group().trim());
-                    start = copyLiteral(s2, m.end(), sb);
-                }
-            }
-            sb.append(normalizeFragment(s2.substring(start)));
-            return sb.toString()
+        String normalize(String s, boolean isLineComment) {
+            // See comment in MarkdownTest for explanation of dummy and Override
+            return (isLineComment ? s : s.stripIndent().trim())
+                    .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@")  // Between block tags
+                    .replaceAll("\n[ \t]+@(?!([@*]|(dummy|Override)))", "\n@")
                     .replaceAll("(?i)\\{@([a-z][a-z0-9.:-]*)\\s+}", "{@$1}")
-                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2");
-        }
-
-        // See comment in MarkdownTest for explanation of dummy and Override
-        String normalizeFragment(String s) {
-            return s.replaceAll("\n[ \t]+@(?!([@*]|(dummy|Override)))", "\n@");
-        }
-
-        int copyLiteral(String s, int start, StringBuilder sb) {
-            int depth = 0;
-            for (int i = start; i < s.length(); i++) {
-                char ch = s.charAt(i);
-                if (i == start && !Character.isWhitespace(ch) && ch != '}') {
-                    sb.append(' ');
-                }
-                switch (ch) {
-                    case '{' ->
-                        depth++;
-
-                    case '}' -> {
-                        depth--;
-                        if (depth < 0) {
-                            sb.append(ch);
-                            return i + 1;
-                        }
-                    }
-                }
-                sb.append(ch);
-            }
-            return s.length();
+                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2")
+                    .replaceAll("<pre> *\\{@code\\n", "<pre>{@code ")
+                    .replaceAll("<pre> *<code>\\n", "<pre><code>");
         }
     }
-
 
     /**
      * Verifies the general "left to right" constraints for the positions of

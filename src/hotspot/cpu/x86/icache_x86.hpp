@@ -40,21 +40,13 @@
 
 class ICache : public AbstractICache {
  public:
-#ifdef AMD64
   enum {
     stub_size      = 64, // Size of the icache flush stub in bytes
     line_size      = 64, // Icache line size in bytes
     log2_line_size = 6   // log2(line_size)
   };
 
-  // Use default implementation
-#else
-  enum {
-    stub_size      = 16,                 // Size of the icache flush stub in bytes
-    line_size      = BytesPerWord,      // conservative
-    log2_line_size = LogBytesPerWord    // log2(line_size)
-  };
-#endif // AMD64
+  static void initialize(int phase);
 };
 
 #endif // CPU_X86_ICACHE_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
@@ -37,34 +34,31 @@ public class HeadlessMalfunctionAgent {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         inst.addTransformer(new ClassFileTransformer() {
-
             @Override
-            public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
-                                    ProtectionDomain pd, byte[] cb) {
-                if ("java/awt/GraphicsEnvironment".equals(className)) {
-                    System.out.println("Transforming java.awt.GraphicsEnvironment.");
-                    try {
-                        final ClassReader cr = new ClassReader(cb);
-                        final ClassWriter cw = new ClassWriter(cr, 0);
-                        cr.accept(new ClassVisitor(Opcodes.ASM9, cw) {
-
-                            @Override
-                            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
-                                                             String[] exceptions) {
-                                if ("isHeadless".equals(name) && "()Z".equals(descriptor)) {
-                                    System.out.println("isHeadless removed from java.awt.GraphicsEnvironment.");
-                                    // WHACK! Remove the isHeadless method.
-                                    return null;
-                                }
-                                return super.visitMethod(access, name, descriptor, signature, exceptions);
-                            }
-                        }, 0);
-                        return cw.toByteArray();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            public byte[] transform(ClassLoader loader,
+                                    String className,
+                                    Class<?> classBeingRedefined,
+                                    ProtectionDomain pd,
+                                    byte[] cb) {
+                if (!"java/awt/GraphicsEnvironment".equals(className)) {
+                    return null;
                 }
-                return null;
+                System.out.println("Transforming java.awt.GraphicsEnvironment.");
+                try {
+                    return ClassFile.of().transformClass(ClassFile.of().parse(cb), (classBuilder, element) -> {
+                        if (element instanceof MethodModel method) {
+                            if ("isHeadless".equals(method.methodName().stringValue()) &&
+                                    "()Z".equals(method.methodType().stringValue())) {
+                                System.out.println("isHeadless removed from java.awt.GraphicsEnvironment.");
+                                return;
+                            }
+                        }
+                        classBuilder.with(element);
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
         });
     }

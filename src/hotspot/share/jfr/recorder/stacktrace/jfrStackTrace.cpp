@@ -102,7 +102,9 @@ void JfrStackTrace::write(JfrChunkWriter& sw) const {
 }
 
 void JfrStackTrace::write(JfrCheckpointWriter& cpw) const {
+  assert(!_written, "invariant");
   write_stacktrace(cpw, _id, _reached_root, _nr_of_frames, _frames);
+  _written = true;
 }
 
 bool JfrStackFrame::equals(const JfrStackFrame& rhs) const {

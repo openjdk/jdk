@@ -101,9 +101,6 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = false;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during deoptimization?
   // ARM does not handle callee-save floats.
   static constexpr bool float_in_double() {

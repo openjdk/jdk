@@ -1163,15 +1163,17 @@ class BadIRNodeForPhase {
     public void duplicatedPhase() {}
 
     @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @FailCount(6)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
     public void alloc() {}
 
     @Test

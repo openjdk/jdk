@@ -71,6 +71,10 @@
           "\"archivedObjects\" of the specified class is stored in the "    \
           "CDS archive heap")                                               \
                                                                             \
+  develop(ccstr, AOTInitTestClass, nullptr,                                 \
+          "For JVM internal testing only. The specified class is stored "   \
+          "in the initialized state in the AOT cache ")                     \
+                                                                            \
   product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \

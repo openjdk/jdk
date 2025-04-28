@@ -124,6 +124,6 @@ void PSVirtualSpace::verify() const {
 #endif // #ifndef PRODUCT
 
 void PSVirtualSpace::print_space_boundaries_on(outputStream* st) const {
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  st->print_cr("[" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
 }

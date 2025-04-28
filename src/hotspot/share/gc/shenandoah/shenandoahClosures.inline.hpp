@@ -31,10 +31,10 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/iterator.inline.hpp"
@@ -59,6 +59,13 @@ void ShenandoahSuperClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Marking
 //
+ShenandoahFlushSATBHandshakeClosure::ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
+  HandshakeClosure("Shenandoah Flush SATB"),
+  _qset(qset) {}
+
+void ShenandoahFlushSATBHandshakeClosure::do_thread(Thread* thread) {
+  _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+}
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,
                                                                ShenandoahReferenceProcessor* rp,

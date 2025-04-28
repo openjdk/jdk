@@ -126,7 +126,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
   }
 
   default:
-    fatal("unhandled bytecode");
+    fatal("unhandled bytecode : Current Method = %s, BCI = %d, OPCODE = %s (0x%X)", _method->name()->as_utf8(), cur_bci(), Bytecodes::name(bc), bc);
   }
   return bc;
 }

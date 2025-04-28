@@ -29,7 +29,10 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+
+#ifndef _AIX
 #include "screencast_pipewire.h"
+
 #include "screencast_portal.h"
 
 extern volatile bool isGtkMainThread;
@@ -925,3 +928,4 @@ int getPipewireFd(const gchar *token,
     DEBUG_SCREENCAST("pwFd %i\n", pipewireFd);
     return pipewireFd;
 }
+#endif

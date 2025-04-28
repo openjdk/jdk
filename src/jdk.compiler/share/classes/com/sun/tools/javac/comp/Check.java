@@ -218,6 +218,12 @@ public class Check {
      */
     private final boolean allowSealed;
 
+    /** Whether to force suppression of deprecation and preview warnings.
+     *  This happens when attributing import statements for JDK 9+.
+     *  @see Feature#DEPRECATION_ON_IMPORT
+     */
+    private boolean importSuppression;
+
 /* *************************************************************************
  * Errors and Warnings
  **************************************************************************/
@@ -225,6 +231,12 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
+        return prev;
+    }
+
+    boolean setImportSuppression(boolean newImportSuppression) {
+        boolean prev = importSuppression;
+        importSuppression = newImportSuppression;
         return prev;
     }
 
@@ -261,17 +273,8 @@ public class Check {
      *  @param msg        A Warning describing the problem.
      */
     public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
-        if (!lint.isSuppressed(LintCategory.PREVIEW))
+        if (!importSuppression && !lint.isSuppressed(LintCategory.PREVIEW))
             preview.reportPreviewWarning(pos, warnKey);
-    }
-
-    /** Log a preview warning.
-     *  @param pos        Position to be used for error reporting.
-     *  @param msg        A Warning describing the problem.
-     */
-    public void warnDeclaredUsingPreview(DiagnosticPosition pos, Symbol sym) {
-        if (!lint.isSuppressed(LintCategory.PREVIEW))
-            preview.reportPreviewWarning(pos, LintWarnings.DeclaredUsingPreview(kindName(sym), sym));
     }
 
     /** Log a preview warning.
@@ -3682,7 +3685,7 @@ public class Check {
      */
     public boolean validateAnnotationDeferErrors(JCAnnotation a) {
         boolean res = false;
-        final Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+        final Log.DiagnosticHandler diagHandler = log.new DiscardDiagnosticHandler();
         try {
             res = validateAnnotation(a);
         } finally {
@@ -3780,8 +3783,8 @@ public class Check {
     }
 
     void checkDeprecated(Supplier<DiagnosticPosition> pos, final Symbol other, final Symbol s) {
-        if ( (s.isDeprecatedForRemoval()
-                || s.isDeprecated() && !other.isDeprecated())
+        if (!importSuppression
+                && (s.isDeprecatedForRemoval() || s.isDeprecated() && !other.isDeprecated())
                 && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)
                 && s.kind != Kind.PCK) {
             deferredLintHandler.report(_l -> warnDeprecated(pos.get(), s));
@@ -3830,10 +3833,10 @@ public class Check {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
                     preview.markUsesPreview(pos);
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreview(s)));
+                    warnPreviewAPI(pos, LintWarnings.IsPreview(s));
                 }
             } else {
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreviewReflective(s)));
+                warnPreviewAPI(pos, LintWarnings.IsPreviewReflective(s));
             }
         }
         if (preview.declaredUsingPreviewFeature(s)) {
@@ -3842,7 +3845,7 @@ public class Check {
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);
-                deferredLintHandler.report(_l -> warnDeclaredUsingPreview(pos, s));
+                warnPreviewAPI(pos, LintWarnings.DeclaredUsingPreview(kindName(s), s));
             }
         }
     }
@@ -4774,7 +4777,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = !tree.var.sym.isUnnamedVariable();
+                bindings[0] |= !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);

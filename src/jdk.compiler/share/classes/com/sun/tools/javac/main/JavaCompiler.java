@@ -238,10 +238,6 @@ public class JavaCompiler {
      */
     public Log log;
 
-    /** Whether or not the options lint category was initially disabled
-     */
-    boolean optionsCheckingInitiallyDisabled;
-
     /** Factory for creating diagnostic objects
      */
     JCDiagnostic.Factory diagFactory;
@@ -439,12 +435,6 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
-        // See if lint options checking was explicitly disabled by the
-        // user; this is distinct from the options check being
-        // enabled/disabled.
-        optionsCheckingInitiallyDisabled =
-            options.isSet(Option.XLINT_CUSTOM, "-options") ||
-            options.isSet(Option.XLINT_CUSTOM, "none");
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -928,11 +918,6 @@ public class JavaCompiler {
             checkReusable();
         hasBeenUsed = true;
 
-        // forcibly set the equivalent of -Xlint:-options, so that no further
-        // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
-
         start_msec = now();
 
         try {
@@ -1166,7 +1151,7 @@ public class JavaCompiler {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             }
         } else { // free resources
@@ -1898,7 +1883,7 @@ public class JavaCompiler {
 
     private Name parseAndGetName(JavaFileObject fo,
                                  Function<JCTree.JCCompilationUnit, Name> tree2Name) {
-        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        DiagnosticHandler dh = log.new DiscardDiagnosticHandler();
         JavaFileObject prevSource = log.useSource(fo);
         try {
             JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);

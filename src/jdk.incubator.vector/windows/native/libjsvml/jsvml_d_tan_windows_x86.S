@@ -2366,7 +2366,7 @@ _unwind___jsvml_tan8_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_tan8_ha_z0_B12_B16:
-        DD      2808865
+        DD      2284577
         DD      7558364
         DD      7369937
         DD      7431367
@@ -2384,10 +2384,6 @@ _unwind___jsvml_tan8_ha_z0_B12_B16:
         DD      2791495
         DD      3049532
         DD      3307569
-        DD      7109414
-        DD      7170845
-        DD      7232276
-        DD      7293707
         DD      imagerel _B5_1
         DD      imagerel _B5_12
         DD      imagerel _unwind___jsvml_tan8_ha_z0_B1_B10
