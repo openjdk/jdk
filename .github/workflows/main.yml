@@ -231,7 +231,7 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
-      make-target: 'static-jdk-image'
+      make-target: 'product-bundles test-bundles static-jdk-bundles'
       # There are issues with fastdebug static build in GHA due to space limit.
       # Only do release build for now.
       debug-levels: '[ "release" ]'
@@ -361,6 +361,17 @@ jobs:
       platform: linux-x64
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
+
+  test-linux-x64-static:
+    name: linux-x64-static
+    needs:
+      - build-linux-x64-static
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: linux-x64
+      bootjdk-platform: linux-x64
+      runs-on: ubuntu-22.04
+      static: true
 
   test-macos-aarch64:
     name: macos-aarch64
