@@ -103,25 +103,27 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   //
   // This allows us to skip list scans. The individual method checks are cheap,
   // but walking the large list of dependencies gets expensive.
+  //
+  // TODO: Check if any other concurrent code modifies the head?
 
-  nmethodBucket* head = dependencies();
+  nmethodBucket* head = Atomic::load(_dependency_context_addr);
   if (head != nullptr && nm == head->get_nmethod()) {
     return;
   }
 
 #ifdef ASSERT
-  for (nmethodBucket* b = dependencies(); b != nullptr; b = b->next()) {
+  for (nmethodBucket* b = head; b != nullptr; b = b->next()) {
     assert(nm != b->get_nmethod(), "Should not be in the list yet");
   }
 #endif
 
   nmethodBucket* new_head = new nmethodBucket(nm, nullptr);
   for (;;) {
-    nmethodBucket* head = Atomic::load(_dependency_context_addr);
     new_head->set_next(head);
     if (Atomic::cmpxchg(_dependency_context_addr, head, new_head) == head) {
       break;
     }
+    head = Atomic::load(_dependency_context_addr);
   }
   if (UsePerfData) {
     _perf_total_buckets_allocated_count->inc();
