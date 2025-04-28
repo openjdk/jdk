@@ -485,15 +485,15 @@ public abstract class SHA3 extends DigestBase {
         }
     }
 
-    public static final class SHAKE128h extends SHA3 {
-        public SHAKE128h() {
-            super("SHAKE128", 32, (byte) 0x1F, 32);
+    public static final class SHAKE128Hash extends SHA3 {
+        public SHAKE128Hash() {
+            super("SHAKE128-256", 32, (byte) 0x1F, 32);
         }
     }
 
-    public static final class SHAKE256h extends SHA3XOF {
-        public SHAKE256h() {
-            super("SHAKE256", 64, (byte) 0x1F, 64);
+    public static final class SHAKE256Hash extends SHA3 {
+        public SHAKE256Hash() {
+            super("SHAKE256-512", 64, (byte) 0x1F, 64);
         }
     }
 
