@@ -2436,19 +2436,34 @@ public class IRNode {
         machOnlyNameRegex(VMLA_MASKED, "vmla_masked");
     }
 
-    public static final String FMSUB = PREFIX + "FMSUB" + POSTFIX;
+    public static final String FMSUB_F = PREFIX + "FMSUB_F" + POSTFIX;
     static {
-        machOnlyNameRegex(FMSUB, "msub(F|D)_reg_reg");
+        machOnlyNameRegex(FMSUB_F, "FmaF");
     }
 
-    public static final String FNMADD = PREFIX + "FNMADD" + POSTFIX;
+    public static final String FMSUB_D = PREFIX + "FMSUB_D" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMADD, "mnadd(F|D)_reg_reg");
+        machOnlyNameRegex(FMSUB_D, "FmaD");
     }
 
-    public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
+    public static final String FNMADD_F = PREFIX + "FNMADD_F" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
+        machOnlyNameRegex(FNMADD_F, "FmaF");
+    }
+
+    public static final String FNMADD_D = PREFIX + "FNMADD_D" + POSTFIX;
+    static {
+        machOnlyNameRegex(FNMADD_D, "FmaD");
+    }
+
+    public static final String FNMSUB_F = PREFIX + "FNFNMSUB_FMSUB" + POSTFIX;
+    static {
+        machOnlyNameRegex(FNMSUB_F, "FmaF");
+    }
+
+    public static final String FNMSUB_D = PREFIX + "FNMSUB_D" + POSTFIX;
+    static {
+        machOnlyNameRegex(FNMSUB_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;

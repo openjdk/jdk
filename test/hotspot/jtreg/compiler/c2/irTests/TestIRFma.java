@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,99 +86,99 @@ public class TestIRFma {
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test1(float a, float b, float c) {
         return Math.fma(-a, -b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test2(double a, double b, double c) {
         return Math.fma(-a, -b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test3(float a, float b, float c) {
         return Math.fma(-a, b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test4(double a, double b, double c) {
         return Math.fma(-a, b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test5(float a, float b, float c) {
         return Math.fma(a, -b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FMSUB_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test6(double a, double b, double c) {
         return Math.fma(a, -b, c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test7(float a, float b, float c) {
         return Math.fma(-a, b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test8(double a, double b, double c) {
         return Math.fma(-a, b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test9(float a, float b, float c) {
         return Math.fma(a, -b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test10(double a, double b, double c) {
         return Math.fma(a, -b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMSUB_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test11(float a, float b, float c) {
         return Math.fma(a, b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMSUB, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMSUB_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test12(double a, double b, double c) {
         return Math.fma(a, b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_F, "> 0", IRNode.NEG_F, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static float test13(float a, float b, float c) {
         return Math.fma(-a, -b, -c);
     }
 
     @Test
-    @IR(counts = {IRNode.FNMADD, "> 0"},
-        applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.FNMADD_D, "> 0", IRNode.NEG_D, "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     static double test14(double a, double b, double c) {
         return Math.fma(-a, -b, -c);
     }
