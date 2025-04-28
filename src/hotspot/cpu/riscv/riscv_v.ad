@@ -1124,9 +1124,10 @@ instruct vxorL_vx_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
 // vector and not
 
 instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
-  predicate(UseZvbb && (Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT));
+  predicate(UseZvbb &&
+            (Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_BYTE ||
+             Matcher::vector_element_basic_type(n) == T_SHORT));
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
   format %{ "vand_notI $dst, $src1, $src2" %}
   ins_encode %{
@@ -1153,9 +1154,10 @@ instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
 %}
 
 instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, vRegMask_V0 v0) %{
-  predicate(UseZvbb && (Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT));
+  predicate(UseZvbb &&
+            (Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_BYTE ||
+             Matcher::vector_element_basic_type(n) == T_SHORT));
   match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (Replicate m1))) v0));
   format %{ "vand_notI_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
@@ -1184,9 +1186,10 @@ instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, vRegMask_V0 v0) 
 %}
 
 instruct vand_notI_vx(vReg dst, vReg src1, iRegIorL2I src2, immI_M1 m1) %{
-  predicate(UseZvbb && (Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT));
+  predicate(UseZvbb &&
+            (Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_BYTE ||
+             Matcher::vector_element_basic_type(n) == T_SHORT));
   match(Set dst (AndV src1 (Replicate (XorI src2 m1))));
   format %{ "vand_notI_vx $dst, $src1, $src2" %}
   ins_encode %{
@@ -1213,9 +1216,10 @@ instruct vand_notL_vx(vReg dst, vReg src1, iRegL src2, immL_M1 m1) %{
 %}
 
 instruct vand_notI_vx_masked(vReg dst_src1, iRegIorL2I src2, immI_M1 m1, vRegMask_V0 v0) %{
-  predicate(UseZvbb && (Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_SHORT));
+  predicate(UseZvbb &&
+            (Matcher::vector_element_basic_type(n) == T_INT ||
+             Matcher::vector_element_basic_type(n) == T_BYTE ||
+             Matcher::vector_element_basic_type(n) == T_SHORT));
   match(Set dst_src1 (AndV (Binary dst_src1 (Replicate (XorI src2 m1))) v0));
   format %{ "vand_notI_vx_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
