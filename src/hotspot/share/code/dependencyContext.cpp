@@ -93,15 +93,16 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
   assert(nm->is_not_installed(), "Precondition");
 
-  // This method tries to add never before seen nmethod, possibly repeatedly,
-  // but holding the CodeCache_lock until all dependencies are added.
+  // This method tries to add never before seen nmethod, holding the CodeCache_lock
+  // until all dependencies are added. The caller code can call multiple times
+  // with the same nmethod, but always under the same lock hold.
   //
   // This means the buckets list is guaranteed to be in either of two states:
-  //   1. The nmethod is not in the list, and can be added to the head.
+  //   1. The nmethod is not in the list, and can be added to the head of the list.
   //   2. The nmethod was already added, and thus it sits at the head of the list.
   //
-  // This allows us not to re-scan the list. Walking the list is expensive
-  // when there are lots of dependencies.
+  // This allows us to skip list scans. The individual method checks are cheap,
+  // but walking the large list of dependencies gets expensive.
 
   nmethodBucket* head = dependencies();
   if (head != nullptr && nm == head->get_nmethod()) {
