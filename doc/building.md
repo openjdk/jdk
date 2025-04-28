@@ -390,11 +390,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                           |
-| ------------------ | ------------------------------------------- |
-| Linux              | gcc 13.2.0                                  |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
-| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
+| Operating system   | Toolchain version                            |
+| ------------------ | -------------------------------------------- |
+| Linux              | gcc 14.2.0                                   |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)      |
+| Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.
@@ -404,7 +404,7 @@ C, and C++14 for C++.
 The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
-The JDK is currently known to compile successfully with gcc version 13.2 or
+The JDK is currently known to compile successfully with gcc version 14.2 or
 newer.
 
 In general, any version between these two should be usable.
@@ -1456,6 +1456,24 @@ sh ./configure --with-jvm-variants=server \
 ```
 
 and run `make` normally.
+
+#### Building for Windows AArch64
+The Visual Studio Build Tools can be used for building the JDK without a full
+Visual Studio installation. To set up the Visual Studio 2022 Build Tools on a
+Windows AArch64 machine for a native build, launch the installer as follows
+in a Windows command prompt:
+
+```
+vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools" ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
+you must set the proper target platform by adding
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
 
 ## Build Performance
 

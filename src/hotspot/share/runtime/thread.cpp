@@ -92,7 +92,7 @@ Thread::Thread(MemTag mem_tag) {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = nullptr;)
+  DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -379,7 +379,7 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
 }
@@ -488,7 +488,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   }
   ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
-  debug_only(if (WizardMode) print_owned_locks_on(st);)
+  DEBUG_ONLY(if (WizardMode) print_owned_locks_on(st);)
 }
 
 void Thread::print() const { print_on(tty); }

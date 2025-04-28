@@ -207,8 +207,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  * <h2>Implementation Notes</h2>
  *
- * <p>This lock supports a maximum of 65535 recursive write locks
- * and 65535 read locks. Attempts to exceed these limits result in
+ * <p>This lock supports a maximum of {@link Integer#MAX_VALUE} recursive write locks
+ * and {@link Integer#MAX_VALUE} read locks. Attempts to exceed these limits result in
  * {@link Error} throws from locking methods.
  *
  * @since 1.5
@@ -251,25 +251,25 @@ public class ReentrantReadWriteLock
      * Synchronization implementation for ReentrantReadWriteLock.
      * Subclassed into fair and nonfair versions.
      */
-    abstract static class Sync extends AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedLongSynchronizer {
         private static final long serialVersionUID = 6317671515068378041L;
 
         /*
          * Read vs write count extraction constants and functions.
-         * Lock state is logically divided into two unsigned shorts:
+         * Lock state is logically divided into two ints:
          * The lower one representing the exclusive (writer) lock hold count,
          * and the upper the shared (reader) hold count.
          */
 
-        static final int SHARED_SHIFT   = 16;
-        static final int SHARED_UNIT    = (1 << SHARED_SHIFT);
-        static final int MAX_COUNT      = (1 << SHARED_SHIFT) - 1;
-        static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
+        static final int SHARED_SHIFT   = 32;
+        static final long SHARED_UNIT    = (1L << SHARED_SHIFT);
+        static final long MAX_COUNT      = Integer.MAX_VALUE;
+        static final long EXCLUSIVE_MASK = (1L << SHARED_SHIFT) - 1;
 
         /** Returns the number of shared holds represented in count. */
-        static int sharedCount(int c)    { return c >>> SHARED_SHIFT; }
+        static int sharedCount(long c)    { return (int)(c >>> SHARED_SHIFT); }
         /** Returns the number of exclusive holds represented in count. */
-        static int exclusiveCount(int c) { return c & EXCLUSIVE_MASK; }
+        static int exclusiveCount(long c) { return (int)(c & EXCLUSIVE_MASK); }
 
         /**
          * A counter for per-thread read hold counts.
@@ -367,11 +367,12 @@ public class ReentrantReadWriteLock
          * both read and write holds that are all released during a
          * condition wait and re-established in tryAcquire.
          */
+        @Override
         @ReservedStackAccess
-        protected final boolean tryRelease(int releases) {
+        protected final boolean tryRelease(long releases) {
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
-            int nextc = getState() - releases;
+            long nextc = getState() - releases;
             boolean free = exclusiveCount(nextc) == 0;
             if (free)
                 setExclusiveOwnerThread(null);
@@ -379,8 +380,9 @@ public class ReentrantReadWriteLock
             return free;
         }
 
+        @Override
         @ReservedStackAccess
-        protected final boolean tryAcquire(int acquires) {
+        protected final boolean tryAcquire(long acquires) {
             /*
              * Walkthrough:
              * 1. If read count nonzero or write count nonzero
@@ -393,8 +395,8 @@ public class ReentrantReadWriteLock
              *    and set owner.
              */
             Thread current = Thread.currentThread();
-            int c = getState();
-            int w = exclusiveCount(c);
+            long c = getState();
+            long w = exclusiveCount(c);
             if (c != 0) {
                 // (Note: if c != 0 and w == 0 then shared count != 0)
                 if (w == 0 || current != getExclusiveOwnerThread())
@@ -412,8 +414,9 @@ public class ReentrantReadWriteLock
             return true;
         }
 
+        @Override
         @ReservedStackAccess
-        protected final boolean tryReleaseShared(int unused) {
+        protected final boolean tryReleaseShared(long unused) {
             Thread current = Thread.currentThread();
             if (firstReader == current) {
                 // assert firstReaderHoldCount > 0;
@@ -435,8 +438,8 @@ public class ReentrantReadWriteLock
                 --rh.count;
             }
             for (;;) {
-                int c = getState();
-                int nextc = c - SHARED_UNIT;
+                long c = getState();
+                long nextc = c - SHARED_UNIT;
                 if (compareAndSetState(c, nextc))
                     // Releasing the read lock has no effect on readers,
                     // but it may allow waiting writers to proceed if
@@ -450,8 +453,9 @@ public class ReentrantReadWriteLock
                 "attempt to unlock read lock, not locked by current thread");
         }
 
+        @Override
         @ReservedStackAccess
-        protected final int tryAcquireShared(int unused) {
+        protected final long tryAcquireShared(long unused) {
             /*
              * Walkthrough:
              * 1. If write lock held by another thread, fail.
@@ -468,10 +472,10 @@ public class ReentrantReadWriteLock
              *    saturated, chain to version with full retry loop.
              */
             Thread current = Thread.currentThread();
-            int c = getState();
+            long c = getState();
             if (exclusiveCount(c) != 0 &&
                 getExclusiveOwnerThread() != current)
-                return -1;
+                return -1L;
             int r = sharedCount(c);
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
@@ -490,7 +494,7 @@ public class ReentrantReadWriteLock
                         readHolds.set(rh);
                     rh.count++;
                 }
-                return 1;
+                return 1L;
             }
             return fullTryAcquireShared(current);
         }
@@ -499,7 +503,7 @@ public class ReentrantReadWriteLock
          * Full version of acquire for reads, that handles CAS misses
          * and reentrant reads not dealt with in tryAcquireShared.
          */
-        final int fullTryAcquireShared(Thread current) {
+        final long fullTryAcquireShared(Thread current) {
             /*
              * This code is in part redundant with that in
              * tryAcquireShared but is simpler overall by not
@@ -508,7 +512,7 @@ public class ReentrantReadWriteLock
              */
             HoldCounter rh = null;
             for (;;) {
-                int c = getState();
+                long c = getState();
                 if (exclusiveCount(c) != 0) {
                     if (getExclusiveOwnerThread() != current)
                         return -1;
@@ -529,7 +533,7 @@ public class ReentrantReadWriteLock
                             }
                         }
                         if (rh.count == 0)
-                            return -1;
+                            return -1L;
                     }
                 }
                 if (sharedCount(c) == MAX_COUNT)
@@ -551,7 +555,7 @@ public class ReentrantReadWriteLock
                         rh.count++;
                         cachedHoldCounter = rh; // cache for release
                     }
-                    return 1;
+                    return 1L;
                 }
             }
         }
@@ -564,7 +568,7 @@ public class ReentrantReadWriteLock
         @ReservedStackAccess
         final boolean tryWriteLock() {
             Thread current = Thread.currentThread();
-            int c = getState();
+            long c = getState();
             if (c != 0) {
                 int w = exclusiveCount(c);
                 if (w == 0 || current != getExclusiveOwnerThread())
@@ -587,7 +591,7 @@ public class ReentrantReadWriteLock
         final boolean tryReadLock() {
             Thread current = Thread.currentThread();
             for (;;) {
-                int c = getState();
+                long c = getState();
                 if (exclusiveCount(c) != 0 &&
                     getExclusiveOwnerThread() != current)
                     return false;
@@ -672,7 +676,7 @@ public class ReentrantReadWriteLock
             setState(0); // reset to unlocked state
         }
 
-        final int getCount() { return getState(); }
+        final long getCount() { return getState(); }
     }
 
     /**
@@ -1431,9 +1435,9 @@ public class ReentrantReadWriteLock
     public boolean hasWaiters(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedLongSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.hasWaiters((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.hasWaiters((AbstractQueuedLongSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -1454,9 +1458,9 @@ public class ReentrantReadWriteLock
     public int getWaitQueueLength(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedLongSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitQueueLength((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitQueueLength((AbstractQueuedLongSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -1479,9 +1483,9 @@ public class ReentrantReadWriteLock
     protected Collection<Thread> getWaitingThreads(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedLongSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitingThreads((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitingThreads((AbstractQueuedLongSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -1494,7 +1498,7 @@ public class ReentrantReadWriteLock
      * @return a string identifying this lock, as well as its lock state
      */
     public String toString() {
-        int c = sync.getCount();
+        long c = sync.getCount();
         int w = Sync.exclusiveCount(c);
         int r = Sync.sharedCount(c);
 

@@ -1278,8 +1278,7 @@ public class ForkJoinPool extends AbstractExecutorService
          * @param internal if caller owns this queue
          * @throws RejectedExecutionException if array could not be resized
          */
-        final void push(ForkJoinTask<?> task, ForkJoinPool pool,
-                        boolean internal) {
+        final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
             int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0 && // else disabled
                 task != null) {
@@ -1383,8 +1382,7 @@ public class ForkJoinPool extends AbstractExecutorService
             if (a != null && (cap = a.length) > 0 &&
                 U.getReference(a, k = slotOffset((cap - 1) & s)) == task &&
                 (internal || tryLockPhase())) {
-                if (top == p &&
-                    U.compareAndSetReference(a, k, task, null)) {
+                if (top == p && U.compareAndSetReference(a, k, task, null)) {
                     taken = true;
                     updateTop(s);
                 }
@@ -1630,12 +1628,6 @@ public class ForkJoinPool extends AbstractExecutorService
      * Sequence number for creating worker names
      */
     private static volatile int poolIds;
-
-    /**
-     * Permission required for callers of methods that may start or
-     * kill threads. Lazily constructed.
-     */
-    static volatile RuntimePermission modifyThreadPermission;
 
     /**
      * For VirtualThread intrinsics
@@ -2061,8 +2053,9 @@ public class ForkJoinPool extends AbstractExecutorService
             ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        int k = Math.max(n << 2, SPIN_WAITS << 1);
-        for (int prechecks = k / n;;) {       // reactivation threshold
+
+        for (int prechecks = Math.min(ac, 2), // reactivation threshold
+             k = Math.max(n + (n << 1), SPIN_WAITS << 1);;) {
             WorkQueue q; int cap; ForkJoinTask<?>[] a; long c;
             if (w.phase == activePhase)
                 return activePhase;
@@ -2071,7 +2064,7 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((q = qs[k & (n - 1)]) == null)
                 Thread.onSpinWait();
             else if ((a = q.array) != null && (cap = a.length) > 0 &&
-                     a[q.base & (cap - 1)] != null && --prechecks <= 0 &&
+                     a[q.base & (cap - 1)] != null && --prechecks < 0 &&
                      (int)(c = ctl) == activePhase &&
                      compareAndSetCtl(c, (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
                 return w.phase = activePhase; // reactivate
