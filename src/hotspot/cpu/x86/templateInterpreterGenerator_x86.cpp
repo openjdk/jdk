@@ -1543,11 +1543,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
+  __ movptr(Address(thread, JavaThread::vm_result_oop_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_vm_result(rax);
+  __ get_vm_result_oop(rax);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the

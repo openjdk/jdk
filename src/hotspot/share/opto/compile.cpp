@@ -474,7 +474,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
-  debug_only(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
+  DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
 
 // ============================================================================
@@ -5265,10 +5265,10 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
 void Compile::igv_print_method_to_network(const char* phase_name) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  igv_print_graph_to_network(phase_name, (Node*) C->root(), empty_list);
+  igv_print_graph_to_network(phase_name, empty_list);
 }
 
-void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
+void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {

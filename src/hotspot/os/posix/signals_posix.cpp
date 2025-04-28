@@ -147,7 +147,7 @@ public:
 };
 
 
-debug_only(static bool signal_sets_initialized = false);
+DEBUG_ONLY(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 
 // Our own signal handlers should never ever get replaced by a third party one.
@@ -1547,7 +1547,7 @@ static void signal_sets_init() {
   if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
   }
-  debug_only(signal_sets_initialized = true);
+  DEBUG_ONLY(signal_sets_initialized = true);
 }
 
 // These are signals that are unblocked while a thread is running Java.
