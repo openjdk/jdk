@@ -58,14 +58,17 @@ public class TestOldGrowthTriggers {
                 int replaceIndex = r.nextInt(ArraySize);
                 int deriveIndex = r.nextInt(ArraySize);
                 switch (i & 0x3) {
-                    case 2:
+                    case 0:
                         // creates new old BigInteger, releases old BigInteger,
                         // may create ephemeral data while computing gcd
                         array[replaceIndex] = array[replaceIndex].gcd(array[deriveIndex]);
                         break;
-                    case 3:
+                    case 1:
                         // creates new old BigInteger, releases old BigInteger
                         array[replaceIndex] = array[replaceIndex].multiply(array[deriveIndex]);
+                        break;
+                    case 2,3:
+                        // do nothing, let all objects in the array age to increase pressure on old generation
                         break;
                 }
             }
