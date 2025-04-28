@@ -464,6 +464,9 @@ GetJavaProperties(JNIEnv *env)
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
 
+    if (isatty(STDIN_FILENO) == 1) {
+        sprops.stdin_encoding = sprops.encoding;
+    }
     if (isatty(STDOUT_FILENO) == 1) {
         sprops.stdout_encoding = sprops.encoding;
     }

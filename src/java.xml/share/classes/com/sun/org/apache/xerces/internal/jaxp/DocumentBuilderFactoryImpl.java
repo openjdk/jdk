@@ -29,7 +29,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
@@ -114,20 +114,13 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
             attributes = new HashMap<>();
         }
 
-        //check if the property is managed by security manager
-        String pName;
-        if ((pName = fSecurityManager.find(name)) != null) {
-            // as the qName is deprecated, let the manager decide whether the
-            // value shall be changed
-            fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value);
-            attributes.put(pName, fSecurityManager.getLimitAsString(pName));
+        if (JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, value)) {
+            // necessary as DocumentBuilder recreate property manager
+            // remove this line once that's changed
+            attributes.put(name, value);
             // no need to create a DocumentBuilderImpl
             return;
-        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
-            attributes.put(pName, value);
-            return;
         }
-
         attributes.put(name, value);
 
         // Test the attribute name by possibly throwing an exception
@@ -146,13 +139,10 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     public Object getAttribute(String name)
         throws IllegalArgumentException
     {
-
         //check if the property is managed by security manager
-        String pName;
-        if ((pName = fSecurityManager.find(name)) != null) {
-            return fSecurityManager.getLimitAsString(pName);
-        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
-            return attributes.get(pName);
+        String value;
+        if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+            return value;
         }
 
         // See if it's in the attributes Map
