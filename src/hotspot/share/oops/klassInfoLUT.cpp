@@ -36,8 +36,8 @@
 #include "utilities/ostream.hpp"
 
 ClassLoaderData* KlassInfoLUT::_common_loaders[4] = { nullptr };
-uint32_t* KlassInfoLUT::_entries = nullptr;
-unsigned KlassInfoLUT::_num_entries = -1;
+uint32_t* KlassInfoLUT::_table = nullptr;
+unsigned KlassInfoLUT::_max_entries = -1;
 
 void KlassInfoLUT::initialize() {
 
@@ -58,26 +58,26 @@ void KlassInfoLUT::initialize() {
       const size_t large_page_size = os::large_page_size();
       if (large_page_size < 16 * M) { // not for freakishly large pages
         table_size_in_bytes = align_up(table_size_in_bytes, large_page_size);
-        _entries = (uint32_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
-        if (_entries != nullptr) {
+        _table = (uint32_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
+        if (_table != nullptr) {
           uses_large_pages = true;
-          _num_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
+          _max_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
         }
       }
     }
-    if (_entries == nullptr) {
+    if (_table == nullptr) {
       table_size_in_bytes = align_up(table_size_in_bytes, os::vm_page_size());
-      _entries = (uint32_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
-      os::commit_memory_or_exit((char*)_entries, table_size_in_bytes, false, "KLUT");
-      _num_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
+      _table = (uint32_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
+      os::commit_memory_or_exit((char*)_table, table_size_in_bytes, false, "KLUT");
+      _max_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
     }
 
     log_info(klut)("Lookup table initialized (%u entries, using %s pages): " RANGEFMT,
-                    _num_entries, (uses_large_pages ? "large" : "normal"), RANGEFMTARGS(_entries, table_size_in_bytes));
+                    _max_entries, (uses_large_pages ? "large" : "normal"), RANGEFMTARGS(_table, table_size_in_bytes));
 
     // We need to zap the whole LUT if CDS is enabled or dumping, since we may need to late-register classes.
-    memset(_entries, 0xff, _num_entries * sizeof(uint32_t));
-    assert(_entries[0] == KlassLUTEntry::invalid_entry, "Sanity"); // must be 0xffffffff
+    memset(_table, 0xff, _max_entries * sizeof(uint32_t));
+    assert(_table[0] == KlassLUTEntry::invalid_entry, "Sanity"); // must be 0xffffffff
 
   }
 }
@@ -157,7 +157,7 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   // Calculate klute from Klass properties and update the table value.
   klute = KlassLUTEntry::build_from_klass(k);
   if (add_to_table) {
-    _entries[nk] = klute.value();
+    _table[nk] = klute.value();
   }
   log_klass_registration(k, nk, add_to_table, klute, "registered");
 
@@ -171,13 +171,9 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 
   // update register stats
   switch (k->kind()) {
-  case InstanceKlassKind:             inc_registered_IK(); break;
-  case InstanceRefKlassKind:          inc_registered_IRK(); break;
-  case InstanceMirrorKlassKind:       inc_registered_IMK(); break;
-  case InstanceClassLoaderKlassKind:  inc_registered_ICLK(); break;
-  case InstanceStackChunkKlassKind:   inc_registered_ISCK(); break;
-  case TypeArrayKlassKind:            inc_registered_TAK(); break;
-  case ObjArrayKlassKind:             inc_registered_OAK(); break;
+#define WHAT(name, shorthand) case name ## Kind : inc_registered_ ## shorthand(); break;
+  KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
   default: ShouldNotReachHere();
   };
   if (k->is_abstract() || k->is_interface()) {
@@ -208,7 +204,7 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   // We just copy that entry into the table slot.
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
-  _entries[nk] = klute.value();
+  _table[nk] = klute.value();
   ClassLoaderData* const cld = k->class_loader_data();
   if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
     register_cld_if_needed(cld);
@@ -255,7 +251,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
   st->print_cr("KLUT statistics:");
 
   if (use_lookup_table()) {
-    st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _num_entries, _num_entries * sizeof(uint32_t));
+    st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(uint32_t));
   }
 
   const uint64_t registered_all = counter_registered_IK + counter_registered_IRK + counter_registered_IMK +
@@ -314,7 +310,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
     // Hit density per cacheline distribution (How well are narrow Klass IDs clustered to give us good local density)
     constexpr int chacheline_size = 64;
     constexpr int slots_per_cacheline = chacheline_size / sizeof(KlassLUTEntry);
-    const int num_cachelines = num_entries() / slots_per_cacheline;
+    const int num_cachelines = max_entries() / slots_per_cacheline;
     int valid_hits_per_cacheline_distribution[slots_per_cacheline + 1] = { 0 };
     for (int i = 0; i < num_cachelines; i++) {
       int n = 0;

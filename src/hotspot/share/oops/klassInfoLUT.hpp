@@ -39,21 +39,57 @@ class ClassLoaderData;
 //#define KLUT_ENABLE_EXPENSIVE_LOG
 #endif
 
+// The Klass Info Lookup Table (KLUT) is a table of 32-bit values. Each value represents
+// a Klass. It contains some important information about its class in a very condensed
+// form. For details about the KLUT entry encoding, please see comments in
+// klassInfoLUTEntry.hpp.
+//
+// The purpose of this table is to make it (mostly) unnecessary to dereference Klass to
+// get Klass meta information; instead, the KLUT entry is read, which means instead of
+// reading from several memory locations spread out over different cache lines, we read
+// just one datum from a very condensed data store. The result is fewer memory traffic
+// and better spatial locality.
+//
+// The KLUT is only allocated when compact object headers are used. With Compact Object Headers,
+// we do have very "tight" (condensed) narrowKlass value space that is perfect for use as
+// indexes into the KLUT lookup table.
+// Without Compact Headers, we still calculate KLUT entries, but store then in and retrieve
+// them from the Klass directly. This gives a (more modest) performance benefit for non-COH
+// scenarios as well as serves to unify oop iteration code.
+//
+// KLUT entry life cycle:
+//
+// When a Klass is dynamically loaded, the KLUT entry is calculated, entered into the table
+// (table[narrowKlass] = klute) and also stored in the Klass itself. See KlassInfoLUT::register_klass().
+//
+// The KLUT entry is never removed from the table. When a class is unloaded, the entry gets
+// stale; that is fine, since the narrowKlass value that could be used to look up the KLUT
+// entry is also stale - referring to an unloaded Klass via its narrowKlass value is an error.
+// A new future Klass that would be created at the same position in the Class Space will
+// get the same narrowKlass and overwrite, as part of its creation, the old stale table slot
+// with a newly generated KLUT entry.
+//
+// It gets a bit more complicated with CDS. CDS maps Klass instances into the process memory
+// without going through the process of initialization. It also refers to that Klass via
+// a narrowKlass value that is the result of a precalculation during dump time (e.g. by
+// accessing obj->klass()->kind() on object that are re-animated from the CDS archive).
+// Since there is no secure way to initialize the KLUT entry for these classes, we (for the
+// moment) allow a form of "self-healing": if the KLUT entry for a class is requested but
+// not yet added, we add it to the KLUT table on the fly. See KlassInfoLUT::late_register_klass().
+
 class KlassInfoLUT : public AllStatic {
 
   static ClassLoaderData* _common_loaders[4]; // See "loader" bits in Klute
-  static uint32_t* _entries;
 
-  static unsigned _num_entries;
 
-  static inline unsigned num_entries() { return _num_entries; }
-
+  static unsigned _max_entries;
+  static uint32_t* _table;
+  static inline unsigned max_entries() { return _max_entries; }
   static inline uint32_t at(unsigned index);
-
   static void allocate_lookup_table();
 
-  // Statistics about the distribution of Klasses registered. These
-  // are not expensive (counter hit per class)
+  // Klass registration statistics. These are not expensive and therefore
+  // we carry them always.
 #define REGISTER_STATS_DO(f)    \
   f(registered_IK)              \
   f(registered_IRK)             \
@@ -68,7 +104,7 @@ class KlassInfoLUT : public AllStatic {
 #undef XX
 
   // Statistics about the hit rate of the lookup table. These are
-  // very expensive.
+  // expensive and only enabled when needed.
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
 #define HIT_STATS_DO(f)    \
   f(hits_IK)           \
@@ -98,7 +134,7 @@ class KlassInfoLUT : public AllStatic {
   static KlassLUTEntry late_register_klass(narrowKlass nk);
 #endif
 
-  static bool use_lookup_table() { return _entries != nullptr; }
+  static bool use_lookup_table() { return _table != nullptr; }
 
 public:
 
@@ -107,14 +143,15 @@ public:
   static KlassLUTEntry register_klass(const Klass* k);
   static inline KlassLUTEntry lookup(narrowKlass k);
 
+  // ClassLoaderData handling
+  static void register_cld_if_needed(ClassLoaderData* cld);
   static int index_for_cld(const ClassLoaderData* cld);
   static inline ClassLoaderData* lookup_cld(int index);
-
-  static void print_statistics(outputStream* out);
-  static void register_cld_if_needed(ClassLoaderData* cld);
 #if INCLUDE_CDS
   static void shared_klass_cld_changed(Klass* k);
 #endif
+
+  static void print_statistics(outputStream* out);
 };
 
 #endif // SHARE_OOPS_KLASSINFOLUT_HPP

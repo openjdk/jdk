@@ -37,10 +37,10 @@ union LayoutHelperHelper {
   unsigned raw;
   struct {
     // lsb
-    unsigned lh_esz : 8; // element size
-    unsigned lh_ebt : 8; // element BasicType (currently unused)
+    unsigned lh_esz : 8; // log2 element size
+    unsigned lh_ebt : 8; // element BasicType
     unsigned lh_hsz : 8; // header size (offset to first element)
-    unsigned lh_tag : 8; // 0x80 or 0xc0
+    unsigned lh_tag : 8; // 0x80 (IK) or 0xc0 (AK)
     // msb
   } bytes;
 };

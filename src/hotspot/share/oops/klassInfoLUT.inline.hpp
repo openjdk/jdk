@@ -33,9 +33,9 @@
 #include "utilities/debug.hpp"
 
 ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
-  assert(_entries != nullptr, "LUT table does not exist");
-  assert(index < num_entries(), "oob (%x vs %x)", index, num_entries());
-  return _entries[index];
+  assert(_table != nullptr, "LUT table does not exist");
+  assert(index < max_entries(), "oob (%x vs %x)", index, max_entries());
+  return _table[index];
 }
 
 ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
@@ -44,8 +44,9 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
   KlassLUTEntry e(v);
 #if INCLUDE_CDS
   if (!e.is_valid()) {
-    // This branch only exists because it is so very difficult to iterate CDS classes after loading
-    // CDS archives. See discussion surrounding 8353225. Hopefully we can remove this in the future.
+    // This branch, and the late_register_klass mechanic, only exists because it is
+    // so difficult to iterate CDS classes after loading CDS archives. See discussion
+    // surrounding 8353225. Hopefully we can remove this in the future.
     return late_register_klass(nk);
   }
 #else

@@ -68,4 +68,5 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosur
     }
   }
 }
+
 #endif // SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP

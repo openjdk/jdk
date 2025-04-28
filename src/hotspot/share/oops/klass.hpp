@@ -68,7 +68,7 @@ class Klass : public Metadata {
   friend class JVMCIVMStructs;
  public:
 
-  // Define a set of handy cast functions (e.g. "as_InstanceStackChunkKlass")
+  // Define a set of handy cast functions (e.g. "as_InstanceStackChunkKlass()")
 #define WHAT(name, shortname)                       \
   name* as_##name() {                               \
     assert(_kind == name ## Kind, "not a " #name ); \
