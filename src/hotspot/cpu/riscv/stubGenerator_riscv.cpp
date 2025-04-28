@@ -1642,20 +1642,16 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_fill_elements, L_exit1;
 
-    int shift = 0;
     // Zero extend value
-    // 8 bit -> 16 bit
+    // 8 bit -> 32 bit
     __ zext(value, value, 8);
     __ mv(tmp_reg, value);
     __ slli(tmp_reg, tmp_reg, 8);
     __ orr(value, value, tmp_reg);
-
-    // 16 bit -> 32 bit
     __ mv(tmp_reg, value);
     __ slli(tmp_reg, tmp_reg, 16);
     __ orr(value, value, tmp_reg);
-
-    __ mv(tmp_reg, 8 >> shift); // Short arrays (< 8 bytes) fill by element
+    __ mv(tmp_reg, 8); // 8 bytes fill by element
     __ bltu(count, tmp_reg, L_fill_elements);
 
     // Align source address at 8 bytes address boundary.
@@ -1673,57 +1669,39 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(t0, L_skip_align2);
     __ sh(value, Address(to, 0));
     __ addi(to, to, 2);
-    __ subiw(count, count, 2 >> shift);
+    __ subiw(count, count, 2);
     __ bind(L_skip_align2);
     // Align to 8 bytes, we know we are 4 byte aligned to start.
     __ test_bit(t0, to, 2);
     __ beqz(t0, L_skip_align4);
     __ sw(value, Address(to, 0));
     __ addi(to, to, 4);
-    __ subiw(count, count, 4 >> shift);
+    __ subiw(count, count, 4);
     __ bind(L_skip_align4);
 
     //  Fill large chunks
-    __ srliw(cnt_words, count, 3 - shift); // number of words
+    __ srliw(cnt_words, count, 3); // number of words
 
     // 32 bit -> 64 bit
     __ zext(value, value, 32);
     __ slli(tmp_reg, value, 32);
     __ orr(value, value, tmp_reg);
 
-    __ slli(tmp_reg, cnt_words, 3 - shift);
+    __ slli(tmp_reg, cnt_words, 3);
     __ subw(count, count, tmp_reg);
     {
       __ fill_words(to, cnt_words, value);
-    }
-
-    // Remaining count is less than 8 bytes. Fill it by a single store.
-    // Note that the total length is no less than 8 bytes.
-    if (!AvoidUnalignedAccesses) {
-      __ beqz(count, L_exit1);
-      __ shadd(to, count, to, tmp_reg, shift); // points to the end
-      __ sd(value, Address(to, -8)); // overwrite some elements
-      __ bind(L_exit1);
-      __ ret();
     }
 
     // Handle copies less than 8 bytes.
     Label L_fill_2, L_fill_4, L_exit2;
     __ bind(L_fill_elements);
 
-    __ test_bit(t0, count, 0);
-    __ beqz(t0, L_fill_2);
+    __ beqz(count, L_exit2);
     __ sb(value, Address(to, 0));
     __ addi(to, to, 1);
-    __ bind(L_fill_2);
-    __ test_bit(t0, count, 1);
-    __ beqz(t0, L_fill_4);
-    __ sh(value, Address(to, 0));
-    __ addi(to, to, 2);
-    __ bind(L_fill_4);
-    __ test_bit(t0, count, 2);
-    __ beqz(t0, L_exit2);
-    __ sw(value, Address(to, 0));
+    __ subiw(count, count, 1);
+    __ bind(L_fill_elements);
 
     __ bind(L_exit2);
   }
