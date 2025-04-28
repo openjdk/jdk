@@ -266,7 +266,7 @@ class MemTracker : AllStatic {
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
-    return *_baseline.ptr();
+    return *_baseline;
   }
 
   static void tuning_statistics(outputStream* out);
