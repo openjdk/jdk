@@ -119,7 +119,10 @@ public class bug8033699 {
             runTest9();
             robot.delay(100);
         } catch (Exception e) {
-            throw new RuntimeException("Error testing LaF: " + laf.getName(), e);
+            Throwable cause = e.getCause();
+            throw new RuntimeException("Error testing LaF: " + laf.getName()
+                    + (cause != null ? " - " + cause.getMessage() : ""),
+                    e);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (mainFrame != null) {
