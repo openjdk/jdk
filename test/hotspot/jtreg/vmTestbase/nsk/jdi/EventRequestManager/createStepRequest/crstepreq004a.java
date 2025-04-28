@@ -58,6 +58,9 @@ public class crstepreq004a {
     private static volatile boolean isFirstThreadReady = false;
     private static volatile boolean isSecondThreadReady = false;
 
+    static Thread thread1;
+    static Thread thread2;
+
     //------------------------------------------------------ mutable common method
 
     public static void main (String argv[]) {
@@ -95,8 +98,8 @@ public class crstepreq004a {
     private static void runTestCase(int testCaseId) {
         isFirstThreadReady = false;
         isSecondThreadReady = false;
-        Thread thread1 = JDIThreadFactory.newThread(new Thread1crstepreq004a("thread1"));
-        Thread thread2 = JDIThreadFactory.newThread(new Thread2crstepreq004a("thread2"));
+        thread1 = JDIThreadFactory.newThread(new Thread1crstepreq004a("thread1"));
+        thread2 = JDIThreadFactory.newThread(new Thread2crstepreq004a("thread2"));
         synchronized (lockObj) {
             thread1.start();
             while (!isFirstThreadReady) {

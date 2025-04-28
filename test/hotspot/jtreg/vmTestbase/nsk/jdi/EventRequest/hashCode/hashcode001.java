@@ -118,7 +118,7 @@ public class hashcode001 {
             switch (i) {
 
                 case 0:
-                       ThreadReference thread = debuggee.threadByNameOrThrow(methodName);
+                       ThreadReference thread = debuggee.mainThread();
 
                        display(".....setting up StepRequest");
                        eventRequest = eventRequestManager.createStepRequest

@@ -264,6 +264,48 @@ public class Debugee extends DebugeeProcess {
         throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
+    /**
+     * Return a debuggee thread by fetching it from a static field in the debuggee.
+     */
+    public ThreadReference threadByFieldNameOrThrow(ReferenceType debuggeeClass,
+                                                    String threadFieldName)
+            throws JDITestRuntimeException {
+        
+        Field field = debuggeeClass.fieldByName(threadFieldName);
+        if (field == null) {
+            throw new JDITestRuntimeException("** Thread field not found ** : "
+                                              + threadFieldName);
+        }
+        
+        ThreadReference thread = (ThreadReference)debuggeeClass.getValue(field);
+        if (thread == null) {
+            throw new JDITestRuntimeException("** Thread field is null ** : "
+                                              + threadFieldName);
+        }
+
+        if (!thread.name().equals(threadFieldName)) {
+            throw new JDITestRuntimeException("** Thread names do not match ** : "
+                                              + threadFieldName + " vs. " + thread.name());
+        }
+        
+        return thread;
+    }
+
+    public void setMainThread(ThreadReference thread) {
+        String threadName = thread.name();
+        if (!threadName.equals("main")) {
+            throw new TestBug("Thread is not \"main\" thread: " + threadName);
+        }
+        mainThread = thread;
+    }
+
+    public ThreadReference mainThread() {
+        if (mainThread == null) {
+            throw new JDITestRuntimeException("** mainThrad has not been set **");
+        }
+        return mainThread;
+    }
+
     // --------------------------------------------------- //
 
     /**
