@@ -46,7 +46,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define DEFAULT_CACHE_LINE_SIZE 64
 
 // The default padding size for data structures to avoid false sharing.
-#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
+#define DEFAULT_PADDING_SIZE (2*DEFAULT_CACHE_LINE_SIZE)
 
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing
