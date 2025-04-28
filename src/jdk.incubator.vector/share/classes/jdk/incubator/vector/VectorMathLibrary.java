@@ -272,11 +272,10 @@ import static jdk.internal.vm.vector.Utils.debug;
                 T impl = implSupplier.apply(opc); // TODO: should call the very same native implementation eventually (once FFM API supports vectors)
                 return new Entry<>(symbol, addr, impl);
             } catch (RuntimeException e) {
-              throw new InternalError("not supported: " + op + " " + vspecies + " " + symbol, e);
+              debug("Symbol not found for vector operation: " + op + " " + vspecies + " " + symbol);
             }
-        } else {
-            return new Entry<>(null, MemorySegment.NULL, implSupplier.apply(opc));
         }
+        return new Entry<>(null, MemorySegment.NULL, implSupplier.apply(opc));
     }
 
     @ForceInline
