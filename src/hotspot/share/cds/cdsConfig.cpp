@@ -646,6 +646,20 @@ bool CDSConfig::is_using_archive() {
   return UseSharedSpaces;
 }
 
+bool CDSConfig::is_using_only_default_archive() {
+  if (!is_using_archive()) {
+    // During JDK build when dumping a classlist (DumpLoadedClassList), exclude error
+    // message from the classlist as it interferes with the default CDS archive creation.
+    return true;
+  }
+
+  return is_using_archive() &&
+         input_static_archive_path() != nullptr &&
+         default_archive_path() != nullptr &&
+         strcmp(input_static_archive_path(), default_archive_path()) == 0 &&
+         input_dynamic_archive_path() == nullptr;
+}
+
 bool CDSConfig::is_logging_lambda_form_invokers() {
   return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
 }

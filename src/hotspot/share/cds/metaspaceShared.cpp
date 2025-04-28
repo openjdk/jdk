@@ -1119,17 +1119,18 @@ void MetaspaceShared::unrecoverable_loading_error(const char* message) {
 }
 
 void MetaspaceShared::report_loading_error(const char* message) {
+  // If the user doesn't specify any CDS options, we will try to load the default CDS archive, which
+  // may fail due to incompatible VM options. Print at the info level to avoid excessive verbosity.
+  // However, if the user has specified a CDS archive (or AOT cache), they would be interested in
+  // knowing that the loading fails, so we print at the error level.
+  Log(cds) log;
+  LogStream ls_error(log.error());
+  LogStream ls_info(log.info());
+  LogStream& ls = CDSConfig::is_using_only_default_archive() ? ls_info : ls_error;
 
-  if (SharedArchiveFile != nullptr) {
-    log_error(cds)("An error has occurred while processing the %s.", CDSConfig::type_of_archive_being_loaded());
-    if (message != nullptr) {
-      log_error(cds)("%s", message);
-    }
-  } else {
-    log_info(cds)("An error has occurred while processing the %s.", CDSConfig::type_of_archive_being_loaded());
-    if (message != nullptr) {
-      log_info(cds)("%s", message);
-    }
+  ls.print_cr("An error has occurred while processing the %s.", CDSConfig::type_of_archive_being_loaded());
+  if (message != nullptr) {
+     ls.print("%s", message);
   }
 }
 
