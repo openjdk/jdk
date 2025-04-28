@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -35,7 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,14 +53,12 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.List;
@@ -187,7 +183,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Snapshots of {@link #callStack} where possible 'this' escapes occur.
      */
-    private final java.util.List<Warning> warningList = new ArrayList<>();
+    private final ArrayList<Warning> warningList = new ArrayList<>();
 
 // These fields are scoped to the constructor being analyzed
 
@@ -200,7 +196,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
      *  constructor we started with, and subsequent entries correspond to invoked methods.
      *  If we're still in the initial constructor, the list will be empty.
      */
-    private final java.util.List<StackFrame> callStack = new ArrayList<>();
+    private final ArrayList<StackFrame> callStack = new ArrayList<>();
 
     /** Used to terminate recursion in {@link #invokeInvokable invokeInvokable()}.
      */
@@ -1202,10 +1198,9 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     // Recurse through indirect code that might get executed later, e.g., a lambda.
     // We record the current number of (real) warnings, then recurse into the deferred
     // code (still using the current RefSet) to see if that number increases, i.e., to
-    // see if it would leak. Then we discard any new warnings and the current RefSet.
+    // see if it would leak. Then we discard any new warnings and the lambda's RefSet.
     // Finally, if the deferred code would have leaked, we create an indirect ExprRef
-    // because it must be holding a 'this' reference. If the deferred code would not leak,
-    // then obviously no leak is possible, period.
+    // because the lambda must be holding a 'this' reference. If not, no leak is possible.
     private <T extends JCTree> void visitDeferred(Runnable deferredCode) {
         int numWarningsPrev = warningList.size();
         RefSet<Ref> refsPrev = refs.clone();
@@ -1839,7 +1834,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         @Override
         public String toString() {
             return "MethodInfo"
-              + "[method=" + declaration.sym
+              + "[method=" + declaringClass.sym.flatname + "." + declaration.sym
               + ",constructor=" + constructor
               + ",analyzable=" + analyzable
               + ",invokable=" + invokable

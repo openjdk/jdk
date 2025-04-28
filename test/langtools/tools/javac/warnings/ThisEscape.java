@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8015831
+ * @bug 8015831 8355753
  * @compile/ref=ThisEscape.out -Xlint:this-escape -XDrawDiagnostics ThisEscape.java
  * @summary Verify 'this' escape detection
  */
@@ -763,6 +763,24 @@ public class ThisEscape {
                 getObject().hashCode();
             }
             return this.obj;
+        }
+    }
+
+    // JDK-8355753 - @SuppressWarnings("this-escape") not respected for indirect leak via field
+    public static class SuppressedIndirectLeakViaField {
+
+        private final int x = this.mightLeak();     // this leak should be suppressed
+
+        public SuppressedIndirectLeakViaField() {
+            this("");
+        }
+
+        @SuppressWarnings("this-escape")
+        private SuppressedIndirectLeakViaField(String s) {
+        }
+
+        public int mightLeak() {
+            return 0;
         }
     }
 }
