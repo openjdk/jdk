@@ -4307,8 +4307,8 @@ instruct vcvtStoB(vReg dst, vReg src) %{
 %}
 
 instruct vcvtStoX(vReg dst, vReg src) %{
-  predicate((Matcher::vector_element_basic_type(n) == T_INT ||
-             Matcher::vector_element_basic_type(n) == T_LONG));
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
   format %{ "vcvtStoX $dst, $src" %}
@@ -4321,8 +4321,8 @@ instruct vcvtStoX(vReg dst, vReg src) %{
 %}
 
 instruct vcvtStoX_fp(vReg dst, vReg src) %{
-  predicate((Matcher::vector_element_basic_type(n) == T_FLOAT ||
-             Matcher::vector_element_basic_type(n) == T_DOUBLE));
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
   format %{ "vcvtStoX_fp $dst, $src" %}
