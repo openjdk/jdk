@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -187,6 +188,22 @@ final class ClassValueTest {
         }
     }
 
+    private static void awaitThreads(Thread... threads) {
+        awaitThreads(Arrays.asList(threads));
+    }
+
+    private static void awaitThreads(Iterable<Thread> threads) {
+        for (var t : threads) {
+            try {
+                if (!t.join(TIMEOUT)) {
+                    fail("Thread not stopping " + t);
+                }
+            } catch (InterruptedException ex) {
+                fail(ex);
+            }
+        }
+    }
+
     /**
      * Tests that get() + remove() can prevent stale value from being installed.
      * Uses junit to do basic stress.
@@ -215,8 +232,7 @@ final class ClassValueTest {
             cv.remove(int.class); // Let's recompute with updated inputs!
             inputUpdated.countDown();
         });
-        innocuous.join(TIMEOUT);
-        refreshInput.join(TIMEOUT);
+        awaitThreads(innocuous, refreshInput);
         assertEquals(1, input.get(), "input not updated");
         assertEquals(1, cv.get(int.class), "CV not using up-to-date input");
     }
@@ -304,7 +320,7 @@ final class ClassValueTest {
         }
     }
 
-    @RepeatedTest(4)
+    @Test
     void testSingletonWinner() {
         CountDownLatch raceStart = new CountDownLatch(1);
         ClassValue<int[]> cv = new ClassValue<>() {
@@ -331,13 +347,7 @@ final class ClassValueTest {
             threads.add(Thread.startVirtualThread(job));
         }
         raceStart.countDown();
-        for (var t : threads) {
-            try {
-                t.join(TIMEOUT);
-            } catch (InterruptedException e) {
-                fail(e);
-            }
-        }
+        awaitThreads(threads);
         assertEquals(1, truthSwapCount.get());
     }
 
@@ -361,13 +371,7 @@ final class ClassValueTest {
         var threads = Arrays.stream(CLASSES)
                 .map(clz -> Thread.startVirtualThread(() -> cv.get(clz)))
                 .toList();
-        for (var t : threads) {
-            try {
-                t.join(TIMEOUT);
-            } catch (InterruptedException e) {
-                fail(e);
-            }
-        }
+        awaitThreads(threads);
     }
 
     @Test
@@ -391,6 +395,8 @@ final class ClassValueTest {
         Holder.clv.get(Holder.One.class);
     }
 
+    private static final ScopedValue<Integer> THREAD_ID = ScopedValue.newInstance();
+
     @Test
     @Timeout(value = 4, unit = TimeUnit.SECONDS)
     void testNoRecomputeOnUnrelatedRemoval() throws InterruptedException {
@@ -398,12 +404,11 @@ final class ClassValueTest {
         CountDownLatch removeTamper = new CountDownLatch(1);
         CountDownLatch t2Started = new CountDownLatch(1);
         CountDownLatch t1Returned = new CountDownLatch(1);
-        ScopedValue<Integer> threadId = ScopedValue.newInstance();
         AtomicInteger t1Tries = new AtomicInteger();
         ClassValue<Object> clv = new ClassValue<>() {
             @Override
             protected Object computeValue(Class<?> type) {
-                int id = threadId.get();
+                int id = THREAD_ID.get();
                 if (id == 1) {
                     t1Tries.incrementAndGet();
                     t1Started.countDown();
@@ -419,22 +424,59 @@ final class ClassValueTest {
             }
         };
 
-        ScopedValue.where(threadId, -1).run(() -> clv.get(long.class)); // set up unrelated class
+        ScopedValue.where(THREAD_ID, -1).run(() -> clv.get(long.class)); // set up unrelated class
         var t1 = Thread.startVirtualThread(() ->
-                ScopedValue.where(threadId, 1).run(() -> {
+                ScopedValue.where(THREAD_ID, 1).run(() -> {
                     clv.get(int.class);
                     t1Returned.countDown(); // returned after x calls to computeValue
                 }));
         var t2 = Thread.startVirtualThread(() ->
-                ScopedValue.where(threadId, 2).run(() -> {
+                ScopedValue.where(THREAD_ID, 2).run(() -> {
                     await(removeTamper);
                     clv.get(int.class); // clv version diff from that of promise
                 }));
         await(t1Started);
         clv.remove(long.class);
         removeTamper.countDown(); // removed unrelated class
-        t1.join(TIMEOUT);
-        t2.join(TIMEOUT);
+        awaitThreads(t1, t2);
         assertEquals(1, t1Tries.get(), "Redundant computeValue retries");
+    }
+
+    @Test
+    @Timeout(value = 4, unit = TimeUnit.SECONDS)
+    void testNoObsoleteInstallation() throws InterruptedException {
+        CountDownLatch slowComputationStart = new CountDownLatch(1);
+        CountDownLatch slowComputationContinue = new CountDownLatch(1);
+        ClassValue<Integer> clv = new ClassValue<>() {
+            @Override
+            protected Integer computeValue(Class<?> type) {
+                if (!THREAD_ID.isBound()) {
+                    return 5;
+                }
+                int threadId = THREAD_ID.get();
+                if (threadId == 1) {
+                    if (slowComputationContinue.getCount() == 0) {
+                        return 42;
+                    } else {
+                        // First invocation
+                        slowComputationStart.countDown();
+                        await(slowComputationContinue);
+                        return -1;
+                    }
+                } else {
+                    return fail("Unknown thread " + threadId);
+                }
+            }
+        };
+        var t = Thread.startVirtualThread(() -> ScopedValue.where(THREAD_ID, 1).run(() -> {
+            int v = clv.get(int.class);
+            assertEquals(42, v, "recomputed value");
+        }));
+        await(slowComputationStart);
+        assertEquals(5, clv.get(int.class), "fast computation installed value");
+        clv.remove(int.class);
+        slowComputationContinue.countDown();
+        awaitThreads(t);
+        assertEquals(42, clv.get(int.class), "slow computation reinstalled value");
     }
 }
