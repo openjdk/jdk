@@ -113,6 +113,9 @@ runs:
         symbols_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/symbols -name bin -type d))"
         tests_dir="$GITHUB_WORKSPACE/bundles/tests"
 
+        #if []; then
+        #fi
+
         if [[ '${{ runner.os }}' == 'Windows' ]]; then
           jdk_dir="$(cygpath $jdk_dir)"
           static_jdk_dir="$(cygpath $static_jdk_dir)"
