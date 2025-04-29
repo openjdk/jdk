@@ -85,8 +85,8 @@ final class Validator {
         }
     }
 
-    // Check if CEN contains the LOC entry by name
-    private boolean checkHasCenEntry(String locEntryName) {
+    // Check any CEN entry is matching the specified name
+    private boolean checkAnyCenEntry(String locEntryName) {
         var hasEntry = cenEntryNames.remove(locEntryName);
         if (!hasEntry) {
             warn(formatMsg("warn.validator.loc.only.entry", locEntryName));
@@ -102,14 +102,13 @@ final class Validator {
             return true;
         }
 
-        if (checkHasCenEntry(locEntryName)) {
+        if (checkAnyCenEntry(locEntryName)) {
             warn(getMsg("warn.validator.order.mismatch"));
             cenEntryNames.addFirst(nextCenEntryName);
             // order mismatch is just a warning, still consider valid
         }
         return false;
     }
-
 
     /*
      * Retrieve entries from the XipInputStream to verify local file headers(LOC)
@@ -130,7 +129,7 @@ final class Validator {
                 }
 
                 if (outOfOrder) {
-                    checkHasCenEntry(locEntryName);
+                    checkAnyCenEntry(locEntryName);
                 } else {
                     outOfOrder = !checkNextCenEntry(locEntryName);
                 }
