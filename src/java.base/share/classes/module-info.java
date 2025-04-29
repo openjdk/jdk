@@ -273,6 +273,7 @@ module java.base {
         java.smartcardio,
         java.net.http,
         jdk.charsets,
+        jdk.incubator.vector,
         jdk.internal.vm.ci,
         jdk.httpserver,
         jdk.jlink,

@@ -1080,15 +1080,19 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[1024];
-  int res = jio_snprintf(
+  int cpu_info_size = jio_snprintf(
               buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  assert(res > 0, "not enough temporary space allocated");
-  insert_features_names(buf + res, sizeof(buf) - res, _features_names);
+  assert(cpu_info_size > 0, "not enough temporary space allocated");
+  insert_features_names(buf + cpu_info_size, sizeof(buf) - cpu_info_size, _features_names);
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = extract_features_string(_cpu_info_string,
+                                             strnlen(_cpu_info_string, sizeof(buf)),
+                                             cpu_info_size);
 
   // Use AES instructions if available.
   if (supports_aes()) {
