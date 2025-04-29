@@ -733,7 +733,7 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       switch (x->id()) {
         case vmIntrinsics::_dsqrt:
         case vmIntrinsics::_dsqrt_strict:
-          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
+	  /* run interpreted */    	
           break;
         case vmIntrinsics::_dsin:
           runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);

@@ -1590,7 +1590,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   if (is_add) { add(modval, dest_current_value, exchange_value); }
 
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: stwcx_(modval, addr_base); break;
     case 2: sthcx_(modval, addr_base); break;
     case 1: stbcx_(modval, addr_base); break;
@@ -1617,8 +1617,6 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
                                        RegisterOrConstant compare_value, Register exchange_value,
                                        Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // Sub-word instructions are available since Power 8.
-  const int instruction_type = size;
-
   Register shift_amount = noreg,
            val32 = dest_current_value,
            modval = exchange_value;
@@ -1626,7 +1624,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // atomic emulation loop
   bind(retry);
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
     case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
     case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
@@ -1648,7 +1646,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: stwcx_(modval, addr_base); break;
     case 2: sthcx_(modval, addr_base); break;
     case 1: stbcx_(modval, addr_base); break;
