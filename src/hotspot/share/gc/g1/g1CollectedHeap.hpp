@@ -480,8 +480,8 @@ private:
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
-  // - if allocation_word_size is set, then this allocation will be
-  //   accounted for in in case shrinking of the heap happens.
+  // - if allocation_word_size is set, then this allocation size will
+  //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool clear_all_soft_refs,
