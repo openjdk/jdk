@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8258229
- * @summary If a method is made not entrant while prinint the assembly, hotspot crashes due to mismatched relocation information.
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:CompileCommand=print,java/math/BitSieve.bit
+ * @summary If a method is made not entrant while printing the assembly, hotspot crashes due to mismatched relocation information.
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+DeoptimizeALot -XX:CompileCommand=print,java/math/BitSieve.bit
  *                   compiler.print.TestPrintAssemblyDeoptRace
  */
 
