@@ -125,6 +125,10 @@ AWT_ASSERT_APPKIT_THREAD;
             isApplicationOwner = YES;
         }
     }
+
+    NSLog(@"ApplicationDelegate::sharedDelegate: shouldInstall=%d, isApplicationOwner=%d, overrideDelegate=%d",
+            shouldInstall, isApplicationOwner, overrideDelegate);
+
     checked = YES;
     if (!shouldInstall) {
         [ThreadUtilities setApplicationOwner:NO];
@@ -194,6 +198,8 @@ AWT_ASSERT_APPKIT_THREAD;
 - (id) init {
 AWT_ASSERT_APPKIT_THREAD;
 
+    NSLog(@"AWT: ApplicationDelegate::init");
+
     self = [super init];
     if (!self) return self;
 
@@ -202,6 +208,9 @@ AWT_ASSERT_APPKIT_THREAD;
     if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
         usingDefaultNib = [NSApp usingDefaultNib];
     }
+
+    NSLog(@"AWT: usingDefaultNib=%d", usingDefaultNib);
+
     if (!usingDefaultNib) return self;
 
     NSMenu *menuBar = [[NSApplication sharedApplication] mainMenu];
@@ -257,6 +266,8 @@ AWT_ASSERT_APPKIT_THREAD;
                                  aboutAvailable, aboutEnabled, prefsAvailable, prefsEnabled);
     CHECK_EXCEPTION();
 
+    NSLog(@"AWT: register notifications");
+
     // register for the finish launching and system power off notifications by default
     NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
     Class clz = [ApplicationDelegate class];
@@ -267,6 +278,8 @@ AWT_ASSERT_APPKIT_THREAD;
     [ctr addObserver:clz selector:@selector(_appDidHide) name:NSApplicationDidHideNotification object:nil];
     [ctr addObserver:clz selector:@selector(_appDidUnhide) name:NSApplicationDidUnhideNotification object:nil];
     [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:@"EmbeddedEvent" object:nil];
+
+    NSLog(@"AWT: normal exit");
 
     return self;
 }
@@ -301,6 +314,8 @@ static jclass sjc_AppEventHandler = NULL;
 
 + (void)_openURL:(NSString *)url {
 AWT_ASSERT_APPKIT_THREAD;
+    NSLog(@"AWT: ApplicationDelegate::_openURL: %@", url);
+
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jstring jURL = NSStringToJavaString(env, url);
@@ -480,6 +495,7 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 + (void)_embeddedEvent:(NSNotification *)notification {
+    NSLog(@"AWT: ApplicationDelegate::_embeddedEvent");
     NSString *name = notification.userInfo[@"name"];
 
     if ([name isEqualToString:@"openURL"]) {
