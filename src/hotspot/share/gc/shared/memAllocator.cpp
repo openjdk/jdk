@@ -35,8 +35,8 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -145,7 +145,7 @@ void MemAllocator::Allocation::verify_before() {
   // not take out a lock if from tlab, so clear here.
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
-  debug_only(check_for_valid_allocation_state());
+  DEBUG_ONLY(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
@@ -327,7 +327,7 @@ HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
   }
 
   // Allocation of an oop can always invoke a safepoint.
-  debug_only(allocation._thread->check_for_valid_safepoint_state());
+  DEBUG_ONLY(allocation._thread->check_for_valid_safepoint_state());
 
   if (UseTLAB) {
     // Try refilling the TLAB and allocating the object in it.

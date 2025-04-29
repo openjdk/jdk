@@ -95,9 +95,9 @@ public class WinResourceTest {
             TKit.assertTextStream(expectedLogMessage)
                     .predicate(String::startsWith)
                     .apply(JPackageCommand.stripTimestamps(
-                            result.getOutput().stream()));
+                            result.getOutput().stream()).iterator());
             TKit.assertTextStream(expectedWixErrorMsg)
-                    .apply(result.getOutput().stream());
+                    .apply(result.getOutput());
         })
         .setExpectedExitCode(1)
         .run();
