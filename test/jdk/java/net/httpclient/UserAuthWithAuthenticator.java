@@ -25,7 +25,7 @@ import java.io.*;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import javax.net.ssl.*;
 import java.util.concurrent.ExecutorService;

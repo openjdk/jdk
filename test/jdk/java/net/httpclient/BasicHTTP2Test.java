@@ -64,8 +64,8 @@ import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 

@@ -50,8 +50,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 /*

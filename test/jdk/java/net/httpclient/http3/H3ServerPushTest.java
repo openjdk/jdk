@@ -60,8 +60,8 @@ import java.util.stream.Collectors;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;

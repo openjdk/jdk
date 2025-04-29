@@ -30,8 +30,8 @@
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
-import java.net.http.HttpRequest.HttpRequestOption;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,11 +39,11 @@ import java.util.Set;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.newBuilder;
 import static java.time.Duration.ofNanos;
 import static java.time.Duration.ofMinutes;
@@ -103,7 +103,7 @@ public class RequestBuilderTest {
         assertThrows(NPE, () -> builder.setHeader("name", null));
         assertThrows(NPE, () -> builder.setHeader(null, "value"));
         assertThrows(NPE, () -> builder.setOption(null, null));
-        assertThrows(NPE, () -> builder.setOption((HttpRequestOption<Http3DiscoveryMode>) null, ANY));
+        assertThrows(NPE, () -> builder.setOption((HttpOption<Http3DiscoveryMode>) null, ANY));
         assertThrows(NPE, () -> builder.timeout(null));
         assertThrows(NPE, () -> builder.POST(null));
         assertThrows(NPE, () -> builder.PUT(null));

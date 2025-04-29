@@ -27,7 +27,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
@@ -49,7 +49,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.util.stream.Collectors.joining;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.fromPublisher;

@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.net.http.UnsupportedProtocolVersionException;

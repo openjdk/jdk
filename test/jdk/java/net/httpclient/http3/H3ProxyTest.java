@@ -34,7 +34,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
@@ -47,10 +47,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 
 /*

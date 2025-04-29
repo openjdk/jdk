@@ -47,8 +47,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test

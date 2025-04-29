@@ -29,7 +29,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -61,9 +61,9 @@ import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 import static java.lang.System.out;

@@ -42,8 +42,8 @@ import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test

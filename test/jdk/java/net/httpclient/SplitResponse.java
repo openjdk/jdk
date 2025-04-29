@@ -40,8 +40,8 @@ import java.util.stream.Stream;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.lang.System.out;
 import static java.lang.String.format;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 

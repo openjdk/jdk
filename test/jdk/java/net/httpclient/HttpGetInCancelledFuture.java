@@ -31,8 +31,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
-import java.net.http.HttpRequest.HttpRequestOption;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
@@ -63,8 +63,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -409,7 +409,7 @@ public class HttpGetInCancelledFuture {
         var id = ID.incrementAndGet();
         try {
             var builder = HttpRequest.newBuilder(url).version(version).GET();
-            if (version == HTTP_3) builder.setOption(HttpRequestOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
+            if (version == HTTP_3) builder.setOption(HttpOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
             var request = builder.build();
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             // System.out.println("Got response for " + id + ": " + response);

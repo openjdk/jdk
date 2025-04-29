@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +46,7 @@ final class ImmutableHttpRequest extends HttpRequest {
     private final Optional<Duration> timeout;
     private final Optional<Version> version;
     // An alternative would be to have one field per supported option
-    private final Map<HttpRequestOption<?>, Object> options;
+    private final Map<HttpOption<?>, Object> options;
 
     /** Creates an ImmutableHttpRequest from the given builder. */
     ImmutableHttpRequest(HttpRequestBuilderImpl builder) {
@@ -83,7 +84,7 @@ final class ImmutableHttpRequest extends HttpRequest {
     public Optional<Version> version() { return version; }
 
     @Override
-    public <T> Optional<T> getOption(HttpRequestOption<T> option) {
+    public <T> Optional<T> getOption(HttpOption<T> option) {
         return Optional.ofNullable(option.type().cast(options.get(option)));
     }
 
@@ -92,7 +93,7 @@ final class ImmutableHttpRequest extends HttpRequest {
         return uri.toString() + " " + method;
     }
 
-    public Map<HttpRequestOption<?>, Object> options() {
+    public Map<HttpOption<?>, Object> options() {
         return options;
     }
 }

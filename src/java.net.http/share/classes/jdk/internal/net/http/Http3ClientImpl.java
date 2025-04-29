@@ -26,7 +26,7 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;

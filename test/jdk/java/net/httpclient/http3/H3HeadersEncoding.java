@@ -52,7 +52,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,8 +68,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.*;
 
 public class H3HeadersEncoding {

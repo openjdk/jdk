@@ -60,7 +60,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 

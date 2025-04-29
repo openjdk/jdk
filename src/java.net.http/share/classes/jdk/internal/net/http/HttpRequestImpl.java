@@ -32,6 +32,8 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpOption;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +49,7 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
@@ -67,7 +69,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
     // An alternative would be to have one field per supported option
-    private final Map<HttpRequestOption<?>, Object> options;
+    private final Map<HttpOption<?>, Object> options;
     private volatile boolean userSetAuthorization;
     private volatile boolean userSetProxyAuthorization;
 
@@ -201,7 +203,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.options = other.optionsFor(this.uri);
     }
 
-    private Map<HttpRequestOption<?>, Object> optionsFor(URI uri) {
+    private Map<HttpOption<?>, Object> optionsFor(URI uri) {
         if (this.uri == uri || Objects.equals(this.uri.getRawAuthority(), uri.getRawAuthority())) {
             return options;
         }
@@ -254,7 +256,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     }
 
     final boolean isHttp3Only(Version version) {
-        return version == Version.HTTP_3 && http3Discovery() == Http3DiscoveryMode.HTTP_3_URI_ONLY;
+        return version == Version.HTTP_3 && http3Discovery() == HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
     }
 
     Http3DiscoveryMode http3Discovery() {
@@ -262,8 +264,8 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         if (h3Discovery.isPresent()) return h3Discovery.get();
         var version = this.version.orElse(null);
         return version == null
-                ? Http3DiscoveryMode.ALT_SVC
-                : Http3DiscoveryMode.ANY;
+                ? HttpOption.Http3DiscoveryMode.ALT_SVC
+                : HttpOption.Http3DiscoveryMode.ANY;
     }
 
     /**
@@ -416,7 +418,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     public Optional<HttpClient.Version> version() { return version; }
 
     @Override
-    public <T> Optional<T> getOption(HttpRequestOption<T> option) {
+    public <T> Optional<T> getOption(HttpOption<T> option) {
         return Optional.ofNullable(option.type().cast(options.get(option)));
     }
 

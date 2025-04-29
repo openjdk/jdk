@@ -23,8 +23,8 @@
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
-import java.net.http.HttpRequest.HttpRequestOption;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +39,8 @@ import java.util.stream.Stream;
 import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
-import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -213,11 +213,11 @@ public class HttpRequestBuilderTest {
                         NullPointerException.class);
 
         builder = test2("setOption", builder, builder::setOption,
-                (HttpRequestOption<Http3DiscoveryMode>)null, (Http3DiscoveryMode) null,
+                (HttpOption<Http3DiscoveryMode>)null, (Http3DiscoveryMode) null,
                 NullPointerException.class);
 
         builder = test2("setOption", builder, builder::setOption,
-                (HttpRequestOption<Http3DiscoveryMode>)null, HTTP_3_URI_ONLY,
+                (HttpOption<Http3DiscoveryMode>)null, HTTP_3_URI_ONLY,
                 NullPointerException.class);
 
 // see JDK-8170093

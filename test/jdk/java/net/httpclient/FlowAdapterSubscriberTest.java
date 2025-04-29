@@ -30,7 +30,7 @@ import java.lang.StackWalker.StackFrame;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -59,7 +59,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 
-import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;

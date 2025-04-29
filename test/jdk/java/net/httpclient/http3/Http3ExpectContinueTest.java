@@ -51,7 +51,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
@@ -105,7 +106,7 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
 
             HttpRequest postRequest = HttpRequest.newBuilder(uri)
                     .version(HTTP_3)
-                    .setOption(HttpRequest.HttpRequestOption.H3_DISCOVERY,
+                    .setOption(HttpOption.H3_DISCOVERY,
                             Http3DiscoveryMode.HTTP_3_URI_ONLY)
                     .POST(HttpRequest.BodyPublishers.ofString(BODY))
                     .expectContinue(true)

@@ -47,7 +47,7 @@ import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpRequest.Http3DiscoveryMode;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
