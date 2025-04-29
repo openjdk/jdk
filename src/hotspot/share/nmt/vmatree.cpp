@@ -34,7 +34,7 @@ const char* VMATree::statetype_strings[3] = {
   "reserved", "committed", "released",
 };
 
-NativeCallStackStorage::StackIndex VMATree::new_reserve_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
+NativeCallStackStorage::StackIndex VMATree::get_new_reserve_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
   using SIndex = NativeCallStackStorage::StackIndex;
   const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
   const SIndex rq = req.callstack;
@@ -56,7 +56,7 @@ NativeCallStackStorage::StackIndex VMATree::new_reserve_callstack(NativeCallStac
   return result[op][st_to_index(ex)];
 }
 
-NativeCallStackStorage::StackIndex VMATree::new_commit_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
+NativeCallStackStorage::StackIndex VMATree::get_new_commit_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
   using SIndex = NativeCallStackStorage::StackIndex;
   const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
   const SIndex rq = req.callstack;
@@ -78,7 +78,7 @@ NativeCallStackStorage::StackIndex VMATree::new_commit_callstack(NativeCallStack
   return result[op][st_to_index(ex)];
 }
 
-VMATree::StateType VMATree::new_state(StateType ex, const RequestInfo& req) {
+VMATree::StateType VMATree::get_new_state(StateType ex, const RequestInfo& req) {
   const StateType Rl = StateType::Released;
   const StateType Rs = StateType::Reserved;
   const StateType C = StateType::Committed;
@@ -100,78 +100,275 @@ VMATree::StateType VMATree::new_state(StateType ex, const RequestInfo& req) {
   return result[op][st_to_index(ex)];
 }
 
-VMATree::SummaryDiff VMATree::register_mapping_new(position A, position B, StateType state,
-                                               const RegionData& metadata, bool use_tag_inplace) {
-
-  assert(A < B, "should be");
-  RequestInfo req{A, B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
-  SummaryDiff diff;
-  VMATreap::Range rA = _tree.find_enclosing_range(A);
-  VMATreap::Range rB = _tree.find_enclosing_range(B);
-  bool no_node_before_A = rA.start == nullptr;
-  bool no_node_before_B = rB.start == nullptr;
-  bool no_overlap_before = no_node_before_A && no_node_before_B;
-  bool no_node_after_A = rA.end == nullptr;
-  bool no_node_after_B = rB.end == nullptr;
-  bool no_overlap_after = no_node_after_A && no_node_after_B;
-  bool no_overlap = no_overlap_before || no_overlap_after;
-  // ...............X....Y.....Z.............
-  //   ^--^        ^--------------^  ^----^
-  //   no-overlap     with-overlap    no-overlap
-  if (no_overlap) {
-    // just insert A and B
-    return diff;
-  }
-  // finding the X....Y region that overlaps with A---B
-  // a--A--b---c---B---d
-  const position impossible = -1;
-  position X =   rA.start != nullptr ? rA.start->key()
-               : rA.end   != nullptr ? rA.end->key()
-               : rB.start != nullptr ? rB.start->key()
-               : rB.end   != nullptr ? rB.end->key() : impossible;
-  assert(X != impossible, "should not");
-  TreapNode* nY = _tree.closest_gt(X);
-  assert(nY != nullptr, "should not");
-  position Y = nY->key();
-
-  enum overlap_case {         //                      ........X..............Y......................
-                     A_B_X_Y, // A < B < X < Y           A--B
-                     A_BX__Y, // A < B = X < Y           A----B
-                     A_X_B_Y, // A < X < B < Y           A--------B
-                     A_X__BY, // A < X < Y = B           A-------------------B
-                     A_X_Y_B, // A < X < Y < B           A-----------------------B
-                     AX_B__Y, // A = X < B < Y                A----B
-                     AX___BY, // A = X < B = Y                A--------------B
-                     AX_Y__B, // A = X < Y < B                A--------------------B
-                     X_A_B_Y, // X < A < B < Y                    A---B
-                     X_A__BY, // X < A < B = Y                    A---------B
-                     X_A_Y_B  // X < A < Y < B                    A-------------------B
+void VMATree::compute_summary_diff(SingleDiff::delta region_size, MemTag t1, const StateType& ex, const RequestInfo& req, MemTag t2, SummaryDiff& diff) {
+  const StateType Rl = StateType::Released;
+  const StateType Rs = StateType::Reserved;
+  const StateType C = StateType::Committed;
+  auto st_to_index = [&](StateType st) -> int {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
   };
-  overlap_case oc;
-  if (B < X) oc = A_B_X_Y;
-  if (B == X) oc = A_BX__Y;
-  switch(oc) {    //                      ........X..............Y......................
-    case A_B_X_Y: // A < B < X < Y           A--B
-    case A_BX__Y: // A < B = X < Y           A----B
-    case A_X_B_Y: // A < X < B < Y           A--------B
-    case A_X__BY: // A < X < Y = B           A-------------------B
-    case A_X_Y_B: // A < X < Y < B           A-----------------------B
-      // decompose into A--Y and Y--B
-      // handle A--Y here and
-      // recursive call of the register_mapping(Y, B, ...)
-      break;
-    case AX_B__Y: // A = X < B < Y                A----B
-    case AX___BY: // A = X < B = Y                A--------------B
-    case AX_Y__B: // A = X < Y < B                A--------------------B
-    case X_A_B_Y: // X < A < B < Y                    A---B
-    case X_A__BY: // X < A < B = Y                    A---------B
-    case X_A_Y_B: // X < A < Y < B                    A-------------------B
-      break;
-  }
-  return diff;
+  const int op = req.op_to_index();
+  assert(op >= 0 && op < 4, "should be");
+
+  SingleDiff::delta a = region_size;
+  // A region with size `a` has a state as <column> and an operation is requested as in <row>
+  // The region has tag `t1` and the operation has tag `t2`.
+  // For each state, we decide how much to be added/subtracted from t1 to t2. Two tables for reserve and commit.
+  // Each pair of <x,y> in the table means add `x` to t1 and add `y` to t2. There are 3 pairs in each row for 3 states.
+  // For example, `reserve[1][4,5]` says `-a,a` means:
+  //    - we are reserving with t2 a region which is already commited with t1
+  //    - since we are reserving, then `a` will be added to t2. (`y` is `a`)
+  //    - since we uncommitting (by reserving) then `a` is to be subtracted from t1. (`x` is `-a`).
+  //    - amount of uncommitted size is in table `commit[1][4,5]` which is `-a,0` that means subtract `a` from t1.
+                                       // existing state
+  SingleDiff::delta reserve[4][3*2] = {// Rl    Rs     C
+                                         {0,0, -a,0, -a,0 },   // op == Release
+                                         {0,a, -a,a, -a,a },   // op == Reserve
+                                         {0,a,  0,0,  0,0 },   // op == Commit
+                                         {0,0,  0,0,  0,0 }    // op == Uncommit
+                                      };
+  SingleDiff::delta commit[4][3*2] = {// Rl    Rs     C
+                                        {0,0,  0,0, -a,0 },   // op == Release
+                                        {0,a,  0,a, -a,0 },   // op == Reserve
+                                        {0,a,  0,a, -a,a },   // op == Commit
+                                        {0,0,  0,0, -a,0 }    // op == Uncommit
+                                     };
+  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(t1)];
+  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(t2)];
+  int st = st_to_index(ex);
+  tty->print_cr("%d %d %d %d %ld %ld", (int)t1, (int)t2, op, st, from_rescom.reserve, to_rescom.reserve);
+  from_rescom.reserve += reserve[op][st * 2    ];
+    to_rescom.reserve += reserve[op][st * 2 + 1];
+  from_rescom.commit  +=  commit[op][st * 2    ];
+    to_rescom.commit  +=  commit[op][st * 2 + 1];
+
 }
+
+void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  IntervalState exSt; // existing state info
+  assert(n1 != nullptr,"sanity");
+  assert(n2 != nullptr,"sanity");
+  if (n1->key() == req.A) {
+    exSt = n1->val().in;
+  } else {
+    exSt = n1->val().out;
+  }
+
+  StateType existing_state              = exSt.type();
+  MemTag    existing_tag                = exSt.mem_tag();
+  SIndex    existing_reserve_callstack  = exSt.reserved_stack();
+  SIndex    existing_commit_callstack   = exSt.committed_stack();
+
+  StateType new_state                   = get_new_state(existing_state, req);
+  MemTag    new_tag                     = req.use_tag_inplace ? existing_tag : req.tag;
+  SIndex    new_reserve_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
+  SIndex    new_committ_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
+
+  n1->val().out.set_tag(new_tag);
+  n1->val().out.set_type(new_state);
+  n1->val().out.set_commit_stack(new_committ_callstack);
+  n1->val().out.set_reserve_stack(new_reserve_callstack);
+
+  n2->val().in.set_tag(new_tag);
+  n2->val().in.set_type(new_state);
+  n2->val().in.set_commit_stack(new_committ_callstack);
+  n2->val().in.set_reserve_stack(new_reserve_callstack);
+
+  SingleDiff::delta region_size = n2->key() - n1->key();
+  compute_summary_diff(region_size, existing_tag, existing_state, req, new_tag, diff);
+}
+
+
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
+
+  if (A == B) {
+    return SummaryDiff();
+  }
+  assert(A < B, "should be");
+  SummaryDiff diff;
+  RequestInfo req{A, B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
+  IntervalChange stA{
+      IntervalState{StateType::Released, empty_regiondata},
+      IntervalState{              state,   metadata}
+  };
+  IntervalChange stB{
+      IntervalState{              state,   metadata},
+      IntervalState{StateType::Released, empty_regiondata}
+  };
+  VMATreap::Range rA = _tree.find_enclosing_range(A);
+  VMATreap::Range rB = _tree.find_enclosing_range(B);
+  // nodes:          .....X.......Y...Z......W........U
+  // request:                 A------------------B
+  // X,Y = enclosing_nodes(A)
+  // W,U = enclosing_nodes(B)
+  // The cases are whether or not X and Y exists and X == A. (A == Y doesn't happen since it is searched by 'lt' predicate)
+  // The cases are whether or not W and U exists and W == B. (B == U doesn't happen since it is searched by 'lt' predicate)
+
+  // We update regions in 3 sections: 1) X..A..Y, 2) Y....W, 3) W..B..U
+  // The regons in [Y,W) are updated in a loop. We update X..A..Y before the loop and W..B..U after the loop.
+  // The table below summarizes the cases and what to do.
+  // 'update'  for a region [a,b) means call 'update_region(node a, node b, req, diff)' to update the region based on existing State and the request.
+
+
+  //                                                                                              Regions before loop                                         Regions in
+  //                                                             X exists     Y exists    X == A   [X,A)         [A,Y)    remove X if        upsert A if       the loop                                    to do after loop
+  //                                                             --------     --------    ------   ------        -----    ---------------    --------------   -------------  ----------------------------------------------------------------
+  // row  0: nodes:          .........A..................B.....  no             no        --       --            --        --                 !A_is_noop()        --
+  // row  1: nodes:          .....X...A..................B.....  yes            no        no       A.in = X.out  --        --                 !A_is_noop()        --
+  // row  2: nodes:          .....XA.....................B.....  yes            no        yes      A.in = X.in   --        X.in == A.out      !remove_X           --
+  // row  3: nodes:          .........A...Y...Z......W...B....U  no             yes       --       --            update    --                 !A_is_noop()       [Y,W)
+  // row  4: nodes:          .....X...A...Y...Z......W...B....U  yes            yes       no       A.in = X.out  update    --                 !A_is_noop()       [Y,W)
+  // row  5: nodes:          .....XA......Y...Z......W...B....U  yes            yes       yes      A.in = X.in   update    X.in == A.out      !remove_X          [Y,W)
+  //       :
+  //       :                                                     W exists     U exists    W == B                                                                             [W,B)         [B,U)            remove W if       upsert B if
+  //       :                                                     --------     --------    ------   ------------------------------------------------------------------------  -----         ------          ----------------  ---------------
+  // row  6: nodes:          .........A..................B.....   no            no          --                                                                                --            --              --                !B.is_noop()
+  // row  7: nodes:          .........A..................B....U   no            yes         --                                                                                --           B.out = U.in     --                !B.is_noop()
+  // row  8: nodes:          .....X...A...Y...Z......W...B.....   yes           no          no                                                                                update        --              W.is_noop()       !B.is_noop()
+  // row  9: nodes:          .....X...A...Y...Z......WB........   yes           no          yes                                                                               --            --              W.in == B.out     !remove_W
+  // row 10: nodes:          .....X...A...Y...Z......W...B....U   yes           yes         no                                                                                update       B.out = U.in     W.is_noop()       !B.is_noop()
+  // row 11: nodes:          .....X...A...Y...Z......WB.......U   yes           yes         yes                                                                               --            --              W.in == B.out     !remove_W
+
+  // We intentionally did not summarize/compress the cases to have them as separate. This expanded way of describing the cases helps us to understand/analyze/verify/debug/maintain the corresponding code more easily.
+  // Mapping of table to row, row to switch-case, 'what to do' to code should be consistent. If one changes, the others have to be updated accordingly.
+  // The sequence of dependecies is: table -> row no -> switch(row)-case -> code. Meaning that whenever any of one item in this sequence is changed, the rest of the consequent items to be checked/changed.
+
+  TreapNode* X = rA.start;
+  TreapNode* Y = rA.end;
+  TreapNode nA{A, stA, 0}; // the node that represents A
+  bool X_exists = X != nullptr;
+  bool Y_exists = Y != nullptr;
+  bool X_eq_A = X_exists && rA.start->key() == A;
+  int row = -1;
+  if (!X_exists && !Y_exists           ) { row = 0; }
+  if ( X_exists && !Y_exists && !X_eq_A) { row = 1; }
+  if ( X_exists && !Y_exists &&  X_eq_A) { row = 2; }
+  if (!X_exists &&  Y_exists           ) { row = 3; }
+  if (!X_exists &&  Y_exists && !X_eq_A) { row = 4; }
+  if ( X_exists &&  Y_exists &&  X_eq_A) { row = 5; }
+
+  // ************************************************************************************ Before loop
+  switch(row) {
+    case 0:
+      if (!stA.is_noop()) { _tree.upsert(A, stA); }
+      break;
+    case 1:
+      stA.in = X->val().out;
+      if (!stA.is_noop()) { _tree.upsert(A, stA); }
+      break;
+    case 2:
+      stA.in = X->val().in;
+      if (X->val().in.equals(stA.out)) {
+        _tree.remove(X->key());
+      } else {
+        _tree.upsert(A, stA);
+      }
+      break;
+    case 3:
+      update_region(&nA, Y, req, diff);
+      if (!nA.val().is_noop()) { _tree.upsert(A, nA.val()); }
+      break;
+    case 4:
+      stA.in = X->val().out;
+      update_region(&nA, Y, req, diff);
+      if (!nA.val().is_noop()) { _tree.upsert(A, nA.val()); }
+      break;
+    case 5:
+      stA.in = X->val().in;
+      update_region(&nA, Y, req, diff);
+      if (X->val().in.equals(stA.out)) {
+        _tree.remove(X->key());
+      } else {
+        _tree.upsert(A, nA.val());
+      }
+      break;
+    default:
+      break;
+  }
+
+  // ************************************************************************************ Loop
+  GrowableArrayCHeap<position, mtNMT> to_be_removed;
+  TreapNode* prev = nullptr;
+  _tree.visit_range_in_order(Y->key(), B + 1, [&](TreapNode* curr){
+    if (prev != nullptr) {
+      update_region(prev, curr, req, diff);
+      // during visit, structure of the tree should not be changed
+      // keep the keys to be removed, and remove them later
+      if (prev->val().is_noop()) {
+        to_be_removed.push(prev->key());
+      }
+    }
+    prev = curr;
+  });
+
+  // ************************************************************************************ After loop
+  TreapNode* W = rB.start;
+  TreapNode* U = rB.end;
+  TreapNode nB{B, stB, 0}; // the node that represents B
+  bool W_exists = W != nullptr;
+  bool U_exists = U != nullptr;
+  bool W_eq_B = W_exists && W->key() == B;
+  if (!W_exists && !U_exists           ) { row = 6; }
+  if (!W_exists &&  U_exists           ) { row = 7; }
+  if ( W_exists && !U_exists && !W_eq_B) { row = 8; }
+  if ( W_exists && !U_exists &&  W_eq_B) { row = 9; }
+  if ( W_exists &&  U_exists && !W_eq_B) { row = 10; }
+  if ( W_exists &&  U_exists &&  W_eq_B) { row = 11; }
+  switch(row) {
+    case 6:
+      if (!stB.is_noop()) { _tree.upsert(B, stB); }
+      break;
+    case 7:
+      stB.out = U->val().in;
+      if (!stB.is_noop()) { _tree.upsert(B, stB); }
+      break;
+    case 8:
+      update_region(W, &nB, req, diff);
+      if (W->val().is_noop()) { _tree.remove(W->key()); }
+      if (!nB.val().is_noop()) { _tree.upsert(B, nB.val()); }
+      break;
+    case 9:
+      if (W->val().in.equals(stB.out)) {
+        _tree.remove(W->key());
+      } else {
+        _tree.upsert(B, stB);
+      }
+      break;
+    case 10:
+      stB.out = U->val().in;
+      update_region(W, &nB, req, diff);
+      if (W->val().in.equals(stB.out)) {
+        _tree.remove(W->key());
+      } else {
+        _tree.upsert(B, stB);
+      }
+      break;
+    case 11:
+      if (W->val().in.equals(stB.out)) {
+        _tree.remove(W->key());
+      } else {
+        _tree.upsert(B, stB);
+      }
+      break;
+    default:
+      break;
+  }
+
+
+  // ************************************************************************************ Delete noop nodes found in the loop
+  while(to_be_removed.length() != 0) {
+    _tree.remove(to_be_removed.pop());
+  }
+
+  return diff;
+}
+VMATree::SummaryDiff VMATree::register_mapping_new(position A, position B, StateType state,
+                                                   const RegionData& metadata, bool use_tag_inplace) {
   assert(!use_tag_inplace || metadata.mem_tag == mtNone,
          "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
   if (A == B) {

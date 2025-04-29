@@ -146,6 +146,17 @@ private:
     bool has_committed_stack() {
       return _committed_stack != NativeCallStackStorage::invalid;
     }
+
+    void set_type(StateType t) {
+      type_tag[0] = static_cast<uint8_t>(t);
+    }
+
+    bool equals(const IntervalState& other) const {
+      return mem_tag()          == other.mem_tag()          &&
+             type()             == other.type()             &&
+             reserved_stack()   == other.reserved_stack()   &&
+             committed_stack()  == other.committed_stack();
+    }
   };
 
   // An IntervalChange indicates a change in state between two intervals. The incoming state
@@ -195,7 +206,7 @@ private:
     }
   };
   struct RequestInfo {
-    position A,B;
+    position A, B;
     StateType op;
     MemTag tag;
     NativeCallStackStorage::StackIndex callstack;
@@ -241,9 +252,11 @@ public:
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
   SummaryDiff register_mapping_new(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
-  StateType new_state(StateType existinting_state, const RequestInfo& req);
-  NativeCallStackStorage::StackIndex new_reserve_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
-  NativeCallStackStorage::StackIndex new_commit_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
+  StateType get_new_state(StateType existinting_state, const RequestInfo& req);
+  NativeCallStackStorage::StackIndex get_new_reserve_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
+  NativeCallStackStorage::StackIndex get_new_commit_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
+  void compute_summary_diff(SingleDiff::delta region_size, MemTag t1, const StateType& ex, const RequestInfo& req, MemTag new_tag, SummaryDiff& diff);
+  void update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff);
 
  public:
   SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
