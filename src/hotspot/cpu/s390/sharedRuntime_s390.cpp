@@ -2769,6 +2769,9 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   Register unroll_block_reg = Z_tmp_1;
