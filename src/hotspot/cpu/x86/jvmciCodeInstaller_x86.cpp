@@ -221,7 +221,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
       return true;
 #if INCLUDE_ZGC
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL:
-      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
       return true;
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadAfterTest);

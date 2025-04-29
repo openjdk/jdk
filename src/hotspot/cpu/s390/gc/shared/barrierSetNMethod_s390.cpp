@@ -40,7 +40,7 @@ class NativeMethodBarrier: public NativeInstruction {
     address get_patchable_data_address() const {
       address inst_addr = get_barrier_start_address() + PATCHABLE_INSTRUCTION_OFFSET;
 
-      debug_only(Assembler::is_z_cfi(*((long*)inst_addr)));
+      DEBUG_ONLY(Assembler::is_z_cfi(*((long*)inst_addr)));
       return inst_addr + 2;
     }
 
@@ -91,7 +91,7 @@ static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() - NativeMethodBarrier::BARRIER_TOTAL_LENGTH;
   auto barrier = reinterpret_cast<NativeMethodBarrier*>(barrier_address);
 
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 
