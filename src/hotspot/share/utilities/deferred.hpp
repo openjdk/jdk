@@ -26,14 +26,13 @@
 #define SHARE_UTILITIES_STABLEVALUE_HPP
 
 #include "globalDefinitions.hpp"
+#include <type_traits>
 
-// A memory area with adequate size and alignment for storage of a T.
-// May be initialized exactly once.
 // The purpose of this class is to defer initialization of a T to a later point in time,
 // and then to never deallocate it. This is mainly useful for deferring the initialization of
 // static fields in classes, in order to avoid "Static Initialization Order Fiasco".
 template<typename T>
-class StableValue {
+class Deferred {
   union {
     T _t;
   };
@@ -41,14 +40,16 @@ class StableValue {
   DEBUG_ONLY(bool _initialized);
 
 public:
-  NONCOPYABLE(StableValue);
+  NONCOPYABLE(Deferred);
 
-  StableValue()
+  Deferred()
   DEBUG_ONLY(: _initialized(false)) {
+    static_assert(std::is_trivially_destructible<T>::value,
+    "T in a Deferred<T> should not have a non-trivial destructor, as it will never be called..");
     // Do not construct value, on purpose.
   }
 
-  ~StableValue() {
+  ~Deferred() {
     // Do not destruct value, on purpose.
   }
 
@@ -67,6 +68,7 @@ public:
 
   template<typename... Ts>
   void initialize(Ts&... args) {
+    assert(!_initialized, "Double initialization forbidden");
     DEBUG_ONLY(_initialized = true);
     using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
     ::new (const_cast<NCVP>(get())) T(args...);
