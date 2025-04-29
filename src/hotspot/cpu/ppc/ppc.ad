@@ -7143,7 +7143,6 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
- 
 
 instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
@@ -9798,18 +9797,6 @@ instruct moveI2F_reg_stack(stackSlotF dst, iRegIsrc src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-//----------Moves between long and float
-
-instruct moveF2L_reg_stack(stackSlotL dst, regF src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "storeD  $src, $dst \t// STACK" %}
-  size(4);
-  ins_encode( enc_stfd(src, dst) );
-  ins_pipe(pipe_class_default);
-%}
 
 //----------Moves between long and double
 
@@ -9835,27 +9822,6 @@ instruct moveD2L_reg_stack(stackSlotL dst, regD src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Move long value from long stack-location to double register.
-instruct moveL2D_stack_reg(regD dst, stackSlotL src) %{
-  match(Set dst (MoveL2D src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFD     $dst, $src \t// MoveL2D" %}
-  size(4);
-  ins_encode( enc_lfd(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move long value from long register to double stack-location.
-instruct moveL2D_reg_stack(stackSlotD dst, iRegLsrc src) %{
-  match(Set dst (MoveL2D src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// MoveL2D" %}
-  size(4);
-  ins_encode( enc_std(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
 
 //----------Register Move Instructions-----------------------------------------
 
@@ -10255,59 +10221,6 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, stackSlotL mem) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE mem);
-  predicate(false);
-
-  format %{ "CmovI   $dst, $crx, $mem \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  mem
-    //    \       |    |   /
-    //     dst=cmovI_bso_stackSlotL_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  dst  crx  mem
-    //      |   \       |    |    /
-    //      dst=cmovI_bso_stackSlotL
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_bso_stackSlotLNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_mem);
-
-    // precedences for new nodes
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_mem;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
 
 instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
@@ -10363,21 +10276,6 @@ instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   %}
 %}
 
-// Double to Int conversion, NaN is mapped to 0.
-instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
-  match(Set dst (ConvD2I src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regD tmpD;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
-    moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
-    cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
@@ -10406,21 +10304,6 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Float to Int conversion, NaN is mapped to 0.
-instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
-  match(Set dst (ConvF2I src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regF tmpF;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
-    moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
-    cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Float to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
@@ -10515,56 +10398,6 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, stackSlotL mem) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE mem);
-  predicate(false);
-
-  format %{ "CmovL   $dst, $crx, $mem \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  mem
-    //    \       |    |   /
-    //     dst=cmovL_bso_stackSlotL_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConL16(0)
-    //      |
-    //      ^  region  dst  crx  mem
-    //      |   \       |    |    /
-    //      dst=cmovL_bso_stackSlotL
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConL16Node();
-    MachNode *m2 = new cmovL_bso_stackSlotLNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_mem);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immL16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_mem;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
 
 instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
@@ -10617,21 +10450,6 @@ instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   %}
 %}
 
-// Float to Long conversion, NaN is mapped to 0.
-instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
-  match(Set dst (ConvF2L src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regF tmpF;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
-    moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
-    cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
@@ -10660,21 +10478,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Long conversion, NaN is mapped to 0.
-instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
-  match(Set dst (ConvD2L src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regD tmpD;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
-    moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
-    cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
@@ -10717,24 +10520,6 @@ instruct convD2F_reg(regF dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer to Float conversion.
-instruct convI2F_ireg_Ex(regF dst, iRegIsrc src) %{
-  match(Set dst (ConvI2F src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    regD tmpD2;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2DRaw_regD(tmpD2, tmpD);        // Convert to double.
-    convD2F_reg(dst, tmpD2);             // Convert double to float.
-  %}
-%}
-
 instruct convL2FRaw_regF(regF dst, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -10748,21 +10533,6 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer to Float conversion. Special version for Power7.
-instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
-  match(Set dst (ConvI2F src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2FRaw_regF(dst, tmpD);          // Convert to float.
-  %}
-%}
 
 // Integer to Float conversion. Special version for Power8.
 instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
@@ -10776,19 +10546,6 @@ instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
   %}
 %}
 
-// L2F to avoid runtime call.
-instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
-  match(Set dst (ConvL2F src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    stackSlotL tmpS;
-    regD tmpD;
-    regL_to_stkL(tmpS, src);             // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2FRaw_regF(dst, tmpD);          // Convert to float.
-  %}
-%}
 
 // L2F to avoid runtime call.  Special version for Power8.
 instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
@@ -10807,21 +10564,6 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 
 // Convert to Double
 
-// Integer to Double conversion.
-instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
-  match(Set dst (ConvI2D src));
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2DRaw_regD(dst, tmpD);          // Convert to double.
-  %}
-%}
 
 // Integer to Double conversion. Special version for Power8.
 instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
@@ -10835,17 +10577,6 @@ instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
   %}
 %}
 
-// Long to Double conversion
-instruct convL2D_reg_Ex(regD dst, stackSlotL src) %{
-  match(Set dst (ConvL2D src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-
-  expand %{
-    regD tmpD;
-    moveL2D_stack_reg(tmpD, src);
-    convL2DRaw_regD(dst, tmpD);
-  %}
-%}
 
 // Long to Double conversion. Special version for Power8.
 instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
@@ -12444,25 +12175,6 @@ instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst
 
 //---------- Min/Max Instructions ---------------------------------------------
 
-instruct minI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (MinI src1 src2));
-  ins_cost(DEFAULT_COST*6);
-
-  expand %{
-    iRegLdst src1s;
-    iRegLdst src2s;
-    iRegLdst diff;
-    iRegLdst sm;
-    iRegLdst doz; // difference or zero
-    convI2L_reg(src1s, src1); // Ensure proper sign extension.
-    convI2L_reg(src2s, src2); // Ensure proper sign extension.
-    subL_reg_reg(diff, src2s, src1s);
-    // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64L_regL(sm, diff);
-    andL_reg_reg(doz, diff, sm); // <=0
-    addI_regL_regL(dst, doz, src1s);
-  %}
-%}
 
 instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MinI src1 src2));
@@ -12476,25 +12188,6 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (MaxI src1 src2));
-  ins_cost(DEFAULT_COST*6);
-
-  expand %{
-    iRegLdst src1s;
-    iRegLdst src2s;
-    iRegLdst diff;
-    iRegLdst sm;
-    iRegLdst doz; // difference or zero
-    convI2L_reg(src1s, src1); // Ensure proper sign extension.
-    convI2L_reg(src2s, src2); // Ensure proper sign extension.
-    subL_reg_reg(diff, src2s, src1s);
-    // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64L_regL(sm, diff);
-    andcL_reg_reg(doz, diff, sm); // >=0
-    addI_regL_regL(dst, doz, src1s);
-  %}
-%}
 
 instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MaxI src1 src2));
