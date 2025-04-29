@@ -143,6 +143,9 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
+          if [[ '${{ inputs.static }}' == 'true' ]]; then
+            static-suffix: "-static"
+          fi
 
       - name: 'Install dependencies'
         run: |

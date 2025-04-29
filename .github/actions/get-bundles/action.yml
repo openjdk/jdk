@@ -32,6 +32,9 @@ inputs:
   debug-suffix:
     description: 'File name suffix denoting debug level, possibly empty'
     required: false
+  static-suffix:
+    description: 'Static bundle file name suffix'
+    required: false
 outputs:
   jdk-path:
     description: 'Path to the installed JDK bundle'
@@ -53,41 +56,41 @@ runs:
       id: download-bundles
       uses: actions/download-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
         path: bundles
       continue-on-error: true
 
     - name: 'Download bundles artifact (retry)'
       uses: actions/download-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
         path: bundles
       if: steps.download-bundles.outcome == 'failure'
 
     - name: 'Unpack bundles'
       run: |
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }${{ inputs.static-suffix }}}.zip ]]; then
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d bundles/jdk
         fi
 
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
         fi
 
-        if [[ -e bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip ]]; then
           echo 'Unpacking static jdk bundle...'
           mkdir -p bundles/static-jdk
-          unzip -q bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d bundles/static-jdk
+          unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip -d bundles/static-jdk
         fi
 
-        if [[ -e bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
           echo 'Unpacking static jdk bundle...'
           mkdir -p bundles/static-jdk
-          tar -xf bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/static-jdk
+          tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz -C bundles/static-jdk
         fi
 
         if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then

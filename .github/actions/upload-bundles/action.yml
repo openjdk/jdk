@@ -46,8 +46,8 @@ runs:
         # Rename bundles to consistent names
         jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
         jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
-        static_jdk_bundle_zip="$(ls build/*/bundles/static-jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
-        static_jdk_bundle_tar_gz="$(ls build/*/bundles/static-jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
+        static_jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }*static}.zip 2> /dev/null || true)"
+        static_jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}*static.tar.gz 2> /dev/null || true)"
         symbols_bundle="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}-symbols.tar.gz 2> /dev/null || true)"
         tests_bundle="$(ls build/*/bundles/jdk-*_bin-tests${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
         static_libs_bundle="$(ls build/*/bundles/jdk-*_bin-static-libs${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
@@ -61,10 +61,10 @@ runs:
           mv "$jdk_bundle_tar_gz" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
         if [[ "$static_jdk_bundle_zip" != "" ]]; then
-          mv "$static_jdk_bundle_zip" "bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip"
+          mv "$static_jdk_bundle_zip" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}-static.zip"
         fi
         if [[ "$static_jdk_bundle_tar_gz" != "" ]]; then
-          mv "$static_jdk_bundle_tar_gz" "bundles/static-jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
+          mv "$static_jdk_bundle_tar_gz" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}-static.tar.gz"
         fi
         if [[ "$symbols_bundle" != "" ]]; then
           mv "$symbols_bundle" "bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
