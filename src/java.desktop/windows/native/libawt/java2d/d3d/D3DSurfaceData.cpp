@@ -531,7 +531,7 @@ JNIEXPORT jlong JNICALL
 {
     D3DSDOps *d3dsdo;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_getNativeResourceNative")
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_getNativeResourceNative");
 
     RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), 0L);
 
