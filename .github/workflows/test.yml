@@ -143,9 +143,16 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
-          if [[ '${{ inputs.static }}' == 'true' ]]; then
-            static-suffix: "-static"
-          fi
+        if '${{ inputs.static }}' != 'true'
+
+      - name: 'Get static bundles'
+        id: static-bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: ${{ matrix.debug-suffix }}
+          static-suffix: "-static"
+        if '${{ inputs.static }}' == 'true'
 
       - name: 'Install dependencies'
         run: |
