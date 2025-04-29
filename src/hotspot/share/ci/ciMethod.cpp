@@ -916,6 +916,7 @@ int ciMethod::scale_count(int count, float prof_factor) {
     if (counter_life > 0) {
       double count_d = (double)count * prof_factor * method_life / counter_life + 0.5;
       if (count_d >= static_cast<double>(INT_MAX)) {
+        // Clamp in case of overflowing int range.
         count = INT_MAX;
       } else {
         count = int(count_d);
