@@ -258,7 +258,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
 
-  unsigned int abs_con = UABS(con);
+  unsigned int abs_con = g_uabs(con);
   if (abs_con != (unsigned int)con) {
     sign_flip = true;
   }
@@ -493,7 +493,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
-  julong abs_con = UABS(con);
+  julong abs_con = g_uabs(con);
   if (abs_con != (julong)con) {
     sign_flip = true;
   }
