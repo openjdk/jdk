@@ -56,20 +56,20 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 
 UNAME_SYSTEM=`uname -s`
 UNAME_RELEASE=`uname -r`
+UNAME_OS=`uname -o`
 
 # Detect cygwin or WSL
 IS_CYGWIN=`echo $UNAME_SYSTEM | grep -i CYGWIN`
 IS_WSL=`echo $UNAME_RELEASE | grep Microsoft`
-IS_MSYS=`echo $UNAME_SYSTEM | grep MSYS_NT`
+IS_MSYS=`echo $UNAME_OS | grep -i Msys`
+MSYS2_ARG_CONV_EXCL="*"          # make "cmd.exe /c" work for msys2
+CMD_EXE="cmd.exe /c"
 if test "x$IS_CYGWIN" != "x"; then
     BUILD_ENV="cygwin"
-    CMD_EXE="cmd.exe /c"
 elif test "x$IS_MSYS" != "x"; then
     BUILD_ENV="cygwin"
-    CMD_EXE="cmd.exe //c"
 elif test "x$IS_WSL" != "x"; then
     BUILD_ENV="wsl"
-    CMD_EXE="cmd.exe /c"
 else
     echo "Unknown environment; only Cygwin/MSYS2/WSL are supported."
     exit 1
