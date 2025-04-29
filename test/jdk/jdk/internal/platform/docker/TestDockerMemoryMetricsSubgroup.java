@@ -185,7 +185,7 @@ public class TestDockerMemoryMetricsSubgroup {
 
         private static TestDockerMemoryMetricsSubgroup.DockerVersion fromVersionString(String version) {
             try {
-                // Example 'podman version 3.2.1'
+                // Example 'docker version 3.2.1'
                 String versNums = version.split("\\s+", 3)[2];
                 String[] numbers = versNums.split("\\.", 3);
                 return new TestDockerMemoryMetricsSubgroup.DockerVersion(Integer.parseInt(numbers[0]),
