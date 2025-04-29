@@ -35,6 +35,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "utilities/resourceHash.hpp"
 
 // Handling of java.lang.ref.Reference objects in the AOT cache
 // ============================================================
@@ -55,10 +56,7 @@
 //     is eligible.
 //
 // [2] A reference that REQUIRE specials clean up (i.e., Reference::queue != _null_queue.resolve())
-//     is eligible ONLY if it has not been put into the "pending" state by the GC (See Reference.java).
-//
-// AOTReferenceObjSupport::check_if_ref_obj() detects the "pending" state by checking the "next" and
-// "discovered" fields of the oop.
+//     is eligible ONLY if its referent is not null.
 //
 // As of this version, the only oops in group [2] that can be found by AOTArtifactFinder are
 // the keys used by ReferencedKeyMap in the implementation of MethodType::internTable.
@@ -74,11 +72,35 @@
 // the use of Weak/Soft references used by java.lang.invoke.
 //
 // We intend to evolve the implementation in the future by
-// -- implementing more prepareForAOTCache() operations for other use cases, and/or
+// -- implementing more assemblySetup() operations for other use cases, and/or
 // -- relaxing the eligibility restrictions.
+//
+//
+// null referents for group [1]
+// ============================
+//
+// Any cached reference R1 of group [1] is allowed to have a null referent.
+// This can happen in the following situations:
+//    (a) R1.clear() was called by Java code during the assembly phase.
+//    (b) The referent has been collected, and R1 is in the "pending" state.
+// In case (b), the "next" and "discovered" fields of the cached copy of R1 will
+// be set to null. During the production run:
+//    - It would appear to the Java program as if immediately during VM start-up, the referent
+//      was collected and ReferenceThread completed processing of R1.
+//    - It would appear to the GC as if immediately during VM start-up, the Java program called
+//      R1.clear().
 
 #if INCLUDE_CDS_JAVA_HEAP
 
+
+class KeepAliveObjectsTable : public ResourceHashtable<oop, bool,
+    36137, // prime number
+    AnyObj::C_HEAP,
+    mtClassShared,
+    HeapShared::oop_hash> {};
+
+static KeepAliveObjectsTable* _keep_alive_objs_table;
+static OopHandle _keep_alive_objs_array;
 static OopHandle _null_queue;
 
 void AOTReferenceObjSupport::initialize(TRAPS) {
@@ -103,41 +125,76 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
     // updated concurrently, so we can remove GC'ed entries ...
     assert(CDSConfig::allow_only_single_java_thread(), "Required");
 
-    TempNewSymbol method_name = SymbolTable::new_symbol("prepareForAOTCache");
-    JavaValue result(T_VOID);
-    JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+    {
+      TempNewSymbol method_name = SymbolTable::new_symbol("assemblySetup");
+      JavaValue result(T_VOID);
+      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
                            method_name,
                            vmSymbols::void_method_signature(),
                            CHECK);
+    }
+
+    {
+      Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
+      Klass* cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
+      TempNewSymbol method_name = SymbolTable::new_symbol("getKeepAliveObjects");
+      TempNewSymbol method_sig = SymbolTable::new_symbol("()[Ljava/lang/Object;");
+      JavaValue result(T_OBJECT);
+      JavaCalls::call_static(&result, cds_klass, method_name, method_sig, CHECK);
+
+      _keep_alive_objs_array = OopHandle(Universe::vm_global(), result.get_oop());
+    }
   }
 }
 
+void AOTReferenceObjSupport::init_keep_alive_objs_table() {
+  assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
+  oop a = _keep_alive_objs_array.resolve();
+  if (a != nullptr) {
+    precond(a->is_objArray());
+    precond(CDSConfig::is_dumping_method_handles());
+    objArrayOop array = objArrayOop(a);
+
+    _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
+    for (int i = 0; i < array->length(); i++) {
+      oop obj = array->obj_at(i);
+      _keep_alive_objs_table->put(obj, true); // The array may have duplicated entries but that's OK.
+    }
+  }
+}
+
+// Returns true IFF obj is an instance of java.lang.ref.Reference. If so, perform extra eligibility checks.
 bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
   // We have a single Java thread. This means java.lang.ref.Reference$ReferenceHandler thread
   // is not running. Otherwise the checks for next/discovered may not work.
   precond(CDSConfig::allow_only_single_java_thread());
+  assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
 
   if (obj->klass()->is_subclass_of(vmClasses::Reference_klass())) {
     oop referent = obj->obj_field(java_lang_ref_Reference::referent_offset());
     oop queue = obj->obj_field(java_lang_ref_Reference::queue_offset());
     oop next = java_lang_ref_Reference::next(obj);
     oop discovered = java_lang_ref_Reference::discovered(obj);
+    bool needs_special_cleanup = (queue != _null_queue.resolve());
 
-    if (next != nullptr || discovered != nullptr) {
-      if (queue != _null_queue.resolve()) {
-        ResourceMark rm;
-        log_error(cds, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
-                             p2i(obj), obj->klass()->external_name());
-        log_error(cds, heap)("referent = " PTR_FORMAT
-                             ", queue = " PTR_FORMAT
-                             ", next = " PTR_FORMAT
-                             ", discovered = " PTR_FORMAT,
-                             p2i(referent), p2i(queue), p2i(next), p2i(discovered));
-        log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
-                             PTR_FORMAT ")", p2i(_null_queue.resolve()));
-        HeapShared::debug_trace();
-        MetaspaceShared::unrecoverable_writing_error();
-      }
+    // If you see the errors below, you probably modified the implementation of java.lang.invoke.
+    // Please check the comments at the top of this file.
+    if (needs_special_cleanup && (referent == nullptr || !_keep_alive_objs_table->contains(referent))) {
+      ResourceMark rm;
+
+      log_error(cds, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
+                           p2i(obj), obj->klass()->external_name());
+      log_error(cds, heap)("referent = " PTR_FORMAT
+                           ", queue = " PTR_FORMAT
+                           ", next = " PTR_FORMAT
+                           ", discovered = " PTR_FORMAT,
+                           p2i(referent), p2i(queue), p2i(next), p2i(discovered));
+      log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
+                           PTR_FORMAT ")", p2i(_null_queue.resolve()));
+      log_error(cds, heap)("%s", (referent == nullptr) ?
+                           "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
+      HeapShared::debug_trace();
+      MetaspaceShared::unrecoverable_writing_error();
     }
 
     if (log_is_enabled(Info, cds, ref)) {

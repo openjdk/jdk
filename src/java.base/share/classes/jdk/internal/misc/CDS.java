@@ -103,6 +103,15 @@ public class CDS {
         keepAliveList.add(s);
     }
 
+    // This is called by native JVM code at the very end of Java execution before
+    // dumping the static archive.
+    // It collects the objects from keepAliveList so that they can be easily processed
+    // by the native JVM code to check that any Reference objects that need special
+    // clean up must have been registed with keepAlive()
+    private static Object[] getKeepAliveObjects() {
+        return keepAliveList.toArray();
+    }
+
     /**
      * Initialize archived static fields in the given Class using archived
      * values from CDS dump time. Also initialize the classes of objects in

@@ -33,6 +33,7 @@
  * @build WeakReferenceTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar weakref.jar
  *             WeakReferenceTestApp WeakReferenceTestApp$Inner ShouldNotBeAOTInited ShouldNotBeArchived SharedQueue
+ *             WeakReferenceTestBadApp1 WeakReferenceTestBadApp2
  * @run driver WeakReferenceTest AOT
  */
 
@@ -41,19 +42,40 @@ import java.lang.ref.ReferenceQueue;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jtreg.SkippedException;
 
 public class WeakReferenceTest {
     static final String appJar = ClassFileInstaller.getJarPath("weakref.jar");
-    static final String mainClass = "WeakReferenceTestApp";
+
+    static final String goodApp = "WeakReferenceTestApp";
+    static final String badApp1 = "WeakReferenceTestBadApp1";
+    static final String badApp2 = "WeakReferenceTestBadApp2";
 
     public static void main(String[] args) throws Exception {
-        Tester t = new Tester();
-        t.run(args);
+        new Tester(goodApp).run(args);
+
+        runBadApp(badApp1, args);
+        runBadApp(badApp2, args);
+    }
+
+    static void runBadApp(String badApp, String[] args) throws Exception {
+        try {
+            new Tester(badApp).run(args);
+            throw new RuntimeException(badApp + " did not fail in assembly phase as expected");
+        } catch (SkippedException e) {
+            System.out.println("Negative test: expected SkippedException");
+        }
     }
 
     static class Tester extends CDSAppTester {
-        public Tester() {
+        String mainClass;
+        public Tester(String mainClass) {
             super(mainClass);
+            this.mainClass = mainClass;
+
+            if (mainClass != goodApp) {
+                setCheckExitValue(false);
+            }
         }
 
         @Override
@@ -66,7 +88,7 @@ public class WeakReferenceTest {
             if (runMode == RunMode.ASSEMBLY) {
                 return new String[] {
                     "-Xlog:gc,cds+class=debug",
-                    "-XX:AOTInitTestClass=WeakReferenceTestApp",
+                    "-XX:AOTInitTestClass=" + mainClass,
                     "-Xlog:cds+map,cds+map+oops=trace:file=cds.oops.txt:none:filesize=0",
                 };
             } else {
@@ -86,6 +108,17 @@ public class WeakReferenceTest {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (runMode == RunMode.ASSEMBLY && mainClass != goodApp) {
+                out.shouldNotHaveExitValue(0);
+                out.shouldMatch("Cannot archive reference object .* of class java.lang.ref.WeakReference");
+                if (mainClass == badApp1) {
+                    out.shouldContain("referent cannot be null");
+                } else {
+                    out.shouldContain("referent is not registered with CDS.keepAlive()");
+                }
+                throw new SkippedException("Assembly phase expected to fail");
+            }
+
             out.shouldHaveExitValue(0);
             out.shouldNotContain("Unexpected exception:");
         }
@@ -93,8 +126,7 @@ public class WeakReferenceTest {
 }
 
 class WeakReferenceTestApp {
-    // This class is NOT aot-initialized
-    static class Inner {
+    static class Inner { // This class is NOT aot-initialized
         static boolean WeakReferenceTestApp_clinit_executed;
     }
 
@@ -247,4 +279,31 @@ class SharedQueue {
     static ReferenceQueue<Object> queue() {
         return sharedQueueInstance.theQueue;
     }
+}
+
+class WeakReferenceTestBadApp1 {
+    static WeakReference refWithQueue;
+    static SharedQueue sharedQueueInstance;
+
+    static {
+        // See comments in aotReferenceObjSupport.cpp: group [2] references cannot have null referent.
+        sharedQueueInstance = SharedQueue.sharedQueueInstance;
+        refWithQueue = new WeakReference(String.class, SharedQueue.queue());
+        refWithQueue.clear();
+    }
+
+    public static void main(String args[]) {}
+}
+
+class WeakReferenceTestBadApp2 {
+    static WeakReference refWithQueue;
+    static SharedQueue sharedQueueInstance;
+
+    static {
+        // See comments in aotReferenceObjSupport.cpp: group [2] references must be registered with CDS.keepAlive()
+        sharedQueueInstance = SharedQueue.sharedQueueInstance;
+        refWithQueue = new WeakReference(String.class, SharedQueue.queue());
+    }
+
+    public static void main(String args[]) {}
 }

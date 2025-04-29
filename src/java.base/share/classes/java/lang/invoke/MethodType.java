@@ -1384,7 +1384,7 @@ s.writeObject(this.parameterArray());
 
     // This is called from C code, at the very end of Java code execution
     // during the AOT cache assembly phase.
-    private static void prepareForAOTCache() {
+    private static void assemblySetup() {
         internTable.prepareForAOTCache();
     }
 }
