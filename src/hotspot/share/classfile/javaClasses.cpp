@@ -4821,7 +4821,7 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
   assert(is_instance(loader), "loader must be oop");
   assert(cl == nullptr || is_instance(cl), "cl argument must be oop");
   oop acl = loader;
-  debug_only(jint loop_count = 0);
+  DEBUG_ONLY(jint loop_count = 0);
   // This loop taken verbatim from ClassLoader.java:
   do {
     acl = parent(acl);
