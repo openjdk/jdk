@@ -86,6 +86,18 @@ public final class CaptureStateUtil {
                     + " does not " + info);
         }
 
+        @Override
+        public int hashCode() {
+            return returnType.hashCode() ^ stateName.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            // Don't use a record pattern to save on startup time
+            return obj instanceof BasicKey that &&
+                    returnType.equals(that.returnType) &&
+                    stateName.equals(that.stateName);
+        }
     }
 
     private CaptureStateUtil() {}
