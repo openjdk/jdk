@@ -27,7 +27,7 @@
  *@summary Verifies that sampled European locales use consistent short time zone names.
  *         Originally assumed all European locales had the same short names,
  *         but due to changes in time zone data and locale handling, that is no longer guaranteed.
- *         This test now verifies that a representative sample of locales (e.g., DE, FR, IT)
+ *         This test now verifies that a representative sample of locales (e.g., fr, it)
  *         still use the same short names (CET/CEST).
  */
 
