@@ -1059,7 +1059,8 @@ AOTCodeAddressTable::~AOTCodeAddressTable() {
 #define _c_str_max  MAX_STR_COUNT
 #define _c_str_base _all_max
 
-static const char* _C_strings[MAX_STR_COUNT] = {nullptr};
+static const char* _C_strings_in[MAX_STR_COUNT] = {nullptr}; // Incoming strings
+static const char* _C_strings[MAX_STR_COUNT]    = {nullptr}; // Our duplicates
 static int _C_strings_count = 0;
 static int _C_strings_s[MAX_STR_COUNT] = {0};
 static int _C_strings_id[MAX_STR_COUNT] = {0};
@@ -1132,19 +1133,26 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
     MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
-      if (_C_strings[i] == str) {
-        return str; // Found existing one
+      if (_C_strings_in[i] == str) {
+        return _C_strings[i]; // Found previous one - return our duplicate
       } else if (strcmp(_C_strings[i], str) == 0) {
         return _C_strings[i];
       }
     }
     // Add new one
     if (_C_strings_count < MAX_STR_COUNT) {
+      // Passed in string can be freed and used space become inaccessible.
+      // Keep original address but duplicate string for future compare.
       _C_strings_id[_C_strings_count] = -1; // Init
-      _C_strings[_C_strings_count++] = str;
+      _C_strings_in[_C_strings_count] = str;
+      const char* dup = os::strdup(str);
+      _C_strings[_C_strings_count++] = dup;
       if (log.is_enabled()) {
-        log.print_cr("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(str), str);
+        log.print_cr("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
       }
+      return dup;
+    } else {
+      fatal("Number of C strings >= MAX_STR_COUNT");
     }
   }
   return str;
@@ -1273,7 +1281,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
           code_blob->print_on(tty);
           code_blob->print_code_on(tty);
           os::find(addr, tty);
-          fatal("Address " INTPTR_FORMAT " for <unknown> is missing in AOT Code Cache addresses table", p2i(addr));
+          fatal("Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
         }
       } else {
         return _extrs_base + id;
