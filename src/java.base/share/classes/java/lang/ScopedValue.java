@@ -307,7 +307,7 @@ public final class ScopedValue<T> {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method in
      * this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @since 21
+     * @since 25
      */
     public static final class Carrier {
         // Bit masks: a 1 in position n indicates that this set of bound values
@@ -409,7 +409,7 @@ public final class ScopedValue<T> {
          * @return the result
          * @throws StructureViolationException if a structure violation is detected
          * @throws X if {@code op} completes with an exception
-         * @since 23
+         * @since 25
          */
         public <R, X extends Throwable> R call(CallableOp<? extends R, X> op) throws X {
             Objects.requireNonNull(op);
@@ -493,7 +493,7 @@ public final class ScopedValue<T> {
      *
      * @param <T> result type of the operation
      * @param <X> type of the exception thrown by the operation
-     * @since 23
+     * @since 25
      */
     @FunctionalInterface
     public interface CallableOp<T, X extends Throwable> {
