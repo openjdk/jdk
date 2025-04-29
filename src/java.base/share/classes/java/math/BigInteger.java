@@ -2600,8 +2600,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (exponent == 0 || this.equals(ONE))
             return ONE;
 
-        if (signum == 0)
-            return ZERO;
+        if (signum == 0 || exponent == 1)
+            return this;
 
         BigInteger base = this.abs();
 
