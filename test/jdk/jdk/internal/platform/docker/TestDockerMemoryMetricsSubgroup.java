@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.platform.Metrics;
+import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerfileConfig;
@@ -30,6 +31,7 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
 
 import java.util.ArrayList;
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
 /*
@@ -45,6 +47,7 @@ import jtreg.SkippedException;
  */
 
 public class TestDockerMemoryMetricsSubgroup {
+    private static final boolean IS_DOCKER = Container.ENGINE_COMMAND.contains("docker");
     private static final String imageName =
             DockerfileConfig.getBaseImageName() + ":" +
             DockerfileConfig.getBaseImageVersion();
@@ -58,6 +61,9 @@ public class TestDockerMemoryMetricsSubgroup {
         if (!DockerTestUtils.canTestDocker()) {
             System.out.println("Unable to run docker tests.");
             return;
+        }
+        if (IS_DOCKER && TestDockerMemoryMetricsSubgroup.DockerVersion.VERSION_20_10_0.compareTo(getDockerVersion()) > 0) {
+            throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
         }
         if ("cgroupv1".equals(metrics.getProvider())) {
             testMemoryLimitSubgroupV1("200m", "400m", false);
@@ -116,5 +122,79 @@ public class TestDockerMemoryMetricsSubgroup {
             "MetricsMemoryTester memory " + innerSize);
 
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
+    }
+
+    // pre: IS_DOCKER == true
+    private static String getDockerVersionStr() {
+        if (!IS_DOCKER) {
+            return null;
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "--version");
+            OutputAnalyzer out = new OutputAnalyzer(pb.start())
+                    .shouldHaveExitValue(0);
+            String result = out.asLines().get(0);
+            System.out.println(Container.ENGINE_COMMAND + " --version returning: " + result);
+            return result;
+        } catch (Exception e) {
+            System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
+            return null;
+        }
+    }
+
+    private static TestDockerMemoryMetricsSubgroup.DockerVersion getDockerVersion() {
+        return TestDockerMemoryMetricsSubgroup.DockerVersion.fromVersionString(getDockerVersionStr());
+    }
+
+    private static class DockerVersion implements Comparable<TestDockerMemoryMetricsSubgroup.DockerVersion> {
+        private static final TestDockerMemoryMetricsSubgroup.DockerVersion DEFAULT = new TestDockerMemoryMetricsSubgroup.DockerVersion(0, 0, 0);
+        private static final TestDockerMemoryMetricsSubgroup.DockerVersion VERSION_20_10_0 = new TestDockerMemoryMetricsSubgroup.DockerVersion(20, 10, 0);
+        private final int major;
+        private final int minor;
+        private final int micro;
+
+        private DockerVersion(int major, int minor, int micro) {
+            this.major = major;
+            this.minor = minor;
+            this.micro = micro;
+        }
+
+        @Override
+        public int compareTo(TestDockerMemoryMetricsSubgroup.DockerVersion other) {
+            if (this.major > other.major) {
+                return 1;
+            } else if (this.major < other.major) {
+                return -1;
+            } else { // equal major
+                if (this.minor > other.minor) {
+                    return 1;
+                } else if (this.minor < other.minor) {
+                    return -1;
+                } else { // equal majors and minors
+                    if (this.micro > other.micro) {
+                        return 1;
+                    } else if (this.micro < other.micro) {
+                        return -1;
+                    } else {
+                        // equal majors, minors, micro
+                        return 0;
+                    }
+                }
+            }
+        }
+
+        private static TestDockerMemoryMetricsSubgroup.DockerVersion fromVersionString(String version) {
+            try {
+                // Example 'podman version 3.2.1'
+                String versNums = version.split("\\s+", 3)[2];
+                String[] numbers = versNums.split("\\.", 3);
+                return new TestDockerMemoryMetricsSubgroup.DockerVersion(Integer.parseInt(numbers[0]),
+                        Integer.parseInt(numbers[1]),
+                        Integer.parseInt(numbers[2]));
+            } catch (Exception e) {
+                System.out.println("Failed to parse docker version: " + version);
+                return DEFAULT;
+            }
+        }
     }
 }
