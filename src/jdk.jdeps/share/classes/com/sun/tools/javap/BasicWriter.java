@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javap;
 import java.io.PrintWriter;
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
 import java.util.Map;
@@ -72,11 +73,12 @@ public class BasicWriter {
             throw new AssertionError();
     }
 
-    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags) {
-        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location());
+    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags, ClassFileFormatVersion cffv) {
+        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location(), cffv);
     }
 
-    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location) {
+    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
+        // TODO pass cffv to maskToAccessFlags
         try {
             return AccessFlag.maskToAccessFlags(mask, location);
         } catch (IllegalArgumentException ex) {
