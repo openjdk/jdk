@@ -3503,6 +3503,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return code;
   }
 
+  // Yet another environment variable: _JAVA_OPTIONS. This mimics the classic VM.
+  // This is an undocumented feature.
   code = parse_java_options_environment_variable(&initial_java_options_args);
   if (code != JNI_OK) {
     return code;
