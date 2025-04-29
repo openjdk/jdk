@@ -520,7 +520,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
+  fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
   # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
   # full qualified llvm_symbolizer path in the __ubsan_default_options() function in
