@@ -99,8 +99,10 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
-
-  MaxVectorSize = 16;
+  MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_ERGO(AlignVector, false);
+  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
@@ -270,8 +272,6 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
   }
-  
-
 
   if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
