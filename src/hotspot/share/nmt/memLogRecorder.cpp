@@ -59,6 +59,8 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/vmError.hpp"
 
+bool NMTRecorder_Locker::_safe_to_use = false;
+
 #if defined(LINUX) || defined(__APPLE__)
 
 #include <locale.h>
@@ -71,13 +73,9 @@
 #include <malloc/malloc.h>
 #endif
 
-bool NMTRecorder_Locker::_safe_to_use = false;
-
-#if defined(LINUX) || defined(__APPLE__)
 #include <pthread.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#endif
 
 #define LD_FORMAT "%'ld"
 
