@@ -32,9 +32,7 @@
  *      BadPushPromiseTest
  */
 
-import jdk.httpclient.test.lib.http2.Http2Handler;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -58,6 +56,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
 import static org.testng.Assert.*;
@@ -74,14 +73,13 @@ public class BadPushPromiseTest {
 
     static final String MAIN_RESPONSE_BODY = "the main response body";
 
-    Http2TestServer server;
+    HttpServerAdapters.HttpTestServer server;
     URI uri;
 
     @BeforeTest
     public void setup() throws Exception {
-        server = new Http2TestServer(false, 0);
-        Http2Handler handler = new ServerPushHandler(MAIN_RESPONSE_BODY
-        );
+        server = HttpServerAdapters.HttpTestServer.create(HTTP_2);
+        HttpServerAdapters.HttpTestHandler handler = new ServerPushHandler(MAIN_RESPONSE_BODY);
         server.addHandler(handler, "/");
         server.start();
         int port = server.getAddress().getPort();
@@ -146,7 +144,7 @@ public class BadPushPromiseTest {
     }
 
     // --- server push handler ---
-    static class ServerPushHandler implements Http2Handler {
+    static class ServerPushHandler implements HttpServerAdapters.HttpTestHandler {
 
         private final String mainResponseBody;
 
@@ -154,7 +152,7 @@ public class BadPushPromiseTest {
             this.mainResponseBody = mainResponseBody;
         }
 
-        public void handle(Http2TestExchange exchange) throws IOException {
+        public void handle(HttpServerAdapters.HttpTestExchange exchange) throws IOException {
             System.err.println("Server: handle " + exchange);
             try (InputStream is = exchange.getRequestBody()) {
                 is.readAllBytes();
@@ -170,7 +168,7 @@ public class BadPushPromiseTest {
             }
         }
 
-        private void pushPromise(Http2TestExchange exchange) {
+        private void pushPromise(HttpServerAdapters.HttpTestExchange exchange) {
             URI requestURI = exchange.getRequestURI();
             String query = exchange.getRequestURI().getQuery();
             int badHeadersIndex = Integer.parseInt(query.substring(query.indexOf("=") + 1));
