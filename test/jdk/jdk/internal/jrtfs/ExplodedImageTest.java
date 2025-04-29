@@ -23,6 +23,7 @@
 
 import jdk.internal.jrtfs.ExplodedImageHelper;
 import jdk.internal.jrtfs.ExplodedImageHelper.Node;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,10 +32,18 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
@@ -60,9 +69,9 @@ public class ExplodedImageTest {
                     two/foo/baz/Baz1.class
                     three/foo/baz/Baz2.class
                     """})
-    public void testBasicNodes(String fileTree, @TempDir Path rootDir) throws IOException {
+    public void testCommonModuleExpectations(String fileTree, @TempDir Path rootDir) throws IOException {
         String separator = rootDir.getFileSystem().getSeparator();
-        List<String> resourceNames = buildFileHierarchy(rootDir, fileTree);
+        Set<String> resourceNames = buildFileHierarchy(rootDir, fileTree);
         ExplodedImageHelper image = new ExplodedImageHelper(rootDir);
 
         // All names here start with "/modules/...".
@@ -72,9 +81,24 @@ public class ExplodedImageTest {
             assertNotNull(node, "Expected node for resource name: " + name);
             String content = new String(node.getResource(), UTF_8);
 
+            // Tests that each resource (underlying file) has the expected contents.
             Path expectedPath = toRelativePath(name.substring("/modules/".length()), separator);
             assertEquals("Path: " + expectedPath, content);
         }
+
+        assertEquals(0,
+                walk(image, "/modules").filter(Node::isLink).count(),
+                "Modules directory should not contain link nodes.");
+        assertEquals(resourceNames,
+                walk(image, "/modules")
+                        .filter(n -> !n.isDirectory())
+                        .map(Node::getName)
+                        .collect(toSet()),
+                "Mismatched module nodes.");
+        // All non-directory nodes should throw IAE if asked for children.
+        walk(image, "/modules")
+                .filter(n -> !n.isDirectory())
+                .forEach(n -> assertThrows(IllegalArgumentException.class, n::getChildNames));
     }
 
     @Test
@@ -88,25 +112,49 @@ public class ExplodedImageTest {
         buildFileHierarchy(rootDir, fileTree);
         ExplodedImageHelper image = new ExplodedImageHelper(rootDir);
 
-        Node fooBar = image.findNode("/packages/foo.bar");
-        assertNotNull(fooBar, "Expected node for name: " + fooBar);
-        Node fooBaz = image.findNode("/packages/foo.baz");
-        assertNotNull(fooBaz, "Expected node for name: " + fooBaz);
+        assertTrue(walk(image, "/packages").allMatch(n -> n.isLink() || n.isDirectory()));
+        Set<String> packages = assertNode(image, "/packages").getChildNames();
+        assertEquals(
+                Set.of("/packages/foo", "/packages/foo.bar", "/packages/foo.baz"),
+                packages,
+                "Unexpected package names: " + packages);
 
-        List<String> fooBarMods = fooBar.getChildNames();
-        assertEquals(2, fooBarMods.size());
-        assertTrue(fooBarMods.contains("/packages/foo.bar/one"));
-        assertTrue(fooBarMods.contains("/packages/foo.bar/two"));
+        Set<String> fooBarMods = assertNode(image, "/packages/foo.bar").getChildNames();
+        assertEquals(
+                Set.of("/packages/foo.bar/one", "/packages/foo.bar/two"),
+                fooBarMods,
+                "Unexpected module names links: " + fooBarMods);
 
-        List<String> fooBazMods = fooBaz.getChildNames();
-        assertEquals(2, fooBazMods.size());
-        assertTrue(fooBazMods.contains("/packages/foo.baz/two"));
-        assertTrue(fooBazMods.contains("/packages/foo.baz/three"));
+        Set<String> fooBazMods = assertNode(image, "/packages/foo.baz").getChildNames();
+        assertEquals(
+                Set.of("/packages/foo.baz/two", "/packages/foo.baz/three"),
+                fooBazMods,
+                "Unexpected module names links: " + fooBazMods);
+    }
+
+    static Node assertNode(ExplodedImageHelper image, String path) {
+        Node node = image.findNode(path);
+        assertNotNull(node, "Expected non-null node for path: " + path);
+        return node;
+    }
+
+    static Stream<Node> walk(ExplodedImageHelper image, String start) {
+        List<Node> nodes = new ArrayList<>();
+        depthFirstWalk(start, image, nodes::add);
+        return nodes.stream();
+    }
+
+    static void depthFirstWalk(String path, ExplodedImageHelper image, Consumer<Node> action) {
+        Node node = Objects.requireNonNull(image.findNode(path), "No node at: " + path);
+        action.accept(node);
+        if (node.isDirectory()) {
+            node.getChildNames().forEach(p -> depthFirstWalk(p, image, action));
+        }
     }
 
     // Assumes newline or command separated list of files. Directories are
     // created implicitly, files contain "Path: <relative path>".
-    static List<String> buildFileHierarchy(Path rootDir, String fileTree) {
+    static Set<String> buildFileHierarchy(Path rootDir, String fileTree) {
         String separator = rootDir.getFileSystem().getSeparator();
         List<Path> relativeModulePaths = Arrays.stream(fileTree.split("[\\s\n]+"))
                 .peek(ExplodedImageTest::assertPath)
@@ -115,7 +163,7 @@ public class ExplodedImageTest {
         relativeModulePaths.forEach(p -> createDummyFile(p, rootDir));
         return relativeModulePaths.stream()
                 .map(ExplodedImageTest::toName)
-                .toList();
+                .collect(toSet());
     }
 
     static void createDummyFile(Path p, Path root) {

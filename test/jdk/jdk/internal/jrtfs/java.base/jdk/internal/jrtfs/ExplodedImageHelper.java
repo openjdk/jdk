@@ -28,6 +28,11 @@ import jdk.internal.jimage.ImageReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Exposes enough of the SystemImage API of the ExplodedImage class for testing.
@@ -39,23 +44,36 @@ public final class ExplodedImageHelper {
         this.image = new ExplodedImage(rootDir);
     }
 
-    public Node findNode(String path) throws IOException {
-        return new Node(image.findNode(path));
+    public Node findNode(String path) {
+        try {
+            ImageReader.Node node = image.findNode(path);
+            return node != null ? new Node(node) : null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public final class Node {
         private final ImageReader.Node node;
 
         public Node(ImageReader.Node node) {
-            this.node = node;
+            this.node = Objects.requireNonNull(node);
         }
 
         public String getName() {
             return node.getName();
         }
 
-        public List<String> getChildNames() {
-            return node.getChildren().stream().map(ImageReader.Node::getName).toList();
+        public boolean isDirectory() {
+            return node.isDirectory();
+        }
+
+        public boolean isLink() {
+            return node.isLink();
+        }
+
+        public Set<String> getChildNames() {
+            return node.getChildren().stream().map(ImageReader.Node::getName).collect(toUnmodifiableSet());
         }
 
         public byte[] getResource() throws IOException {
