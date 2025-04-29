@@ -43,16 +43,19 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) {
 
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   assert(method != nullptr, "Should be");
-  oop klass_holder = method->method_holder()->klass_holder();
-  if (klass_holder != nullptr) {
-    // Normal class, return the holder that would block unloading.
-    // This would be either classloader oop for non-hidden classes,
-    // or Java mirror oop for hidden classes.
-    return klass_holder;
+
+  InstanceKlass* holder = method->method_holder();
+  if (holder->class_loader_data()->is_permanent_class_loader_data()) {
+    // Method holder class cannot be unloaded.
+    return nullptr;
   }
 
-  // Null holder, the relevant class would not be unloaded.
-  return nullptr;
+  // Return the holder that would block unloading.
+  // This would be either classloader oop for non-hidden classes,
+  // or Java mirror oop for hidden classes.
+  oop klass_holder = holder->klass_holder();
+  assert(klass_holder != nullptr, "Should be");
+  return klass_holder;
 }
 
 void UnloadableMethodHandle::release() {
