@@ -34,8 +34,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import static java.util.stream.Collectors.joining;
 import static jdk.internal.jshell.tool.JShellTool.RECORD_SEPARATOR;
@@ -120,15 +123,10 @@ class Startup {
     }
 
     private static final String DEFAULT_STARTUP_NAME = "DEFAULT";
-    private static final String DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS = "DEFAULT_NO_MODULE_IMPORTS";
-    private static final String PREVIEW_DEFAULT_STARTUP_NAME = "PREVIEW_DEFAULT";
 
     // cached DEFAULT start-up
-    private static Startup[] defaultStartup = new Startup[] {
-        null, //standard startup
-        null, //JDK 24 and older startup
-        null  //preview startup
-    };
+    private static Map<DefaultStartupType, Startup> defaultStartup =
+            new EnumMap<>(DefaultStartupType.class);
 
     // the list of entries
     private List<StartupEntry> entries;
@@ -174,9 +172,10 @@ class Startup {
     boolean isDefault() {
         if (entries.size() == 1) {
             StartupEntry sue = entries.get(0);
-            if (sue.isBuiltIn && (sue.name.equals(DEFAULT_STARTUP_NAME) ||
-                                  sue.name.equals(DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS) ||
-                                  sue.name.equals(PREVIEW_DEFAULT_STARTUP_NAME))) {
+            if (sue.isBuiltIn &&
+                Arrays.stream(DefaultStartupType.values())
+                      .map(DefaultStartupType::getResourceName)
+                      .anyMatch(sue.name::equals)) {
                 return true;
             }
         }
@@ -340,28 +339,47 @@ class Startup {
      */
     static Startup defaultStartup(String sourceLevel, boolean preview, MessageHandler mh) {
         Source source = Source.lookup(sourceLevel);
-        boolean hasModuleImports = source == null ||
-                                   Feature.MODULE_IMPORTS.allowedInSource(source);
-        int idx = preview ? 2 : !hasModuleImports ? 1 : 0;
+        DefaultStartupType type;
+        if (preview) {
+            type = DefaultStartupType.PREVIEW_DEFAULT_STARTUP;
+        } else if (source == null ||
+                   Feature.MODULE_IMPORTS.allowedInSource(source)) {
+            type = DefaultStartupType.DEFAULT_STARTUP;
+        } else {
+            type = DefaultStartupType.DEFAULT_STARTUP_NO_MODULE_IMPORTS;
+        }
 
-        if (defaultStartup[idx] != null) {
-            return defaultStartup[idx];
-        }
-        String resourceName = preview ? PREVIEW_DEFAULT_STARTUP_NAME
-                                      : !hasModuleImports ? DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS
-                                                          : DEFAULT_STARTUP_NAME;
-        try {
-            String content = readResource(resourceName);
-            return defaultStartup[idx] = new Startup(
-                    new StartupEntry(true, DEFAULT_STARTUP_NAME, content));
-        } catch (AccessDeniedException e) {
-            mh.errormsg("jshell.err.file.not.accessible", "jshell", resourceName, e.getMessage());
-        } catch (NoSuchFileException e) {
-            mh.errormsg("jshell.err.file.not.found", "jshell", resourceName);
-        } catch (Exception e) {
-            mh.errormsg("jshell.err.file.exception", "jshell", resourceName, e);
-        }
-        return defaultStartup[idx] = noStartup();
+        return defaultStartup.computeIfAbsent(type, t -> {
+            String resourceName = t.getResourceName();
+
+            try {
+                String content = readResource(resourceName);
+                return new Startup(
+                        new StartupEntry(true, DEFAULT_STARTUP_NAME, content));
+            } catch (AccessDeniedException e) {
+                mh.errormsg("jshell.err.file.not.accessible", "jshell", resourceName, e.getMessage());
+            } catch (NoSuchFileException e) {
+                mh.errormsg("jshell.err.file.not.found", "jshell", resourceName);
+            } catch (Exception e) {
+                mh.errormsg("jshell.err.file.exception", "jshell", resourceName, e);
+            }
+            return noStartup();
+        });
     }
 
+    private enum DefaultStartupType {
+        DEFAULT_STARTUP("DEFAULT"),
+        DEFAULT_STARTUP_NO_MODULE_IMPORTS("DEFAULT_NO_MODULE_IMPORTS"),
+        PREVIEW_DEFAULT_STARTUP("PREVIEW_DEFAULT");
+
+        private final String resourceName;
+
+        private DefaultStartupType(String resourceName) {
+            this.resourceName = resourceName;
+        }
+
+        public String getResourceName() {
+            return resourceName;
+        }
+    }
 }

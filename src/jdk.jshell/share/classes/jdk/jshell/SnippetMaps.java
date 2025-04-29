@@ -194,11 +194,11 @@ final class SnippetMaps {
         if (Stream.concat(Stream.of("java.lang"), pkgs).anyMatch(pkg::equals)) {
             return full.substring(pkg.length() + 1);
         }
-        Stream<String> mods = importSnippets()
-                               .filter(isi -> isi.subKind() == SubKind.MODULE_IMPORT_SUBKIND)
-                               .map(isi -> isi.fullname)
-                               .flatMap(this::module2PackagesForImport);
-        if (mods.anyMatch(pkg::equals)) {
+        Stream<String> modPkgs = importSnippets()
+                                   .filter(isi -> isi.subKind() == SubKind.MODULE_IMPORT_SUBKIND)
+                                   .map(isi -> isi.fullname)
+                                   .flatMap(this::module2PackagesForImport);
+        if (modPkgs.anyMatch(pkg::equals)) {
             return full.substring(pkg.length() + 1);
         }
         return full;
