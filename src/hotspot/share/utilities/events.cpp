@@ -57,7 +57,7 @@ static EventLogStack* _event_logs = nullptr;
 
 EventLog::EventLog() : _next(nullptr) {
   // This normally done during bootstrap when we're only single threaded,
-  // but a lockFreeStack in case some are created slightly late.
+  // but use a lockFreeStack because there are some events that are created later.
   _event_logs->_list.push(*this);
 }
 
