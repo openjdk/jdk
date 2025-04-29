@@ -21,18 +21,28 @@
  * questions.
  */
 
+import static jdk.internal.util.OperatingSystem.LINUX;
+import static jdk.internal.util.OperatingSystem.MACOS;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageUserScript;
+import jdk.jpackage.test.JPackageUserScript.WinGlobals;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
 
@@ -55,39 +65,33 @@ public class PostImageScriptTest {
         EXTERNAL_APP_IMAGE
     }
 
-    public record TestSpec(Mode mode, Optional<Path> installDir, boolean verifyAppImageContents) {
+    public record TestSpec(Mode mode, boolean verifyAppImageContents) {
 
         public TestSpec {
             Objects.requireNonNull(mode);
-            Objects.requireNonNull(installDir);
         }
 
         @Override
         public String toString() {
             final var sb = new StringBuilder();
             sb.append(mode);
-            installDir.ifPresent(dir -> {
-                sb.append("; installdir=").append(dir);
-            });
             if (verifyAppImageContents) {
                 sb.append("; verifyAppImageContents");
             }
             return sb.toString();
         }
 
-        void test() {
+        static PackageTest createTest(Mode mode, PackageType... types) {
+            if (types.length > 0 && Stream.of(types).allMatch(Predicate.not(PackageType::isEnabled))) {
+                throw TKit.throwSkippedException(String.format("All native packagers from %s list are disabled", List.of(types)));
+            }
+
+            final var test = new PackageTest().forTypes(types);
+
             final var appImageCmd = JPackageCommand.helloAppImage()
                     .setFakeRuntime().setArgumentValue("--dest", TKit.createTempDirectory("appimage"));
 
             appImageCmd.execute();
-
-            final var test = new PackageTest();
-
-            installDir.ifPresent(dir -> {
-                test.addInitializer(cmd -> {
-                    cmd.addArguments("--install-dir", dir);
-                });
-            });
 
             switch (mode) {
                 case APP -> {
@@ -110,25 +114,41 @@ public class PostImageScriptTest {
                 }
             }
 
+            test.addInitializer(cmd -> {
+                cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+            });
+
+            return test;
+        }
+
+        PackageTest createTest() {
+            return createTest(mode);
+        }
+
+        PackageTest initTest() {
+            return initTest(createTest());
+        }
+
+        PackageTest initTest(PackageTest test) {
             if (verifyAppImageContents) {
                 test.addInitializer(cmd -> {
-                    cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
-
                     final Path runtimeDir;
                     if (TKit.isLinux()) {
                         runtimeDir = Path.of("/").relativize(cmd.appRuntimeDirectory());
-                    } else if (cmd.isRuntime()) {
-                        runtimeDir = ApplicationLayout.javaRuntime().runtimeDirectory();
+                    } else if (!cmd.isRuntime()) {
+                        runtimeDir = ApplicationLayout.platformAppImage().runtimeHomeDirectory();
+                    } else if (TKit.isOSX()) {
+                        runtimeDir = Path.of("Contents/Home");
                     } else {
-                        runtimeDir = ApplicationLayout.platformAppImage().runtimeDirectory();
+                        runtimeDir = Path.of("");
                     }
 
                     final Path runtimeBinDir = runtimeDir.resolve("bin");
 
                     if (TKit.isWindows()) {
                         JPackageUserScript.POST_IMAGE.create(cmd, List.of(
-                                "var fs = new ActiveXObject('Scripting.FileSystemObject')",
-                                "var shell = new ActiveXObject('WScript.Shell')",
+                                WinGlobals.JS_SHELL.expr(),
+                                WinGlobals.JS_FS.expr(),
                                 "WScript.Echo('PWD: ' + fs.GetFolder(shell.CurrentDirectory).Path)",
                                 String.format("WScript.Echo('Probe directory: %s')", runtimeBinDir),
                                 String.format("fs.GetFolder('%s')", runtimeBinDir.toString().replace('\\', '/'))
@@ -143,35 +163,114 @@ public class PostImageScriptTest {
                     }
                 });
             } else {
-                JPackageUserScript.verifyDirectories(test);
+                JPackageUserScript.verifyPackagingDirectories(test);
             }
 
-            test.run(Action.CREATE);
+            return test;
         }
     }
 
-    public static Collection<Object[]> test() {
-        final List<TestSpec> data = new ArrayList<>();
-        for (final var mode : Mode.values()) {
-            for (final var verifyAppImageContents : List.of(true, false)) {
-                data.add(new TestSpec(mode, Optional.empty(), verifyAppImageContents));
-            }
-        }
+    @Test
+    @ParameterSupplier(value="createVerifyAppImageContentsTestSpecs")
+    @ParameterSupplier(value="createVerifyNoNewFilesInDirectoriesTestSpecs")
+    public static void test(TestSpec spec) {
+        spec.initTest().run(Action.CREATE);
+    }
 
-        if (TKit.isLinux()) {
-            for (final var mode : Mode.values()) {
-                data.add(new TestSpec(mode, Optional.of(Path.of("/usr")), true));
-            }
-        }
+    public static Collection<Object[]> createVerifyAppImageContentsTestSpecs() {
+        return createModeTestSpecs(true);
+    }
 
-        return data.stream().map(spec -> {
+    public static Collection<Object[]> createVerifyNoNewFilesInDirectoriesTestSpecs() {
+        return createModeTestSpecs(false);
+    }
+
+    @Test(ifOS = LINUX)
+    @ParameterSupplier(value="createVerifyAppImageContentsTestSpecs")
+    public static void testWithInstallDir(TestSpec spec) {
+        spec.initTest(spec.createTest().addInitializer(cmd -> {
+            cmd.addArguments("--install-dir", "/usr");
+        })).run(Action.CREATE);
+    }
+
+    @Test(ifOS = MACOS)
+    @Parameter("APP")
+    public static void testWithServices(Mode mode) {
+        final var test = TestSpec.createTest(mode, PackageType.MAC_PKG).addInitializer(cmd -> {
+            cmd.addArgument("--launcher-as-service");
+        });
+
+        JPackageUserScript.verifyPackagingDirectories()
+                .withUnchangedDirectory("../services")
+                .withUnchangedDirectory("../support")
+                .withEmptyDirectory("../packages")
+                .apply(test).run(Action.CREATE);
+    }
+
+    @Test
+    public static void testEnvVars() {
+        final Map<PackageType, JPackageUserScript.EnvVarVerifier> verifiers = new HashMap<>();
+
+        final var imageDirOutputPrefix = "image-dir=";
+
+        TestSpec.createTest(Mode.APP).addInitializer(cmd -> {
+            final var verifier = JPackageUserScript.verifyEnvVariables().envVar("JpAppImageDir").create();
+            verifiers.put(cmd.packageType(), verifier);
+
+            final List<String> script = new ArrayList<>();
+            script.addAll(verifier.createScript());
+            if (TKit.isWindows()) {
+                script.add("WScript.Echo('" + imageDirOutputPrefix + "' + fs.GetFolder(shell.CurrentDirectory).Path)");
+            } else {
+                script.add("printf '" + imageDirOutputPrefix + "%s\\n' \"$PWD\"");
+            }
+
+            JPackageUserScript.POST_IMAGE.create(cmd, script);
+
+            cmd.saveConsoleOutput(true);
+
+        }).addBundleVerifier((cmd, result) -> {
+            final var imageDir = result.stdout().getOutput().stream().map(String::stripLeading).filter(str -> {
+                return str.startsWith(imageDirOutputPrefix);
+            }).map(str -> {
+                return str.substring(imageDirOutputPrefix.length());
+            }).findFirst().orElseThrow();
+            final var verifier = verifiers.get(cmd.packageType());
+            // On macOS, the path to app image set from jpackage starts with "/var"
+            // and the value of `PWD` variable in the "post-image" script is a path
+            // starting with "/private/var", which is a target of "/var" symlink.
+            //
+            // Can't use Path.toRealPath() to resolve symlinks because the app image directory is gone.
+            //
+            // Instead, the workaround is to strip all leading path components
+            // before the path component starting with "jdk.jpackage" substring.
+            verifier.verify(Map.of("JpAppImageDir", JPackageUserScript.ExpectedEnvVarValue.create(
+                    stripLeadingNonJPackagePathComponents(imageDir),
+                    PostImageScriptTest::stripLeadingNonJPackagePathComponents)));
+        }).run(Action.CREATE);
+    }
+
+    private static Collection<Object[]> createModeTestSpecs(boolean verifyAppImageContents) {
+        return Stream.of(Mode.values()).map(mode -> {
+            return new TestSpec(mode, verifyAppImageContents);
+        }).map(spec -> {
             return new Object[] {spec};
         }).toList();
     }
 
-    @Test
-    @ParameterSupplier
-    public static void test(TestSpec spec) {
-        spec.test();
+    private static Path stripLeadingNonJPackagePathComponents(String path) {
+        if (!Path.of(path).isAbsolute()) {
+            throw new IllegalArgumentException();
+        }
+
+        final var m = JPACKAGE_TEMP_DIR_REGEXP.matcher(path);
+        if (!m.find()) {
+            TKit.assertUnexpected(String.format("jpackage temp directory not foind in [%s] path", path));
+        }
+
+        return Path.of(m.group());
     }
+
+    private final static Pattern JPACKAGE_TEMP_DIR_REGEXP = Pattern.compile("[\\\\/]jdk\\.jpackage.+$",
+            TKit.isWindows() ? 0 : Pattern.CASE_INSENSITIVE);
 }
