@@ -2647,9 +2647,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Use slightly different algorithms for small and large operands.
         // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
-        if (base.mag.length == 1 && scaleFactor <= Long.SIZE) {
+        if (scaleFactor <= Long.SIZE) {
             // Small number algorithm.  Everything fits into an unsigned long.
-            int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
+            int newSign = (signum < 0 && (exponent & 1) == 1 ? -1 : 1);
             long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
