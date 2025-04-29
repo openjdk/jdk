@@ -71,7 +71,7 @@ public class TestMemoryWithSubgroups {
             System.out.println("Unable to run docker tests.");
             return;
         }
-        if (IS_DOCKER && TestDockerMemoryMetricsSubgroup.DockerVersion.VERSION_20_10_0.compareTo(getDockerVersion()) > 0) {
+        if (IS_DOCKER && TestMemoryWithSubgroups.DockerVersion.VERSION_20_10_0.compareTo(getDockerVersion()) > 0) {
             throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
         }
         if (isRootless()) {
@@ -162,13 +162,13 @@ public class TestMemoryWithSubgroups {
         }
     }
 
-    private static TestDockerMemoryMetricsSubgroup.DockerVersion getDockerVersion() {
-        return TestDockerMemoryMetricsSubgroup.DockerVersion.fromVersionString(getDockerVersionStr());
+    private static TestMemoryWithSubgroups.DockerVersion getDockerVersion() {
+        return TestMemoryWithSubgroups.DockerVersion.fromVersionString(getDockerVersionStr());
     }
 
-    private static class DockerVersion implements Comparable<TestDockerMemoryMetricsSubgroup.DockerVersion> {
-        private static final TestDockerMemoryMetricsSubgroup.DockerVersion DEFAULT = new TestDockerMemoryMetricsSubgroup.DockerVersion(0, 0, 0);
-        private static final TestDockerMemoryMetricsSubgroup.DockerVersion VERSION_20_10_0 = new TestDockerMemoryMetricsSubgroup.DockerVersion(20, 10, 0);
+    private static class DockerVersion implements Comparable<TestMemoryWithSubgroups.DockerVersion> {
+        private static final TestMemoryWithSubgroups.DockerVersion DEFAULT = new TestMemoryWithSubgroups.DockerVersion(0, 0, 0);
+        private static final TestMemoryWithSubgroups.DockerVersion VERSION_20_10_0 = new TestMemoryWithSubgroups.DockerVersion(20, 10, 0);
         private final int major;
         private final int minor;
         private final int micro;
@@ -180,7 +180,7 @@ public class TestMemoryWithSubgroups {
         }
 
         @Override
-        public int compareTo(TestDockerMemoryMetricsSubgroup.DockerVersion other) {
+        public int compareTo(TestMemoryWithSubgroups.DockerVersion other) {
             if (this.major > other.major) {
                 return 1;
             } else if (this.major < other.major) {
@@ -203,12 +203,12 @@ public class TestMemoryWithSubgroups {
             }
         }
 
-        private static TestDockerMemoryMetricsSubgroup.DockerVersion fromVersionString(String version) {
+        private static TestMemoryWithSubgroups.DockerVersion fromVersionString(String version) {
             try {
                 // Example 'docker version 3.2.1'
                 String versNums = version.split("\\s+", 3)[2];
                 String[] numbers = versNums.split("\\.", 3);
-                return new TestDockerMemoryMetricsSubgroup.DockerVersion(Integer.parseInt(numbers[0]),
+                return new TestMemoryWithSubgroups.DockerVersion(Integer.parseInt(numbers[0]),
                         Integer.parseInt(numbers[1]),
                         Integer.parseInt(numbers[2]));
             } catch (Exception e) {
