@@ -259,9 +259,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 if (kind == CLASS) {
                     TypeMirror supertype = e.getSuperclass();
                     if (supertype.getKind() != TypeKind.NONE) {
-                        TypeElement e2 = (TypeElement)
-                            ((DeclaredType) supertype).asElement();
-                        if (e2.getSuperclass().getKind() != TypeKind.NONE)
+                        if (!isUnimportantObjectType(supertype))
                             writer.print(" extends " + supertype);
                     }
                 }
@@ -524,11 +522,27 @@ public class PrintingProcessor extends AbstractProcessor {
             List<? extends TypeParameterElement> typeParams = e.getTypeParameters();
             if (!typeParams.isEmpty()) {
                 writer.print(typeParams.stream()
-                             .map(tpe -> annotationsToString(tpe) + tpe.toString() + " extends " + tpe.getBounds().stream().map(t -> t.toString()).collect(Collectors.joining(" & ")))
+                             .map(tpe -> annotationsToString(tpe) + tpe.toString() + printTypeVariableBoundsIfNeeded(tpe))
                              .collect(Collectors.joining(", ", "<", ">")));
                 if (pad)
                     writer.print(" ");
             }
+        }
+
+        private String printTypeVariableBoundsIfNeeded(TypeParameterElement tpe) {
+            List<? extends TypeMirror> printableBounds =
+                    tpe.getBounds()
+                       .stream()
+                       .filter(type -> !isUnimportantObjectType(type))
+                       .toList();
+
+            if (printableBounds.isEmpty()) {
+                return "";
+            }
+
+            return " extends " + printableBounds.stream()
+                                                .map(t -> t.toString())
+                                                .collect(Collectors.joining(" & "));
         }
 
         private String annotationsToString(Element e) {
@@ -770,5 +784,13 @@ public class PrintingProcessor extends AbstractProcessor {
             writer.print(spaces[indentation]);
         }
 
+        private boolean isUnimportantObjectType(TypeMirror type) {
+            if (!type.getAnnotationMirrors().isEmpty()) {
+                return false;
+            }
+            TypeElement e2 = (TypeElement)
+                ((DeclaredType) type).asElement();
+            return e2.getSuperclass().getKind() == TypeKind.NONE;
+        }
     }
 }
