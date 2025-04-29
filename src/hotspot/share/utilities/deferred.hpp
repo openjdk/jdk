@@ -44,8 +44,6 @@ public:
 
   Deferred()
   DEBUG_ONLY(: _initialized(false)) {
-    static_assert(std::is_trivially_destructible<T>::value,
-    "T in a Deferred<T> should not have a non-trivial destructor, as it will never be called..");
     // Do not construct value, on purpose.
   }
 
