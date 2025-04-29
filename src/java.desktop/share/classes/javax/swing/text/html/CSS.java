@@ -734,7 +734,7 @@ public class CSS implements Serializable {
         valueConvertor.put(CSS.Attribute.BACKGROUND_ATTACHMENT,
                            valueMapper);
         Object generic = new CssValue();
-        for (Attribute key : Attribute.allAttributes) {
+        for (CSS.Attribute key : CSS.Attribute.allAttributes) {
             valueConvertor.putIfAbsent(key, generic);
         }
     }
