@@ -271,6 +271,6 @@ public class PostImageScriptTest {
         return Path.of(m.group());
     }
 
-    private final static Pattern JPACKAGE_TEMP_DIR_REGEXP = Pattern.compile("[\\\\/]jdk\\.jpackage.+$",
+    private static final Pattern JPACKAGE_TEMP_DIR_REGEXP = Pattern.compile("[\\\\/]jdk\\.jpackage.+$",
             TKit.isWindows() ? 0 : Pattern.CASE_INSENSITIVE);
 }

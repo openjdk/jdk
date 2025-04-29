@@ -280,7 +280,7 @@ public class TKitTest extends JUnitAdapter {
             return new Builder(role);
         }
 
-        final static class Builder {
+        static final class Builder {
 
             private Builder(String role) {
                 this.role = role;
