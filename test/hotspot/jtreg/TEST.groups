@@ -449,7 +449,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
- -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/LotsOfJRTClasses.java \
+ -runtime/cds/appcds/LotsOfSyntheticClasses.java \
  -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \

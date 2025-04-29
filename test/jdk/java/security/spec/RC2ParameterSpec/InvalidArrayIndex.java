@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
-#define SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+/*
+ * @test
+ * @bug 8351113
+ * @summary check for negative offset
+ * @library /test/lib
+ */
 
-#include "runtime/javaThread.hpp"
+import jdk.test.lib.Utils;
+import javax.crypto.spec.RC2ParameterSpec;
 
-class JfrSpinlockHelper {
- private:
-  volatile int* const _lock;
+public class InvalidArrayIndex {
 
- public:
-  JfrSpinlockHelper(volatile int* lock) : _lock(lock) {
-    Thread::SpinAcquire(_lock);
-  }
-
-  ~JfrSpinlockHelper() {
-    Thread::SpinRelease(_lock);
-  }
-};
-
-#endif // SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+    public static void main(String[] args) throws Exception {
+        Utils.runAndCheckException(() -> new RC2ParameterSpec(0, new byte[20],
+                Integer.MIN_VALUE), ArrayIndexOutOfBoundsException.class);
+    }
+}
