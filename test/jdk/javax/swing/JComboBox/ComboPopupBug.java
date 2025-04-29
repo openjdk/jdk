@@ -56,6 +56,8 @@ public class ComboPopupBug {
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> closeButton.doClick());
+
+            robot.waitForIdle();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
