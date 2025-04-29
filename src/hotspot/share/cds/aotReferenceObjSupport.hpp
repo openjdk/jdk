@@ -39,6 +39,7 @@ public:
   static void init_keep_alive_objs_table();
   static bool check_if_ref_obj(oop obj);
   static bool skip_field(int field_offset);
+  static bool is_enabled();
 };
 
 #endif // SHARE_CDS_AOTREFERENCEOBJSUPPORT_HPP

@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
@@ -5458,6 +5459,10 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
         klass == vmClasses::MemberName_klass()) {
       return false;
     }
+  }
+
+  if (!AOTReferenceObjSupport::is_enabled() && klass->is_subclass_of(vmClasses::Reference_klass())) {
+    return false;
   }
 
   return true;

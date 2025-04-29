@@ -103,7 +103,17 @@ static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;
 static OopHandle _null_queue;
 
+bool AOTReferenceObjSupport::is_enabled() {
+  // For simplicity, AOTReferenceObjSupport is enabled only when dumping method handles.
+  // Otherwise we won't see Reference objects in the AOT cache. Let's be conservative now.
+  return CDSConfig::is_dumping_method_handles();
+}
+
 void AOTReferenceObjSupport::initialize(TRAPS) {
+  if (!AOTReferenceObjSupport::is_enabled()) {
+    return;
+  }
+
   TempNewSymbol class_name = SymbolTable::new_symbol("java/lang/ref/ReferenceQueue");
   Klass* k = SystemDictionary::resolve_or_fail(class_name, true, CHECK);
   InstanceKlass* ik = InstanceKlass::cast(k);
@@ -120,7 +130,7 @@ void AOTReferenceObjSupport::initialize(TRAPS) {
 
 // Ensure that all group [2] references found by AOTArtifactFinder are eligible.
 void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (AOTReferenceObjSupport::is_enabled()) {
     // This assert means that the MethodType and MethodTypeForm tables won't be
     // updated concurrently, so we can remove GC'ed entries ...
     assert(CDSConfig::allow_only_single_java_thread(), "Required");
@@ -152,7 +162,7 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
     precond(a->is_objArray());
-    precond(CDSConfig::is_dumping_method_handles());
+    precond(AOTReferenceObjSupport::is_enabled());
     objArrayOop array = objArrayOop(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
@@ -171,7 +181,13 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
 
   if (obj->klass()->is_subclass_of(vmClasses::Reference_klass())) {
-    oop referent = obj->obj_field(java_lang_ref_Reference::referent_offset());
+    precond(AOTReferenceObjSupport::is_enabled());
+    precond(JavaClasses::is_supported_for_archiving(obj));
+    precond(_keep_alive_objs_table != nullptr);
+
+    // GC needs to know about this load, It will keep referent alive until the current safepoint ends.
+    oop referent = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(obj, java_lang_ref_Reference::referent_offset());
+
     oop queue = obj->obj_field(java_lang_ref_Reference::queue_offset());
     oop next = java_lang_ref_Reference::next(obj);
     oop discovered = java_lang_ref_Reference::discovered(obj);
