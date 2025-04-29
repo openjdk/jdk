@@ -445,7 +445,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         @Override
         public R visitDeclared(DeclaredType t, P p) {
             scan(t.getTypeArguments(), p);
-            // don't scan enclosing 
+            // don't scan enclosing
             // don't scan super types
             return super.visitDeclared(t, p);
         }
