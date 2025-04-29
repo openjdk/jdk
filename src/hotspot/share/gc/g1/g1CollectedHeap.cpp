@@ -1533,11 +1533,11 @@ void G1CollectedHeap::safepoint_synchronize_end() {
   jlong now = os::elapsed_counter();
   jlong synchronize_duration = now - _last_synchronized_start;
 
-  if (_last_safepoint_refinement_epoch == refinement_epoch()) {
+  if (_last_safepoint_refinement_epoch == _refinement_epoch) {
     _yield_duration_in_refinement_epoch += synchronize_duration;
   } else {
     _last_refinement_epoch_start = now;
-    _last_safepoint_refinement_epoch = refinement_epoch();
+    _last_safepoint_refinement_epoch = _refinement_epoch;
     _yield_duration_in_refinement_epoch = 0;
   }
 

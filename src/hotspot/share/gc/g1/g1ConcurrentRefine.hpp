@@ -134,10 +134,6 @@ class G1ConcurrentRefineSweepState {
     return _state_names[static_cast<uint>(state)];
   }
 
-  // The epoch the sweep has started; used to determine if there has been
-  // a forced card table swap due to a garbage collection while doing work.
-  size_t _sweep_start_epoch;
-
   // Current heap snapshot.
   G1CardTableClaimTable* _sweep_table;
 
@@ -148,8 +144,6 @@ class G1ConcurrentRefineSweepState {
   Tickspan get_duration(State start, State end);
 
   G1ConcurrentRefineStats _stats;
-
-  static size_t refinement_epoch();
 
   // Advances the state to next_state if not interrupted by a changed epoch. Returns
   // to Idle otherwise.

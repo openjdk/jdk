@@ -1092,8 +1092,6 @@ public:
     return G1BarrierSet::g1_barrier_set()->refinement_table();
   }
 
-  size_t refinement_epoch() const { return _refinement_epoch; }
-
   G1CardTable::CardValue* card_table_base() const {
     assert(card_table() != nullptr, "must be");
     return card_table()->byte_map_base();
