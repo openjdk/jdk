@@ -125,6 +125,12 @@ AWT_ASSERT_APPKIT_THREAD;
             isApplicationOwner = YES;
         }
     }
+
+    // Register embedded event listener
+    NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
+    Class clz = [ApplicationDelegate class];
+    [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:@"EmbeddedEvent" object:nil];
+
     checked = YES;
     if (!shouldInstall) {
         [ThreadUtilities setApplicationOwner:NO];
@@ -266,7 +272,6 @@ AWT_ASSERT_APPKIT_THREAD;
     [ctr addObserver:clz selector:@selector(_appDidDeactivate) name:NSApplicationDidResignActiveNotification object:nil];
     [ctr addObserver:clz selector:@selector(_appDidHide) name:NSApplicationDidHideNotification object:nil];
     [ctr addObserver:clz selector:@selector(_appDidUnhide) name:NSApplicationDidUnhideNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:@"EmbeddedEvent" object:nil];
 
     return self;
 }
