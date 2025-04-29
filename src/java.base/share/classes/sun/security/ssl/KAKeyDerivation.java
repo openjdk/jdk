@@ -128,6 +128,9 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             saltSecret = kd.deriveKey("TlsSaltSecret");
 
             // derive handshake secret
+            // NOTE: do not reuse the HKDF object for "TlsEarlySecret" for
+            // the handshake secret key derivation (below) as it may not
+            // work with the "sharedSecret" obj.
             KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             return hkdf.deriveKey(type, HKDFParameterSpec.ofExtract()
                     .addSalt(saltSecret).addIKM(sharedSecret).extractOnly());
