@@ -540,7 +540,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     }
     case Bytecodes::_i2d:
     case Bytecodes::_l2d: {
-
       FloatRegister rdst = dst->as_double_reg();
       // move src to dst register
       if (code == Bytecodes::_i2d) {
@@ -554,7 +553,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_i2f:
     case Bytecodes::_l2f: {
       FloatRegister rdst = dst->as_float_reg();
-
       // move src to dst register
       if (code == Bytecodes::_i2f) {
         __ mtfprwa(rdst, src->as_register());
