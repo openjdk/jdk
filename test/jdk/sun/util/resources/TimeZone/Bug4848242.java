@@ -23,7 +23,7 @@
 
 /*
  *@test
- *@bug 4848242
+ *@bug 8342886
  *@summary Verifies that sampled European locales use consistent short time zone names.
  *         Originally assumed all European locales had the same short names,
  *         but due to changes in time zone data and locale handling, that is no longer guaranteed.
