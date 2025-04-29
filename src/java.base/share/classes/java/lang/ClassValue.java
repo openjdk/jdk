@@ -25,8 +25,6 @@
 
 package java.lang;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -146,7 +144,7 @@ public abstract class ClassValue<T> {
             // invariant:  No false positive matches.  False negatives are OK if rare.
             // The key fact that makes this work: if this.version == e.version,
             // then this thread has a right to observe (final) e.value.
-            return e.value();
+            return e.value;
         // The fast path can fail for any of these reasons:
         // 1. no entry has been computed yet
         // 2. hash code collision (before or after reduction mod cache.length)
@@ -166,13 +164,13 @@ public abstract class ClassValue<T> {
      */
     public void remove(Class<?> type) {
         ClassValueMap map = getMap(type);
-        map.removeEntry(this);
+        map.removeAccess(this);
     }
 
     // Possible functionality for JSR 292 MR 1
     /*public*/ void put(Class<?> type, T value) {
         ClassValueMap map = getMap(type);
-        map.changeEntry(this, value);
+        map.setAccess(this, value);
     }
 
     //| --------
@@ -201,7 +199,7 @@ public abstract class ClassValue<T> {
     private T getFromBackup(Entry<?>[] cache, Class<?> type) {
         Entry<T> e = probeBackupLocations(cache, this);
         if (e != null)
-            return e.value();
+            return e.value;
         return getFromHashMap(type);
     }
 
@@ -214,33 +212,41 @@ public abstract class ClassValue<T> {
     private T getFromHashMap(Class<?> type) {
         // The fail-safe recovery is to fall back to the underlying classValueMap.
         ClassValueMap map = getMap(type);
-        Throwable ex = null;
+        var accessed = map.readAccess(this);
+        if (accessed instanceof Entry) {
+            @SuppressWarnings("unchecked")
+            var cast = (Entry<T>) accessed;
+            return cast.value;
+        }
+
+        RemovalToken permission = (RemovalToken) accessed; // nullable
         for (; ; ) {
-            Entry<T> e = map.startEntry(this);
-            if (!e.isPromise())
-                return e.value();
+            T value;
             try {
-                // Try to make a real entry for the promised version.
-                // e is real if computeValue finishes normally,
-                // otherwise it is still the old promise
-                e = makeEntry(e.version(), computeValue(type));
-            } catch (Throwable problem) {
-                ex = problem;
-            } finally {
-                // Whether computeValue throws or returns normally,
-                // be sure to remove the empty entry.
-                //
-                e = map.finishEntry(this, e);
+                value = computeValue(type);
+            } catch (Throwable ex) {
+                accessed = map.readAccess(this);
+                if (accessed instanceof Entry) {
+                    @SuppressWarnings("unchecked")
+                    var cast = (Entry<T>) accessed;
+                    return cast.value;
+                }
+                // report failure here, but allow other callers to try again
+                if (ex instanceof RuntimeException rte) {
+                    throw rte;
+                } else {
+                    throw ex instanceof Error err ? err : new Error(ex);
+                }
             }
-            if (e != null)    // success, either here or in a racing thread
-                return e.value();
-            if (ex == null)   // a racing thread called remove, so try again
-                continue;
-            // report failure here, but allow other callers to try again
-            if (ex instanceof RuntimeException rte) {
-                throw rte;
+            // computeValue succeed, proceed to install
+            accessed = map.installAccess(this, permission, makeEntry(version(), value));
+            if (accessed instanceof Entry) {
+                @SuppressWarnings("unchecked")
+                var cast = (Entry<T>) accessed;
+                return cast.value;
             } else {
-                throw ex instanceof Error err ? err : new Error(ex);
+                permission = (RemovalToken) accessed;
+                // repeat
             }
         }
     }
@@ -249,7 +255,7 @@ public abstract class ClassValue<T> {
     boolean match(Entry<?> e) {
         // racing e.version : null (blank) => unique Version token => null (GC-ed version)
         // non-racing this.version : v1 => v2 => ... (updates are read faithfully from volatile)
-        return (e != null && e.get() == this.version);
+        return (e != null && e.version() == this.version);
         // invariant:  No false positives on version match.  Null is OK for false negative.
         // invariant:  If version matches, then e.value is readable (final set in Entry.<init>)
     }
@@ -309,90 +315,50 @@ public abstract class ClassValue<T> {
     private volatile Version<T> version = new Version<>(this);
     Version<T> version() { return version; }
     void bumpVersion() { version = new Version<>(this); }
-    static class Version<T> {
+    static final class Version<T> {
         private final ClassValue<T> classValue;
         Version(ClassValue<T> classValue) { this.classValue = classValue; }
         ClassValue<T> classValue() { return classValue; }
-        Entry<T> createPromise() { return new Entry<>(this); }
         boolean isLive() { return classValue.version() == this; }
+    }
+
+    private static final class RemovalToken {
+        private final WeakReference<Thread> actor;
+
+        private RemovalToken() {
+            this.actor = new WeakReference<>(Thread.currentThread());
+        }
+
+        // Arguments are nullable, intentionally
+        static boolean areCompatible(RemovalToken current, RemovalToken original) {
+            assert current != null || original == null : current + " : " + original;
+            return current == original || current.actor.refersTo(Thread.currentThread());
+        }
     }
 
     /** One binding of a value to a class via a ClassValue.
      *  Shared for the map and the cache array.
-     *  The states are only meaningful for the cache array; whatever in the map
+     *  The version is only meaningful for the cache array; whatever in the map
      *  is authentic, but state informs the cache an entry may be out-of-date.
      *  States are:<ul>
-     *  <li> promise if value == Entry.this
-     *  <li> else dead if version == null
-     *  <li> else stale if version != classValue.version
+     *  <li> dead if version == null
+     *  <li> stale if version != classValue.version
      *  <li> else live </ul>
      *  Promises are never put into the cache; they only live in the
      *  backing map while a computeValue call is in flight.
      *  Once an entry goes stale, it can be reset at any time
      *  into the dead state.
      */
-    static class Entry<T> extends WeakReference<Version<T>> {
-        final Object value;  // usually of type T, but sometimes (Entry)this
+    static final class Entry<T> {
+        final T value;
+        final WeakReference<Version<T>> version; // The version exists only for cache invalidation
+
         Entry(Version<T> version, T value) {
-            super(version);
-            this.value = value;  // for a regular entry, value is of type T
-        }
-        private void assertNotPromise() { assert(!isPromise()); }
-        /** For creating a promise. */
-        Entry(Version<T> version) {
-            super(version);
-            this.value = new PromiseInfo();  // for a promise, value is not of type T, but PromiseInfo!
-        }
-        /** Fetch the value.  This entry must not be a promise. */
-        @SuppressWarnings("unchecked")  // if !isPromise, type is T
-        T value() { assertNotPromise(); return (T) value; }
-
-        boolean isPromise() { return value instanceof PromiseInfo; }
-
-        boolean addPromiseByCurrentThread() {
-            return ((PromiseInfo) value).addCurrentThread();
+            this.value = value;
+            this.version = new WeakReference<>(version);
         }
 
-        boolean isPromisedByCurrentThread() {
-            return ((PromiseInfo) value).containsCurrentThread();
-        }
-
-        // The content of a promise is a non-empty set of threads working on that promise.
-        // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads).
-        // Compared to ThreadTracker, this optimizes optimistically for
-        // single-thread accessors and uses plain instead of concurrent data structures.
-        static final class PromiseInfo {
-            private final Thread initialThread;
-            private Map<Thread, Object> otherThreads; // Must be identity/thread ID-based
-
-            PromiseInfo() {
-                initialThread = Thread.currentThread();
-            }
-
-            boolean addCurrentThread() {
-                Thread t = Thread.currentThread();
-                if (initialThread == t) {
-                    return false;
-                }
-
-                var others = this.otherThreads;
-                if (others == null) {
-                    others = new IdentityHashMap<>();
-                    this.otherThreads = others;
-                }
-                return others.put(t, int.class) == null;
-            }
-
-            boolean containsCurrentThread() {
-                Thread t = Thread.currentThread();
-                if (initialThread == t)
-                    return true;
-                var map = otherThreads;
-                return map != null && map.containsKey(t);
-            }
-        }
-
-        Version<T> version() { return get(); }
+        Version<T> version() { return version.get(); }
         ClassValue<T> classValueOrNull() {
             Version<T> v = version();
             return (v == null) ? null : v.classValue();
@@ -401,16 +367,14 @@ public abstract class ClassValue<T> {
             Version<T> v = version();
             if (v == null)  return false;
             if (v.isLive())  return true;
-            clear();
+            version.clear();
             return false;
         }
         Entry<T> refreshVersion(Version<T> v2) {
-            assertNotPromise();
-            @SuppressWarnings("unchecked")  // if !isPromise, type is T
-            Entry<T> e2 = new Entry<>(v2, (T) value);
-            clear();
-            // value = null -- caller must drop
-            return e2;
+            if (!version.refersTo(v2)) {
+                return new Entry<>(v2, value);
+            }
+            return this;
         }
         static final Entry<?> DEAD_ENTRY = new Entry<>(null, null);
     }
@@ -466,9 +430,10 @@ public abstract class ClassValue<T> {
 
     /** A backing map for all ClassValues.
      *  Gives a fully serialized "true state" for each pair (ClassValue cv, Class type).
+     *  The state may be assigned value or unassigned token.
      *  Also manages an unserialized fast-path cache.
      */
-    static class ClassValueMap extends WeakHashMap<ClassValue.Identity, Entry<?>> {
+    static final class ClassValueMap extends WeakHashMap<ClassValue.Identity, Object> {
         private Entry<?>[] cacheArray;
         private int cacheLoad, cacheLoadLimit;
 
@@ -487,126 +452,54 @@ public abstract class ClassValue<T> {
 
         Entry<?>[] getCache() { return cacheArray; }
 
-        /** Initiate a query.  Store a promise (placeholder) if there is no value yet. */
-        synchronized
-        <T> Entry<T> startEntry(ClassValue<T> classValue) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e = (Entry<T>) get(classValue.identity);
-            Version<T> v = classValue.version();
-            if (e == null) {
-                e = v.createPromise();
-                // The presence of a promise means that a value is pending for v.
-                // Eventually, finishEntry will overwrite the promise.
-                put(classValue.identity, e);
-                // Note that the promise is never entered into the cache!
-                return e;
-            } else if (e.isPromise()) {
-                // Somebody else has asked the same question.
-                // Let the races begin!
-                //
-                // Anything in the map is authentic - even if this promise may
-                // appear "outdated" by version, if it is truly outdated, it
-                // would have been removed or replaced from the map.
-                //
-                // Keep track of which threads observe this particular promise.
-                // All of them are equally racing to fulfill the promise.
-                e.addPromiseByCurrentThread();
-                // Let the VM throw StackOverflowError: sometimes, a
-                // computeValue can trigger class initialization, which
-                // itself triggers another computeValue.
-                return e;
-            } else {
-                // there is already a completed entry here; report it
-                if (e.version() != v) {
-                    // There is a stale but valid entry here; make it fresh again.
-                    // Once an entry is in the hash table, we don't care what its version is.
-                    e = e.refreshVersion(v);
-                    put(classValue.identity, e);
+        // A simple read access to this map, for the initial get access.
+        synchronized <T> Object readAccess(ClassValue<T> classValue) {
+            var item = get(classValue.identity);
+            if (item instanceof Entry) {
+                @SuppressWarnings("unchecked")
+                var entry = (Entry<T>) item;
+                // cache refresh
+                var updated = entry.refreshVersion(classValue.version());
+                if (updated != entry) {
+                    put(classValue.identity, updated);
                 }
+            }
+            return item;
+        }
+
+        // An installation attempt, for when a computeValue finishes.
+        synchronized <T> Object installAccess(ClassValue<T> classValue, RemovalToken computationalToken, Entry<T> entry) {
+            var item = readAccess(classValue);
+            if (item instanceof Entry)
+                return item; // somebody already installed
+            var currentToken = (RemovalToken) item;
+            if (RemovalToken.areCompatible(currentToken, computationalToken)) {
+                put(classValue.identity, entry);
                 // Add to the cache, to enable the fast path, next time.
                 checkCacheLoad();
-                addToCache(classValue, e);
-                return e;
+                addToCache(classValue, entry);
+                return entry;
             }
+            return currentToken;
         }
 
-        /** Finish a query.  Overwrite a matching placeholder.  Drop stale incoming values. */
-        synchronized
-        <T> Entry<T> finishEntry(ClassValue<T> classValue, Entry<T> e) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e0 = (Entry<T>) get(classValue.identity);
-            if (e == e0) {
-                // We can get here during exception processing, unwinding from computeValue.
-                assert(e.isPromise());
-                // Other threads can retry if successful or just propagate their exceptions.
-                remove(classValue.identity);
-                return null;
-            } else if (e0 != null && e0.isPromise()) {
-                if (e0.version() != e.version() || !e0.isPromisedByCurrentThread()) {
-                    // e0 is created after e, whether e failed (promise) or succeeded
-                    return null;  // caller must try again
-                }
-                // If e0 matches the intended entry, there has not been a remove call
-                // between the previous startEntry and now.  So now overwrite e0.
-                Version<T> v = classValue.version();
-                if (e.version() != v)  // removal in unrelated associations
-                    e = e.refreshVersion(v);
-                put(classValue.identity, e);
-                // Add to the cache, to enable the fast path, next time.
-                checkCacheLoad();
-                addToCache(classValue, e);
-                return e;
-            } else {
-                // Some sort of mismatch; caller must try again if e0=null.
-                // This can happen when:
-                // 1. Another thread computes and finishes exceptionally.
-                // 2. A remove() is issued after computation started.
-                return e0;
-            }
+        // A removal, requiring subsequent installations to be up-to-date with it.
+        synchronized void removeAccess(ClassValue<?> classValue) {
+            // Always put in a token to invalidate ongoing computations
+            put(classValue.identity, new RemovalToken());
+            classValue.bumpVersion();
+            removeStaleEntries(classValue);
         }
 
-        /** Remove an entry. */
-        synchronized
-        void removeEntry(ClassValue<?> classValue) {
-            Entry<?> e = remove(classValue.identity);
-            // e == null: Uninitialized, and no pending calls to computeValue.
-            // remove(identity) didn't change anything.  No change.
-            if (e != null) {
-                if (e.isPromise()) {
-                    // Remove the outdated promise to force recomputation.
-                    if (e.isPromisedByCurrentThread()) {
-                        // Notify myself that I am still up-to-date. All other racers are stale.
-                        // That is, the fresh promise contains only this thread as promiser.
-                        put(classValue.identity, classValue.version().createPromise());
-                    }
-                } else {
-                    // Initialized.
-                    // Bump forward to invalidate racy-read cached entries.
-                    classValue.bumpVersion();
-                    // Make all cache elements for this guy go stale.
-                    removeStaleEntries(classValue);
-                }
-            }
-        }
-
-        /** Change the value for an entry. */
-        synchronized
-        <T> void changeEntry(ClassValue<T> classValue, T value) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e0 = (Entry<T>) get(classValue.identity);
-            Version<T> version = classValue.version();
-            if (e0 != null) {
-                if (e0.version() == version && e0.value() == value)
-                    // no value change => no version change needed
-                    return;
-                classValue.bumpVersion();
-                removeStaleEntries(classValue);
-            }
-            Entry<T> e = makeEntry(version, value);
-            put(classValue.identity, e);
+        // A set, requires cache to flush.
+        synchronized <T> void setAccess(ClassValue<T> classValue, T value) {
+            classValue.bumpVersion();
+            removeStaleEntries();
+            var entry = makeEntry(classValue.version(), value);
+            put(classValue.identity, entry);
             // Add to the cache, to enable the fast path, next time.
             checkCacheLoad();
-            addToCache(classValue, e);
+            addToCache(classValue, entry);
         }
 
         //| --------
