@@ -116,12 +116,12 @@ protected:
   // values of ObjAlignmentInBytes.
   template <class KlassType, HeaderMode mode, class OopType>
   static inline size_t calculate_size_for_object_fast(KlassLUTEntry klute, oop obj) {
+    check_oopType<OopType>();
+    check_headerMode<mode>();
+    assert(MinObjAlignmentInBytes == BytesPerWord,
+        "Don't call for non-standard ObjAlignmentInBytes");
     assert(mode != HeaderMode::Uncompressed && UseCompressedClassPointers,
-           "Not for uncompressed class pointer mode");
-    assert((UseCompactObjectHeaders == true) == (mode == HeaderMode::Compact), "HeaderMode mismatch");
-    assert(sizeof(OopType) == 4 || sizeof(OopType) == 8, "odd OopType");
-    assert((UseCompressedOops == true) == (sizeof(OopType) == 4), "OopType mismatch");
-    assert(MinObjAlignmentInBytes == BytesPerWord, "Bad call");
+        "Don't call for uncompressed Klasspointers");
 
     size_t s;
     constexpr KlassKind kind = KlassType::Kind;
@@ -156,6 +156,18 @@ protected:
   static inline bool should_use_slowpath_getsize() {
     return !UseCompressedClassPointers || ObjectAlignmentInBytes != BytesPerWord;
   }
+
+  template <HeaderMode mode>
+  static inline void check_headerMode() {
+    assert(ObjLayout::klass_mode() == mode, "Header mode mismatch");
+  }
+
+  template <typename OopType>
+  static inline void check_oopType() {
+    assert(sizeof(OopType) == 8 || sizeof(OopType) == 4, "strange OopType");
+    assert( (sizeof(OopType) == 4) == (UseCompressedOops == true), "OopType mismatch");
+  }
+
 };
 
 ////////////////////////////////////////////////
@@ -170,6 +182,7 @@ class OopOopIterateDispatch : public DispatchBase {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate<OopType, OopClosureType>(obj, cl, klute);
     }
 
@@ -215,6 +228,7 @@ class OopOopIterateDispatchReverse : public DispatchBase {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate_reverse<OopType, OopClosureType>(obj, cl, klute);
     }
 
@@ -260,6 +274,7 @@ class OopOopIterateDispatchBounded : public DispatchBase {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType>(obj, cl, mr, klute);
     }
 
@@ -305,12 +320,15 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
       return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
     static size_t invoke_slow(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
       return obj->size();
     }
@@ -369,12 +387,15 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
       return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
     static size_t invoke_slow(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+      check_oopType<OopType>();
       KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
       return obj->size();
     }
@@ -399,7 +420,7 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
         } else {
           _function[KlassType::Kind] = UseCompressedOops ?
               //&invoke<KlassType, HeaderMode::Compressed, narrowOop> :
-              &invoke<KlassType, HeaderMode::Compressed, oop> :
+              &invoke<KlassType, HeaderMode::Compressed, narrowOop> :
               &invoke<KlassType, HeaderMode::Compressed, oop>;
         }
       }
@@ -438,6 +459,8 @@ class OopOopIterateDispatchRange : public DispatchBase {
 
     template <HeaderMode mode, typename OopType>
     static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
       ObjArrayKlass::oop_oop_iterate_range<mode, OopType, OopClosureType>(obj, cl, start, end);
     }
 

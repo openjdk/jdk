@@ -104,7 +104,6 @@ template <HeaderMode mode, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
   assert(start <= end, "Sanity");
   assert(start >= 0, "Sanity");
-
   const int len = a->length_nobranches<mode>();
   assert(a->length() == len, "Sanity (%d vs %d)", len, a->length());
   T* const b = (T*)a->base_nobranches<mode, T>();
