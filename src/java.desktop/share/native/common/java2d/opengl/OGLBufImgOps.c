@@ -135,7 +135,7 @@ OGLBufImgOps_CreateConvolveProgram(jint flags)
     char edge[100];
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLBufImgOps_CreateConvolveProgram: flags=%d",
                 flags);
 
@@ -189,7 +189,7 @@ OGLBufImgOps_EnableConvolveOp(OGLContext *oglc, jlong pSrcOps,
     GLint loc;
     jint flags = 0;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
                 kernelWidth, kernelHeight);
 
@@ -350,7 +350,7 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     char *postRescale = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLBufImgOps_CreateRescaleProgram: flags=%d",
                 flags);
 
@@ -572,7 +572,7 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     char *postLookup = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLBufImgOps_CreateLookupProgram: flags=%d",
                 flags);
 
@@ -632,7 +632,7 @@ OGLBufImgOps_EnableLookupOp(OGLContext *oglc, jlong pSrcOps,
     int i;
     jint flags = 0;
 
-    J2dTraceLn4(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
                 shortData, numBands, bandLength, offset);
 

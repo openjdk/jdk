@@ -73,7 +73,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     jboolean sync = JNI_FALSE;
     unsigned char *b, *end;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLRenderQueue_flushBuffer: limit=%d", limit);
 
     b = (unsigned char *)jlong_to_ptr(buf);
@@ -89,7 +89,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     while (b < end) {
         jint opcode = NEXT_INT(b);
 
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
                     opcode, (end-b));
 
@@ -667,7 +667,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
             break;
 
         default:
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
                 "OGLRenderQueue_flushBuffer: invalid opcode=%d", opcode);
             if (oglc != NULL) {
                 RESET_PREVIOUS_OP();
@@ -756,7 +756,7 @@ OGLRenderQueue_CheckPreviousOp(jint op)
         return;
     }
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE,
+    J2dTraceLn(J2D_TRACE_VERBOSE,
                 "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
 
     switch (previousOp) {

@@ -220,7 +220,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
             [NSOpenGLContext clearCurrentContext];
             return;
         }
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL version=%s", versionstr);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL version=%s", versionstr);
 
         jint caps = CAPS_EMPTY;
         OGLContext_GetExtensionInfo(env, &caps);
@@ -234,7 +234,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
             caps |= CAPS_DOUBLEBUFFERED;
         }
 
-        J2dRlsTraceLn1(J2D_TRACE_INFO,
+        J2dRlsTraceLn(J2D_TRACE_INFO,
                        "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
                        (caps & CAPS_DOUBLEBUFFERED) != 0);
 

@@ -56,7 +56,7 @@ D3DBufImgOps_EnableConvolveOp(D3DContext *d3dc, jlong pSrcOps,
     jint i, j, kIndex;
     jint flags = 0;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
                 kernelWidth, kernelHeight);
 
@@ -204,7 +204,7 @@ D3DBufImgOps_EnableLookupOp(D3DContext *d3dc,
     for (i = 0; i < 4; i++) {
         bands[i] = NULL;
     }
-    J2dTraceLn4(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
                 shortData, numBands, bandLength, offset);
 

@@ -133,7 +133,7 @@ D3DTR_UpdateLCDTextColor(D3DContext *d3dc, jint contrast)
     jfloat gamma = ((jfloat)contrast) / 100.0f;
     jfloat clr[4];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DTR_UpdateLCDTextColor: contrast=%d", contrast);
 
     /*

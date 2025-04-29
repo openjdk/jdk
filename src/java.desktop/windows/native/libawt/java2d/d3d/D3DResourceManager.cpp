@@ -61,7 +61,7 @@ D3DResource::Init(IDirect3DResource9 *pRes, IDirect3DSwapChain9 *pSC)
             ((IDirect3DCubeTexture9*)pResource)->GetLevelDesc(0, &desc);
             break;
         default:
-            J2dTraceLn1(J2D_TRACE_VERBOSE, "  resource type=%d", type);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  resource type=%d", type);
         }
     } else if (pSwapChain != NULL) {
         pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pSurface);
@@ -90,7 +90,7 @@ D3DResource::SetSDOps(D3DSDOps *pOps)
     if (pOps != NULL && this->pOps != NULL) {
         // something's wrong, we're overwriting
         // a non-null field (setting it to null is allowed)
-        J2dTraceLn2(J2D_TRACE_WARNING,
+        J2dTraceLn(J2D_TRACE_WARNING,
                     "D3DResource::SetSDOps: overwriting "\
                     "this->pOps=0x%x with pOps=0x%x", this->pOps, pOps);
     }
@@ -157,7 +157,7 @@ D3DResourceManager::D3DResourceManager()
 HRESULT
 D3DResourceManager::Init(D3DContext *pCtx)
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DRM::Init pCtx=%x", pCtx);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRM::Init pCtx=%x", pCtx);
     if (this->pCtx != pCtx ||
         (this->pCtx != NULL &&
          this->pCtx->Get3DDevice() != pCtx->Get3DDevice()))
@@ -211,7 +211,7 @@ D3DResourceManager::ReleaseResource(IManagedResource* pResource)
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::ReleaseResource");
 
     if (pResource != NULL) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  releasing pResource=%x", pResource);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  releasing pResource=%x", pResource);
         if (pResource->pPrev != NULL) {
             pResource->pPrev->pNext = pResource->pNext;
         } else {
@@ -237,7 +237,7 @@ D3DResourceManager::AddResource(IManagedResource* pResource)
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::AddResource");
 
     if (pResource != NULL) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  pResource=%x", pResource);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  pResource=%x", pResource);
         pResource->pPrev = NULL;
         pResource->pNext = pHead;
         if (pHead != NULL) {
@@ -261,7 +261,7 @@ D3DResourceManager::CreateTexture(UINT width, UINT height,
     IDirect3DDevice9 *pd3dDevice;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateTexture");
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  w=%d h=%d isRTT=%d isOpaque=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d isRTT=%d isOpaque=%d",
                 width, height, isRTT, isOpaque);
 
     if (ppTextureResource == NULL || pCtx == NULL ||
@@ -317,7 +317,7 @@ D3DResourceManager::CreateTexture(UINT width, UINT height,
     res = pd3dDevice->CreateTexture(width, height, 1/*levels*/, dwUsage,
                                     format, pool, &pTexture, 0);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created texture: 0x%x", pTexture);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created texture: 0x%x", pTexture);
         *ppTextureResource = new D3DResource((IDirect3DResource9*)pTexture);
         res = AddResource(*ppTextureResource);
     } else {
@@ -342,7 +342,7 @@ HRESULT D3DResourceManager::CreateRTSurface(UINT width, UINT height,
     IDirect3DDevice9 *pd3dDevice;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateRTSurface");
-    J2dTraceLn3(J2D_TRACE_VERBOSE, "  w=%d h=%d isOpaque=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d isOpaque=%d",
                 width, height, isOpaque);
 
     if (pCtx == NULL || ppSurfaceResource == NULL ||
@@ -363,7 +363,7 @@ HRESULT D3DResourceManager::CreateRTSurface(UINT width, UINT height,
                                          isLockable,
                                          &pSurface, NULL);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created RT Surface: 0x%x ", pSurface);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created RT Surface: 0x%x ", pSurface);
         if (pFormat != NULL) {
             *pFormat = format;
         }
@@ -385,7 +385,7 @@ HRESULT D3DResourceManager::CreateOSPSurface(UINT width, UINT height,
     IDirect3DDevice9 *pd3dDevice;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateOSPSurface");
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  w=%d h=%d", width, height);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d", width, height);
 
     if (pCtx == NULL || ppSurfaceResource == NULL ||
         (pd3dDevice = pCtx->Get3DDevice()) == NULL)
@@ -413,7 +413,7 @@ HRESULT D3DResourceManager::CreateOSPSurface(UINT width, UINT height,
                                                   format, pool,
                                                   &pSurface, NULL);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created OSP Surface: 0x%x ",pSurface);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created OSP Surface: 0x%x ",pSurface);
         *ppSurfaceResource = new D3DResource((IDirect3DResource9*)pSurface);
         res = AddResource(*ppSurfaceResource);
     } else {
@@ -436,7 +436,7 @@ D3DResourceManager::CreateSwapChain(HWND hWnd, UINT numBuffers,
     D3DPRESENT_PARAMETERS newParams, *curParams;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateSwapChain");
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  w=%d h=%d hwnd=%x numBuffers=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d hwnd=%x numBuffers=%d",
                 width, height, hWnd, numBuffers);
 
     if (pCtx == NULL || ppSwapChainResource == NULL ||
@@ -481,7 +481,7 @@ D3DResourceManager::CreateSwapChain(HWND hWnd, UINT numBuffers,
     }
 
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE,"  created swap chain: 0x%x ",pSwapChain);
+        J2dTraceLn(J2D_TRACE_VERBOSE,"  created swap chain: 0x%x ",pSwapChain);
         *ppSwapChainResource = new D3DResource(pSwapChain);
         res = AddResource(*ppSwapChainResource);
     } else {

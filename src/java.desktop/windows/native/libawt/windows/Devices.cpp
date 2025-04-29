@@ -99,13 +99,13 @@ static BOOL IsValidMonitor(HMONITOR hMon)
     memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
     mieInfo.cbSize = sizeof(MONITORINFOEX);
     if (!::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
-        J2dTraceLn1(J2D_TRACE_INFO, "Devices::IsValidMonitor: GetMonitorInfo failed for monitor with handle %p", hMon);
+        J2dTraceLn(J2D_TRACE_INFO, "Devices::IsValidMonitor: GetMonitorInfo failed for monitor with handle %p", hMon);
         return FALSE;
     }
 
     HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
     if (NULL == hDC) {
-        J2dTraceLn2(J2D_TRACE_INFO, "Devices::IsValidMonitor: CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
+        J2dTraceLn(J2D_TRACE_INFO, "Devices::IsValidMonitor: CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
         return FALSE;
     }
 
@@ -183,7 +183,7 @@ CriticalSection Devices::arrayLock;
  */
 Devices::Devices(int numDevices)
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "Devices::Devices numDevices=%d", numDevices);
+    J2dTraceLn(J2D_TRACE_INFO, "Devices::Devices numDevices=%d", numDevices);
     this->numDevices = numDevices;
     this->refCount = 0;
     devices = (AwtWin32GraphicsDevice**)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
@@ -224,7 +224,7 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
     AwtWin32GraphicsDevice** rawDevices = newDevices->GetRawArray();
     int i;
     for (i = 0; i < numScreens; ++i) {
-        J2dTraceLn2(J2D_TRACE_VERBOSE, "  hmon[%d]=0x%x", i, monHds[i]);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  hmon[%d]=0x%x", i, monHds[i]);
         rawDevices[i] = new AwtWin32GraphicsDevice(i, monHds[i], newDevices);
     }
     for (i = 0; i < numScreens; ++i) {
@@ -247,7 +247,7 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
             J2dTraceLn(J2D_TRACE_VERBOSE, "  Invalidating removed devices");
             for (int i = newNumScreens; i < oldNumScreens; i++) {
                 // removed device, needs to be invalidated
-                J2dTraceLn1(J2D_TRACE_WARNING,
+                J2dTraceLn(J2D_TRACE_WARNING,
                             "Devices::UpdateInstance: device removed: %d", i);
                 oldDevices->GetDevice(i)->Invalidate(env);
             }
@@ -277,7 +277,7 @@ void Devices::AddReference()
     J2dTraceLn(J2D_TRACE_INFO, "Devices::AddReference");
     CriticalSection::Lock l(arrayLock);
     refCount++;
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  refCount=%d", refCount);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  refCount=%d", refCount);
 }
 
 /**
@@ -319,7 +319,7 @@ Devices* Devices::GetInstance()
 AwtWin32GraphicsDevice *Devices::GetDeviceReference(int index,
                                                     BOOL adjust)
 {
-    J2dTraceLn2(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "Devices::GetDeviceReference index=%d adjust?=%d",
                 index, adjust);
 
@@ -339,17 +339,17 @@ AwtWin32GraphicsDevice *Devices::GetDeviceReference(int index,
  */
 AwtWin32GraphicsDevice *Devices::GetDevice(int index, BOOL adjust)
 {
-    J2dTraceLn2(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "Devices::GetDevice index=%d adjust?=%d",
                 index, adjust);
     if (index < 0 || index >= numDevices) {
         if (!adjust) {
-            J2dTraceLn1(J2D_TRACE_WARNING,
+            J2dTraceLn(J2D_TRACE_WARNING,
                         "Devices::GetDevice: "\
                         "incorrect index %d, returning NULL.", index);
             return NULL;
         }
-        J2dTraceLn1(J2D_TRACE_WARNING,
+        J2dTraceLn(J2D_TRACE_WARNING,
                     "Devices::GetDevice: "\
                     "adjusted index %d to 0.", index);
         index = 0;
@@ -385,7 +385,7 @@ int Devices::Release()
 
     int refs = --refCount;
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  refCount=%d", refs);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  refCount=%d", refs);
 
     if (refs == 0) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "  disposing the array");
@@ -407,7 +407,7 @@ int Devices::Release()
         // (note: can not reference refCount here!)
         return refs;
     } else if (refs < 0) {
-        J2dTraceLn1(J2D_TRACE_ERROR,
+        J2dTraceLn(J2D_TRACE_ERROR,
                     "Devices::Release: Negative ref count! refCount=%d",
                     refs);
     }

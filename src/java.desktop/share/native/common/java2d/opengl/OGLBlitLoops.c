@@ -497,10 +497,10 @@ OGLBlitLoops_IsoBlit(JNIEnv *env,
             sy2 = srcInfo.bounds.y2;
         }
 
-        J2dTraceLn2(J2D_TRACE_VERBOSE, "  texture=%d hint=%d", texture, hint);
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d hint=%d", texture, hint);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
                     sx1, sy1, sx2, sy2);
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
                     dx1, dy1, dx2, dy2);
 
         if (texture) {
@@ -625,11 +625,11 @@ OGLBlitLoops_Blit(JNIEnv *env,
                 sy2 = srcInfo.bounds.y2;
             }
 
-            J2dTraceLn3(J2D_TRACE_VERBOSE, "  texture=%d srctype=%d hint=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d srctype=%d hint=%d",
                         texture, srctype, hint);
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
                         sx1, sy1, sx2, sy2);
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
                         dx1, dy1, dx2, dy2);
 
             // Note: we will calculate x/y positions in the raster manually
@@ -821,9 +821,9 @@ OGLBlitLoops_SurfaceToSwBlit(JNIEnv *env, OGLContext *oglc,
             }
 #endif
 
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx=%d sy=%d w=%d h=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  sx=%d sy=%d w=%d h=%d",
                         srcx, srcy, width, height);
-            J2dTraceLn2(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
                         dstx, dsty);
 
             // this accounts for lower-left origin of the source region
@@ -864,9 +864,9 @@ OGLBlitLoops_CopyArea(JNIEnv *env,
     RETURN_IF_NULL(dstOps);
     RESET_PREVIOUS_OP();
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d",
                 x, y, width, height);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
                 dx, dy);
 
     srcBounds.x1 = x;

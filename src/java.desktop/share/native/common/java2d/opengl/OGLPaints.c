@@ -44,7 +44,7 @@ OGLPaints_ResetPaint(OGLContext *oglc)
     J2dTraceLn(J2D_TRACE_INFO, "OGLPaints_ResetPaint");
 
     RETURN_IF_NULL(oglc);
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  state=%d", oglc->paintState);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  state=%d", oglc->paintState);
     RESET_PREVIOUS_OP();
 
     if (oglc->useMask) {
@@ -102,7 +102,7 @@ OGLPaints_SetColor(OGLContext *oglc, jint pixel)
 {
     jubyte r, g, b, a;
 
-    J2dTraceLn1(J2D_TRACE_INFO, "OGLPaints_SetColor: pixel=%08x", pixel);
+    J2dTraceLn(J2D_TRACE_INFO, "OGLPaints_SetColor: pixel=%08x", pixel);
 
     RETURN_IF_NULL(oglc);
 
@@ -123,7 +123,7 @@ OGLPaints_SetColor(OGLContext *oglc, jint pixel)
         b = (jubyte)(pixel >>  0);
         a = (jubyte)(pixel >> 24);
 
-        J2dTraceLn4(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "  updating color: r=%02x g=%02x b=%02x a=%02x",
                     r, g, b, a);
     } else {
@@ -134,7 +134,7 @@ OGLPaints_SetColor(OGLContext *oglc, jint pixel)
         b = (jubyte)(pixel >>  0);
         a = 0xff;
 
-        J2dTraceLn4(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "  updating xor color: r=%02x g=%02x b=%02x xorpixel=%08x",
                     r, g, b, oglc->xorPixel);
     }
@@ -704,7 +704,7 @@ OGLPaints_CreateLinearGradProgram(jint flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLPaints_CreateLinearGradProgram",
                 flags);
 
@@ -808,7 +808,7 @@ OGLPaints_CreateRadialGradProgram(jint flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLPaints_CreateRadialGradProgram",
                 flags);
 

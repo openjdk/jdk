@@ -109,9 +109,9 @@ BOOL DWMIsCompositionEnabled() {
         HRESULT res = DwmAPI::DwmIsCompositionEnabled(&bEnabled);
         if (SUCCEEDED(res)) {
             bRes = bEnabled;
-            J2dTraceLn1(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
+            J2dTraceLn(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
         } else {
-            J2dTraceLn1(J2D_TRACE_ERROR,
+            J2dTraceLn(J2D_TRACE_ERROR,
                     "IsDWMCompositionEnabled: error %x when detecting"\
                     "if composition is enabled", res);
         }

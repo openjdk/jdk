@@ -245,7 +245,7 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         db      = attrVals[2];
         alpha   = attrVals[3];
 
-        J2dRlsTrace5(J2D_TRACE_VERBOSE,
+        J2dRlsTrace(J2D_TRACE_VERBOSE,
             "[V]     pixfmt=%d db=%d alpha=%d depth=%d stencil=%d valid=",
                      pixfmt, db, alpha, depth, stencil);
 
@@ -264,7 +264,7 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         return 0;
     }
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
+    J2dRlsTraceLn(J2D_TRACE_INFO,
         "WGLGC_GetPixelFormatForDC: chose %d as the best pixel format",
                    chosenPixFmt);
 
@@ -595,7 +595,7 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     extstr = j2d_wglGetExtensionsStringARB(hdc);
     OGLContext_GetExtensionInfo(env, &caps);
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
+    J2dRlsTraceLn(J2D_TRACE_INFO,
         "WGLGraphicsConfig_getWGLConfigInfo: OpenGL version=%s",
                    (versionstr == NULL) ? "null" : (char *)versionstr);
 

@@ -220,7 +220,7 @@ OGLVertexCache_AddMaskQuad(OGLContext *oglc,
     jfloat tx1, ty1, tx2, ty2;
     jfloat dx1, dy1, dx2, dy2;
 
-    J2dTraceLn1(J2D_TRACE_INFO, "OGLVertexCache_AddMaskQuad: %d",
+    J2dTraceLn(J2D_TRACE_INFO, "OGLVertexCache_AddMaskQuad: %d",
                 maskCacheIndex);
 
     if (maskCacheIndex >= OGLVC_MASK_CACHE_MAX_INDEX ||

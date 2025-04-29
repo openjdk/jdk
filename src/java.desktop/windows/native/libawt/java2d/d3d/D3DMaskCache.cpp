@@ -57,7 +57,7 @@ D3DMaskCache::~D3DMaskCache()
 HRESULT
 D3DMaskCache::Init(D3DContext *pCtx)
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DMaskCache::Init pCtx=%x", pCtx);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DMaskCache::Init pCtx=%x", pCtx);
     this->pCtx = pCtx;
     this->maskCacheIndex = 0;
     return S_OK;
@@ -103,7 +103,7 @@ HRESULT D3DMaskCache::AddMaskQuad(int srcx, int srcy,
     float tx1, ty1, tx2, ty2;
     float dx1, dy1, dx2, dy2;
 
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DVertexCacher::AddMaskQuad: %d",
+    J2dTraceLn(J2D_TRACE_INFO, "D3DVertexCacher::AddMaskQuad: %d",
                 maskCacheIndex);
 
     if (maskCacheIndex >= D3D_MASK_CACHE_MAX_INDEX ||

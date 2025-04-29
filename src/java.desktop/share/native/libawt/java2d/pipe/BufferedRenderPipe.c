@@ -59,7 +59,7 @@ Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans
     jint ipos;
     jboolean hasException;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "BufferedRenderPipe_fillSpans: bpos=%d limit=%d",
                 bpos, limit);
 

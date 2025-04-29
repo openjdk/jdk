@@ -69,7 +69,7 @@ D3DBL_CopySurfaceToIntArgbImage(IDirect3DSurface9 *pSurface,
     SurfaceDataRasInfo srcInfo;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DBL_CopySurfaceToIntArgbImage");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
+    J2dTraceLn(J2D_TRACE_VERBOSE,
                 " rect={%-4d, %-4d, %-4d, %-4d}",
                 r.left, r.top, r.right, r.bottom);
 
@@ -121,7 +121,7 @@ D3DBL_CopySurfaceToIntArgbImage(IDirect3DSurface9 *pSurface,
                                          &srcInfo, pDstInfo, NULL, NULL);
             break;
         default:
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
                 "D3DBL_CopySurfaceToIntArgbImage: unknown format %d",
                 desc.Format);
     }
@@ -147,7 +147,7 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
     DWORD dwLockFlags = D3DLOCK_NOSYSLOCK;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DBL_CopyImageToIntXrgbSurface");
-    J2dTraceLn5(J2D_TRACE_VERBOSE,
+    J2dTraceLn(J2D_TRACE_VERBOSE,
                 " srctype=%d rect={%-4d, %-4d, %-4d, %-4d}",
                 srctype, r.left, r.top, r.right, r.bottom);
 
@@ -238,7 +238,7 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
 //                                             pSrcInfo, &dstInfo, NULL, NULL);
             break;
         default:
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
                            "D3DBL_CopyImageToIntXrgbSurface: unknown type %d",
                            srctype);
     }
@@ -676,10 +676,10 @@ D3DBlitLoops_IsoBlit(JNIEnv *env,
             sy2 = srcInfo.bounds.y2;
         }
 
-        J2dTraceLn2(J2D_TRACE_VERBOSE, "  texture=%d hint=%d", texture, hint);
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d hint=%d", texture, hint);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
                     sx1, sy1, sx2, sy2);
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
                     dx1, dy1, dx2, dy2);
 
         D3DTEXTUREFILTERTYPE fhint =
@@ -697,7 +697,7 @@ D3DBlitLoops_IsoBlit(JNIEnv *env,
             DWORD abEnabled = 0;
 
             pd3dDevice->GetRenderState(D3DRS_ALPHABLENDENABLE, &abEnabled);
-            J2dTraceLn3(J2D_TRACE_VERBOSE, "  xform=%d clip=%d abEnabled=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  xform=%d clip=%d abEnabled=%d",
                         xform, d3dc->GetClipType(), abEnabled);
             if (!xform && d3dc->GetClipType() != CLIP_SHAPE && !abEnabled) {
                 fhint = d3dc->IsStretchRectFilteringSupported(fhint) ?
@@ -794,11 +794,11 @@ D3DBlitLoops_Blit(JNIEnv *env,
                 sy2 = srcInfo.bounds.y2;
             }
 
-            J2dTraceLn3(J2D_TRACE_VERBOSE, "  texture=%d srctype=%d hint=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d srctype=%d hint=%d",
                         texture, srctype, hint);
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
                         sx1, sy1, sx2, sy2);
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
                         dx1, dy1, dx2, dy2);
 
             if (texture) {
@@ -889,9 +889,9 @@ D3DBlitLoops_SurfaceToSwBlit(JNIEnv *env, D3DContext *d3dc,
             width = srcInfo.bounds.x2 - srcInfo.bounds.x1;
             height = srcInfo.bounds.y2 - srcInfo.bounds.y1;
 
-            J2dTraceLn4(J2D_TRACE_VERBOSE, "  sx=%d sy=%d w=%d h=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  sx=%d sy=%d w=%d h=%d",
                         srcx, srcy, width, height);
-            J2dTraceLn2(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
                         dstx, dsty);
 
             d3dc->UpdateState(STATE_OTHEROP);
@@ -961,9 +961,9 @@ D3DBlitLoops_CopyArea(JNIEnv *env,
     RETURN_STATUS_IF_NULL(dstOps, E_FAIL);
     RETURN_STATUS_IF_NULL(dstOps->pResource, E_FAIL);
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d",
                 x, y, width, height);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
                 dx, dy);
 
     IDirect3DDevice9 *pd3dDevice = d3dc->Get3DDevice();
