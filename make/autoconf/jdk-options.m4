@@ -522,7 +522,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
       $ADDITIONAL_UBSAN_CHECKS"
   UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
   if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
-    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-stringop-truncation -Wno-format-overflow -Wno-stringop-overflow"
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
   fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
   # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
