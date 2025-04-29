@@ -75,27 +75,27 @@ public class BigIntegerPow {
     public void setup() {
         Random r = new Random(1123);
 
-        xsExp = (1 << 25) - 1;
+        xsExp = (1 << 20) - 1;
         xsArray = new BigInteger[TESTSIZE]; /*
          * Each array entry is atmost 64 bits
          * in size
          */
-        sExp = (1 << 23) - 1;
+        sExp = (1 << 18) - 1;
         sArray = new BigInteger[TESTSIZE]; /*
          * Each array entry is atmost 256 bits
          * in size
          */
-        mExp = (1 << 21) - 1;
+        mExp = (1 << 16) - 1;
         mArray = new BigInteger[TESTSIZE]; /*
          * Each array entry is atmost 1024 bits
          * in size
          */
-        lExp = (1 << 19) - 1;
+        lExp = (1 << 14) - 1;
         lArray = new BigInteger[TESTSIZE]; /*
          * Each array entry is atmost 4096 bits
          * in size
          */
-        xlExp = (1 << 17) - 1;
+        xlExp = (1 << 12) - 1;
         xlArray = new BigInteger[TESTSIZE]; /*
          * Each array entry is atmost 16384 bits
          * in size
