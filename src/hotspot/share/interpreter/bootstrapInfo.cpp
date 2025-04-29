@@ -137,8 +137,8 @@ void BootstrapInfo::resolve_args(TRAPS) {
   assert(_bsm.not_null(), "resolve_bsm first");
 
   // if there are no static arguments, return leaving _arg_values as null
-  BSMAttributeEntry* attr = bsm_attr();
-  int argc = attr->argument_count();
+  BSMAttributeEntry& attr = bsm_attr();
+  int argc = attr.argument_count();
   if (argc == 0 && UseBootstrapCallInfo < 2) return;
 
   bool use_BSCI;
@@ -166,7 +166,7 @@ void BootstrapInfo::resolve_args(TRAPS) {
   if (!use_BSCI && _pool->tag_at(_bss_index).is_dynamic_constant()) {
     bool found_unresolved_condy = false;
     for (int i = 0; i < argc; i++) {
-      int arg_index = attr->argument_index(i);
+      int arg_index = attr.argument_index(i);
       if (_pool->tag_at(arg_index).is_dynamic_constant()) {
         // potential recursion point condy -> condy
         bool found_it = false;
@@ -190,7 +190,7 @@ void BootstrapInfo::resolve_args(TRAPS) {
     bool all_resolved = true;
     for (int i = 0; i < argc; i++) {
       bool found_it = false;
-      int arg_index = attr->argument_index(i);
+      int arg_index = attr.argument_index(i);
       _pool->find_cached_constant_at(arg_index, found_it, CHECK);
       if (!found_it) {
         all_resolved = false;

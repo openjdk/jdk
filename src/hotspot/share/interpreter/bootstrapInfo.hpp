@@ -76,10 +76,10 @@ class BootstrapInfo : public StackObj {
   // derived accessors
   InstanceKlass* caller() const         { return _pool->pool_holder(); }
   oop caller_mirror() const             { return caller()->java_mirror(); }
-  BSMAttributeEntry* bsm_attr() const   { return _pool->bsm_attribute_entry(_bsm_attr_index); }
-  int bsm_index() const                 { return bsm_attr()->bootstrap_method_index(); }
-  int arg_count() const                 { return bsm_attr()->argument_count(); }
-  int arg_index(int j) const            { return bsm_attr()->argument_index(j); }
+  BSMAttributeEntry& bsm_attr() const   { return *_pool->bsm_attribute_entry(_bsm_attr_index); }
+  int bsm_index() const                 { return bsm_attr().bootstrap_method_index(); }
+  int arg_count() const                 { return bsm_attr().argument_count(); }
+  int arg_index(int j) const            { return bsm_attr().argument_index(j); }
   ResolvedIndyEntry* indy_entry() const;
 
   // If there is evidence this call site was already linked, set the
