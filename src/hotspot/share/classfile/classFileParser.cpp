@@ -3295,8 +3295,8 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   Array<u2>* const entries =  // u2 data holding all the BSM attribute entries
     MetadataFactory::new_array<u2>(_loader_data, attribute_tail_length / sizeof(u2), CHECK);
 
-  // Eagerly assign arrays so they will be deallocated with the constant
-  // pool if there is an error.
+  // Eagerly assign arrays so they will be deallocated with
+  // the constant pool if there is an error.
   cp->set_bsm_attribute_offsets(offsets);
   cp->set_bsm_attribute_entries(entries);
 
