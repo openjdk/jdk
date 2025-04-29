@@ -32,12 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-#if defined(LINUX) || defined(__APPLE__)
-
-#if defined(LINUX)
-#define MAXTHREADNAMESIZE 256
-#endif
-
 // see MemTracker::NmtVirtualMemoryLocker
 class NMTRecorder_Locker: StackObj {
   static bool _safe_to_use;
@@ -54,6 +48,12 @@ public:
     _safe_to_use = true;
   }
 };
+
+#if defined(LINUX) || defined(__APPLE__)
+
+#if defined(LINUX)
+#define MAXTHREADNAMESIZE 256
+#endif
 
 class NMT_LogRecorder : public StackObj {
 protected:
