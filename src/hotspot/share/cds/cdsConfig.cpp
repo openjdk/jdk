@@ -647,12 +647,6 @@ bool CDSConfig::is_using_archive() {
 }
 
 bool CDSConfig::is_using_only_default_archive() {
-  if (!is_using_archive()) {
-    // During JDK build when dumping a classlist (DumpLoadedClassList), exclude error
-    // message from the classlist as it interferes with the default CDS archive creation.
-    return true;
-  }
-
   return is_using_archive() &&
          input_static_archive_path() != nullptr &&
          default_archive_path() != nullptr &&

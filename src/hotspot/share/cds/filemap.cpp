@@ -1429,8 +1429,10 @@ void FileMapInfo::map_or_load_heap_region() {
       // all AOT-linked classes are visible.
       //
       // We get here because the heap is too small. The app will fail anyway. So let's quit.
-      MetaspaceShared::unrecoverable_loading_error("CDS archive has aot-linked classes but the archived "
-                                                   "heap objects cannot be loaded. Try increasing your heap size.");
+      log_error(cds)("%s has aot-linked classes but the archived "
+                     "heap objects cannot be loaded. Try increasing your heap size.",
+                     CDSConfig::type_of_archive_being_loaded());
+      MetaspaceShared::unrecoverable_loading_error();
     }
     CDSConfig::stop_using_full_module_graph("archive heap loading failed");
   }
@@ -1792,29 +1794,34 @@ bool FileMapInfo::validate_aot_class_linking() {
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
   // is available.
   if (header()->has_aot_linked_classes()) {
+    const char* archive_type = CDSConfig::type_of_archive_being_loaded();
     CDSConfig::set_has_aot_linked_classes(true);
     if (JvmtiExport::should_post_class_file_load_hook()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.",
+                     archive_type);
       return false;
     }
     if (JvmtiExport::has_early_vmstart_env()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI early vm start is in use.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when JVMTI early vm start is in use.",
+                     archive_type);
       return false;
     }
     if (!CDSConfig::is_using_full_module_graph()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when archived full module graph is not used.",
+                     archive_type);
       return false;
     }
 
     const char* prop = Arguments::get_property("java.security.manager");
     if (prop != nullptr && strcmp(prop, "disallow") != 0) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
+      log_error(cds)("%s has aot-linked classes. It cannot be used with -Djava.security.manager=%s.",
+                     archive_type, prop);
       return false;
     }
 
 #if INCLUDE_JVMTI
     if (Arguments::has_jdwp_agent()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with JDWP agent");
+      log_error(cds)("%s has aot-linked classes. It cannot be used with JDWP agent", archive_type);
       return false;
     }
 #endif
@@ -1874,8 +1881,8 @@ bool FileMapHeader::validate() {
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
     if (has_aot_linked_classes()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when the "
-                     "java.system.class.loader property is specified.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when the "
+                     "java.system.class.loader property is specified.", CDSConfig::type_of_archive_being_loaded());
       return false;
     }
     log_warning(cds)("Archived non-system classes are disabled because the "

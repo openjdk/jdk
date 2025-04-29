@@ -110,7 +110,7 @@ public:
   static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
 
   static void unrecoverable_loading_error(const char* message = nullptr);
-  static void report_loading_error(const char* message = nullptr);
+  static void report_loading_error(const char* format, ...);
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 

@@ -999,7 +999,7 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
       }
     } else {
       log_warning(cds)("%s%s", mismatch_msg, hint_msg);
-      MetaspaceShared::report_loading_error();
+      MetaspaceShared::report_loading_error("");
     }
   }
   return success;
