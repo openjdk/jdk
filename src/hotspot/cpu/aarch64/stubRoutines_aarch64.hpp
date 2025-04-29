@@ -109,6 +109,8 @@ private:
     _completed = true;
   }
 
+  address generate_libmCbrt();
+
 private:
   static uint16_t  _kyberConsts[];
   static uint32_t _dilithiumConsts[];

@@ -167,6 +167,8 @@ class MacroAssembler: public Assembler {
   void membar(Membar_mask_bits order_constraint);
 
   using Assembler::ldr;
+  using Assembler::ldrd;
+  using Assembler::ldrq;
   using Assembler::str;
   using Assembler::ldrw;
   using Assembler::strw;
@@ -175,6 +177,15 @@ class MacroAssembler: public Assembler {
   void ldrw(Register Rw, const Address &adr);
   void str(Register Rx, const Address &adr);
   void strw(Register Rx, const Address &adr);
+
+  void ldrd(FloatRegister f, Address adr, Register scratch) {
+    lea(scratch, adr);
+    ldrd(f, Address(scratch, 0));
+  }
+  void ldrq(FloatRegister f, Address adr, Register scratch) {
+    lea(scratch, adr);
+    ldrq(f, Address(scratch, 0));
+  }
 
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
@@ -1531,6 +1542,8 @@ public:
 
   void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
       address pio2, address dsin_coef, address dcos_coef);
+  void generate_libmCbrt();
+
  private:
   // begin trigonometric functions support block
   void generate__ieee754_rem_pio2(address npio2_hw, address two_over_pi, address pio2);
@@ -1538,6 +1551,7 @@ public:
   void generate_kernel_sin(FloatRegister x, bool iyIsOne, address dsin_coef);
   void generate_kernel_cos(FloatRegister x, address dcos_coef);
   // end trigonometric functions support block
+
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2);
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2) {
