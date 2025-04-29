@@ -91,20 +91,21 @@ void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope
 //
 void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
-  assert(nm->is_not_installed(), "Precondition");
+  assert(nm->is_not_installed(), "Precondition: new nmethod");
 
   // This method tries to add never before seen nmethod, holding the CodeCache_lock
   // until all dependencies are added. The caller code can call multiple times
   // with the same nmethod, but always under the same lock hold.
   //
-  // This means the buckets list is guaranteed to be in either of two states:
-  //   1. The nmethod is not in the list, and can be added to the head of the list.
-  //   2. The nmethod was already added, and thus it sits at the head of the list.
+  // This means the buckets list is guaranteed to be in either of two states, with
+  // regards to the newly added nmethod:
+  //   1. The nmethod is not in the list, and can be just added to the head of the list.
+  //   2. The nmethod is in the list, and it is already at the head of the list.
   //
-  // This allows us to skip list scans. The individual method checks are cheap,
-  // but walking the large list of dependencies gets expensive.
-  //
-  // TODO: Check if any other concurrent code modifies the head?
+  // This path is the only path that adds to the list. There can be concurrent removals
+  // from the list, but they do not break this invariant. This invariant allows us
+  // to skip list scans. The individual method checks are cheap, but walking the large
+  // list of dependencies gets expensive.
 
   nmethodBucket* head = Atomic::load(_dependency_context_addr);
   if (head != nullptr && nm == head->get_nmethod()) {
@@ -113,7 +114,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
 
 #ifdef ASSERT
   for (nmethodBucket* b = head; b != nullptr; b = b->next()) {
-    assert(nm != b->get_nmethod(), "Should not be in the list yet");
+    assert(nm != b->get_nmethod(), "Invariant: should not be in the list yet");
   }
 #endif
 
