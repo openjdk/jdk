@@ -172,7 +172,7 @@ class VirtualMemorySummary : AllStatic {
   }
 
   static bool initialize() {
-    new (as_snapshot()) VirtualMemorySnapshot();
+    _snapshot.initialize();
     return true;
   }
 
