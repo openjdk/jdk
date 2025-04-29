@@ -207,7 +207,7 @@
     </event>
 
     <event name="jdk.SafepointLatency">
-      <setting name="enabled" control="method-sampling-enabled">false</setting>
+      <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
       <setting name="throttle">off</setting>
