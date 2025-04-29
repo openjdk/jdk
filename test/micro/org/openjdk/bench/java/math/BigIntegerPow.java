@@ -48,14 +48,14 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 1, time = 1)
 @Fork(value = 3)
 public class BigIntegerPow {
 
     private BigInteger[] xsArray, sArray, mArray, lArray, xlArray;
     private int xsExp, sExp, mExp, lExp, xlExp;
-    private static final int TESTSIZE = 2;
+    private static final int TESTSIZE = 1;
 
     /*
      * You can run this test via the command line:
