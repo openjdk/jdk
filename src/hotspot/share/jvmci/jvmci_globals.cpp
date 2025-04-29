@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
@@ -145,8 +144,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(UseMulAddIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomeryMultiplyIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomerySquareIntrinsic)
-  JVMCI_FLAG_CHECKED(UseVectorStubs)
 #endif // !COMPILER2
+       //
+  JVMCI_FLAG_CHECKED(UseVectorStubs)
 
 #ifndef PRODUCT
 #define JVMCI_CHECK4(type, name, value, ...) assert(name##checked, #name " flag not checked");

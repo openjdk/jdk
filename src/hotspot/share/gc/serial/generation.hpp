@@ -54,6 +54,7 @@ class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
 class OopClosure;
+class ReservedSpace;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;

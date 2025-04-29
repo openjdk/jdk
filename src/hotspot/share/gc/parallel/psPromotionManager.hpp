@@ -28,8 +28,9 @@
 #include "gc/parallel/psPromotionLAB.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -67,15 +68,8 @@ class PSPromotionManager {
   static MutableSpace*                  _young_space;
 
 #if TASKQUEUE_STATS
-  size_t                              _array_chunk_pushes;
-  size_t                              _array_chunk_steals;
-  size_t                              _arrays_chunked;
-  size_t                              _array_chunks_processed;
-
-  void print_local_stats(outputStream* const out, uint i) const;
-  static void print_taskqueue_stats();
-
-  void reset_stats();
+  static void print_and_reset_taskqueue_stats();
+  PartialArrayTaskStats* partial_array_task_stats();
 #endif // TASKQUEUE_STATS
 
   PSYoungPromotionLAB                 _young_lab;
@@ -88,8 +82,7 @@ class PSPromotionManager {
   uint                                _target_stack_size;
 
   static PartialArrayStateManager*    _partial_array_state_manager;
-  PartialArrayStateAllocator          _partial_array_state_allocator;
-  PartialArrayTaskStepper             _partial_array_stepper;
+  PartialArraySplitter                _partial_array_splitter;
   uint                                _min_array_size_for_chunking;
 
   PreservedMarks*                     _preserved_marks;
@@ -105,7 +98,7 @@ class PSPromotionManager {
 
   template <class T> void  process_array_chunk_work(oop obj,
                                                     int start, int end);
-  void process_array_chunk(PartialArrayState* state);
+  void process_array_chunk(PartialArrayState* state, bool stolen);
   void push_objArray(oop old_obj, oop new_obj);
 
   void push_depth(ScannerTask task);
@@ -164,7 +157,7 @@ class PSPromotionManager {
     return claimed_stack_depth()->is_empty();
   }
 
-  inline void process_popped_location_depth(ScannerTask task);
+  inline void process_popped_location_depth(ScannerTask task, bool stolen);
 
   static bool should_scavenge(oop* p, bool check_to_space = false);
   static bool should_scavenge(narrowOop* p, bool check_to_space = false);
@@ -173,8 +166,6 @@ class PSPromotionManager {
   void copy_and_push_safe_barrier(T* p);
 
   template <class T> inline void claim_or_forward_depth(T* p);
-
-  TASKQUEUE_STATS_ONLY(inline void record_steal(ScannerTask task);)
 
   void push_contents(oop obj);
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);

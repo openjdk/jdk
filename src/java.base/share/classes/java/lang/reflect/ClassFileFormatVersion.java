@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,47 @@ package java.lang.reflect;
  */
 @SuppressWarnings("doclint:reference") // cross-module links
 public enum ClassFileFormatVersion {
+    /*
+     * Summary of class file format evolution; previews are listed for
+     * convenience, but they are not modeled by this enum.
+     * 1.1: InnerClasses, Synthetic, Deprecated attributes
+     * 1.2: ACC_STRICT modifier
+     * 1.3: no changes
+     * 1.4: no changes
+     * 1.5: Annotations (Runtime(Inv/V)isible(Parameter)Annotations attributes);
+     *      Generics (Signature, LocalVariableTypeTable attributes);
+     *      EnclosingMethod attribute
+     * 1.6: Verification by type checking (StackMapTable attribute)
+     * 1.7: Verification by type checking enforced (jsr and ret opcodes
+     *      obsolete); java.lang.invoke support (JSR 292) (CONSTANT_MethodHandle,
+     *      CONSTANT_MethodType, CONSTANT_InvokeDynamic constant pool entries,
+     *      BoostrapMethods attribute); <clinit> method must be ACC_STATIC
+     * 1.8: private, static, and non-abstract (default) methods in interfaces;
+     *      Type Annotations (JEP 104) (Runtime(Inv/V)isibleTypeAnnotations
+     *      attribute); MethodParameters attribute
+     *   9: JSR 376 - modules (JSR 376, JEP 261) (Module, ModuleMainClass,
+     *      ModulePackages attributes, CONSTANT_Module, CONSTANT_Package
+     *      constant pool entries, ACC_MODULE modifier)
+     *  10: minor tweak to requires_flags in Module attribute
+     *  11: Nest mates (JEP 181) (NestHost, NestMembers attributes);
+     *      CONSTANT_Dynamic (JEP 309) constant pool entry
+     *  12: Preview Features (JEP 12) (minor version must be 0 or 65535)
+     *  13: no changes
+     *  14: no changes; (JEP 359 Records in Preview)
+     *  15: no changes; (JEP 384 Records in 2nd Preview, JEP 360 Sealed Classes
+     *      in Preview)
+     *  16: Records (JEP 395) (Record attribute); (JEP 397 Sealed Classes in 2nd
+     *      Preview)
+     *  17: Sealed Classes (JEP 409) (PermittedSubclasses attribute); ACC_STRICT
+     *      modifier obsolete (JEP 306)
+     *  18: no changes
+     *  19: no changes
+     *  20: no changes
+     *  21: no changes
+     *  22: no changes
+     *  23: no changes
+     *  24: no changes
+     */
 
     /**
      * The original version.

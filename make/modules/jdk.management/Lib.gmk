@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
 ################################################################################
@@ -36,14 +38,9 @@ ifeq ($(call isTargetOs, windows), true)
   LIBMANAGEMENT_EXT_CFLAGS := -DPSAPI_VERSION=1
 endif
 
-LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
-    OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
+    OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_gcc_DiagnosticCommandImpl.c := unused-variable, \
     DISABLED_WARNINGS_clang_DiagnosticCommandImpl.c := unused-variable, \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
@@ -54,3 +51,5 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
 ))
 
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
+
+################################################################################

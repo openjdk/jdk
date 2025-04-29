@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +26,9 @@
 #ifndef SHARE_RUNTIME_THREAD_HPP
 #define SHARE_RUNTIME_THREAD_HPP
 
-#include "jni.h"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -525,6 +525,8 @@ protected:
  public:
   // Stack overflow support
   address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
+  // Needed for code that can query a new thread before the stack has been set.
+  address stack_base_or_null() const   { return _stack_base; }
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -603,7 +605,7 @@ protected:
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock, const char * Name);
+  static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)

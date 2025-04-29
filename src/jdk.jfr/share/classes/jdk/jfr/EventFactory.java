@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import jdk.internal.module.Checks;
 import jdk.jfr.internal.EventClassBuilder;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Utils;
 
@@ -98,8 +97,6 @@ public final class EventFactory {
         Objects.requireNonNull(annotationElements, "annotationElements");
         Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
-
-        SecuritySupport.checkRegisterPermission();
 
         List<AnnotationElement> sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
         List<ValueDescriptor> sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);

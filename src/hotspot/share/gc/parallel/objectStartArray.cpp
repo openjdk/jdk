@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "nmt/memTracker.hpp"
+#include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
@@ -47,7 +46,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
 
   // Do not use large-pages for the backing store. The one large page region
   // will be used for the heap proper.
-  ReservedSpace backing_store(bytes_to_reserve, mtGC);
+  ReservedSpace backing_store = MemoryReserver::reserve(bytes_to_reserve, mtGC);
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }
@@ -122,7 +121,7 @@ void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
     assert(start_entry_for_region > end_entry, "Sanity check");
   }
 
-  debug_only(verify_for_block(blk_start, blk_end);)
+  DEBUG_ONLY(verify_for_block(blk_start, blk_end);)
 }
 
 void ObjectStartArray::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {

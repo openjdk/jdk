@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"
@@ -130,6 +129,9 @@ void VM_Version::setup_cpu_available_features() {
     snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
+
+  int features_offset = strnlen(buf, sizeof(buf));
+
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
@@ -192,7 +194,9 @@ void VM_Version::setup_cpu_available_features() {
     }
   }
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = _cpu_info_string + features_offset;
 }
 
 void VM_Version::os_aux_features() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,46 +433,6 @@ public class InstanceKlass extends Klass {
       enclosingMethodAttributeSize = db.lookupIntConstant("InstanceKlass::enclosing_method_attribute_size").intValue();
     }
   }
-
-  // refer to compute_modifier_flags in VM code.
-  public long computeModifierFlags() {
-    long access = getAccessFlags();
-    // But check if it happens to be member class.
-    U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : innerClassList.length();
-    if (length > 0) {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
-                      "just checking");
-       }
-       for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-          if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
-              break;
-          }
-          int ioff = innerClassList.at(i +
-                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
-          // 'ioff' can be zero.
-          // refer to JVM spec. section 4.7.5.
-          if (ioff != 0) {
-             // only look at classes that are already loaded
-             // since we are looking for the flags for our self.
-             Symbol name = getConstants().getKlassNameAt(ioff);
-
-             if (name.equals(getName())) {
-                // This is really a member class
-                access = innerClassList.at(i +
-                        InnerClassAttributeOffset.innerClassAccessFlagsOffset);
-                break;
-             }
-          }
-       } // for inner classes
-    }
-
-    // Remember to strip ACC_SUPER bit
-    return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
-  }
-
 
   // whether given Symbol is name of an inner/nested Klass of this Klass?
   // anonymous and local classes are excluded.
@@ -1004,85 +964,5 @@ public class InstanceKlass extends Klass {
       }
     }
     return -1;
-  }
-
-  public void dumpReplayData(PrintStream out) {
-    ConstantPool cp = getConstants();
-
-    // Try to record related loaded classes
-    Klass sub = getSubklassKlass();
-    while (sub != null) {
-        if (sub instanceof InstanceKlass) {
-            out.println("instanceKlass " + sub.getName().asString());
-        }
-        sub = sub.getNextSiblingKlass();
-    }
-
-    final int length = cp.getLength();
-    out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
-    for (int index = 1; index < length; index++) {
-      out.print(" " + cp.getTags().at(index));
-    }
-    out.println();
-    if (isInitialized()) {
-      Field[] staticFields = getStaticFields();
-      for (int i = 0; i < staticFields.length; i++) {
-        Field f = staticFields[i];
-        Oop mirror = getJavaMirror();
-        if (f.isFinal() && !f.hasInitialValue()) {
-          out.print("staticfield " + getName().asString() + " " +
-                    OopUtilities.escapeString(f.getID().getName()) + " " +
-                    f.getFieldType().getSignature().asString() + " ");
-          if (f instanceof ByteField) {
-            ByteField bf = (ByteField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof BooleanField) {
-            BooleanField bf = (BooleanField)f;
-            out.println(bf.getValue(mirror) ? 1 : 0);
-          } else if (f instanceof ShortField) {
-            ShortField bf = (ShortField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof CharField) {
-            CharField bf = (CharField)f;
-            out.println(bf.getValue(mirror) & 0xffff);
-          } else if (f instanceof IntField) {
-            IntField bf = (IntField)f;
-            out.println(bf.getValue(mirror));
-          } else  if (f instanceof LongField) {
-            LongField bf = (LongField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof FloatField) {
-            FloatField bf = (FloatField)f;
-            out.println(Float.floatToRawIntBits(bf.getValue(mirror)));
-          } else if (f instanceof DoubleField) {
-            DoubleField bf = (DoubleField)f;
-            out.println(Double.doubleToRawLongBits(bf.getValue(mirror)));
-          } else if (f instanceof OopField) {
-            OopField bf = (OopField)f;
-
-            Oop value = bf.getValue(mirror);
-            if (value == null) {
-              out.println("null");
-            } else if (value.isInstance()) {
-              Instance inst = (Instance)value;
-              if (inst.isA(SystemDictionary.getStringKlass())) {
-                out.println("\"" + OopUtilities.stringOopToEscapedString(inst) + "\"");
-              } else {
-                out.println(inst.getKlass().getName().asString());
-              }
-            } else if (value.isObjArray()) {
-              ObjArray oa = (ObjArray)value;
-              Klass ek = (ObjArrayKlass)oa.getKlass();
-              out.println(oa.getLength() + " " + ek.getName().asString());
-            } else if (value.isTypeArray()) {
-              TypeArray ta = (TypeArray)value;
-              out.println(ta.getLength());
-            } else {
-              out.println(value);
-            }
-          }
-        }
-      }
-    }
   }
 }

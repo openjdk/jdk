@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,8 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         java.desktop, // for ScopedValue
-        java.se, // for ParticipatesInPreview
         jdk.compiler,
+        jdk.crypto.cryptoki, // participates in preview features
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
         jdk.jdeps, // participates in preview features
@@ -198,14 +198,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.util to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.commons to
-        jdk.jfr;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
@@ -227,7 +219,8 @@ module java.base {
         jdk.jshell,
         jdk.nio.mapmode,
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.graal.compiler;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
@@ -279,6 +272,7 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.incubator.vector,
         jdk.internal.vm.ci,
         jdk.jlink,
         jdk.jpackage,

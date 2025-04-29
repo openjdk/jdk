@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -45,8 +44,8 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -58,18 +57,18 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -128,8 +127,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
   while (true) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
-      TASKQUEUE_STATS_ONLY(pm->record_steal(task));
-      pm->process_popped_location_depth(task);
+      pm->process_popped_location_depth(task, true);
       pm->drain_stacks_depth(true);
     } else {
       if (terminator.offer_termination()) {
@@ -206,7 +204,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::oop_task_queues()) {}
+      _terminator(max_workers, ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -461,7 +459,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
         // Calculate the new survivor size and tenuring threshold
 
         log_debug(gc, ergo)("AdaptiveSizeStart:  collection: %d ", heap->total_collections());
-        log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+        log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                             old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
         if (UsePerfData) {
@@ -629,7 +627,7 @@ bool PSScavenge::should_attempt_scavenge() {
   size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
   bool result = promotion_estimate < free_in_old_gen;
 
-  log_trace(ergo)("%s scavenge: average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
+  log_trace(ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
                 result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
                 (size_t) policy->padded_average_promoted_in_bytes(),
                 free_in_old_gen);

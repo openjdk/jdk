@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.security.*;
 import java.security.interfaces.*;
 
+import javax.crypto.KDFParameters;
 import javax.crypto.interfaces.*;
 
 import javax.security.auth.Subject;
@@ -526,6 +527,8 @@ public final class SunPKCS11 extends AuthProvider {
 
     private static final String SR  = "SecureRandom";
 
+    private static final String KDF  = "KDF";
+
     static {
         // names of all the implementation classes
         // use local variables, only used here
@@ -546,6 +549,7 @@ public final class SunPKCS11 extends AuthProvider {
         String P11PBECipher        = "sun.security.pkcs11.P11PBECipher";
         String P11Signature        = "sun.security.pkcs11.P11Signature";
         String P11PSSSignature     = "sun.security.pkcs11.P11PSSSignature";
+        String P11HKDF             = "sun.security.pkcs11.P11HKDF";
 
         // XXX register all aliases
 
@@ -729,6 +733,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_BLOWFISH_CBC));
         d(SKF, "ChaCha20",      P11SecretKeyFactory,
                 m(CKM_CHACHA20_POLY1305));
+        d(SKF, "Generic",       P11SecretKeyFactory,
+                m(CKM_GENERIC_SECRET_KEY_GEN));
 
         /*
          * PBE Secret Key Factories
@@ -1073,6 +1079,13 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
+
+        d(KDF, "HKDF-SHA256", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA256_HMAC));
+        d(KDF, "HKDF-SHA384", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA384_HMAC));
+        d(KDF, "HKDF-SHA512", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA512_HMAC));
     }
 
     // background thread that periodically checks for token insertion
@@ -1506,6 +1519,14 @@ public final class SunPKCS11 extends AuthProvider {
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);
+                }
+            } else if (type == KDF) {
+                try {
+                    return new P11HKDF(token, algorithm, (KDFParameters) param);
+                } catch (ClassCastException |
+                         InvalidAlgorithmParameterException e) {
+                    throw new NoSuchAlgorithmException(
+                            "Cannot instantiate a service of KDF type.", e);
                 }
             } else {
                 throw new NoSuchAlgorithmException("Unknown type: " + type);

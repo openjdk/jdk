@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -36,8 +35,8 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -146,7 +145,7 @@ void MemAllocator::Allocation::verify_before() {
   // not take out a lock if from tlab, so clear here.
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
-  debug_only(check_for_valid_allocation_state());
+  DEBUG_ONLY(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
@@ -294,13 +293,13 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   mem = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &allocation._allocated_tlab_size);
   if (mem == nullptr) {
     assert(allocation._allocated_tlab_size == 0,
-           "Allocation failed, but actual size was updated. min: " SIZE_FORMAT
-           ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
+           "Allocation failed, but actual size was updated. min: %zu"
+           ", desired: %zu, actual: %zu",
            min_tlab_size, new_tlab_size, allocation._allocated_tlab_size);
     return nullptr;
   }
   assert(allocation._allocated_tlab_size != 0, "Allocation succeeded but actual size not updated. mem at: "
-         PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
+         PTR_FORMAT " min: %zu, desired: %zu",
          p2i(mem), min_tlab_size, new_tlab_size);
 
   // ...and clear or zap just allocated TLAB, if needed.
@@ -328,7 +327,7 @@ HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
   }
 
   // Allocation of an oop can always invoke a safepoint.
-  debug_only(allocation._thread->check_for_valid_safepoint_state());
+  DEBUG_ONLY(allocation._thread->check_for_valid_safepoint_state());
 
   if (UseTLAB) {
     // Try refilling the TLAB and allocating the object in it.

@@ -521,6 +521,7 @@ final class IntMaxVector extends IntVector {
         return laneHelper(i);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -540,6 +541,7 @@ final class IntMaxVector extends IntVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public IntMaxVector withLaneHelper(int i, int e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,11 @@ public abstract class KDFSpi {
      *         result of {@code deriveData}.
      *
      * @param alg
-     *         the algorithm of the resultant {@code SecretKey} object
+     *         the algorithm of the resultant {@code SecretKey} object.
+     *         See the SecretKey Algorithms section in the
+     *         <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *         Java Security Standard Algorithm Names Specification</a>
+     *         for information about standard secret key algorithm names.
      * @param derivationSpec
      *         derivation parameters
      *
@@ -129,6 +133,7 @@ public abstract class KDFSpi {
      *         if {@code alg} is empty or invalid
      * @throws NullPointerException
      *         if {@code alg} or {@code derivationSpec} is null
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  AlgorithmParameterSpec derivationSpec)

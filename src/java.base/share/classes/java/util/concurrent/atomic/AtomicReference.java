@@ -55,6 +55,7 @@ public class AtomicReference<V> implements java.io.Serializable {
     private static final VarHandle VALUE = MhUtil.findVarHandle(
             MethodHandles.lookup(), "value", Object.class);
 
+    /** @serial */
     @SuppressWarnings("serial") // Conditionally serializable
     private volatile V value;
 

@@ -26,16 +26,16 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
-#include "gc/shared/plab.hpp"
-#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
@@ -48,6 +48,9 @@ private:
   bool                    _oom_during_evac;
 
   SATBMarkQueue           _satb_mark_queue;
+
+  // Current active CardTable's byte_map_base for this thread.
+  CardTable::CardValue*   _card_table;
 
   // Thread-local allocation buffer for object evacuations.
   // In generational mode, it is exclusive to the young generation.
@@ -111,12 +114,29 @@ public:
   }
 
   static char gc_state(Thread* thread) {
-    assert(thread->is_Java_thread(), "GC state is only synchronized to java threads");
     return data(thread)->_gc_state;
   }
 
+  static bool is_gc_state(Thread* thread, ShenandoahHeap::GCState state) {
+    return (gc_state(thread) & state) != 0;
+  }
+
+  static bool is_gc_state(ShenandoahHeap::GCState state) {
+    return is_gc_state(Thread::current(), state);
+  }
+
+  static void set_card_table(Thread* thread, CardTable::CardValue* ct) {
+    assert(ct != nullptr, "trying to set thread local card_table pointer to nullptr.");
+    data(thread)->_card_table = ct;
+  }
+
+  static CardTable::CardValue* card_table(Thread* thread) {
+    CardTable::CardValue* ct = data(thread)->_card_table;
+    assert(ct != nullptr, "returning a null thread local card_table pointer.");
+    return ct;
+  }
+
   static void initialize_gclab(Thread* thread) {
-    assert (thread->is_Java_thread() || thread->is_Worker_thread(), "Only Java and GC worker threads are allowed to get GCLABs");
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
@@ -273,6 +293,10 @@ public:
 
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
+  }
+
+  static ByteSize card_table_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
   }
 };
 

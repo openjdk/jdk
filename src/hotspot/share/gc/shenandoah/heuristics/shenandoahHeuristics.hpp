@@ -69,6 +69,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
+  // How many times can I decline a trigger opportunity without being penalized for excessive idle span before trigger?
+  static const size_t Penalty_Free_Declinations = 16;
+
 #ifdef ASSERT
   enum UnionTag {
     is_uninitialized, is_garbage, is_live_data
@@ -77,6 +80,18 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+
+  bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
+  size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
+                                          //  heuristic has answered false to should_start_gc().
+  size_t _most_recent_declined_trigger_count;
+                                       ;  // This represents the value of _declined_trigger_count as captured at the
+                                          //  moment the most recent GC effort was triggered.  In case the most recent
+                                          //  concurrent GC effort degenerates, the value of this variable allows us to
+                                          //  differentiate between degeneration because heuristic was overly optimistic
+                                          //  in delaying the trigger vs. degeneration for other reasons (such as the
+                                          //  most recent GC triggered "immediately" after previous GC finished, but the
+                                          //  free headroom has already been depleted).
 
   class RegionData {
     private:
@@ -167,6 +182,16 @@ protected:
 
   void adjust_penalty(intx step);
 
+  inline void accept_trigger() {
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+  }
+
+  inline void decline_trigger() {
+    _declined_trigger_count++;
+  }
+
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
@@ -184,6 +209,10 @@ public:
   virtual void record_cycle_end();
 
   virtual bool should_start_gc();
+
+  inline void cancel_trigger_request() {
+    _start_gc_is_pending = false;
+  }
 
   virtual bool should_degenerate_cycle();
 

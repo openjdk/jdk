@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,8 +234,10 @@ public class TestSegments {
         assertTrue(s.contains("byteSize: "));
         if (segment.heapBase().isPresent()) {
             assertTrue(s.contains("heapBase: ["));
+            assertFalse(s.contains("native"));
         } else {
             assertFalse(s.contains("heapBase: "));
+            assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
     }

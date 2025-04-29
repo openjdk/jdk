@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -36,16 +35,16 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCCounters.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -92,12 +91,13 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -178,11 +178,11 @@ G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
     // safepoint.
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
-    log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: %zuB",
                               word_size * HeapWordSize);
 
     assert(word_size * HeapWordSize < G1HeapRegion::GrainBytes,
-           "This kind of expansion should never be more than one region. Size: " SIZE_FORMAT,
+           "This kind of expansion should never be more than one region. Size: %zu",
            word_size * HeapWordSize);
     if (expand_single_region(node_index)) {
       // Given that expand_single_region() succeeded in expanding the heap, and we
@@ -334,7 +334,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(G1HeapRegion* first_h
 }
 
 size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
-  assert(is_humongous(word_size), "Object of size " SIZE_FORMAT " must be humongous here", word_size);
+  assert(is_humongous(word_size), "Object of size %zu must be humongous here", word_size);
   return align_up(word_size, G1HeapRegion::GrainWords) / G1HeapRegion::GrainWords;
 }
 
@@ -357,7 +357,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
-      log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
+      log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
       policy()->record_new_heap_size(num_regions());
     } else {
@@ -402,7 +402,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   return attempt_allocation(word_size, word_size, &dummy);
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
+HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size) {
   ResourceMark rm; // For retrieving the thread names in log messages.
 
   // Make sure you read the note in attempt_allocation_humongous().
@@ -426,7 +426,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
       // Now that we have the lock, we first retry the allocation in case another
       // thread changed the region while we were waiting to acquire the lock.
-      result = _allocator->attempt_allocation_locked(word_size);
+      result = _allocator->attempt_allocation_locked(node_index, word_size);
       if (result != nullptr) {
         return result;
       }
@@ -443,7 +443,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       return result;
     }
 
-    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT " words",
+    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu words",
                          Thread::current()->name(), word_size);
 
     // We can reach here if we were unsuccessful in scheduling a collection (because
@@ -453,7 +453,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // here and the follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(word_size, word_size, &dummy);
+    result = _allocator->attempt_allocation(node_index, word_size, word_size, &dummy);
     if (result != nullptr) {
       return result;
     }
@@ -461,7 +461,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      log_warning(gc, alloc)("%s:  Retried allocation %u times for " SIZE_FORMAT " words",
+      log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
     }
   }
@@ -494,8 +494,8 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   MemRegion reserved = _hrm.reserved();
 
   if (reserved.word_size() <= word_size) {
-    log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = " SIZE_FORMAT
-                       " bytes, heap = " SIZE_FORMAT " bytes", word_size, reserved.word_size());
+    log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = %zu"
+                       " bytes, heap = %zu bytes", word_size, reserved.word_size());
     return nullptr;
   }
 
@@ -513,7 +513,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   }
   increase_used(word_size * HeapWordSize);
   if (commits != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
                               G1HeapRegion::GrainWords * HeapWordSize * commits);
   }
 
@@ -572,7 +572,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   iterate_regions_in_range(range, dealloc_archive_region);
 
   if (shrink_count != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB",
                               G1HeapRegion::GrainWords * HeapWordSize * shrink_count);
     // Explicit uncommit.
     uncommit_regions(shrink_count);
@@ -587,11 +587,14 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+  // Fix NUMA node association for the duration of this allocation
+  const uint node_index = _allocator->current_node_index();
+
+  HeapWord* result = _allocator->attempt_allocation(node_index, min_word_size, desired_word_size, actual_word_size);
 
   if (result == nullptr) {
     *actual_word_size = desired_word_size;
-    result = attempt_allocation_slow(desired_word_size);
+    result = attempt_allocation_slow(node_index, desired_word_size);
   }
 
   assert_heap_not_locked();
@@ -672,7 +675,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       return result;
     }
 
-    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT "",
+    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu",
                          Thread::current()->name(), word_size);
 
     // We can reach here if we were unsuccessful in scheduling a collection (because
@@ -698,8 +701,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   assert(!_allocator->has_mutator_alloc_region() || !expect_null_mutator_alloc_region,
          "the current alloc region was unexpectedly found to be non-null");
 
+  // Fix NUMA node association for the duration of this allocation
+  const uint node_index = _allocator->current_node_index();
+
   if (!is_humongous(word_size)) {
-    return _allocator->attempt_allocation_locked(word_size);
+    return _allocator->attempt_allocation_locked(node_index, word_size);
   } else {
     HeapWord* result = humongous_obj_allocate(word_size);
     if (result != nullptr && policy()->need_to_start_conc_mark("STW humongous allocation")) {
@@ -977,7 +983,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   _verifier->verify_region_sets_optional();
 
   size_t expand_bytes = MAX2(word_size * HeapWordSize, MinHeapDeltaBytes);
-  log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: %zuB",
                             word_size * HeapWordSize);
 
 
@@ -994,7 +1000,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
-  log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: %zuB expansion amount: %zuB",
                             expand_bytes, aligned_expand_bytes);
 
   if (is_maximal_no_gc()) {
@@ -1041,7 +1047,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
 
-  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B actual amount shrunk: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: %zuB aligned shrinking amount: %zuB actual amount shrunk: %zuB",
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
@@ -1159,8 +1165,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cardset_mm(card_set_config(), card_set_freelist_pool()),
-  _young_regions_cardset(card_set_config(), &_young_regions_cardset_mm),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, 1u /* group_id */),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),
@@ -1212,8 +1217,21 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
                                                                  size_t size,
                                                                  size_t translation_factor) {
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
+
+  // When a page size is given we don't want to mix large
+  // and normal pages. If the size is not a multiple of the
+  // page size it will be aligned up to achieve this.
+  size_t alignment = os::vm_allocation_granularity();
+  if (preferred_page_size != os::vm_page_size()) {
+    alignment = MAX2(preferred_page_size, alignment);
+    size = align_up(size, alignment);
+  }
+
   // Allocate a new reserved space, preferring to use large pages.
-  ReservedSpace rs(size, preferred_page_size);
+  ReservedSpace rs = MemoryReserver::reserve(size,
+                                             alignment,
+                                             preferred_page_size);
+
   size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -1288,7 +1306,7 @@ jint G1CollectedHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   // Create the barrier set for the entire reserved region.
-  G1CardTable* ct = new G1CardTable(heap_rs.region());
+  G1CardTable* ct = new G1CardTable(_reserved);
   G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
@@ -1440,7 +1458,7 @@ jint G1CollectedHeap::initialize() {
 
   G1InitLogger::print();
 
-  FullGCForwarding::initialize(heap_rs.region());
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
@@ -1861,7 +1879,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
     return try_collect_concurrently(cause,
                                     counters_before.total_collections(),
                                     counters_before.old_marking_cycles_started());
-  } else if (cause == GCCause::_gc_locker || cause == GCCause::_wb_young_gc
+  } else if (cause == GCCause::_wb_young_gc
              DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
 
     // Schedule a standard evacuation pause. We're setting word_size
@@ -2094,26 +2112,28 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
-void G1CollectedHeap::print_on(outputStream* st) const {
+void G1CollectedHeap::print_heap_on(outputStream* st) const {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
-  st->print(" %-20s", "garbage-first heap");
+  st->print("%-20s", "garbage-first heap");
   st->print(" total reserved %zuK, committed %zuK, used %zuK",
             _hrm.reserved().byte_size()/K, capacity()/K, heap_used/K);
   st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(_hrm.reserved().start()),
             p2i(_hrm.reserved().end()));
   st->cr();
-  st->print("  region size " SIZE_FORMAT "K, ", G1HeapRegion::GrainBytes / K);
+
+  StreamAutoIndentor indentor(st, 1);
+  st->print("region size %zuK, ", G1HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();
-  st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
+  st->print("%u young (%zuK), ", young_regions,
             (size_t) young_regions * G1HeapRegion::GrainBytes / K);
   uint survivor_regions = survivor_regions_count();
-  st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
+  st->print("%u survivors (%zuK)", survivor_regions,
             (size_t) survivor_regions * G1HeapRegion::GrainBytes / K);
   st->cr();
   if (_numa->is_enabled()) {
     uint num_nodes = _numa->num_active_nodes();
-    st->print("  remaining free region(s) on each NUMA node: ");
+    st->print("remaining free region(s) on each NUMA node: ");
     const uint* node_ids = _numa->node_ids();
     for (uint node_index = 0; node_index < num_nodes; node_index++) {
       uint num_free_regions = _hrm.num_free_regions(node_index);
@@ -2121,7 +2141,6 @@ void G1CollectedHeap::print_on(outputStream* st) const {
     }
     st->cr();
   }
-  MetaspaceUtils::print_on(st);
 }
 
 void G1CollectedHeap::print_regions_on(outputStream* st) const {
@@ -2135,19 +2154,26 @@ void G1CollectedHeap::print_regions_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_extended_on(outputStream* st) const {
-  print_on(st);
+  print_heap_on(st);
 
   // Print the per-region information.
   st->cr();
   print_regions_on(st);
 }
 
-void G1CollectedHeap::print_on_error(outputStream* st) const {
-  this->CollectedHeap::print_on_error(st);
+void G1CollectedHeap::print_gc_on(outputStream* st) const {
+  // Print the per-region information.
+  print_regions_on(st);
+  st->cr();
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 
   if (_cm != nullptr) {
     st->cr();
-    _cm->print_on_error(st);
+    _cm->print_on(st);
   }
 }
 
@@ -2703,7 +2729,7 @@ bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
 void G1CollectedHeap::set_region_short_lived_locked(G1HeapRegion* hr) {
   _eden.add(hr);
   _policy->set_region_eden(hr);
-  hr->install_group_cardset(young_regions_cardset());
+  young_regions_cset_group()->add(hr);
 }
 
 #ifdef ASSERT
@@ -2760,7 +2786,7 @@ void G1CollectedHeap::increase_used(size_t bytes) {
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
   assert(_summary_bytes_used >= bytes,
-         "invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
+         "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
          _summary_bytes_used, bytes);
   _summary_bytes_used -= bytes;
 }
@@ -2914,7 +2940,7 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       _survivor.add(new_alloc_region);
       register_new_survivor_region_with_region_attr(new_alloc_region);
       // Install the group cardset.
-      new_alloc_region->install_group_cardset(young_regions_cardset());
+      young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
     }
@@ -3057,6 +3083,8 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::arm_all_nmethods();
 }
 
-void G1CollectedHeap::prepare_group_cardsets_for_scan () {
-  _young_regions_cardset.reset_table_scanner_for_groups();
+void G1CollectedHeap::prepare_group_cardsets_for_scan() {
+  young_regions_cardset()->reset_table_scanner_for_groups();
+
+  collection_set()->prepare_groups_for_scan();
 }

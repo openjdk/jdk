@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
@@ -66,11 +65,10 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
     set_base((address)heap_space.compressed_oop_base());
   }
 
-  _heap_address_range = heap_space.region();
+  _heap_address_range = MemRegion((HeapWord*)heap_space.base(), (HeapWord*)heap_space.end());
 
   LogTarget(Debug, gc, heap, coops) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     print_mode(&ls);
   }
@@ -161,7 +159,7 @@ bool CompressedOops::base_overlaps() {
 }
 
 void CompressedOops::print_mode(outputStream* st) {
-  st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+  st->print("Heap address: " PTR_FORMAT ", size: %zu MB",
             p2i(_heap_address_range.start()), _heap_address_range.byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));

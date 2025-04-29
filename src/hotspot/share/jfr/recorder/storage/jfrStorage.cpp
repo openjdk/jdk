@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -137,7 +136,7 @@ JfrStorageControl& JfrStorage::control() {
 }
 
 static void log_allocation_failure(const char* msg, size_t size) {
-  log_warning(jfr)("Unable to allocate " SIZE_FORMAT " bytes of %s.", size, msg);
+  log_warning(jfr)("Unable to allocate %zu bytes of %s.", size, msg);
 }
 
 BufferPtr JfrStorage::acquire_thread_local(Thread* thread, size_t size /* 0 */) {
@@ -327,8 +326,8 @@ static void log_discard(size_t pre_full_count, size_t post_full_count, size_t am
   if (log_is_enabled(Debug, jfr, system)) {
     const size_t number_of_discards = pre_full_count - post_full_count;
     if (number_of_discards > 0) {
-      log_debug(jfr, system)("Cleared " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" bytes.", number_of_discards, amount);
-      log_debug(jfr, system)("Current number of full buffers " SIZE_FORMAT "", number_of_discards);
+      log_debug(jfr, system)("Cleared %zu full buffer(s) of %zu bytes.", number_of_discards, amount);
+      log_debug(jfr, system)("Current number of full buffers %zu", number_of_discards);
     }
   }
 }
@@ -399,7 +398,7 @@ static void assert_flush_large_precondition(ConstBufferPtr cur, const u1* const 
 #endif // ASSERT
 
 BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_precondition(cur, used, native, t);)
+  DEBUG_ONLY(assert_flush_precondition(cur, used, native, t);)
   const u1* const cur_pos = cur->pos();
   req += used;
   // requested size now encompass the outstanding used size
@@ -408,7 +407,7 @@ BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native,
 }
 
 BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
+  DEBUG_ONLY(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
   // A flush is needed before memmove since a non-large buffer is thread stable
   // (thread local). The flush will not modify memory in addresses above pos()
   // which is where the "used / uncommitted" data resides. It is therefore both
@@ -451,7 +450,7 @@ static BufferPtr restore_shelved_buffer(bool native, Thread* t) {
 }
 
 BufferPtr JfrStorage::flush_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
+  DEBUG_ONLY(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
   // Can the "regular" buffer (now shelved) accommodate the requested size?
   BufferPtr shelved = t->jfr_thread_local()->shelved_buffer();
   assert(shelved != nullptr, "invariant");
@@ -481,7 +480,7 @@ static BufferPtr large_fail(BufferPtr cur, bool native, JfrStorage& storage_inst
 // even though it might be smaller than the requested size.
 // Caller needs to ensure if the size was successfully accommodated.
 BufferPtr JfrStorage::provision_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_provision_large_precondition(cur, used, req, t);)
+  DEBUG_ONLY(assert_provision_large_precondition(cur, used, req, t);)
   assert(t->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");
   BufferPtr const buffer = acquire_large(req, t);
   if (buffer == nullptr) {
@@ -566,7 +565,7 @@ static size_t process_full(Processor& processor, JfrFullList* list, JfrStorageCo
 static void log(size_t count, size_t amount, bool clear = false) {
   if (log_is_enabled(Debug, jfr, system)) {
     if (count > 0) {
-      log_debug(jfr, system)("%s " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" B of data%s",
+      log_debug(jfr, system)("%s %zu full buffer(s) of %zu B of data%s",
         clear ? "Discarded" : "Wrote", count, amount, clear ? "." : " to chunk.");
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -49,7 +48,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/perfData.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -63,6 +61,7 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
@@ -76,10 +75,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
@@ -365,19 +368,12 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
-      // that we own, we can transfer one or more threads from the waitset
-      // to the entrylist here and now, avoiding the slow-path.
+      // that we own, we quickly notify them here and now, avoiding the slow-path.
       if (all) {
-        DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
+        mon->quick_notifyAll(current);
       } else {
-        DTRACE_MONITOR_PROBE(notify, mon, obj, current);
+        mon->quick_notify(current);
       }
-      int free_count = 0;
-      do {
-        mon->INotify(current);
-        ++free_count;
-      } while (mon->first_waiter() != nullptr && all);
-      OM_PERFDATA_OP(Notifications, inc(free_count));
     }
     return true;
   }
@@ -407,10 +403,6 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     return false;  // Slow path
   }
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
-  }
-
   assert(LockingMode == LM_LEGACY, "legacy mode below");
 
   const markWord mark = obj->mark();
@@ -431,7 +423,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     // Case: TLE inimical operations such as nested/recursive synchronization
 
     if (m->has_owner(current)) {
-      m->_recursions++;
+      m->increment_recursions(current);
       current->inc_held_monitor_count();
       return true;
     }
@@ -448,7 +440,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     lock->set_displaced_header(markWord::unused_mark());
 
     if (!m->has_owner() && m->try_set_owner(current)) {
-      assert(m->_recursions == 0, "invariant");
+      assert(m->recursions() == 0, "invariant");
       current->inc_held_monitor_count();
       return true;
     }
@@ -682,7 +674,8 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
     ObjectMonitor* monitor;
     bool entered;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      entered = LightweightSynchronizer::inflate_and_enter(obj(), inflate_cause_jni_enter, current, current) != nullptr;
+      BasicLock lock;
+      entered = LightweightSynchronizer::inflate_and_enter(obj(), &lock, inflate_cause_jni_enter, current, current) != nullptr;
     } else {
       monitor = inflate(current, obj(), inflate_cause_jni_enter);
       entered = monitor->enter(current);
@@ -1264,39 +1257,60 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   if (MonitorUsedDeflationThreshold == 0) {  // disabled case is easy
     return false;
   }
-  // Start with ceiling based on a per-thread estimate:
-  size_t ceiling = ObjectSynchronizer::in_use_list_ceiling();
-  size_t old_ceiling = ceiling;
-  if (ceiling < list->max()) {
-    // The max used by the system has exceeded the ceiling so use that:
-    ceiling = list->max();
-  }
   size_t monitors_used = list->count();
   if (monitors_used == 0) {  // empty list is easy
     return false;
   }
-  if (NoAsyncDeflationProgressMax != 0 &&
-      _no_progress_cnt >= NoAsyncDeflationProgressMax) {
-    double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-    size_t new_ceiling = ceiling + (size_t)((double)ceiling * remainder) + 1;
-    ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
-    log_info(monitorinflation)("Too many deflations without progress; "
-                               "bumping in_use_list_ceiling from " SIZE_FORMAT
-                               " to " SIZE_FORMAT, old_ceiling, new_ceiling);
-    _no_progress_cnt = 0;
-    ceiling = new_ceiling;
-  }
+  size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
+  // Make sure that we use a ceiling value that is not lower than
+  // previous, not lower than the recorded max used by the system, and
+  // not lower than the current number of monitors in use (which can
+  // race ahead of max). The result is guaranteed > 0.
+  size_t ceiling = MAX3(old_ceiling, list->max(), monitors_used);
 
   // Check if our monitor usage is above the threshold:
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
   if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
-    log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
-                               ", monitor_usage=" SIZE_FORMAT ", threshold=%d",
+    // Deflate monitors if over the threshold percentage, unless no
+    // progress on previous deflations.
+    bool is_above_threshold = true;
+
+    // Check if it's time to adjust the in_use_list_ceiling up, due
+    // to too many async deflation attempts without any progress.
+    if (NoAsyncDeflationProgressMax != 0 &&
+        _no_progress_cnt >= NoAsyncDeflationProgressMax) {
+      double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
+      size_t delta = (size_t)(ceiling * remainder) + 1;
+      size_t new_ceiling = (ceiling > SIZE_MAX - delta)
+        ? SIZE_MAX         // Overflow, let's clamp new_ceiling.
+        : ceiling + delta;
+
+      ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
+      log_info(monitorinflation)("Too many deflations without progress; "
+                                 "bumping in_use_list_ceiling from %zu"
+                                 " to %zu", old_ceiling, new_ceiling);
+      _no_progress_cnt = 0;
+      ceiling = new_ceiling;
+
+      // Check if our monitor usage is still above the threshold:
+      monitor_usage = (monitors_used * 100LL) / ceiling;
+      is_above_threshold = int(monitor_usage) > MonitorUsedDeflationThreshold;
+    }
+    log_info(monitorinflation)("monitors_used=%zu, ceiling=%zu"
+                               ", monitor_usage=%zu, threshold=%d",
                                monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
-    return true;
+    return is_above_threshold;
   }
 
   return false;
+}
+
+size_t ObjectSynchronizer::in_use_list_count() {
+  return _in_use_list.count();
+}
+
+size_t ObjectSynchronizer::in_use_list_max() {
+  return _in_use_list.max();
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
@@ -1341,7 +1355,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
     // touched many monitors.
-    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (%zd ms) "
                                "is greater than time since last deflation (" JLONG_FORMAT " ms)",
                                GuaranteedAsyncDeflationInterval, time_since_last);
 
@@ -1406,7 +1420,11 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != nullptr, "invariant");
-  event->set_monitorClass(obj->klass());
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
   event->commit();
@@ -1570,9 +1588,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop 
       // with the ObjectMonitor, it is safe to allow async deflation:
       _in_use_list.add(m);
 
-      // Hopefully the performance counters are allocated on distinct cache lines
-      // to avoid false sharing on MP systems ...
-      OM_PERFDATA_OP(Inflations, inc());
       if (log_is_enabled(Trace, monitorinflation)) {
         ResourceMark rm;
         lsh.print_cr("inflate(has_locker): object=" INTPTR_FORMAT ", mark="
@@ -1612,9 +1627,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop 
     // with the ObjectMonitor, it is safe to allow async deflation:
     _in_use_list.add(m);
 
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     if (log_is_enabled(Trace, monitorinflation)) {
       ResourceMark rm;
       lsh.print_cr("inflate(unlocked): object=" INTPTR_FORMAT ", mark="
@@ -1697,8 +1709,8 @@ class ObjectMonitorDeflationLogging: public StackObj {
   elapsedTimer                             _timer;
 
   size_t ceiling() const { return ObjectSynchronizer::in_use_list_ceiling(); }
-  size_t count() const   { return ObjectSynchronizer::_in_use_list.count(); }
-  size_t max() const     { return ObjectSynchronizer::_in_use_list.max(); }
+  size_t count() const   { return ObjectSynchronizer::in_use_list_count(); }
+  size_t max() const     { return ObjectSynchronizer::in_use_list_max(); }
 
 public:
   ObjectMonitorDeflationLogging()
@@ -1712,7 +1724,7 @@ public:
 
   void begin() {
     if (_stream != nullptr) {
-      _stream->print_cr("begin deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("begin deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -1721,9 +1733,9 @@ public:
   void before_handshake(size_t unlinked_count) {
     if (_stream != nullptr) {
       _timer.stop();
-      _stream->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
-                        ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                        SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("before handshaking: unlinked_count=%zu"
+                        ", in_use_list stats: ceiling=%zu, count="
+                        "%zu, max=%zu",
                         unlinked_count, ceiling(), count(), max());
     }
   }
@@ -1731,7 +1743,7 @@ public:
   void after_handshake() {
     if (_stream != nullptr) {
       _stream->print_cr("after handshaking: in_use_list stats: ceiling="
-                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                        "%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -1741,10 +1753,10 @@ public:
     if (_stream != nullptr) {
       _timer.stop();
       if (deflated_count != 0 || unlinked_count != 0 || _debug.is_enabled()) {
-        _stream->print_cr("deflated_count=" SIZE_FORMAT ", {unlinked,deleted}_count=" SIZE_FORMAT " monitors in %3.7f secs",
+        _stream->print_cr("deflated_count=%zu, {unlinked,deleted}_count=%zu monitors in %3.7f secs",
                           deflated_count, unlinked_count, _timer.seconds());
       }
-      _stream->print_cr("end deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("end deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
     }
   }
@@ -1752,16 +1764,16 @@ public:
   void before_block_for_safepoint(const char* op_name, const char* cnt_name, size_t cnt) {
     if (_stream != nullptr) {
       _timer.stop();
-      _stream->print_cr("pausing %s: %s=" SIZE_FORMAT ", in_use_list stats: ceiling="
-                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("pausing %s: %s=%zu, in_use_list stats: ceiling="
+                        "%zu, count=%zu, max=%zu",
                         op_name, cnt_name, cnt, ceiling(), count(), max());
     }
   }
 
   void after_block_for_safepoint(const char* op_name) {
     if (_stream != nullptr) {
-      _stream->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
-                        ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
+      _stream->print_cr("resuming %s: in_use_list stats: ceiling=%zu"
+                        ", count=%zu, max=%zu", op_name,
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -1841,9 +1853,6 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   }
 
   log.end(deflated_count, unlinked_count);
-
-  OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
-  OM_PERFDATA_OP(Deflations, inc(deflated_count));
 
   GVars.stw_random = os::random();
 
@@ -1988,7 +1997,7 @@ void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
 void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   size_t l_in_use_count = _in_use_list.count();
   size_t l_in_use_max = _in_use_list.max();
-  out->print_cr("count=" SIZE_FORMAT ", max=" SIZE_FORMAT, l_in_use_count,
+  out->print_cr("count=%zu, max=%zu", l_in_use_count,
                 l_in_use_max);
 
   size_t ck_in_use_count = 0;
@@ -2000,21 +2009,21 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   }
 
   if (l_in_use_count == ck_in_use_count) {
-    out->print_cr("in_use_count=" SIZE_FORMAT " equals ck_in_use_count="
-                  SIZE_FORMAT, l_in_use_count, ck_in_use_count);
+    out->print_cr("in_use_count=%zu equals ck_in_use_count=%zu",
+                  l_in_use_count, ck_in_use_count);
   } else {
-    out->print_cr("WARNING: in_use_count=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_count=" SIZE_FORMAT, l_in_use_count,
+    out->print_cr("WARNING: in_use_count=%zu is not equal to "
+                  "ck_in_use_count=%zu", l_in_use_count,
                   ck_in_use_count);
   }
 
   size_t ck_in_use_max = _in_use_list.max();
   if (l_in_use_max == ck_in_use_max) {
-    out->print_cr("in_use_max=" SIZE_FORMAT " equals ck_in_use_max="
-                  SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("in_use_max=%zu equals ck_in_use_max=%zu",
+                  l_in_use_max, ck_in_use_max);
   } else {
-    out->print_cr("WARNING: in_use_max=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_max=" SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("WARNING: in_use_max=%zu is not equal to "
+                  "ck_in_use_max=%zu", l_in_use_max, ck_in_use_max);
   }
 }
 

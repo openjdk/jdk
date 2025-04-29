@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +23,10 @@
  *
  */
 
-
-#include "precompiled.hpp"
-
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -38,7 +36,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -96,6 +93,8 @@ public:
 class ShenandoahPurgeSATBTask : public WorkerTask {
 private:
   ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the vm thread reads it.
   volatile size_t             _trashed_oops;
 
 public:
@@ -108,7 +107,7 @@ public:
 
   ~ShenandoahPurgeSATBTask() {
     if (_trashed_oops > 0) {
-      log_debug(gc)("Purged " SIZE_FORMAT " oops from old generation SATB buffers", _trashed_oops);
+      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
     }
   }
 
@@ -121,6 +120,35 @@ public:
     ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
     ShenandoahProcessOldSATB processor(mark_queue);
     while (satb_queues.apply_closure_to_completed_buffer(&processor)) {}
+
+    Atomic::add(&_trashed_oops, processor.trashed_oops());
+  }
+};
+
+class ShenandoahTransferOldSATBTask : public WorkerTask {
+  ShenandoahSATBMarkQueueSet&  _satb_queues;
+  ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the control thread reads it.
+  volatile size_t              _trashed_oops;
+
+public:
+  explicit ShenandoahTransferOldSATBTask(ShenandoahSATBMarkQueueSet& satb_queues, ShenandoahObjToScanQueueSet* mark_queues) :
+    WorkerTask("Transfer SATB"),
+    _satb_queues(satb_queues),
+    _mark_queues(mark_queues),
+    _trashed_oops(0) {}
+
+  ~ShenandoahTransferOldSATBTask() {
+    if (_trashed_oops > 0) {
+      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
+    }
+  }
+
+  void work(uint worker_id) override {
+    ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
+    ShenandoahProcessOldSATB processor(mark_queue);
+    while (_satb_queues.apply_closure_to_completed_buffer(&processor)) {}
 
     Atomic::add(&_trashed_oops, processor.trashed_oops());
   }
@@ -425,14 +453,25 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   }
 }
 
-void ShenandoahOldGeneration::transfer_pointers_from_satb() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  shenandoah_assert_safepoint();
+void ShenandoahOldGeneration::concurrent_transfer_pointers_from_satb() const {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
   log_debug(gc)("Transfer SATB buffers");
-  uint nworkers = heap->workers()->active_workers();
-  StrongRootsScope scope(nworkers);
 
+  // Step 1. All threads need to 'complete' partially filled, thread local SATB buffers. This
+  // is accomplished in ShenandoahConcurrentGC::complete_abbreviated_cycle using a Handshake
+  // operation.
+  // Step 2. Use worker threads to transfer oops from old, active regions in the completed
+  // SATB buffers to old generation mark queues.
+  ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahTransferOldSATBTask transfer_task(satb_queues, task_queues());
+  heap->workers()->run_task(&transfer_task);
+}
+
+void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
+  log_debug(gc)("Transfer SATB buffers");
   ShenandoahPurgeSATBTask purge_satb_task(task_queues());
   heap->workers()->run_task(&purge_satb_task);
 }
@@ -497,7 +536,7 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
-    log_debug(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
+    log_debug(gc, thread)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
     EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
     validate_transition(new_state);
     _state = new_state;
@@ -653,9 +692,9 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
     const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
     const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
 
-    log_info(gc, ergo)("Promotion failed, size " SIZE_FORMAT ", has plab? %s, PLAB remaining: " SIZE_FORMAT
-                       ", plab promotions %s, promotion reserve: " SIZE_FORMAT ", promotion expended: " SIZE_FORMAT
-                       ", old capacity: " SIZE_FORMAT ", old_used: " SIZE_FORMAT ", old unaffiliated regions: " SIZE_FORMAT,
+    log_info(gc, ergo)("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+                       ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
+                       ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
                        size * HeapWordSize, plab == nullptr? "no": "yes",
                        words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
                        max_capacity(), used(), free_unaffiliated_regions());
@@ -700,7 +739,7 @@ void ShenandoahOldGeneration::abandon_collection_candidates() {
 void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
   assert(is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
   _old_heuristics->prepare_for_old_collections();
-  log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
+  log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: %zu",
                _old_heuristics->unprocessed_old_collection_candidates(),
                _old_heuristics->coalesce_and_fill_candidates_count());
 }

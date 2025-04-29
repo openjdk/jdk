@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -199,6 +199,7 @@ class MacroAssembler: public Assembler {
 
   // Test a bit in memory. Result is reflected in CC.
   void testbit(const Address &a, unsigned int bit);
+  void testbit_ushort(const Address &a, unsigned int bit);
   // Test a bit in a register. Result is reflected in CC.
   void testbit(Register r, unsigned int bitPos);
 
@@ -815,8 +816,8 @@ class MacroAssembler: public Assembler {
   void set_thread_state(JavaThreadState new_state);
 
   // Read vm result from thread.
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register result);
+  void get_vm_result_oop  (Register oop_result);
+  void get_vm_result_metadata(Register result);
 
   // Vm result is currently getting hijacked to for oop preservation.
   void set_vm_result(Register oop_result);
@@ -1108,6 +1109,8 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
+  void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
+  void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 };
 
 #ifdef ASSERT

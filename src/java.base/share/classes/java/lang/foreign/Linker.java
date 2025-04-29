@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
@@ -797,7 +797,7 @@ public sealed interface Linker permits AbstractLinker {
          *     arguments</li>
          * <li>{@code N}, none of the arguments passed to the function are passed as
          *     variadic arguments</li>
-         * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed
+         * <li>{@code m}, where {@code 0 < m < N}, the arguments {@code m..N-1} are passed
          *     as variadic arguments</li>
          * </ul>
          * It is important to always use this linker option when linking a
@@ -859,10 +859,11 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+            int set = Stream.of(Objects.requireNonNull(capturedState))
                     .map(Objects::requireNonNull)
                     .map(CapturableState::forName)
-                    .collect(Collectors.toSet());
+                    .mapToInt(state -> 1 << state.ordinal())
+                    .sum();
             return new LinkerOptions.CaptureCallState(set);
         }
 

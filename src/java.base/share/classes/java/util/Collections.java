@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
-public class Collections {
+public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {
     }
@@ -1054,6 +1054,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<? extends E> c;
 
@@ -1337,6 +1338,7 @@ public class Collections {
                              implements SortedSet<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -4929149591599911165L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -1419,7 +1421,7 @@ public class Collections {
                 new EmptyNavigableSet<>();
 
         /**
-         * The instance we are protecting.
+         * @serial The instance we are protecting.
          */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
@@ -1488,6 +1490,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -283967356065247728L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<? extends E> list;
 
@@ -1641,6 +1644,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -1034234728574286014L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Map<? extends K, ? extends V> m;
 
@@ -2068,6 +2072,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8806743815996713206L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, ? extends V> sm;
 
@@ -2149,7 +2154,7 @@ public class Collections {
             new EmptyNavigableMap<>();
 
         /**
-         * The instance we wrap and protect.
+         * @serial The instance we wrap and protect.
          */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, ? extends V> nm;
@@ -2283,8 +2288,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;  // Backing Collection
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Object mutex;     // Object on which to synchronize
 
@@ -2487,6 +2494,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 8695801310862127406L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -2583,6 +2591,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5505529816273629798L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
@@ -2694,6 +2703,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -7754090372962971524L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
@@ -2862,8 +2872,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1978198479659022715L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K,V> m;     // Backing Map
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Object      mutex;        // Object on which to synchronize
 
@@ -3061,6 +3073,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8798146769416483793L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K,V> sm;
 
@@ -3165,6 +3178,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 699392247599746807L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K,V> nm;
 
@@ -3345,9 +3359,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1578914078182001775L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<E> type;
 
         @SuppressWarnings("unchecked")
@@ -3403,6 +3418,7 @@ public class Collections {
 
         public boolean add(E e)          { return c.add(typeCheck(e)); }
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private E[] zeroLengthElementArray; // Lazily initialized
 
@@ -3497,6 +3513,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 1433151992604707767L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Queue<E> queue;
 
@@ -3602,6 +3619,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599911165492914959L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -3667,6 +3685,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5429120189805438922L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
@@ -3751,6 +3770,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 65247728283967356L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
@@ -3901,11 +3921,12 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 5742860141034234728L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<K> keyType;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<V> valueType;
 
         private void typeCheck(Object key, Object value) {
@@ -4301,6 +4322,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599671320688067438L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, V> sm;
 
@@ -4377,6 +4399,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -4852462692372534096L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, V> nm;
 
@@ -5108,6 +5131,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3193687207550431679L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
@@ -5163,6 +5187,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3093736618740652951L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
@@ -5233,8 +5258,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -6979724477215052911L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K k;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V v;
 
@@ -5373,7 +5400,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 2739099268398711800L;
 
+        /** @serial */
         final int n;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final E element;
 
@@ -5914,6 +5943,7 @@ public class Collections {
     private static class SetFromMap<E> extends AbstractSet<E>
         implements Set<E>, Serializable
     {
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Map<E, Boolean> m;          // The backing map
         private transient Set<E> s;       // Its keySet
@@ -6088,6 +6118,7 @@ public class Collections {
         implements Queue<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1802017725587941708L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Deque<E> q;
         AsLIFOQueue(Deque<E> q)                     { this.q = q; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -98,7 +97,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeStackPrinter.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/stringUtils.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
@@ -212,8 +210,10 @@ bool InstanceKlass::has_nest_member(JavaThread* current, InstanceKlass* k) const
   return false;
 }
 
-// Called to verify that k is a permitted subclass of this class
-bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
+// Called to verify that k is a permitted subclass of this class.
+// The incoming stringStream is used to format the messages for error logging and for the caller
+// to use for exception throwing.
+bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const {
   Thread* current = Thread::current();
   assert(k != nullptr, "sanity check");
   assert(_permitted_subclasses != nullptr && _permitted_subclasses != Universe::the_empty_short_array(),
@@ -221,22 +221,34 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
 
   if (log_is_enabled(Trace, class, sealed)) {
     ResourceMark rm(current);
-    log_trace(class, sealed)("Checking for permitted subclass of %s in %s",
+    log_trace(class, sealed)("Checking for permitted subclass %s in %s",
                              k->external_name(), this->external_name());
   }
 
   // Check that the class and its super are in the same module.
   if (k->module() != this->module()) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed for same module of permitted subclass %s and sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same module check: subclass %s is in module '%s' with loader %s, "
+             "and sealed class %s is in module '%s' with loader %s",
+             k->external_name(),
+             k->module()->name_as_C_string(),
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->module()->name_as_C_string(),
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
   if (!k->is_public() && !is_same_class_package(k)) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed, subclass %s not public and not in the same package as sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same package check: non-public subclass %s is in package '%s' with classloader %s, "
+             "and sealed class %s is in package '%s' with classloader %s",
+             k->external_name(),
+             k->package() != nullptr ? k->package()->name()->as_C_string() : "unnamed",
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->package() != nullptr ? this->package()->name()->as_C_string() : "unnamed",
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
@@ -248,7 +260,10 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
       return true;
     }
   }
-  log_trace(class, sealed)("- class is NOT a permitted subclass!");
+
+  ss.print("Failed listed permitted subclass check: class %s is not a permitted subclass of %s",
+           k->external_name(), this->external_name());
+  log_trace(class, sealed)(" - %s", ss.as_string());
   return false;
 }
 
@@ -1306,7 +1321,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
-    debug_only(vtable().verify(tty, true);)
+    DEBUG_ONLY(vtable().verify(tty, true);)
   }
   else {
     // Step 10 and 11
@@ -1769,7 +1784,7 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
     Symbol* f_name = fs.name();
     Symbol* f_sig  = fs.signature();
     if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
       return true;
     }
   }
@@ -1838,7 +1853,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.offset() == offset) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -1899,19 +1914,16 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
-  fieldDescriptor fd;
-  int length = java_fields_count();
-  for (int i = 0; i < length; i += 1) {
-    fd.reinitialize(this, i);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    fieldDescriptor& fd = fs.field_descriptor();
     if (!fd.is_static()) {
       cl->do_field(&fd);
     }
   }
 }
 
-// first in Pair is offset, second is index.
-static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
-  return a->first - b->first;
+static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
+  return a->offset() - b->offset();
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
@@ -1920,25 +1932,20 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
     super->print_nonstatic_fields(cl);
   }
   ResourceMark rm;
-  fieldDescriptor fd;
   // In DebugInfo nonstatic fields are sorted by offset.
-  GrowableArray<Pair<int,int> > fields_sorted;
-  int i = 0;
+  GrowableArray<FieldInfo> fields_sorted;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
-      fd = fs.field_descriptor();
-      Pair<int,int> f(fs.offset(), fs.index());
-      fields_sorted.push(f);
-      i++;
+      fields_sorted.push(fs.to_FieldInfo());
     }
   }
-  if (i > 0) {
-    int length = i;
-    assert(length == fields_sorted.length(), "duh");
+  int length = fields_sorted.length();
+  if (length > 0) {
     fields_sorted.sort(compare_fields_by_offset);
+    fieldDescriptor fd;
     for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i).second);
-      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      fd.reinitialize(this, fields_sorted.at(i));
+      assert(!fd.is_static() && fd.offset() == checked_cast<int>(fields_sorted.at(i).offset()), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
@@ -2683,7 +2690,7 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  if (CDSConfig::is_dumping_invokedynamic() && HeapShared::is_lambda_proxy_klass(this)) {
+  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
     // keep _nest_host
   } else {
     // clear _nest_host to ensure re-load at runtime
@@ -2691,6 +2698,7 @@ void InstanceKlass::remove_unshareable_info() {
   }
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
+  DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
 }
@@ -3322,8 +3330,8 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   return outer_klass;
 }
 
-jint InstanceKlass::compute_modifier_flags() const {
-  jint access = access_flags().as_int();
+u2 InstanceKlass::compute_modifier_flags() const {
+  u2 access = access_flags().as_unsigned_short();
 
   // But check if it happens to be member class.
   InnerClassesIterator iter(this);
@@ -3343,7 +3351,7 @@ jint InstanceKlass::compute_modifier_flags() const {
     }
   }
   // Remember to strip ACC_SUPER bit
-  return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
+  return (access & (~JVM_ACC_SUPER));
 }
 
 jint InstanceKlass::jvmti_class_status() const {
@@ -3486,7 +3494,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
     nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
     if (inv != nullptr && inv->is_in_use()) {
-      inv->make_not_entrant();
+      inv->make_not_entrant("OSR invalidation of lower levels");
     }
   }
 }
@@ -3637,7 +3645,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       st->print("   ");
     }
   }
-  if (n >= MaxSubklassPrintSize) st->print("(" INTX_FORMAT " more klasses...)", n - MaxSubklassPrintSize);
+  if (n >= MaxSubklassPrintSize) st->print("(%zd more klasses...)", n - MaxSubklassPrintSize);
   st->cr();
 
   if (is_interface()) {
@@ -3746,7 +3754,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   ik->print_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"non-static oop maps: ");
+  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
@@ -3789,7 +3797,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     }
   }
 
-  st->print_cr(BULLET"---- fields (total size " SIZE_FORMAT " words):", oop_size(obj));
+  st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj));
   FieldPrinter print_field(st, obj);
   print_nonstatic_fields(&print_field);
 
@@ -4183,7 +4191,7 @@ JNIid::JNIid(Klass* holder, int offset, JNIid* next) {
   _holder = holder;
   _offset = offset;
   _next = next;
-  debug_only(_is_static_field_id = false;)
+  DEBUG_ONLY(_is_static_field_id = false;)
 }
 
 

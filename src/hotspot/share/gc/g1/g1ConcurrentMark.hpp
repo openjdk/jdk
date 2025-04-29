@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
@@ -562,6 +562,8 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+  // Approximate number of incoming references found during marking.
+  size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
 
   // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(G1HeapRegion* r);
@@ -705,7 +707,7 @@ public:
 
   void threads_do(ThreadClosure* tc) const;
 
-  void print_on_error(outputStream* st) const;
+  void print_on(outputStream* st) const;
 
   // Mark the given object on the marking bitmap if it is below TAMS.
   inline bool mark_in_bitmap(uint worker_id, oop const obj);
@@ -952,6 +954,8 @@ public:
 
   inline void update_liveness(oop const obj, size_t const obj_size);
 
+  inline void inc_incoming_refs(oop const obj);
+
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);
   // Evict the whole statistics cache into the global statistics. Returns the
@@ -973,14 +977,14 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  size_t _young_cardset_bytes_per_region;
-
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
+
+  void do_cset_groups();
 
 public:
   // The header and footer are printed in the constructor and

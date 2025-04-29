@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/epsilon/epsilonMemoryPool.hpp"
 #include "gc/shared/gc_globals.hpp"

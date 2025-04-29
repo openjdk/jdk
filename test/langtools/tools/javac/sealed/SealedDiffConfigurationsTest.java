@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8247352 8293348
+ * @test 8247352 8293348 8349512
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -132,7 +132,10 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         ClassModel sealedCF = ClassFile.of().parse(out.resolve(cfName));
         Assert.check((sealedCF.flags().flagsMask() & ClassFile.ACC_FINAL) == 0, String.format("class at file %s must not be final", cfName));
         PermittedSubclassesAttribute permittedSubclasses = sealedCF.findAttribute(Attributes.permittedSubclasses()).orElseThrow();
-        Assert.check(permittedSubclasses.permittedSubclasses().size() == expectedSubTypeNames.size());
+        Assert.check(permittedSubclasses.permittedSubclasses().size() == expectedSubTypeNames.size(),
+                String.format("%s != %s",
+                        permittedSubclasses.permittedSubclasses(),
+                        expectedSubTypeNames));
         List<String> subtypeNames = new ArrayList<>();
         permittedSubclasses.permittedSubclasses().forEach(i -> {
             try {
@@ -725,5 +728,34 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .files(fooUser, foo)
                 .run();
         checkSealedClassFile(out, "Foo.class", List.of("Foo$R1", "Foo$R2"));
+    }
+
+    @Test
+    public void testDuplicatePermittedSubclassesDoclint(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path foo = src.resolve("Foo.java");
+
+        tb.writeFile(foo,
+                """
+                public class Foo {
+                  private enum E {
+                    INSTANCE {
+                      /** foo {@link E} */
+                      void f() {}
+                    };
+                    void f() {}
+                  }
+                }
+                """);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .options("-Xdoclint:html,syntax")
+                .outdir(out)
+                .files(foo)
+                .run();
+        checkSealedClassFile(out, "Foo$E.class", List.of("Foo$E$1"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -103,7 +102,9 @@ void JfrStackTrace::write(JfrChunkWriter& sw) const {
 }
 
 void JfrStackTrace::write(JfrCheckpointWriter& cpw) const {
+  assert(!_written, "invariant");
   write_stacktrace(cpw, _id, _reached_root, _nr_of_frames, _frames);
+  _written = true;
 }
 
 bool JfrStackFrame::equals(const JfrStackFrame& rhs) const {
@@ -163,10 +164,10 @@ static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
 }
 
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
-  vframeStreamCommon(RegisterMap(jt,
-                                 RegisterMap::UpdateMap::skip,
-                                 RegisterMap::ProcessFrames::skip,
-                                 walk_continuation(jt))),
+  vframeStreamCommon(jt,
+                     RegisterMap::UpdateMap::skip,
+                     RegisterMap::ProcessFrames::skip,
+                     walk_continuation(jt)),
     _vthread(JfrThreadLocal::is_vthread(jt)),
     _cont_entry(_vthread ? jt->last_continuation() : nullptr),
     _async_mode(async_mode) {

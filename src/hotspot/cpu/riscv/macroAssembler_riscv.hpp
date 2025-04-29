@@ -60,14 +60,14 @@ class MacroAssembler: public Assembler {
   // Note that SP must be updated to the right place before saving/restoring RA and FP
   // because signal based thread suspend/resume could happen asynchronously.
   void enter() {
-    addi(sp, sp, - 2 * wordSize);
+    subi(sp, sp, 2 * wordSize);
     sd(ra, Address(sp, wordSize));
     sd(fp, Address(sp));
     addi(fp, sp, 2 * wordSize);
   }
 
   void leave() {
-    addi(sp, fp, - 2 * wordSize);
+    subi(sp, fp, 2 * wordSize);
     ld(fp, Address(sp));
     ld(ra, Address(sp, wordSize));
     addi(sp, sp, 2 * wordSize);
@@ -122,8 +122,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result(Register oop_result, Register java_thread);
-  void get_vm_result_2(Register metadata_result, Register java_thread);
+  void get_vm_result_oop(Register oop_result, Register java_thread);
+  void get_vm_result_metadata(Register metadata_result, Register java_thread);
 
   // These always tightly bind to MacroAssembler::call_VM_leaf_base
   // bypassing the virtual implementation
@@ -242,12 +242,6 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
-  // idiv variant which deals with MINLONG as dividend and -1 as divisor
-  int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
-  int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
-
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -323,21 +317,55 @@ class MacroAssembler: public Assembler {
                                      Register tmp1_reg,
                                      Register tmp2_reg,
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register tmp1_reg,
+                                            Register tmp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register tmp1_reg,
+                                           Register tmp2_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register result,
+                                         Register tmp1,
+                                         Register tmp2,
+                                         Register tmp3,
+                                         Register tmp4,
+                                         Label *L_success);
 
   void population_count(Register dst, Register src, Register tmp1, Register tmp2);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  bool lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register result,
-                                     Register tmp1,
-                                     Register tmp2,
-                                     Register tmp3,
-                                     Register tmp4,
-                                     u1 super_klass_slot,
-                                     bool stub_is_near = false);
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register result,
+                                           Register tmp1,
+                                           Register tmp2,
+                                           Register tmp3,
+                                           Register tmp4,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -351,7 +379,8 @@ class MacroAssembler: public Assembler {
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register result,
-                                               Register tmp1);
+                                               Register tmp,
+                                               bool is_stub = true);
 
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -388,14 +417,16 @@ class MacroAssembler: public Assembler {
   // We used four bit to indicate the read and write bits in the predecessors and successors,
   // and extended i for r, o for w if UseConservativeFence enabled.
   enum Membar_mask_bits {
-    StoreStore = 0b0101,               // (pred = ow   + succ =   ow)
-    LoadStore  = 0b1001,               // (pred = ir   + succ =   ow)
-    StoreLoad  = 0b0110,               // (pred = ow   + succ =   ir)
-    LoadLoad   = 0b1010,               // (pred = ir   + succ =   ir)
-    AnyAny     = LoadStore | StoreLoad // (pred = iorw + succ = iorw)
+    StoreStore = 0b0101,               // (pred = w   + succ = w)
+    LoadStore  = 0b1001,               // (pred = r   + succ = w)
+    StoreLoad  = 0b0110,               // (pred = w   + succ = r)
+    LoadLoad   = 0b1010,               // (pred = r   + succ = r)
+    AnyAny     = LoadStore | StoreLoad // (pred = rw  + succ = rw)
   };
 
   void membar(uint32_t order_constraint);
+
+ private:
 
   static void membar_mask_to_pred_succ(uint32_t order_constraint,
                                        uint32_t& predecessor, uint32_t& successor) {
@@ -408,7 +439,7 @@ class MacroAssembler: public Assembler {
     // 11(rw)-> 1111(iorw)
     if (UseConservativeFence) {
       predecessor |= predecessor << 2;
-      successor |= successor << 2;
+      successor   |= successor << 2;
     }
   }
 
@@ -416,25 +447,13 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
-  void fence(uint32_t predecessor, uint32_t successor) {
-    if (UseZtso) {
-      if ((pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) == StoreLoad) {
-        // TSO allows for stores to be reordered after loads. When the compiler
-        // generates a fence to disallow that, we are required to generate the
-        // fence for correctness.
-        Assembler::fence(predecessor, successor);
-      } else {
-        // TSO guarantees other fences already.
-      }
-    } else {
-      // always generate fence for RVWMO
-      Assembler::fence(predecessor, successor);
-    }
-  }
+ public:
 
   void cmodx_fence();
 
   void pause() {
+    // Zihintpause
+    // PAUSE is encoded as a FENCE instruction with pred=W, succ=0, fm=0, rd=x0, and rs1=x0.
     Assembler::fence(w, 0);
   }
 
@@ -591,9 +610,6 @@ class MacroAssembler: public Assembler {
   }
 
   // Control and status pseudo instructions
-  void rdinstret(Register Rd);                  // read instruction-retired counter
-  void rdcycle(Register Rd);                    // read cycle counter
-  void rdtime(Register Rd);                     // read time
   void csrr(Register Rd, unsigned csr);         // read csr
   void csrw(unsigned csr, Register Rs);         // write csr
   void csrs(unsigned csr, Register Rs);         // set bits in csr
@@ -601,19 +617,23 @@ class MacroAssembler: public Assembler {
   void csrwi(unsigned csr, unsigned imm);
   void csrsi(unsigned csr, unsigned imm);
   void csrci(unsigned csr, unsigned imm);
-  void frcsr(Register Rd);                      // read float-point csr
-  void fscsr(Register Rd, Register Rs);         // swap float-point csr
-  void fscsr(Register Rs);                      // write float-point csr
-  void frrm(Register Rd);                       // read float-point rounding mode
-  void fsrm(Register Rd, Register Rs);          // swap float-point rounding mode
-  void fsrm(Register Rs);                       // write float-point rounding mode
+  void frcsr(Register Rd) { csrr(Rd, CSR_FCSR); }; // read float-point csr
+  void fscsr(Register Rd, Register Rs);            // swap float-point csr
+  void fscsr(Register Rs);                         // write float-point csr
+  void frrm(Register Rd) { csrr(Rd, CSR_FRM); };   // read float-point rounding mode
+  void fsrm(Register Rd, Register Rs);             // swap float-point rounding mode
+  void fsrm(Register Rs);                          // write float-point rounding mode
   void fsrmi(Register Rd, unsigned imm);
   void fsrmi(unsigned imm);
-  void frflags(Register Rd);                    // read float-point exception flags
-  void fsflags(Register Rd, Register Rs);       // swap float-point exception flags
-  void fsflags(Register Rs);                    // write float-point exception flags
+  void frflags(Register Rd) { csrr(Rd, CSR_FFLAGS); }; // read float-point exception flags
+  void fsflags(Register Rd, Register Rs);              // swap float-point exception flags
+  void fsflags(Register Rs);                           // write float-point exception flags
   void fsflagsi(Register Rd, unsigned imm);
   void fsflagsi(unsigned imm);
+  // Requires Zicntr
+  void rdinstret(Register Rd) { csrr(Rd, CSR_INSTRET); }; // read instruction-retired counter
+  void rdcycle(Register Rd)   { csrr(Rd, CSR_CYCLE); };   // read cycle counter
+  void rdtime(Register Rd)    { csrr(Rd, CSR_TIME); };    // read time
 
   // Restore cpu control state after JNI call
   void restore_cpu_control_state_after_jni(Register tmp);
@@ -637,6 +657,11 @@ class MacroAssembler: public Assembler {
   void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
 
+  void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -650,9 +675,9 @@ class MacroAssembler: public Assembler {
   // JALR, return address stack updates:
   // | rd is x1/x5 | rs1 is x1/x5 | rd=rs1 | RAS action
   // | ----------- | ------------ | ------ |-------------
-  // |     No      |      No      |   —    | None
-  // |     No      |      Yes     |   —    | Pop
-  // |     Yes     |      No      |   —    | Push
+  // |     No      |      No      |   -    | None
+  // |     No      |      Yes     |   -    | Pop
+  // |     Yes     |      No      |   -    | Push
   // |     Yes     |      Yes     |   No   | Pop, then push
   // |     Yes     |      Yes     |   Yes  | Push
   //
@@ -884,12 +909,29 @@ public:
   void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
+  // float imm move
+  static bool can_hf_imm_load(short imm);
+  static bool can_fp_imm_load(float imm);
+  static bool can_dp_imm_load(double imm);
+  void fli_h(FloatRegister Rd, short imm);
+  void fli_s(FloatRegister Rd, float imm);
+  void fli_d(FloatRegister Rd, double imm);
 
   // arith
-  void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
-  void sub (Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
+  void add (Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void sub (Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+  void addw(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void subw(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+
+  void subi(Register Rd, Register Rn, int64_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addi(Rd, Rn, -decrement);
+  }
+
+  void subiw(Register Rd, Register Rn, int64_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addiw(Rd, Rn, -decrement);
+  }
 
 #define INSN(NAME)                                               \
   inline void NAME(Register Rd, Register Rs1, Register Rs2) {    \
@@ -916,9 +958,10 @@ public:
   void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in lower word, sign-extend
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);  // reverse bytes in doubleword
 
-  void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
-  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
-  void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
+  void ror(Register dst, Register src, Register shift, Register tmp = t0);
+  void ror(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rolw(Register dst, Register src, uint32_t shift, Register tmp = t0);
+
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
 // Load and Store Instructions
@@ -1028,6 +1071,7 @@ public:
     }                                                                                              \
   }
 
+  INSN(flh);
   INSN(flw);
   INSN(fld);
 
@@ -1362,7 +1406,8 @@ public:
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
-  void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
+  void ctzc_bits(Register Rd, Register Rs, bool isLL = false,
+                 Register tmp1 = t0, Register tmp2 = t1);
 
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
@@ -1518,16 +1563,16 @@ public:
         sltu(Rt, zr, Rt);
         break;
       case T_CHAR   :
-        zero_extend(Rt, Rt, 16);
+        zext(Rt, Rt, 16);
         break;
       case T_BYTE   :
-        sign_extend(Rt, Rt, 8);
+        sext(Rt, Rt, 8);
         break;
       case T_SHORT  :
-        sign_extend(Rt, Rt, 16);
+        sext(Rt, Rt, 16);
         break;
       case T_INT    :
-        sign_extend(Rt, Rt, 32);
+        sext(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
@@ -1542,8 +1587,8 @@ public:
   void double_compare(Register result, FloatRegister Rs1, FloatRegister Rs2, int unordered_result);
 
   // Zero/Sign-extend
-  void zero_extend(Register dst, Register src, int bits);
-  void sign_extend(Register dst, Register src, int bits);
+  void zext(Register dst, Register src, int bits);
+  void sext(Register dst, Register src, int bits);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);

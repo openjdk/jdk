@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Test Shutdown event
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr
@@ -64,7 +64,26 @@ public class TestShutdownEvent {
              new TestSig("INT")
     };
 
+    /*
+     * We don't run if -esa is specified, because parser invariants are not
+     * guaranteed for emergency dumps, which are provided on a best-effort basis only.
+     */
+    private static boolean hasIncompatibleTestOptions() {
+        String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
+        for (String s : testVmOpts) {
+            if (s.equals("-esa")) {
+                System.out.println("Incompatible option: " + s + " specified. Skipping test.");
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void main(String[] args) throws Throwable {
+        if (hasIncompatibleTestOptions()) {
+            return;
+        }
+
         for (int i = 0; i < subTests.length; ++i) {
             int attempts = subTests[i].attempts();
             if (attempts == 0) {

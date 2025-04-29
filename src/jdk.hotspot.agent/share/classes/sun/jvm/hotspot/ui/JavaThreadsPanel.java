@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,7 +464,7 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
       Threads threads = VM.getVM().getThreads();
       for (int i = 0; i < threads.getNumberOfThreads(); i++) {
         JavaThread t = threads.getJavaThreadAt(i);
-        if (t.isJavaThread()) {
+        if (!t.isHiddenFromExternalView()) {
             cachedThreads.add(new CachedThread(t));
         }
       }

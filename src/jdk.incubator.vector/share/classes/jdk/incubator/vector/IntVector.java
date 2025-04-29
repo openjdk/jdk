@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -554,7 +554,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Integer>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -689,7 +689,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, m,
             UN_IMPL.find(op, opc, IntVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<IntVector, VectorMask<Integer>>>
@@ -824,6 +825,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     = this.compare(EQ, (int) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, that, m,
             BIN_IMPL.find(op, opc, IntVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<IntVector, VectorMask<Integer>>>
@@ -1751,7 +1754,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1784,7 +1787,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1808,7 +1811,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1841,7 +1844,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1891,7 +1894,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2412,6 +2415,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     <S extends VectorShuffle<Integer>>
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, int.class, length(),
             this, shuffle, null,
@@ -2437,7 +2441,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, int.class, length(),
@@ -2853,6 +2857,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((int)-1, m, (i, a, b) -> (int)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2931,7 +2939,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /**
      * {@inheritDoc} <!--workaround-->
      * This is an alias for {@link #toArray()}
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code IntVector},
      * there will be no loss of range or precision.
      */
@@ -2943,7 +2951,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code IntVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2963,7 +2971,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code IntVector},
      * there will be no loss of precision.
      */
@@ -3033,7 +3041,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Integer>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3243,7 +3252,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+        ((AbstractMask<Integer>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3311,7 +3321,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         } else {
             IntSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Integer>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3450,7 +3461,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
             }
             IntSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+                ((AbstractMask<Integer>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3677,26 +3689,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     // End of low-level memory operations.
 
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                IntSpecies vsp,
-                                VectorMask<Integer> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Integer>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                IntSpecies vsp,
-                                VectorMask<Integer> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Integer>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
     @ForceInline
     private void conditionalStoreNYI(int offset,
                                      IntSpecies vsp,
@@ -3738,7 +3730,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

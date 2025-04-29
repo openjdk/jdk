@@ -26,18 +26,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
 
-public class JavaAppDescTest {
-
-    public JavaAppDescTest(JavaAppDesc expectedAppDesc, JavaAppDesc actualAppDesc) {
-        this.expectedAppDesc = expectedAppDesc;
-        this.actualAppDesc = actualAppDesc;
-    }
+public class JavaAppDescTest extends JUnitAdapter {
 
     @Test
-    public void test() {
+    @ParameterSupplier("input")
+    public void test(JavaAppDesc expectedAppDesc, JavaAppDesc actualAppDesc) {
         TKit.assertEquals(expectedAppDesc.toString(), actualAppDesc.toString(), null);
         TKit.assertTrue(expectedAppDesc.equals(actualAppDesc), null);
     }
@@ -53,7 +49,6 @@ public class JavaAppDescTest {
                 appDesc).classFilePath().toString(), null);
     }
 
-    @Parameters
     public static List<Object[]> input() {
         return List.of(new Object[][] {
             createTestCase("", "hello.jar:Hello"),
@@ -93,6 +88,4 @@ public class JavaAppDescTest {
         return new JavaAppDesc[] {expectedAppDesc, actualAppDesc};
     }
 
-    private final JavaAppDesc expectedAppDesc;
-    private final JavaAppDesc actualAppDesc;
 }

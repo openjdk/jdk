@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,6 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 // by virtual functions.
 class AddNode : public Node {
   virtual uint hash() const;
-
-  Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
-  static Node* find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
-
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
@@ -160,6 +153,22 @@ public:
   int min_opcode() const { return Op_MinD; }
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+//------------------------------AddHFNode---------------------------------------
+// Add 2 half-precision floats
+class AddHFNode : public AddNode {
+public:
+  AddHFNode(Node* in1, Node* in2) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_of_identity(const Type* t1, const Type* t2) const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::ZERO; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual uint ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------AddPNode---------------------------------------
@@ -407,6 +416,34 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }
+};
+
+//------------------------------MaxHFNode--------------------------------------
+// Maximum of 2 half floats.
+class MaxHFNode : public MaxNode {
+public:
+  MaxHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::NEG_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+};
+
+//------------------------------MinHFNode---------------------------------------
+// Minimum of 2 half floats.
+class MinHFNode : public MaxNode {
+public:
+  MinHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::POS_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
 };
 
 //------------------------------MaxDNode---------------------------------------

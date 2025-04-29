@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -234,9 +233,21 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
   case Op_Jump:
   case Op_Root:
   case Op_Goto:
-  case Op_NeverBranch:
     freq_idx = 0;               // fall thru
     break;
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    int succ_idx = 0; // normal case
+    if (succ == b->_succs[1]->head()) {
+      // Edges swapped, rare case. May happen due to an unusual matcher
+      // traversal order for peeled infinite loops.
+      succ_idx = 1;
+    } else {
+      assert(succ == b->_succs[0]->head(), "succ not found");
+    }
+    freq_idx = succ_idx;
+    break;
+  }
   case Op_TailCall:
   case Op_TailJump:
   case Op_ForwardException:

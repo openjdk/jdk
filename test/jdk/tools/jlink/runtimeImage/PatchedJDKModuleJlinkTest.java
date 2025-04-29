@@ -42,7 +42,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m PatchedJDKModuleJlinkTest
+ * @run main/othervm -Xmx1g PatchedJDKModuleJlinkTest
  */
 public class PatchedJDKModuleJlinkTest extends AbstractLinkableRuntimeTest {
 

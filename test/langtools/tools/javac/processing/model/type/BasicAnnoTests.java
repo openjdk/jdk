@@ -163,7 +163,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
      */
     class TestTypeScanner extends TypeScanner<Void, Void> {
         Element elem;
-        NavigableMap<Integer, AnnotationMirror> toBeFound;
+        NavigableMap<Integer, List<AnnotationMirror>> toBeFound;
         int count = 0;
         Set<TypeMirror> seen = new HashSet<>();
 
@@ -171,10 +171,10 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             super(types);
             this.elem = elem;
 
-            NavigableMap<Integer, AnnotationMirror> testByPos = new TreeMap<>();
+            NavigableMap<Integer, List<AnnotationMirror>> testByPos = new TreeMap<>();
             for (AnnotationMirror test : tests) {
                 for (int pos : getPosn(test)) {
-                    testByPos.put(pos, test);
+                    testByPos.computeIfAbsent(pos, ArrayList::new).add(test);
                 }
             }
             this.toBeFound = testByPos;
@@ -196,17 +196,18 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
                         out.println("scan " + count + ": " + t);
                     if (toBeFound.size() > 0) {
                         if (toBeFound.firstKey().equals(count)) {
-                            AnnotationMirror test = toBeFound.pollFirstEntry().getValue();
-                            String annoType = getAnnoType(test);
-                            AnnotationMirror anno = getAnnotation(t, annoType);
-                            if (anno == null) {
-                                error(elem, "annotation not found on " + count + ": " + t);
-                            } else {
-                                String v = getValue(anno, "value").toString();
-                                if (v.equals(getExpect(test))) {
-                                    out.println("found " + anno + " as expected");
+                            for (AnnotationMirror test : toBeFound.pollFirstEntry().getValue()) {
+                                String annoType = getAnnoType(test);
+                                AnnotationMirror anno = getAnnotation(t, annoType);
+                                if (anno == null) {
+                                    error(elem, "annotation not found on " + count + ": " + t);
                                 } else {
-                                    error(elem, "Unexpected value: " + v + ", expected: " + getExpect(test));
+                                    String v = getValue(anno, "value").toString();
+                                    if (v.equals(getExpect(test))) {
+                                        out.println("found " + anno + " as expected");
+                                    } else {
+                                        error(elem, "Unexpected value: " + v + ", expected: " + getExpect(test));
+                                    }
                                 }
                             }
                         } else if (count > toBeFound.firstKey()) {

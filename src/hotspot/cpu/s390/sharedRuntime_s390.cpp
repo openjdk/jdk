@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
@@ -2395,7 +2394,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ testbit(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
       __ z_bfalse(L_skip_barrier); // non-static
     }
 
@@ -2763,11 +2762,15 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   Register unroll_block_reg = Z_tmp_1;
@@ -2882,7 +2885,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ z_br(Z_R14);
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -3043,7 +3046,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
 
   // get the returned method
-  __ get_vm_result_2(Z_method);
+  __ get_vm_result_metadata(Z_method);
 
   // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
@@ -3057,7 +3060,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // exception pending => remove activation and forward to exception handler
 
   __ z_lgr(Z_R2, Z_R0); // pending_exception
-  __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+  __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
   __ load_const_optimized(Z_R1_scratch, StubRoutines::forward_exception_entry());
   __ z_br(Z_R1_scratch);
 

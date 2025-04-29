@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,6 @@ public class Main {
      * flag0: no zip compression (store only)
      * Mflag: DO NOT generate a manifest file (just ZIP)
      * iflag: generate jar index
-     * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
      * kflag: keep existing file
@@ -210,18 +209,8 @@ public class Main {
         }
     }
 
-    static String formatMsg(String key, String arg) {
+    static String formatMsg(String key, String... args) {
         String msg = getMsg(key);
-        String[] args = new String[1];
-        args[0] = arg;
-        return MessageFormat.format(msg, (Object[]) args);
-    }
-
-    static String formatMsg2(String key, String arg, String arg1) {
-        String msg = getMsg(key);
-        String[] args = new String[2];
-        args[0] = arg;
-        args[1] = arg1;
         return MessageFormat.format(msg, (Object[]) args);
     }
 
@@ -254,7 +243,6 @@ public class Main {
     /**
      * Starts main program with the specified arguments.
      */
-    @SuppressWarnings({"removal"})
     public synchronized boolean run(String[] args) {
         ok = true;
         if (!parseArgs(args)) {
@@ -326,11 +314,13 @@ public class Main {
                     // error("Warning: -v option ignored");
                     vflag = false;
                 }
-                final String tmpbase = (fname == null)
+                String tmpFilePrefix = (fname == null)
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
-
-                tmpFile = createTemporaryFile(tmpbase, ".jar");
+                if (tmpFilePrefix.length() < 3) {
+                    tmpFilePrefix = "tmpjar" + tmpFilePrefix;
+                }
+                tmpFile = createTemporaryFile(tmpFilePrefix, ".jar");
                 try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
                 }
@@ -431,8 +421,9 @@ public class Main {
                     file = new File(fname);
                 } else {
                     file = createTemporaryFile("tmpJar", ".jar");
-                    try (InputStream in = new FileInputStream(FileDescriptor.in)) {
-                        Files.copy(in, file.toPath());
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         OutputStream os = Files.newOutputStream(file.toPath())) {
+                        in.transferTo(os);
                     }
                 }
                 ok = validateJar(file);
@@ -459,7 +450,7 @@ public class Main {
         try (ZipFile zf = new ZipFile(file)) {
             return Validator.validate(this, zf);
         } catch (IOException e) {
-            error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            error(formatMsg("error.validator.jarfile.exception", fname, e.getMessage()));
             return true;
         }
     }
@@ -840,7 +831,7 @@ public class Main {
                     // the entry starts with VERSIONS_DIR and version != BASE_VERSION,
                     // which means the "[dirs|files]" in --release v [dirs|files]
                     // includes VERSIONS_DIR-ed entries --> warning and skip (?)
-                    error(formatMsg2("error.release.unexpected.versioned.entry",
+                    error(formatMsg("error.release.unexpected.versioned.entry",
                                      name, String.valueOf(version)));
                     ok = false;
                     return;
@@ -1264,8 +1255,7 @@ public class Main {
         if (vflag) {
             size = e.getSize();
             long csize = e.getCompressedSize();
-            out.print(formatMsg2("out.size", String.valueOf(size),
-                        String.valueOf(csize)));
+            out.print(formatMsg("out.size", String.valueOf(size), String.valueOf(csize)));
             if (e.getMethod() == ZipEntry.DEFLATED) {
                 long ratio = 0;
                 if (size != 0) {
@@ -1373,7 +1363,6 @@ public class Main {
         });
     }
 
-    @SuppressWarnings("serial")
     Set<ZipEntry> newDirSet() {
         return new HashSet<ZipEntry>() {
             public boolean add(ZipEntry e) {
@@ -1786,11 +1775,12 @@ public class Main {
             // Unable to create file due to permission violation or security exception
         }
         if (tmpfile == null) {
-            // Were unable to create temporary file, fall back to temporary file in the same folder
+            // We were unable to create temporary file, fall back to temporary file in the
+            // same folder as the JAR file
             if (fname != null) {
                 try {
                     File tmpfolder = new File(fname).getAbsoluteFile().getParentFile();
-                    tmpfile = File.createTempFile(fname, ".tmp" + suffix, tmpfolder);
+                    tmpfile = File.createTempFile(tmpbase, ".tmp" + suffix, tmpfolder);
                 } catch (IOException ioe) {
                     // Last option failed - fall gracefully
                     fatalError(ioe);
