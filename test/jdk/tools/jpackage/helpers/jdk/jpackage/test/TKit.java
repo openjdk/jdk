@@ -656,7 +656,7 @@ public final class TKit {
     }
 
 
-    public static void assertEquals(String expected, String actual, String msg) {
+    public static void assertEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -668,7 +668,7 @@ public final class TKit {
         traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
-    public static void assertNotEquals(String expected, String actual, String msg) {
+    public static void assertNotEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
