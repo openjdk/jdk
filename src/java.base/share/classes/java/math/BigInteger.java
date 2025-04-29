@@ -2659,6 +2659,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                             ? new BigInteger(result << bitsToShift, newSign)
                             : new BigInteger(result, newSign).shiftLeft(bitsToShift));
         } else {
+            if (((bitLength() - 1L) * exponent + 1) / Integer.SIZE > MAX_MAG_LENGTH) {
+                reportOverflow();
+            }
+
             // Large number algorithm.  This is basically identical to
             // the algorithm above, but calls multiply()
             // which may use more efficient algorithms for large numbers.
