@@ -101,10 +101,10 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
         if (iv == null) {
             throw new IllegalArgumentException("IV missing");
         }
-        int blockSize = 8;
         if (offset < 0) {
             throw new ArrayIndexOutOfBoundsException("offset is negative");
         }
+        int blockSize = 8;
         if (iv.length - offset < blockSize) {
             throw new IllegalArgumentException("IV too short");
         }
