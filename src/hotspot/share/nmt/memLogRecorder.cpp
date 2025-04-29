@@ -71,6 +71,8 @@
 #include <malloc/malloc.h>
 #endif
 
+bool NMTRecorder_Locker::_safe_to_use = false;
+
 #if defined(LINUX) || defined(__APPLE__)
 #include <pthread.h>
 #include <sys/mman.h>
@@ -90,7 +92,6 @@ static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, re
 
 #define NMT_HEADER_SIZE 16
 
-bool NMTRecorder_Locker::_safe_to_use = false;
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
 
@@ -356,7 +357,6 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
   // fprintf(stderr, "NMT_MemoryLogRecorder::replay(%d)\n", pid);
   static const char *path = ".";
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
-  NMTRecorder_Locker locker;
 
   file_info log_fi = _open_file_and_read(INFO_LOG_FILE, path, pid);
   if (log_fi.fd == -1) {
