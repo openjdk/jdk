@@ -542,14 +542,12 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_l2d: {
 
       FloatRegister rdst = dst->as_double_reg();
-
       // move src to dst register
       if (code == Bytecodes::_i2d) {
         __ mtfprwa(rdst, src->as_register());
       } else {
         __ mtfprd(rdst, src->as_register_lo());
       }
-
       __ fcfid(rdst, rdst);
       break;
     }
@@ -563,9 +561,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       } else {
         __ mtfprd(rdst, src->as_register_lo());
       }
-      
       __ fcfids(rdst, rdst);
-
       break;
     }
     case Bytecodes::_f2d: {
@@ -583,12 +579,10 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
-
       __ li(dst->as_register(), 0);
       __ bso(CR0, L);
       __ fctiwz(rsrc, rsrc); // USE_KILL
       __ mffprd(dst->as_register(), rsrc);
-
       __ bind(L);
       break;
     }
@@ -602,7 +596,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ li(dst->as_register_lo(), 0);
       __ bso(CR0, L);
       __ fctidz(rsrc, rsrc); // USE_KILL
-
       __ mffprd(dst->as_register_lo(), rsrc);
       __ bind(L);
       break;
