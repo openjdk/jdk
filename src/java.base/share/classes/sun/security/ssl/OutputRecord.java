@@ -176,7 +176,7 @@ abstract class OutputRecord
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                         "change_cipher_spec message");
                 }
@@ -210,7 +210,7 @@ abstract class OutputRecord
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                         "key_update handshake message");
                 }

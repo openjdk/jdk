@@ -69,7 +69,7 @@ final class Utilities {
             SNIServerName serverName = sniList.get(i);
             if (serverName.getType() == StandardConstants.SNI_HOST_NAME) {
                 sniList.set(i, sniHostName);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl")) {
                      SSLLogger.fine(
                         "the previous server name in SNI (" + serverName +
                         ") was replaced with (" + sniHostName + ")");
@@ -115,7 +115,7 @@ final class Utilities {
                 return new SNIHostName(hostname);
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl")) {
                      SSLLogger.fine(hostname + "\" " +
                         "is not a legal HostName for  server name indication");
                 }

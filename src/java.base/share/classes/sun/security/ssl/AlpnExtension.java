@@ -157,7 +157,7 @@ final class AlpnExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "Ignore client unavailable extension: " +
                             SSLExtension.CH_ALPN.name);
@@ -170,7 +170,7 @@ final class AlpnExtension {
 
             String[] laps = chc.sslConfig.applicationProtocols;
             if ((laps == null) || (laps.length == 0)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "No available application protocols");
                 }
@@ -183,7 +183,7 @@ final class AlpnExtension {
                 int length = ap.getBytes(alpnCharset).length;
                 if (length == 0) {
                     // log the configuration problem
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.severe(
                                 "Application protocol name cannot be empty");
                     }
@@ -197,7 +197,7 @@ final class AlpnExtension {
                     listLength += (length + 1);
                 } else {
                     // log the configuration problem
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.severe(
                                 "Application protocol name (" + ap +
                                 ") exceeds the size limit (" +
@@ -212,7 +212,7 @@ final class AlpnExtension {
 
                 if (listLength > MAX_AP_LIST_LENGTH) {
                     // log the configuration problem
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.severe(
                                 "The configured application protocols (" +
                                 Arrays.toString(laps) +
@@ -266,7 +266,7 @@ final class AlpnExtension {
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "Ignore server unavailable extension: " +
                             SSLExtension.CH_ALPN.name);
@@ -288,7 +288,7 @@ final class AlpnExtension {
             if (noAPSelector && noAlpnProtocols) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore server unenabled extension: " +
                             SSLExtension.CH_ALPN.name);
@@ -371,7 +371,7 @@ final class AlpnExtension {
                     (AlpnSpec)shc.handshakeExtensions.get(SSLExtension.CH_ALPN);
             if (requestedAlps == null) {
                 // Ignore, this extension was not requested and accepted.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable extension: " +
                             SSLExtension.SH_ALPN.name);
@@ -416,7 +416,7 @@ final class AlpnExtension {
                 // Ignore, no negotiated application layer protocol.
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                         "Ignore, no negotiated application layer protocol");
                 }

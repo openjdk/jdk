@@ -140,7 +140,7 @@ final class HelloVerifyRequest {
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced HelloVerifyRequest handshake message", hvrm);
             }
@@ -197,7 +197,7 @@ final class HelloVerifyRequest {
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming HelloVerifyRequest handshake message", hvrm);
             }

@@ -392,7 +392,7 @@ final class Finished {
             // Change write cipher and delivery ChangeCipherSpec message.
             ChangeCipherSpec.t10Producer.produce(chc, message);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced client Finished handshake message", fm);
             }
@@ -455,7 +455,7 @@ final class Finished {
             // Change write cipher and delivery ChangeCipherSpec message.
             ChangeCipherSpec.t10Producer.produce(shc, message);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced server Finished handshake message", fm);
             }
@@ -544,7 +544,7 @@ final class Finished {
         private void onConsumeFinished(ClientHandshakeContext chc,
                 ByteBuffer message) throws IOException {
             FinishedMessage fm = new FinishedMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming server Finished handshake message", fm);
             }
@@ -604,7 +604,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
             }
@@ -683,7 +683,7 @@ final class Finished {
             chc.handshakeHash.update();
 
             FinishedMessage fm = new FinishedMessage(chc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced client Finished handshake message", fm);
             }
@@ -777,7 +777,7 @@ final class Finished {
             shc.handshakeHash.update();
 
             FinishedMessage fm = new FinishedMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced server Finished handshake message", fm);
             }
@@ -913,7 +913,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming server Finished handshake message", fm);
             }
@@ -1047,7 +1047,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
             }

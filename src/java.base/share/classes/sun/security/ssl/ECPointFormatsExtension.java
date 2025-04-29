@@ -171,7 +171,7 @@ final class ECPointFormatsExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_EC_POINT_FORMATS)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");
                 }
@@ -193,7 +193,7 @@ final class ECPointFormatsExtension {
                 return extData;
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Need no ec_point_formats extension");
             }
@@ -221,7 +221,7 @@ final class ECPointFormatsExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_EC_POINT_FORMATS)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");
                 }

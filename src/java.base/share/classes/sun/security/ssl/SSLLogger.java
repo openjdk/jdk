@@ -60,8 +60,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
-    public static final boolean isOn;
-    static EnumSet<ComponentToken> activeComponents = EnumSet.noneOf(ComponentToken.class);
+    // high level boolean to track whether "all" or "ssl" option
+    // is specified. Further checks may be necessary to determine
+    // if data is logged
+    public static final boolean logging;
+    static EnumSet<DebugOption> activeComponents = EnumSet.noneOf(DebugOption.class);
 
     static {
         String p = System.getProperty("javax.net.debug");
@@ -69,7 +72,7 @@ public final class SSLLogger {
             if (p.isEmpty()) {
                 property = "";
                 logger = System.getLogger("javax.net.ssl");
-                activeComponents.add(ComponentToken.EMPTYALL);
+                activeComponents.add(DebugOption.EMPTYALL);
             } else {
                 property = p.toLowerCase(Locale.ENGLISH);
                 if (property.contains("help")) {
@@ -77,10 +80,10 @@ public final class SSLLogger {
                 }
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
                 if (property.contains("all")) {
-                    activeComponents.add(ComponentToken.EMPTYALL);
+                    activeComponents.add(DebugOption.EMPTYALL);
                 } else {
                     String tmpProperty = property;
-                    for (ComponentToken o : ComponentToken.values()) {
+                    for (DebugOption o : DebugOption.values()) {
                         if (tmpProperty.contains(o.component)) {
                             activeComponents.add(o);
                             // remove the pattern to avoid it being reused
@@ -89,58 +92,26 @@ public final class SSLLogger {
                         }
                     }
                     // some rules to check
-                    if ((activeComponents.contains(ComponentToken.PLAINTEXT)
-                            || activeComponents.contains(ComponentToken.PACKET))
-                            && !activeComponents.contains(ComponentToken.RECORD)) {
-                        activeComponents.remove(ComponentToken.PLAINTEXT);
-                        activeComponents.remove(ComponentToken.PACKET);
+                    if ((activeComponents.contains(DebugOption.PLAINTEXT)
+                            || activeComponents.contains(DebugOption.PACKET))
+                            && !activeComponents.contains(DebugOption.RECORD)) {
+                        activeComponents.remove(DebugOption.PLAINTEXT);
+                        activeComponents.remove(DebugOption.PACKET);
                     }
 
-                    if (activeComponents.contains(ComponentToken.VERBOSE)
-                            && !activeComponents.contains(ComponentToken.HANDSHAKE)) {
-                        activeComponents.remove(ComponentToken.VERBOSE);
+                    if (activeComponents.contains(DebugOption.VERBOSE)
+                            && !activeComponents.contains(DebugOption.HANDSHAKE)) {
+                        activeComponents.remove(DebugOption.VERBOSE);
                     }
                 }
             }
-            isOn = activeComponents.contains(ComponentToken.EMPTYALL)
-                    || activeComponents.contains(ComponentToken.SSL);
+            logging = activeComponents.contains(DebugOption.EMPTYALL)
+                    || activeComponents.contains(DebugOption.SSL);
         } else {
             property = null;
             logger = null;
-            isOn = false;
+            logging = false;
         }
-    }
-
-    private static void help() {
-        System.err.println();
-        System.err.println("help           print this help message and exit");
-        System.err.println("expand         expanded (less compact) output format");
-        System.err.println();
-        System.err.println("all            turn on all debugging");
-        System.err.println("ssl            turn on ssl debugging");
-        System.err.println();
-        System.err.println("The following can be used with ssl:");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\thandshake    print each handshake message");
-        System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\trecord       enable per-record tracing");
-        System.err.println("\trespmgr      print OCSP response tracing");
-        System.err.println("\tsession      print session activity");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\tsslctx       print SSLContext tracing");
-        System.err.println("\tsessioncache print session cache tracing");
-        System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\ttrustmanager print trust manager tracing");
-        System.err.println("\tpluggability print pluggability tracing");
-        System.err.println();
-        System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tverbose   verbose handshake message printing");
-        System.err.println();
-        System.err.println("\trecord debugging can be widened with:");
-        System.err.println("\tplaintext    hex dump of record plaintext");
-        System.err.println("\tpacket       print raw SSL/TLS packets");
-        System.err.println();
-        System.exit(0);
     }
 
     /**
@@ -154,17 +125,19 @@ public final class SSLLogger {
      * system property value syntax as per help menu.
      */
     public static boolean isOn(String checkPoints) {
-        if (!isOn) {
+        if (!logging) {
             return false;
         }
 
-        if (activeComponents.contains(ComponentToken.EMPTYALL)) {
+        if (activeComponents.contains(DebugOption.EMPTYALL)) {
             // System.Logger in use or property = "all"
             return true;
         }
 
+        // log any call site using "ssl" value unless
+        // javax.net.debug value contains sub-component option
         if (checkPoints.equals("ssl")) {
-            return !ComponentToken.isSslFilteringEnabled();
+            return !DebugOption.isSslFilteringEnabled();
         }
 
         if (activeComponents.size() == 1 && !containsWidenOption(checkPoints)) {
@@ -239,13 +212,45 @@ public final class SSLLogger {
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
     public static boolean logWarning(String option, String s) {
-        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+        if (SSLLogger.logging && SSLLogger.isOn(option)) {
             SSLLogger.warning(s);
         }
         return false;
     }
 
-    enum ComponentToken {
+    private static void help() {
+        System.err.println();
+        System.err.println("help           print this help message and exit");
+        System.err.println("expand         expanded (less compact) output format");
+        System.err.println();
+        System.err.println("all            turn on all debugging");
+        System.err.println("ssl            turn on ssl debugging");
+        System.err.println();
+        System.err.println("The following can be used with ssl:");
+        System.err.println("\tdefaultctx   print default SSL initialization");
+        System.err.println("\thandshake    print each handshake message");
+        System.err.println("\tkeymanager   print key manager tracing");
+        System.err.println("\trecord       enable per-record tracing");
+        System.err.println("\trespmgr      print OCSP response tracing");
+        System.err.println("\tsession      print session activity");
+        System.err.println("\tdefaultctx   print default SSL initialization");
+        System.err.println("\tsslctx       print SSLContext tracing");
+        System.err.println("\tsessioncache print session cache tracing");
+        System.err.println("\tkeymanager   print key manager tracing");
+        System.err.println("\ttrustmanager print trust manager tracing");
+        System.err.println("\tpluggability print pluggability tracing");
+        System.err.println();
+        System.err.println("\thandshake debugging can be widened with:");
+        System.err.println("\tverbose   verbose handshake message printing");
+        System.err.println();
+        System.err.println("\trecord debugging can be widened with:");
+        System.err.println("\tplaintext    hex dump of record plaintext");
+        System.err.println("\tpacket       print raw SSL/TLS packets");
+        System.err.println();
+        System.exit(0);
+    }
+
+    private enum DebugOption {
         EMPTYALL,
         DEFAULTCTX,
         HANDSHAKE,
@@ -262,11 +267,11 @@ public final class SSLLogger {
 
         final String component;
 
-        ComponentToken() {
+        DebugOption() {
             this.component = this.toString().toLowerCase(Locale.ROOT);
         }
 
-        static boolean isSslFilteringEnabled() {
+        private static boolean isSslFilteringEnabled() {
             return activeComponents.contains(DEFAULTCTX)
                     || activeComponents.contains(HANDSHAKE)
                     || activeComponents.contains(KEYMANAGER)
@@ -277,7 +282,6 @@ public final class SSLLogger {
                     || activeComponents.contains(TRUSTMANAGER);
         }
     }
-
 
     private static class SSLConsoleLogger implements Logger {
         private final String loggerName;

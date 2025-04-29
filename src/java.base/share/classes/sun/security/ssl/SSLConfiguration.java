@@ -202,7 +202,7 @@ final class SSLConfiguration implements Cloneable {
         if (nstServerCount == null || nstServerCount < 0 ||
             nstServerCount > 10) {
             serverNewSessionTicketCount = SERVER_NST_DEFAULT;
-            if (nstServerCount != null && SSLLogger.isOn &&
+            if (nstServerCount != null && SSLLogger.logging &&
                 SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount defaults to " +
@@ -211,7 +211,7 @@ final class SSLConfiguration implements Cloneable {
             }
         } else {
             serverNewSessionTicketCount = nstServerCount;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount set to " +
                         serverNewSessionTicketCount);
@@ -567,7 +567,7 @@ final class SSLConfiguration implements Cloneable {
      */
     private static String[] getCustomizedSignatureScheme(String propertyName) {
         String property = System.getProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.logging && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                             property + "'");
@@ -595,7 +595,7 @@ final class SSLConfiguration implements Cloneable {
                 if (scheme != null && scheme.isAvailable) {
                     signatureSchemes.add(schemeName);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,sslctx")) {
                         SSLLogger.fine(
                         "The current installed providers do not " +
                               "support signature scheme: " + schemeName);

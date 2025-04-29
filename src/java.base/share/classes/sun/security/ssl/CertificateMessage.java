@@ -265,7 +265,7 @@ final class CertificateMessage {
             shc.handshakeSession.setLocalCertificates(x509Possession.popCerts);
             T12CertificateMessage cm =
                     new T12CertificateMessage(shc, x509Possession.popCerts);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced server Certificate handshake message", cm);
             }
@@ -293,7 +293,7 @@ final class CertificateMessage {
             // an empty cert chain instead.
             if (x509Possession == null) {
                 if (chc.negotiatedProtocol.useTLS10PlusSpec()) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "No X.509 certificate for client authentication, " +
                             "use empty Certificate message instead");
@@ -302,7 +302,7 @@ final class CertificateMessage {
                     x509Possession =
                             new X509Possession(null, new X509Certificate[0]);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "No X.509 certificate for client authentication, " +
                             "send a no_certificate alert");
@@ -324,7 +324,7 @@ final class CertificateMessage {
             }
             T12CertificateMessage cm =
                     new T12CertificateMessage(chc, x509Possession.popCerts);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced client Certificate handshake message", cm);
             }
@@ -360,13 +360,13 @@ final class CertificateMessage {
 
             T12CertificateMessage cm = new T12CertificateMessage(hc, message);
             if (hc.sslConfig.isClientMode) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
                 }
                 onCertificate((ClientHandshakeContext)context, cm);
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming client Certificate handshake message", cm);
                 }
@@ -501,7 +501,7 @@ final class CertificateMessage {
             try {
                 thisSubjectAltNames = thisCert.getSubjectAlternativeNames();
             } catch (CertificateParsingException cpe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Attempt to obtain subjectAltNames extension failed!");
                 }
@@ -511,7 +511,7 @@ final class CertificateMessage {
             try {
                 prevSubjectAltNames = prevCert.getSubjectAlternativeNames();
             } catch (CertificateParsingException cpe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Attempt to obtain subjectAltNames extension failed!");
                 }
@@ -980,7 +980,7 @@ final class CertificateMessage {
                 certEnt.extensions.produce(shc, enabledCTExts);
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced server Certificate message", cm);
             }
 
@@ -997,7 +997,7 @@ final class CertificateMessage {
                 ClientHelloMessage clientHello) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No signature_algorithms(_cert) in ClientHello");
                 }
@@ -1021,7 +1021,7 @@ final class CertificateMessage {
             SSLPossession pos = X509Authentication
                     .createPossession(hc, supportedKeyTypes);
             if (pos == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("No available authentication scheme");
                 }
             }
@@ -1034,14 +1034,14 @@ final class CertificateMessage {
             SSLPossession pos = choosePossession(chc, clientHello);
             X509Certificate[] localCerts;
             if (pos == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("No available client authentication scheme");
                 }
                 localCerts = new X509Certificate[0];
             } else {
                 chc.handshakePossessions.add(pos);
                 if (!(pos instanceof X509Possession x509Possession)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "No X.509 certificate for client authentication");
                     }
@@ -1067,7 +1067,7 @@ final class CertificateMessage {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Failed to produce client Certificate message", ce);
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced client Certificate message", cm);
             }
 
@@ -1099,13 +1099,13 @@ final class CertificateMessage {
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
             if (hc.sslConfig.isClientMode) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
                 }
                 onConsumeCertificate((ClientHandshakeContext)context, cm);
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming client Certificate handshake message", cm);
                 }

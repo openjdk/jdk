@@ -210,7 +210,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         int contentLen = ((header[3] & 0xFF) << 8) +
                            (header[4] & 0xFF);          // pos: 3, 4
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
+        if (SSLLogger.logging && SSLLogger.isOn("ssl,record")) {
             SSLLogger.fine(
                     "READ: " +
                     ProtocolVersion.nameOf(majorVersion, minorVersion) +
@@ -243,7 +243,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         readFully(contentLen);
         recordBody.flip();
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
+        if (SSLLogger.logging && SSLLogger.isOn("ssl,record")) {
             SSLLogger.fine(
                     "READ: " +
                     ProtocolVersion.nameOf(majorVersion, minorVersion) +
@@ -406,7 +406,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                  */
                 os.write(SSLRecord.v2NoCipher);      // SSLv2Hello
 
-                if (SSLLogger.isOn) {
+                if (SSLLogger.logging) {
                     if (SSLLogger.isOn("ssl,record")) {
                          SSLLogger.fine(
                                 "Requested to negotiate unsupported SSLv2!");
@@ -445,7 +445,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
             ByteBuffer converted = convertToClientHello(recordBody);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,record,packet")) {
                 SSLLogger.fine(
                         "[Converted] ClientHello", converted);
             }
@@ -488,13 +488,13 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     private static int read(InputStream is, byte[] buf, int off, int len)  throws IOException {
         int readLen = is.read(buf, off, len);
         if (readLen < 0) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,record,packet")) {
                 SSLLogger.fine("Raw read: EOF");
             }
             throw new EOFException("SSL peer shut down incorrectly");
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
+        if (SSLLogger.logging && SSLLogger.isOn("ssl,record,packet")) {
             ByteBuffer bb = ByteBuffer.wrap(buf, off, readLen);
             SSLLogger.fine("Raw read", bb);
         }

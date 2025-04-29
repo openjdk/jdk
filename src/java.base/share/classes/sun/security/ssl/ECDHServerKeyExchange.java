@@ -489,7 +489,7 @@ final class ECDHServerKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             ECDHServerKeyExchangeMessage skem =
                     new ECDHServerKeyExchangeMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced ECDH ServerKeyExchange handshake message", skem);
             }
@@ -522,7 +522,7 @@ final class ECDHServerKeyExchange {
             // AlgorithmConstraints are checked during decoding
             ECDHServerKeyExchangeMessage skem =
                     new ECDHServerKeyExchangeMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Consuming ECDH ServerKeyExchange handshake message", skem);
             }

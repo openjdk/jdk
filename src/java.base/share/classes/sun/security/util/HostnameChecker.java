@@ -271,7 +271,7 @@ public class HostnameChecker {
             name = IDN.toUnicode(IDN.toASCII(name));
             template = IDN.toUnicode(IDN.toASCII(template));
         } catch (RuntimeException re) {
-            if (SSLLogger.isOn) {
+            if (SSLLogger.logging) {
                 SSLLogger.fine("Failed to normalize to Unicode: " + re);
             }
 
@@ -308,7 +308,7 @@ public class HostnameChecker {
             String template, boolean chainsToPublicCA) {
         // not ok if it is a single wildcard character or "*."
         if (template.equals("*") || template.equals("*.")) {
-            if (SSLLogger.isOn) {
+            if (SSLLogger.logging) {
                 SSLLogger.fine(
                     "Certificate domain name has illegal single " +
                       "wildcard character: " + template);
@@ -328,7 +328,7 @@ public class HostnameChecker {
 
         // not ok if there is no dot after wildcard (ex: "*com")
         if (firstDotIndex == -1) {
-            if (SSLLogger.isOn) {
+            if (SSLLogger.logging) {
                 SSLLogger.fine(
                     "Certificate domain name has illegal wildcard, " +
                     "no dot after wildcard character: " + template);
@@ -353,7 +353,7 @@ public class HostnameChecker {
 
         // Is it a top-level domain?
         if (wildcardedDomain.equalsIgnoreCase(templateDomainSuffix)) {
-            if (SSLLogger.isOn) {
+            if (SSLLogger.logging) {
                 SSLLogger.fine(
                     "Certificate domain name has illegal " +
                     "wildcard for top-level public suffix: " + template);

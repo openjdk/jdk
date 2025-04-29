@@ -90,7 +90,7 @@ final class KeyShareExtension {
                 Record.putInt16(m, namedGroupId);
                 Record.putBytes16(m, keyExchange);
             } catch (IOException ioe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                         "Unlikely IOException", ioe);
                 }
@@ -222,7 +222,7 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.CH_KEY_SHARE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable key_share extension");
                 }
@@ -237,7 +237,7 @@ final class KeyShareExtension {
                 namedGroups = chc.clientRequestedNamedGroups;
                 if (namedGroups == null || namedGroups.isEmpty()) {
                     // No supported groups.
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                             "Ignore key_share extension, no supported groups");
                     }
@@ -287,7 +287,7 @@ final class KeyShareExtension {
                 NamedGroup ng) {
             SSLKeyExchange ke = SSLKeyExchange.valueOf(ng);
             if (ke == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                         "No key exchange for named group " + ng.name);
                 }
@@ -323,7 +323,7 @@ final class KeyShareExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             if (shc.handshakeExtensions.containsKey(SSLExtension.CH_KEY_SHARE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "The key_share extension has been loaded");
                 }
@@ -332,7 +332,7 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_KEY_SHARE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable key_share extension");
                 }
@@ -346,7 +346,7 @@ final class KeyShareExtension {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
                 if (ng == null || !NamedGroup.isActivatable(shc.sslConfig,
                         shc.algorithmConstraints, ng)) {
-                    if (SSLLogger.isOn &&
+                    if (SSLLogger.logging &&
                             SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "Ignore unsupported named group: " +
@@ -364,7 +364,7 @@ final class KeyShareExtension {
                         if (!shc.algorithmConstraints.permits(
                                 EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                                 namedGroupCredentials.getPublicKey())) {
-                            if (SSLLogger.isOn &&
+                            if (SSLLogger.logging &&
                                     SSLLogger.isOn("ssl,handshake")) {
                                 SSLLogger.warning(
                                     "key share entry of " + ng + " does not " +
@@ -379,7 +379,7 @@ final class KeyShareExtension {
                         credentials.add(kaCred);
                     }
                 } catch (GeneralSecurityException ex) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                                 "Cannot decode named group: " +
                                 NamedGroup.nameOf(entry.namedGroupId));
@@ -522,7 +522,7 @@ final class KeyShareExtension {
                             SSLExtension.CH_KEY_SHARE);
             if (kss == null) {
                 // Unlikely, no key_share extension requested.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Ignore, no client key_share extension");
                 }
@@ -531,7 +531,7 @@ final class KeyShareExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.SH_KEY_SHARE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Ignore, no available server key_share extension");
                 }
@@ -542,7 +542,7 @@ final class KeyShareExtension {
             if ((shc.handshakeCredentials == null) ||
                     shc.handshakeCredentials.isEmpty()) {
                 // Unlikely, HelloRetryRequest should be used earlier.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available client key share entries");
                 }
@@ -562,7 +562,7 @@ final class KeyShareExtension {
 
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(ng);
                 if (ke == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                             "No key exchange for named group " + ng.name);
                     }
@@ -597,7 +597,7 @@ final class KeyShareExtension {
 
             if (keyShare == null) {
                 // Unlikely, HelloRetryRequest should be used instead earlier.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available server key_share extension");
                 }
@@ -708,7 +708,7 @@ final class KeyShareExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Cannot use the previous requested key shares anymore.
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "No key_share extension in ServerHello, " +
                         "cleanup the key shares if necessary");
@@ -801,7 +801,7 @@ final class KeyShareExtension {
             for (NamedGroup ng : shc.clientRequestedNamedGroups) {
                 if (NamedGroup.isActivatable(shc.sslConfig,
                         shc.algorithmConstraints, ng)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "HelloRetryRequest selected named group: " +
                                 ng.name);
