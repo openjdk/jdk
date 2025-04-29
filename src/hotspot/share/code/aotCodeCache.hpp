@@ -337,8 +337,6 @@ public:
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
-static const char* add_C_string2(const char* str) NOT_CDS_RETURN_(str);
-
   static void print_on(outputStream* st) NOT_CDS_RETURN;
 };
 
