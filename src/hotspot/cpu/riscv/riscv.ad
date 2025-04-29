@@ -1914,9 +1914,10 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_FmaF:
     case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
-      return UseFMA;
+      return UseRVV && UseFMA;
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
