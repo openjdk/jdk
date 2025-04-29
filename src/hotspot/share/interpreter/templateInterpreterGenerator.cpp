@@ -194,6 +194,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
   method_entry(java_lang_math_tanh )
+  method_entry(java_lang_math_cbrt )
   method_entry(java_lang_math_abs  )
   method_entry(java_lang_math_sqrt )
   method_entry(java_lang_math_sqrt_strict)
@@ -453,6 +454,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
   case Interpreter::java_lang_math_tanh    : // fall thru
+  case Interpreter::java_lang_math_cbrt    : // fall thru
   case Interpreter::java_lang_math_abs     : // fall thru
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru
@@ -487,4 +489,3 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   }
   return entry_point;
 }
-

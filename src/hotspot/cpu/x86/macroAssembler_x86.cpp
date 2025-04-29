@@ -2247,6 +2247,16 @@ void MacroAssembler::evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_l
   }
 }
 
+void MacroAssembler::movapd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::movapd(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movapd(dst, Address(rscratch, 0));
+  }
+}
 
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");

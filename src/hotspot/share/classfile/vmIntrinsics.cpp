@@ -92,6 +92,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -144,6 +145,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -288,6 +290,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:

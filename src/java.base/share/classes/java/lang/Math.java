@@ -445,6 +445,7 @@ public final class Math {
      * @return  the cube root of {@code a}.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static double cbrt(double a) {
         return StrictMath.cbrt(a);
     }

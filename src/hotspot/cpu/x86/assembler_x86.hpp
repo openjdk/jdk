@@ -950,6 +950,7 @@ private:
   // New cpus require use of movaps and movapd to avoid partial register stall
   // when moving between registers.
   void movaps(XMMRegister dst, XMMRegister src);
+  void movapd(XMMRegister dst, Address src);
   void movapd(XMMRegister dst, XMMRegister src);
 
   // End avoid using directly
@@ -2449,6 +2450,9 @@ private:
   void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // Bitwise Logical OR of Packed Floating-Point Values
+  void orpd(XMMRegister dst, XMMRegister src);
 
   void unpckhpd(XMMRegister dst, XMMRegister src);
   void unpcklpd(XMMRegister dst, XMMRegister src);
