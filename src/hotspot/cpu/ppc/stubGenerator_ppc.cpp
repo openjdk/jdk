@@ -1224,8 +1224,6 @@ class StubGenerator: public StubCodeGenerator {
           // Restore DSCR pre-fetch value.
           __ load_const_optimized(tmp2, VM_Version::_dscr_val);
           __ mtdscr(tmp2);
-          
-
       } // FasterArrayCopy
       __ bind(l_6);
 
