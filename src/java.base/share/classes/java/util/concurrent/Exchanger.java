@@ -537,6 +537,8 @@ public class Exchanger<V> {
         MATCH = MhUtil.findVarHandle(l, Node.class, "match", Object.class);
         ENTRY = MhUtil.findVarHandle(l, Slot.class, "entry", Node.class);
         AA = MethodHandles.arrayElementVarHandle(Slot[].class);
+        // Prevent rare disastrous classloading in first call to LockSupport.park.
+        // See: https://bugs.openjdk.java.net/browse/JDK-8074773
+        Class<?> ensureLoaded = LockSupport.class;
     }
-
 }

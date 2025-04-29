@@ -585,4 +585,10 @@ public class ThreadFlock implements AutoCloseable {
             return flock.scopedValueBindings();
         }
     }
+
+    static {
+        // Prevent rare disastrous classloading in first call to LockSupport.park.
+        // See: https://bugs.openjdk.java.net/browse/JDK-8074773
+        Class<?> ensureLoaded = LockSupport.class;
+    }
 }
