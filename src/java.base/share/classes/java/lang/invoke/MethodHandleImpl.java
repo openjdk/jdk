@@ -1526,6 +1526,10 @@ abstract class MethodHandleImpl {
     }
 
     static {
+        runtimeSetup();
+    }
+
+    private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
             public Class<?> getDeclaringClass(Object rmname) {
