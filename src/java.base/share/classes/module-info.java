@@ -275,6 +275,7 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.incubator.vector,
         jdk.internal.vm.ci,
         jdk.jlink,
         jdk.jpackage,

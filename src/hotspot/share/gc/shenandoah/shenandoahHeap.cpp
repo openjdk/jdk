@@ -583,7 +583,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #pragma warning( pop )
 #endif
 
-void ShenandoahHeap::print_on(outputStream* st) const {
+void ShenandoahHeap::print_heap_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
   st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
                byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
@@ -634,7 +634,6 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 
   st->cr();
-  MetaspaceUtils::print_on(st);
 
   if (Verbose) {
     st->cr();
@@ -642,9 +641,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 }
 
-void ShenandoahHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
+void ShenandoahHeap::print_gc_on(outputStream* st) const {
   print_heap_regions_on(st);
 }
 
