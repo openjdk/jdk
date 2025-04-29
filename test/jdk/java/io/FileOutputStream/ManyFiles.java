@@ -24,12 +24,7 @@
 /* @test
  * @bug 4189011 5019303
  * @summary Test opening over 2048 files
- * @comment Vestigial comment from before the requires tag was added:
- * Linux does not yet allow opening this many files; Solaris
- * 8 requires an explicit allocation of more file descriptors
- * to succeed. Since this test is written to check for a
- * Windows capability it is much simpler to only run it
- * on that platform.
+ * @comment Linux does not yet allow opening this many files
  * @requires (os.family != "linux")
  * @run main/timeout=300 ManyFiles
  */
