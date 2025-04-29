@@ -1417,6 +1417,7 @@ instruct vmaxu(vReg dst, vReg src1, vReg src2) %{
   format %{ "vmaxu $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmaxu_vv(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
@@ -1430,6 +1431,7 @@ instruct vminu(vReg dst, vReg src1, vReg src2) %{
   format %{ "vminu $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vminu_vv(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
@@ -1445,6 +1447,7 @@ instruct vmaxu_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   format %{ "vmaxu_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmaxu_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
@@ -1458,6 +1461,7 @@ instruct vminu_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   format %{ "vminu_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vminu_vv(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg), Assembler::v0_t);
