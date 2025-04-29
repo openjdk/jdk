@@ -491,7 +491,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   assert(!phase->exceeding_node_budget(), "sanity");
 
   // Peeling does loop cloning which can result in O(N^2) node construction.
-  if (_body.size() > 255) {
+  if (_body.size() > 255 && !StressLoopPeeling) {
     return 0;   // Suppress too large body size.
   }
   // Optimistic estimate that approximates loop body complexity via data and
@@ -503,12 +503,20 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   }
 
   // Check for vectorized loops, any peeling done was already applied.
+  // Peeling is not legal here, we don't even stress peel!
   if (_head->is_CountedLoop()) {
     CountedLoopNode* cl = _head->as_CountedLoop();
     if (cl->is_unroll_only() || cl->trip_count() == 1) {
       return 0;
     }
   }
+
+  // It is now safe to peel or not.
+  if(StressLoopPeeling) {
+    // In case of stress, let's just pick randomly...
+    return phase->C->random() % 2 == 0 ? estimate : 0;
+  }
+  // ...otherwise, let's apply our heuristic.
 
   Node* test = tail();
 
@@ -527,21 +535,12 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
-        // Found reason to peel!...
-        if (StressLoopPeeling && phase->C->random() % 2 == 0) {
-          // ...but sometimes, let's not, just to see what happens.
-          return 0;
-        }
-        return estimate;
+        return estimate;    // Found reason to peel!
       }
     }
     // Walk up dominators to loop _head looking for test which is executed on
     // every path through the loop.
     test = phase->idom(test);
-  }
-  if (StressLoopPeeling && phase->C->random() % 2 == 0) {
-    // Let's go crazy! No good reason to peel, but no good reason not to, so let's!
-    return estimate;
   }
   return 0;
 }
