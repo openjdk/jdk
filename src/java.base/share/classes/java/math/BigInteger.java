@@ -2659,7 +2659,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                             ? new BigInteger(result << bitsToShift, newSign)
                             : new BigInteger(result, newSign).shiftLeft(bitsToShift));
         } else {
-            if (((bitLength() - 1L) * exponent + 1) / Integer.SIZE > MAX_MAG_LENGTH) {
+            if (((bitLength() - 1L) * exponent + 1L) / Integer.SIZE > MAX_MAG_LENGTH) {
                 reportOverflow();
             }
 
