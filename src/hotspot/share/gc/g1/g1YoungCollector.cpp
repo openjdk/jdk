@@ -32,9 +32,9 @@
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -49,9 +49,9 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -486,7 +486,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
   if (collector_state()->in_concurrent_start_gc()) {
+    Ticks start = Ticks::now();
     concurrent_mark()->pre_concurrent_start(_gc_cause);
+    phase_times()->record_prepare_concurrent_task_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
   // Please see comment in g1CollectedHeap.hpp and
@@ -743,11 +745,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
                                                       bool has_optional_evacuation_work) {
   G1GCPhaseTimes* p = phase_times();
 
-  {
-    Ticks start = Ticks::now();
-    rem_set()->merge_heap_roots(true /* initial_evacuation */);
-    p->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
-  }
+  rem_set()->merge_heap_roots(true /* initial_evacuation */);
 
   Tickspan task_time;
   const uint num_workers = workers()->active_workers();
@@ -812,6 +810,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
   Tickspan total_processing = Ticks::now() - start_processing;
 
   G1GCPhaseTimes* p = phase_times();
+  p->record_or_add_optional_evac_time(task_time.seconds() * 1000.0);
   p->record_or_add_nmethod_list_cleanup_time((total_processing - task_time).seconds() * 1000.0);
 }
 
@@ -830,17 +829,9 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
       break;
     }
 
-    {
-      Ticks start = Ticks::now();
-      rem_set()->merge_heap_roots(false /* initial_evacuation */);
-      phase_times()->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
-    }
+    rem_set()->merge_heap_roots(false /* initial_evacuation */);
 
-    {
-      Ticks start = Ticks::now();
-      evacuate_next_optional_regions(per_thread_states);
-      phase_times()->record_or_add_optional_evac_time((Ticks::now() - start).seconds() * 1000.0);
-    }
+    evacuate_next_optional_regions(per_thread_states);
 
     rem_set()->complete_evac_phase(true /* has_more_than_one_evacuation_phase */);
   }

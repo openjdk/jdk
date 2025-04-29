@@ -444,7 +444,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 // Useful if consumed previously by access via stackTop().
 void InterpreterMacroAssembler::popx(int len) {
   add2reg(Z_esp, len*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 // Get Address object of stack top. No checks. No pop.
@@ -458,38 +458,38 @@ void InterpreterMacroAssembler::pop_i(Register r) {
   z_l(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_ptr(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_l(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), false);
   add2reg(Z_esp, Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), true);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   z_st(r, Address(Z_esp));
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
@@ -501,7 +501,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   z_stg(r, Address(Z_esp, offset));
   clear_mem(Address(Z_esp), Interpreter::stackElementSize);
@@ -509,13 +509,13 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister f) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   freg2mem_opt(f, Address(Z_esp), false);
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister d) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   freg2mem_opt(d, Address(Z_esp, offset));
   add2reg(Z_esp, 2 * offset);
@@ -1002,15 +1002,15 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // markWord header = obj->mark().set_unlocked();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, object);
-    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_btrue(slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(monitor, object, header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(tmp, object);
+      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      z_btrue(slow_case);
+    }
 
     // Load markWord from object into header.
     z_lg(header, hdr_offset, object);
