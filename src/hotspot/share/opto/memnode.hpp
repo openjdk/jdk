@@ -71,7 +71,7 @@ protected:
       _unsafe_access(false),
       _barrier_data(0) {
     init_class_id(Class_Mem);
-    debug_only(_adr_type=at; adr_type();)
+    DEBUG_ONLY(_adr_type=at; adr_type();)
   }
   MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3 ) :
       Node(c0,c1,c2,c3),
@@ -80,7 +80,7 @@ protected:
       _unsafe_access(false),
       _barrier_data(0) {
     init_class_id(Class_Mem);
-    debug_only(_adr_type=at; adr_type();)
+    DEBUG_ONLY(_adr_type=at; adr_type();)
   }
   MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3, Node *c4) :
       Node(c0,c1,c2,c3,c4),
@@ -89,7 +89,7 @@ protected:
       _unsafe_access(false),
       _barrier_data(0) {
     init_class_id(Class_Mem);
-    debug_only(_adr_type=at; adr_type();)
+    DEBUG_ONLY(_adr_type=at; adr_type();)
   }
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
@@ -273,7 +273,7 @@ public:
   // Following method is copied from TypeNode:
   void set_type(const Type* t) {
     assert(t != nullptr, "sanity");
-    debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
+    DEBUG_ONLY(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     *(const Type**)&_type = t;   // cast away const-ness
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "type change must preserve hash code");
@@ -1497,7 +1497,7 @@ class MergeMemStream : public StackObj {
   MergeMemStream(MergeMemNode* mm) {
     mm->iteration_setup();
     init(mm);
-    debug_only(_cnt2 = 999);
+    DEBUG_ONLY(_cnt2 = 999);
   }
   // iterate in parallel over two merges
   // only iterates through non-empty elements of mm2
