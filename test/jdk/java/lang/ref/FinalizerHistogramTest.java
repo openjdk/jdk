@@ -21,12 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.util.ForceGC;
+import jdk.test.whitebox.WhiteBox;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -38,8 +34,13 @@ import java.lang.reflect.Field;
  * @summary Unit test for FinalizerHistogram
  * @modules java.base/java.lang.ref:open
  * @library /test/lib
- * @build jdk.test.lib.util.ForceGC
- * @run main/othervm FinalizerHistogramTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      FinalizerHistogramTest
  */
 
 public class FinalizerHistogramTest {
@@ -48,7 +49,8 @@ public class FinalizerHistogramTest {
     static final AtomicInteger trappedCount = new AtomicInteger(0);
     static final int OBJECTS_COUNT = 1000;
 
-    static RefQForTwo refQForTwo;
+    static WhiteBox wb;
+    static boolean refProResult;
 
     static class MyObject {
         public MyObject() {
@@ -63,25 +65,18 @@ public class FinalizerHistogramTest {
         }
     }
 
-    public static void main(String[] argvs) {
+    public static void main(String[] argvs) throws InterruptedException {
         try {
             lock.lock();
-            refQForTwo = new RefQForTwo(new MyObject(), new MyObject());
-            for(int i = 2; i < OBJECTS_COUNT; ++i) {
+            for(int i = 0; i < OBJECTS_COUNT; ++i) {
                 new MyObject();
             }
             System.out.println("Objects intialized: " + initializedCount.get());
-            // GC and wait for at least 2 MyObjects to be ready for finalization,
-            // and one MyObject to be trapped in finalize().
-            boolean forceGCResult = ForceGC.waitFor(() -> refQForTwo.bothRefsCleared() &&
-                                                          trappedCount.intValue() > 0,
-                    Duration.ofSeconds(60).toMillis());
-            if (!forceGCResult) {
-                System.out.println("*** ForceGC condition not met! ***");
-            }
-            System.out.println("ref1Cleared: " + refQForTwo.ref1Cleared);
-            System.out.println("ref2Cleared: " + refQForTwo.ref2Cleared);
-            System.out.println("trappedCount.intValue(): " + trappedCount.intValue());
+            wb = WhiteBox.getWhiteBox();
+            wb.fullGC();
+            refProResult = wb.waitForReferenceProcessing();
+            System.out.println("waitForReferenceProcessing returned: " + refProResult);
+            while(trappedCount.get() < 1);
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
 
@@ -120,38 +115,5 @@ public class FinalizerHistogramTest {
         } finally {
             lock.unlock();
         }
-    }
-
-    private static class RefQForTwo implements Runnable {
-        final ReferenceQueue queue;
-        final WeakReference ref1;
-        final WeakReference ref2;
-        volatile boolean ref1Cleared = false;
-        volatile boolean ref2Cleared = false;
-        Thread thread;
-
-        private RefQForTwo(Object obj1, Object obj2) {
-            queue = new ReferenceQueue();
-            ref1 = new WeakReference(obj1, queue);
-            ref2 = new WeakReference(obj2, queue);
-
-            thread = new Thread(this, "RefQForTwo thread");
-            thread.start();
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (!bothRefsCleared()) {
-                    Reference ref = queue.remove();
-                    if (ref == ref1) { ref1Cleared = true; }
-                    else if (ref == ref2) { ref2Cleared = true; }
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public boolean bothRefsCleared() { return ref1Cleared && ref2Cleared; }
     }
 }
