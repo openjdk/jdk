@@ -220,18 +220,24 @@ static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
   return (size_t) desired_capacity_d;
 }
 
-size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
+size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t allocation_word_size) {
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.
   const size_t capacity_after_gc = _g1h->capacity();
-  const size_t used_after_gc = capacity_after_gc -
-                               _g1h->unused_committed_regions_in_bytes() -
-                               // Discount space used by current Eden to establish a
-                               // situation during Remark similar to at the end of full
-                               // GC where eden is empty. During Remark there can be an
-                               // arbitrary number of eden regions which would skew the
-                               // results.
-                               _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
+  size_t used_after_gc = capacity_after_gc -
+                         _g1h->unused_committed_regions_in_bytes() -
+                         // Discount space used by current Eden to establish a
+                         // situation during Remark similar to at the end of full
+                         // GC where eden is empty. During Remark there can be an
+                         // arbitrary number of eden regions which would skew the
+                         // results.
+                         _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
+  // If the full collection was triggered by an allocation failure, we should account
+  // for the bytes required for this allocation under used_after_gc. This prevents
+  // unnecessary shrinking that would be followed by an expand call to satisfy the
+  // allocation.
+  size_t allocation_bytes = allocation_word_size * HeapWordSize;
+  used_after_gc += allocation_bytes;
 
   size_t minimum_desired_capacity = target_heap_capacity(used_after_gc, MinHeapFreeRatio);
   size_t maximum_desired_capacity = target_heap_capacity(used_after_gc, MaxHeapFreeRatio);
