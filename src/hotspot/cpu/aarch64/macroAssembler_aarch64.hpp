@@ -1472,16 +1472,6 @@ public:
 
   public:
 
-  void ldr_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
-      ldr(dest, const_addr);
-    } else {
-      uint64_t offset;
-      adrp(dest, InternalAddress(const_addr.target()), offset);
-      ldr(dest, Address(dest, offset));
-    }
-  }
-
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
 

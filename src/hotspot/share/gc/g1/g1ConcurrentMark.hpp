@@ -709,7 +709,7 @@ public:
 
   void threads_do(ThreadClosure* tc) const;
 
-  void print_on_error(outputStream* st) const;
+  void print_on(outputStream* st) const;
 
   // Mark the given object on the marking bitmap if it is below TAMS.
   inline bool mark_in_bitmap(uint worker_id, oop const obj);

@@ -1240,6 +1240,7 @@ static void merge_refinement_table() {
 
 void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1GCPhaseTimes* pt = g1h->phase_times();
 
   // 1. Prepare the merging process
   {
@@ -1249,9 +1250,9 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
     Tickspan total = Ticks::now() - start;
     if (initial_evacuation) {
-      g1h->phase_times()->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     } else {
-      g1h->phase_times()->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     }
   }
 
@@ -1267,6 +1268,8 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   }
 
   // 3. Merge other heap roots.
+  Ticks start = Ticks::now();
+
   {
     WorkerThreads* workers = g1h->workers();
 
@@ -1285,6 +1288,12 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     // Clear current young only collection set. Survivor regions will be added
     // to the set during evacuation.
     g1h->young_regions_cset_group()->clear();
+  }
+
+  if (initial_evacuation) {
+    pt->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  } else {
+    pt->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
   }
 
   if (VerifyDuringGC && initial_evacuation) {

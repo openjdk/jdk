@@ -178,11 +178,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   // Merge refinement table time. Note that this time is included in _cur_merge_heap_roots_time_ms.
   double _cur_merge_refinement_table_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
+  // Included in above merge and optional-merge time.
+  double _cur_distribute_log_buffers_time_ms;
 
   double _cur_prepare_merge_heap_roots_time_ms;
   double _cur_optional_prepare_merge_heap_roots_time_ms;
-
-  double _cur_distribute_log_buffers_time_ms;
 
   double _cur_pre_evacuate_prepare_time_ms;
 
@@ -193,6 +193,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_ref_proc_time_ms;
 
   double _cur_collection_start_sec;
+  // Not included in _gc_pause_time_ms
   double _root_region_scan_wait_time_ms;
 
   double _external_accounted_time_ms;
@@ -212,8 +213,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_region_register_time;
 
+  // Not included in _gc_pause_time_ms
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
+
+  // Time spent to trigger concurrent tasks of ResetMarkingState and NoteStartOfMark.
+  double _cur_prepare_concurrent_task_time_ms;
 
   ReferenceProcessorPhaseTimes _ref_phase_times;
   WeakProcessorTimes _weak_phase_times;
@@ -319,6 +324,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_ref_proc_time_ms = ms;
   }
 
+  void record_prepare_concurrent_task_time_ms(double ms) {
+    _cur_prepare_concurrent_task_time_ms = ms;
+  }
+
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
   }
@@ -386,8 +395,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double cur_collection_par_time_ms() {
     return _cur_collection_initial_evac_time_ms +
            _cur_optional_evac_time_ms +
+           _cur_prepare_merge_heap_roots_time_ms +
            _cur_merge_heap_roots_time_ms +
-           _cur_optional_merge_heap_roots_time_ms;
+           _cur_optional_prepare_merge_heap_roots_time_ms +
+           _cur_optional_merge_heap_roots_time_ms +
+           _cur_collection_nmethod_list_cleanup_time_ms;
   }
 
   double cur_merge_refinement_table_time() const {
