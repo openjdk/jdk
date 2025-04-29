@@ -2438,32 +2438,32 @@ public class IRNode {
 
     public static final String FMSUB_F = PREFIX + "FMSUB_F" + POSTFIX;
     static {
-        machOnlyNameRegex(FMSUB_F, "FmaF");
+        beforeMatchingNameRegex(FMSUB_F, "FmaF");
     }
 
     public static final String FMSUB_D = PREFIX + "FMSUB_D" + POSTFIX;
     static {
-        machOnlyNameRegex(FMSUB_D, "FmaD");
+        beforeMatchingNameRegex(FMSUB_D, "FmaD");
     }
 
     public static final String FNMADD_F = PREFIX + "FNMADD_F" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMADD_F, "FmaF");
+        beforeMatchingNameRegex(FNMADD_F, "FmaF");
     }
 
     public static final String FNMADD_D = PREFIX + "FNMADD_D" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMADD_D, "FmaD");
+        beforeMatchingNameRegex(FNMADD_D, "FmaD");
     }
 
     public static final String FNMSUB_F = PREFIX + "FNFNMSUB_FMSUB" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMSUB_F, "FmaF");
+        beforeMatchingNameRegex(FNMSUB_F, "FmaF");
     }
 
     public static final String FNMSUB_D = PREFIX + "FNMSUB_D" + POSTFIX;
     static {
-        machOnlyNameRegex(FNMSUB_D, "FmaD");
+        beforeMatchingNameRegex(FNMSUB_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;
