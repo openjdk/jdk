@@ -47,6 +47,8 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
+bool CDSConfig::_is_one_step_training = false;
+bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
@@ -394,37 +396,42 @@ void CDSConfig::check_aot_flags() {
     _old_cds_flags_used = true;
   }
 
-  // "New" AOT flags must not be mixed with "classic" flags such as -Xshare:dump
+  // "New" AOT flags must not be mixed with "classic" CDS flags such as -Xshare:dump
   CHECK_NEW_FLAG(AOTCache);
+  CHECK_NEW_FLAG(AOTCacheOutput);
   CHECK_NEW_FLAG(AOTConfiguration);
   CHECK_NEW_FLAG(AOTMode);
 
   CHECK_SINGLE_PATH(AOTCache);
+  CHECK_SINGLE_PATH(AOTCacheOutput);
   CHECK_SINGLE_PATH(AOTConfiguration);
 
-  if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
-    // AOTCache/AOTConfiguration/AOTMode not used.
-    return;
-  } else {
-    _new_aot_flags_used = true;
+  if (FLAG_IS_DEFAULT(AOTCache) &&
+      FLAG_IS_DEFAULT(AOTMode)) {
+    bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
+    bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
+    if (!has_cache_output && !has_config) {
+      // AOT flags are not used. Use classic CDS workflow
+      return;
+    } else if (has_cache_output) {
+      // If AOTCacheOutput has been set, default mode is "record".
+      // Default value for AOTConfiguration, if necessary, will be assigned in check_aotmode_record().
+      FLAG_SET_ERGO(AOTMode, "record");
+    }
   }
+
+  // At least one AOT flag has been used
+ _new_aot_flags_used = true;
 
   if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
+  } else if (strcmp(AOTMode, "record") == 0) {
+    check_aotmode_record();
   } else {
-    // AOTMode is record or create
-    if (FLAG_IS_DEFAULT(AOTConfiguration)) {
-      vm_exit_during_initialization(err_msg("-XX:AOTMode=%s cannot be used without setting AOTConfiguration", AOTMode));
-    }
-
-    if (strcmp(AOTMode, "record") == 0) {
-      check_aotmode_record();
-    } else {
-      assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
-      check_aotmode_create();
-    }
+    assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
+    check_aotmode_create();
   }
 }
 
@@ -448,6 +455,26 @@ void CDSConfig::check_aotmode_auto_or_on() {
 }
 
 void CDSConfig::check_aotmode_record() {
+  bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
+  bool has_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
+
+  if (has_output) {
+    _is_one_step_training = true;
+    if (!has_config) {
+      // Too early; can't use resource allocation yet.
+      size_t len = strlen(AOTCacheOutput) + 10;
+      char* temp = AllocateHeap(len, mtArguments);
+      jio_snprintf(temp, len, "%s.config", AOTCacheOutput);
+      FLAG_SET_ERGO(AOTConfiguration, temp);
+      FreeHeap(temp);
+      _has_temp_aot_config_file = true;
+    }
+  } else {
+    if (!has_config) {
+      vm_exit_during_initialization("-XX:AOTMode=record cannot be used without setting AOTCacheOutput or AOTConfiguration");
+    }
+  }
+
   if (!FLAG_IS_DEFAULT(AOTCache)) {
     vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
   }
@@ -463,8 +490,22 @@ void CDSConfig::check_aotmode_record() {
 }
 
 void CDSConfig::check_aotmode_create() {
-  if (FLAG_IS_DEFAULT(AOTCache)) {
-    vm_exit_during_initialization("AOTCache must be specified when using -XX:AOTMode=create");
+  if (FLAG_IS_DEFAULT(AOTConfiguration)) {
+    vm_exit_during_initialization("-XX:AOTMode=create cannot be used without setting AOTConfiguration");
+  }
+
+  bool has_cache = !FLAG_IS_DEFAULT(AOTCache);
+  bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
+
+  if (!has_cache && !has_cache_output) {
+    vm_exit_during_initialization("AOTCache or AOTCacheOutput must be specified when using -XX:AOTMode=create");
+  } else if (has_cache && has_cache_output && strcmp(AOTCache, AOTCacheOutput) != 0) {
+    vm_exit_during_initialization("AOTCache and AOTCacheOutput have different values");
+  }
+
+  if (!has_cache) {
+    precond(has_cache_output);
+    FLAG_SET_ERGO(AOTCache, AOTCacheOutput);
   }
 
   _is_dumping_final_static_archive = true;

@@ -1945,12 +1945,12 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
   return check_memory_size(*long_arg, min_size, max_size);
 }
 
-// Parse JavaVMInitArgs structure
-
+// Parse JavaVMInitArgs (in the order of the parameters to this function)
 jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
                                    const JavaVMInitArgs *java_tool_options_args,
+                                   const JavaVMInitArgs *cmd_line_args,
                                    const JavaVMInitArgs *java_options_args,
-                                   const JavaVMInitArgs *cmd_line_args) {
+                                   const JavaVMInitArgs *aot_tool_options_args) {
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
@@ -1963,30 +1963,49 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
 
-  // Parse args structure generated from java.base vm options resource
+  // Parse args generated from java.base vm options resource
   jint result = parse_each_vm_init_arg(vm_options_args, JVMFlagOrigin::JIMAGE_RESOURCE);
   if (result != JNI_OK) {
     return result;
   }
 
-  // Parse args structure generated from JAVA_TOOL_OPTIONS environment
+  // Parse args generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
   result = parse_each_vm_init_arg(java_tool_options_args, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
-  // Parse args structure generated from the command line flags.
+  // Parse args generated from the command line flags.
   result = parse_each_vm_init_arg(cmd_line_args, JVMFlagOrigin::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
 
-  // Parse args structure generated from the _JAVA_OPTIONS environment
+  // Parse args generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
   result = parse_each_vm_init_arg(java_options_args, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Parse args generated from the AOT_TOOL_OPTIONS environment variable -- only if AOTMode is "create"
+  if (aot_tool_options_args->nOptions > 0) {
+    assert(AOTMode != nullptr && strcmp(AOTMode, "create") == 0, "Required for parsing AOT_TOOL_OPTIONS");
+    for (int index = 0; index < aot_tool_options_args->nOptions; index++) {
+      JavaVMOption* option = aot_tool_options_args->options + index;
+      const char* optionString = option->optionString;
+      if (strncmp(optionString, "-XX:AOTMode=", 12) == 0 &&
+          strcmp(optionString, "-XX:AOTMode=create") != 0) {
+        jio_fprintf(defaultStream::error_stream(),
+            "Option %s cannot be specified in AOT_TOOL_OPTIONS\n", optionString);
+        return JNI_ERR;
+      }
+    }
+    result = parse_each_vm_init_arg(aot_tool_options_args, JVMFlagOrigin::ENVIRON_VAR);
+    if (result != JNI_OK) {
+      return result;
+    }
   }
 
   // Disable CDS for exploded image
@@ -3075,6 +3094,52 @@ jint Arguments::parse_java_tool_options_environment_variable(ScopedVMInitArgs* a
   return parse_options_environment_variable("JAVA_TOOL_OPTIONS", args);
 }
 
+static JavaVMOption* get_last_aotmode_arg(const JavaVMInitArgs* args) {
+  for (int index = args->nOptions - 1; index >= 0; index--) {
+    JavaVMOption* option = args->options + index;
+    if (strncmp(option->optionString, "-XX:AOTMode=", 12) == 0) {
+      return option;
+    }
+  }
+
+  return nullptr;
+}
+
+jint Arguments::parse_aot_tool_options_environment_variable(const JavaVMInitArgs* vm_options_args,
+                                                            const JavaVMInitArgs* java_tool_options_args,
+                                                            const JavaVMInitArgs* cmd_line_args,
+                                                            const JavaVMInitArgs* java_options_args,
+                                                            ScopedVMInitArgs* aot_tool_options_args) {
+  // Don't bother scanning all the args if this env variable is not set
+  if (::getenv("AOT_TOOL_OPTIONS") == nullptr) {
+    return JNI_OK;
+  }
+
+  // The JavaVMInitArgs will be parsed by parse_vm_init_args() in the order of the
+  // parameters to this function, so let's look backwards and find the last occurrence
+  // of -XX:AOTMode=xxx, which will decide the value of AOTMode.
+  JavaVMOption* option;
+  if ((option = get_last_aotmode_arg(java_options_args)) != nullptr ||
+      (option = get_last_aotmode_arg(cmd_line_args)) != nullptr ||
+      (option = get_last_aotmode_arg(java_tool_options_args)) != nullptr ||
+      (option = get_last_aotmode_arg(vm_options_args)) != nullptr) {
+    // We have found the last -XX:AOTMode=xxx in the above 4 set of args. At this point
+    // <option> has NOT been parsed yet, so its value is not reflected inside the global
+    // variable AOTMode.
+    if (strcmp(option->optionString, "-XX:AOTMode=create") != 0) {
+      return JNI_OK; // Do not parse AOT_TOOL_OPTIONS
+    }
+  } else {
+    // -XX:AOTMode is not specified in any of 4 options_args, let's check AOTMode,
+    // which would have been set inside process_settings_file();
+    if (AOTMode == nullptr || strcmp(AOTMode, "create") != 0) {
+      return JNI_OK; // Do not parse AOT_TOOL_OPTIONS
+    }
+  }
+
+  return parse_options_environment_variable("AOT_TOOL_OPTIONS", aot_tool_options_args);
+}
+
 jint Arguments::parse_options_environment_variable(const char* name,
                                                    ScopedVMInitArgs* vm_args) {
   char *buffer = ::getenv(name);
@@ -3453,19 +3518,21 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   ScopedVMInitArgs initial_vm_options_args("");
   ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
+  ScopedVMInitArgs initial_aot_tool_options_args("env_var='AOT_TOOL_OPTIONS'");
 
   // Pointers to current working set of containers
   JavaVMInitArgs* cur_cmd_args;
   JavaVMInitArgs* cur_vm_options_args;
   JavaVMInitArgs* cur_java_options_args;
   JavaVMInitArgs* cur_java_tool_options_args;
+  JavaVMInitArgs* cur_aot_tool_options_args;
 
   // Containers for modified/expanded options
   ScopedVMInitArgs mod_cmd_args("cmd_line_args");
   ScopedVMInitArgs mod_vm_options_args("vm_options_args");
   ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
-
+  ScopedVMInitArgs mod_aot_tool_options_args("env_var='_AOT_TOOL_OPTIONS'");
 
   jint code =
       parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
@@ -3525,7 +3592,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     cur_java_options_args->ignoreUnrecognized = true;
   }
 
-  // Parse specified settings file
+  // Parse specified settings file (s) -- the effects are applied immediately into the JVM global flags.
   if (settings_file_specified) {
     if (!process_settings_file(flags_file, true,
                                cur_cmd_args->ignoreUnrecognized)) {
@@ -3546,17 +3613,38 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
   }
 
+  // AOT_TOOL_OPTIONS are parsed only if -XX:AOTMode=create has been detected from all
+  // the options that have been gathered above.
+  code = parse_aot_tool_options_environment_variable(cur_vm_options_args,
+                                                     cur_java_tool_options_args,
+                                                     cur_cmd_args,
+                                                     cur_java_options_args,
+                                                     &initial_aot_tool_options_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+  code = expand_vm_options_as_needed(initial_aot_tool_options_args.get(),
+                                     &mod_aot_tool_options_args,
+                                     &cur_aot_tool_options_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+
   if (PrintVMOptions) {
     print_options(cur_java_tool_options_args);
     print_options(cur_cmd_args);
     print_options(cur_java_options_args);
+    print_options(cur_aot_tool_options_args);
   }
 
-  // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
+  // Apply the settings in these args into the JVM global flags, in the order
+  // of the parameters to parse_vm_init_args()
   jint result = parse_vm_init_args(cur_vm_options_args,
                                    cur_java_tool_options_args,
+                                   cur_cmd_args,
                                    cur_java_options_args,
-                                   cur_cmd_args);
+                                   cur_aot_tool_options_args);
 
   if (result != JNI_OK) {
     return result;

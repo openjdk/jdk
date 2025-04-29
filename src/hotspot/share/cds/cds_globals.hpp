@@ -116,6 +116,10 @@
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
                                                                             \
+  product(ccstr, AOTCacheOutput, nullptr,                                   \
+          "Write AOT cache into this file (overrides AOTCache when "        \
+          "writing)")                                                       \
+                                                                            \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
           "ConstantPools")                                                  \
