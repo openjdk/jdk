@@ -455,7 +455,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   RegisterMap map(chunk->at(0)->register_map());
   bool deoptimized_objects = false;
 
-  bool const jvmci_has_installed_code = JVMCI::has_installed_code();
+  bool const jvmci_has_installed_code = JVMCI_ONLY(JVMCI::has_installed_code()) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_has_installed_code COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
@@ -527,7 +527,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   bool realloc_failures = false;
 
 #if COMPILER2_OR_JVMCI
-  bool const jvmci_has_installed_code = JVMCI::has_installed_code();
+  bool const jvmci_has_installed_code = JVMCI_ONLY(JVMCI::has_installed_code()) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
