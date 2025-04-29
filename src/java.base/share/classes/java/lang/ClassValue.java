@@ -37,61 +37,37 @@ import static java.lang.ClassValue.ClassValueMap.probeHomeLocation;
 import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
 
 /**
- * Lazily associate a computed value with (potentially) every type.
+ * Lazily associate a computed value with any {@code Class} object.
  * For example, if a dynamic language needs to construct a message dispatch
  * table for each class encountered at a message send call site,
  * it can use a {@code ClassValue} to cache information needed to
  * perform the message send quickly, for each class encountered.
  * <p>
- * For any some specific pair of {@code ClassValue} and {@code Class}
- * objects, there is an assignment state for the value accessed by
- * {@code cv.get(c)}, and the state can be changed by method calls
- * {@code get} and {@code remove}.
+ * The basic operation of a {@code ClassValue} is {@link #get get}, which
+ * returns an associated value, initially created by an invocation to {@link
+ * #computeValue computeValue}; multiple invocations may happen under race, but
+ * only one value is ever associated.
  * <p>
- * The {@code get} method assigns it a value if it as not assigned
- * already, and otherwise returns the previously assigned value.  The
- * {@code remove} method removes any assigned value.
+ * Another operation is {@link #remove remove}: it clears an associated value,
+ * and ensures subsequent associated values are computed with input states
+ * up-to-date with the removal.
  * <p>
- * For any specific pair of {@code ClassValue} and {@code Class}
- * objects, all state changes are serialized in a simple linear order,
- * within the Java Memory Model.  The initial assignment state, and
- * the state after a {@code remove} call, is unassigned.  A call to
- * {@code get} on an assigned state returns the assigned value.
- * Thus, consecutive calls to {@code get} will return the same
- * value, until the next {@code remove}.
- * <p>
- * If a call to {@code get} occurs on an unassigned state, the {@code
- * computeValue} method is invoked.  If {@code computeValue} returns a
- * value normally, that value is the new assignment state.  If {@code
- * computeValue} throws an exception, an {@code Error} or {@code
- * RuntimeException} is thrown, either the thrown exception itself, or
- * an {@code Error} wrapping that exception as a cause.  If {@code
- * computeValue} make a recursive call to {@code get} (on the same
- * {@code Class}), a {@code StackOverflowError} is thrown.
- * <p>
- * If two or more racing calls are made to {@code get} on an
- * unassigned state, {@code computeValue} may be invoked on any or all
- * of them.  If one of those {@code computeValue} invocations returns
- * or throws, the {@code ClassValue} chooses the corresponding {@code
- * get} call to be the first in the linear order.  If the chosen
- * {@code computeValue} call returned normally, that value is
- * assigned, and other racing {@code computeValue} results will
- * be discarded when those invocations return or throw.  If the chosen
- * {@code computeValue} throws, that exception is thrown to the thread
- * making the {@code get} call, the binding state remains unbound, and
- * the remaining threads (if any) race to produce the bound value.
- * If all {@code computeValue} invocations throw, the value is not
- * bound after all.
- * <p>
- * Any {@code remove} call is given a place among a matching sequence
- * of {@code get} calls.  If a {@code remove} call is made recursively
- * during a {@code computeValue} call (on the same pair of operands),
- * it is regarded as having taken effect already (since the {@code
- * get} in process must have been triggered by a missing assignment).
- * In other words, a recursive call to {@code remove} from {@code
- * computeValue} has no effect at all.
+ * For a particular association, there is a total order for accesses to the
+ * associated value.  Accesses are atomic; they include:
+ * <ul>
+ * <li>A read-only access by {@code get}</li>
+ * <li>An attempt to associate the return value of a {@code computeValue} by
+ * {@code get}</li>
+ * <li>Clearing of an association by {@code remove}</li>
+ * </ul>
+ * A {@code get} call always include at least one access; a {@code remove} call
+ * always has exactly one access; a {@code computeValue} call always happens
+ * between two accesses.  This establishes the order of {@code computeValue}
+ * calls with respect to {@code remove} calls and determines whether the
+ * results of a {@code computeValue} can be successfully associated by a {@code
+ * get}.
  *
- * @param <T> the type of the derived value
+ * @param <T> the type of the associated value
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
@@ -104,48 +80,59 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Computes the given class's derived value for this {@code ClassValue}.
+     * Computes the value to associate to the given {@code Class}.
      * <p>
-     * This method will be invoked within the first thread that accesses
-     * the value with the {@link #get get} method.
+     * This method is invoked when an initial read-only access by {@link #get
+     * get} failed to find this association.
      * <p>
-     * Normally, this method is invoked at most once per class,
-     * but it may be invoked again if there has been a call to
-     * {@link #remove remove}.
+     * If this method throws an exception, the initiating {@code get} call will
+     * not attempt to associate a value, and may terminate either by returning
+     * an observed associated value, if it exists, or by propagating that
+     * exception.
      * <p>
-     * If this method throws an exception, the corresponding call to {@code get}
-     * will terminate abnormally with that exception, and no class value will be recorded.
+     * Otherwise, the value is computed and returned.  An attempt to install the
+     * value happens, which can end up observing:
+     * <ul>
+     * <li>This association is already associated by another attempt. The
+     * associated value is returned.</li>
+     * <li>The most recent {@link #remove remove} call, if it exists, does not
+     * happen-before (JLS {@jls 17.4.5}) the finish of the {@code computeValue}
+     * that computed the value for this attempt.  A retry attempt, which that
+     * {@code remove} call happens-before, happens to re-establish this
+     * happens-before relationship.</li>
+     * <li>Otherwise, this attempt successfully associates this value, and
+     * returns the newly associated value.</li>
+     * </ul>
      *
-     * @param type the type whose class value must be computed
-     * @return the newly computed value associated with this {@code ClassValue}, for the given class or interface
+     * @apiNote
+     * A {@code computeValue} call may, due to class loading or other
+     * circumstances, recursively call {@code get} or {@code remove} for the
+     * same association.  The recursive {@code get}, if the recursion stops,
+     * successfully finishes and this initiating {@code get} observes the
+     * associated value from recursion.  The recursive {@code remove} is no-op,
+     * since being on the same thread, the {@code remove} already happens-before
+     * the finish of this {@code computeValue}.
+     *
+     * @param type the {@code Class} to associate a value to
+     * @return the newly computed value to associate
      * @see #get
      * @see #remove
      */
     protected abstract T computeValue(Class<?> type);
 
     /**
-     * Returns the value for the given class.
-     * If no value has yet been computed, it is obtained by
-     * an invocation of the {@link #computeValue computeValue} method.
+     * {@return the value associated to the given {@code Class}}
      * <p>
-     * The actual installation of the value on the class
-     * is performed atomically.
-     * At that point, if several racing threads have
-     * computed values, one is chosen, and returned to
-     * all the racing threads.
+     * This method first performs a read-only access, and returns the associated
+     * value if it exists.  Otherwise, this method tries to associate a value
+     * from a {@link #computeValue computeValue} invocation until a value is
+     * successfully associated.
      * <p>
-     * The {@code type} parameter is typically a class, but it may be any type,
-     * such as an interface, a primitive type (like {@code int.class}), or {@code void.class}.
-     * <p>
-     * In the absence of {@code remove} calls, a class value has a simple
-     * state diagram:  uninitialized and initialized.
-     * When {@code remove} calls are made,
-     * the rules for value observation are more complex.
-     * See the documentation for {@link #remove remove} for more information.
+     * This method may throw an exception from a {@code computeValue} invocation.
+     * In this case, no value is associated.
      *
-     * @param type the type whose class value must be computed or retrieved
-     * @return the current value associated with this {@code ClassValue}, for the given class or interface
-     * @throws NullPointerException if the argument is null
+     * @param type the {@code Class} to retrieve the associated value for
+     * @throws NullPointerException if the argument is {@code null}
      * @see #remove
      * @see #computeValue
      */
@@ -169,27 +156,13 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Removes the associated value for the given class.
-     * If this value is subsequently {@linkplain #get read} for the same class,
-     * its value will be reinitialized by invoking its {@link #computeValue computeValue} method.
-     * This may result in an additional invocation of the
-     * {@code computeValue} method for the given class.
-     * <p>
-     * For a particular association, a {@code remove} call happens-before (JLS
-     * {@jls 17.4.5}) any subsequent {@code get}, including any contingent {@code
-     * computeValue} invocation that computed the associated value.  Naturally,
-     * any {@code computeValue} that began before the {@code remove} call must
-     * have its result discarded, because the removal must happen-before the
-     * computation of the associated value.  The {@code get} call that invoked
-     * the stale {@code computeValue} may retry to re-establish this
-     * happens-before relationship.
-     * <p>
-     * If this is invoked through {@code computeValue}, which can happen due to
-     * side effects like class initialization, this will be no-op to the caller
-     * thread.
+     * Removes the associated value for the given {@code Class}.  If this
+     * association is subsequently {@linkplain #get accessed}, this removal
+     * happens-before (JLS {@jls 17.4.5}) the finish of the {@link #computeValue
+     * computeValue} call that returned the associated value.
      *
      * @param type the type whose class value must be removed
-     * @throws NullPointerException if the argument is null
+     * @throws NullPointerException if the argument is {@code null}
      */
     public void remove(Class<?> type) {
         ClassValueMap map = getMap(type);
