@@ -39,6 +39,7 @@
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -48,13 +49,18 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintSSL {
 
     public static void main(String[] args) throws Throwable {
+        // Using "SunX509" KeyManager which doesn't check peer supported
+        // signature algorithms, so we can make keytool print certificate
+        // with weak MD5withRSA signature algorithm.
+        Security.setProperty("ssl.KeyManagerFactory.algorithm", "SunX509");
+
         Files.deleteIfExists(Paths.get("keystore"));
 
         // make sure that "-printcert" works with weak algorithms
         OutputAnalyzer out = SecurityTools.keytool("-genkeypair "
                 + "-keystore keystore -storepass passphrase "
-                + "-keypass passphrase -keyalg rsa -keysize 2048 "
-                + "-sigalg SHA256withRSA -alias rsa_alias -dname CN=Server");
+                + "-keypass passphrase -keyalg rsa -keysize 1024 "
+                + "-sigalg MD5withRSA -alias rsa_alias -dname CN=Server");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 

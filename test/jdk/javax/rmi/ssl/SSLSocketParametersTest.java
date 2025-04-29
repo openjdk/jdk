@@ -48,8 +48,7 @@ import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 
-public class SSLSocketParametersTest extends SSLContextTemplate implements
-        Serializable {
+public class SSLSocketParametersTest extends SSLContextTemplate {
 
     public SSLSocketParametersTest() throws Exception {
         SSLContext.setDefault(createServerSSLContext());
