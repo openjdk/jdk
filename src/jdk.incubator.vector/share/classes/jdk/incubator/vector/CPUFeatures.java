@@ -42,6 +42,9 @@ import static jdk.internal.vm.vector.Utils.debug;
     private static Set<String> getCPUFeatures() {
         String featuresString = VectorSupport.getCPUFeatures();
         debug(featuresString);
+
+        if (featuresString.equals("")) return Set.of();
+
         String[] features = featuresString.toLowerCase(Locale.ROOT)
                                           .split(",? "); // " " or ", " are used as a delimiter by JVM
         assert validateFeatures(features);
