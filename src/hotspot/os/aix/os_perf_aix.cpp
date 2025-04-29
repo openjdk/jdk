@@ -72,7 +72,7 @@ enum {
  * Get info for requested PID from /proc/<pid>/psinfo file
  */
 static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
-  static size_t BUF_LENGTH = 32 + sizeof(u_longlong_t);
+  const size_t BUF_LENGTH = 32 + sizeof(u_longlong_t);
 
   FILE* fp;
   char buf[BUF_LENGTH];

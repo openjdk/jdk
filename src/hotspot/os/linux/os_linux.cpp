@@ -1662,7 +1662,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
           }
 
           ThreadInVMfromNative tiv(jt);
-          debug_only(VMNativeEntryWrapper vew;)
+          DEBUG_ONLY(VMNativeEntryWrapper vew;)
 
           VM_LinuxDllLoad op(filename, ebuf, ebuflen);
           VMThread::execute(&op);
