@@ -525,7 +525,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
     if (log_is_enabled(Debug, cds, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(cds, resolve)("Checking lambda callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     if (!check_lambda_metafactory_signature(cp, factory_type_sig)) {

@@ -33,16 +33,22 @@
  * @build MethodHandleTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar mh.jar
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
+ *             UnsupportedBSMs UnsupportedBSMs$MyEnum
+ *             ObjectMethodsTest ObjectMethodsTest$C
  * @run driver MethodHandleTest AOT
  */
 
+import java.io.Serializable;
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.runtime.ObjectMethods;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import static java.lang.invoke.MethodType.methodType;
 
 public class MethodHandleTest {
     static final String appJar = ClassFileInstaller.getJarPath("mh.jar");
@@ -145,12 +151,17 @@ class MethodHandleTestApp {
 
     static MethodHandle arrayGetMH;
 
+    // Created in assembly phase.
+    // Used in production run.
+    static MethodHandle ObjectMethodsTest_handle;
+
     static {
         System.out.println("MethodHandleTestApp.<clinit>");
 
         try {
             setupCachedMHs();
-            invokeUnsupportedBSMs();
+            ObjectMethodsTest_handle = ObjectMethodsTest.makeHandle();
+            UnsupportedBSMs.invokeUnsupportedBSMs();
         } catch (Throwable t) {
             throw new RuntimeException("Unexpected exception", t);
         }
@@ -195,9 +206,11 @@ class MethodHandleTestApp {
 
         testMethodHandles(isProduction);
         testVarHandles(isProduction);
-        invokeUnsupportedBSMs();
-    }
 
+        ObjectMethodsTest.testEqualsC(ObjectMethodsTest_handle);
+
+        UnsupportedBSMs.invokeUnsupportedBSMs();
+    }
 
     static void testMethodHandles(boolean isProduction) throws Throwable {
         state_A = 0;
@@ -265,23 +278,91 @@ class MethodHandleTestApp {
             }
         }
     }
+}
 
+// Excerpt from test/jdk/java/lang/runtime/ObjectMethodsTest.java
+class ObjectMethodsTest {
+    public static class C {
+        static final MethodType EQUALS_DESC = methodType(boolean.class, C.class, Object.class);
+        static final MethodType HASHCODE_DESC = methodType(int.class, C.class);
+        static final MethodType TO_STRING_DESC = methodType(String.class, C.class);
+
+        static final MethodHandle[] ACCESSORS = accessors();
+        static final String NAME_LIST = "x;y";
+        private static MethodHandle[] accessors() {
+            try {
+                return  new MethodHandle[]{
+                        MethodHandles.lookup().findGetter(C.class, "x", int.class),
+                        MethodHandles.lookup().findGetter(C.class, "y", int.class),
+                };
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        private final int x;
+        private final int y;
+        C (int x, int y) { this.x = x; this.y = y; }
+        public int x() { return x; }
+        public int y() { return y; }
+    }
+
+    public static MethodHandle makeHandle() throws Throwable {
+        MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+        CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "equals", C.EQUALS_DESC, C.class, C.NAME_LIST, C.ACCESSORS);
+        return cs.dynamicInvoker();
+    }
+
+    public static void testEqualsC(MethodHandle handle) throws Throwable {
+        C c = new C(5, 5);
+        assertTrue((boolean)handle.invokeExact(c, (Object)c));
+        assertTrue((boolean)handle.invokeExact(c, (Object)new C(5, 5)));
+        assertFalse((boolean)handle.invokeExact(c, (Object)new C(5, 4)));
+        assertFalse((boolean)handle.invokeExact(c, (Object)new C(4, 5)));
+        assertFalse((boolean)handle.invokeExact(c, (Object)null));
+        assertFalse((boolean)handle.invokeExact(c, new Object()));
+    }
+
+    private static void assertTrue(boolean b) {
+        if (b != true) {
+            throw new RuntimeException("Assertion fails");
+        }
+    }
+
+    private static void assertFalse(boolean b) {
+        assertTrue(!b);
+    }
+}
+
+class UnsupportedBSMs {
     // This method is executed during the assembly phase.
     //
     // Try to invoke some BSMs that are normally not executed in the assembly phase. However, these
     // BSMs may be executed in rare cases (such as when loading signed classes -- see JDK-8353330.)
     // Let's make sure the assembly phase can tolerate such BSMs, even if the call sites that they
     // produce are not stored into the AOT cache.
-    static void invokeUnsupportedBSMs() {
+    //
+    // Hopefully with enough testing in here, we can avoid situations where innocent changes in
+    // core libs might cause the AOT assembly phase to fail.
+    static void invokeUnsupportedBSMs() throws Throwable {
         int n = testTypeSwitch((Integer)1234);
         System.out.println("SwitchBootstraps.typeSwitch: " + n);
         if (n != 5678) {
             throw new RuntimeException("n should be " + 5678 + " but is: " + n);
         }
+
+        Object o = getRunnableAndSerializable();
+        System.out.println(o.getClass());
+        if (!(o instanceof Runnable) || !(o instanceof Serializable)) {
+            throw new RuntimeException("o has wrong interfaces");
+        }
+
+        statementEnum(MyEnum.A);
     }
 
     static int testTypeSwitch(Number n) {
-        // The BSM is java/lang/runtime/SwitchBootstraps::typeSwitch
+        // BSM = java/lang/runtime/SwitchBootstraps::typeSwitch
         return switch (n) {
             case Integer in -> {
                 yield 5678;
@@ -290,5 +371,24 @@ class MethodHandleTestApp {
                 yield 0;
             }
         };
+    }
+
+    static Runnable getRunnableAndSerializable() {
+        // BSM = java/lang/invoke/LambdaMetafactory.altMetafactory
+        return (Runnable & Serializable) () -> {
+            System.out.println("Inside getRunnableAndSerializable");
+        };
+    }
+
+    // Excerpt from test/langtools/tools/javac/patterns/EnumTypeChanges.java
+    enum MyEnum { A, B; }
+    static String statementEnum(MyEnum e) {
+        // BSM = java/lang/runtime/SwitchBootstraps.enumSwitch
+        switch (e) {
+            case A ->  { return "A"; }
+            case B ->  { return "B"; }
+            case MyEnum e1 when e1 == null -> throw new AssertionError();
+            default -> { return "D"; }
+        }
     }
 }

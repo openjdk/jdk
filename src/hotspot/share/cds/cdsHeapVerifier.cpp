@@ -138,6 +138,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                           "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
 
+    ADD_EXCL("java/lang/runtime/ObjectMethods",           "CLASS_IS_INSTANCE",     // D
+                                                          "FALSE",                 // D
+                                                          "TRUE",                  // D
+                                                          "ZERO");                 // D
   }
 
 # undef ADD_EXCL
