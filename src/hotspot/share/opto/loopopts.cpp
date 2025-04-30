@@ -1088,6 +1088,52 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
   }
 }
 
+// Detect if split_through_phi would split an LShift that multiplies a
+// (potential) loop iv. Return true if we match the node pattern
+// (BaseCounted)Loop -> Phi -> LShift. Splitting this pattern can prevent range
+// check elminiation of or addressing optimizations.
+bool PhaseIdealLoop::would_split_lshift_through_phi(Node* n, Node* n_blk) {
+  const PhiNode* phi = n->in(1)->isa_Phi();
+  if (phi == nullptr) {
+    return false;
+  }
+
+  if (n_blk->is_BaseCountedLoop()) {
+    const BaseCountedLoopNode* cloop = n_blk->as_BaseCountedLoop();
+    return n->Opcode() == Op_LShift(cloop->bt()) && phi == cloop->phi();
+  } else if (n_blk->is_Loop()) {
+    // In some cases, we have not been able to detect a counted loop before
+    // PhaseIdeal loop attempts to split ifs. Often, this is due to the loop
+    // iv not being loop invariant in after one pass of beautify loops. In this
+    // case, we can match the same pattern as for counted loops, allbeit with
+    // slightly less precision, since we do not yet know the basic type of the
+    // loop iv.
+    const LoopNode* loop = n_blk->as_Loop();
+    const BasicType phi_t = phi->in(1)->bottom_type()->basic_type();
+    return (phi_t == T_INT || T_LONG) && n->Opcode() == Op_LShift(phi_t) && phi->in(0) == loop;
+  }
+  return false;
+}
+
+// Split some nodes that take a counted loop phi as input at a counted
+// loop can cause vectorization of some expressions to fail
+bool PhaseIdealLoop::split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk) {
+  if (!n_blk->is_CountedLoop()) {
+    return false;
+  }
+
+  int opcode = n->Opcode();
+
+  if (opcode != Op_AndI &&
+      opcode != Op_MulI &&
+      opcode != Op_RotateRight &&
+      opcode != Op_RShiftI) {
+    return false;
+  }
+
+  return n->in(1) == n_blk->as_BaseCountedLoop()->phi();
+}
+
 //------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
@@ -1168,9 +1214,9 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }
-  // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
-  if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
-      n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
+  // Pushing a shift through the iv Phi can get in the way of addressing
+  // optimizations or range check elimination.
+  if (would_split_lshift_through_phi(n, n_blk)) {
     return n;
   }
 
