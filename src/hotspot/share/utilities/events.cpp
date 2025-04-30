@@ -46,8 +46,6 @@ StringEventLog* Events::_class_loading = nullptr;
 StringEventLog* Events::_deopt_messages = nullptr;
 StringEventLog* Events::_dll_messages = nullptr;
 
-static EventLog* _event_logs = nullptr;
-
 EventLog::EventLog() {
   // This normally done during bootstrap when we're only single threaded,
   // but use lock free add because there are some events that are created later.
