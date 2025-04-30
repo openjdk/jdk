@@ -66,7 +66,7 @@ public class GetProcessCpuLoad {
             }
         }
 
-        if (good == 0 && ex != null) {
+        if (good == 0) {
             // Delayed failure for Windows.
             throw ex;
         }
