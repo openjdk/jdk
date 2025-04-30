@@ -1116,7 +1116,7 @@ public interface HttpServerAdapters {
     /**
      * A version agnostic adapter class for HTTP Servers.
      */
-    public static abstract class HttpTestServer implements AutoCloseable {
+    abstract class HttpTestServer implements AutoCloseable {
         private static final class ServerLogging {
             private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
             static void enableLogging() {
@@ -1131,8 +1131,6 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
-        @Override
-        public void close() throws Exception { stop(); }
 
         /**
          * {@return the HTTP3 test server which is acting as an alt-service for this server,
@@ -1169,6 +1167,11 @@ public interface HttpServerAdapters {
          */
         public abstract boolean canHandle(Version version, Version... more);
         public abstract void setRequestApprover(final Predicate<String> approver);
+
+        @Override
+        public void close() throws Exception {
+            stop();
+        }
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -1504,6 +1507,13 @@ public interface HttpServerAdapters {
                 System.out.println("Http2TestServerImpl: stop");
                 impl.stop();
             }
+
+            @Override
+            public void close() throws Exception {
+                System.out.println("Http2TestServerImpl: close");
+                impl.close();
+            }
+
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()
@@ -1550,11 +1560,6 @@ public interface HttpServerAdapters {
                     }
                 }
                 return true;
-            }
-
-            @Override
-            public void close() throws Exception {
-                impl.close();
             }
 
             @Override

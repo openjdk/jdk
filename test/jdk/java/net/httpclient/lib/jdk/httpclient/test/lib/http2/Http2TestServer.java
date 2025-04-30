@@ -89,25 +89,18 @@ public final class Http2TestServer implements AutoCloseable {
     // request approver which takes the server connection key as the input
     private volatile Predicate<String> newRequestApprover;
 
-    private static final AtomicLong threadCount = new AtomicLong();
-    private static final ThreadFactory defaultThreadFac =
-        (Runnable r) -> {
-            Thread t = new Thread(r);
-            t.setName("Test-server-pool-" + threadCount.incrementAndGet());
-            return t;
-        };
-
-
-    private static ExecutorService getDefaultExecutor() {
-        return Executors.newCachedThreadPool(defaultThreadFac);
+    private static ExecutorService createExecutor(String name) {
+        String threadNamePrefix = "%s-pool".formatted(name);
+        ThreadFactory threadFactory = Thread.ofPlatform().name(threadNamePrefix, 0).factory();
+        return Executors.newCachedThreadPool(threadFactory);
     }
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, getDefaultExecutor(), 50, null, null);
+        this(serverName, secure, port, null, 50, null, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, getDefaultExecutor(), 50, null, null);
+        this(null, secure, port, null, 50, null, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -226,7 +219,7 @@ public final class Http2TestServer implements AutoCloseable {
         this.sniMatcher = serverName == null
                 ? new ServerNameMatcher(localAddr.getHostName())
                 : new ServerNameMatcher(this.serverName);
-        this.exec = exec == null ? getDefaultExecutor() : exec;
+        this.exec = exec == null ? createExecutor(name) : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();

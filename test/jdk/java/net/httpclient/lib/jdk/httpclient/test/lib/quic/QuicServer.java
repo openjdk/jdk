@@ -37,13 +37,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.LongFunction;
@@ -81,14 +79,6 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
     public interface ConnectionAcceptor {
         boolean acceptIncoming(SocketAddress source, QuicServerConnection quicConnection);
     }
-
-    private static final AtomicLong threadCount = new AtomicLong();
-    private static final ThreadFactory defaultThreadFac =
-            (Runnable r) -> {
-                Thread t = new Thread(r);
-                t.setName("Quic-server-pool-" + threadCount.incrementAndGet());
-                return t;
-            };
 
     final Logger debug = Utils.getDebugLogger(this::name);
 
@@ -248,8 +238,8 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             this.ownExecutor = false;
         } else {
             this.executor = Utils.safeExecutor(
-                    Executors.newCachedThreadPool(defaultThreadFac),
-                    (r, t) -> debug.log("rejected task - using ASYNC_POOL", t));
+                    createExecutor(serverId),
+                    (_, t) -> debug.log("rejected task - using ASYNC_POOL", t));
             this.ownExecutor = true;
         }
         this.serverId = serverId;
@@ -271,6 +261,12 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             debug.log("server created, incoming delivery policy %s, outgoing delivery policy %s",
                     this.incomingDeliveryPolicy, this.outgoingDeliveryPolicy);
         }
+    }
+
+    private static ExecutorService createExecutor(String name) {
+        String threadNamePrefix = "%s-quic-pool".formatted(name);
+        ThreadFactory threadFactory = Thread.ofPlatform().name(threadNamePrefix, 0).factory();
+        return Executors.newCachedThreadPool(threadFactory);
     }
 
     @Override
