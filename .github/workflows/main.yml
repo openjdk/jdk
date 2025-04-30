@@ -238,9 +238,6 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-      # It currently doesn't produce any bundles, but probably will do in
-      # the future.
-      bundle-suffix: "-static"
       static-suffix: "-static"
     if: needs.prepare.outputs.linux-x64 == 'true'
 
