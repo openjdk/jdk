@@ -121,8 +121,6 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
            _num_indy_cp_entries_reverted);
   msg.info("Platform loader initiated classes = %6d", AOTClassLinker::num_platform_initiated_classes());
   msg.info("App      loader initiated classes = %6d", AOTClassLinker::num_app_initiated_classes());
-  msg.info("Dynamic proxy classes             = %6d%s", _num_dynamic_proxy_classes,
-           CDSConfig::is_dumping_full_module_graph() ? "" : " (not archiving FMG)");
   msg.info("MethodCounters                    = %6d (%8d bytes)", _counts[RW][MethodCountersType],
                                                                   _bytes [RW][MethodCountersType]);
   msg.info("KlassTrainingData                 = %6d (%8d bytes)", _counts[RW][KlassTrainingDataType],
