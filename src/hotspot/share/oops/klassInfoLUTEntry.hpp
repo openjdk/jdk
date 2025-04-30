@@ -73,10 +73,10 @@ class typeArrayOopDesc;
 // ----------------- InstanceKlass encoding ----------------------
 //
 // Bit    31          27          23          19          15          11          7           3        0
-//        K  K  K  L  L  S  S  S  S  S  O2 O2 O2 O2 O2 C2 C2 C2 C2 C2 C2 C2 O1 O1 O1 O1 C1 C1 C1 C1 C1 C1
-//                       \           /  \                                 / \                          /
-//                        -----------    ---------------------------------   --------------------------
-//                         obj size        offset, count for oop map 2        offset, count for oop map 1
+//        K  K  K  L  L  S  S  S  S  S  S  O2 O2 O2 O2 O2 C2 C2 C2 C2 C2 C2 O1 O1 O1 O1 C1 C1 C1 C1 C1 C1
+//                       \             /   \                              / \                          /
+//                        -------------     ------------------------------   --------------------------
+//                         obj size           offset, count for oop map 2     offset, count for oop map 1
 //
 // C1 (6 bits): Count of first Oop Map Entry
 // O1 (4 bits): Offset, in number-of-(oop|narrowOop), of second Oop Map Entry
@@ -94,11 +94,11 @@ class typeArrayOopDesc;
 // ----------------- ArrayKlass encoding -------------------------
 //
 // Bit   31          27          23          19          15          11          7           3        0
-//       K  K  K  L  L  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  E  E  H  H  H  H  H
-//                      \                                                        /  \ /   \           /
-//                       --------------------------------------------------------    -     -----------
-//                                                (unused)                          elem      header
-//                                                                                  size      size
+//       K  K  K  L  L  0  0  0  0  0  0  0  0  0  0  0  E  E  E  E  E  E  E  E  H  H  H  H  H  H  H  H
+//                      \                             /  \                    /  \                    /
+//                       -----------------------------    --------------------    --------------------
+//                             unused                        log2 elem size          header size
+//
 //
 // H (5 bits): header size, in bytes (same as layouthelper header size)
 // E (2 bits): log2 elem size, in bytes
@@ -167,8 +167,8 @@ class KlassLUTEntry {
   };
 
   // Bits only valid for ArrayKlass
-  static constexpr int bits_ak_l2esz      = 2;
-  static constexpr int bits_ak_hsz        = 5;
+  static constexpr int bits_ak_l2esz      = 8;
+  static constexpr int bits_ak_hsz        = 8;
   struct AKE {
     // lsb
     unsigned hsz    : bits_ak_hsz;    // header size (offset to first element) in bytes
