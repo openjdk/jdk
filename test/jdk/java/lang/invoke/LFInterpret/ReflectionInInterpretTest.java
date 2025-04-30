@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,22 @@
  * questions.
  */
 
-#ifdef AIX
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
-#include "runtime/os.inline.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "unittest.hpp"
+/*
+ * @test
+ * @bug 8297727
+ * @summary MethodHandle field access fails with bytecode compilation disabled
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames
+ *     -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=-1
+ *     ReflectionInInterpretTest
+ */
+public class ReflectionInInterpretTest {
+    private static Integer f; // non-Object type is required to find a non-compiled form
 
-// On Aix, when using shmget() in os::attempt_reserve_memory_at() we should fail with attach
-// attempts not aligned to shmget() segment boundaries (256m)
-// But shmget() is only used in cases we want to have 64K pages and mmap() does not provide it.
-TEST_VM(os_aix, aix_reserve_at_non_shmlba_aligned_address) {
-  if (os::vm_page_size() != 4*K && !os::Aix::supports_64K_mmap_pages()) {
-    // With this condition true shmget() is used inside
-    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M, mtTest);
-    ASSERT_EQ(p, nullptr); // should have failed
-    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M, mtTest);
-    ASSERT_EQ(p, nullptr); // should have failed
-  }
+    public static void main(String... args) throws Throwable {
+        MethodHandle mh = MethodHandles.lookup().findStaticGetter(ReflectionInInterpretTest.class, "f", Integer.class);
+        var _ = (Integer) mh.invokeExact();
+    }
 }
-
-#endif // AIX
