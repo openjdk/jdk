@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8280473
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  *
  * @run main/othervm -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -Xbatch -XX:CompileThreshold=100 -XX:CompileCommand=compileonly,*::test
@@ -39,7 +39,7 @@
 
 package compiler.runtime;
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -51,8 +51,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class TestConstantDynamic {
     static final Class<TestConstantDynamic> THIS_CLASS = TestConstantDynamic.class;

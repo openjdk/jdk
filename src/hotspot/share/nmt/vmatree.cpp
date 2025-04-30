@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -207,7 +206,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(stA.out.mem_tag())];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {
@@ -220,7 +219,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+    out->print("%zu (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
                statetype_to_string(out_state(current).type()));
   });
   out->cr();

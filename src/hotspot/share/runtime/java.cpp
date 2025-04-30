@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
@@ -55,7 +55,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassVtable.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -182,7 +182,7 @@ static void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = %zd):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   uint64_t total        = 0,
@@ -231,7 +231,7 @@ static void print_method_invocation_histogram() {
 
 static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
-    tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
+    tty->print_cr("[BytecodeCounter::counter_value = %zu]", BytecodeCounter::counter_value());
   }
 }
 
@@ -353,8 +353,8 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+  if (PrintCompilerMemoryStatisticsAtExit) {
+    CompilationMemoryStatistic::print_final_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -426,10 +426,9 @@ void before_exit(JavaThread* thread, bool halt) {
 #if INCLUDE_CDS
   // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
-  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  DynamicArchive::dump_at_exit(thread);
   assert(!thread->has_pending_exception(), "must be");
 #endif
-
 
   // Actual shutdown logic begins here.
 
@@ -441,6 +440,10 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
+
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    MetaspaceShared::preload_and_dump(thread);
+  }
 #endif
 
   // Hang forever on exit if we're reporting an error.
@@ -472,7 +475,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Print GC/heap related information.
   Log(gc, heap, exit) log;
   if (log.is_info()) {
-    ResourceMark rm;
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
     if (log.is_trace()) {
@@ -519,7 +521,7 @@ void before_exit(JavaThread* thread, bool halt) {
   if (VerifyStringTableAtExit) {
     size_t fail_cnt = StringTable::verify_and_compare_entries();
     if (fail_cnt != 0) {
-      tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
+      tty->print_cr("ERROR: fail_cnt=%zu", fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");
     }
   }

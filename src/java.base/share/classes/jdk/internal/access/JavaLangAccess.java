@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -230,11 +229,6 @@ public interface JavaLangAccess {
      * Updates module m to open a package to all unnamed modules.
      */
     void addOpensToAllUnnamed(Module m, String pkg);
-
-    /**
-     * Updates module m to open all packages in the given sets.
-     */
-    void addOpensToAllUnnamed(Module m, Set<String> concealedPkgs, Set<String> exportedPkgs);
 
     /**
      * Updates module m to use a service.
@@ -471,21 +465,11 @@ public interface JavaLangAccess {
      */
     Object classData(Class<?> c);
 
-    int getCharsLatin1(long i, int index, byte[] buf);
-
-    int getCharsUTF16(long i, int index, byte[] buf);
-
     /**
      * Returns the {@link NativeLibraries} object associated with the provided class loader.
      * This is used by {@link SymbolLookup#loaderLookup()}.
      */
     NativeLibraries nativeLibrariesFor(ClassLoader loader);
-
-    /**
-     * Direct access to Shutdown.exit to avoid security manager checks
-     * @param statusCode the status code
-     */
-    void exit(int statusCode);
 
     /**
      * Returns an array of all platform threads.
@@ -595,11 +579,6 @@ public interface JavaLangAccess {
      * Returns the virtual thread default scheduler.
      */
     Executor virtualThreadDefaultScheduler();
-
-    /**
-     * Returns a stream of the delayed task schedulers used for virtual threads.
-     */
-    Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers();
 
     /**
      * Creates a new StackWalker

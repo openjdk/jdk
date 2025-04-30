@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class Klass : public Metadata {
   friend class JVMCIVMStructs;
  public:
   // Klass Kinds for all subclasses of Klass
-  enum KlassKind {
+  enum KlassKind : u2 {
     InstanceKlassKind,
     InstanceRefKlassKind,
     InstanceMirrorKlassKind,
@@ -113,15 +113,17 @@ class Klass : public Metadata {
   //
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
-  jint        _layout_helper;
+  jint _layout_helper;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
   //  - Various type checking in the JVM
   const KlassKind _kind;
 
-  // Processed access flags, for use by Class.getModifiers.
-  jint        _modifier_flags;
+  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
+  KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -157,26 +159,16 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  markWord _prototype_header;   // Used to initialize objects' header
+
   // Bitmap and hash code used by hashed secondary supers.
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
-  markWord _prototype_header;   // Used to initialize objects' header
-
-  int _vtable_len;              // vtable length. This field may be read very often when we
-                                // have lots of itable dispatches (e.g., lambdas and streams).
-                                // Keep it away from the beginning of a Klass to avoid cacheline
-                                // contention that may happen when a nearby object is modified.
-  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
-                                // Some flags created by the JVM, not in the class file itself,
-                                // are in _misc_flags below.
-
-  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
-
 private:
-  // This is an index into FileMapHeader::_shared_path_table[], to
-  // associate this class with the JAR file where it's loaded from during
-  // dump time. If a class is not loaded from the shared archive, this field is
+  // This is an index into AOTClassLocationConfig::class_locations(), to
+  // indicate the AOTClassLocation where this class is loaded from during
+  // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
   s2 _shared_class_path_index;
 
@@ -200,9 +192,16 @@ private:
   };
 #endif
 
-  KlassFlags  _misc_flags;
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
+
+public:
+
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
 protected:
 
@@ -281,7 +280,6 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }
@@ -290,10 +288,6 @@ protected:
   // Set java mirror OopHandle to null for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
-
-  // modifier flags
-  jint modifier_flags() const          { return _modifier_flags; }
-  void set_modifier_flags(jint flags)  { _modifier_flags = flags; }
 
   // size helper
   int layout_helper() const            { return _layout_helper; }
@@ -447,7 +441,6 @@ protected:
   static ByteSize secondary_supers_offset()      { return byte_offset_of(Klass, _secondary_supers); }
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
-  static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
@@ -756,7 +749,13 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  virtual jint compute_modifier_flags() const = 0;
+  // Get modifier flags from Java mirror cache.
+  int modifier_flags() const;
+
+  // Compute modifier flags from the original data. This also allows
+  // accessing flags when Java mirror is already dead, e.g. during class
+  // unloading.
+  virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

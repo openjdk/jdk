@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,6 @@
   do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
   do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
   do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \
@@ -138,7 +137,6 @@
   /* support for CDS */                                                                                         \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
-  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader                               ) \
   do_klass(Enum_klass,                                  java_lang_Enum                                        ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
   do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \

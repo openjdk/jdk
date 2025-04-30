@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -177,7 +176,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   const ClassFileStream cfs1 = *stream;
   const ClassFileStream* const cfs = &cfs1;
 
-  debug_only(const u1* const old_current = stream->current();)
+  DEBUG_ONLY(const u1* const old_current = stream->current();)
 
   // Used for batching symbol allocations.
   const char* names[SymbolTable::symbol_alloc_batch_size];
@@ -2127,7 +2126,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   // access_flags, name_index, descriptor_index, attributes_count
   cfs->guarantee_more(8, CHECK_NULL);
 
-  int flags = cfs->get_u2_fast();
+  u2 flags = cfs->get_u2_fast();
   const u2 name_index = cfs->get_u2_fast();
   const int cp_size = cp->length();
   guarantee_property(
@@ -2981,7 +2980,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
                          "Class is both outer and inner class in class file %s", CHECK_0);
     }
     // Access flags
-    jint flags;
+    u2 flags;
     // JVM_ACC_MODULE is defined in JDK-9 and later.
     if (_major_version >= JAVA_9_VERSION) {
       flags = cfs->get_u2_fast() & (RECOGNIZED_INNER_CLASS_MODIFIERS | JVM_ACC_MODULE);
@@ -2998,7 +2997,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
     inner_classes->at_put(index++, inner_class_info_index);
     inner_classes->at_put(index++, outer_class_info_index);
     inner_classes->at_put(index++, inner_name_index);
-    inner_classes->at_put(index++, inner_access_flags.as_short());
+    inner_classes->at_put(index++, inner_access_flags.as_unsigned_short());
   }
 
   // Check for circular and duplicate entries.
@@ -3747,11 +3746,6 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
-
-  // Initialize cached modifier_flags to support Class.getModifiers().
-  // This must follow setting inner_class attributes.
-  int computed_modifiers = this_klass->compute_modifier_flags();
-  this_klass->set_modifier_flags(computed_modifiers);
 
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
@@ -5249,7 +5243,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // it's official
   set_klass(ik);
 
-  debug_only(ik->verify();)
+  DEBUG_ONLY(ik->verify();)
 }
 
 void ClassFileParser::update_class_name(Symbol* new_class_name) {
@@ -5336,10 +5330,11 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(_stream != nullptr, "invariant");
   assert(_stream->buffer() == _stream->current(), "invariant");
   assert(_class_name != nullptr, "invariant");
-  assert(0 == _access_flags.as_int(), "invariant");
+  assert(0 == _access_flags.as_unsigned_short(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(_loader_data->class_loader());
+  // Always verify CFLH bytes from the user agents.
+  _need_verify = stream->from_class_file_load_hook() ? true : Verifier::should_verify_for(_loader_data->class_loader());
 
   // synch back verification state to stream to check for truncation.
   stream->set_need_verify(_need_verify);
@@ -5488,7 +5483,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len
 
   // Access flags
-  jint flags;
+  u2 flags;
   // JVM_ACC_MODULE is defined in JDK-9 and later.
   if (_major_version >= JAVA_9_VERSION) {
     flags = stream->get_u2_fast() & (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_MODULE);
@@ -5663,7 +5658,7 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
     static volatile size_t counter = 0;
     Atomic::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
     size_t new_id = Atomic::add(&counter, (size_t)1);
-    jio_snprintf(addr_buf, 20, SIZE_FORMAT_X, new_id);
+    jio_snprintf(addr_buf, 20, "0x%zx", new_id);
   } else {
     jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
   }

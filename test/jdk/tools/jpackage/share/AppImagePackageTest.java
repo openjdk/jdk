@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
+import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.Annotations.Test;
@@ -46,7 +49,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @compile AppImagePackageTest.java
+ * @compile -Xlint:all -Werror AppImagePackageTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppImagePackageTest
  */
@@ -73,7 +76,7 @@ public class AppImagePackageTest {
     public static void testEmpty(boolean withIcon) throws IOException {
         final String name = "EmptyAppImagePackageTest";
         final String imageName = name + (TKit.isOSX() ? ".app" : "");
-        Path appImageDir = TKit.createTempDirectory(null).resolve(imageName);
+        Path appImageDir = TKit.createTempDirectory("appimage").resolve(imageName);
 
         Files.createDirectories(appImageDir.resolve("bin"));
         Path libDir = Files.createDirectories(appImageDir.resolve("lib"));
@@ -106,17 +109,16 @@ public class AppImagePackageTest {
     public static void testBadAppImage() throws IOException {
         Path appImageDir = TKit.createTempDirectory("appimage");
         Files.createFile(appImageDir.resolve("foo"));
-        configureAppImageWithoutJPackageXMLFile(appImageDir).addInitializer(
-                cmd -> {
-                    cmd.removeArgumentWithValue("--name");
-                }).run(Action.CREATE);
+        configureBadAppImage(appImageDir).addInitializer(cmd -> {
+            cmd.removeArgumentWithValue("--name");
+        }).run(Action.CREATE);
     }
 
     @Test
     public static void testBadAppImage2() throws IOException {
         Path appImageDir = TKit.createTempDirectory("appimage");
         Files.createFile(appImageDir.resolve("foo"));
-        configureAppImageWithoutJPackageXMLFile(appImageDir).run(Action.CREATE);
+        configureBadAppImage(appImageDir).run(Action.CREATE);
     }
 
     @Test
@@ -126,29 +128,45 @@ public class AppImagePackageTest {
         JPackageCommand appImageCmd = JPackageCommand.helloAppImage().
                 setFakeRuntime().setArgumentValue("--dest", appImageDir);
 
-        configureAppImageWithoutJPackageXMLFile(appImageCmd.outputBundle()).
-                addRunOnceInitializer(() -> {
-                    appImageCmd.execute();
-                    Files.delete(AppImageFile.getPathInAppImage(appImageCmd.
-                            outputBundle()));
-                }).run(Action.CREATE);
+        configureBadAppImage(appImageCmd.outputBundle()).addRunOnceInitializer(() -> {
+            appImageCmd.execute();
+            Files.delete(AppImageFile.getPathInAppImage(appImageCmd.outputBundle()));
+        }).run(Action.CREATE);
     }
 
-    private static PackageTest configureAppImageWithoutJPackageXMLFile(
-            Path appImageDir) {
-        return new PackageTest()
-                .addInitializer(cmd -> {
-                    cmd.saveConsoleOutput(true);
-                    cmd.addArguments("--app-image", appImageDir);
-                    cmd.removeArgumentWithValue("--input");
-                    cmd.ignoreDefaultVerbose(true); // no "--verbose" option
-                })
-                .addBundleVerifier((cmd, result) -> {
-                    TKit.assertTextStream(
-                    "Error: Missing .jpackage.xml file in app-image dir").apply(
-                            result.getOutput().stream());
-                })
-                .setExpectedExitCode(1);
+    @Test
+    public static void testBadAppImageFile() throws IOException {
+        final var appImageRoot = TKit.createTempDirectory("appimage");
+
+        final var appImageCmd = JPackageCommand.helloAppImage().
+                setFakeRuntime().setArgumentValue("--dest", appImageRoot);
+
+        final var appImageDir = appImageCmd.outputBundle();
+
+        final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.invalid-app-image", appImageDir, AppImageFile.getPathInAppImage(appImageDir));
+
+        configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
+            appImageCmd.execute();
+            XmlUtils.createXml(AppImageFile.getPathInAppImage(appImageDir), xml -> {
+                xml.writeStartElement("jpackage-state");
+                xml.writeEndElement();
+            });
+        }).run(Action.CREATE);
+    }
+
+    private static PackageTest configureBadAppImage(Path appImageDir) {
+        return configureBadAppImage(appImageDir,
+                JPackageStringBundle.MAIN.cannedFormattedString("error.foreign-app-image", appImageDir));
+    }
+
+    private static PackageTest configureBadAppImage(Path appImageDir, CannedFormattedString expectedError) {
+        return new PackageTest().addInitializer(cmd -> {
+            cmd.addArguments("--app-image", appImageDir);
+            cmd.removeArgumentWithValue("--input");
+            cmd.ignoreDefaultVerbose(true); // no "--verbose" option
+            cmd.validateOutput(expectedError);
+        }).setExpectedExitCode(1);
     }
 
     private static Path iconPath(String name) {

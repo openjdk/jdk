@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -36,8 +35,8 @@
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
@@ -212,4 +211,12 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
   bool result = nmethod_entry_barrier(nm);
   OrderAccess::cross_modify_fence();
   return result;
+}
+
+oop BarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(nm->oop_addr_at(index));
+}
+
+oop BarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(nm->oop_addr_at(index));
 }

@@ -118,8 +118,6 @@ class ParkEvent : public PlatformEvent {
     Thread * AssociatedWith ;
 
   public:
-    // MCS-CLH list linkage and Native Mutex/Monitor
-    ParkEvent * volatile ListNext ;
     volatile int TState ;
     volatile int Notified ;             // for native monitor construct
 
@@ -139,7 +137,6 @@ class ParkEvent : public PlatformEvent {
     ParkEvent() : PlatformEvent() {
        AssociatedWith = nullptr ;
        FreeNext       = nullptr ;
-       ListNext       = nullptr ;
        TState         = 0 ;
        Notified       = 0 ;
     }

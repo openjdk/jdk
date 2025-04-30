@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "libadt/vectset.hpp"
@@ -323,7 +322,7 @@ Node::Node(uint req)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
     _in = nullptr;
@@ -342,7 +341,7 @@ Node::Node(Node *n0)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
@@ -355,7 +354,7 @@ Node::Node(Node *n0, Node *n1)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -370,7 +369,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -387,7 +386,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -406,7 +405,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -428,7 +427,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -452,7 +451,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -490,7 +489,7 @@ Node *Node::clone() const {
   n->_outcnt = 0;
   n->_outmax = 0;
   // Unlock this guy, since he is not in any hash table.
-  debug_only(n->_hash_lock = 0);
+  DEBUG_ONLY(n->_hash_lock = 0);
   // Walk the old node's input list to duplicate its edges
   uint i;
   for( i = 0; i < len(); i++ ) {
@@ -509,8 +508,16 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (for_merge_stores_igvn()) {
+    // Don't add cloned node to Compile::_for_merge_stores_igvn list automatically.
+    // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
+    n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  }
   if (n->is_ParsePredicate()) {
     C->add_parse_predicate(n->as_ParsePredicate());
+  }
+  if (n->is_OpaqueTemplateAssertionPredicate()) {
+    C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -518,11 +525,11 @@ Node *Node::clone() const {
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
-  debug_only( n->verify_construction() );
+  DEBUG_ONLY( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
   // impossible to break on the clone's moment of creation.
-  //debug_only( n->set_debug_idx( debug_idx() ) );
+  //DEBUG_ONLY( n->set_debug_idx( debug_idx() ) );
 
   C->copy_node_notes_to(n, (Node*) this);
 
@@ -548,10 +555,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-
-      C->print_inlining_assert_ready();
-      C->print_inlining_move_to(cg);
-      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {
@@ -612,13 +615,16 @@ void Node::destruct(PhaseValues* phase) {
     compile->remove_expensive_node(this);
   }
   if (is_OpaqueTemplateAssertionPredicate()) {
-    compile->remove_template_assertion_predicate_opaq(this);
+    compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
   }
   if (is_ParsePredicate()) {
     compile->remove_parse_predicate(as_ParsePredicate());
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (for_merge_stores_igvn()) {
+    compile->remove_from_merge_stores_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -669,55 +675,45 @@ void Node::destruct(PhaseValues* phase) {
   }
 }
 
-//------------------------------grow-------------------------------------------
-// Grow the input array, making space for more edges
-void Node::grow(uint len) {
+// Resize input or output array to grow it to the next larger power-of-2 bigger
+// than len.
+void Node::resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing) {
   Arena* arena = Compile::current()->node_arena();
-  uint new_max = _max;
-  if( new_max == 0 ) {
-    _max = 4;
-    _in = (Node**)arena->Amalloc(4*sizeof(Node*));
-    Node** to = _in;
-    to[0] = nullptr;
-    to[1] = nullptr;
-    to[2] = nullptr;
-    to[3] = nullptr;
+  uint new_max = max_size;
+  if (new_max == 0) {
+    max_size = 4;
+    array = (Node**)arena->Amalloc(4 * sizeof(Node*));
+    if (needs_clearing) {
+      array[0] = nullptr;
+      array[1] = nullptr;
+      array[2] = nullptr;
+      array[3] = nullptr;
+    }
     return;
   }
   new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  _in = (Node**)arena->Arealloc(_in, _max*sizeof(Node*), new_max*sizeof(Node*));
-  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // null all new space
-  _max = new_max;               // Record new max length
+  assert(needs_clearing || (array != nullptr && array != NO_OUT_ARRAY), "out must have sensible value");
+  array = (Node**)arena->Arealloc(array, max_size * sizeof(Node*), new_max * sizeof(Node*));
+  if (needs_clearing) {
+    Copy::zero_to_bytes(&array[max_size], (new_max - max_size) * sizeof(Node*)); // null all new space
+  }
+  max_size = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
-  assert(_max == new_max && _max > len, "int width of _max is too small");
+  assert(max_size > len, "int width of _max or _outmax is too small");
+}
+
+//------------------------------grow-------------------------------------------
+// Grow the input array, making space for more edges
+void Node::grow(uint len) {
+  resize_array(_in, _max, len, true);
 }
 
 //-----------------------------out_grow----------------------------------------
 // Grow the input array, making space for more edges
-void Node::out_grow( uint len ) {
+void Node::out_grow(uint len) {
   assert(!is_top(), "cannot grow a top node's out array");
-  Arena* arena = Compile::current()->node_arena();
-  uint new_max = _outmax;
-  if( new_max == 0 ) {
-    _outmax = 4;
-    _out = (Node **)arena->Amalloc(4*sizeof(Node*));
-    return;
-  }
-  new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  assert(_out != nullptr && _out != NO_OUT_ARRAY, "out must have sensible value");
-  _out = (Node**)arena->Arealloc(_out,_outmax*sizeof(Node*),new_max*sizeof(Node*));
-  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // null all new space
-  _outmax = new_max;               // Record new max length
-  // This assertion makes sure that Node::_max is wide enough to
-  // represent the numerical value of new_max.
-  assert(_outmax == new_max && _outmax > len, "int width of _outmax is too small");
+  resize_array(_out, _outmax, len, false);
 }
 
 #ifdef ASSERT
@@ -946,7 +942,7 @@ void Node::disconnect_inputs(Compile* C) {
 #endif
 
   // Node::destruct requires all out edges be deleted first
-  // debug_only(destruct();)   // no reuse benefit expected
+  // DEBUG_ONLY(destruct();)   // no reuse benefit expected
   C->record_dead_node(_idx);
 }
 
@@ -1457,6 +1453,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
+          } else if (dead->is_data_proj_of_pure_function(n)) {
+            igvn->_worklist.push(n);
           } else {
             BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
@@ -1594,6 +1592,13 @@ jdouble Node::getd() const {
 jfloat Node::getf() const {
   assert( Opcode() == Op_ConF, "" );
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
+}
+
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
 }
 
 #ifndef PRODUCT
@@ -2052,7 +2057,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+      C->igv_print_graph_to_network("PrintBFS", _print_list);
     }
   } else {
     _output->print_cr("No nodes to print.");
@@ -2423,9 +2428,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2929,6 +2934,25 @@ bool Node::is_dead_loop_safe() const {
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
+bool Node::is_pure_function() const {
+  switch (Opcode()) {
+  case Op_ModD:
+  case Op_ModF:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
+// but we already have and need maybe_pure_function in all the call sites, so
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
+// while it takes more thinking to realize that a locally computed in(0) must be equal to
+// the local in the caller.
+bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
+}
+
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove
@@ -3052,3 +3076,78 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
+
+void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+  Node* c = ctrl_use->in(j);
+  if (igvn->type(c) != Type::TOP) {
+    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+    create_halt_path(igvn, c, loop, phase_str);
+  }
+}
+
+// This Type node is dead. It could be because the type that it captures and the type of the node computed from its
+// inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
+// be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
+// flow construct must guard the Type node (an If node usually). When the Type node becomes dead, the guard usually
+// constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
+// doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
+// paths. The dead paths are then replaced by a Halt node.
+void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+  Unique_Node_List wq;
+  wq.push(this);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      if (u->is_CFG()) {
+        assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
+        make_path_dead(igvn, loop, u, 0, phase_str);
+      } else if (u->is_Phi()) {
+        Node* r = u->in(0);
+        assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
+        if (r->is_Region()) {
+          for (uint j = 1; j < u->req(); ++j) {
+            if (u->in(j) == n) {
+              make_path_dead(igvn, loop, r, j, phase_str);
+            }
+          }
+        }
+      } else {
+        wq.push(u);
+      }
+    }
+  }
+}
+
+void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+  Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(frame);
+  } else {
+    loop->register_new_node(frame, igvn->C->start());
+  }
+
+  stringStream ss;
+  ss.print("dead path discovered by TypeNode during %s", phase_str);
+
+  Node* halt = new HaltNode(c, frame, ss.as_string(igvn->C->comp_arena()));
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(halt);
+  } else {
+    loop->register_control(halt, loop->ltree_root(), c);
+  }
+  igvn->add_input_to(igvn->C->root(), halt);
+}
+
+Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    Node* top = igvn->C->top();
+    ResourceMark rm;
+    make_paths_from_here_dead(igvn, nullptr, "igvn");
+    return top;
+  }
+
+  return Node::Ideal(phase, can_reshape);
+}
+

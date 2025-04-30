@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,6 @@ public class TypeAnnotations {
                         enclEl.getKind() != ElementKind.PACKAGE &&
                         enclTy != null &&
                         enclTy.getKind() != TypeKind.NONE &&
-                        enclTy.getKind() != TypeKind.ERROR &&
                         (enclTr.getKind() == JCTree.Kind.MEMBER_SELECT ||
                                 enclTr.getKind() == JCTree.Kind.PARAMETERIZED_TYPE ||
                                 enclTr.getKind() == JCTree.Kind.ANNOTATED_TYPE)) {

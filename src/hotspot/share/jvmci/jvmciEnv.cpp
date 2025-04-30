@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -32,6 +31,9 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
+#include "jvmci/jniAccessMark.inline.hpp"
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -41,12 +43,10 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
-#include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompiler.hpp"
-#include "jvmci/jvmciRuntime.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -613,7 +613,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
+    permit_forbidden_function::free((void*)_init_error_msg);
   }
   if (_init_error != JNI_OK) {
     return;
@@ -1592,7 +1592,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
     HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
     HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
     HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
-    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_field_flags());
     HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
     HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
     return wrap(obj_h());
@@ -1603,7 +1603,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
                                       (jint)fieldinfo->name_index(),
                                       (jint)fieldinfo->signature_index(),
                                       (jint)fieldinfo->offset(),
-                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->access_flags().as_field_flags(),
                                       (jint)fieldinfo->field_flags().as_uint(),
                                       (jint)fieldinfo->initializer_index());
 
@@ -1776,7 +1776,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1785,7 +1785,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 
@@ -1865,9 +1865,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
 
 void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->nmethod_entry_barrier(nm);
-  }
+  bs_nm->nmethod_entry_barrier(nm);
   _thread->set_live_nmethod(nm);
 }
 

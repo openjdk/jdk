@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -32,7 +31,7 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -470,7 +469,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
-IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol) {
   // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
   // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
   // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
@@ -2170,7 +2169,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
     : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
       _deopt_reason(deopt_reason),
-      _useless(false) {
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_ParsePredicate);
   gvn->C->add_parse_predicate(this);
   gvn->C->record_for_post_loop_opts_igvn(this);
@@ -2178,12 +2177,18 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
   switch (deopt_reason) {
     case Deoptimization::Reason_predicate:
     case Deoptimization::Reason_profile_predicate:
+    case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
   }
 #endif // ASSERT
+}
+
+void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
@@ -2195,14 +2200,15 @@ Node* ParsePredicateNode::uncommon_trap() const {
 
 // Fold this node away once it becomes useless or at latest in post loop opts IGVN.
 const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
   if (phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT
@@ -2213,15 +2219,18 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled Loop ");
+      st->print("Profiled_Loop ");
+      break;
+    case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
+      st->print("Auto_Vectorization_Check ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop Limit Check ");
+      st->print("Loop_Limit_Check ");
       break;
     default:
       fatal("unknown kind");
   }
-  if (_useless) {
+  if (_predicate_state == PredicateState::Useless) {
     st->print("#useless ");
   }
 }

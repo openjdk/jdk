@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ class Method : public Metadata {
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
   AdapterHandlerEntry* _adapter;
-  AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
+  AccessFlags       _access_flags;               // Access flags
   MethodFlags       _flags;
 
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
@@ -255,7 +255,7 @@ class Method : public Metadata {
   void set_deprecated_for_removal() { constMethod()->set_deprecated_for_removal(); }
   bool deprecated_for_removal() const { return constMethod()->deprecated_for_removal(); }
 
-  int highest_comp_level() const;
+  inline int highest_comp_level() const;
   void set_highest_comp_level(int level);
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
@@ -334,8 +334,8 @@ class Method : public Metadata {
   inline float rate() const;
   inline void set_rate(float rate);
 
-  int invocation_count() const;
-  int backedge_count() const;
+  inline int invocation_count() const;
+  inline int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
@@ -344,7 +344,7 @@ class Method : public Metadata {
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
-  int interpreter_invocation_count()            { return invocation_count();          }
+  inline int interpreter_invocation_count() const;
 
 #ifndef PRODUCT
   int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}

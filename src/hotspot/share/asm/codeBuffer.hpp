@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,8 +121,8 @@ class CodeSection {
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
-    debug_only(_index = -1);
-    debug_only(_outer = (CodeBuffer*)badAddress);
+    DEBUG_ONLY(_index = -1);
+    DEBUG_ONLY(_outer = (CodeBuffer*)badAddress);
   }
 
   void initialize_outer(CodeBuffer* outer, int8_t index) {
@@ -455,6 +455,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _name            = name;
     _before_expand   = nullptr;
     _blob            = nullptr;
+    _total_start     = nullptr;
+    _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
     _last_insn       = nullptr;
@@ -533,7 +535,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     assert(code_start != nullptr, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    debug_only(verify_section_allocation();)
+    DEBUG_ONLY(verify_section_allocation();)
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
@@ -607,7 +609,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Properties
   const char* name() const                  { return _name; }
-  void set_name(const char* name)           { _name = name; }
   CodeBuffer* before_expand() const         { return _before_expand; }
   BufferBlob* blob() const                  { return _blob; }
   void    set_blob(BufferBlob* blob);

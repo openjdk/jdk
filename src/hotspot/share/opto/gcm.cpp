@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1265,13 +1264,15 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
     return C->randomized_select(cand_cnt);
   }
 
-  // Better Frequency
-  if (LCA->_freq < least_freq) {
+  const double delta = 1 + PROB_UNLIKELY_MAG(4);
+
+  // Better Frequency. Add a small delta to the comparison to not needlessly
+  // hoist because of, e.g., small numerical inaccuracies.
+  if (LCA->_freq * delta < least_freq) {
     return true;
   }
 
   // Otherwise, choose with latency
-  const double delta = 1 + PROB_UNLIKELY_MAG(4);
   if (!in_latency                     &&  // No block containing latency
       LCA->_freq < least_freq * delta &&  // No worse frequency
       target_latency >= end_latency   &&  // within latency range
@@ -1694,7 +1695,7 @@ void PhaseCFG::global_code_motion() {
   // Enabling the scheduler for register pressure plus finding blocks of size to schedule for it
   // is key to enabling this feature.
   PhaseChaitin regalloc(C->unique(), *this, _matcher, true);
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);      // Arena for liveness
   ResourceMark rm_live(&live_arena);
   PhaseLive live(*this, regalloc._lrg_map.names(), &live_arena, true);
   PhaseIFG ifg(&live_arena);
@@ -2159,8 +2160,13 @@ float Block::succ_prob(uint i) {
     // Pass frequency straight thru to target
     return 1.0f;
 
-  case Op_NeverBranch:
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    if (_succs[i]->head() == succ) {
+      return 1.0f;
+    }
     return 0.0f;
+  }
 
   case Op_TailCall:
   case Op_TailJump:

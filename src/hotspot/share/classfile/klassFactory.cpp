@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
@@ -77,7 +76,9 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       s2 path_index = ik->shared_classpath_index();
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     pointer_delta_as_int(end_ptr, ptr),
-                                                    cfs->source());
+                                                    cfs->source(),
+                                                    /* from_boot_loader_modules_image */ false,
+                                                    /* from_class_file_load_hook */ true);
       ClassLoadInfo cl_info(protection_domain);
       ClassFileParser parser(stream,
                              class_name,
@@ -156,7 +157,9 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
       // Set new class file stream using JVMTI agent modified class file data.
       stream = new ClassFileStream(ptr,
                                    pointer_delta_as_int(end_ptr, ptr),
-                                   stream->source());
+                                   stream->source(),
+                                   /* from_boot_loader_modules_image */ false,
+                                   /* from_class_file_load_hook */ true);
     }
   }
 

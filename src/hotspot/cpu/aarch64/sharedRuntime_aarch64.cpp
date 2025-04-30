@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
@@ -760,7 +759,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ ldrw(rscratch1, Address(rmethod, Method::access_flags_offset()));
+      __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
       __ andsw(zr, rscratch1, JVM_ACC_STATIC);
       __ br(Assembler::EQ, L_skip_barrier); // non-static
     }
@@ -2784,7 +2783,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ cbnz(rscratch1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rmethod, rthread);
+  __ get_vm_result_metadata(rmethod, rthread);
   __ str(rmethod, Address(sp, reg_save.reg_offset_in_bytes(rmethod)));
 
   // r0 is where we want to jump, overwrite rscratch1 which is saved and scratch
@@ -2803,7 +2802,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(zr, Address(rthread, JavaThread::vm_result_oop_offset()));
 
   __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,13 +23,13 @@ package com.sun.org.apache.xerces.internal.parsers;
 import java.io.IOException;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.Utils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -50,7 +50,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: Nov 2023
+ * @LastModified: Apr 2025
  */
 public abstract class XMLParser {
 

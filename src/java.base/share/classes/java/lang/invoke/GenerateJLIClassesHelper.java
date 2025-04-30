@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,13 +378,7 @@ class GenerateJLIClassesHelper {
         ArrayList<String> names = new ArrayList<>();
         HashSet<String> dedupSet = new HashSet<>();
         for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
-            LambdaForm zero = LambdaForm.zeroForm(type);
-            String name = zero.kind.defaultLambdaName
-                   + "_" + zero.returnType().basicTypeChar();
-            if (dedupSet.add(name)) {
-                names.add(name);
-                forms.add(zero);
-            }
+            String name;
 
             LambdaForm identity = LambdaForm.identityForm(type);
             name = identity.kind.defaultLambdaName
@@ -392,6 +386,16 @@ class GenerateJLIClassesHelper {
             if (dedupSet.add(name)) {
                 names.add(name);
                 forms.add(identity);
+            }
+
+            if (type != V_TYPE) {
+                LambdaForm constant = LambdaForm.constantForm(type);
+                name = constant.kind.defaultLambdaName
+                        + "_" + constant.returnType().basicTypeChar();
+                if (dedupSet.add(name)) {
+                    names.add(name);
+                    forms.add(constant);
+                }
             }
         }
         return generateCodeBytesForLFs(className,
@@ -426,24 +430,21 @@ class GenerateJLIClassesHelper {
             names.add(form.kind.defaultLambdaName);
         }
         for (Wrapper wrapper : Wrapper.values()) {
-            if (wrapper == Wrapper.VOID) {
-                continue;
-            }
+            int ftype = wrapper == Wrapper.VOID ? DirectMethodHandle.FT_CHECKED_REF : DirectMethodHandle.ftypeKind(wrapper.primitiveType());
             for (byte b = DirectMethodHandle.AF_GETFIELD; b < DirectMethodHandle.AF_LIMIT; b++) {
-                int ftype = DirectMethodHandle.ftypeKind(wrapper.primitiveType());
                 LambdaForm form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " non-volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
                 // volatile
                 form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
             }
         }
         return generateCodeBytesForLFs(className,

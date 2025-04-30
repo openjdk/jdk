@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "shenandoahGlobalGeneration.hpp"
 
 ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
   _mark_bit_map(heap_region, bitmap_region),
@@ -56,7 +57,7 @@ bool ShenandoahMarkingContext::is_bitmap_range_within_region_clear(const HeapWor
     size_t start_idx = heap->heap_region_index_containing(start);
 #ifdef ASSERT
     size_t end_idx = heap->heap_region_index_containing(end - 1);
-    assert(start_idx == end_idx, "Expected range to be within same region (" SIZE_FORMAT ", " SIZE_FORMAT ")", start_idx, end_idx);
+    assert(start_idx == end_idx, "Expected range to be within same region (%zu, %zu)", start_idx, end_idx);
 #endif
     ShenandoahHeapRegion* r = heap->get_region(start_idx);
     if (!heap->is_bitmap_slice_committed(r)) {
@@ -73,7 +74,7 @@ void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion
   _top_at_mark_starts_base[idx] = bottom;
   _top_bitmaps[idx] = bottom;
 
-  log_debug(gc)("SMC:initialize_top_at_mark_start for Region " SIZE_FORMAT ", TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
+  log_debug(gc)("SMC:initialize_top_at_mark_start for Region %zu, TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
                 r->index(), p2i(bottom), p2i(r->end()));
 }
 
@@ -85,7 +86,7 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   HeapWord* bottom = r->bottom();
   HeapWord* top_bitmap = _top_bitmaps[r->index()];
 
-  log_debug(gc)("SMC:clear_bitmap for %s Region " SIZE_FORMAT ", top_bitmap: " PTR_FORMAT,
+  log_debug(gc)("SMC:clear_bitmap for %s Region %zu, top_bitmap: " PTR_FORMAT,
                 r->affiliation_name(), r->index(), p2i(top_bitmap));
 
   if (top_bitmap > bottom) {
@@ -94,17 +95,5 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   }
 
   assert(is_bitmap_range_within_region_clear(bottom, r->end()),
-         "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
-}
-
-bool ShenandoahMarkingContext::is_complete() {
-  return _is_complete.is_set();
-}
-
-void ShenandoahMarkingContext::mark_complete() {
-  _is_complete.set();
-}
-
-void ShenandoahMarkingContext::mark_incomplete() {
-  _is_complete.unset();
+         "Region %zu should have no marks in bitmap", r->index());
 }

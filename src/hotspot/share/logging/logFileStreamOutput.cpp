@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorations.hpp"
@@ -174,9 +173,7 @@ int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const
 }
 
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, decorations, msg);
+  if (AsyncLogWriter::enqueue(*this, decorations, msg)) {
     return 0;
   }
 
@@ -187,9 +184,7 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, msg_iterator);
+  if (AsyncLogWriter::enqueue(*this, msg_iterator)) {
     return 0;
   }
 

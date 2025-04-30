@@ -15,4 +15,6 @@
   <String Id="InstallDirNotEmptyDlgInstallDirExistMessage">フォルダ[INSTALLDIR]はすでに存在します。そのフォルダにインストールしますか?</String>
 
   <String Id="ContextMenuCommandLabel">[ProductName]で開く</String>
+
+  <String Id="OsConditionMessage">[ProductName][ProductVersion] is not supported on this version of Windows</String>
 </WixLocalization>

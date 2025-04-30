@@ -33,7 +33,7 @@ import jdk.test.lib.Asserts;
  * @summary Test that it is possible to start a stream against a directory,
  *          specified on command line, where multiple processes starts
  *          simultaneously
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.streaming.Application

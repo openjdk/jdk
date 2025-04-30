@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 SAP SE. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,17 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.spi.AsynchronousChannelProvider;
-import sun.nio.ch.Pollset;
+import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.HashSet;
+import java.util.Iterator;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.Pollset;
 
 /**
  * AsynchronousChannelGroup implementation based on the AIX pollset framework.
@@ -141,6 +143,8 @@ final class AixPollPort
         sv = new int[2];
         try {
             Pollset.socketpair(sv);
+            // make the reading part of the socket nonblocking, so the drain (drain_all) method works
+            IOUtil.configureBlocking(IOUtil.newFD(sv[0]), false);
             // register one end with pollset
             Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
@@ -271,23 +275,21 @@ final class AixPollPort
 
     // Process all events currently stored in the control queue.
     private void processControlQueue() {
-        synchronized (controlQueue) {
-            // On Aix it is only possible to set the event
-            // bits on the first call of pollsetCtl. Later
-            // calls only add bits, but cannot remove them.
-            // Therefore, we always remove the file
-            // descriptor ignoring the error and then add it.
-            Iterator<ControlEvent> iter = controlQueue.iterator();
-            while (iter.hasNext()) {
-                ControlEvent ev = iter.next();
-                Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
-                if (!ev.removeOnly()) {
-                    ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
-                }
-                iter.remove();
+        // On Aix it is only possible to set the event
+        // bits on the first call of pollsetCtl. Later
+        // calls only add bits, but cannot remove them.
+        // Therefore, we always remove the file
+        // descriptor ignoring the error and then add it.
+        Iterator<ControlEvent> iter = controlQueue.iterator();
+        while (iter.hasNext()) {
+            ControlEvent ev = iter.next();
+            Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
+            if (!ev.removeOnly()) {
+                ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
             }
-            controlQueue.notifyAll();
+            iter.remove();
         }
+        controlQueue.notifyAll();
     }
 
     /*
@@ -306,8 +308,21 @@ final class AixPollPort
                     int n;
                     controlLock.lock();
                     try {
-                        n = Pollset.pollsetPoll(pollset, address,
+                        int m;
+                        m = n = Pollset.pollsetPoll(pollset, address,
                                      MAX_EVENTS_TO_POLL, Pollset.PS_NO_TIMEOUT);
+                        while (m-- > 0) {
+                            long eventAddress = Pollset.getEvent(address, m);
+                            int fd = Pollset.getDescriptor(eventAddress);
+
+                            // To emulate one shot semantic we need to remove
+                            // the file descriptor here.
+                            if (fd != sp[0] && fd != ctlSp[0]) {
+                                synchronized (controlQueue) {
+                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
+                                }
+                            }
+                        }
                     } finally {
                         controlLock.unlock();
                     }
@@ -322,14 +337,6 @@ final class AixPollPort
                         while (n-- > 0) {
                             long eventAddress = Pollset.getEvent(address, n);
                             int fd = Pollset.getDescriptor(eventAddress);
-
-                            // To emulate one shot semantic we need to remove
-                            // the file descriptor here.
-                            if (fd != sp[0] && fd != ctlSp[0]) {
-                                synchronized (controlQueue) {
-                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
-                                }
-                            }
 
                             // wakeup
                             if (fd == sp[0]) {
@@ -350,7 +357,7 @@ final class AixPollPort
                             // wakeup to process control event
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    Pollset.drain1(ctlSp[0]);
+                                    IOUtil.drain(ctlSp[0]);
                                     processControlQueue();
                                 }
                                 if (n > 0) {

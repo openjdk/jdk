@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,15 @@ public class ClassListFormatE extends ClassListFormatBase {
         //----------------------------------------------------------------------
         // TESTGROUP E: super class and interfaces
         //----------------------------------------------------------------------
-        dumpShouldFail(
+        dumpShouldPass(
             "TESTCASE E1: missing interfaces: keyword",
             appJar, classlist(
                 "Hello",
                 "java/lang/Object id: 1",
                 "CustomLoadee2 id: 1 super: 1 source: " + customJarPath
             ),
-            "Class CustomLoadee2 implements the interface CustomInterface2_ia, but no interface has been specified in the input line");
+            "java.lang.NoClassDefFoundError: CustomInterface2_ia",
+            "Cannot find CustomLoadee2");
 
         dumpShouldFail(
             "TESTCASE E2: missing one interface",
@@ -67,7 +68,7 @@ public class ClassListFormatE extends ClassListFormatBase {
                 "CustomInterface2_ib id: 3 super: 1 source: " + customJarPath,
                 "CustomLoadee2 id: 4 super: 1 interfaces: 2 source: " + customJarPath
             ),
-            "The interface CustomInterface2_ib implemented by class CustomLoadee2 does not match any of the specified interface IDs");
+            "The number of interfaces (1) specified in class list does not match the class file (2)");
 
         dumpShouldFail(
             "TESTCASE E3: specifying an interface that's not implemented by the class",
@@ -101,5 +102,15 @@ public class ClassListFormatE extends ClassListFormatBase {
                 "CustomLoadee2 id: 5 super: 4 interfaces: 2 3 source: " + customJarPath
             ),
             "The specified super class CustomLoadee (id 4) does not match actual super class java.lang.Object");
+
+        dumpShouldPass(
+            "TESTCASE E6: JAR file doesn't exist",
+            appJar, classlist(
+                "Hello",
+                "java/lang/Object id: 1",
+                "NoSuchClass id: 2 super: 1 source: no_such_file.jar"
+            ),
+            "Cannot find NoSuchClass",
+            "java.io.IOException: No such file: no_such_file.jar");
     }
 }

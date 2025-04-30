@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -227,11 +226,6 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
 
   Label local_guard;
@@ -281,7 +275,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
           // order, while allowing other independent instructions to be reordered.
           // Note: This may be slower than using a membar(load|load) (fence r,r).
           // Because processors will not start the second load until the first comes back.
-          // This means you can’t overlap the two loads,
+          // This means you can't overlap the two loads,
           // which is stronger than needed for ordering (stronger than TSO).
           __ srli(ra, t0, 32);
           __ orr(t1, t1, ra);
@@ -321,11 +315,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ beqz(xmethod, bad_call);
 

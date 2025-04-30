@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Throttle;
 import jdk.jfr.internal.Type;
@@ -47,7 +48,7 @@ import jdk.jfr.internal.util.Utils;
 @Label("Throttle")
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
-public final class ThrottleSetting extends JDKSettingControl {
+public final class ThrottleSetting extends SettingControl {
     public static final String DEFAULT_VALUE = Throttle.DEFAULT;
     private final PlatformEventType eventType;
     private String value = DEFAULT_VALUE;
@@ -93,7 +94,7 @@ public final class ThrottleSetting extends JDKSettingControl {
             // if unit is less than 1 s, scale samples
             if (unit.nanos < SECONDS.nanos) {
                 long perSecond = SECONDS.nanos / unit.nanos;
-                samples *= Utils.multiplyOverflow(samples, perSecond, Long.MAX_VALUE);
+                samples = Utils.multiplyOverflow(samples, perSecond, Long.MAX_VALUE);
             }
             eventType.setThrottle(samples, millis);
             this.value = value;

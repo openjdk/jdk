@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBitMap.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -53,12 +52,6 @@ void ZRememberedSet::initialize(size_t page_size) {
   const BitMap::idx_t size_in_bits = to_bit_size(page_size);
   _bitmap[0].initialize(size_in_bits, true /* clear */);
   _bitmap[1].initialize(size_in_bits, true /* clear */);
-}
-
-void ZRememberedSet::delete_all() {
-  assert(is_initialized(), "precondition");
-  _bitmap[0].resize(0);
-  _bitmap[1].resize(0);
 }
 
 bool ZRememberedSet::is_cleared_current() const {
@@ -206,5 +199,5 @@ bool ZRememberedSetContainingInLiveIterator::next(ZRememberedSetContaining* cont
 }
 
 void ZRememberedSetContainingInLiveIterator::print_statistics() const {
-  _page->log_msg(" (remembered iter count: " SIZE_FORMAT " skipped: " SIZE_FORMAT ")", _count, _count_skipped);
+  _page->log_msg(" (remembered iter count: %zu skipped: %zu)", _count, _count_skipped);
 }

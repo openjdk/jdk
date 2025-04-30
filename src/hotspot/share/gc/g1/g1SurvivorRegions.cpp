@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 
 G1SurvivorRegions::G1SurvivorRegions() :
   _regions(new (mtGC) GrowableArray<G1HeapRegion*>(8, mtGC)),

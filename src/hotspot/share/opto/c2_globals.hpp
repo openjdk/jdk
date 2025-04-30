@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@
           "Force counted loops to keep a safepoint")                        \
                                                                             \
   product(bool, UseLoopPredicate, true,                                     \
-          "Generate a predicate to select fast/slow loop versions")         \
+          "Move checks with uncommon trap out of loops.")                   \
                                                                             \
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
@@ -345,6 +345,12 @@
                                                                             \
   develop(bool, TraceLoopUnswitching, false,                                \
           "Trace loop unswitching")                                         \
+                                                                            \
+  product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
+          "Enable loop multiversioning (for speculative compilation)")      \
+                                                                            \
+  develop(bool, TraceLoopMultiversioning, false,                            \
+          "Trace loop multiversioning")                                     \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
@@ -633,6 +639,9 @@
   develop(bool, VerifyLoopOptimizations, false,                             \
           "verify major loop optimizations")                                \
                                                                             \
+  develop(bool, VerifyNoNewIrreducibleLoops, false,                         \
+          "Verify that no new irreducible loops are created after parsing") \
+                                                                            \
   product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
           "do extra type profiling and use it more aggressively")           \
                                                                             \
@@ -659,6 +668,16 @@
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
+                                                                            \
+  product(uint, VerifyConstraintCasts, 0, DIAGNOSTIC,                       \
+          "Perform runtime checks to verify the value of a "                \
+          "ConstraintCast lies inside its type"                             \
+          "0 = does not perform any verification, "                         \
+          "1 = perform verification on ConstraintCastNodes that are "       \
+              "present during code emission, "                              \
+          "2 = Do not do widening of ConstraintCastNodes so that we can "   \
+              "have more verification coverage")                            \
+          range(0, 2)                                                       \
                                                                             \
   product(intx, MaxInlineLevel, 15,                                         \
           "maximum number of nested calls that are inlined by high tier "   \
@@ -741,9 +760,6 @@
   product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
           "Enables aggressive reboxing of vectors")                         \
                                                                             \
-  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
-          "Use stubs for vector transcendental operations")                 \
-                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
@@ -776,7 +792,9 @@
           range(0, max_juint)                                               \
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
-          "Move predicates out of loops based on profiling data")           \
+          "Move checks with an uncommon trap out of loops based on "        \
+          "profiling data. "                                                \
+          "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
@@ -809,6 +827,12 @@
   product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
+                                                                            \
+  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
+          "When a Type node becomes top, make paths where the node is "     \
+          "used dead by replacing them with a Halt node. Turning this off " \
+          "could corrupt the graph in rare cases and should be used with "  \
+          "care.")                                                          \
 
 // end of C2_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
@@ -60,7 +60,7 @@ void NMTUsage::update_malloc_usage() {
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
-    const MallocMemory* mm = ms->by_type(mem_tag);
+    const MallocMemory* mm = ms->by_tag(mem_tag);
     _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
@@ -84,7 +84,7 @@ void NMTUsage::update_vm_usage() {
   _vm_total.reserved = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
-    const VirtualMemory* vm = vms->by_type(mem_tag);
+    const VirtualMemory* vm = vms->by_tag(mem_tag);
 
     _vm_by_type[i].reserved = vm->reserved();
     _vm_by_type[i].committed = vm->committed();
@@ -94,7 +94,7 @@ void NMTUsage::update_vm_usage() {
 
   { // MemoryFileTracker addition
     using MFT = MemoryFileTracker::Instance;
-    MFT::Locker lock;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
       int i = NMTUtil::tag_to_index(tag);
       _vm_by_type[i].committed += vm->committed();

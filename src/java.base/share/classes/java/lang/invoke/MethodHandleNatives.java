@@ -71,31 +71,6 @@ class MethodHandleNatives {
                                                  boolean resolve,
                                                  Object ifNotAvailable);
 
-    /** Represents a context to track nmethod dependencies on CallSite instance target. */
-    static class CallSiteContext implements Runnable {
-        //@Injected JVM_nmethodBucket* vmdependencies;
-        //@Injected jlong last_cleanup;
-
-        static CallSiteContext make(CallSite cs) {
-            final CallSiteContext newContext = new CallSiteContext();
-            // CallSite instance is tracked by a Cleanable which clears native
-            // structures allocated for CallSite context. Though the CallSite can
-            // become unreachable, its Context is retained by the Cleanable instance
-            // (which is referenced from Cleaner instance which is referenced from
-            // CleanerFactory class) until cleanup is performed.
-            CleanerFactory.cleaner().register(cs, newContext);
-            return newContext;
-        }
-
-        @Override
-        public void run() {
-            MethodHandleNatives.clearCallSiteContext(this);
-        }
-    }
-
-    /** Invalidate all recorded nmethods. */
-    private static native void clearCallSiteContext(CallSiteContext context);
-
     private static native void registerNatives();
     static {
         registerNatives();

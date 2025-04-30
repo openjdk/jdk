@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ inline bool JfrMemorySpace< Client, RetrievalPolicy, FreeListType, FullListType,
 // allocations are even multiples of the mspace min size
 static inline size_t align_allocation_size(size_t requested_size, size_t min_element_size) {
   if (requested_size > static_cast<size_t>(min_intx)) {
-    assert(false, "requested size: " SIZE_FORMAT " is too large", requested_size);
+    assert(false, "requested size: %zu is too large", requested_size);
     return 0;
   }
   u8 alloc_size_bytes = min_element_size;

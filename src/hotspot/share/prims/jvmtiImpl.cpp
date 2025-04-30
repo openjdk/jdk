@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/nmethod.hpp"
@@ -745,40 +744,6 @@ VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
     JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth, bool self)
     : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0, self) {}
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl - see comments in jvmtiImpl.hpp
-//
-
-bool JvmtiSuspendControl::suspend(JavaThread *java_thread) {
-  return java_thread->java_suspend();
-}
-
-bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
-  return java_thread->java_resume();
-}
-
-void JvmtiSuspendControl::print() {
-#ifndef PRODUCT
-  ResourceMark rm;
-  LogStreamHandle(Trace, jvmti) log_stream;
-  log_stream.print("Suspended Threads: [");
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-#ifdef JVMTI_TRACE
-    const char *name   = JvmtiTrace::safe_get_thread_name(thread);
-#else
-    const char *name   = "";
-#endif /*JVMTI_TRACE */
-    log_stream.print("%s(%c ", name, thread->is_suspended() ? 'S' : '_');
-    if (!thread->has_last_Java_frame()) {
-      log_stream.print("no stack");
-    }
-    log_stream.print(") ");
-  }
-  log_stream.print_cr("]");
-#endif
-}
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {

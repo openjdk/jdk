@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -43,7 +42,7 @@ void Block_Array::grow( uint i ) {
   if (i < Max()) {
     return; // No need to grow
   }
-  debug_only(_limit = i+1);
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
@@ -1614,7 +1613,8 @@ void PhaseBlockLayout::find_edges() {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
           int from_pct = (int) ((100 * freq) / b->_freq);
-          int to_pct = (int) ((100 * freq) / target->_freq);
+          float f_to_pct = (100 * freq) / target->_freq;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }

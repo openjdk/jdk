@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1218,7 +1218,7 @@ jvmtiEnv *jvmti;
                             <li><i>Timed wait?</i>
                               <ul>
                                 <li>Indefinite (<datalink
-                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink></li>
+                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink>)</li>
                                 <li>Timed (<datalink
                                     id="JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT"><code>JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT</code></datalink>)</li>
                               </ul>
@@ -3081,6 +3081,37 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           The frame at <code>depth</code> is executing a
           native method.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
+        <error id="JVMTI_ERROR_DUPLICATE">
+          There is already a frame pop event request at the specified depth.
+        </error>
+      </errors>
+    </function>
+
+    <function id="ClearAllFramePops" num="67" since="25">
+      <synopsis>Clear Frame Pop</synopsis>
+      <description>
+        Clear all frame pop requests so that a <eventlink id="FramePop"></eventlink>
+        event will not be generated for any frames.
+        See the <eventlink id="FramePop"></eventlink> event for details.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+        <required id="can_generate_frame_pop_events"></required>
+      </capabilities>
+      <parameters>
+        <param id="thread">
+          <jthread null="current" impl="noconvert"/>
+          <description>
+            The thread for which all the frame pop events will be cleared.
+          </description>
+        </param>
+      </parameters>
+      <errors>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
         </error>
@@ -15477,6 +15508,9 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="7 June 2023" version="21.0.0">
       Virtual threads finalized to be a permanent feature.
       Agent start-up in the live phase now specified to print a warning.
+  </change>
+  <change date="10 January 2025" version="25.0.0">
+      Add new function ClearAllFramePops. Needed to speedup debugger single stepping.
   </change>
 </changehistory>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -718,7 +718,8 @@ public class Compatibility {
             String match = "^  ("
                     + "  Signature algorithm: " + signItem.certInfo.
                             expectedSigalg(signItem) + ", " + signItem.certInfo.
-                            expectedKeySize() + "-bit key"
+                            expectedKeySize() + "-bit " + signItem.certInfo.
+                            expectedKeyAlgorithm() + " key"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
                     + (isWeakAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
@@ -1222,6 +1223,12 @@ public class Compatibility {
                         throw new RuntimeException("Unsupported/expected key algorithm: " + keyAlgorithm);
                 }
             }
+        }
+
+        private String expectedKeyAlgorithm() {
+            return keyAlgorithm.equals("EC")
+                    ? ("EC .secp" + expectedKeySize() + "r1.")
+                    : keyAlgorithm;
         }
 
         private int expectedKeySize() {

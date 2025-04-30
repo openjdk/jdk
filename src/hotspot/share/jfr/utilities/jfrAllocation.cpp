@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "logging/log.hpp"
@@ -53,7 +52,7 @@ static void add(size_t alloc_size) {
   if (!JfrRecorder::is_created()) {
     const jlong total_allocated = atomic_add_jlong((jlong)alloc_size, &_allocated_bytes);
     const jlong current_live_set = atomic_add_jlong((jlong)alloc_size, &_live_set_bytes);
-    log_trace(jfr, system)("Allocation: [" SIZE_FORMAT "] bytes", alloc_size);
+    log_trace(jfr, system)("Allocation: [%zu] bytes", alloc_size);
     log_trace(jfr, system)("Total alloc [" JLONG_FORMAT "] bytes", total_allocated);
     log_trace(jfr, system)("Liveset:    [" JLONG_FORMAT "] bytes", current_live_set);
   }
@@ -63,7 +62,7 @@ static void subtract(size_t dealloc_size) {
   if (!JfrRecorder::is_created()) {
     const jlong total_deallocated = atomic_add_jlong((jlong)dealloc_size, &_deallocated_bytes);
     const jlong current_live_set = atomic_add_jlong(((jlong)dealloc_size * -1), &_live_set_bytes);
-    log_trace(jfr, system)("Deallocation: [" SIZE_FORMAT "] bytes", dealloc_size);
+    log_trace(jfr, system)("Deallocation: [%zu] bytes", dealloc_size);
     log_trace(jfr, system)("Total dealloc [" JLONG_FORMAT "] bytes", total_deallocated);
     log_trace(jfr, system)("Liveset:      [" JLONG_FORMAT "] bytes", current_live_set);
   }
@@ -77,14 +76,14 @@ static void hook_memory_deallocation(size_t dealloc_size) {
 static void hook_memory_allocation(const char* allocation, size_t alloc_size) {
   if (nullptr == allocation) {
     if (!JfrRecorder::is_created()) {
-      log_warning(jfr, system)("Memory allocation failed for size [" SIZE_FORMAT "] bytes", alloc_size);
+      log_warning(jfr, system)("Memory allocation failed for size [%zu] bytes", alloc_size);
       return;
     } else {
       // after critical startup, fail as by default
       vm_exit_out_of_memory(alloc_size, OOM_MALLOC_ERROR, "AllocateHeap");
     }
   }
-  debug_only(add(alloc_size));
+  DEBUG_ONLY(add(alloc_size));
 }
 
 void JfrCHeapObj::on_memory_allocation(const void* allocation, size_t size) {
@@ -112,12 +111,12 @@ void* JfrCHeapObj::operator new [](size_t size, const std::nothrow_t&  nothrow_c
 }
 
 void JfrCHeapObj::operator delete(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete(p);
 }
 
 void JfrCHeapObj::operator delete[](void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete[](p);
 }
 
@@ -128,7 +127,7 @@ char* JfrCHeapObj::realloc_array(char* old, size_t size) {
 }
 
 void JfrCHeapObj::free(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   FreeHeap(p);
 }
 
