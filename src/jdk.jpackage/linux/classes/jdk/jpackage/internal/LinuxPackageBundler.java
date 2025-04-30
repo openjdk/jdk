@@ -107,18 +107,18 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         LinuxPackagingPipeline.build()
                 .excludeDirFromCopying(outputParentDir)
+                .task(PackagingPipeline.PackageTaskID.CREATE_CONFIG_FILES)
+                        .packageAction(this::buildConfigFiles)
+                        .add()
                 .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
                         .packageAction(this::buildPackage)
-                        .add()
-                .task(PackagingPipeline.PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
-                        .noaction() // FIXME: implement post-app-image script execution on Linux
                         .add()
                 .create().execute(env, pkg, outputParentDir);
 
         return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
     }
 
-    private void buildPackage(PackageBuildEnv<LinuxPackage, AppImageLayout> env) throws PackagerException, IOException {
+    private void buildConfigFiles(PackageBuildEnv<LinuxPackage, AppImageLayout> env) throws PackagerException, IOException {
         for (var ca : customActions) {
             ca.init(env.env(), env.pkg());
         }
@@ -131,8 +131,11 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         data.putAll(createReplacementData(env.env(), env.pkg()));
 
-        Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                data), env.env(), env.pkg(), env.outputDir());
+        createConfigFiles(Collections.unmodifiableMap(data), env.env(), env.pkg());
+    }
+
+    private void buildPackage(PackageBuildEnv<LinuxPackage, AppImageLayout> env) throws PackagerException, IOException {
+        Path packageBundle = buildPackageBundle(env.env(), env.pkg(), env.outputDir());
 
         verifyOutputBundle(env.env(), env.pkg(), packageBundle).stream()
                 .filter(Objects::nonNull)
@@ -202,8 +205,11 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     protected abstract Map<String, String> createReplacementData(
             BuildEnv env, LinuxPackage pkg) throws IOException;
 
-    protected abstract Path buildPackageBundle(
+    protected abstract void createConfigFiles(
             Map<String, String> replacementData,
+            BuildEnv env, LinuxPackage pkg) throws IOException;
+
+    protected abstract Path buildPackageBundle(
             BuildEnv env, LinuxPackage pkg, Path outputParentDir) throws
             PackagerException, IOException;
 

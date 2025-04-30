@@ -80,11 +80,15 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected Path buildPackageBundle(Map<String, String> replacementData, BuildEnv env,
-            LinuxPackage pkg, Path outputParentDir) throws PackagerException, IOException {
-
+    protected void createConfigFiles(Map<String, String> replacementData,
+            BuildEnv env, LinuxPackage pkg) throws IOException {
         prepareProjectConfig(replacementData, env, pkg);
         adjustPermissionsRecursive(env.appImageDir());
+    }
+
+    @Override
+    protected Path buildPackageBundle(BuildEnv env, LinuxPackage pkg,
+            Path outputParentDir) throws PackagerException, IOException {
         return buildDeb(env, pkg, outputParentDir);
     }
 

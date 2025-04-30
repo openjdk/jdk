@@ -91,10 +91,8 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         return List.of(createRpmbuildToolValidator());
     }
 
-    @Override
-    protected Path buildPackageBundle(Map<String, String> replacementData, BuildEnv env,
-            LinuxPackage pkg, Path outputParentDir) throws PackagerException, IOException {
-
+    protected void createConfigFiles(Map<String, String> replacementData,
+            BuildEnv env, LinuxPackage pkg) throws IOException {
         Path specFile = specFile(env, pkg);
 
         // prepare spec file
@@ -102,7 +100,11 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 .setCategory(I18N.getString("resource.rpm-spec-file"))
                 .setSubstitutionData(replacementData)
                 .saveToFile(specFile);
+    }
 
+    @Override
+    protected Path buildPackageBundle(BuildEnv env, LinuxPackage pkg,
+            Path outputParentDir) throws PackagerException, IOException {
         return buildRPM(env, pkg, outputParentDir);
     }
 
