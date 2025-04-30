@@ -482,7 +482,7 @@ public final class KDF {
     private void rethrow(InvalidAlgorithmParameterException e)
             throws InvalidAlgorithmParameterException {
         var source = serviceIterator == null
-                ? "specified" : "selected";
+                ? "specified" : "previously selected";
         if (!skipDebug && pdebug != null) {
             pdebug.println("A " + this.getAlgorithm()
                     + " derivation cannot be performed "
@@ -639,6 +639,11 @@ public final class KDF {
                                         derivationSpec);
                         // found a working KDFSpi
                         this.theOne = currOne;
+                        if (!skipDebug && pdebug != null) {
+                            pdebug.println("The provider "
+                                    + currOne.provider().getName()
+                                    + " is selected");
+                        }
                         return result;
                     } catch (Exception e) {
                         if (!skipDebug && pdebug != null) {

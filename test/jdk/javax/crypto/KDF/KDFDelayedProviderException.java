@@ -60,7 +60,7 @@ public class KDFDelayedProviderException {
         // After P1 has been selected, ED448 is no longer supported
         var k = KDF.getInstance("K");
         k.deriveData(NamedParameterSpec.ED25519);
-        checkMessage("The selected provider P1 does not support this input",
+        checkMessage("The previously selected provider P1 does not support this input",
                 () -> k.deriveData(NamedParameterSpec.ED448));
 
     }
