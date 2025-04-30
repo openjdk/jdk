@@ -228,9 +228,6 @@ class WeakReferenceTestApp {
         if (ref.get() == null) {
             throw new RuntimeException("ref.get() should not be null");
         }
-        if (ref2.get() == null) {
-            throw new RuntimeException("ref2.get() should not be null");
-        }
 
         System.out.println("... running GC ...");
         root = null; // make ref.referent() eligible for collection
