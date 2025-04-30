@@ -126,6 +126,8 @@ public:
     } else {
       _wx_writes_required = 0;
     }
+    // TODO: also check for X(W,W) that should be Lazy(W,W)
+    // and check for W(X()) where the X is not required
 #endif
 #if 0
     // FIXME
@@ -140,8 +142,8 @@ public:
       // Here we simulate a single write to make sure the write scope is marked as
       // needed, which satisfies the debug check above for unneeded write scopes.
       assert(new_state == WXWrite, "unexpected state");
-      REQUIRE_THREAD_WX_MODE_WRITE
-      _thread->require_wx_mode(WXWrite); // inc_wx_writes_required();
+      // REQUIRE_THREAD_WX_MODE_WRITE
+      _thread->require_wx_mode(WXWrite, FILE, LINE); // inc_wx_writes_required();
     }
   }
 

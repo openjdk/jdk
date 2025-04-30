@@ -179,16 +179,7 @@ void ScavengableNMethods::prune_unlinked_nmethods() {
 
 #if INCLUDE_WX_NEW
   Thread* current = Thread::current();
-  bool w_cond = (head != nullptr);
-  auto _wx_w = WXConditionalWriteMark(current, w_cond);
-  if (w_cond) {
-    // We set write mode above, expecting writes to happen, but there is no
-    // guarantee with more conditionals inside the loop.  Here we simulate
-    // a single write to make sure the write scope is marked as needed,
-    // which satisfies a debug check for unneeded write scopes.  The alternative
-    // is to use fine-grained write scopes inside the loop, which could hurt
-    // performance.
-    REQUIRE_THREAD_WX_MODE_WRITE
+  auto _wx_w = WXSpeculativeWriteMark(current, (_head != nullptr));
 #endif
 
   DEBUG_ONLY(mark_on_list_nmethods());
