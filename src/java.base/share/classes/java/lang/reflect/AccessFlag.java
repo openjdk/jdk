@@ -381,7 +381,7 @@ public enum AccessFlag {
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
-        var definition = findDefinition(location);
+        var definition = findDefinition(location);  // null checks location
         int unmatchedMask = mask & (~location.flagsMask());
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
@@ -404,8 +404,8 @@ public enum AccessFlag {
      * @since 25
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
-        var definition = findDefinition(location);
-        int unmatchedMask = mask & (~location.flagsMask(cffv)); // implicit null check
+        var definition = findDefinition(location);  // null checks location
+        int unmatchedMask = mask & (~location.flagsMask(cffv));  // null checks cffv
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
                     Integer.toHexString(unmatchedMask) +
