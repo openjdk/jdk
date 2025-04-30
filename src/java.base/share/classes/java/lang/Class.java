@@ -47,7 +47,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -82,12 +81,11 @@ import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
+import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
-import sun.reflect.generics.repository.MethodRepository;
-import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
@@ -1437,17 +1435,10 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isMethod())
                 return null;
 
-            MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(),
-                                                              getFactory());
-            Class<?>   returnType       = toClass(typeInfo.getReturnType());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for(int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
+            // Descriptor already validated by VM
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            Class<?>   returnType       = types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Method[] candidates = enclosingCandidate.privateGetDeclaredMethods(false);
@@ -1566,17 +1557,10 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isConstructor())
                 return null;
 
-            ConstructorRepository typeInfo = ConstructorRepository.make(enclosingInfo.getDescriptor(),
-                                                                        getFactory());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for (int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
-
+            // Descriptor already validated by VM
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Constructor<?>[] candidates = enclosingCandidate
@@ -1882,7 +1866,7 @@ public final class Class<T> implements java.io.Serializable,
             }
             currentClass = currentClass.getSuperclass();
         }
-        return list.toArray(new Class<?>[0]);
+        return list.toArray(EMPTY_CLASS_ARRAY);
     }
 
 
