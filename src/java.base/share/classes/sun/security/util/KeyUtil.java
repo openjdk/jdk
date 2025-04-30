@@ -31,6 +31,8 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.function.BiFunction;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -456,6 +458,144 @@ public final class KeyUtil {
     public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
         return alg.equalsIgnoreCase("TlsPremasterSecret")
                 || alg.equalsIgnoreCase("Generic");
+    }
+
+    /**
+     * Writes one of the ML-KEM or ML-DSA private key formats.
+     *
+     * For example:
+     *  ML-KEM-1024-PrivateKey ::= CHOICE {
+     *       seed [0] OCTET STRING (SIZE (64)),
+     *       expandedKey OCTET STRING (SIZE (3168)),
+     *       both SEQUENCE {
+     *           seed OCTET STRING (SIZE (64)),
+     *           expandedKey OCTET STRING (SIZE (3168))
+     *           }
+     *       }
+     *
+     * This method returns one of the choices depending on the system/security
+     * property jdk.type.pkcs8.encoding.
+     *
+     * @param pname parameter set name
+     * @param type the type string in property name, "mlkem" or "mldsa"
+     * @param seed the seed, could be null
+     * @param expanded the expanded key, could be null
+     * @param expand function to calculate expanded from seed, could be null
+     *               if there is already expanded provided
+     * @returns one of the choices, null if seed not provided but the output
+     *          requires it. Note that the expanded key will always be
+     *          generated even if not provided in the input
+     */
+    public static byte[] writeToChoices(
+            String pname, String type, byte[] seed, byte[] expanded,
+            BiFunction<String, byte[], byte[]> expand) {
+        byte[] skOctets;
+        var prop = SecurityProperties.getOverridableProperty(
+                "jdk." + type + ".pkcs8.encoding");
+        if (prop == null) prop = "seed";
+
+        // Ensures using one-byte len in DER
+        assert seed == null || seed.length < 128;
+        // Ensures using two-byte len in DER
+        assert expanded == null || expanded.length > 256 && expanded.length < 60000;
+
+        switch (prop.toLowerCase(Locale.ROOT)) {
+            case "seed" -> {
+                if (seed == null) return null;
+                skOctets = new byte[seed.length + 2];
+                skOctets[0] = (byte)0x80;
+                skOctets[1] = (byte) seed.length;
+                System.arraycopy(seed, 0, skOctets, 2, seed.length);
+            }
+            case "expandedkey" -> {
+                if (expanded == null) expanded = expand.apply(pname, seed);
+                skOctets = new byte[expanded.length + 4];
+                skOctets[0] = 0x04;
+                writeShortLength(skOctets, 1, expanded.length);
+                System.arraycopy(expanded, 0, skOctets, 4, expanded.length);
+            }
+            case "both" -> {
+                if (seed == null) return null;
+                if (expanded == null) expanded = expand.apply(pname, seed);
+                skOctets = new byte[10 + seed.length + expanded.length];
+                skOctets[0] = 0x30;
+                writeShortLength(skOctets, 1, 6 + seed.length + expanded.length);
+                skOctets[4] = 0x04;
+                skOctets[5] = (byte)seed.length;
+                System.arraycopy(seed, 0, skOctets, 6, seed.length);
+                skOctets[6 + seed.length] = 0x04;
+                writeShortLength(skOctets, 7 + seed.length, expanded.length);
+                System.arraycopy(expanded, 0, skOctets, 10 + seed.length, expanded.length);
+            }
+            default -> throw new IllegalArgumentException("Unknown format: " + prop);
+        }
+        return skOctets;
+    }
+
+    /**
+     * Splits one of the ML-KEM or ML-DSA private key formats into
+     * seed and expandedKey, if exists.
+     *
+     * @param seedLen correct seed length
+     * @param input input bytes
+     * @returns seed and expandedkey, each could be null if not inside
+     *          the input. Results are newly allocated arrays
+     * @throws InvalidKeyException if input is invalid
+     */
+    public static byte[][] splitChoices(int seedLen, byte[] input)
+            throws InvalidKeyException {
+        if (input.length < seedLen + 2) {
+            throw new InvalidKeyException("Too short");
+        }
+        return switch (input[0]) {
+            case (byte) 0x80 -> {
+                // 80 SEED_LEN <SEED_LEN of seed>
+                if (input[1] != seedLen && input.length != seedLen + 2) {
+                    throw new InvalidKeyException("Invalid seed");
+                }
+                yield new byte[][] { Arrays.copyOfRange(input, 2, seedLen + 2), null };
+            }
+            case 0x04 -> {
+                // 04 82 nn nn <nn of expandedKey>
+                if (readShortLength(input, 1) != input.length - 4) {
+                    throw new InvalidKeyException("Invalid expandedKey");
+                }
+                yield new byte[][] { null, Arrays.copyOfRange(input, 4, input.length) };
+            }
+            case 0x30 -> {
+                // 30 82 mm mm 04 SEED_LEN <SEED_LEN of seed> 04 82 nn nn <nn of expandedKey>
+                if (input.length < 6 + seedLen + 4) {
+                    throw new InvalidKeyException("Too short");
+                }
+                if (readShortLength(input, 1) != input.length - 4
+                        || input[4] != 0x04
+                        || input[5] != (byte)seedLen
+                        || input[seedLen + 6] != 0x04
+                        || readShortLength(input, seedLen + 7)
+                        != input.length - 10 - seedLen) {
+                    throw new InvalidKeyException("Invalid both");
+                }
+                yield new byte[][] {
+                        Arrays.copyOfRange(input, 6, 6 + seedLen),
+                        Arrays.copyOfRange(input, seedLen + 10, input.length)};
+            }
+            default -> throw new InvalidKeyException("Wrong tag: " + input[0]);
+        };
+    }
+
+    // Reads a 2 bytes length from DER encoding
+    private static int readShortLength(byte[] input, int from) throws InvalidKeyException {
+        if (input[from] != (byte)0x82) {
+            throw new InvalidKeyException("Unexpected length");
+        }
+        return ((input[from + 1] & 0xff) << 8) + (input[from + 2] & 0xff);
+    }
+
+    // Writes a 2 bytes length to DER encoding
+    private static void writeShortLength(byte[] input, int from, int value) {
+        input[from] = (byte)0x82;
+        input[from + 1] = (byte) (value >> 8);
+        input[from + 2] = (byte) (value);
     }
 }
 

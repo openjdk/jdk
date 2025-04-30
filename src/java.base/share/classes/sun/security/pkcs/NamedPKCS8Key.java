@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package sun.security.pkcs;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
 
-import javax.security.auth.DestroyFailedException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -39,6 +36,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
+import java.util.Objects;
 
 /// Represents a private key from an algorithm family that is specialized
 /// with a named parameter set.
@@ -50,6 +48,14 @@ import java.util.Arrays;
 /// identifier in the PKCS #8 encoding of the key is always a single OID derived
 /// from the parameter set name.
 ///
+/// Besides the existing [PKCS8Key#key] field, this class contains an
+/// expanded format stored in [#expanded]. While `key` always represents
+/// the format used for encoding, the expanded format is always used
+/// in computations. The expanded format must be self-sufficient for
+/// cryptographic computations without requiring the encoding format.
+///
+/// Both fields must be present.
+///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
     @Serial
@@ -57,42 +63,47 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
-    private final byte[] rawBytes;
+    private final transient byte[] expanded;
 
     private transient boolean destroyed = false;
 
-    /// Ctor from family name, parameter set name, raw key bytes.
-    /// Key bytes won't be cloned, caller must relinquish ownership
-    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes) {
+    /// Creates a `NamedPKCS8Key` from raw key bytes.
+    ///
+    /// `encoded` and `expanded` won't be cloned, caller
+    /// must relinquish ownership.
+    ///
+    /// @param fname family name
+    /// @param pname parameter set name
+    /// @param encoded raw key bytes, not null
+    /// @param expanded expanded key format, not null
+    public NamedPKCS8Key(String fname, String pname, byte[] encoded, byte[] expanded) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
+        this.expanded = Objects.requireNonNull(expanded);
+        this.key = Objects.requireNonNull(encoded);
         try {
             this.algid = AlgorithmId.get(pname);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        this.rawBytes = rawBytes;
-
-        DerValue val = new DerValue(DerValue.tag_OctetString, rawBytes);
-        try {
-            this.key = val.toByteArray();
-        } finally {
-            val.clear();
-        }
     }
 
-    /// Ctor from family name, and PKCS #8 bytes
-    public NamedPKCS8Key(String fname, byte[] encoded) throws InvalidKeyException {
+    /// Creates a `NamedPKCS8Key` from family name and PKCS #8 encoding.
+    ///
+    /// @param fname family name
+    /// @param encoded PKCS #8 encoding. It is copied so caller can modify
+    ///     it after the method call.
+    /// @param expander a function that is able to calculate the expanded
+    ///     format from the encoding format inside `encoded`.The
+    ///     ownership of the result is fully granted to this object.
+    public NamedPKCS8Key(String fname, byte[] encoded, Expander expander)
+            throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        try {
-            paramSpec = new NamedParameterSpec(algid.getName());
-            if (algid.getEncodedParams() != null) {
-                throw new InvalidKeyException("algorithm identifier has params");
-            }
-            rawBytes = new DerInputStream(key).getOctetString();
-        } catch (IOException e) {
-            throw new InvalidKeyException("Cannot parse input", e);
+        this.expanded = expander.expand(algid.getName(), this.key);
+        paramSpec = new NamedParameterSpec(algid.getName());
+        if (algid.getEncodedParams() != null) {
+            throw new InvalidKeyException("algorithm identifier has params");
         }
     }
 
@@ -104,9 +115,15 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     /// Returns the reference to the internal key. Caller must not modify
-    /// the content or keep a reference.
+    /// the content or pass the reference to untrusted application code.
     public byte[] getRawBytes() {
-        return rawBytes;
+        return key;
+    }
+
+    /// Returns the reference to the key in expanded format. Caller must not
+    /// modify the content or pass the reference to untrusted application code.
+    public byte[] getExpanded() {
+        return expanded;
     }
 
     @Override
@@ -127,9 +144,9 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     @Override
-    public void destroy() throws DestroyFailedException {
-        Arrays.fill(rawBytes, (byte)0);
+    public void destroy() {
         Arrays.fill(key, (byte)0);
+        Arrays.fill(expanded, (byte)0);
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }
@@ -139,5 +156,11 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public boolean isDestroyed() {
         return destroyed;
+    }
+
+    /// Expands from encoding format to expanded format.
+    public interface Expander {
+        /// The expand method.
+        byte[] expand(String pname, byte[] input) throws InvalidKeyException;
     }
 }

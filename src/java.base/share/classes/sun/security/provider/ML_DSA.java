@@ -568,6 +568,39 @@ public class ML_DSA {
         return new ML_DSA_KeyPair(sk, pk);
     }
 
+    public ML_DSA_PublicKey privKeyToPubKey(ML_DSA_PrivateKey sk) {
+        //Sample A
+        int[][][] keygenA = generateA(sk.rho); //A is in NTT domain
+
+        //Compute t and tr
+        mlDsaVectorNtt(sk.s1); //s1 now in NTT domain
+        int[][] As1 = new int[mlDsa_k][ML_DSA_N];
+        matrixVectorPointwiseMultiply(As1, keygenA, sk.s1);
+        mlDsaVectorInverseNtt(sk.s1); //take s1 out of NTT domain
+
+        mlDsaVectorInverseNtt(As1);
+        int[][] t = vectorAddPos(As1, sk.s2);
+        int[][] t0 = new int[mlDsa_k][ML_DSA_N];
+        int[][] t1 = new int[mlDsa_k][ML_DSA_N];
+        power2Round(t, t0, t1);
+        if (!Arrays.deepEquals(t0, sk.t0)) {
+            throw new IllegalArgumentException("t0 does not patch");
+        }
+
+        var crHash = new SHAKE256(TR_LEN);
+
+        ML_DSA_PublicKey pk = new ML_DSA_PublicKey(sk.rho, t1);
+        byte[] publicKeyBytes = pkEncode(pk);
+        crHash.update(publicKeyBytes);
+        byte[] tr = crHash.digest();
+        if (!Arrays.equals(tr, sk.tr)) {
+            throw new IllegalArgumentException("tr does not patch");
+        }
+
+        //Encode PK and SK
+        return new ML_DSA_PublicKey(sk.rho, t1);
+    }
+
     public ML_DSA_Signature signInternal(byte[] message, byte[] rnd, byte[] skBytes) {
         //Decode private key and initialize hash function
         ML_DSA_PrivateKey sk = skDecode(skBytes);

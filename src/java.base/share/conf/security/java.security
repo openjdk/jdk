@@ -1549,3 +1549,45 @@ jdk.tls.alpnCharset=ISO_8859_1
 # security property value defined here.
 #
 #jdk.security.krb5.name.case.sensitive=false
+
+#
+# The privateKey field for newly generated ML-KEM private keys in PKCS #8
+#
+# draft-ietf-lamps-kyber-certificates specifies three formats for an ML-KEM
+# private key: a 64-octet seed, an (expanded) private key, or both.
+#
+# This values can be "seed", "expandedKey", or "both" (case-insensitive).
+# The default value is "seed".
+#
+# When a new keypair is generated, its private key encoding will be determined
+# by this property.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# Note: This property is currently used by the SunJCE provider in the JDK
+# Reference implementation. It is not guaranteed to be supported by other
+# SE implementations.
+#
+#jdk.mlkem.pkcs8.encoding = seed
+
+#
+# The privateKey field for newly generated ML-DSA private keys in PKCS #8
+#
+# draft-ietf-lamps-dilithium-certificates specifies three formats for an ML-DSA
+# private key: a 32-octet seed, an (expanded) private key, or both.
+#
+# When a new keypair is generated, its private key encoding will be determined
+# by this property.
+#
+# This values can be "seed", "expandedKey", or "both" (case-insensitive).
+# The default value is "seed".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# Note: This property is currently used by the SUN provider in the JDK
+# Reference implementation. It is not guaranteed to be supported by other
+# SE implementations.
+#
+#jdk.mldsa.pkcs8.encoding = seed

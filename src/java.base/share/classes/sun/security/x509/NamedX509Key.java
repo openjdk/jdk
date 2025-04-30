@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,8 @@ public final class NamedX509Key extends X509Key {
         setKey(new BitArray(rawBytes.length * 8, rawBytes));
     }
 
-    /// Ctor from family name, and X.509 bytes
+    /// Ctor from family name, and X.509 bytes. Input byte array
+    /// is copied. Caller can modify it after the method call.
     public NamedX509Key(String fname, byte[] encoded) throws InvalidKeyException {
         this.fname = fname;
         decode(encoded);
