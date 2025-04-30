@@ -61,7 +61,6 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGEAPPLAUNCHER, \
     DISABLED_WARNINGS_clang_Log.cpp := unused-const-variable, \
     CFLAGS_FILTER_OUT := -MD, \
     CXXFLAGS_FILTER_OUT := -MD, \
-    CFLAGS_macosx := -Wno-format-nonliteral, \
     CFLAGS_windows := -MT $(JPACKAGE_CFLAGS_windows), \
     CXXFLAGS_windows := -MT $(JPACKAGE_CXXFLAGS_windows), \
     LD_SET_ORIGIN := false, \

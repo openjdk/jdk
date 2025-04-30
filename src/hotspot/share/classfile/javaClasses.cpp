@@ -4821,7 +4821,7 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
   assert(is_instance(loader), "loader must be oop");
   assert(cl == nullptr || is_instance(cl), "cl argument must be oop");
   oop acl = loader;
-  debug_only(jint loop_count = 0);
+  DEBUG_ONLY(jint loop_count = 0);
   // This loop taken verbatim from ClassLoader.java:
   do {
     acl = parent(acl);
@@ -5453,7 +5453,7 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
   if (!CDSConfig::is_dumping_method_handles()) {
-    // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
+    // These are supported by CDS only when CDSConfig::is_dumping_method_handles() is enabled.
     if (klass == vmClasses::ResolvedMethodName_klass() ||
         klass == vmClasses::MemberName_klass()) {
       return false;

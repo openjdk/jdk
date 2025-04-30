@@ -815,7 +815,7 @@ protected:
     emit(insn);
   }
 
- public:
+ protected:
 
   enum barrier {
     i = 0b1000, o = 0b0100, r = 0b0010, w = 0b0001,
@@ -845,6 +845,8 @@ protected:
     patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
+
+ public:
 
 #define INSN(NAME, op, funct3, funct7)                      \
   void NAME() {                                             \
@@ -2321,6 +2323,7 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
 

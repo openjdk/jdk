@@ -438,6 +438,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      * Defines the translet class and auxiliary classes.
      * Returns a reference to the Class object that defines the main class
      */
+    @SuppressWarnings("removal")
     private void defineTransletClasses()
         throws TransformerConfigurationException {
 

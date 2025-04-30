@@ -1073,38 +1073,6 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   return true;
 }
 
-InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                                Handle class_loader,
-                                                                Handle protection_domain,
-                                                                PackageEntry* pkg_entry,
-                                                                TRAPS) {
-  InstanceKlass* shared_nest_host = SystemDictionaryShared::get_shared_nest_host(ik);
-  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
-  Symbol* cn = shared_nest_host->name();
-  Klass *s = resolve_or_fail(cn, class_loader, true, CHECK_NULL);
-  if (s != shared_nest_host) {
-    // The dynamically resolved nest_host is not the same as the one we used during dump time,
-    // so we cannot use ik.
-    return nullptr;
-  } else {
-    assert(s->is_shared(), "must be");
-  }
-
-  InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, nullptr, pkg_entry, CHECK_NULL);
-
-  if (loaded_ik != nullptr) {
-    assert(shared_nest_host->is_same_class_package(ik),
-           "lambda proxy class and its nest host must be in the same package");
-    // The lambda proxy class and its nest host have the same class loader and class loader data,
-    // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-    assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-    assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
-    ik->set_nest_host(shared_nest_host);
-  }
-
-  return loaded_ik;
-}
-
 InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle class_loader,
                                                    Handle protection_domain,
@@ -1112,6 +1080,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
+  assert(ik->is_shared(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
   assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
@@ -1130,7 +1099,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   InstanceKlass* new_ik = nullptr;
   // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
   // It will be skipped for shared VM hidden lambda proxy classes.
-  if (!SystemDictionaryShared::is_hidden_lambda_proxy(ik)) {
+  if (!ik->is_hidden()) {
     new_ik = KlassFactory::check_shared_class_file_load_hook(
       ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
   }

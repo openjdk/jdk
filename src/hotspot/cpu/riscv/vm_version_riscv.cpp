@@ -220,18 +220,34 @@ void VM_Version::common_initialize() {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
+
+  // UseZvbb (depends on RVV).
+  if (UseZvbb && !UseRVV) {
+    warning("Cannot enable UseZvbb on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvbb, false);
+  }
+
+  // UseZvbc (depends on RVV).
+  if (UseZvbc && !UseRVV) {
+    warning("Cannot enable UseZvbc on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvbc, false);
+  }
+
+  // UseZvkn (depends on RVV).
+  if (UseZvkn && !UseRVV) {
+    warning("Cannot enable UseZvkn on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvkn, false);
+  }
+
+  // UseZvfh (depends on RVV)
+  if (UseZvfh && !UseRVV) {
+    warning("Cannot enable UseZvfh on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvfh, false);
+  }
 }
 
 #ifdef COMPILER2
 void VM_Version::c2_initialize() {
-  if (UseCMoveUnconditionally) {
-    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
-  }
-
-  if (ConditionalMoveLimit > 0) {
-    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
-  }
-
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
   } else {
@@ -345,20 +361,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    FLAG_SET_DEFAULT(UseZvbb, false);
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbc)) {
-      warning("Cannot enable UseZvbc on cpu without RVV support.");
-    }
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
   if (!AvoidUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
       FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
@@ -383,11 +385,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  // UseZvkn (depends on RVV) and SHA-2.
-  if (UseZvkn && !UseRVV) {
-    FLAG_SET_DEFAULT(UseZvkn, false);
-    warning("Cannot enable Zvkn on cpu without RVV support.");
-  }
   // SHA-2, depends on Zvkn.
   if (UseSHA) {
     if (UseZvkn) {
@@ -471,7 +468,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
   _initialized = true;
 }
 
