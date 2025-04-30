@@ -1319,6 +1319,11 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return TypeClass::ZERO;
   }
 
+  // Mod by zero?  Throw an exception at runtime!
+  if (type_divisor->is_con() && type_divisor->get_con() == 0) {
+    return TypeClass::POS;
+  }
+
   const TypeClass* type_dividend = t1->cast<TypeClass>();
   if (type_dividend->is_con() && type_divisor->is_con()) {
     Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());
@@ -1515,6 +1520,13 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeF::make(0.));
+  }
 
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());
@@ -1535,10 +1547,10 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1553,12 +1565,19 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jint;
   }
 
-  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
+  return replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
 }
 
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeD::make(0.));
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1580,10 +1599,10 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1598,33 +1617,33 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jlong;
   }
 
-  return replace_with_con(phase, TypeD::make(jdouble_cast(xr)));
+  return replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
 }
 
-Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
+Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
   Compile* C = phase->C;
   Node* con_node = phase->makecon(con);
   CallProjections projs;
   extract_projections(&projs, false, false);
-  C->gvn_replace_by(projs.fallthrough_proj, in(TypeFunc::Control));
+  phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
   if (projs.fallthrough_catchproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_catchproj, in(TypeFunc::Control));
+    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
   }
   if (projs.fallthrough_memproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_memproj, in(TypeFunc::Memory));
+    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
   }
   if (projs.catchall_memproj != nullptr) {
-    C->gvn_replace_by(projs.catchall_memproj, C->top());
+    phase->replace_node(projs.catchall_memproj, C->top());
   }
   if (projs.fallthrough_ioproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_ioproj, in(TypeFunc::I_O));
+    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
   }
   assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
   assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
   if (projs.resproj != nullptr) {
-    C->gvn_replace_by(projs.resproj, con_node);
+    phase->replace_node(projs.resproj, con_node);
   }
-  C->gvn_replace_by(this, C->top());
+  phase->replace_node(this, C->top());
   C->remove_macro_node(this);
   disconnect_inputs(C);
   return nullptr;

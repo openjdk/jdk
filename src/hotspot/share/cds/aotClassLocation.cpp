@@ -47,6 +47,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+Array<ClassPathZipEntry*>* AOTClassLocationConfig::_dumptime_jar_files = nullptr;
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
 
@@ -270,7 +271,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   cs->_manifest_length = manifest_length;
   cs->_check_time = check_time;
   cs->_from_cpattr = from_cpattr;
-  cs->_timestamp = timestamp;
+  cs->_timestamp = check_time ? timestamp : 0;
   cs->_filesize = filesize;
   cs->_file_type = type;
   cs->_group = group;
@@ -477,6 +478,13 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
                                                                tmp_array.length(), CHECK);
   for (int i = 0; i < tmp_array.length(); i++) {
     _class_locations->at_put(i, tmp_array.at(i));
+  }
+
+  _dumptime_jar_files = MetadataFactory::new_array<ClassPathZipEntry*>(ClassLoaderData::the_null_class_loader_data(),
+                                                                       tmp_array.length(), CHECK);
+  for (int i = 1; i < tmp_array.length(); i++) {
+    ClassPathZipEntry* jar_file = ClassLoader::create_class_path_zip_entry(tmp_array.at(i)->path());
+    _dumptime_jar_files->at_put(i, jar_file); // may be null if the path is not a valid JAR file
   }
 
   const char* lcp = find_lcp(all_css.boot_and_app_cp(), _dumptime_lcp_len);
@@ -691,6 +699,29 @@ void AOTClassLocationConfig::check_nonempty_dirs() const {
   if (has_nonempty_dir) {
     vm_exit_during_cds_dumping("Cannot have non-empty directory in paths", nullptr);
   }
+}
+
+// It's possible to use reflection+setAccessible to call into ClassLoader::defineClass() to
+// pretend that a dynamically generated class comes from a JAR file in the classpath.
+// Detect such classes so that they can be excluded from the archive.
+bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, InstanceKlass* ik) {
+  if (1 <= classpath_index && classpath_index < length()) {
+    ClassPathZipEntry *zip = _dumptime_jar_files->at(classpath_index);
+    if (zip != nullptr) {
+      JavaThread* current = JavaThread::current();
+      ResourceMark rm(current);
+      const char* const class_name = ik->name()->as_C_string();
+      const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
+                                                                          ik->name()->utf8_length());
+      if (!zip->has_entry(current, file_name)) {
+        log_warning(cds)("class %s cannot be archived because it was not defined from %s as claimed",
+                         class_name, zip->name());
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
@@ -989,8 +1020,14 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
-      log_error(cds)("%s%s", mismatch_msg, hint_msg);
-      MetaspaceShared::unrecoverable_loading_error();
+      if (CDSConfig::is_dumping_final_static_archive()) {
+        log_error(cds)("class path and/or module path are not compatible with the "
+                       "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
+        vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
+      } else {
+        log_error(cds)("%s%s", mismatch_msg, hint_msg);
+        MetaspaceShared::unrecoverable_loading_error();
+      }
     } else {
       log_warning(cds)("%s%s", mismatch_msg, hint_msg);
     }

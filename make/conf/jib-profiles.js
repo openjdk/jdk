@@ -207,7 +207,8 @@ var getJibProfiles = function (input) {
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
         "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
-        "{,**/}.git"
+        "{,**/}.git",
+        "{,**/}core.[0-9]*"
     ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
@@ -390,8 +391,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "23";
-    common.boot_jdk_build_number = "37";
+    common.boot_jdk_version = "24";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -1087,14 +1088,14 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc13.2.0-OL6.4+1.0",
+        linux_x64: "gcc14.2.0-OL6.4+1.0",
         macosx: "Xcode14.3.1+1.0",
-        windows_x64: "VS2022-17.6.5+1.0",
-        linux_aarch64: "gcc13.2.0-OL7.6+1.0",
+        windows_x64: "VS2022-17.13.2+1.0",
+        linux_aarch64: "gcc14.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc13.2.0-Fedora_41+1.0",
-        linux_s390x: "gcc13.2.0-Fedora_41+1.0",
-        linux_riscv64: "gcc13.2.0-Fedora_41+1.0"
+        linux_ppc64le: "gcc14.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc14.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc14.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1236,7 +1237,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "9.0.0+1.0",
-            module: "graphviz-" + input.target_platform,
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },

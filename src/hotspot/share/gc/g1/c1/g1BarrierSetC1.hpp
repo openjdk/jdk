@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
   CodeBlob* pre_barrier_c1_runtime_code_blob() { return _pre_barrier_c1_runtime_code_blob; }
   CodeBlob* post_barrier_c1_runtime_code_blob() { return _post_barrier_c1_runtime_code_blob; }
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };
 
 #endif // SHARE_GC_G1_C1_G1BARRIERSETC1_HPP

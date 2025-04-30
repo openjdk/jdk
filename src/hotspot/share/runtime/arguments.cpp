@@ -91,7 +91,7 @@ size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
-bool   Arguments::_sun_java_launcher_is_altjvm  = false;
+bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -331,9 +331,7 @@ bool Arguments::is_incompatible_cds_internal_module_property(const char* propert
 bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
   if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
-        matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
-        matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
+    if (matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
@@ -343,7 +341,9 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
 
     if (!check_for_cds) {
       // CDS notes: these properties are supported by CDS archived full module graph.
-      if (matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+      if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
+          matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
+          matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
           matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
           matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
         return true;
@@ -355,7 +355,7 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
 
 // Process java launcher properties.
 void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
-  // See if sun.java.launcher or sun.java.launcher.is_altjvm is defined.
+  // See if sun.java.launcher is defined.
   // Must do this before setting up other system properties,
   // as some of them may depend on launcher type.
   for (int index = 0; index < args->nOptions; index++) {
@@ -366,10 +366,8 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
       process_java_launcher_argument(tail, option->extraInfo);
       continue;
     }
-    if (match_option(option, "-Dsun.java.launcher.is_altjvm=", &tail)) {
-      if (strcmp(tail, "true") == 0) {
-        _sun_java_launcher_is_altjvm = true;
-      }
+    if (match_option(option, "-XX:+ExecutingUnitTests")) {
+      _executing_unit_tests = true;
       continue;
     }
   }
@@ -526,6 +524,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+#ifdef _LP64
+  { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(26), JDK_Version::undefined() },
+#endif
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -1271,10 +1272,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     } else {
         warning("The java.compiler system property is obsolete and no longer supported.");
     }
-  } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0) {
-    // sun.java.launcher.is_altjvm property is
-    // private and is processed in process_sun_java_launcher_properties();
-    // the sun.java.launcher property is passed on to the java application
   } else if (strcmp(key, "sun.boot.library.path") == 0) {
     // append is true, writable is true, internal is false
     PropertyList_unique_add(&_system_properties, key, value, AppendProperty,
@@ -1365,11 +1362,19 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    jio_fprintf(defaultStream::error_stream(),
-      "Class data sharing is inconsistent with other specified options.\n");
-    vm_exit_during_initialization("Unable to use shared archive", message);
+    log_error(cds)("%s is incompatible with other specified options.",
+                   CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
+    if (CDSConfig::new_aot_flags_used()) {
+      vm_exit_during_initialization("Unable to use AOT cache", message);
+    } else {
+      vm_exit_during_initialization("Unable to use shared archive", message);
+    }
   } else {
-    log_info(cds)("Unable to use shared archive: %s", message);
+    if (CDSConfig::new_aot_flags_used()) {
+      log_warning(cds)("Unable to use AOT cache: %s", message);
+    } else {
+      log_info(cds)("Unable to use shared archive: %s", message);
+    }
     UseSharedSpaces = false;
   }
 }
@@ -1755,8 +1760,8 @@ bool Arguments::created_by_java_launcher() {
   return strcmp(DEFAULT_JAVA_LAUNCHER, _sun_java_launcher) != 0;
 }
 
-bool Arguments::sun_java_launcher_is_altjvm() {
-  return _sun_java_launcher_is_altjvm;
+bool Arguments::executing_unit_tests() {
+  return _executing_unit_tests;
 }
 
 //===========================================================================================================
@@ -2597,9 +2602,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
         ret = true;
-      } else if (strcmp(tail, ":async") == 0) {
-        LogConfiguration::set_async_mode(true);
-        ret = true;
+      } else if (strncmp(tail, ":async", strlen(":async")) == 0) {
+        const char* async_tail = tail + strlen(":async");
+        ret = LogConfiguration::parse_async_argument(async_tail);
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
         assert(ret, "-Xlog without arguments should never fail to parse");
@@ -3700,7 +3705,7 @@ jint Arguments::apply_ergo() {
     CompressedKlassPointers::pre_initialize();
   }
 
-  CDSConfig::initialize();
+  CDSConfig::ergo_initialize();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
@@ -3781,18 +3786,21 @@ jint Arguments::apply_ergo() {
       }
     }
     FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
-
-    if (!FLAG_IS_DEFAULT(UseVectorStubs) && UseVectorStubs) {
-      warning("Disabling UseVectorStubs since EnableVectorSupport is turned off.");
-    }
-    FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
 #endif // COMPILER2_OR_JVMCI
+
+#ifdef COMPILER2
+  if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
+    warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+#endif // COMPILER2
 
   if (log_is_enabled(Info, perf, class, link)) {
     if (!UsePerfData) {
       warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
-      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+      LogConfiguration::disable_tags(false, LOG_TAGS(perf, class, link));
+      assert(!log_is_enabled(Info, perf, class, link), "sanity");
     }
   }
 

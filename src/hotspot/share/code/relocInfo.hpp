@@ -574,7 +574,7 @@ class RelocIterator : public StackObj {
 
   void set_has_current(bool b) {
     _datalen = !b ? -1 : 0;
-    debug_only(_data = nullptr);
+    DEBUG_ONLY(_data = nullptr);
   }
   void set_current(relocInfo& ri) {
     _current = &ri;

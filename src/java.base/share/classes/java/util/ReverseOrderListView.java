@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,6 @@ class ReverseOrderListView<E> implements List<E> {
         return ArraysSupport.reverse(base.toArray());
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         return ArraysSupport.toArrayReversed(base, a);
     }
