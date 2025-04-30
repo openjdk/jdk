@@ -70,7 +70,6 @@ class EventLog : public CHeapObj<mtInternal> {
   // Print log names (for help output of VM.events).
   virtual void print_names(outputStream* out) const = 0;
 
-  static EventLog* volatile* next_ptr(EventLog& el) { return &el._next; }
 };
 
 
@@ -218,6 +217,8 @@ class Events : AllStatic {
   friend class EventLog;
 
  private:
+  static EventLog* _logs;
+
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;
 
