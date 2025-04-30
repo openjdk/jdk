@@ -60,9 +60,15 @@ public class dispose004a {
     }
 
     //====================================================== test program
+
+    static Thread mainThread = null;
+    static Thread test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+
+        mainThread = Thread.currentThread();
 
         for (int i=0; i<argv.length; i++) {
             if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
@@ -95,8 +101,8 @@ public class dispose004a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threaddispose004a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threaddispose004a("testedThread"));
                          log1("       thread2 is created");
 
                          label:

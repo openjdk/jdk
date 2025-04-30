@@ -169,6 +169,7 @@ public class stop001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
 
@@ -196,8 +197,6 @@ public class stop001 {
 
             String threadName = "Thread2";
 
-            List            allThreads    = null;
-            ListIterator    listIterator  = null;
             List            classes       = null;
             ReferenceType mainthreadClass = null;
             ObjectReference throwableObj  = null;
@@ -207,7 +206,6 @@ public class stop001 {
 
                 log2("getting ThreadReference objects and setting up breakponts");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(debuggeeName);
                     mainthreadClass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -216,19 +214,7 @@ public class stop001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "thread2", threadName);
             }
 
 

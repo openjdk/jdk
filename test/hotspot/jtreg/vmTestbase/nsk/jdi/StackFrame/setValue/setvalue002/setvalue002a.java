@@ -59,7 +59,7 @@ public class setvalue002a {
 
     //====================================================== test program
 
-    static public Thread test_thread = null;
+    static Thread test_thread = null;
 
     //----------------------------------------------------   main method
 
@@ -97,7 +97,7 @@ public class setvalue002a {
 
                 case 0:
                          test_thread =
-                                 JDIThreadFactory.newThread(new Threadsetvalue002a("testedThread"));
+                             JDIThreadFactory.newThread(new Threadsetvalue002a("testedThread"));
                          log1("       thread2 is created");
 
                          label:

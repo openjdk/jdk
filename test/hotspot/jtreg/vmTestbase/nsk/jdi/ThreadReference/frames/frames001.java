@@ -189,6 +189,7 @@ public class frames001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -226,9 +227,6 @@ public class frames001 {
             String bpLine2 = "breakpointLineNumber2";
             String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             BreakpointRequest breakpRequest1 = null;
@@ -248,7 +246,6 @@ public class frames001 {
 
                 log2("getting ThreadReference objects and setting up breakponts");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -257,19 +254,7 @@ public class frames001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "test_thread", threadName);
 
                 log2("setting up breakpoints");
 

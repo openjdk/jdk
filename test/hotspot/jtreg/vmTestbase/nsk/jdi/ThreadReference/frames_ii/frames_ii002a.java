@@ -59,6 +59,9 @@ public class frames_ii002a {
     }
 
     //====================================================== test program
+
+    static Threadframes_ii002a test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,7 +97,7 @@ public class frames_ii002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadframes_ii002a test_thread =
+                         test_thread =
                              new Threadframes_ii002a("testedThread");
                          log1("       thread2 is created");
 

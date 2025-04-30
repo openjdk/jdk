@@ -206,6 +206,7 @@ public class dispose005 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -242,9 +243,6 @@ public class dispose005 {
             //String bpLine2 = "breakpointLineNumber2";
             //String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             BreakpointRequest breakpRequest1 = null;
@@ -259,7 +257,6 @@ public class dispose005 {
 
                 log2("getting ThreadReference object");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                     classType   = (ClassType) testedclass;

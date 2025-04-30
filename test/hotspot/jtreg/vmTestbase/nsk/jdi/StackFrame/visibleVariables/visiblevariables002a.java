@@ -58,6 +58,9 @@ public class visiblevariables002a {
     }
 
     //====================================================== test program
+
+    static Thread test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -93,7 +96,7 @@ public class visiblevariables002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
+                         test_thread =
                              JDIThreadFactory.newThread(new Threadvisiblevariables002a("testedThread"));
                          log1("       thread2 is created");
 

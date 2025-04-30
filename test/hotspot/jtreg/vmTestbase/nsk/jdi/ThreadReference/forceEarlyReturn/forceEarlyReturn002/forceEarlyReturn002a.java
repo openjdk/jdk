@@ -59,12 +59,14 @@ public class forceEarlyReturn002a extends AbstractJDIDebuggee {
     public String[] doInit(String args[]) {
         args = super.doInit(args);
 
-        Thread.currentThread().setName(mainThreadName);
+        mainThread = Thread.currentThread();
+        mainThread.setName(mainThreadName);
 
         return args;
     }
 
     public static String mainThreadName = "MainThread";
+    public static Thread mainThread = null;
 
     // call testClassMethod()
     public final static String COMMAND_CALL_OBJECT_METHOD = "callObjectMethod";

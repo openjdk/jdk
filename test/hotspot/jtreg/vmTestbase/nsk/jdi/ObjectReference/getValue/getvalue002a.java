@@ -60,6 +60,7 @@ public class getvalue002a {
 
     //====================================================== test program
 
+    static getvalue002aThread test_thread = null;
     static getvalue002aTestClass obj = new getvalue002aTestClass();
 
     //----------------------------------------------------   main method
@@ -97,8 +98,7 @@ public class getvalue002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         getvalue002aThread test_thread =
-                             new getvalue002aThread("testedThread");
+                         test_thread = new getvalue002aThread("testedThread");
                          log1("       thread2 is created");
 
                          label:

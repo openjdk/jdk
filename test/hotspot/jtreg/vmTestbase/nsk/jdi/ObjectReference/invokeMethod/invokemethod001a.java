@@ -60,6 +60,9 @@ public class invokemethod001a {
     }
 
     //====================================================== test program
+
+    static Threadinvokemethod001a test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -95,8 +98,7 @@ public class invokemethod001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadinvokemethod001a test_thread =
-                             new Threadinvokemethod001a("testedThread");
+                         test_thread = new Threadinvokemethod001a("testedThread");
                          log1("       thread2 is created");
 
                          label:

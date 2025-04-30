@@ -60,6 +60,9 @@ public class referencetype001a {
     }
 
     //====================================================== test program
+
+    static Threadreferencetype001a test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -95,8 +98,7 @@ public class referencetype001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadreferencetype001a test_thread =
-                             new Threadreferencetype001a("testedThread");
+                         test_thread = new Threadreferencetype001a("testedThread");
                          log1("       thread2 is created");
 
                          label:

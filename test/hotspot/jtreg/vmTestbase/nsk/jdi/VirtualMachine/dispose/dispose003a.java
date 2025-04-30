@@ -59,6 +59,9 @@ public class dispose003a {
     }
 
     //====================================================== test program
+
+    static Thread test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,8 @@ public class dispose003a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threaddispose003a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threaddispose003a("testedThread"));
                          log1("       thread2 is created");
 
                          label:

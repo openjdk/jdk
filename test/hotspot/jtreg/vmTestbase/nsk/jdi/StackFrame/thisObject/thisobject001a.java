@@ -59,6 +59,9 @@ public class thisobject001a {
     }
 
     //====================================================== test program
+
+    static Threadthisobject001a test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,7 @@ public class thisobject001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadthisobject001a test_thread =
-                             new Threadthisobject001a("testedThread");
+                         test_thread = new Threadthisobject001a("testedThread");
                          log1("       thread2 is created");
 
                          label:

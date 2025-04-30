@@ -58,6 +58,9 @@ public class frame001a {
     }
 
     //====================================================== test program
+
+    static Thread test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -93,8 +96,8 @@ public class frame001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threadframe001a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threadframe001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:

@@ -59,6 +59,8 @@ public class invokemethod001a {
 
     //====================================================== test program
 
+    static Thread test_thread = null;
+
     //    String mName =                        //!!!!!!!!!!!!!!!!!!!!!!
     //    "nsk.jdi.ClassType.invokeMethod";
 
@@ -98,8 +100,8 @@ public class invokemethod001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threadinvokemethod001a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threadinvokemethod001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
