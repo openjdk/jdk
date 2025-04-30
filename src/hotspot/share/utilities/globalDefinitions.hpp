@@ -269,6 +269,9 @@ inline jdouble jdouble_cast(jlong x);
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
 
+// for timer info max values which include all bits, 0xffffffffffffffff
+const jlong all_bits_jlong = ~jlong(0);
+
 //-------------------------------------------
 // Constant for jdouble
 const jlong min_jlongDouble = CONST64(0x0000000000000001);

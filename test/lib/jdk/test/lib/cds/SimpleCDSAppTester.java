@@ -173,4 +173,9 @@ public class SimpleCDSAppTester {
         (new Tester(name)).runAOTWorkflow();
         return this;
     }
+
+    public SimpleCDSAppTester run(String args[])  throws Exception {
+        (new Tester(name)).run(args);
+        return this;
+    }
 }
