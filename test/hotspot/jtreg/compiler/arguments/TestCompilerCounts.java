@@ -27,7 +27,6 @@
  * @bug 8356000
  * @requires vm.flagless
  * @requires vm.debug
- * @requires os.arch=="amd64" | os.arch=="x86_64"
  *
  * @summary Test compiler counts selection, verified by internal assertions
  * @run driver compiler.arguments.TestCompilerCounts
