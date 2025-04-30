@@ -1735,6 +1735,9 @@ public final class String
         return Character.offsetByCodePoints(this, index, codePointOffset);
     }
 
+    /**
+     * {@inheritDoc CharSequence}
+     */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());

@@ -483,6 +483,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                                             index, codePointOffset);
     }
 
+    /**
+     * {@inheritDoc CharSequence}
+     */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin)
     {
