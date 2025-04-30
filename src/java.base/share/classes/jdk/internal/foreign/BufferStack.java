@@ -177,7 +177,7 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
     public static BufferStack of(MemoryLayout layout) {
         Objects.requireNonNull(layout);
         long size = layout.byteAlignment() > 8
-                ? layout.byteSize() + layout.byteAlignment() - 1
+                ? Utils.alignUp(layout.byteSize(), layout.byteAlignment())
                 : layout.byteSize();
         return of(size);
     }
