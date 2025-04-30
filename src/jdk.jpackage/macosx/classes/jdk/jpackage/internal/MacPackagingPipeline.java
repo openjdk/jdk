@@ -107,6 +107,8 @@ final class MacPackagingPipeline {
                     return new TaskContextProxy(appContext, false, isRuntimeInstaller || withPredefinedAppImage);
                 })
                 .appImageLayoutForPackaging(MacPackagingPipeline::packagingLayout)
+                .task(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
+                        .packageAction(MacPackagingPipeline::runPostAppImageUserScript).add()
                 .task(CopyAppImageTaskID.COPY)
                         .copyAction(MacPackagingPipeline::copyAppImage).add()
                 .task(MacBuildApplicationTaskID.RUNTIME_INFO_PLIST)
@@ -215,6 +217,12 @@ final class MacPackagingPipeline {
             Files.createDirectories(runtimeMacOSDir);
             Files.copy(jli, runtimeMacOSDir.resolve(jliName));
         }
+    }
+
+    private static void runPostAppImageUserScript(PackageBuildEnv<Package, AppImageLayout> env) throws IOException {
+        PackagingPipeline.runPostAppImageUserScript(new PackageBuildEnv<>(
+                BuildEnv.withAppImageDir(env.env(), env.env().appImageDir().resolve(env.envLayout().rootDirectory())),
+                env.pkg(), env.pkg().appImageLayout(), env.outputDir()));
     }
 
     private static void writePackageFile(PackageBuildEnv<Package, ApplicationLayout> env) throws IOException {
