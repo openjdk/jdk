@@ -146,4 +146,4 @@ jobs:
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
           bundle-suffix: ${{ inputs.bundle-suffix }}
-          static-suffix: ${{ static.bundle-suffix }}
+          static-suffix: ${{ inputs.static-suffix }}
