@@ -282,7 +282,7 @@ public class filter_s002 extends JDIBase {
             switch (i) {
 
               case 0:
-                     ThreadReference thread1 = debuggee.threadByNameOrThrow("thread1");
+                     ThreadReference thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "thread1");
                      eventRequest1 = setting23StepRequest(thread1, testedClassName1,
                                               EventRequest.SUSPEND_NONE, property1);
 

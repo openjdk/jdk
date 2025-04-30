@@ -482,17 +482,14 @@ bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   }
 
   if (_heap->cancelled_gc()) {
-    // It's possible the gc cycle was cancelled after the last time
-    // the collection checked for cancellation. In which case, the
-    // old gc cycle is still completed, and we have to deal with this
-    // cancellation. We set the degeneration point to be outside
-    // the cycle because if this is an allocation failure, that is
-    // what must be done (there is no degenerated old cycle). If the
-    // cancellation was due to a heuristic wanting to start a young
-    // cycle, then we are not actually going to a degenerated cycle,
-    // so the degenerated point doesn't matter here.
-    check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle);
-    if (cause == GCCause::_shenandoah_concurrent_gc) {
+    // It's possible the gc cycle was cancelled after the last time the collection checked for cancellation. In which
+    // case, the old gc cycle is still completed, and we have to deal with this cancellation. We set the degeneration
+    // point to be outside the cycle because if this is an allocation failure, that is what must be done (there is no
+    // degenerated old cycle). If the cancellation was due to a heuristic wanting to start a young cycle, then we are
+    // not actually going to a degenerated cycle, so don't set the degeneration point here.
+    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle);
+    } else if (cause == GCCause::_shenandoah_concurrent_gc) {
       _heap->shenandoah_policy()->record_interrupted_old();
     }
     return false;
