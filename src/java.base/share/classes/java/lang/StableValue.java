@@ -613,9 +613,9 @@ public sealed interface StableValue<T>
      * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param size       the size of the allowed inputs in the continuous
-     *                   interval {@code [0, size)}
-     * @param underlying IntFunction used to compute cached values
+     * @param size       the upper bound of the range {@code [0, size)} indicating
+     *                   the allowed inputs
+     * @param underlying {@code IntFunction} used to compute cached values
      * @param <R>        the type of results delivered by the returned IntFunction
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
