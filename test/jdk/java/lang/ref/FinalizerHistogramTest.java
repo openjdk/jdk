@@ -50,7 +50,6 @@ public class FinalizerHistogramTest {
     static final int OBJECTS_COUNT = 1000;
 
     static WhiteBox wb;
-    static boolean refProResult;
 
     static class MyObject {
         public MyObject() {
@@ -74,8 +73,12 @@ public class FinalizerHistogramTest {
             System.out.println("Objects intialized: " + initializedCount.get());
             wb = WhiteBox.getWhiteBox();
             wb.fullGC();
-            refProResult = wb.waitForReferenceProcessing();
-            System.out.println("waitForReferenceProcessing returned: " + refProResult);
+            boolean refProResult;
+            do {
+                refProResult = wb.waitForReferenceProcessing();
+                System.out.println("waitForReferenceProcessing returned: " + refProResult);
+            } while (refProResult);
+
             while(trappedCount.get() < 1);
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
