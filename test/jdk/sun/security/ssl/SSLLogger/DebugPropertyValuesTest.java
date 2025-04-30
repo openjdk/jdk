@@ -101,13 +101,13 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "sslctx", "trustmanager", "verbose")),
                 // allow expand option for more verbose output
                 Arguments.of(List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("handshake", "handshake-expand", "verbose")), // TODO -- why verbose ?
+                        List.of("handshake", "handshake-expand", "ssl", "verbose")), // TODO -- why verbose ?
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
-                        List.of("record", "record-expand")),
+                        List.of("record", "record-expand", "ssl")),
                 // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
-                        List.of("record")),
+                        List.of("record", "ssl")),
                 // example of test where no "ssl" value is passed
                 // handshake debugging with verbose mode
                 // only verbose gets printed. Needs fixing (JDK-8044609)
@@ -128,18 +128,18 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "sslctx", "trustmanager", "verbose")),
                 // plaintext is valid for record option
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
-                        List.of("plaintext", "record")),
+                        List.of("plaintext", "record", "ssl")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager"),
-                        List.of("trustmanager")),
+                        List.of("ssl", "trustmanager")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:sslctx"),
-                        List.of("sslctx")),
+                        List.of("ssl", "sslctx")),
                 // help message test. Should exit without running test
                 Arguments.of(List.of("-Djavax.net.debug=help"),
                         List.of("help")),
                 // add in javax.net.debug sanity test
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager",
                                 "-Djava.security.debug=all"),
-                        List.of("javax.net.debug", "trustmanager")),
+                        List.of("javax.net.debug", "ssl", "trustmanager")),
                 // empty invokes System.Logger use
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),

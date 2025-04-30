@@ -59,108 +59,75 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public final class SSLLogger {
     private static final System.Logger logger;
-    private static final String property;
     // high level boolean to track whether "all" or "ssl" option
     // is specified. Further checks may be necessary to determine
     // if data is logged
     public static final boolean logging;
-    static EnumSet<DebugOption> activeComponents = EnumSet.noneOf(DebugOption.class);
 
     static {
         String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
-                property = "";
                 logger = System.getLogger("javax.net.ssl");
-                activeComponents.add(DebugOption.EMPTYALL);
+                Opt.ALL.on = true;
             } else {
-                property = p.toLowerCase(Locale.ENGLISH);
-                if (property.contains("help")) {
+                p = p.toLowerCase(Locale.ENGLISH);
+                if (p.contains("help")) {
+                    // help option calls exit
                     help();
                 }
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
-                if (property.contains("all")) {
-                    activeComponents.add(DebugOption.EMPTYALL);
+                if (p.contains("all")) {
+                    Opt.ALL.on = true;
                 } else {
-                    String tmpProperty = property;
-                    for (DebugOption o : DebugOption.values()) {
-                        if (tmpProperty.contains(o.component)) {
-                            activeComponents.add(o);
-                            // remove the pattern to avoid it being reused
+                    for (Opt o : Opt.values()) {
+                        // deal with special "_" options later
+                        if (o.component.contains("_")) {
+                            continue;
+                        }
+
+                        if (p.contains(o.component)) {
+                            o.on = true;
+                            // remove pattern to avoid it being reused
                             // e.g. "ssl,sslctx" parsing
-                            tmpProperty = tmpProperty.replaceFirst(o.component, "");
+                            p = p.replaceFirst(o.component, "");
                         }
                     }
-                    // some rules to check
-                    if ((activeComponents.contains(DebugOption.PLAINTEXT)
-                            || activeComponents.contains(DebugOption.PACKET))
-                            && !activeComponents.contains(DebugOption.RECORD)) {
-                        activeComponents.remove(DebugOption.PLAINTEXT);
-                        activeComponents.remove(DebugOption.PACKET);
+
+                    if (Opt.HANDSHAKE.on && p.contains("verbose")) {
+                        Opt.HANDSHAKE_VERBOSE.on = true;
                     }
 
-                    if (activeComponents.contains(DebugOption.VERBOSE)
-                            && !activeComponents.contains(DebugOption.HANDSHAKE)) {
-                        activeComponents.remove(DebugOption.VERBOSE);
+                    if (Opt.RECORD.on) {
+                        if (p.contains("packet")) {
+                            Opt.RECORD_PACKET.on = true;
+                        }
+                        if (p.contains("plaintext")) {
+                            Opt.RECORD_PLAINTEXT.on = true;
+                        }
+                    }
+                    // finally if only "ssl" component is declared, then
+                    // enable all subcomponents
+                    if (Opt.SSL.on && !Opt.isAnySubComponentEnabled()) {
+                        Opt.enableAllSubComponents();
                     }
                 }
             }
-            logging = activeComponents.contains(DebugOption.EMPTYALL)
-                    || activeComponents.contains(DebugOption.SSL);
+            // javax.net.debug would be misconfigured property wrt
+            // logging if value didn't contain "all" or "ssl"
+            logging = Opt.ALL.on || Opt.SSL.on;
         } else {
-            property = null;
             logger = null;
             logging = false;
         }
     }
 
     /**
-     * Return true if the "javax.net.debug" property contains the
-     * debug check points, "all" or if the System.Logger is used.
-     *
-     * Specify all string tokens required when calling this method.
-     * E.g. since "plaintext" is a widened option of the "record" option,
-     * the call needs to be isOn("ssl,record,plaintext") to ensure
-     * correct use. It also ensures that the user specifies the correct
-     * system property value syntax as per help menu.
+     * Return true if the specific DebugOption is enabled or ALL is enabled
      */
-    public static boolean isOn(String checkPoints) {
-        if (!logging) {
-            return false;
-        }
 
-        if (activeComponents.contains(DebugOption.EMPTYALL)) {
-            // System.Logger in use or property = "all"
-            return true;
-        }
-
-        // log any call site using "ssl" value unless
-        // javax.net.debug value contains sub-component option
-        if (checkPoints.equals("ssl")) {
-            return !DebugOption.isSslFilteringEnabled();
-        }
-
-        if (activeComponents.size() == 1 && !containsWidenOption(checkPoints)) {
-            // in ssl mode, we always log except for widen options
-            return true;
-        }
-
-        String[] options = checkPoints.split(",");
-        for (String option : options) {
-            option = option.trim().toLowerCase(Locale.ROOT);
-            if (!property.contains(option)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean containsWidenOption(String options) {
-        return options.contains("verbose")
-                || options.contains("plaintext")
-                || options.contains("packet")
-                || options.contains("expand");
+    public static boolean isOn(Opt option) {
+        return Opt.ALL.on || option.on;
     }
 
     public static void severe(String msg, Object... params) {
@@ -211,8 +178,8 @@ public final class SSLLogger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(String option, String s) {
-        if (SSLLogger.logging && SSLLogger.isOn(option)) {
+    public static boolean logWarning(Opt option, String s) {
+        if (SSLLogger.logging && option.on) {
             SSLLogger.warning(s);
         }
         return false;
@@ -250,36 +217,53 @@ public final class SSLLogger {
         System.exit(0);
     }
 
-    private enum DebugOption {
-        EMPTYALL,
+    public enum Opt {
+        ALL,
         DEFAULTCTX,
         HANDSHAKE,
+        HANDSHAKE_VERBOSE,
         KEYMANAGER,
         RECORD,
+        RECORD_PACKET,
+        RECORD_PLAINTEXT,
         RESPMGR,
         SESSION,
         SSLCTX,
         TRUSTMANAGER,
-        VERBOSE,
-        PLAINTEXT,
-        PACKET,
         SSL; // define ssl last, helps with sslctx matching later.
 
         final String component;
+        boolean on;
 
-        DebugOption() {
+        Opt() {
             this.component = this.toString().toLowerCase(Locale.ROOT);
         }
 
-        private static boolean isSslFilteringEnabled() {
-            return activeComponents.contains(DEFAULTCTX)
-                    || activeComponents.contains(HANDSHAKE)
-                    || activeComponents.contains(KEYMANAGER)
-                    || activeComponents.contains(RECORD)
-                    || activeComponents.contains(RESPMGR)
-                    || activeComponents.contains(SESSION)
-                    || activeComponents.contains(SSLCTX)
-                    || activeComponents.contains(TRUSTMANAGER);
+        public static boolean isAnySubComponentEnabled() {
+            for (Opt option : subComponentList()) {
+                if (option.on) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void enableAllSubComponents() {
+            for (Opt option: subComponentList()) {
+                option.on = true;
+            }
+        }
+
+        public static List<Opt> subComponentList() {
+            List<Opt> subComponents = new ArrayList<>();
+            for (Opt option : values()) {
+                if (option.component.contains("_")
+                        || option.equals(ALL) || option.equals(SSL)) {
+                    continue;
+                }
+                subComponents.add(option);
+            }
+            return subComponents;
         }
     }
 
