@@ -25,12 +25,11 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestBufferStackStress
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestBufferStackStress
  */
 
 import jdk.internal.foreign.BufferStack;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -40,6 +39,7 @@ import java.util.stream.IntStream;
 
 import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestBufferStackStress extends NativeTestHelper {
 
@@ -55,7 +55,7 @@ public class TestBufferStackStress extends NativeTestHelper {
                                 // Try to assert no two vThreads get allocated the same stack space.
                                 MemorySegment segment = arena.allocate(JAVA_LONG);
                                 JAVA_LONG.varHandle().setVolatile(segment, 0L, threadId);
-                                Assert.assertEquals(threadId, (long) JAVA_LONG.varHandle().getVolatile(segment, 0L));
+                                assertEquals(threadId, (long) JAVA_LONG.varHandle().getVolatile(segment, 0L));
                             }
                         }
                         Thread.yield(); // make sure the driver thread gets a chance.
@@ -64,7 +64,7 @@ public class TestBufferStackStress extends NativeTestHelper {
         Thread.sleep(Duration.of(10, SECONDS));
         Arrays.stream(vThreads).forEach(
                 thread -> {
-                    Assert.assertTrue(thread.isAlive());
+                    assertTrue(thread.isAlive());
                     thread.interrupt();
                 });
     }

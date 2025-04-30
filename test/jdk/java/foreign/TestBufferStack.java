@@ -25,12 +25,11 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStack
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestBufferStack
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestBufferStack
  */
 
 import jdk.internal.foreign.BufferStack;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -41,8 +40,10 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.ValueLayout.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestBufferStack extends NativeTestHelper {
+
     @Test
     public void testScopedAllocation() {
         int stackSize = 128;
@@ -51,47 +52,47 @@ public class TestBufferStack extends NativeTestHelper {
         try (Arena frame1 = stack.pushFrame(3 * JAVA_INT.byteSize(), JAVA_INT.byteAlignment())) {
             // Segments have expected sizes and are accessible and allocated consecutively in the same scope.
             MemorySegment segment11 = frame1.allocate(JAVA_INT);
-            Assert.assertEquals(segment11.scope(), frame1.scope());
-            Assert.assertEquals(segment11.byteSize(), JAVA_INT.byteSize());
+            assertEquals(frame1.scope(), segment11.scope());
+            assertEquals(JAVA_INT.byteSize(), segment11.byteSize());
             segment11.set(JAVA_INT, 0, 1);
             stackSegment = segment11.reinterpret(stackSize);
 
             MemorySegment segment12 = frame1.allocate(JAVA_INT);
-            Assert.assertEquals(segment12.address(), segment11.address() + JAVA_INT.byteSize());
-            Assert.assertEquals(segment12.byteSize(), JAVA_INT.byteSize());
-            Assert.assertEquals(segment12.scope(), frame1.scope());
+            assertEquals(segment11.address() + JAVA_INT.byteSize(), segment12.address());
+            assertEquals(JAVA_INT.byteSize(), segment12.byteSize());
+            assertEquals(frame1.scope(), segment12.scope());
             segment12.set(JAVA_INT, 0, 1);
 
             MemorySegment segment2;
             try (Arena frame2 = stack.pushFrame(JAVA_LONG.byteSize(), JAVA_LONG.byteAlignment())) {
-                Assert.assertNotEquals(frame2.scope(), frame1.scope());
+                assertNotEquals(frame1.scope(), frame2.scope());
                 // same here, but a new scope.
                 segment2 = frame2.allocate(JAVA_LONG);
-                Assert.assertEquals(segment2.address(), segment12.address() + /*segment12 size + frame 1 spare + alignment constraint*/ 3 * JAVA_INT.byteSize());
-                Assert.assertEquals(segment2.byteSize(), JAVA_LONG.byteSize());
-                Assert.assertEquals(segment2.scope(), frame2.scope());
+                assertEquals( segment12.address() + /*segment12 size + frame 1 spare + alignment constraint*/ 3 * JAVA_INT.byteSize(), segment2.address());
+                assertEquals(JAVA_LONG.byteSize(), segment2.byteSize());
+                assertEquals(frame2.scope(), segment2.scope());
                 segment2.set(JAVA_LONG, 0, 1);
 
                 // Frames must be closed in stack order.
-                Assert.assertThrows(IllegalStateException.class, frame1::close);
+                assertThrows(IllegalStateException.class, frame1::close);
             }
             // Scope is closed here, inner segments throw.
-            Assert.assertThrows(IllegalStateException.class, () -> segment2.get(JAVA_INT, 0));
+            assertThrows(IllegalStateException.class, () -> segment2.get(JAVA_INT, 0));
             // A new stack frame allocates at the same location (but different scope) as the previous did.
             try (Arena frame3 = stack.pushFrame(2 * JAVA_INT.byteSize(), JAVA_INT.byteAlignment())) {
                 MemorySegment segment3 = frame3.allocate(JAVA_INT);
-                Assert.assertEquals(segment3.scope(), frame3.scope());
-                Assert.assertEquals(segment3.address(), segment12.address() + 2 * JAVA_INT.byteSize());
+                assertEquals(frame3.scope(), segment3.scope());
+                assertEquals(segment12.address() + 2 * JAVA_INT.byteSize(), segment3.address());
             }
 
             // Fallback arena behaves like regular stack frame.
             MemorySegment outOfStack;
             try (Arena hugeFrame = stack.pushFrame(1024, 4)) {
                 outOfStack = hugeFrame.allocate(4);
-                Assert.assertEquals(outOfStack.scope(), hugeFrame.scope());
-                Assert.assertTrue(outOfStack.asOverlappingSlice(stackSegment).isEmpty());
+                assertEquals(hugeFrame.scope(), outOfStack.scope());
+                assertTrue(outOfStack.asOverlappingSlice(stackSegment).isEmpty());
             }
-            Assert.assertThrows(IllegalStateException.class, () -> outOfStack.get(JAVA_INT, 0));
+            assertThrows(IllegalStateException.class, () -> outOfStack.get(JAVA_INT, 0));
 
             // Outer segments are still accessible.
             segment11.get(JAVA_INT, 0);
@@ -120,8 +121,8 @@ public class TestBufferStack extends NativeTestHelper {
         // Each downcall and upcall require 48 bytes of stack.
         // After five allocations we start falling back.
         MemorySegment point = recurse(10);
-        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 0), 12.0);
-        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 1), 11.0);
-        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 2), 10.0);
+        assertEquals( 12.0, point.getAtIndex(C_DOUBLE, 0));
+        assertEquals(11.0, point.getAtIndex(C_DOUBLE, 1));
+        assertEquals( 10.0, point.getAtIndex(C_DOUBLE, 2));
     }
 }
