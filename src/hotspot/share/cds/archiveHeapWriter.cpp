@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -607,18 +608,27 @@ class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
   oop _src_obj;
   address _buffered_obj;
   CHeapBitMap* _oopmap;
-
+  bool _is_java_lang_ref;
 public:
   EmbeddedOopRelocator(oop src_obj, address buffered_obj, CHeapBitMap* oopmap) :
-    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap) {}
+    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap)
+  {
+    _is_java_lang_ref = AOTReferenceObjSupport::check_if_ref_obj(src_obj);
+  }
 
   void do_oop(narrowOop *p) { EmbeddedOopRelocator::do_oop_work(p); }
   void do_oop(      oop *p) { EmbeddedOopRelocator::do_oop_work(p); }
 
 private:
   template <class T> void do_oop_work(T *p) {
-    size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    ArchiveHeapWriter::relocate_field_in_buffer<T>((T*)(_buffered_obj + field_offset), _oopmap);
+    int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_src_obj));
+    T* field_addr = (T*)(_buffered_obj + field_offset);
+    if (_is_java_lang_ref && AOTReferenceObjSupport::skip_field(field_offset)) {
+      // Do not copy these fields. Set them to null
+      *field_addr = (T)0x0;
+    } else {
+      ArchiveHeapWriter::relocate_field_in_buffer<T>(field_addr, _oopmap);
+    }
   }
 };
 
