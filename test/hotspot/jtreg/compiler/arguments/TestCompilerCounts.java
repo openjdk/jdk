@@ -59,7 +59,7 @@ public class TestCompilerCounts {
     }
 
     public static void testWith(String mode) throws IOException {
-        for (int cpus = 1; cpus < Runtime.getRuntime().availableProcessors(); cpus++) {
+        for (int cpus = 1; cpus <= Runtime.getRuntime().availableProcessors(); cpus++) {
             String[] args = new String[] {
                 mode,
                 "-XX:ActiveProcessorCount=" + cpus,
