@@ -27,12 +27,13 @@ import java.nio.file.Path;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Parameter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
+import static jdk.internal.util.OperatingSystem.MACOS;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
@@ -56,6 +57,7 @@ public class AppContentTest {
 
     private static final String TEST_JAVA = "apps/PrintEnv.java";
     private static final String TEST_DUKE = "apps/dukeplug.png";
+    private static final String TEST_DUKE_LINK = "dukeplugLink.png";
     private static final String TEST_DIR = "apps";
     private static final String TEST_BAD = "non-existant";
 
@@ -67,24 +69,17 @@ public class AppContentTest {
     // Need to prepare arguments for `--app-content` accordingly.
     private static final boolean copyInResources = TKit.isOSX();
 
-    private final List<String> testPathArgs;
-
-    @Parameters
-    public static Collection<?> data() {
-        return List.of(new String[][]{
-            {TEST_JAVA, TEST_DUKE}, // include two files in two options
-            {TEST_JAVA, TEST_BAD},  // try to include non-existant content
-            {TEST_JAVA + "," + TEST_DUKE, TEST_DIR}, // two files in one option,
-                                            // and a dir tree in another option.
-        });
-    }
-
-    public AppContentTest(String... testPathArgs) {
-        this.testPathArgs = List.of(testPathArgs);
-    }
-
     @Test
-    public void test() throws Exception {
+    // include two files in two options
+    @Parameter({TEST_JAVA, TEST_DUKE})
+    // try to include non-existant content
+    @Parameter({TEST_JAVA, TEST_BAD})
+     // two files in one option and a dir tree in another option.
+    @Parameter({TEST_JAVA + "," + TEST_DUKE, TEST_DIR})
+     // include one file and one link to the file
+    @Parameter(value = {TEST_JAVA, TEST_DUKE_LINK}, ifOS = MACOS)
+    public void test(String... args) throws Exception {
+        final List<String> testPathArgs = List.of(args);
         final int expectedJPackageExitCode;
         if (testPathArgs.contains(TEST_BAD)) {
             expectedJPackageExitCode = 1;
@@ -103,7 +98,11 @@ public class AppContentTest {
                     List<String> paths = Arrays.asList(arg.split(","));
                     for (String p : paths) {
                         Path name = Path.of(p).getFileName();
-                        TKit.assertPathExists(baseDir.resolve(name), true);
+                        if (name.toString().contains("Link")) {
+                            TKit.assertSymbolicLinkExists(baseDir.resolve(name));
+                        } else {
+                            TKit.assertPathExists(baseDir.resolve(name), true);
+                        }
                     }
                 }
 
@@ -146,9 +145,16 @@ public class AppContentTest {
         private static Path copyAppContentPath(Path appContentPath) throws IOException {
             var appContentArg = TKit.createTempDirectory("app-content").resolve("Resources");
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
-            var dstPath = appContentArg.resolve(srcPath.getFileName());
+            Path dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            FileUtils.copyRecursive(srcPath, dstPath);
+            if (dstPath.getFileName().toString().contains("Link")) {
+                String tagetName = dstPath.getFileName().toString().replace("Link", "");
+                Path targetPath = dstPath.getParent().resolve(tagetName);
+                Files.createFile(targetPath);
+                Files.createSymbolicLink(dstPath, targetPath.toAbsolutePath());
+            } else {
+                FileUtils.copyRecursive(srcPath, dstPath);
+            }
             return appContentArg;
         }
 
