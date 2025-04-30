@@ -82,9 +82,9 @@ public class BadPushPromiseTest {
         HttpServerAdapters.HttpTestHandler handler = new ServerPushHandler(MAIN_RESPONSE_BODY);
         server.addHandler(handler, "/");
         server.start();
-        int port = server.getAddress().getPort();
-        System.err.println("Server listening on port " + port);
-        uri = new URI("http://localhost:" + port + "/foo/a/b/c");
+        String authority = server.serverAuthority();
+        System.err.println("Server listening on address " + authority);
+        uri = new URI("http://" + authority + "/foo/a/b/c");
     }
 
     @AfterTest
