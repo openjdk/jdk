@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class MultiScreenTest {
         for (int j = 0; j < gs.length; j++) {
             GraphicsConfiguration[] gc = gs[j].getConfigurations();
             if (gc.length > 0) {
-                for (int i = 0; i < gc.length / 2; i++) {
+                for (int i = 0; i < gc.length && i < 10; i++) {
                     JFrame f = new JFrame(gc[i]); //test JFrame( gc )
                     GCCanvas c = new GCCanvas(gc[i]);//test canvas( gc )
                     Rectangle gcBounds = gc[i].getBounds(); //test getBounds()
