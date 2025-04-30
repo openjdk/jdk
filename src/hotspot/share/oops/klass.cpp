@@ -678,7 +678,7 @@ void Klass::append_to_sibling_list() {
   if (Universe::is_fully_initialized()) {
     assert_locked_or_safepoint(Compile_lock);
   }
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
   if (super == nullptr) return;     // special case: class Object
@@ -703,7 +703,7 @@ void Klass::append_to_sibling_list() {
       return;
     }
   }
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
 }
 
 void Klass::clean_subklass() {
