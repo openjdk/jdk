@@ -137,11 +137,11 @@ public final class HijrahDate
     /**
      * The month-of-year.
      */
-    private final transient int monthOfYear;
+    private final transient byte monthOfYear;
     /**
      * The day-of-month.
      */
-    private final transient int dayOfMonth;
+    private final transient byte dayOfMonth;
 
     //-------------------------------------------------------------------------
     /**
@@ -273,8 +273,8 @@ public final class HijrahDate
 
         this.chrono = chrono;
         this.prolepticYear = prolepticYear;
-        this.monthOfYear = monthOfYear;
-        this.dayOfMonth = dayOfMonth;
+        this.monthOfYear = (byte) monthOfYear;
+        this.dayOfMonth = (byte) dayOfMonth;
     }
 
     /**
@@ -287,8 +287,8 @@ public final class HijrahDate
 
         this.chrono = chrono;
         this.prolepticYear = dateInfo[0];
-        this.monthOfYear = dateInfo[1];
-        this.dayOfMonth = dateInfo[2];
+        this.monthOfYear = (byte) dateInfo[1];
+        this.dayOfMonth = (byte) dateInfo[2];
     }
 
     //-----------------------------------------------------------------------
