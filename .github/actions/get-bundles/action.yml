@@ -81,16 +81,18 @@ runs:
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
         fi
 
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip ]]; then
-          echo 'Unpacking static jdk bundle...'
-          mkdir -p bundles/static-jdk
-          unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip -d bundles/static-jdk
-        fi
+        if [[ '${{ inputs.static-suffix }}' != '' ]]; then
+          if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip ]]; then
+            echo 'Unpacking static jdk bundle...'
+            mkdir -p bundles/static-jdk
+            unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip -d bundles/static-jdk
+          fi
 
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
-          echo 'Unpacking static jdk bundle...'
-          mkdir -p bundles/static-jdk
-          tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz -C bundles/static-jdk
+          if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
+            echo 'Unpacking static jdk bundle...'
+            mkdir -p bundles/static-jdk
+            tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz -C bundles/static-jdk
+          fi
         fi
 
         if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
