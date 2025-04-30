@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStack
  * @run junit/othervm --enable-native-access=ALL-UNNAMED TestBufferStack
@@ -33,19 +34,49 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+import jdk.test.lib.thread.VThreadRunner;
 
 import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.ValueLayout.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestBufferStack extends NativeTestHelper {
+final class TestBufferStack extends NativeTestHelper {
+
+    private static final long POOL_SIZE = 64;
+    private static final long SMALL_ALLOC_SIZE = 8;
 
     @Test
-    public void testScopedAllocation() {
+    void invariants() {
+        var ex = assertThrows(IllegalArgumentException.class, () -> BufferStack.of(-1));
+        assertEquals("Size is negative: -1", ex.getMessage());
+        assertThrows(NullPointerException.class, () -> BufferStack.of(null));
+
+        BufferStack stack = BufferStack.of(POOL_SIZE);
+        assertThrows(IllegalArgumentException.class, () -> stack.pushFrame(-1, 8));
+        assertThrows(IllegalArgumentException.class, () -> stack.pushFrame(SMALL_ALLOC_SIZE, -1));
+
+        try (var arena = stack.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+            assertThrows(IllegalArgumentException.class, () -> arena.allocate(-1));
+            assertThrows(IllegalArgumentException.class, () -> arena.allocate(4, -1));
+        }
+    }
+
+    @Test
+    void invariantsVt() {
+        VThreadRunner.run(this::invariants);
+    }
+
+    @Test
+    void testScopedAllocation() {
         int stackSize = 128;
         BufferStack stack = BufferStack.of(stackSize);
         MemorySegment stackSegment;
@@ -100,6 +131,11 @@ public class TestBufferStack extends NativeTestHelper {
         }
     }
 
+    @Test
+    void testScopedAllocationVt() {
+        VThreadRunner.run(this::testScopedAllocation);
+    }
+
     static {
         System.loadLibrary("TestBufferStack");
     }
@@ -117,7 +153,7 @@ public class TestBufferStack extends NativeTestHelper {
     }
 
     @Test
-    public void testDeepStack() throws Throwable {
+    void testDeepStack() {
         // Each downcall and upcall require 48 bytes of stack.
         // After five allocations we start falling back.
         MemorySegment point = recurse(10);
@@ -125,4 +161,121 @@ public class TestBufferStack extends NativeTestHelper {
         assertEquals(11.0, point.getAtIndex(C_DOUBLE, 1));
         assertEquals( 10.0, point.getAtIndex(C_DOUBLE, 2));
     }
+
+    @Test
+    void testDeepStackVt() {
+        VThreadRunner.run(this::testDeepStack);
+    }
+
+    @Test
+    void equals() {
+        var first = BufferStack.of(POOL_SIZE);
+        var second = BufferStack.of(POOL_SIZE);
+        assertNotEquals(first, second);
+        assertEquals(first, first);
+    }
+
+    @Test
+    void allocationSameAsPoolSize() {
+        MemoryLayout twoInts = MemoryLayout.sequenceLayout(2, JAVA_INT);
+        var pool = BufferStack.of(POOL_SIZE);
+        long firstAddress;
+        try (var arena = pool.pushFrame(JAVA_INT)) {
+            var segment = arena.allocate(JAVA_INT);
+            firstAddress = segment.address();
+        }
+        for (int i = 0; i < 10; i++) {
+            try (var arena = pool.pushFrame(twoInts)) {
+                var segment = arena.allocate(JAVA_INT);
+                assertEquals(firstAddress, segment.address());
+                var segmentTwo = arena.allocate(JAVA_INT);
+                assertNotEquals(firstAddress, segmentTwo.address());
+            }
+        }
+    }
+
+    @Test
+    void allocationSameAsPoolSizeVt() {
+        VThreadRunner.run(this::allocationSameAsPoolSize);
+    }
+
+    @Test
+    void allocationCaptureStateLayout() {
+        var layout = Linker.Option.captureStateLayout();
+        var pool = BufferStack.of(layout);
+        long firstAddress;
+        try (var arena = pool.pushFrame(layout)) {
+            var segment = arena.allocate(layout);
+            firstAddress = segment.address();
+        }
+        for (int i = 0; i < 10; i++) {
+            try (var arena = pool.pushFrame(layout)) {
+                var segment = arena.allocate(layout);
+                assertEquals(firstAddress, segment.address());
+                // Questionable exception type
+                assertThrows(IndexOutOfBoundsException.class, () -> arena.allocate(layout));
+            }
+        }
+    }
+
+    @Test
+    void allocateConfinement() {
+        var pool = BufferStack.of(POOL_SIZE);
+        Consumer<Arena> allocateAction = arena ->
+                assertThrows(WrongThreadException.class, () -> {
+                    CompletableFuture<Arena> future = CompletableFuture.supplyAsync(() -> pool.pushFrame(SMALL_ALLOC_SIZE, 1));
+                    var otherThreadArena = future.get();
+                    otherThreadArena.allocate(SMALL_ALLOC_SIZE);
+                    // Intentionally do not close the otherThreadArena here.
+                });
+        doInTwoStackedArenas(pool, allocateAction, allocateAction);
+    }
+
+    @Test
+    void allocateConfinementVt() {
+        VThreadRunner.run(this::allocateConfinement);
+    }
+
+    @Test
+    void closeConfinement() {
+        var pool = BufferStack.of(POOL_SIZE);
+        Consumer<Arena> closeAction = arena -> {
+            // Do not use CompletableFuture here as it might accidentally run on the
+            // same carrier thread as a virtual thread.
+            AtomicReference<Arena> otherThreadArena = new AtomicReference<>();
+            var thread = Thread.ofPlatform().start(() -> {
+                otherThreadArena.set(pool.pushFrame(SMALL_ALLOC_SIZE, 1));
+            });
+            try {
+                thread.join();
+            } catch (InterruptedException ie) {
+                fail(ie);
+            }
+            assertThrows(WrongThreadException.class, otherThreadArena.get()::close);
+        };
+        doInTwoStackedArenas(pool, closeAction, closeAction);
+    }
+
+    @Test
+    void closeConfinementVt() {
+        VThreadRunner.run(this::closeConfinement);
+    }
+
+    @Test
+    void toStringTest() {
+        BufferStack stack = BufferStack.of(POOL_SIZE);
+        assertEquals("BufferStack[" + POOL_SIZE + "]", stack.toString());
+    }
+
+    static void doInTwoStackedArenas(BufferStack pool,
+                                     Consumer<Arena> firstAction,
+                                     Consumer<Arena> secondAction) {
+        try (var firstArena = pool.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+            firstAction.accept(firstArena);
+            try (var secondArena = pool.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+                secondAction.accept(secondArena);
+            }
+        }
+    }
+
 }

@@ -29,9 +29,11 @@ import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.ref.Reference;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -45,8 +47,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
 
     /**
-     * {@return a new Arena that tries to provided {@code size} and {@code byteAlignment}
-     * allocations by recycling the BufferStacks internal memory}
+     * {@return a new Arena that tries to provide {@code size} and {@code byteAlignment}
+     *          allocations by recycling the BufferStacks internal memory}
      *
      * @param size          to be reserved from this BufferStacks internal memory
      * @param byteAlignment to be used for reservation
@@ -54,6 +56,32 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
     @ForceInline
     public Arena pushFrame(long size, long byteAlignment) {
         return tl.get().pushFrame(size, byteAlignment);
+    }
+
+    /**
+     * {@return a new Arena that tries to provide {@code layout}
+     *          allocations by recycling the BufferStacks internal memory}
+     *
+     * @param layout for which to reserve internal memory
+     */
+    @ForceInline
+    public Arena pushFrame(MemoryLayout layout) {
+        return pushFrame(layout.byteSize(), layout.byteAlignment());
+    }
+
+    @Override
+    public String toString() {
+        return "BufferStack[" + size + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj;
     }
 
     private record PerThread(ReentrantLock lock, SlicingAllocator stack, Arena arena) {
@@ -82,7 +110,7 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
             private final boolean locked;
             private final long parentOffset;
             private final long topOfStack;
-            private final Arena scope = Arena.ofConfined();
+            private final Arena confinedArena = Arena.ofConfined();
             private final SegmentAllocator frame;
 
             @SuppressWarnings("restricted")
@@ -92,7 +120,7 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
                 parentOffset = stack.currentOffset();
                 MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
                 topOfStack = stack.currentOffset();
-                frame = new SlicingAllocator(frameSegment.reinterpret(scope, null));
+                frame = new SlicingAllocator(frameSegment.reinterpret(confinedArena, null));
             }
 
             @ForceInline
@@ -105,19 +133,26 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
             @Override
             @SuppressWarnings("restricted")
             public MemorySegment allocate(long byteSize, long byteAlignment) {
+                // Make sure we are on the right thread
+                if (((MemorySessionImpl) scope()).ownerThread() != Thread.currentThread()) {
+                    throw MemorySessionImpl.wrongThread();
+                }
                 return frame.allocate(byteSize, byteAlignment);
             }
 
+            @ForceInline
             @Override
             public MemorySegment.Scope scope() {
-                return scope.scope();
+                return confinedArena.scope();
             }
 
             @ForceInline
             @Override
             public void close() {
                 assertOrder();
-                scope.close();
+                // the Arena::close method is closed "early" as it checks thread
+                // confinement and before any mutation of the internal state takes place.
+                confinedArena.close();
                 stack.resetTo(parentOffset);
                 if (locked) {
                     lock.unlock();
@@ -128,11 +163,22 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
     }
 
     public static BufferStack of(long size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("Size is negative: " + size);
+        }
         return new BufferStack(size, new CarrierThreadLocal<>() {
             @Override
             protected BufferStack.PerThread initialValue() {
                 return BufferStack.PerThread.of(size);
             }
         });
+    }
+
+    public static BufferStack of(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
+        long size = layout.byteAlignment() > 8
+                ? layout.byteSize() + layout.byteAlignment() - 1
+                : layout.byteSize();
+        return of(size);
     }
 }
