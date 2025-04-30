@@ -30,8 +30,6 @@
  * @modules jdk.crypto.cryptoki
  */
 
-import jtreg.SkippedException;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -43,12 +41,14 @@ import java.security.Security;
 public class SerializeProvider extends PKCS11Test {
 
     public void main(Provider p) throws Exception {
-        if (Security.getProvider(p.getName()) != p) {
-            Security.addProvider(p);
+        // Checking if provider is null in case the
+        // provider supplied by the PKCS11Test is null
+        if (p==null) {
+            throw new RuntimeException("Provider must not be NULL");
         }
 
         if (Security.getProvider(p.getName()) != p) {
-            throw new SkippedException("Provider not installed in Security, skipping");
+            Security.addProvider(p);
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
