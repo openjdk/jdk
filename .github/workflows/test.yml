@@ -173,6 +173,7 @@ jobs:
             TEST='${{ matrix.test-suite }}'
             BOOT_JDK=${{ steps.bootjdk.outputs.path }}
             JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}
+            JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}
             JT_HOME=${{ steps.jtreg.outputs.path }}
             JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
             SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
