@@ -3110,6 +3110,9 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
@@ -3132,6 +3135,9 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
