@@ -241,6 +241,7 @@ jobs:
       # It currently doesn't produce any bundles, but probably will do in
       # the future.
       bundle-suffix: "-static"
+      static-suffix: "-static"
     if: needs.prepare.outputs.linux-x64 == 'true'
 
   build-linux-x64-static-libs:

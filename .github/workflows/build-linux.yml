@@ -64,6 +64,9 @@ on:
       bundle-suffix:
         required: false
         type: string
+      static-suffix:
+        required: false
+        type: string
 
 jobs:
   build-linux:
@@ -143,3 +146,4 @@ jobs:
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
           bundle-suffix: ${{ inputs.bundle-suffix }}
+          static-suffix: ${{ static.bundle-suffix }}
