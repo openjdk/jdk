@@ -58,7 +58,6 @@ public class RacingSBThreads {
 
     // Constant arguments available to be passed to StringBuilder operations
     private static final StringBuilder otherSB = new StringBuilder("ab\uFF21\uFF22");
-    private static final CharBuffer otherCharBuffer = CharBuffer.allocate(4).append("a\uFF21");
     private static final StringBuilder otherLongerSB = new StringBuilder("abcde\uFF21\uFF22\uFF23\uFF24\uFF25");
 
     // Create a String with a repeated character
@@ -82,7 +81,7 @@ public class RacingSBThreads {
     /**
      * Run the stress cases indicated by command line arguments or run all cases.
      * Running each for TIMEOUT_SEC seconds or until a failure.
-     * The timeuut/test duration can be scaled by setting System property
+     * The timeout/test duration can be scaled by setting System property
      * `test.timeout.factor` to a double value, for example, `-Dtest.timeout.factor=2.0`
      * @param args command line arguments
      */
@@ -155,7 +154,7 @@ public class RacingSBThreads {
         private StressKind(String sbInitString, BiConsumer<StringBuilder,Character> func) {
             this.func = func;
             this.sbInitString = sbInitString;
-        };
+        }
     }
 
     public RacingSBThreads(StressKind stressKind) {
