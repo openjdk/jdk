@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacDmgPackageMixin;
 
