@@ -671,7 +671,7 @@ public:
 // must witness. For such stores, we must
 //
 //   1. raise the load's LCA to force the load to (eventually) be scheduled at
-//      latest in the stores's block, and
+//      latest in the store's block, and
 //   2. if the load may get scheduled in the store's block, additionally insert
 //      an anti-dependence edge from the load to the store to ensure LCM
 //      schedules the load before the store within the block.
@@ -679,7 +679,7 @@ public:
 // For a given store, we say that the store is on a _distinct_ control-flow
 // path relative to the load if there are no paths from early to LCA that go
 // through the store's block. Such stores are not anti-dependent, and there is
-// no need to update the LCA nor to add anti-depencence edges.
+// no need to update the LCA nor to add anti-dependence edges.
 //
 // Due to the presence of loops, we must also raise the LCA above
 // anti-dependent memory Phis. We defer the details (see later comments in the
