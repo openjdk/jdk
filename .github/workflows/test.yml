@@ -166,31 +166,27 @@ jobs:
           fi
 
       - name: 'Run tests'
-        id: run-tests
+        id: run-tests-static
+        if: ${{ inputs.static-suffix == '-static' }}
         run: >
-          #if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
-          #  make test-prebuilt
-          #  TEST='${{ matrix.test-suite }}'
-          #  BOOT_JDK=${{ steps.bootjdk.outputs.path }}
-          #  JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}
-          #  JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}
-          #  JT_HOME=${{ steps.jtreg.outputs.path }}
-          #  JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
-          #  SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
-          #  TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          #  JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
-          #  && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
-          #else
-          #  make test-prebuilt
-          #  TEST='${{ matrix.test-suite }}'
-          #  BOOT_JDK=${{ steps.bootjdk.outputs.path }}
-          #  JT_HOME=${{ steps.jtreg.outputs.path }}
-          #  JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
-          #  SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
-          #  TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          #  JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
-          #  && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
-          #fi
+          make test-prebuilt
+          TEST='${{ matrix.test-suite }}'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}
+          JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
+        env:
+          PATH: ${{ steps.path.outputs.value }}
+
+      - name: 'Run tests'
+        id: run-tests
+        if: ${{ inputs.static-suffix != '-static' }}
+        run: >
           make test-prebuilt
           TEST='${{ matrix.test-suite }}'
           BOOT_JDK=${{ steps.bootjdk.outputs.path }}
