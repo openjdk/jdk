@@ -1293,6 +1293,8 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     }
     mapped_base = requested_base;
   } else {
+    // We do not execute in-place in the AOT code region.
+    // AOT code is copied to the CodeCache for execution.
     bool read_only = false, allow_exec = false;
     mapped_base = map_memory(_fd, _full_path, r->file_offset(),
                              requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
