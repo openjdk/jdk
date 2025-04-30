@@ -286,7 +286,14 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this. This is a standard
-    // operation to align a value up to a certain power of 2
+    // operation to align a value up to a certain power of 2.
+    // Since alignment is a power of 2, -alignment is a value having all the
+    // bits being 1 upto the location of the bit in alignment (in the example,
+    // -alignment = 11110000). As a result, lo & -alignment set all bits after
+    // the bit in alignment to 0, which is equivalent to rounding lo down to a
+    // multiple of alignment. Since lo is not divisible by alignment, to round
+    // lo up to a multiple of alignment, we add alignment to the rounded down
+    // value.
     //           1 1 0 1 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
     // Our current new_lo satisfies zeros, just OR it with ones to obtain the
