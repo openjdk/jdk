@@ -1792,10 +1792,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public byte[] exportKeyMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
-        if (exportKeyMaterialKey(label, context, length).getEncoded() == null) {
+        byte[] bytes =
+                exportKeyMaterialKey(label, context, length).getEncoded();
+        if (bytes == null) {
             throw new UnsupportedOperationException(
                     "Exported key material is not extractable");
-        };
+        }
+        return bytes;
     }
 
     /** Returns a string representation of this SSL session */
