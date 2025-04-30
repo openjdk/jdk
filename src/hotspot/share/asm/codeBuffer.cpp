@@ -1042,6 +1042,9 @@ void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset
 
 #ifndef PRODUCT
 void CodeBuffer::block_comment(ptrdiff_t offset, const char* comment) {
+  if (insts()->scratch_emit()) {
+    return;
+  }
   if (_collect_comments) {
     const char* str = _asm_remarks.insert(offset, comment);
     postcond(str != comment);
@@ -1049,6 +1052,9 @@ void CodeBuffer::block_comment(ptrdiff_t offset, const char* comment) {
 }
 
 const char* CodeBuffer::code_string(const char* str) {
+  if (insts()->scratch_emit()) {
+    return str;
+  }
   const char* tmp = _dbg_strings.insert(str);
   postcond(tmp != str);
   return tmp;
