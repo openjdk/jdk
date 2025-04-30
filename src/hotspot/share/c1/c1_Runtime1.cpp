@@ -1363,7 +1363,7 @@ int Runtime1::move_klass_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
@@ -1380,7 +1380,7 @@ int Runtime1::move_mirror_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
@@ -1397,7 +1397,7 @@ int Runtime1::move_appendix_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
