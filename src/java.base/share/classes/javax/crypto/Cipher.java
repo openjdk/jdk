@@ -109,8 +109,20 @@ import sun.security.util.KnownOIDs;
  * the {@code update} and {@code doFinal} methods).
  * <p>
  * AEAD modes may have a uniqueness requirement on key and IVs when re-initializing the Cipher object to prevent forgery attacks.
- * This may cause an {@link IllegalStateException} when calling {@code update} after a {@code doFinal}.
- * 
+ * This may cause an {@link IllegalStateException} when calling {@code update} after a {@code doFinal}.d.
+ *
+ * <p> For AEAD modes like GCM, note that:
+ *  <ul>
+ *    <li>Cipher objects <b>cannot be reused</b> for multiple encryptions or decryptions with the same parameters (key/IV).
+ *    <li>Reinitialization with {@code Cipher.init()} must use a <b>fresh IV/nonce</b> to preserve security.
+ *    <li>Calling {@code update} is not guaranteed to work and may result in {@link InvalidAlgorithmParameterException}.
+ *  </ul>
+ *
+ * <p><b>Important:</b> Reusing the same IV (nonce) with the same key in AEAD modes like GCM is a serious security risk.
+ *
+ *  @see javax.crypto.Cipher
+ *  @see javax.crypto.spec.GCMParameterSpec
+ *
  * <p>
  * Every implementation of the Java platform is required to support
  * the following standard {@code Cipher} object transformations with
