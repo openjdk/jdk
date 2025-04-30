@@ -99,8 +99,8 @@ class Register {
 
   // testers
   constexpr bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
-  constexpr bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13 ); }
-  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
+  constexpr bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 };
@@ -169,7 +169,7 @@ class ConditionRegister {
 
   // testers
   constexpr bool is_valid()       const { return (0 <= _encoding && _encoding <  number_of_registers); }
-  constexpr bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4 );  }
+  constexpr bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4); }
 
   const char* name() const;
 };
@@ -214,7 +214,7 @@ class FloatRegister {
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
-  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 
@@ -324,7 +324,7 @@ class VectorRegister {
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
-  constexpr bool is_nonvolatile() const { return (20 <= _encoding && _encoding <= 31 ); }
+  constexpr bool is_nonvolatile() const { return (20 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 
@@ -374,6 +374,7 @@ constexpr VectorRegister VR31 = as_VectorRegister(31);
 
 
 // The implementation of Vector-Scalar (VSX) registers on POWER architecture.
+// VSR0-31 are aliases for F0-31 and VSR32-63 are aliases for VR0-31.
 class VectorSRegister {
   int _encoding;
  public:
