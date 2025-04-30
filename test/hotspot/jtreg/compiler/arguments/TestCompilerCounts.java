@@ -45,11 +45,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestCompilerCounts {
 
     public static void main(String[] args) throws IOException {
-        if (args.length > 0) {
-            System.out.println("Pass");
-            return;
-        }
-
         testWith("-XX:TieredStopAtLevel=0");
         testWith("-XX:TieredStopAtLevel=1");
         testWith("-XX:TieredStopAtLevel=2");
@@ -63,8 +58,7 @@ public class TestCompilerCounts {
             String[] args = new String[] {
                 mode,
                 "-XX:ActiveProcessorCount=" + cpus,
-                "compiler.arguments.TestCompilerCounts",
-                "run"
+                "-version"
             };
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
