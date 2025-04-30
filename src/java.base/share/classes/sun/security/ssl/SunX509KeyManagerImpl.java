@@ -156,7 +156,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             X509Credentials cred = new X509Credentials((PrivateKey)key,
                 (X509Certificate[])certs);
             credentialsMap.put(alias, cred);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("found key for : " + alias, (Object[])certs);
             }
         }
@@ -384,7 +384,8 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             if (issuers.length == 0) {
                 // no issuer specified, match all
                 aliases.add(alias);
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,keymanager")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                     SSLLogger.fine("matching alias: " + alias);
                 }
             } else {
@@ -394,7 +395,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
                     if (certIssuers.contains(issuers[i])) {
                         aliases.add(alias);
                         if (SSLLogger.logging &&
-                                SSLLogger.isOn("ssl,keymanager")) {
+                                SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                             SSLLogger.fine("matching alias: " + alias);
                         }
                         break;

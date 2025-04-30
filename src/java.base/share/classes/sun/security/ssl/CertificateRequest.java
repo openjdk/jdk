@@ -297,7 +297,7 @@ final class CertificateRequest {
                     shc.sslContext.getX509TrustManager().getAcceptedIssuers();
             T10CertificateRequestMessage crm = new T10CertificateRequestMessage(
                     shc, caCerts, shc.negotiatedCipherSuite.keyExchange);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced CertificateRequest handshake message", crm);
             }
@@ -360,7 +360,7 @@ final class CertificateRequest {
 
             T10CertificateRequestMessage crm =
                     new T10CertificateRequestMessage(chc, message);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming CertificateRequest handshake message", crm);
             }
@@ -400,7 +400,8 @@ final class CertificateRequest {
             }
 
             if (clientAlias == null) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No available client authentication");
                 }
                 return;
@@ -408,7 +409,8 @@ final class CertificateRequest {
 
             PrivateKey clientPrivateKey = km.getPrivateKey(clientAlias);
             if (clientPrivateKey == null) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No available client private key");
                 }
                 return;
@@ -416,7 +418,8 @@ final class CertificateRequest {
 
             X509Certificate[] clientCerts = km.getCertificateChain(clientAlias);
             if ((clientCerts == null) || (clientCerts.length == 0)) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No available client certificate");
                 }
                 return;
@@ -655,7 +658,7 @@ final class CertificateRequest {
             T12CertificateRequestMessage crm = new T12CertificateRequestMessage(
                     shc, caCerts, shc.negotiatedCipherSuite.keyExchange,
                     certReqSignAlgs);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced CertificateRequest handshake message", crm);
             }
@@ -717,7 +720,7 @@ final class CertificateRequest {
 
             T12CertificateRequestMessage crm =
                     new T12CertificateRequestMessage(chc, message);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming CertificateRequest handshake message", crm);
             }
@@ -784,7 +787,8 @@ final class CertificateRequest {
                 T12CertificateRequestMessage crm) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No signature and hash algorithms " +
                             "in CertificateRequest");
                 }
@@ -808,7 +812,7 @@ final class CertificateRequest {
                             hc.algorithmConstraints,                        //  we will be able to produce
                             hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
                             ka, hc.negotiatedProtocol) != null
-                            || SSLLogger.logWarning("ssl,handshake",
+                            || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
                                     "Unable to produce CertificateVerify for key algorithm: " + ka))
                     .filter(ka -> {
                         var xa = X509Authentication.valueOfKeyAlgorithm(ka);
@@ -816,14 +820,16 @@ final class CertificateRequest {
                         // This set should share at least one common algorithm with
                         // the CR's allowed key types.
                         return xa != null && !Collections.disjoint(crKeyTypes, Arrays.asList(xa.keyTypes))
-                                || SSLLogger.logWarning("ssl,handshake", "Unsupported key algorithm: " + ka);
+                                || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
+                                "Unsupported key algorithm: " + ka);
                     })
                     .toArray(String[]::new);
 
             SSLPossession pos = X509Authentication
                     .createPossession(hc, supportedKeyTypes);
             if (pos == null) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No available authentication scheme");
                 }
             }
@@ -933,7 +939,8 @@ final class CertificateRequest {
             SSLExtension[] extTypes = shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.CERTIFICATE_REQUEST, shc.negotiatedProtocol);
             crm.extensions.produce(shc, extTypes);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced CertificateRequest message", crm);
             }
 
@@ -985,7 +992,7 @@ final class CertificateRequest {
 
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(chc, message);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming CertificateRequest handshake message", crm);
             }

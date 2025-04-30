@@ -228,7 +228,7 @@ enum Alert {
             TransportContext tc = (TransportContext)context;
 
             AlertMessage am = new AlertMessage(tc, m);
-            if (SSLLogger.logging && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("Received alert message", am);
             }
 

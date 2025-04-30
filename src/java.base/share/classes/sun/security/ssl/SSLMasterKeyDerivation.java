@@ -154,7 +154,8 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
                 //
                 // For RSA premaster secrets, do not signal a protocol error
                 // due to the Bleichenbacher attack. See comments further down.
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("RSA master secret generation error.", iae);
                 }
                 throw new ProviderException(iae);

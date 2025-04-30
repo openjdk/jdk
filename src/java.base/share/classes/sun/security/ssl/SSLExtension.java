@@ -820,7 +820,7 @@ enum SSLExtension implements SSLStringizer {
     private static Collection<String> getDisabledExtensions(
                 String propertyName) {
         String property = System.getProperty(propertyName);
-        if (SSLLogger.logging && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                             property + "'");

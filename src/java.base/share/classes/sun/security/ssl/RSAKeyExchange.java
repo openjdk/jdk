@@ -150,7 +150,8 @@ final class RSAKeyExchange {
                 needFailover = !KeyUtil.isOracleJCEProvider(
                         cipher.getProvider().getName());
             } catch (InvalidKeyException | UnsupportedOperationException iue) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("The Cipher provider "
                             + safeProviderName(cipher)
                             + " caused exception: " + iue.getMessage());
@@ -197,7 +198,8 @@ final class RSAKeyExchange {
             try {
                 return cipher.getProvider().toString();
             } catch (Exception e) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Retrieving The Cipher provider name" +
                             " caused exception ", e);
                 }
@@ -205,7 +207,8 @@ final class RSAKeyExchange {
             try {
                 return cipher.toString() + " (provider name not available)";
             } catch (Exception e) {
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Retrieving The Cipher name" +
                             " caused exception ", e);
                 }
@@ -220,7 +223,7 @@ final class RSAKeyExchange {
                 int clientVersion, int serverVersion, byte[] encodedSecret,
                 SecureRandom generator) throws GeneralSecurityException {
 
-            if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Generating a premaster secret");
             }
 
@@ -235,7 +238,8 @@ final class RSAKeyExchange {
             } catch (InvalidAlgorithmParameterException |
                     NoSuchAlgorithmException iae) {
                 // unlikely to happen, otherwise, must be a provider exception
-                if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("RSA premaster secret generation error", iae);
                 }
 

@@ -273,7 +273,8 @@ enum NamedGroup {
                     | NoSuchAlgorithmException exp) {
                 if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
                     mediator = false;
-                    if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.logging &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                             "No AlgorithmParameters for " + name, exp);
                     }
@@ -294,7 +295,8 @@ enum NamedGroup {
                         // AlgorithmParameters.getInstance(name);
                     } catch (NoSuchAlgorithmException nsae) {
                         mediator = false;
-                        if (SSLLogger.logging && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.logging &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.warning(
                                 "No AlgorithmParameters for " + name, nsae);
                         }
@@ -383,7 +385,7 @@ enum NamedGroup {
             NamedGroup ng = NamedGroup.nameOf(ss);
             if (ng == null || !ng.isAvailable) {
                 if (SSLLogger.logging &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                             "Ignore the named group (" + ss
                                     + "), unsupported or unavailable");
@@ -811,7 +813,8 @@ enum NamedGroup {
                 }
 
                 if (groupList.isEmpty() &&
-                        SSLLogger.logging && SSLLogger.isOn("ssl")) {
+                        SSLLogger.logging &&
+                        SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("No default named groups");
                 }
             }
