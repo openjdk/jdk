@@ -29,14 +29,20 @@ import java.lang.annotation.*;
 
 /**
  * The {@code @IntrinsicCandidate} indicates that an annotated method is
- * recognized by {@code vmIntrinsics.hpp} and may be subject to intrinsification
- * by the HotSpot VM.  (See {@code LibraryCallKit::try_to_inline} in {@code
- * library_call.cpp} for logic that checks if an intrinsic is available and
- * applicable at a given call site.)  Intrinsification replaces a candidate
- * method's body, bytecode or native, with handwritten platform assembly and/or
- * compiler IR.  Many Java library methods have properties that cannot be
- * deduced by the compiler for optimization, or can utilize specific hardware
- * instructions not modeled by the compiler IR, making intrinsics necessary.
+ * recognized by {@code vmIntrinsics.hpp} for special treatment by the HotSpot
+ * VM, unlike the other methods.  The HotSpot VM checks, when loading a class,
+ * the consistency of recognized methods and {@code @IntrinsicCandidate}
+ * annotations, unless the {@code CheckIntrinsics} VM flag is disabled.
+ *
+ * <h2 id="intrinsification">Intrinsification</h2>
+ * The most frequently special treatment is intrinsification, which replaces a
+ * candidate method's body, bytecode or native, with handwritten platform
+ * assembly and/or compiler IR.  (See {@code LibraryCallKit::try_to_inline} in
+ * {@code library_call.cpp} for logic that checks if an intrinsic is available
+ * and applicable at a given call site.)  Many Java library methods have
+ * properties that cannot be deduced by the compiler for optimization, or can
+ * utilize specific hardware instructions not modeled by the compiler IR, making
+ * intrinsics necessary.
  * <p>
  * Intrinsification may never happen, or happen at any moment during execution.
  * For example, the bytecodes of a candidate method may be executed by lower
@@ -82,10 +88,7 @@ import java.lang.annotation.*;
  * intrinsic.)  For example, the documentation can simply say that the result is
  * undefined if a race happens.  However, race conditions must not lead to
  * program failures or type safety breaches, as listed above.
- * </blockquote><p>
- * The HotSpot VM checks, when loading a class, the consistency of recognized
- * methods and {@code @IntrinsicCandidate} annotations, unless the {@code
- * CheckIntrinsics} VM flag is disabled.
+ * </blockquote>
  *
  * @since 16
  */
