@@ -306,6 +306,7 @@ public abstract sealed class Reference<T>
         handler.start();
     }
 
+    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
