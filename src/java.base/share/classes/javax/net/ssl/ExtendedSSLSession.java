@@ -242,12 +242,11 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         accommodated
      * @throws NullPointerException if {@code label} is null
      * @throws UnsupportedOperationException if the underlying provider
-     *         does not implement the operation
+     *         does not implement the operation, or if the derived key
+     *         material is not extractable.
      *
      * @return a byte buffer of size {@code length} that contains the EKM
-     *         material or {@code null} if the key material could not be
-     *         extracted
-     *
+     *         material
      * @since 25
      */
     public byte[] exportKeyMaterialData(
