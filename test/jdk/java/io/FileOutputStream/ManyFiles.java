@@ -24,8 +24,6 @@
 /* @test
  * @bug 4189011 5019303
  * @summary Test opening over 2048 files
- * @comment Linux does not yet allow opening this many files
- * @requires (os.family != "linux")
  * @run main/timeout=300 ManyFiles
  */
 
