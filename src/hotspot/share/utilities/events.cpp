@@ -47,13 +47,13 @@ StringEventLog* Events::_deopt_messages = nullptr;
 StringEventLog* Events::_dll_messages = nullptr;
 
 EventLog::EventLog() {
-  // This normally done during bootstrap when we're only single threaded,
+  // This is normally done during bootstrap when we're only single threaded,
   // but use lock free add because there are some events that are created later.
   EventLog* old_head;
   do {
     old_head = Atomic::load(&Events::_logs);
     _next = old_head;
-  } while (Atomic::cmpxchg(&Events::_logs, old_head, this, memory_order_relaxed) != old_head);
+  } while (Atomic::cmpxchg(&Events::_logs, old_head, this) != old_head);
 }
 
 // For each registered event logger, print out the current contents of
