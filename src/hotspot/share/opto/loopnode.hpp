@@ -1868,15 +1868,121 @@ class CountedLoopConverter {
   bool _insert_init_trip_limit_check = false;
 
   // Return a type based on condition control flow
-  const TypeInt* filtered_type( Node *n, Node* n_ctrl);
-  const TypeInt* filtered_type( Node *n ) { return filtered_type(n, nullptr); }
+  const TypeInt* filtered_type(Node* n, Node* n_ctrl);
+  const TypeInt* filtered_type(Node* n) { return filtered_type(n, nullptr); }
   // Helpers for filtered type
-  const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
+  const TypeInt* filtered_type_from_dominators(Node* val, Node* val_ctrl);
 
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
+
+  // LoopStructure build_loop_structure() {
+  // }
+
+  bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask) {
+    if (stride_con > 0) {
+      if (init_t->lo_as_long() > max_signed_integer(_iv_bt) - stride_con) {
+        return true; // cyclic loop
+      }
+    } else {
+      if (init_t->hi_as_long() < min_signed_integer(_iv_bt) - stride_con) {
+        return true; // cyclic loop
+      }
+    }
+
+    if (phi_increment != nullptr && mask != BoolTest::ne) {
+      // check if there is a possibility of IV overflowing after the first increment
+      if (stride_con > 0) {
+        if (init_t->hi_as_long() > max_signed_integer(_iv_bt) - stride_con) {
+          return true;
+        }
+      } else {
+        if (init_t->lo_as_long() < min_signed_integer(_iv_bt) - stride_con) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // TODO: move to .cpp (as simple non-members statics?)
+  bool is_infinite_loop(const CountedLoopNode::TruncatedIncrement increment, const TypeInteger* limit_t, const Node* incr) {
+    PhaseIterGVN& igvn = _phase->igvn();
+
+    if (increment.trunc1 != nullptr) {
+      // When there is a truncation, we must be sure that after the truncation
+      // the trip counter will end up higher than the limit, otherwise we are looking
+      // at an endless loop. Can happen with range checks.
+
+      // Example:
+      // int i = 0;
+      // while (true)
+      //    sum + = array[i];
+      //    i++;
+      //    i = i && 0x7fff;
+      //  }
+      //
+      // If the array is shorter than 0x8000 this exits through a AIOOB
+      //  - Counted loop transformation is ok
+      // If the array is longer then this is an endless loop
+      //  - No transformation can be done.
+
+      const TypeInteger* incr_t = igvn.type(incr)->is_integer(_iv_bt);
+      if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
+        // if the limit can have a higher value than the increment (before the0 phi)
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // TODO: move to .cpp
+  bool has_truncation_wrap(const CountedLoopNode::TruncatedIncrement increment, Node* phi, jlong stride_con) {
+    // If iv trunc type is smaller than int (i.e., short/char/byte), check for possible wrap.
+    if (!TypeInteger::bottom(_iv_bt)->higher_equal(increment.trunc_type)) {
+      assert(increment.trunc1 != nullptr, "must have found some truncation");
+
+      // Get a better type for the phi (filtered thru if's)
+      const TypeInteger* phi_ft = filtered_type(phi);
+
+      // Can iv take on a value that will wrap?
+      //
+      // Ensure iv's limit is not within "stride" of the wrap value.
+      //
+      // Example for "short" type
+      //    Truncation ensures value is in the range -32768..32767 (iv_trunc_t)
+      //    If the stride is +10, then the last value of the induction
+      //    variable before the increment (phi_ft->_hi) must be
+      //    <= 32767 - 10 and (phi_ft->_lo) must be >= -32768 to
+      //    ensure no truncation occurs after the increment.
+
+      if (stride_con > 0) {
+        if (increment.trunc_type->hi_as_long() - phi_ft->hi_as_long() < stride_con ||
+            increment.trunc_type->lo_as_long() > phi_ft->lo_as_long()) {
+          return true;  // truncation may occur
+        }
+      } else if (stride_con < 0) {
+        if (increment.trunc_type->lo_as_long() - phi_ft->lo_as_long() > stride_con ||
+            increment.trunc_type->hi_as_long() < phi_ft->hi_as_long()) {
+          return true;  // truncation may occur
+        }
+      }
+
+      // No possibility of wrap so truncation can be discarded
+      // Promote iv type to Int
+      // TODO: actually promote it?
+    } else {
+      assert(Type::equals(increment.trunc_type, TypeInt::INT) || Type::equals(increment.trunc_type, TypeLong::LONG),
+             "unexpected truncation type");
+      assert(increment.trunc1 == nullptr && increment.trunc2 == nullptr, "no truncation for int");
+    }
+
+    return false;
+  }
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -1885,7 +1991,7 @@ class CountedLoopConverter {
         _loop(loop),
         _iv_bt(iv_bt) {
     assert(phase != nullptr, ""); // Fail early if mandatory parameters are null.
-    assert(head != nullptr, "");
+    assert(head->is_Loop(), "");
     assert(loop != nullptr, "");
     assert(iv_bt == T_INT || iv_bt == T_LONG, ""); // Loops can be either int or long.
   }

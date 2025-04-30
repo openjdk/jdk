@@ -1629,6 +1629,7 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loo
 bool CountedLoopConverter::is_counted_loop() {
   PhaseIterGVN* igvn = &_phase->igvn();
 
+  // FIXME: BEGIN extract to ============ is_trip_counted(); =================
   Node* back_control = _phase->loop_exit_control(_head, _loop);
   if (back_control == nullptr) {
     return false;
@@ -1654,7 +1655,6 @@ bool CountedLoopConverter::is_counted_loop() {
   if (increment.incr == nullptr) {
     return false; // Funny increment opcode
   }
-
   assert(increment.incr->Opcode() == Op_Add(_iv_bt), "wrong increment code");
 
   const PhaseIdealLoop::LoopIvStride stride = PhaseIdealLoop::loop_iv_stride(increment.incr);
@@ -1667,113 +1667,38 @@ bool CountedLoopConverter::is_counted_loop() {
     xphi = xphi->in(1);
   }
 
-  // Stride must be constant
-  jlong stride_con = stride.stride->get_integer_as_long(_iv_bt);
-  assert(stride_con != 0, "missed some peephole opt");
-
   PhiNode* phi = PhaseIdealLoop::loop_iv_phi(xphi, iv_incr.phi_incr, _head);
-
   if (phi == nullptr ||
       (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != increment.incr) ||
       (increment.trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != increment.trunc1)) {
     return false;
   }
 
-  const Node* iftrue = back_control;
-  uint iftrue_op = iftrue->Opcode();
-  Node* iff = iftrue->in(0);
-  BoolNode* test = iff->in(1)->as_Bool();
-
   const TypeInteger* limit_t = igvn->type(exit_test.limit)->is_integer(_iv_bt);
-  if (increment.trunc1 != nullptr) {
-    // When there is a truncation, we must be sure that after the truncation
-    // the trip counter will end up higher than the limit, otherwise we are looking
-    // at an endless loop. Can happen with range checks.
-
-    // Example:
-    // int i = 0;
-    // while (true)
-    //    sum + = array[i];
-    //    i++;
-    //    i = i && 0x7fff;
-    //  }
-    //
-    // If the array is shorter than 0x8000 this exits through a AIOOB
-    //  - Counted loop transformation is ok
-    // If the array is longer then this is an endless loop
-    //  - No transformation can be done.
-
-    const TypeInteger* incr_t = igvn->type(iv_incr.incr)->is_integer(_iv_bt);
-    if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
-      // if the limit can have a higher value than the increment (before the0 phi)
-      return false;
-    }
+  // Check trip counter will end up higher than the limit
+  if (is_infinite_loop(increment, limit_t, iv_incr.incr)) {
+    return false;
   }
 
-  Node* init_trip = phi->in(LoopNode::EntryControl);
-
-  // If iv trunc type is smaller than int, check for possible wrap.
-  if (!TypeInteger::bottom(_iv_bt)->higher_equal(increment.trunc_type)) {
-    assert(increment.trunc1 != nullptr, "must have found some truncation");
-
-    // Get a better type for the phi (filtered thru if's)
-    const TypeInteger* phi_ft = filtered_type(phi);
-
-    // Can iv take on a value that will wrap?
-    //
-    // Ensure iv's limit is not within "stride" of the wrap value.
-    //
-    // Example for "short" type
-    //    Truncation ensures value is in the range -32768..32767 (iv_trunc_t)
-    //    If the stride is +10, then the last value of the induction
-    //    variable before the increment (phi_ft->_hi) must be
-    //    <= 32767 - 10 and (phi_ft->_lo) must be >= -32768 to
-    //    ensure no truncation occurs after the increment.
-
-    if (stride_con > 0) {
-      if (increment.trunc_type->hi_as_long() - phi_ft->hi_as_long() < stride_con ||
-          increment.trunc_type->lo_as_long() > phi_ft->lo_as_long()) {
-        return false;  // truncation may occur
-      }
-    } else if (stride_con < 0) {
-      if (increment.trunc_type->lo_as_long() - phi_ft->lo_as_long() > stride_con ||
-          increment.trunc_type->hi_as_long() < phi_ft->hi_as_long()) {
-        return false;  // truncation may occur
-      }
-    }
-    // No possibility of wrap so truncation can be discarded
-    // Promote iv type to Int
-  } else {
-    assert(increment.trunc1 == nullptr && increment.trunc2 == nullptr, "no truncation for int");
-  }
-
+  // Stride must be constant
+  jlong stride_con = stride.stride->get_integer_as_long(_iv_bt);
+  assert(stride_con != 0, "missed some peephole opt");
   if (!condition_stride_ok(exit_test.mask, stride_con)) {
     return false;
   }
 
-  const TypeInteger* init_t = igvn->type(init_trip)->is_integer(_iv_bt);
-  if (stride_con > 0) {
-    if (init_t->lo_as_long() > max_signed_integer(_iv_bt) - stride_con) {
-      return false; // cyclic loop
-    }
-  } else {
-    if (init_t->hi_as_long() < min_signed_integer(_iv_bt) - stride_con) {
-      return false; // cyclic loop
-    }
+  // Check iv type can be promoted to int for short/char/byte loops
+  if (has_truncation_wrap(increment, phi, stride_con)) {
+    return false;
   }
 
-  if (iv_incr.phi_incr != nullptr && exit_test.mask != BoolTest::ne) {
-    // check if there is a possibility of IV overflowing after the first increment
-    if (stride_con > 0) {
-      if (init_t->hi_as_long() > max_signed_integer(_iv_bt) - stride_con) {
-        return false;
-      }
-    } else {
-      if (init_t->lo_as_long() < min_signed_integer(_iv_bt) - stride_con) {
-        return false;
-      }
-    }
+  Node* init_trip = phi->in(LoopNode::EntryControl);
+  const TypeInteger* init_t = igvn->type(init_trip)->is_integer(_iv_bt);
+  if (is_iv_overflowing(init_t, stride_con, iv_incr.phi_incr, exit_test.mask)) {
+    return false;
   }
+
+  // FIXME: END extract to ============ is_trip_counted(); =================
 
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
@@ -2040,9 +1965,11 @@ bool CountedLoopConverter::is_counted_loop() {
   // (2.3)
   const bool init_plus_stride_could_overflow =
       (stride_con > 0 && init_t->hi_as_long() > max_signed_integer(_iv_bt) - stride_con) ||
-          (stride_con < 0 && init_t->lo_as_long() < min_signed_integer(_iv_bt) - stride_con);
+      (stride_con < 0 && init_t->lo_as_long() < min_signed_integer(_iv_bt) - stride_con);
+
   // (2.1)
-  const bool init_gte_limit = (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
+  const bool init_gte_limit =
+      (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
       (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
 
   bool insert_init_trip_limit_check = false;
@@ -2097,6 +2024,11 @@ bool CountedLoopConverter::is_counted_loop() {
       mask = BoolTest::gt;
     }
   }
+
+  const Node* iftrue = back_control;
+  uint iftrue_op = iftrue->Opcode();
+  Node* iff = iftrue->in(0);
+  BoolNode* test = iff->in(1)->as_Bool();
 
   Node* sfpt = nullptr;
   if (_loop->_child == nullptr) {
