@@ -73,7 +73,7 @@ public final class SSLLogger {
             } else {
                 p = p.toLowerCase(Locale.ENGLISH);
                 if (p.contains("help")) {
-                    // help option calls exit
+                    // help option calls exit(0)
                     help();
                 }
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
@@ -94,6 +94,8 @@ public final class SSLLogger {
                         }
                     }
 
+                    // "record" and "handshake" subcomponents allow
+                    // extra configuration options
                     if (Opt.HANDSHAKE.on && p.contains("verbose")) {
                         Opt.HANDSHAKE_VERBOSE.on = true;
                     }
@@ -106,15 +108,16 @@ public final class SSLLogger {
                             Opt.RECORD_PLAINTEXT.on = true;
                         }
                     }
-                    // finally if only "ssl" component is declared, then
-                    // enable all subcomponents
+                    // finally, if only "ssl" component is declared, then
+                    // enable all subcomponents. "ssl" logs all activity
+                    // except for the "data" and "packet" categories
                     if (Opt.SSL.on && !Opt.isAnySubComponentEnabled()) {
                         Opt.enableAllSubComponents();
                     }
                 }
             }
-            // javax.net.debug would be misconfigured property wrt
-            // logging if value didn't contain "all" or "ssl"
+            // javax.net.debug would be misconfigured property with respect
+            // to logging if value didn't contain "all" or "ssl"
             logging = Opt.ALL.on || Opt.SSL.on;
         } else {
             logger = null;

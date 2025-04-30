@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582
+ * @bug 8350582 8044609
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -101,9 +101,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "sslctx", "trustmanager", "verbose")),
                 // allow expand option for more verbose output
                 Arguments.of(List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("handshake", "handshake-expand", "ssl", "verbose")), // TODO -- why verbose ?
+                        List.of("handshake", "handshake-expand", "ssl", "verbose")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
+                        List.of("record", "record-expand", "ssl")),
+		// reverse the input params of last example. should be same result
+                Arguments.of(List.of("-Djavax.net.debug=expand,record:ssl"),
                         List.of("record", "record-expand", "ssl")),
                 // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
