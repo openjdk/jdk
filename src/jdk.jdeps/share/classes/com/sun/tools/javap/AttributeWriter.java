@@ -25,16 +25,24 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.Annotation;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.Signature;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
-import java.lang.classfile.*;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.attribute.*;
-import static java.lang.classfile.ClassFile.*;
+
+import static java.lang.classfile.ClassFile.ACC_MANDATED;
+import static java.lang.classfile.ClassFile.ACC_SYNTHETIC;
 import static java.lang.classfile.attribute.StackMapFrameInfo.*;
 import static java.lang.classfile.instruction.CharacterRange.*;
 

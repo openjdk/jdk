@@ -25,34 +25,36 @@
 
 package com.sun.tools.javap;
 
-import java.lang.reflect.AccessFlag;
-import java.lang.reflect.ClassFileFormatVersion;
-import java.net.URI;
-import java.text.DateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
-import java.lang.constant.ClassDesc;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassSignature;
-import java.lang.classfile.ClassFile;
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import static java.lang.classfile.ClassFile.*;
 
 /*
  *  The main javap class to write the contents of a class file as text.
@@ -277,10 +279,10 @@ public class ClassWriter extends BasicWriter {
     }
     // where
 
-    private static final ClassFile VERIFIER = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+    private static final ClassFile VERIFIER = ClassFile.of(ClassHierarchyResolverOption.of(
             ClassHierarchyResolver.defaultResolver().orElse(new ClassHierarchyResolver() {
                 @Override
-                public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+                public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
                     // mark all unresolved classes as interfaces to exclude them from assignability verification
                     return ClassHierarchyInfo.ofInterface();
                 }
@@ -808,7 +810,7 @@ public class ClassWriter extends BasicWriter {
         return getModifiers(set);
     }
 
-    private static Set<String> getModifiers(Set<java.lang.reflect.AccessFlag> flags) {
+    private static Set<String> getModifiers(Set<AccessFlag> flags) {
         Set<String> s = new LinkedHashSet<>();
         for (var f : flags)
             if (f.sourceModifier()) s.add(Modifier.toString(f.mask()));
@@ -819,7 +821,7 @@ public class ClassWriter extends BasicWriter {
         return getFlags(flags.flagsMask(), flagsReportUnknown(flags, cffv()));
     }
 
-    private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {
+    private static Set<String> getFlags(int mask, Set<AccessFlag> flags) {
         Set<String> s = new LinkedHashSet<>();
         for (var f: flags) {
             s.add("ACC_" + f.name());

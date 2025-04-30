@@ -184,5 +184,20 @@ public class BasicAccessFlagTest {
         for (var location : AccessFlag.Location.values()) {
             assertThrows(NullPointerException.class, () -> location.flags(null));
         }
+
+        for (var location : AccessFlag.Location.values()) {
+            try {
+                location.flags(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flags(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
+            }
+            try {
+                location.flagsMask(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flagsMask(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
+            }
+        }
     }
 }

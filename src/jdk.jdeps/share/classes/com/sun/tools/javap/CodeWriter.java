@@ -25,15 +25,18 @@
 
 package com.sun.tools.javap;
 
-import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.instruction.*;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.Locale;
 import java.util.stream.Collectors;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.instruction.*;
 
 /*
  *  Write the contents of a Code attribute.

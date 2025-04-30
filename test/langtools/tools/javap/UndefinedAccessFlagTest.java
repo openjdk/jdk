@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8297271 8333748
+ * @bug 8333748 8349536
  * @summary javap should not fail if reserved access flag bits are set to 1
  * @library /tools/lib
  * @modules jdk.jdeps/com.sun.tools.javap
