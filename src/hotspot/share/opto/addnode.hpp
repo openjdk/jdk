@@ -49,17 +49,17 @@ class AddNode : public Node {
     jlong multiplier = 0;
   };
 
-  inline static bool is_valid_multiplication(const Multiplication& mul, Node* variable) {
+  inline static bool is_valid_multiplication(const Multiplication& mul, const Node* variable) {
     return mul.valid && mul.variable == variable;
   }
 
   Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
-  static Multiplication find_simple_addition_pattern(Node* n, BasicType bt);
-  static Multiplication find_simple_lshift_pattern(Node* n, BasicType bt);
-  static Multiplication find_simple_multiplication_pattern(Node* n, BasicType bt);
-public:
-  static Multiplication find_power_of_two_addition_pattern(Node* n, BasicType bt);
+  static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
+  static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
+  static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);
+  static Multiplication find_power_of_two_addition_pattern(const Node* n, BasicType bt);
 
+ public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
   }
