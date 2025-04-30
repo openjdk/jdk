@@ -35,8 +35,6 @@ import java.util.ListIterator;
 
 import sun.awt.windows.WToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.java2d.SurfaceManagerFactory;
-import sun.java2d.WindowsSurfaceManagerFactory;
 import sun.java2d.d3d.D3DGraphicsDevice;
 import sun.java2d.windows.WindowsFlags;
 
@@ -62,9 +60,6 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         WindowsFlags.initFlags();
 
         initDisplay();
-
-        // Install correct surface manager factory.
-        SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
 
         double sx = -1;
         double sy = -1;

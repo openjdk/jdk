@@ -1326,6 +1326,10 @@ void os::Posix::init_2(void) {
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
 
+int os::Posix::clock_tics_per_second() {
+  return clock_tics_per_sec;
+}
+
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
 // and sem_timedwait().
@@ -1473,12 +1477,9 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
