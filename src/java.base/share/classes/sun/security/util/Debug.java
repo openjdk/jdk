@@ -65,7 +65,7 @@ public class Debug {
         }
 
         if (args != null) {
-            args = marshal(args);
+            args = args.toLowerCase(Locale.ENGLISH);
             if (args.equals("help")) {
                 Help();
             } else if (args.contains("all")) {
@@ -347,19 +347,6 @@ public class Debug {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * change a string into lower case except permission classes and URLs.
-     */
-    private static String marshal(String args) {
-        if (args != null) {
-
-            // convert to lower-case characters
-            return String.valueOf(args.toLowerCase(Locale.ENGLISH));
-        }
-
-        return null;
     }
 
     public static String toString(byte[] b) {
