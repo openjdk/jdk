@@ -41,11 +41,6 @@ import java.security.Security;
 public class SerializeProvider extends PKCS11Test {
 
     public void main(Provider p) throws Exception {
-        // Checking if provider is null in case the
-        // provider supplied by the PKCS11Test is null
-        if (p==null) {
-            throw new RuntimeException("Provider must not be NULL");
-        }
 
         if (Security.getProvider(p.getName()) != p) {
             Security.addProvider(p);
@@ -62,7 +57,7 @@ public class SerializeProvider extends PKCS11Test {
         InputStream in = new ByteArrayInputStream(data);
         ObjectInputStream oin = new ObjectInputStream(in);
 
-        Provider p2 = (Provider)oin.readObject();
+        Provider p2 = (Provider) oin.readObject();
 
         System.out.println("Reconstituted: " + p2);
 
