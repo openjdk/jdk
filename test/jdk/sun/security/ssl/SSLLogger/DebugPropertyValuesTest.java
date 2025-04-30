@@ -105,7 +105,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("record", "record-expand", "ssl")),
-		// reverse the input params of last example. should be same result
+                // reverse the input params of last example. should be same result
                 Arguments.of(List.of("-Djavax.net.debug=expand,record:ssl"),
                         List.of("record", "record-expand", "ssl")),
                 // this test is equivalent to ssl:record mode
