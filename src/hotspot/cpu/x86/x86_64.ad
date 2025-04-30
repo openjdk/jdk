@@ -1596,14 +1596,11 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 bool Matcher::supports_vector_calling_convention(void) {
-  if (EnableVectorSupport && UseVectorStubs) {
-    return true;
-  }
-  return false;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = XMM0_num;
   int hi = XMM0b_num;
   if (ideal_reg == Op_VecX) hi = XMM0d_num;
@@ -1850,14 +1847,14 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
       __ vzeroupper();
     }
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 

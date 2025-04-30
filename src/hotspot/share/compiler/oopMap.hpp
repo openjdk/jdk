@@ -162,7 +162,7 @@ class OopMap: public ResourceObj {
   bool _has_derived_oops;
   CompressedWriteStream* _write_stream;
 
-  debug_only( OopMapValue::oop_types* _locs_used; int _locs_length;)
+  DEBUG_ONLY( OopMapValue::oop_types* _locs_used; int _locs_length;)
 
   // Accessors
   int omv_count() const                       { return _omv_count; }
