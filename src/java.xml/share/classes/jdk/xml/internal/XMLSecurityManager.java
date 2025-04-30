@@ -361,7 +361,7 @@ public final class XMLSecurityManager {
         for (Limit limit : Limit.values()) {
             if (limit.is(propertyName)) {
                 // current spec: new property name == systemProperty
-                return limit.systemProperty();
+                return (limit.systemProperty != null) ? limit.systemProperty : limit.apiProperty;
             }
         }
         //ENTITYCOUNT's new name is qName

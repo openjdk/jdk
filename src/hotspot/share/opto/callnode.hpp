@@ -790,6 +790,7 @@ public:
   void  set_arg_escape(bool f)             { _arg_escape = f; }
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
+  void register_for_late_inline();
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 

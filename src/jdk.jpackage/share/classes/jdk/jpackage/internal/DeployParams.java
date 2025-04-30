@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.PackagerException;
 
 /**
  * DeployParams

@@ -322,7 +322,7 @@ Node::Node(uint req)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
     _in = nullptr;
@@ -341,7 +341,7 @@ Node::Node(Node *n0)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
@@ -354,7 +354,7 @@ Node::Node(Node *n0, Node *n1)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -369,7 +369,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -386,7 +386,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -405,7 +405,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -427,7 +427,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -451,7 +451,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -489,7 +489,7 @@ Node *Node::clone() const {
   n->_outcnt = 0;
   n->_outmax = 0;
   // Unlock this guy, since he is not in any hash table.
-  debug_only(n->_hash_lock = 0);
+  DEBUG_ONLY(n->_hash_lock = 0);
   // Walk the old node's input list to duplicate its edges
   uint i;
   for( i = 0; i < len(); i++ ) {
@@ -525,11 +525,11 @@ Node *Node::clone() const {
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
-  debug_only( n->verify_construction() );
+  DEBUG_ONLY( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
   // impossible to break on the clone's moment of creation.
-  //debug_only( n->set_debug_idx( debug_idx() ) );
+  //DEBUG_ONLY( n->set_debug_idx( debug_idx() ) );
 
   C->copy_node_notes_to(n, (Node*) this);
 
@@ -942,7 +942,7 @@ void Node::disconnect_inputs(Compile* C) {
 #endif
 
   // Node::destruct requires all out edges be deleted first
-  // debug_only(destruct();)   // no reuse benefit expected
+  // DEBUG_ONLY(destruct();)   // no reuse benefit expected
   C->record_dead_node(_idx);
 }
 
@@ -2057,7 +2057,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+      C->igv_print_graph_to_network("PrintBFS", _print_list);
     }
   } else {
     _output->print_cr("No nodes to print.");
@@ -3076,3 +3076,78 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
+
+void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
+  Node* c = ctrl_use->in(j);
+  if (igvn->type(c) != Type::TOP) {
+    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+    create_halt_path(igvn, c, loop, phase_str);
+  }
+}
+
+// This Type node is dead. It could be because the type that it captures and the type of the node computed from its
+// inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
+// be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
+// flow construct must guard the Type node (an If node usually). When the Type node becomes dead, the guard usually
+// constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
+// doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
+// paths. The dead paths are then replaced by a Halt node.
+void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
+  Unique_Node_List wq;
+  wq.push(this);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      if (u->is_CFG()) {
+        assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
+        make_path_dead(igvn, loop, u, 0, phase_str);
+      } else if (u->is_Phi()) {
+        Node* r = u->in(0);
+        assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
+        if (r->is_Region()) {
+          for (uint j = 1; j < u->req(); ++j) {
+            if (u->in(j) == n) {
+              make_path_dead(igvn, loop, r, j, phase_str);
+            }
+          }
+        }
+      } else {
+        wq.push(u);
+      }
+    }
+  }
+}
+
+void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+  Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(frame);
+  } else {
+    loop->register_new_node(frame, igvn->C->start());
+  }
+
+  stringStream ss;
+  ss.print("dead path discovered by TypeNode during %s", phase_str);
+
+  Node* halt = new HaltNode(c, frame, ss.as_string(igvn->C->comp_arena()));
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(halt);
+  } else {
+    loop->register_control(halt, loop->ltree_root(), c);
+  }
+  igvn->add_input_to(igvn->C->root(), halt);
+}
+
+Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    Node* top = igvn->C->top();
+    ResourceMark rm;
+    make_paths_from_here_dead(igvn, nullptr, "igvn");
+    return top;
+  }
+
+  return Node::Ideal(phase, can_reshape);
+}
+

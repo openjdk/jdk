@@ -76,7 +76,7 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<ResolvedMethodEntry>* _resolved_method_entries;
 
   // Sizing
-  debug_only(friend class ClassVerifier;)
+  DEBUG_ONLY(friend class ClassVerifier;)
 
   public:
     // specific but defiinitions for ldc

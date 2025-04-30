@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,5 +244,12 @@ public enum Target {
      */
     public boolean nullCheckOuterThisByDefault() {
         return compareTo(JDK1_25) >= 0;
+    }
+
+    /** Releases prior to JDK 23 don't allow primitive types as case labels in
+     *  SwitchBootstrap.typeSwitch
+     */
+    public boolean switchBootstrapOnlyAllowsReferenceTypesAsCaseLabels() {
+        return compareTo(Target.JDK1_23) < 0;
     }
 }

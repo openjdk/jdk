@@ -604,10 +604,8 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                            \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
-  nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
-  nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
   volatile_nonstatic_field(JavaThread,         _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
@@ -704,6 +702,7 @@
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
      static_field(Abstract_VM_Version,         _features,                                     uint64_t)                              \
      static_field(Abstract_VM_Version,         _features_string,                              const char*)                           \
+     static_field(Abstract_VM_Version,         _cpu_info_string,                              const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
