@@ -203,7 +203,7 @@ public class PostImageScriptTest {
         JPackageUserScript.verifyPackagingDirectories()
                 .withUnchangedDirectory("../services")
                 .withUnchangedDirectory("../support")
-                .withEmptyDirectory("../packages")
+                .withNonexistantPath("../packages")
                 .apply(test).run(Action.CREATE);
     }
 
