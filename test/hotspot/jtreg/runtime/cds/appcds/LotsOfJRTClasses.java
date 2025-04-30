@@ -33,10 +33,10 @@ import jdk.test.lib.cds.CDSOptions;
  *          this will produce an archive with over 30,000 classes.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @run driver/timeout=500 LotsOfClasses
+ * @run driver/timeout=500 LotsOfJRTClasses
  */
 
-public class LotsOfClasses {
+public class LotsOfJRTClasses {
 
     public static void main(String[] args) throws Exception {
         ArrayList<String> list = new ArrayList<>();

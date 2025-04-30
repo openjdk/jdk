@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.test;
 
-import java.util.HashSet;
-import java.util.Set;
+/*
+ * @test
+ * @bug 8351113
+ * @summary check for negative offset
+ * @library /test/lib
+ */
 
-public record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
+import jdk.test.lib.Utils;
+import javax.crypto.spec.RC2ParameterSpec;
 
-    public static <T> Comm<T> compare(Set<T> a, Set<T> b) {
-        Set<T> common = new HashSet<>(a);
-        common.retainAll(b);
-        Set<T> unique1 = new HashSet<>(a);
-        unique1.removeAll(common);
-        Set<T> unique2 = new HashSet<>(b);
-        unique2.removeAll(common);
-        return new Comm<>(common, unique1, unique2);
-    }
+public class InvalidArrayIndex {
 
-    public boolean uniqueEmpty() {
-        return unique1.isEmpty() && unique2.isEmpty();
+    public static void main(String[] args) throws Exception {
+        Utils.runAndCheckException(() -> new RC2ParameterSpec(0, new byte[20],
+                Integer.MIN_VALUE), ArrayIndexOutOfBoundsException.class);
     }
 }
