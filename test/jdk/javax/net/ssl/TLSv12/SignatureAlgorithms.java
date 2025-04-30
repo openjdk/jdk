@@ -31,8 +31,18 @@
  * @bug 8049321
  * @summary Support SHA256WithDSA in JSSE
  * @library /javax/net/ssl/templates
- * @run main/othervm  -XX:StartFlightRecording=filename=/tmp/sha1-hs.jfr,settings=/tmp/securityEvents.jfc SignatureAlgorithms PKIX "SHA-224,SHA-256"
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-224,SHA-256"
  *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-224"
+ *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-256"
+ *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-224,SHA-256"
+ *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA256
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-224"
+ *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA256
+ * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-256"
+ *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA256
  */
 
 import java.util.*;
