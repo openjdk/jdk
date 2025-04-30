@@ -69,13 +69,13 @@ runs:
 
     - name: 'Unpack bundles'
       run: |
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }${{ inputs.static-suffix }}}.zip ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d bundles/jdk
         fi
 
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
