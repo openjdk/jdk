@@ -45,25 +45,6 @@ import java.util.function.Supplier;
  *  deletion without notice.</b>
  */
 public class BasicWriter {
-    private static final Map<AccessFlag.Location, Integer> LOCATION_MASKS;
-
-    static {
-        var map = new EnumMap<AccessFlag.Location, Integer>(AccessFlag.Location.class);
-        for (var loc : AccessFlag.Location.values()) {
-            map.put(loc, 0);
-        }
-
-        for (var flag : AccessFlag.values()) {
-            for (var loc : flag.locations()) {
-                map.compute(loc, (_, v) -> v | flag.mask());
-            }
-        }
-
-        // Peculiarities from AccessFlag.maskToAccessFlag
-        map.compute(AccessFlag.Location.METHOD, (_, v) -> v | Modifier.STRICT);
-
-        LOCATION_MASKS = map;
-    }
 
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
@@ -82,7 +63,7 @@ public class BasicWriter {
         try {
             return AccessFlag.maskToAccessFlags(mask, location);
         } catch (IllegalArgumentException ex) {
-            mask &= LOCATION_MASKS.get(location);
+            mask &= location.flagsMask(cffv);
             report("Access Flags: " + ex.getMessage());
             return AccessFlag.maskToAccessFlags(mask, location);
         }
