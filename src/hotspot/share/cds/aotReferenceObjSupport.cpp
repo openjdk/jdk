@@ -52,10 +52,10 @@
 // Eligibility
 // ===========
 //
-// [1] A reference that does not require special clean up (i.e., Reference::queue == _null_queue.resolve())
+// [1] A reference that does not require special clean up (i.e., Reference::queue == ReferenceQueue.NULL_QUEUE)
 //     is eligible.
 //
-// [2] A reference that REQUIRE specials clean up (i.e., Reference::queue != _null_queue.resolve())
+// [2] A reference that REQUIRE specials clean up (i.e., Reference::queue != ReferenceQueue.NULL_QUEUE)
 //     is eligible ONLY if its referent is not null.
 //
 // As of this version, the only oops in group [2] that can be found by AOTArtifactFinder are
@@ -119,7 +119,7 @@ void AOTReferenceObjSupport::initialize(TRAPS) {
   InstanceKlass* ik = InstanceKlass::cast(k);
   ik->initialize(CHECK);
 
-  TempNewSymbol field_name = SymbolTable::new_symbol("N""ULL");
+  TempNewSymbol field_name = SymbolTable::new_symbol("NULL_QUEUE");
   fieldDescriptor fd;
   bool found = ik->find_local_field(field_name, vmSymbols::referencequeue_signature(), &fd);
   precond(found);

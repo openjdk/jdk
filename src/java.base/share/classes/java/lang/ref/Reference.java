@@ -76,10 +76,10 @@ public abstract sealed class Reference<T>
      *   indicate end of list.
      *
      *   Dequeued: Added to the associated queue and then removed.
-     *   queue = ReferenceQueue.NULL; next = this.
+     *   queue = ReferenceQueue.NULL_QUEUE; next = this.
      *
      *   Unregistered: Not associated with a queue when created.
-     *   queue = ReferenceQueue.NULL.
+     *   queue = ReferenceQueue.NULL_QUEUE.
      *
      * The collector only needs to examine the referent field and the
      * discovered field to determine whether a (non-FinalReference) Reference
@@ -161,8 +161,8 @@ public abstract sealed class Reference<T>
      *
      * When registered: the queue with which this reference is registered.
      *        enqueued: ReferenceQueue.ENQUEUE
-     *        dequeued: ReferenceQueue.NULL
-     *    unregistered: ReferenceQueue.NULL
+     *        dequeued: ReferenceQueue.NULL_QUEUE
+     *    unregistered: ReferenceQueue.NULL_QUEUE
      */
     volatile ReferenceQueue<? super T> queue;
 
@@ -232,7 +232,7 @@ public abstract sealed class Reference<T>
      */
     private void enqueueFromPending() {
         var q = queue;
-        if (q != ReferenceQueue.NULL) q.enqueue(this);
+        if (q != ReferenceQueue.NULL_QUEUE) q.enqueue(this);
     }
 
     private static final Object processPendingLock = new Object();
@@ -544,7 +544,7 @@ public abstract sealed class Reference<T>
 
     Reference(T referent, ReferenceQueue<? super T> queue) {
         this.referent = referent;
-        this.queue = (queue == null) ? ReferenceQueue.NULL : queue;
+        this.queue = (queue == null) ? ReferenceQueue.NULL_QUEUE : queue;
     }
 
     /**
