@@ -44,10 +44,7 @@ public class OOMCrashClass1960_2 implements Opcodes {
     public static byte[] dump() throws Exception {
 
         ClassWriter classWriter = new ClassWriter(0);
-        FieldVisitor fieldVisitor;
-        RecordComponentVisitor recordComponentVisitor;
         MethodVisitor methodVisitor;
-        AnnotationVisitor annotationVisitor0;
 
         classWriter.visit(V1_1, ACC_PUBLIC | ACC_SUPER, "OOMCrashClass1960_2", null, "java/lang/Object", null);
 
