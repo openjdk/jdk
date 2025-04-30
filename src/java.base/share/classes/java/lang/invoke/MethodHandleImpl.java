@@ -1525,6 +1525,7 @@ abstract class MethodHandleImpl {
         }
     }
 
+    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
