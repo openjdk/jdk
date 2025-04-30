@@ -595,7 +595,7 @@ void CDSConfig::setup_compiler_args() {
     FLAG_SET_ERGO(AOTReplayTraining, false);
   } else if (is_dumping_final_static_archive() && can_dump_profiles) {
     // JEP 483 workflow -- assembly
-    FLAG_SET_ERGO(AOTRecordTraining, false); // This will be updated inside MetaspaceShared::preload_and_dump()
+    FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
   } else if (is_using_archive() && new_aot_flags_used()) {
     // JEP 483 workflow -- production

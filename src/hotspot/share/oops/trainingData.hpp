@@ -281,7 +281,7 @@ private:
 
   static bool have_data() { return AOTReplayTraining;  } // Going to read
   static bool need_data() { return AOTRecordTraining;  } // Going to write
-  static bool assembling_data() { return CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
+  static bool assembling_data() { return have_data() && CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
 
   template<typename Function>
   static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
