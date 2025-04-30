@@ -359,7 +359,7 @@ void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj
   // for this loop
   if (TraceLoopLimitCheck) {
     tty->print_cr("Counted Loop Limit Check generated:");
-    debug_only( bol->dump(2); )
+    DEBUG_ONLY( bol->dump(2); )
   }
 #endif
 }

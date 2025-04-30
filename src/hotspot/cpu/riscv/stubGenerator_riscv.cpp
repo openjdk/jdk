@@ -6761,8 +6761,6 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     generate_string_indexof_stubs();
 
-    generate_vector_math_stubs();
-
 #endif // COMPILER2
   }
 
