@@ -178,7 +178,7 @@ class ZipCoder {
     }
 
     /**
-     * {@return the {@link Charset} used this {@code ZipCoder}}
+     * {@return the {@link Charset} used by this {@code ZipCoder}}
      */
     final Charset charset() {
         return this.cs;

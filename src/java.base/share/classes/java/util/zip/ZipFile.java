@@ -82,7 +82,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private final String filePath;     // ZIP file path
     private final String fileName;     // name of the file
-    // ZipCoder for entry names and comments when not using UTF-8
+    // Used when decoding entry names and comments
     private final ZipCoder zipCoder;
     private volatile boolean closeRequested;
 
@@ -1428,15 +1428,13 @@ public class ZipFile implements ZipConstants, Closeable {
          * if the fileKey() is not available.
          * - The ZIP file's last modified time (to allow for cases
          * where a ZIP file is re-opened after it has been modified).
-         * - The Charset, that was provided when constructing a ZipFile instance,
-         * for reading non-UTF-8 entry names and comments.
+         * - The Charset that was provided when constructing the ZipFile instance.
          * The unique combination of these components identifies a Source of a ZipFile.
          */
         private static class Key {
             private final BasicFileAttributes attrs;
             private final File file;
-            // the Charset to be used for processing non-UTF-8 entry names in the ZIP file
-            // and the ZIP file comment
+            // the Charset that was provided when constructing the ZipFile instance
             private final Charset charset;
 
             /**
