@@ -176,7 +176,7 @@ public class ConsoleTest extends KullaTesting {
             }
         };
         int count = 384; // 128-255, 384-511, 640-767, ... (JDK-8355371)
-        String testStr = "ア"; // U+30A2 (A2 >= 80) (JDK-8354910)
+        String testStr = "\u30A2"; // Japanese katakana (A2 >= 80) (JDK-8354910)
         assertEval("System.console().writer().write(\"" + testStr + "\".repeat(" + count + "))");
         String expected = testStr.repeat(count);
         assertEquals(sb.toString(), expected);
