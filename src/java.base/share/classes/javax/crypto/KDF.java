@@ -477,6 +477,24 @@ public final class KDF {
         throw e;
     }
 
+    // Rethrows the IAPE thrown by an implementation, adding an explanation
+    // on in which situation it fails.
+    private void rethrow(InvalidAlgorithmParameterException e)
+            throws InvalidAlgorithmParameterException {
+        var source = serviceIterator == null
+                ? "specified" : "selected";
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("A " + this.getAlgorithm()
+                    + " derivation cannot be performed "
+                    + "using the supplied derivation "
+                    + "inputs, using the " + source + " "
+                    + theOne.provider().getName()
+                    + ".");
+        }
+        throw new InvalidAlgorithmParameterException("The " + source + " provider "
+                + theOne.provider.getName() + " does not support this input", e);
+    }
+
     /**
      * Derives a key, returned as a {@code SecretKey} object.
      *
@@ -521,7 +539,12 @@ public final class KDF {
         }
         Objects.requireNonNull(derivationSpec);
         if (checkSpiNonNull(theOne)) {
-            return theOne.spi().engineDeriveKey(alg, derivationSpec);
+            try {
+                return theOne.spi().engineDeriveKey(alg, derivationSpec);
+            } catch (InvalidAlgorithmParameterException e) {
+                rethrow(e);
+                return null; // will not be called
+            }
         } else {
             return (SecretKey) chooseProvider(alg, derivationSpec);
         }
@@ -552,7 +575,12 @@ public final class KDF {
 
         Objects.requireNonNull(derivationSpec);
         if (checkSpiNonNull(theOne)) {
-            return theOne.spi().engineDeriveData(derivationSpec);
+            try {
+                return theOne.spi().engineDeriveData(derivationSpec);
+            } catch (InvalidAlgorithmParameterException e) {
+                rethrow(e);
+                return null; // will not be called
+            }
         } else {
             try {
                 return (byte[]) chooseProvider(null, derivationSpec);
@@ -647,7 +675,8 @@ public final class KDF {
                     e.printStackTrace(pdebug.getPrintStream());
                 }
                 // getNext reached end without finding an implementation
-                throw new InvalidAlgorithmParameterException(lastException);
+                throw new InvalidAlgorithmParameterException(
+                        "No provider supports this input", lastException);
             }
         }
     }
