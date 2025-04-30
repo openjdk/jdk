@@ -34,6 +34,7 @@ import java.util.List;
 import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
 import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.internal.util.OperatingSystem.LINUX;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
@@ -77,7 +78,7 @@ public class AppContentTest {
      // two files in one option and a dir tree in another option.
     @Parameter({TEST_JAVA + "," + TEST_DUKE, TEST_DIR})
      // include one file and one link to the file
-    @Parameter(value = {TEST_JAVA, TEST_DUKE_LINK}, ifOS = MACOS)
+    @Parameter(value = {TEST_JAVA, TEST_DUKE_LINK}, ifOS = {MACOS,LINUX})
     public void test(String... args) throws Exception {
         final List<String> testPathArgs = List.of(args);
         final int expectedJPackageExitCode;
@@ -143,7 +144,10 @@ public class AppContentTest {
         }
 
         private static Path copyAppContentPath(Path appContentPath) throws IOException {
-            var appContentArg = TKit.createTempDirectory("app-content").resolve("Resources");
+            Path appContentArg = TKit.createTempDirectory("app-content");
+            if (copyInResources) {
+                appContentArg = appContentArg.resolve("Resources");
+            }
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             Path dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
@@ -159,7 +163,10 @@ public class AppContentTest {
         }
 
         private static List<Path> initAppContentPaths(List<Path> appContentPaths) {
-            if (copyInResources) {
+            boolean copy = (copyInResources || appContentPaths.stream()
+                            .anyMatch(s -> s.toString().contains("Link")));
+
+            if (copy) {
                 return appContentPaths.stream().map(appContentPath -> {
                     if (appContentPath.endsWith(TEST_BAD)) {
                         return appContentPath;

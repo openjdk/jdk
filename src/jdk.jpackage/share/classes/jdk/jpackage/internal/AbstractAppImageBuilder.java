@@ -25,7 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -108,14 +107,9 @@ public abstract class AbstractAppImageBuilder {
 
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {
-            if (OperatingSystem.isMacOS()) {
-                FileUtils.copyRecursive(Path.of(item),
-                    appLayout.contentDirectory().resolve(Path.of(item).getFileName()),
-                    LinkOption.NOFOLLOW_LINKS);
-            } else {
-                FileUtils.copyRecursive(Path.of(item),
-                    appLayout.contentDirectory().resolve(Path.of(item).getFileName()));
-            }
+            FileUtils.copyRecursive(Path.of(item),
+                appLayout.contentDirectory().resolve(Path.of(item).getFileName()),
+                LinkOption.NOFOLLOW_LINKS);
         }
     }
 
