@@ -440,10 +440,12 @@ void CompilationPolicy::initialize() {
       FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
     }
     if (CICompilerCountPerCPU) {
+      int min_count = (c1_only || c2_only) ? 1 : 2;
+      int active_cpus = os::active_processor_count();
       // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
-      int log_cpu = log2i(os::active_processor_count());
+      int log_cpu = log2i(active_cpus);
       int loglog_cpu = log2i(MAX2(log_cpu, 1));
-      count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
+      count = MAX2(log_cpu * loglog_cpu * 3 / 2, min_count);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
       size_t c1_size = 0;
 #ifdef COMPILER1
@@ -453,12 +455,20 @@ void CompilationPolicy::initialize() {
 #ifdef COMPILER2
       c2_size = C2Compiler::initial_code_buffer_size();
 #endif
-      size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
+      size_t buffer_size = 0;
+      if (c1_only) {
+        buffer_size = c1_size;
+      } else if (c2_only) {
+        buffer_size = c2_size;
+      } else {
+        buffer_size = c1_size/3 + 2*c2_size/3;
+      }
       int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
-        count = MAX2(max_count, c1_only ? 1 : 2);
+        count = MAX2(max_count, min_count);
       }
+      assert((!c1_only && !c2_only) || count <= active_cpus, "Too many threads: %d", count);
       FLAG_SET_ERGO(CICompilerCount, count);
     }
 #else
@@ -476,7 +486,6 @@ void CompilationPolicy::initialize() {
 #endif
 
     if (c1_only) {
-      // No C2 compiler thread required
       set_c1_count(count);
     } else if (c2_only) {
       set_c2_count(count);
