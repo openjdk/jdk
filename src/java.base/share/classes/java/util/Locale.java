@@ -3497,7 +3497,7 @@ public final class Locale implements Cloneable, Serializable {
             if (h == 0) {
                 h = 17;
                 h = 37*h + range.hashCode();
-                h = 37*h + Long.hashCode(Double.doubleToLongBits(weight));
+                h = 37*h + Double.hashCode(weight);
                 if (h != 0) {
                     hash = h;
                 }
