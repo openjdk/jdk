@@ -76,6 +76,13 @@ define igv
 end
 ```
 
+On `lldb`, it might be necessary to explicitly cast the registers to `void*` to
+ ensure their values are correctly passed as arguments:
+
+```
+(lldb) p igv_print(true, (void*)$sp, (void*)$fp, (void*)$pc)
+```
+
 Another way to dump graphs interactively is through the `Node::dump_bfs`
 functionality with the option `!` (run `p find_node(0)->dump_bfs(0,0,"H")` to
 see the complete list of options). One of the versions of this function also
