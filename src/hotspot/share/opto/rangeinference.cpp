@@ -83,6 +83,21 @@ public:
 // does not exist one such number, the calculation will overflow and return a
 // value < lo.
 //
+// Formally, this function tries to find the minimum value that is not less
+// than lo and satisfies bits, assuming such value exists. The cases where such
+// value does not exists automatically follows.
+//
+// If there exists a value not less than lo and satisfies bits, then this
+// function will always find a such value. The conversion is also true, that is
+// if this function finds a value not less than lo and satisfies bits, then it
+// must trivially be the case that there exists a such value. As a result, the
+// negation of those statements are also equivalent, there does not exists a
+// value not less than lo and satisfies bits if and only if this function does
+// not return a such value.
+//
+// In practice, since the algorithm always ensures that the returned value
+// satisfies bits, we only need to check if it is not less than lo.
+//
 // Here, we view a number in binary as a bit string. As a result,  the first
 // bit refers to the highest bit (the MSB), the last bit refers to the lowest
 // bit (the LSB), a bit comes before (being higher than) another if it is more
