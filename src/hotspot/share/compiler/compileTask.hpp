@@ -29,7 +29,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/unloadableMethodHandle.hpp"
+#include "oops/unloadableMethodHandle.hpp"
 #include "utilities/xmlstream.hpp"
 
 class DirectiveSet;

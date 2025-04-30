@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
-#define SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
+#ifndef SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
+#define SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
 
-#include "runtime/unloadableMethodHandle.hpp"
+#include "unloadableMethodHandle.hpp"
 
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
@@ -95,4 +95,4 @@ inline Method* UnloadableMethodHandle::method() const {
   return _method;
 }
 
-#endif // SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
+#endif // SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_INLINE_HPP

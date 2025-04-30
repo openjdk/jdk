@@ -27,7 +27,7 @@
 
 #include "compiler/compileTask.hpp"
 
-#include "runtime/unloadableMethodHandle.inline.hpp"
+#include "oops/unloadableMethodHandle.inline.hpp"
 
 inline Method* CompileTask::method() const {
   return _method_handle.method();

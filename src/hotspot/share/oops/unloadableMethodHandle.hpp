@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
-#define SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
+#ifndef SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP
+#define SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP
 
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
@@ -94,4 +94,4 @@ public:
   void block_unloading();
 };
 
-#endif // SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
+#endif // SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP
