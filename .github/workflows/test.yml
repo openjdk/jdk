@@ -40,7 +40,7 @@ on:
       xcode-toolset-version:
         required: false
         type: string
-      static:
+      static-suffix:
         required: false
         type: string
 
@@ -143,16 +143,7 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
-        if: '${{ inputs.static }}' != 'true'
-
-      - name: 'Get static bundles'
-        id: static-bundles
-        uses: ./.github/actions/get-bundles
-        with:
-          platform: ${{ inputs.platform }}
-          debug-suffix: ${{ matrix.debug-suffix }}
-          static-suffix: "-static"
-        if: '${{ inputs.static }}' == 'true'
+          static-suffix: ${{ inputs.static-suffix }}
 
       - name: 'Install dependencies'
         run: |
@@ -177,7 +168,7 @@ jobs:
       - name: 'Run tests'
         id: run-tests
         run: >
-          if [[ '${{ inputs.static }}' == 'true' ]]; then
+          if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
             make test-prebuilt
             TEST='${{ matrix.test-suite }}'
             BOOT_JDK=${{ steps.bootjdk.outputs.path }}

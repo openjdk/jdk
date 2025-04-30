@@ -371,7 +371,7 @@ jobs:
       platform: linux-x64
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
-      static: true
+      static-suffix: "-static"
 
   test-macos-aarch64:
     name: macos-aarch64
