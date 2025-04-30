@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,9 @@ final class RSAClientKeyExchange {
 
                 // update the states
                 chc.handshakeSession.setMasterSecret(masterSecret);
+                chc.handshakeSession.setRandoms(
+                        chc.clientHelloRandom, chc.serverHelloRandom);
+
                 SSLTrafficKeyDerivation kd =
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
                 if (kd == null) {   // unlikely
@@ -301,6 +304,9 @@ final class RSAClientKeyExchange {
 
                 // update the states
                 shc.handshakeSession.setMasterSecret(masterSecret);
+                shc.handshakeSession.setRandoms(
+                        shc.clientHelloRandom, shc.serverHelloRandom);
+
                 SSLTrafficKeyDerivation kd =
                         SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
                 if (kd == null) {       // unlikely
