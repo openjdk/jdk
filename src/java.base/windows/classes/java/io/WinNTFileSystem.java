@@ -41,6 +41,9 @@ final class WinNTFileSystem extends FileSystem {
 
     private static final String LONG_PATH_PREFIX = "\\\\?\\";
 
+    private static final boolean DELETE_READONLY =
+        Boolean.getBoolean("jdk.io.File.deleteReadOnly");
+
     private final char slash;
     private final char altSlash;
     private final char semicolon;
@@ -565,9 +568,9 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean delete(File f) {
-        return delete0(f);
+        return delete0(f, DELETE_READONLY);
     }
-    private native boolean delete0(File f);
+    private native boolean delete0(File f, boolean deleteReadOnly);
 
     @Override
     public boolean rename(File f1, File f2) {
