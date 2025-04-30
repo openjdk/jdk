@@ -36,6 +36,8 @@ import java.lang.ref.Reference;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
 /**
  * A buffer stack that allows efficient reuse of memory segments. This is useful in cases
  * where temporary memory is needed.
@@ -150,8 +152,9 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
             @Override
             public void close() {
                 assertOrder();
-                // the Arena::close method is closed "early" as it checks thread
-                // confinement and before any mutation of the internal state takes place.
+                // the Arena::close method is called "early" as it checks thread
+                // confinement and crucially before any mutation of the internal
+                // state takes place.
                 confinedArena.close();
                 stack.resetTo(parentOffset);
                 if (locked) {
@@ -176,7 +179,8 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
 
     public static BufferStack of(MemoryLayout layout) {
         Objects.requireNonNull(layout);
-        long size = layout.byteAlignment() > 8
+        // Allocations are always at least aligned with the largest Java type (e.g., long)
+        long size = layout.byteAlignment() > JAVA_LONG.byteSize()
                 ? Utils.alignUp(layout.byteSize(), layout.byteAlignment())
                 : layout.byteSize();
         return of(size);
