@@ -327,12 +327,12 @@ static bool is_excluded(Klass* k) {
       CDSConfig::is_dumping_archive() &&
       CDSConfig::current_thread_is_vm_or_dumper()) {
     if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
-      log_debug(cds)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
+      log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
     } else {
       bool excluded = SystemDictionaryShared::should_be_excluded(k);
       if (excluded) {
-        log_debug(cds)("Purged %s from MDO: excluded class", k->name()->as_C_string());
+        log_debug(aot, training)("Purged %s from MDO: excluded class", k->name()->as_C_string());
       }
       return excluded;
     }
@@ -1794,7 +1794,7 @@ bool MethodData::profile_parameters_for_method(const methodHandle& m) {
 }
 
 void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(MethodData): %p for %p %s", this, _method, _method->name_and_sig_as_C_string());
+  log_trace(aot, training)("Iter(MethodData): %p for %p %s", this, _method, _method->name_and_sig_as_C_string());
   it->push(&_method);
   if (_parameters_type_data_di != no_parameters) {
     parameters_type_data()->metaspace_pointers_do(it);

@@ -558,7 +558,7 @@ void KlassTrainingData::cleanup(Visitor& visitor) {
     bool is_excluded = !holder()->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder(), nullptr);
     if (is_excluded) {
       ResourceMark rm;
-      log_debug(cds)("Cleanup KTD %s", name()->as_klass_external_name());
+      log_debug(aot, training)("Cleanup KTD %s", name()->as_klass_external_name());
       _holder = nullptr;
       key()->make_empty();
     }
@@ -575,9 +575,9 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
   visitor.visit(this);
   if (has_holder()) {
     if (SystemDictionaryShared::check_for_exclusion(holder()->method_holder(), nullptr)) {
-      log_debug(cds)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
+      log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
       if (_final_profile != nullptr && _final_profile->method() != _holder) {
-        log_warning(cds)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
+        log_warning(aot, training)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
       }
       _final_profile = nullptr;
       _final_counters = nullptr;
@@ -733,14 +733,14 @@ void TrainingData::DepList<T>::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 void KlassTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
-  log_trace(cds)("Iter(KlassTrainingData): %p", this);
+  log_trace(aot, training)("Iter(KlassTrainingData): %p", this);
   TrainingData::metaspace_pointers_do(iter);
   _comp_deps.metaspace_pointers_do(iter);
   iter->push(&_holder);
 }
 
 void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
-  log_trace(cds)("Iter(MethodTrainingData): %p", this);
+  log_trace(aot, training)("Iter(MethodTrainingData): %p", this);
   TrainingData::metaspace_pointers_do(iter);
   iter->push(&_klass);
   iter->push((Method**)&_holder);
@@ -752,7 +752,7 @@ void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 void CompileTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
-  log_trace(cds)("Iter(CompileTrainingData): %p", this);
+  log_trace(aot, training)("Iter(CompileTrainingData): %p", this);
   TrainingData::metaspace_pointers_do(iter);
   _init_deps.metaspace_pointers_do(iter);
   _ci_records.metaspace_pointers_do(iter);

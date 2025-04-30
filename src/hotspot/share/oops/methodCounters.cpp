@@ -82,7 +82,7 @@ void MethodCounters::clear_counters() {
 }
 
 void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(MethodCounters): %p", this);
+  log_trace(aot, training)("Iter(MethodCounters): %p", this);
   it->push(&_method);
   it->push(&_method_training_data);
 }
