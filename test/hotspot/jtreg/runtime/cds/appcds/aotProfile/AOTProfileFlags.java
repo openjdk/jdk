@@ -28,6 +28,8 @@
  * @requires vm.cds
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
+ * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.flagless
  * @library /test/lib /test/setup_aot
  * @build AOTProfileFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar

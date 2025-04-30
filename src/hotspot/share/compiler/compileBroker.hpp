@@ -453,6 +453,10 @@ public:
   static void print_heapinfo(outputStream *out, const char* function, size_t granularity);
 };
 
+// In order to achiveve a maximally fast warmup we attempt to compile important methods as soon as all
+// the classes that they depend on are initialized. TrainingReplayThread processes a queue of InstanceKlass*
+// that have just finished running their static initializers. We find all the methods that depend on the given class
+// and for which the number of remaining dependencies is now zero, and eagerly compile them.
 class TrainingReplayThread : public JavaThread {
   static void training_replay_thread_entry(JavaThread* thread, TRAPS);
 public:

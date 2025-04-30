@@ -355,7 +355,7 @@ class MetaspaceObj {
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
                      Type type) throw();
-  // This is used for allocating training data. See JDK-8331086.
+  // This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
   void* operator new(size_t size, MemTag flags) throw();
   void operator delete(void* p) = delete;
 
