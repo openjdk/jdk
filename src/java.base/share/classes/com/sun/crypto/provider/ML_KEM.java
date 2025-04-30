@@ -649,7 +649,7 @@ public final class ML_KEM {
         }
 
         mlKemG.update(seed);
-//        mlKemG.update((byte)mlKem_k);
+        mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
@@ -1009,10 +1009,7 @@ public final class ML_KEM {
     // The elements of poly at return will be in the range of [0, mlKem_q]
     private void mlKemNTT(short[] poly) {
         assert poly.length == ML_KEM_N;
-        if (implKyberNtt(poly, montZetasForVectorNttArr) == 0) {
-//            System.out.println(Arrays.toString(poly));
-//            System.exit(12);
-        }
+        implKyberNtt(poly, montZetasForVectorNttArr);
         mlKemBarrettReduce(poly);
     }
 
