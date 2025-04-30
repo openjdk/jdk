@@ -177,7 +177,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   volatile int64_t _current_sampling_period_ns = -1;
   volatile bool _disenrolled;
   volatile bool _stop_signals = false;
-  volatile int _active_signal_handlers;
+  volatile int _active_signal_handlers = 0;
   volatile bool _is_out_of_safepoint_sampling_triggered = false;
 
   JfrCPUTimeThreadSampler(double rate, bool autoadapt);
