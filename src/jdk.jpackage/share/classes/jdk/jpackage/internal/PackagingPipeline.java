@@ -398,7 +398,7 @@ final class PackagingPipeline {
                 .setResourceCategoryId("resource.post-app-image-script")
                 .setScriptNameSuffix("post-image")
                 .setEnvironmentVariable("JpAppImageDir", appImageDir.toAbsolutePath().toString())
-                .run(env.env(), env.pkg().packageName());
+                .run(env.env(), env.pkg().app().name());
     }
 
     private PackagingPipeline(FixedDAG<TaskID> taskGraph, Map<TaskID, TaskConfig> taskConfig,
