@@ -454,7 +454,7 @@ class SingletonBlob: public RuntimeBlob {
   friend class VMStructs;
 
  protected:
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size, bool alloc_fail_is_fatal=true) throw();
 
  public:
    SingletonBlob(

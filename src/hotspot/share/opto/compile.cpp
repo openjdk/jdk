@@ -421,7 +421,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist) {
+void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -474,7 +474,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
-  debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
+  DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
 
 // ============================================================================
@@ -1013,8 +1013,6 @@ void Compile::Init(bool aliasing) {
   _top     = nullptr;  // cached later
   _matcher = nullptr;  // filled in later
   _cfg     = nullptr;  // filled in later
-
-  IA32_ONLY( set_24_bit_selection_and_mode(true, false); )
 
   _node_note_array = nullptr;
   _default_node_notes = nullptr;
@@ -1857,6 +1855,9 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
 
+  if (has_loops() || _loop_opts_cnt > 0) {
+    print_method(PHASE_AFTER_LOOP_OPTS, 2);
+  }
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
   assert(!C->major_progress(), "not cleared");
@@ -2085,6 +2086,7 @@ bool Compile::inline_incrementally_one() {
   for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
     CallGenerator* cg = _late_inlines.at(i);
+    bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node());
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
       cg->do_late_inline();
@@ -2095,6 +2097,16 @@ bool Compile::inline_incrementally_one() {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
+      } else {
+        bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
+        if (!is_scheduled_for_igvn_before && is_scheduled_for_igvn_after) {
+          // Avoid potential infinite loop if node already in the IGVN list
+          assert(false, "scheduled for IGVN during inlining attempt");
+        } else {
+          // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
+          assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
+          cg->call_node()->set_generator(cg);
+        }
       }
     } else {
       // Ignore late inline direct calls when inlining is not allowed.
@@ -2365,6 +2377,10 @@ void Compile::Optimize() {
   remove_root_to_sfpts_edges(igvn);
 
   if (failing())  return;
+
+  if (has_loops()) {
+    print_method(PHASE_BEFORE_LOOP_OPTS, 2);
+  }
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
@@ -4082,17 +4098,6 @@ bool Compile::final_graph_reshaping() {
     }
   }
 
-#ifdef IA32
-  // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogeneous, item (3).
-  if (UseSSE == 0 &&
-      frc.get_float_count() > 32 &&
-      frc.get_double_count() == 0 &&
-      (10 * frc.get_call_count() < frc.get_float_count()) ) {
-    set_24_bit_selection_and_mode(false, true);
-  }
-#endif // IA32
-
   set_java_calls(frc.get_java_call_count());
   set_inner_loops(frc.get_inner_loop_count());
 
@@ -4253,11 +4258,25 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 //------------------------------verify_bidirectional_edges---------------------
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
-void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
+void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints) const {
   // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
   uint stack_size = live_nodes() >> 4;
-  Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
-  nstack.push(_root);
+  Node_List nstack(MAX2(stack_size, (uint) OptoNodeListSize));
+  if (root_and_safepoints != nullptr) {
+    assert(root_and_safepoints->member(_root), "root is not in root_and_safepoints");
+    for (uint i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
+      Node* root_or_safepoint = root_and_safepoints->at(i);
+      // If the node is a safepoint, let's check if it still has a control input
+      // Lack of control input signifies that this node was killed by CCP or
+      // recursively by remove_globally_dead_node and it shouldn't be a starting
+      // point.
+      if (!root_or_safepoint->is_SafePoint() || root_or_safepoint->in(0) != nullptr) {
+        nstack.push(root_or_safepoint);
+      }
+    }
+  } else {
+    nstack.push(_root);
+  }
 
   while (nstack.size() > 0) {
     Node* n = nstack.pop();
@@ -4307,12 +4326,12 @@ void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
-void Compile::verify_graph_edges(bool no_dead_code) {
+void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List* root_and_safepoints) const {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
 
     // Call graph walk to check edges
-    verify_bidirectional_edges(visited);
+    verify_bidirectional_edges(visited, root_and_safepoints);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;
@@ -5246,10 +5265,10 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
 void Compile::igv_print_method_to_network(const char* phase_name) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  igv_print_graph_to_network(phase_name, (Node*) C->root(), empty_list);
+  igv_print_graph_to_network(phase_name, empty_list);
 }
 
-void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
+void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {

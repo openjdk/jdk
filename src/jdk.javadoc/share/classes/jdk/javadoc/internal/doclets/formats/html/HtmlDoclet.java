@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,12 @@ public class HtmlDoclet extends AbstractDoclet {
             copyFontResources();
         }
 
+        var syntaxHighlight = options.syntaxHighlight();
+        if (syntaxHighlight) {
+            copyResource(DocPaths.HIGHLIGHT_CSS, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS), true);
+            copyResource(DocPaths.HIGHLIGHT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.HIGHLIGHT_JS), true);
+        }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         if (options.stylesheetFile().isEmpty()) {
@@ -409,7 +415,7 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
         for (TypeElement te : typeElems) {
-            if (utils.hasHiddenTag(te) ||
+            if (utils.isHidden(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }

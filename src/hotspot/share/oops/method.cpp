@@ -433,7 +433,7 @@ void Method::set_itable_index(int index) {
     // itable index should be the same as the runtime index.
     assert(_vtable_index == itable_index_max - index,
            "archived itable index is different from runtime index");
-    return; // don’t write into the shared class
+    return; // don't write into the shared class
   } else {
     _vtable_index = itable_index_max - index;
   }
@@ -1256,7 +1256,7 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
 // or adapter that it points to is still live and valid.
 // This function must not hit a safepoint!
 address Method::verified_code_entry() {
-  debug_only(NoSafepointVerifier nsv;)
+  DEBUG_ONLY(NoSafepointVerifier nsv;)
   assert(_from_compiled_entry != nullptr, "must be set");
   return _from_compiled_entry;
 }

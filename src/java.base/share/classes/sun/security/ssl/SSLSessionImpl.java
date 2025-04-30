@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.ssl;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
@@ -195,10 +194,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = id;
         this.host = hc.conContext.transport.getPeerHost();
         this.port = hc.conContext.transport.getPeerPort();
-        this.localSupportedSignAlgs = hc.localSupportedSignAlgs == null ?
+        this.localSupportedSignAlgs = hc.localSupportedCertSignAlgs == null ?
                 Collections.emptySet() :
                 Collections.unmodifiableCollection(
-                        new ArrayList<>(hc.localSupportedSignAlgs));
+                        new ArrayList<>(hc.localSupportedCertSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
         this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
@@ -279,6 +278,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 1 byte > Number of requestedServerNames entries
      *   < 1 byte > ServerName length
      *   < length in bytes > ServerName
+     * < 4 bytes > maximumPacketSize
+     * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
      * < 2 byte > status response length
      *   < 2 byte > status response entry length
@@ -304,8 +305,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
-     * < 4 bytes > maximumPacketSize
-     * < 4 bytes > negotiatedMaxFragSize
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -1300,12 +1299,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /**
      * Use large packet sizes now or follow RFC 2246 packet sizes (2^14)
      * until changed.
-     *
+     * <P>
      * In the TLS specification (section 6.2.1, RFC2246), it is not
      * recommended that the plaintext has more than 2^14 bytes.
      * However, some TLS implementations violate the specification.
      * This is a workaround for interoperability with these stacks.
-     *
+     * <P>
      * Application could accept large fragments up to 2^15 bytes by
      * setting the system property jsse.SSLEngine.acceptLargeFragments
      * to "true".
@@ -1318,7 +1317,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Expand the buffer size of both SSL/TLS network packet and
      * application data.
      */
-    protected void expandBufferSizes() {
+    void expandBufferSizes() {
         sessionLock.lock();
         try {
             acceptLargeFragments = true;

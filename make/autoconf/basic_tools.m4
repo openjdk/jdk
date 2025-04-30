@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   # Tools only needed on some platforms
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 ])
 
 ################################################################################
@@ -104,9 +105,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
   UTIL_LOOKUP_PROGS(WHOAMI, whoami)
-
-  # Tools only needed on some platforms
-  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)
@@ -469,7 +467,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
-      PANDOC_MARKDOWN_FLAG="markdown-smart"
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-smart"
+    else
+      AC_MSG_RESULT([no])
+    fi
+
+    AC_MSG_CHECKING([if the pandoc tex_math_dollars extension needs to be disabled for markdown])
+    if $PANDOC --list-extensions | $GREP -q '+tex_math_dollars'; then
+      AC_MSG_RESULT([yes])
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-tex_math_dollars"
     else
       AC_MSG_RESULT([no])
     fi

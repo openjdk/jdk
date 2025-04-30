@@ -75,10 +75,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
     AC_MSG_NOTICE([Rewriting ORIGINAL_PATH to $REWRITTEN_PATH])
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86 && test "x$with_jvm_variants" != xzero; then
+    AC_MSG_ERROR([32-bit x86 builds are not supported])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      AC_MSG_ERROR([32-bit Windows builds are not supported])
-    fi
     BASIC_SETUP_PATHS_WINDOWS
   fi
 
@@ -532,9 +533,6 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
 
   BASIC_CHECK_SRC_PERMS
-
-  # Check if the user has any old-style ALT_ variables set.
-  FOUND_ALT_VARIABLES=`env | grep ^ALT_`
 
   # Before generating output files, test if they exist. If they do, this is a reconfigure.
   # Since we can't properly handle the dependencies for this, warn the user about the situation

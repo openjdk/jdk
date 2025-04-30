@@ -374,7 +374,7 @@ void ArenaStatCounter::on_arena_chunk_deallocation(size_t size, uint64_t stamp) 
 void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   st->print("Total Usage: %zu ", _peak);
   if (_peak > 0) {
-#ifdef COMPILER2
+#ifdef COMPILER1
     // C1: print allocations broken down by arena types
     if (_comp_type == CompilerType::compiler_c1) {
       st->print("[");
@@ -656,7 +656,7 @@ class MemStatStore : public CHeapObj<mtCompiler> {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     const unsigned stop_after = max_num_printed == -1 ? UINT_MAX : (unsigned)max_num_printed;
     result.num = result.num_c1 = result.num_c2 = result.num_filtered_out = 0;
-    for (int i = 0; _entries[i].e != nullptr && i < max_entries && result.num < stop_after; i++) {
+    for (int i = 0; i < max_entries && _entries[i].e != nullptr && result.num < stop_after; i++) {
       if (_entries[i].s >= minsize) {
         f(_entries[i].e);
         result.num++;

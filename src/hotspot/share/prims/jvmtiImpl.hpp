@@ -278,28 +278,6 @@ class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
 };
 
 
-///////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl
-//
-// Convenience routines for suspending and resuming threads.
-//
-// All attempts by JVMTI to suspend and resume threads must go through the
-// JvmtiSuspendControl interface.
-//
-// methods return true if successful
-//
-class JvmtiSuspendControl : public AllStatic {
-public:
-  // suspend the thread, taking it to a safepoint
-  static bool suspend(JavaThread *java_thread);
-  // resume the thread
-  static bool resume(JavaThread *java_thread);
-
-  static void print();
-};
-
-
 /**
  * When a thread (such as the compiler thread or VM thread) cannot post a
  * JVMTI event itself because the event needs to be posted from a Java
