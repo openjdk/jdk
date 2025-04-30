@@ -1196,6 +1196,9 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
+#if defined(AARCH64)
+    SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
+#endif // AARCH64
   }
 #endif // COMPILER2
 
