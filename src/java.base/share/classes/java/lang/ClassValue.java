@@ -42,13 +42,13 @@ import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
  * perform the message send quickly, for each class encountered.
  * <p>
  * The basic operation of a {@code ClassValue} is {@link #get get}, which
- * returns an associated value, initially created by an invocation to {@link
+ * returns the associated value, initially created by an invocation to {@link
  * #computeValue computeValue}; multiple invocations may happen under race, but
- * only one value is ever associated.
+ * exactly one value is associated to a {@code Class} and returned.
  * <p>
- * Another operation is {@link #remove remove}: it clears an associated value,
- * and ensures subsequent associated values are computed with input states
- * up-to-date with the removal.
+ * Another operation is {@link #remove remove}: it clears the associated value
+ * (if it exists), and ensures the next associated value is computed with input
+ * states up-to-date with the removal.
  * <p>
  * For a particular association, there is a total order for accesses to the
  * associated value.  Accesses are atomic; they include:
@@ -80,36 +80,35 @@ public abstract class ClassValue<T> {
     /**
      * Computes the value to associate to the given {@code Class}.
      * <p>
-     * This method is invoked when an initial read-only access by {@link #get
-     * get} failed to find this association.
+     * This method is invoked when the initial read-only access by {@link #get
+     * get} finds no associated value.
      * <p>
      * If this method throws an exception, the initiating {@code get} call will
-     * not attempt to associate a value, and may terminate either by returning
-     * an observed associated value, if it exists, or by propagating that
-     * exception.
+     * not attempt to associate a value, and may terminate by returning the
+     * associated value if it exists, or by propagating that exception otherwise.
      * <p>
-     * Otherwise, the value is computed and returned.  An attempt to install the
-     * value happens, which can end up observing:
+     * Otherwise, the value is computed and returned.  An attempt to associate
+     * the return value happens, with one of the following outcomes:
      * <ul>
-     * <li>This association is already associated by another attempt. The
-     * associated value is returned.</li>
+     * <li>The associated value is present; it is returned and no association
+     * is done.</li>
      * <li>The most recent {@link #remove remove} call, if it exists, does not
      * happen-before (JLS {@jls 17.4.5}) the finish of the {@code computeValue}
-     * that computed the value for this attempt.  A retry attempt, which that
-     * {@code remove} call happens-before, happens to re-establish this
-     * happens-before relationship.</li>
-     * <li>Otherwise, this attempt successfully associates this value, and
-     * returns the newly associated value.</li>
+     * that computed the value to associate.  A new invocation to {@code
+     * computeValue}, which that {@code remove} call happens-before, happens to
+     * re-establish this happens-before relationship.</li>
+     * <li>Otherwise, this value is successfully associated and returned.</li>
      * </ul>
      *
      * @apiNote
      * A {@code computeValue} call may, due to class loading or other
      * circumstances, recursively call {@code get} or {@code remove} for the
-     * same association.  The recursive {@code get}, if the recursion stops,
+     * same {@code type}.  The recursive {@code get}, if the recursion stops,
      * successfully finishes and this initiating {@code get} observes the
      * associated value from recursion.  The recursive {@code remove} is no-op,
      * since being on the same thread, the {@code remove} already happens-before
-     * the finish of this {@code computeValue}.
+     * the finish of this {@code computeValue}; the result from this {@code
+     * computeValue} still may be associated.
      *
      * @param type the {@code Class} to associate a value to
      * @return the newly computed value to associate
@@ -123,11 +122,11 @@ public abstract class ClassValue<T> {
      * <p>
      * This method first performs a read-only access, and returns the associated
      * value if it exists.  Otherwise, this method tries to associate a value
-     * from a {@link #computeValue computeValue} invocation until a value is
-     * successfully associated.
+     * from a {@link #computeValue computeValue} invocation until the associated
+     * value exists, which may be from another thread.
      * <p>
      * This method may throw an exception from a {@code computeValue} invocation.
-     * In this case, no value is associated.
+     * In this case, no association happens.
      *
      * @param type the {@code Class} to retrieve the associated value for
      * @throws NullPointerException if the argument is {@code null}
@@ -154,10 +153,11 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Removes the associated value for the given {@code Class}.  If this
-     * association is subsequently {@linkplain #get accessed}, this removal
-     * happens-before (JLS {@jls 17.4.5}) the finish of the {@link #computeValue
-     * computeValue} call that returned the associated value.
+     * Removes the associated value for the given {@code Class} and invalidates
+     * all out-of-date computations.  If this association is subsequently
+     * {@linkplain #get accessed}, this removal happens-before (JLS {@jls
+     * 17.4.5}) the finish of the {@link #computeValue computeValue} call that
+     * returned the associated value.
      *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is {@code null}
@@ -170,7 +170,7 @@ public abstract class ClassValue<T> {
     // Possible functionality for JSR 292 MR 1
     /*public*/ void put(Class<?> type, T value) {
         ClassValueMap map = getMap(type);
-        map.setAccess(this, value);
+        map.forcedAssociateAccess(this, value);
     }
 
     //| --------
@@ -225,6 +225,8 @@ public abstract class ClassValue<T> {
             try {
                 value = computeValue(type);
             } catch (Throwable ex) {
+                // no value is associated, but there may be already associated
+                // value. Return that if it exists.
                 accessed = map.readAccess(this);
                 if (accessed instanceof Entry) {
                     @SuppressWarnings("unchecked")
@@ -238,8 +240,8 @@ public abstract class ClassValue<T> {
                     throw ex instanceof Error err ? err : new Error(ex);
                 }
             }
-            // computeValue succeed, proceed to install
-            accessed = map.installAccess(this, permission, makeEntry(version(), value));
+            // computeValue succeed, proceed to associate
+            accessed = map.associateAccess(this, permission, value);
             if (accessed instanceof Entry) {
                 @SuppressWarnings("unchecked")
                 var cast = (Entry<T>) accessed;
@@ -313,13 +315,13 @@ public abstract class ClassValue<T> {
      * before this.version.
      */
     private volatile Version<T> version = new Version<>(this);
-    Version<T> version() { return version; }
+
     void bumpVersion() { version = new Version<>(this); }
-    static final class Version<T> {
-        private final ClassValue<T> classValue;
-        Version(ClassValue<T> classValue) { this.classValue = classValue; }
-        ClassValue<T> classValue() { return classValue; }
-        boolean isLive() { return classValue.version() == this; }
+
+    record Version<T>(/* Object identity, */ClassValue<T> classValue) {
+        boolean isLive() {
+            return classValue.version == this;
+        }
     }
 
     private static final class RemovalToken {
@@ -371,10 +373,7 @@ public abstract class ClassValue<T> {
             return false;
         }
         Entry<T> refreshVersion(Version<T> v2) {
-            if (!version.refersTo(v2)) {
-                return new Entry<>(v2, value);
-            }
-            return this;
+            return version.refersTo(v2) ? this : new Entry<>(v2, value);
         }
         static final Entry<?> DEAD_ENTRY = new Entry<>(null, null);
     }
@@ -452,14 +451,14 @@ public abstract class ClassValue<T> {
 
         Entry<?>[] getCache() { return cacheArray; }
 
-        // A simple read access to this map, for the initial get access.
+        // A simple read access to this map, for the initial step of get or failure recovery.
         synchronized <T> Object readAccess(ClassValue<T> classValue) {
             var item = get(classValue.identity);
             if (item instanceof Entry) {
                 @SuppressWarnings("unchecked")
                 var entry = (Entry<T>) item;
                 // cache refresh
-                var updated = entry.refreshVersion(classValue.version());
+                var updated = entry.refreshVersion(classValue.version);
                 if (updated != entry) {
                     put(classValue.identity, updated);
                 }
@@ -467,13 +466,14 @@ public abstract class ClassValue<T> {
             return item;
         }
 
-        // An installation attempt, for when a computeValue finishes.
-        synchronized <T> Object installAccess(ClassValue<T> classValue, RemovalToken computationalToken, Entry<T> entry) {
+        // An association attempt, for when a computeValue returns a value.
+        synchronized <T> Object associateAccess(ClassValue<T> classValue, RemovalToken computationalToken, T value) {
             var item = readAccess(classValue);
             if (item instanceof Entry)
-                return item; // somebody already installed
+                return item; // value already associated
             var currentToken = (RemovalToken) item;
             if (RemovalToken.areCompatible(currentToken, computationalToken)) {
+                var entry = makeEntry(classValue.version, value);
                 put(classValue.identity, entry);
                 // Add to the cache, to enable the fast path, next time.
                 checkCacheLoad();
@@ -483,7 +483,7 @@ public abstract class ClassValue<T> {
             return currentToken;
         }
 
-        // A removal, requiring subsequent installations to be up-to-date with it.
+        // A removal, requiring subsequent associations to be up-to-date with it.
         synchronized void removeAccess(ClassValue<?> classValue) {
             // Always put in a token to invalidate ongoing computations
             put(classValue.identity, new RemovalToken());
@@ -491,11 +491,11 @@ public abstract class ClassValue<T> {
             removeStaleEntries(classValue);
         }
 
-        // A set, requires cache to flush.
-        synchronized <T> void setAccess(ClassValue<T> classValue, T value) {
+        // A forced association, requires cache to flush.
+        synchronized <T> void forcedAssociateAccess(ClassValue<T> classValue, T value) {
             classValue.bumpVersion();
             removeStaleEntries();
-            var entry = makeEntry(classValue.version(), value);
+            var entry = makeEntry(classValue.version, value);
             put(classValue.identity, entry);
             // Add to the cache, to enable the fast path, next time.
             checkCacheLoad();
