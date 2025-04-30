@@ -28,6 +28,7 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -962,22 +963,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     ArchiveHeapWriter::init();
+
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_method_handles()) {
-      // This assert means that the MethodType and MethodTypeForm tables won't be
-      // updated concurrently when we are saving their contents into a side table.
-      assert(CDSConfig::allow_only_single_java_thread(), "Required");
-
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
-                             vmSymbols::createArchivedObjects(),
-                             vmSymbols::void_method_signature(),
-                             CHECK);
-    }
+    AOTReferenceObjSupport::initialize(CHECK);
+    AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
     if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
