@@ -56,7 +56,7 @@ public class ZipFileCharsetTest {
      * ZIP structure that's cached.
      * A ZipFile can be constructed by passing a Charset which will be used to
      * decode the entry names (and comment) in a ZIP file.
-     * The test here verifies that when multiple ZipFile instances are
+     * The test verifies that when multiple ZipFile instances are
      * constructed using different Charsets but the same underlying ZIP file,
      * then the internal caching implementation of ZipFile doesn't end up using
      * a wrong Charset for parsing the ZIP structure of the ZIP file.
