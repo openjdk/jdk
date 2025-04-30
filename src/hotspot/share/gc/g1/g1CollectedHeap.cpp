@@ -857,7 +857,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 
   do_full_collection(clear_all_soft_refs,
                      false /* do_maximal_compaction */,
-                     size_t(0) /* allocation_word_size*/);
+                     size_t(0) /* allocation_word_size */);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {

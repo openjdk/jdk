@@ -236,6 +236,11 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
   // for the bytes required for this allocation under used_after_gc. This prevents
   // unnecessary shrinking that would be followed by an expand call to satisfy the
   // allocation.
+  if (_g1h->is_humongous(allocation_word_size)) {
+    // Humongous objects are allocated in entire regions, we must calculate
+    // required space in terms of full regions, not just the object size.
+    allocation_word_size = align_up(allocation_word_size, G1HeapRegion::GrainWords);
+  }
   size_t allocation_bytes = allocation_word_size * HeapWordSize;
   used_after_gc += allocation_bytes;
 
