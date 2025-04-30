@@ -16,82 +16,149 @@
  * properties used in this stylesheet.
  */
 :root {
-    /* body, block and code fonts */
-    --body-font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-    --block-font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
-    --code-font-family: 'DejaVu Sans Mono', monospace;
-    /* Base font sizes for body and code elements */
-    --body-font-size: 14.2px;
-    --block-font-size: 14.4px;
-    --code-font-size: 13.9px;
-    --nav-font-size: 13.4px;
-    /* Line height for continuous text blocks */
-    --block-line-height: 1.5;
-    --code-line-height: 1.6;
-    /* Text colors for body and block elements */
-    --body-text-color: #282828;
-    --block-text-color: #282828;
-    /* Background colors for various elements */
-    --body-background-color: #ffffff;
-    --section-background-color: var(--body-background-color);
-    --detail-background-color: #ffffff;
-    --code-background-color: #f5f5f5;
-    --mark-background-color: #f7f7f7;
-    --detail-block-color: #f4f4f4;
-    /* Colors for navigation bar and table captions */
-    --navbar-background-color: #4D7A97;
-    --navbar-text-color: #ffffff;
-    /* Background color for subnavigation and various headers */
-    --subnav-background-color: #dee3e9;
-    --subnav-link-color: #47688a;
-    --member-heading-background-color: var(--subnav-background-color);
-    /* Background and text colors for selected tabs and navigation items */
-    --selected-background-color: #f8981d;
-    --selected-text-color: #253441;
-    --selected-link-color: #4a698a;
-    /* Background colors for generated tables */
-    --table-header-color: #ebeff4;
-    --even-row-color: #ffffff;
-    --odd-row-color: #f0f0f2;
-    /* Text color for page title */
-    --title-color: #2c4557;
-    /* Text colors for links */
-    --link-color: #437291;
-    --link-color-active: #bb7a2a;
-    /* Table of contents */
-    --toc-background-color: #f8f8f8;
-    --toc-highlight-color: var(--subnav-background-color);
-    --toc-hover-color: #e9ecf0;
-    /* Snippet and pre colors */
-    --snippet-background-color: #f2f2f4;
-    --snippet-text-color: var(--block-text-color);
-    --snippet-highlight-color: #f7c590;
-    --pre-background-color: var(--snippet-background-color);
-    --pre-text-color: var(--snippet-text-color);
-    /* Border colors for structural elements and user defined tables */
-    --border-color: #e6e6e6;
-    --table-border-color: #000000;
-    /* Styles for table tabs */
-    --tab-border-radius: 2px 2px 0 0;
-    /* Search input colors */
-    --search-input-background-color: #ffffff;
-    --search-input-text-color: #000000;
-    --search-input-placeholder-color: #909090;
-    /* Highlight color for active search tag target */
-    --search-tag-highlight-color: #ffff66;
-    /* Copy button colors and filters */
-    --button-border-color: #b0b8c8;
-    --button-active-filter: brightness(96%);
-    --button-focus-filter: brightness(104%);
-    /* Colors for invalid tag notifications */
-    --invalid-tag-background-color: #ffe6e6;
-    --invalid-tag-text-color: #000000;
-    /* Navigation bar dimensions */
+    color-scheme: only dark;
+    /* Navigation bar and content area dimensions */
     --top-nav-height: 44px;
     --sub-nav-height: 36px;
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
     --max-content-width: 1500px;
     --content-margin: 0 auto;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        /* body, block and code fonts */
+        --body-font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+        --block-font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+        --code-font-family: 'DejaVu Sans Mono', monospace;
+        /* Base font sizes for body and code elements */
+        --body-font-size: 14.2px;
+        --block-font-size: 14.4px;
+        --code-font-size: 13.9px;
+        --nav-font-size: 13.4px;
+        /* Line height for continuous text blocks */
+        --block-line-height: 1.5;
+        --code-line-height: 1.6;
+        /* Text colors for body and block elements */
+        --body-text-color: #282828;
+        --block-text-color: #282828;
+        /* Background colors for various elements */
+        --body-background-color: #ffffff;
+        --section-background-color: var(--body-background-color);
+        --detail-background-color: #ffffff;
+        --code-background-color: #f5f5f5;
+        --mark-background-color: #f7f7f7;
+        --detail-block-color: #f4f4f4;
+        /* Colors for navigation bar and table captions */
+        --navbar-background-color: #4D7A97;
+        --navbar-text-color: #ffffff;
+        /* Background color for subnavigation and various headers */
+        --subnav-background-color: #dee3e9;
+        --subnav-link-color: #47688a;
+        --member-heading-background-color: var(--subnav-background-color);
+        /* Background and text colors for selected tabs and navigation items */
+        --selected-background-color: #f8981d;
+        --selected-text-color: #253441;
+        --selected-link-color: #4a698a;
+        /* Background colors for generated tables */
+        --table-header-color: #ebeff4;
+        --even-row-color: #ffffff;
+        --odd-row-color: #f0f0f2;
+        /* Text color for page title */
+        --title-color: #2c4557;
+        /* Text colors for links */
+        --link-color: #437291;
+        --link-color-active: #bb7a2a;
+        /* Table of contents */
+        --toc-background-color: #f8f8f8;
+        --toc-highlight-color: var(--subnav-background-color);
+        --toc-hover-color: #e9ecf0;
+        /* Snippet and pre colors */
+        --snippet-background-color: #f2f2f4;
+        --snippet-text-color: var(--block-text-color);
+        --snippet-highlight-color: #f7c590;
+        --pre-background-color: var(--snippet-background-color);
+        --pre-text-color: var(--snippet-text-color);
+        /* Border colors for structural elements and user defined tables */
+        --border-color: #e6e6e6;
+        --table-border-color: #000000;
+        /* Styles for table tabs */
+        --tab-border-radius: 2px 2px 0 0;
+        /* Search input colors */
+        --search-input-background-color: #ffffff;
+        --search-input-text-color: #000000;
+        --search-input-placeholder-color: #909090;
+        --select-input-background-color: #f0f0f0;
+        /* Highlight color for active search tag target */
+        --search-tag-highlight-color: #ffff66;
+        /* Copy button colors and filters */
+        --button-border-color: #7c818d;
+        --button-active-filter: brightness(96%);
+        --button-focus-filter: brightness(104%);
+        /* Colors for invalid tag notifications */
+        --invalid-tag-background-color: #ffe6e6;
+        --invalid-tag-text-color: #000000;
+    }
+}
+/*
+ * Dark theme
+ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --body-font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+        --block-font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+        --code-font-family: 'DejaVu Sans Mono', monospace;
+        --body-font-size: 14.2px;
+        --block-font-size: 14.4px;
+        --code-font-size: 13.9px;
+        --nav-font-size: 13.4px;
+        --block-line-height: 1.5;
+        --code-line-height: 1.6;
+        --body-text-color: #e8e8e8;
+        --block-text-color: #e8e8e8;
+        --body-background-color: #333c44;
+        --section-background-color: var(--body-background-color);
+        --detail-background-color: #333c44;
+        --code-background-color: #414c57;
+        --mark-background-color: #414c57;
+        --detail-block-color: #f4f4f4;
+        --navbar-background-color: /* #324F62; */ /* #2E556F; */ /* #355266; */ /* #3b5a74; */ /* #41617b; */ /* #3c5971; */ #2f4e68;
+        --navbar-text-color: #ffffff;
+        --subnav-background-color: /* #3F5F73; */ /* #495257; */ /* #515455; */ #242626;
+        --subnav-link-color: /* #fbad1a; */ #db9716; /* #a0c0f8; */ /* #92bee3; */
+        --member-heading-background-color: var(--subnav-background-color);
+        --selected-background-color: #f8981d;
+        --selected-text-color: #253441;
+        --selected-link-color: #4a698a;
+        --table-header-color: /* #1E282F; */ #212d35;
+        --even-row-color: #333c44;
+        --odd-row-color: /* #414c57; */ #3f4a55;
+        --title-color: #fff;
+        --link-color: #fbad1a; /* #a0c0f8; */ /* #92bee3; */
+        --link-color-active: #ffc455;
+        --toc-background-color: #2A3135;
+        --toc-highlight-color: var(--subnav-background-color);
+        --toc-hover-color: #3f4246;
+        --snippet-background-color: #263037;
+        --snippet-text-color: var(--block-text-color);
+        --snippet-highlight-color: #f7c590;
+        --pre-background-color: var(--snippet-background-color);
+        --pre-text-color: var(--snippet-text-color);
+        --border-color: /* #1E282F; */ #334551;
+        --table-border-color: #1E282F;
+        --tab-border-radius: 2px 2px 0 0;
+        --search-input-background-color: #303030;
+        --search-input-text-color: #d0d0d0;
+        --search-input-placeholder-color: #909090;
+        --search-tag-highlight-color: #ffff66;
+        --button-border-color: #626870;
+        --button-active-filter: brightness(96%);
+        --button-focus-filter: brightness(104%);
+        --invalid-tag-background-color: #ffe6e6;
+        --invalid-tag-text-color: #000000;
+        img {
+            filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
+        }
+    }
 }
 /*
  * Styles for individual HTML elements.
@@ -1025,7 +1092,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
 .ui-autocomplete .search-result-desc {
     font-size: var(--nav-font-size);
     padding: 2px 4px;
-    color: #404040;
+    color: var(--body-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -1033,7 +1100,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     font-weight:bold;
 }
 .ui-menu .ui-state-active .search-result-desc {
-    color: #383838;
+    color: var(--selected-text-color);
 }
 .ui-menu .ui-menu-item-wrapper {
     padding: 3px 4px;
@@ -1045,7 +1112,7 @@ input[type="text"] {
     background-position:3px 4px;
     background-color: var(--search-input-background-color);
     color: var(--search-input-text-color);
-    border-color: var(--border-color);
+    /* border-color: var(--border-color); */
     border-radius: 4px;
     padding-left:20px;
     padding-right: 18px;
@@ -1106,8 +1173,9 @@ select#search-modules {
     font-size: var(--nav-font-size);
     padding: 3px 5px;
     border-radius: 4px;
-    background: #f0f0f0;
-    border: 1px solid #909090;
+    background: var(--select-input-background-color);
+    color: var(--search-input-text-color);
+    border: 1px solid var(--button-border-color);
 }
 kbd {
     background-color: #eeeeee;
@@ -1178,7 +1246,7 @@ div#result-container {
 }
 #result-container div.result-table > a.search-result-link .search-result-desc {
     font-size: var(--nav-font-size);
-    color: #404040;
+    color: var(--body-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
 }
