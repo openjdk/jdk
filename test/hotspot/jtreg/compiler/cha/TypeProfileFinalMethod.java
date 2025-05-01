@@ -102,7 +102,7 @@ public class TypeProfileFinalMethod {
 
             // print inline tree for checking
             directive = "[{ match: [\"" + Launcher.class.getName() + "::test2\"]," +
-                "c2: { PrintInlining: true } }]";
+                "c2: { PrintCompilation: true, PrintInlining: true } }]";
             WB.addCompilerDirective(directive);
         }
 
