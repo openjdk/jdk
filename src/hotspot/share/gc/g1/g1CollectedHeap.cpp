@@ -898,18 +898,13 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
     return result;
   }
 
-  if (!is_humongous(word_size)) {
-    // In a G1 heap, we're supposed to keep allocation from failing by
-    // incremental pauses.  Therefore, at least for now, we'll favor
-    // expansion over collection.  (This might change in the future if we can
-    // do something smarter than full collection to satisfy a failed alloc.)
-    //
-    // For humongous objects, we should have expanded the heap on the first
-    // attempt_allocation_at_safepoint above.
-    result = expand_and_allocate(word_size);
-    if (result != nullptr) {
-      return result;
-    }
+  // In a G1 heap, we're supposed to keep allocation from failing by
+  // incremental pauses.  Therefore, at least for now, we'll favor
+  // expansion over collection.  (This might change in the future if we can
+  // do something smarter than full collection to satisfy a failed alloc.)
+  result = expand_and_allocate(word_size);
+  if (result != nullptr) {
+    return result;
   }
 
   if (do_gc) {
