@@ -300,7 +300,7 @@ public:
 inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   assert_cond(addr != nullptr);
   NativeGeneralJump* jump = (NativeGeneralJump*)(addr);
-  debug_only(jump->verify();)
+  DEBUG_ONLY(jump->verify();)
   return jump;
 }
 
