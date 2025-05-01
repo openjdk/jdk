@@ -315,7 +315,15 @@ public:
   // methods to restore a blob from AOT code cache into the CodeCache
   void post_restore();
   CodeBlob* restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
-  static CodeBlob* create(CodeBlob* archived_blob, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
+  static CodeBlob* create(CodeBlob* archived_blob,
+                          const char* name,
+                          address archived_reloc_data,
+                          ImmutableOopMapSet* archived_oop_maps
+#ifndef PRODUCT
+                          , AsmRemarks& archived_asm_remarks
+                          , DbgStrings& archived_dbg_strings
+#endif // PRODUCT
+                         );
 };
 
 //----------------------------------------------------------------------------------------------------

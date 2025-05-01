@@ -811,6 +811,16 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     has_oop_maps = true;
   }
 
+#ifndef PRODUCT
+  // Write asm remarks
+  if (!cache->write_asm_remarks(blob)) {
+    return false;
+  }
+  if (!cache->write_dbg_strings(blob)) {
+    return false;
+  }
+#endif /* PRODUCT */
+
   if (!cache->write_relocations(blob)) {
     return false;
   }
@@ -891,7 +901,22 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     oop_maps = read_oop_map_set();
   }
 
-  CodeBlob* code_blob = CodeBlob::create(archived_blob, stored_name, reloc_data, oop_maps);
+#ifndef PRODUCT
+  AsmRemarks asm_remarks;
+  read_asm_remarks(asm_remarks);
+  DbgStrings dbg_strings;
+  read_dbg_strings(dbg_strings);
+#endif // PRODUCT
+
+  CodeBlob* code_blob = CodeBlob::create(archived_blob,
+                                         stored_name,
+                                         reloc_data,
+                                         oop_maps
+#ifndef PRODUCT
+                                         , asm_remarks
+                                         , dbg_strings
+#endif
+                                        );
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
@@ -1068,6 +1093,80 @@ ImmutableOopMapSet* AOTCodeReader::read_oop_map_set() {
   set_read_position(offset);
   return oopmaps;
 }
+
+#ifndef PRODUCT
+bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
+  // Write asm remarks
+  uint* count_ptr = (uint *)reserve_bytes(sizeof(uint));
+  if (count_ptr == nullptr) {
+    return false;
+  }
+  uint count = 0;
+  bool result = cb.asm_remarks().iterate([&] (uint offset, const char* str) -> bool {
+    log_trace(aot, codecache, stubs)("asm remark offset=%d, str=%s", offset, str);
+    uint n = write_bytes(&offset, sizeof(uint));
+    if (n != sizeof(uint)) {
+      return false;
+    }
+    n = write_bytes(str, strlen(str) + 1);
+    if (n != strlen(str) + 1) {
+      return false;
+    }
+    count += 1;
+    return true;
+  });
+  *count_ptr = count;
+  return result;
+}
+
+void AOTCodeReader::read_asm_remarks(AsmRemarks& asm_remarks) {
+  // Read asm remarks
+  uint offset = read_position();
+  uint count = *(uint *)addr(offset);
+  offset += sizeof(uint);
+  for (uint i = 0; i < count; i++) {
+    uint remark_offset = *(uint *)addr(offset);
+    offset += sizeof(uint);
+    const char* remark = (const char*)addr(offset);
+    offset += strlen(remark)+1;
+    asm_remarks.insert(remark_offset, remark);
+  }
+  set_read_position(offset);
+}
+
+bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
+  // Write dbg strings
+  uint* count_ptr = (uint *)reserve_bytes(sizeof(uint));
+  if (count_ptr == nullptr) {
+    return false;
+  }
+  uint count = 0;
+  bool result = cb.dbg_strings().iterate([&] (const char* str) -> bool {
+    log_trace(aot, codecache, stubs)("dbg string=%s", str);
+    uint n = write_bytes(str, strlen(str) + 1);
+    if (n != strlen(str) + 1) {
+      return false;
+    }
+    count += 1;
+    return true;
+  });
+  *count_ptr = count;
+  return result;
+}
+
+void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
+  // Read dbg strings
+  uint offset = read_position();
+  uint count = *(uint *)addr(offset);
+  offset += sizeof(uint);
+  for (uint i = 0; i < count; i++) {
+    const char* str = (const char*)addr(offset);
+    offset += strlen(str)+1;
+    dbg_strings.insert(str);
+  }
+  set_read_position(offset);
+}
+#endif // PRODUCT
 
 //======================= AOTCodeAddressTable ===============
 

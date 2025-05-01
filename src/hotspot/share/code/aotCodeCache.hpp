@@ -38,6 +38,8 @@ class AOTCodeCache;
 class AdapterBlob;
 class ExceptionBlob;
 class ImmutableOopMapSet;
+class AsmRemarks;
+class DbgStrings;
 
 enum class vmIntrinsicID : int;
 enum CompLevel : signed char;
@@ -312,6 +314,10 @@ public:
 
   bool write_relocations(CodeBlob& code_blob);
   bool write_oop_map_set(CodeBlob& cb);
+#ifndef PRODUCT
+  bool write_asm_remarks(CodeBlob& cb);
+  bool write_dbg_strings(CodeBlob& cb);
+#endif // PRODUCT
 
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
@@ -388,6 +394,10 @@ public:
   ImmutableOopMapSet* read_oop_map_set();
 
   void fix_relocations(CodeBlob* code_blob);
+#ifndef PRODUCT
+  void read_asm_remarks(AsmRemarks& asm_remarks);
+  void read_dbg_strings(DbgStrings& dbg_strings);
+#endif // PRODUCT
 };
 
 // code cache internal runtime constants area used by AOT code
