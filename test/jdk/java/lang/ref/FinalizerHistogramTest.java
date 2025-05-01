@@ -46,7 +46,6 @@ import java.lang.reflect.Field;
 public class FinalizerHistogramTest {
     static ReentrantLock lock = new ReentrantLock();
     static final AtomicInteger initializedCount = new AtomicInteger(0);
-    static final AtomicInteger trappedCount = new AtomicInteger(0);
     static final int OBJECTS_COUNT = 1000;
 
     static WhiteBox wb;
@@ -59,7 +58,6 @@ public class FinalizerHistogramTest {
 
         protected void finalize() {
             // Trap the object in a finalization queue
-            trappedCount.incrementAndGet();
             lock.lock();
         }
     }
@@ -78,8 +76,6 @@ public class FinalizerHistogramTest {
                 refProResult = wb.waitForReferenceProcessing();
                 System.out.println("waitForReferenceProcessing returned: " + refProResult);
             } while (refProResult);
-
-            while(trappedCount.get() < 1);
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
 
