@@ -76,9 +76,10 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,
-        @JEP(number=494, title="Module Import Declarations", status="Second Preview")
-        MODULE_IMPORTS,
-        KEY_DERIVATION,
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

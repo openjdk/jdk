@@ -224,9 +224,22 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zfa.enable_feature();
   }
 #endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+  // Currently tests shows that cmove using Zicond instructions will bring
+  // performance regression, but to get a test coverage all the time, will
+  // still prefer to enabling it in debug version.
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
     VM_Version::ext_Zicond.enable_feature();
   }
+#endif
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);

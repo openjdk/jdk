@@ -1630,12 +1630,6 @@ public class ForkJoinPool extends AbstractExecutorService
     private static volatile int poolIds;
 
     /**
-     * Permission required for callers of methods that may start or
-     * kill threads. Lazily constructed.
-     */
-    static volatile RuntimePermission modifyThreadPermission;
-
-    /**
      * For VirtualThread intrinsics
      */
     private static final JavaLangAccess JLA;

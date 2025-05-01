@@ -40,12 +40,12 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -1445,6 +1445,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
 
 void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1GCPhaseTimes* pt = g1h->phase_times();
 
   {
     Ticks start = Ticks::now();
@@ -1453,9 +1454,9 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
     Tickspan total = Ticks::now() - start;
     if (initial_evacuation) {
-      g1h->phase_times()->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     } else {
-      g1h->phase_times()->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     }
   }
 
@@ -1464,6 +1465,8 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
   uint const num_workers = initial_evacuation ? workers->active_workers() :
                                                 MIN2(workers->active_workers(), (uint)increment_length);
+
+  Ticks start = Ticks::now();
 
   {
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
@@ -1483,6 +1486,12 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   }
 
   print_merge_heap_roots_stats();
+
+  if (initial_evacuation) {
+    pt->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  } else {
+    pt->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  }
 }
 
 void G1RemSet::complete_evac_phase(bool has_more_than_one_evacuation_phase) {

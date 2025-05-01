@@ -55,17 +55,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj, rscratch1);
-    testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    jcc(Assembler::notZero, slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
-    const Register thread = r15_thread;
-    lightweight_lock(disp_hdr, obj, hdr, thread, tmp, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(hdr, obj, rscratch1);
+      testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      jcc(Assembler::notZero, slow_case);
+    }
+
     // Load object header
     movptr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
@@ -128,7 +128,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
+    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
@@ -148,7 +148,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 // Defines obj, preserves var_size_in_bytes
 void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, Label& slow_case) {
   if (UseTLAB) {
-    tlab_allocate(noreg, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+    tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
     jmp(slow_case);
   }
@@ -325,11 +325,11 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
-  if (breakAtEntry || VerifyFPU) {
+  if (breakAtEntry) {
     // Verified Entry first instruction should be 5 bytes long for correct
     // patching by patch_verified_entry().
     //
-    // Breakpoint and VerifyFPU have one byte first instruction.
+    // Breakpoint has one byte first instruction.
     // Also first instruction will be one byte "push(rbp)" if stack banging
     // code is not generated (see build_frame() above).
     // For all these cases generate long instruction first.
@@ -337,7 +337,6 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   }
   if (breakAtEntry) int3();
   // build frame
-  IA32_ONLY( verify_FPU(0, "method_entry"); )
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
