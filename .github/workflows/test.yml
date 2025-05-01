@@ -167,7 +167,7 @@ jobs:
           else
             echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
-          if [[ '${{ inputs.static-suffix }}' == '-static']]; then
+          if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
             echo "static-problemlist-path=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
           fi
 
