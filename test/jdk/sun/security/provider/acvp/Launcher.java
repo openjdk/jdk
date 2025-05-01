@@ -37,6 +37,7 @@ import java.util.zip.ZipFile;
  * @bug 8342442 8345057
  * @library /test/lib
  * @modules java.base/sun.security.provider
+ *          java.base/sun.security.util
  * @run main Launcher
  */
 
@@ -46,6 +47,7 @@ import java.util.zip.ZipFile;
  * @bug 8342442 8345057
  * @library /test/lib
  * @modules java.base/sun.security.provider
+ *          java.base/sun.security.util
  * @run main/othervm -Xcomp Launcher
  */
 
