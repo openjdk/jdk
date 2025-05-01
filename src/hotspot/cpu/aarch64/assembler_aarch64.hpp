@@ -926,18 +926,13 @@ public:
 #undef INSN
 
   // The maximum range of a branch is fixed for the AArch64
-  // architecture.  Max branch range is the largest value
-  // that will fit in the instruction
-  static const uint64_t max_branch_range = 128 * M;
-
-  // The maximum range of a branch is fixed for the AArch64
   // architecture.  In debug mode we shrink it in order to test
   // trampolines, but not so small that branches in the interpreter
   // are out of range.
   static const uint64_t branch_range = NOT_DEBUG(max_branch_range) DEBUG_ONLY(2 * M);
 
-  static bool reachable_from_branch_at(address branch, address target, bool use_max=false) {
-    return uabs(target - branch) < (use_max ? max_branch_range : branch_range);
+  static bool reachable_from_branch_at(address branch, address target) {
+    return uabs(target - branch) < branch_range;
   }
 
   // Unconditional branch (immediate)
