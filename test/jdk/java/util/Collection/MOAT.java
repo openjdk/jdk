@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,8 @@ public class MOAT {
 
         // Unmodifiable wrappers
         testImmutableSet(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))), 99);
+        testImmutableSet(AccessFlag.maskToAccessFlags(0, AccessFlag.Location.CLASS), AccessFlag.ABSTRACT);
+        testImmutableSet(AccessFlag.maskToAccessFlags(Modifier.PUBLIC | Modifier.STATIC | Modifier.SYNCHRONIZED, AccessFlag.Location.METHOD), AccessFlag.ABSTRACT);
         testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
         testImmutableMap(unmodifiableMap(Collections.singletonMap(1,2)));
         testImmutableSeqColl(unmodifiableSequencedCollection(Arrays.asList(1,2,3)), 99);
@@ -478,6 +480,8 @@ public class MOAT {
                    () -> c.remove(first),
                    () -> c.removeAll(singleton(first)),
                    () -> c.retainAll(emptyList()));
+        } else {
+            testEmptyIterator(c.iterator());
         }
         testForEachMatch(c);
         testSpliteratorMatch(c);
