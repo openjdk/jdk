@@ -315,7 +315,7 @@ public class Debugee extends DebugeeProcess {
 
         if (!thread.name().equals(threadName)) {
             throw new JDITestRuntimeException("** Thread names do not match ** : "
-                                              + threadFieldName + " vs. " + thread.name());
+                                              + threadName + " vs. " + thread.name());
         }
 
         return thread;
