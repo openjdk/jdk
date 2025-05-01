@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,22 @@
  * questions.
  */
 
- // key: compiler.err.import.module.not.found
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
-import module unknown;
+/*
+ * @test
+ * @bug 8297727
+ * @summary MethodHandle field access fails with bytecode compilation disabled
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames
+ *     -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=-1
+ *     ReflectionInInterpretTest
+ */
+public class ReflectionInInterpretTest {
+    private static Integer f; // non-Object type is required to find a non-compiled form
 
-public class ImportModuleNotFound {
+    public static void main(String... args) throws Throwable {
+        MethodHandle mh = MethodHandles.lookup().findStaticGetter(ReflectionInInterpretTest.class, "f", Integer.class);
+        var _ = (Integer) mh.invokeExact();
+    }
 }

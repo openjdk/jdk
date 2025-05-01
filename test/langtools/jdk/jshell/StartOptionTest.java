@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -68,6 +69,7 @@ public class StartOptionTest {
     protected ByteArrayOutputStream userout;
     protected ByteArrayOutputStream usererr;
     protected InputStream cmdInStream;
+    private Map<String, String> testPersistence;
 
     private JavaShellToolBuilder builder() {
         // turn on logging of launch failures
@@ -77,12 +79,23 @@ public class StartOptionTest {
                 .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
                 .err(new PrintStream(cmderr), new PrintStream(usererr))
                 .in(cmdInStream, null)
-                .persistence(new HashMap<>())
+                .persistence(getThisTestPersistence())
                 .env(new HashMap<>())
                 .locale(Locale.ROOT);
     }
 
+    protected Map<String, String> getThisTestPersistence() {
+        return testPersistence != null ? testPersistence
+                                       : new HashMap<>();
+    }
+
     protected int runShell(String... args) {
+        cmdout.reset();
+        cmderr.reset();
+        console.reset();
+        userout.reset();
+        usererr.reset();
+
         try {
             return builder()
                     .start(Presets.addExecutionIfMissing(args));
@@ -149,6 +162,17 @@ public class StartOptionTest {
     protected void startCheckUserOutput(Consumer<String> checkUserOutput,
             String... args) {
         runShell(args);
+        check(userout, checkUserOutput, "userout");
+        check(cmderr, null, "cmderr");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCommandOutput, "cmdout");
         check(userout, checkUserOutput, "userout");
         check(usererr, null, "usererr");
     }
@@ -226,8 +250,12 @@ public class StartOptionTest {
     }
 
     protected String writeToFile(String stuff) {
+        return writeToFile("doit.repl", stuff);
+    }
+
+    protected String writeToFile(String fileName, String stuff) {
         Compiler compiler = new Compiler();
-        Path p = compiler.getPath("doit.repl");
+        Path p = compiler.getPath(fileName);
         compiler.writeToFile(p, stuff);
         return p.toString();
     }
@@ -393,7 +421,7 @@ public class StartOptionTest {
                 "--show-version");
     }
 
-    public void testPreviewEnabled() {
+    public void testSourceLevel() {
         String fn = writeToFile(
                 """
                 System.out.println(\"prefix\");
@@ -401,23 +429,105 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+        startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                              fn);
         startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                              "--enable-preview", fn);
+        String fn24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--release", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--source", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C-source", "-C24", fn24);
         //JDK-8341631:
         String fn2 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             fn2);
+        String fn2Preview = writeToFile(
                 """
                 System.out.println(\"prefix\");
                 IO.println(\"test\");
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
-                             fn2);
         startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
-                             "--enable-preview", fn2);
+                             "--enable-preview", fn2Preview);
+
+        testPersistence = new HashMap<>();
+
+        String newStartupScript = writeToFile("test-startup.repl",
+                """
+                System.out.println("Custom start script");
+                """);
+        String setStartup = writeToFile(
+                """
+                /set start -retain {file}
+                /exit
+                """.replace("{file}", newStartupScript));
+        startCheckUserOutput(s -> {}, setStartup);
+        String exit = writeToFile(
+                """
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "Custom start script\n"),
+                             exit);
+        String clearStartup = writeToFile(
+                """
+                /set start -retain -default
+                /exit
+                """);
+        startCheckUserOutput(s -> {}, clearStartup);
+        String retainTest = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
+                                    s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    retainTest);
+        String retainTest24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--release", "-C24", retainTest24);
+
+        String set24DefaultTest = writeToFile(
+                """
+                /set start -default -retain
+                /exit
+                """);
+        startCheckUserOutput(s -> {},
+                             "-C--release", "-C24", set24DefaultTest);
+
+        String checkDefaultAfterSet24Test = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
+                                    s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    checkDefaultAfterSet24Test);
     }
+
     public void testInput() {
         //readLine(String):
         String readLinePrompt = writeToFile(
