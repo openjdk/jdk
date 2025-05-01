@@ -69,7 +69,7 @@ public class cangetmonitorinfo001a {
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
- 
+
         for (int i=0; i<argv.length; i++) {
             if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
                 verbMode = true;

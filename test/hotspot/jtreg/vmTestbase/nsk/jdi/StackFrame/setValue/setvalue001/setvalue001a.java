@@ -58,7 +58,7 @@ public class setvalue001a {
     }
 
     //====================================================== test program
- 
+
     static Thread test_thread = null;
 
    //----------------------------------------------------   main method
