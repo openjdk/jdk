@@ -35,7 +35,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-
+import java.awt.image.VolatileImage;
 import java.util.function.Consumer;
 
 /**
@@ -43,7 +43,7 @@ import java.util.function.Consumer;
  * @bug 8355078
  * @summary Checks if different image types (BufferedImage and VolatileImage)
  *          produce the same results when using different ways to fill the image
- *          (setColor, setPaint, and custom Paint).
+ *          (setColor, setPaint, and custom Paint)
  */
 public final class ColorPaintContextBasicTest {
 
@@ -77,12 +77,13 @@ public final class ColorPaintContextBasicTest {
 
         private final Color color;
 
-        public CustomPaint(Color color) {
+        private CustomPaint(Color color) {
             this.color = color;
         }
 
         @Override
-        public PaintContext createContext(ColorModel cm, Rectangle deviceBounds,
+        public PaintContext createContext(ColorModel cm,
+                                          Rectangle deviceBounds,
                                           Rectangle2D userBounds,
                                           AffineTransform xform,
                                           RenderingHints hints)
@@ -112,47 +113,44 @@ public final class ColorPaintContextBasicTest {
             System.err.println("Test color: " + Integer.toHexString(rgb));
             for (int type : TYPES) {
                 var goldBI = new BufferedImage(SIZE, SIZE, type);
-                var setPaintBI = new BufferedImage(SIZE, SIZE, type);
-                var setCustomBI = new BufferedImage(SIZE, SIZE, type);
+                var paintBI = new BufferedImage(SIZE, SIZE, type);
+                var customBI = new BufferedImage(SIZE, SIZE, type);
 
                 fill(goldBI, g -> g.setColor(color));
-                fill(setPaintBI, g -> g.setPaint(color));
-                fill(setCustomBI, g -> g.setPaint(new CustomPaint(color)));
+                fill(paintBI, g -> g.setPaint(color));
+                fill(customBI, g -> g.setPaint(new CustomPaint(color)));
 
-                if (!verify(setPaintBI, goldBI)) {
-                    throw new RuntimeException("setPaintBI != goldBI");
+                if (!verify(paintBI, goldBI)) {
+                    throw new RuntimeException("paintBI != goldBI");
                 }
 
-                if (!verify(setCustomBI, goldBI)) {
-                    throw new RuntimeException("setCustomBI != goldBI");
+                if (!verify(customBI, goldBI)) {
+                    throw new RuntimeException("customBI != goldBI");
                 }
 
                 if (gc == null) {
                     continue;
                 }
 
-                var goldVI = gc.createCompatibleVolatileImage(SIZE, SIZE,
-                        goldBI.getTransparency());
-                var setPaintVI = gc.createCompatibleVolatileImage(SIZE, SIZE,
-                        goldBI.getTransparency());
-                var setCustomVI = gc.createCompatibleVolatileImage(SIZE, SIZE,
-                        goldBI.getTransparency());
+                int transparency = goldBI.getTransparency();
+                var goldVI2BI = fillVI(gc, transparency,
+                                       g -> g.setColor(color));
+                var paintVI2BI = fillVI(gc, transparency,
+                                        g -> g.setPaint(color));
+                var customVI2BI = fillVI(gc, transparency,
+                                         g -> g.setPaint(new CustomPaint(color)));
 
-                fill(goldVI, g -> g.setColor(color));
-                fill(setPaintVI, g -> g.setPaint(color));
-                fill(setCustomVI, g -> g.setPaint(new CustomPaint(color)));
-
-                BufferedImage goldVI2BI = goldVI.getSnapshot();
-
+                // Do no compare transparent BufferedImage and VolatileImage,
+                // they may have different alpha precision.
                 if (color.getAlpha() == 255 && !verify(goldBI, goldVI2BI)) {
                     throw new RuntimeException("goldBI != goldVI2BI");
                 }
 
-                if (!verify(setPaintVI.getSnapshot(), goldVI2BI)) {
+                if (!verify(paintVI2BI, goldVI2BI)) {
                     throw new RuntimeException("setPaintVI != goldVI2BI");
                 }
 
-                if (!verify(setCustomVI.getSnapshot(), goldVI2BI)) {
+                if (!verify(customVI2BI, goldVI2BI)) {
                     throw new RuntimeException("setCustomVI != goldVI2BI");
                 }
             }
@@ -164,6 +162,32 @@ public final class ColorPaintContextBasicTest {
         action.accept(g2d);
         g2d.fillRect(0, 0, SIZE, SIZE);
         g2d.dispose();
+    }
+
+    private static BufferedImage fillVI(GraphicsConfiguration gc,
+                                        int transparency,
+                                        Consumer<Graphics2D> action)
+    {
+        var vi = gc.createCompatibleVolatileImage(SIZE, SIZE, transparency);
+        int attempt = 0;
+        while (true) {
+            if (++attempt > 10) {
+                throw new RuntimeException("Too many attempts: " + attempt);
+            }
+
+            int status = vi.validate(gc);
+            if (status == VolatileImage.IMAGE_INCOMPATIBLE) {
+                vi = gc.createCompatibleVolatileImage(SIZE, SIZE, transparency);
+            }
+
+            fill(vi, action);
+
+            BufferedImage snapshot = vi.getSnapshot();
+            if (vi.contentsLost()) {
+                continue;
+            }
+            return snapshot;
+        }
     }
 
     private static boolean verify(BufferedImage img1, BufferedImage img2) {
