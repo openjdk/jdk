@@ -62,9 +62,9 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         withInstallDirChooserDlg = pkg.withInstallDirChooser();
 
-        var shortcutFolders = ShortcutsFolder.getForPackage(pkg);
+        final var shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
-        withShortcutPromptDlg = !shortcutFolders.isEmpty();
+        withShortcutPromptDlg = !shortcutFolders.isEmpty() && pkg.withShortcutPrompt();
 
         customDialogs = new ArrayList<>();
 

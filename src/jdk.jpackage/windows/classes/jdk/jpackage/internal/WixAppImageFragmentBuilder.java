@@ -669,6 +669,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             }
         });
 
+        // The installed "app" directory is never empty as it contains at least ".package" file.
+        // However, the "app" directory in the source app image can be empty because the ".package"
+        // file is picked from the build config directory, not from the source app image.
+        Optional.ofNullable(installedAppImage).map(ApplicationLayout::appDirectory).ifPresent(emptyDirs::remove);
+
         List<String> componentIds = new ArrayList<>();
         for (var dir : emptyDirs) {
             componentIds.add(addComponent(xml, dir, Component.CreateFolder,

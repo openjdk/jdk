@@ -165,7 +165,7 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
     String createVolumeUrlLocation() throws IOException {
         final var volumeParentDir = volumePath().getParent();
         Files.createDirectories(volumeParentDir);
-        // Url should end with '/' and it should be real path (no symbolic links).
+        // The URL should end with '/' and it should be real path (no symbolic links).
         return volumeParentDir.toRealPath().resolve(volumePath().getFileName()).toUri().toString() + File.separator;
     }
 
@@ -222,9 +222,9 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
         data.put("DEPLOY_VOLUME_URL", createVolumeUrlLocation());
 
         // Full path to background image, so we can find it.
-        data.put("DEPLOY_BG_FILE", bgImageFileInMountedDmg().toString());
+        data.put("DEPLOY_BG_FILE", bgImageFileInMountedDmg().toAbsolutePath().toString());
 
-        data.put("DEPLOY_VOLUME_PATH", volumePath().toString());
+        data.put("DEPLOY_VOLUME_PATH", volumePath().toAbsolutePath().toString());
         data.put("DEPLOY_APPLICATION_NAME", pkg.app().name());
 
         String targetItem = pkg.relativeInstallDir().getFileName().toString();

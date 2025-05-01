@@ -153,7 +153,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
                             "--scripts", normalizedAbsolutePathString(servicesScriptsDir)));
 
             final var supportPkg = InternalPackageType.SUPPORT.createInternalPackage(
-                    supportRoot, pkg, env, List.of(
+                    supportRoot.resolve("src"), pkg, env, List.of(
                             "--install-location", "/Library/Application Support"));
 
             return new Services(servicesPkg, servicesScriptsDir, supportPkg);
@@ -189,7 +189,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             final var supportInstallDir = Path.of("/Library/Application Support").resolve(pkg.packageName());
 
             Map<String, String> data = new HashMap<>(servicesSubstitutionData);
-            data.put("APP_INSTALLATION_FOLDER", mainInstallDir.toString());
+            data.put("APP_INSTALLATION_FOLDER", enqouter.applyTo(mainInstallDir.toString()));
             data.put("SUPPORT_INSTALLATION_FOLDER", enqouter.applyTo(supportInstallDir.toString()));
 
             new ShellScriptResource("uninstall.command")
