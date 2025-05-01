@@ -2849,7 +2849,8 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     entry_offset[1] = handler->get_c2i_entry() - i2c_entry;
     entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
     entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
-    AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
+    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
+    assert(success || !AOTCodeCache::is_dumping_adapters(), "sanity");
   }
   handler->relocate(adapter_blob->content_begin());
 #ifndef PRODUCT

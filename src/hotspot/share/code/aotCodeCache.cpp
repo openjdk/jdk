@@ -53,7 +53,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-static void load_failure() {
+static void report_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
@@ -61,7 +61,7 @@ static void load_failure() {
   AOTAdapterCaching = false;
 }
 
-static void store_failure() {
+static void report_store_failure() {
   if (AbortVMOnAOTCodeFailure) {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
@@ -110,9 +110,9 @@ void AOTCodeCache::initialize() {
   }
   if (!open_cache(is_dumping, is_using)) {
     if (is_using) {
-      load_failure();
+      report_load_failure();
     } else {
-      store_failure();
+      report_store_failure();
     }
     return;
   }
@@ -128,7 +128,7 @@ void AOTCodeCache::init2() {
   }
   if (!verify_vm_config()) {
     close();
-    load_failure();
+    report_load_failure();
   }
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
@@ -452,7 +452,7 @@ address AOTCodeCache::reserve_bytes(uint nbytes) {
     log_warning(aot,codecache)("Failed to ensure %d bytes at offset %d in AOT Code Cache. Increase AOTCodeMaxSize.",
                                nbytes, _write_position);
     set_failed();
-    store_failure();
+    report_store_failure();
     return nullptr;
   }
   address buffer = (address)(_store_buffer + _write_position);
@@ -474,7 +474,7 @@ uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
     log_warning(aot, codecache)("Failed to write %d bytes at offset %d to AOT Code Cache. Increase AOTCodeMaxSize.",
                                 nbytes, _write_position);
     set_failed();
-    store_failure();
+    report_store_failure();
     return 0;
   }
   copy_bytes((const char* )buffer, (address)(_store_buffer + _write_position), nbytes);
@@ -765,7 +765,7 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     log_warning(aot, codecache, stubs)("Saved blob's name '%s' is different from the expected name '%s'",
                                        stored_name, name);
     ((AOTCodeCache*)_cache)->set_failed();
-    load_failure();
+    report_load_failure();
     return nullptr;
   }
 
