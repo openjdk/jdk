@@ -32,7 +32,6 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
-import java.security.spec.AlgorithmParameterSpec;
 import java.text.MessageFormat;
 import java.util.Locale;
 import javax.crypto.KDF;

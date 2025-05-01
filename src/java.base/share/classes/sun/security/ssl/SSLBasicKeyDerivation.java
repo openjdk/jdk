@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.KDF;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;

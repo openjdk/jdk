@@ -834,7 +834,6 @@ final class PreSharedKeyExtension {
 
     private static SecretKey deriveBinderKey(HandshakeContext context,
             SecretKey psk, SSLSessionImpl session) throws IOException {
-        SecretKey earlySecret = null;
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
             byte[] zeros = new byte[hashAlg.hashLength];
