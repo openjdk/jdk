@@ -214,6 +214,17 @@ Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean prefe
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
 {
+    /*
+     * On Windows, the backlog value of SOMAXCONN allows the underlying
+     * platform implementation to set the backlog to a maximum reasonable value.
+     * In order to use a backlog higher than what SOMAXCONN determines, Windows
+     * documentation of listen() function suggests using SOMAXCONN_HINT(N)
+     * (where N is a number).
+     * SOMAXCONN_HINT will adjust the value N to be within the range (200, 65535).
+     */
+    if (backlog >= 200) {
+        backlog = SOMAXCONN_HINT(backlog);
+    }
     if (listen(fdval(env,fdo), backlog) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "listen");
     }
