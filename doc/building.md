@@ -390,11 +390,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                           |
-| ------------------ | ------------------------------------------- |
-| Linux              | gcc 14.2.0                                  |
+| Operating system   | Toolchain version                            |
+| ------------------ | -------------------------------------------- |
+| Linux              | gcc 14.2.0                                   |
 | macOS              | Apple Xcode 15.4 (using clang 15.0.0)       |
-| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
+| Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.
