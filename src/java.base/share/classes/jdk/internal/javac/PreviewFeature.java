@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,8 @@ public @interface PreviewFeature {
         MODULE_IMPORTS,
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
         //XXX Number will change when assigned
         @JEP(number=999, title="PEM API", status="Preview")
         PEM_API,

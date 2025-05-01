@@ -309,7 +309,8 @@ address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M);
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtClassShared);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -1201,7 +1202,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 #undef _LOG_PREFIX
 
   // Log information about a region, whose address at dump time is [base .. top). At
-  // runtime, this region will be mapped to requested_base. requested_base is 0 if this
+  // runtime, this region will be mapped to requested_base. requested_base is nullptr if this
   // region will be mapped at os-selected addresses (such as the bitmap region), or will
   // be accessed with os::read (the header).
   //
@@ -1210,7 +1211,11 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   static void log_region(const char* name, address base, address top, address requested_base) {
     size_t size = top - base;
     base = requested_base;
-    top = requested_base + size;
+    if (requested_base == nullptr) {
+      top = (address)size;
+    } else {
+      top = requested_base + size;
+    }
     log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }

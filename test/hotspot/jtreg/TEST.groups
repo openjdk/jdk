@@ -408,6 +408,7 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
@@ -448,7 +449,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
- -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/LotsOfJRTClasses.java \
+ -runtime/cds/appcds/LotsOfSyntheticClasses.java \
  -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
@@ -507,6 +509,7 @@ hotspot_cds_epsilongc = \
 # those that rely on redefining classes that are already archived.
 hotspot_aot_classlinking = \
   runtime/cds \
+ -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
@@ -585,9 +588,8 @@ hotspot_metaspace = \
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
-  runtime/cds/appcds/HelloTest.java \
-  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java \
-  runtime/cds/appcds/ClassLoaderTest.java
+  runtime/cds/appcds/aotCache/HelloAOTCache.java \
+  runtime/cds/appcds/HelloTest.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
