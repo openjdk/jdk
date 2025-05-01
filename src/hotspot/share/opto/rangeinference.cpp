@@ -460,19 +460,20 @@ adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
   //     satisfy {bits._ones, bits._zeros}.
   //
   // 2. Assume there is a value k that is larger than ~h such that k is not
-  // larger than hi and k satisfies {bits._zeros, bits._ones}. As a result, ~k
-  // would satisfy {bits._ones, bits._zeros}. And since bitwise-not is a
-  // strictly decreasing function, given ~h < k <= hi, we have h > ~k >= ~hi.
-  // This contradicts the assumption that h is the smallest value not smaller
-  // than ~hi and satisfies {bits._ones, bits._zeros}.
+  // larger than hi, i.e. ~h < k <= hi, and k satisfies {bits._zeros, bits._ones}.
+  // As a result, ~k would satisfy {bits._ones, bits._zeros}. And since bitwise-not
+  // is a strictly decreasing function, given ~h < k <= hi, we have h > ~k >= ~hi.
+  // This contradicts the assumption that h is the smallest value not smaller than
+  // ~hi and satisfies {bits._ones, bits._zeros}.
   //
   // As a result, ~h is the largest value not larger than hi that satisfies
   // bits (QED).
-  U new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
-  if (new_hi > bounds._hi) {
+  U h = adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
+  if (h < ~bounds._hi) {
     return AdjustResult<RangeInt<U>>::make_empty();
   }
 
+  U new_hi = ~h;
   bool progress = (new_lo != bounds._lo) || (new_hi != bounds._hi);
   bool present = new_lo <= new_hi;
   return {progress, present, {new_lo, new_hi}};
