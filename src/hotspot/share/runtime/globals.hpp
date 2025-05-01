@@ -702,10 +702,13 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, PrintClassLoaderDataGraphAtExit, false,                     \
           "Print the class loader data graph at exit")                      \
                                                                             \
+  product(bool, PrintVMInfoAtExit, false, DIAGNOSTIC,                       \
+          "Executes the the VM.info diagnostic command at exit")            \
+                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
-                                                                            \
+	                                                                          \
   product(bool, DisablePrimordialThreadGuardPages, false, EXPERIMENTAL,     \
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
