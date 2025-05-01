@@ -98,6 +98,16 @@ import java.util.stream.Stream;
  * Delegating to the underlying Process or ProcessHandle is typically
  * easiest and most efficient.
  *
+ * @implNote Starting a process uses resources in both the invoking process and the invoked
+ * process and for the communication streams between them while the processes are running.
+ * The resources to control the process and for communication between the processes are retained until
+ * there are no longer any references to the Process or the input, error, and output streams,
+ * or they have been closed.
+ * Streams should be {@code closed} when they are no longer needed, releasing the operating system
+ * resources. The process implementation closes file descriptors and handles for streams
+ * that are no longer referenced to prevent leaking operating system resources.
+ * Processes that have terminated or been terminated are monitored and their resources released.
+ *
  * @since   1.0
  */
 public abstract class Process {
@@ -126,6 +136,9 @@ public abstract class Process {
      * ProcessBuilder.redirectInput}
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
+     *
+     * <p>The output stream should be {@linkplain OutputStream#close closed}
+     * when it is no longer needed.
      *
      * @apiNote
      * When writing to both {@link #getOutputStream()} and either {@link #outputWriter()}
@@ -159,9 +172,14 @@ public abstract class Process {
      * then the input stream returned by this method will receive the
      * merged standard output and the standard error of the process.
      *
+     * <p>The input stream should be {@linkplain InputStream#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Use {@link #getInputStream()} and {@link #inputReader()} with extreme care.
-     * The {@code BufferedReader} may have buffered input from the input stream.
+     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * The input reader consumes and buffers bytes from the input stream.
+     * Bytes read from the input stream would not be seen by the reader and
+     * buffer contents are unpredictable.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -185,9 +203,14 @@ public abstract class Process {
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The error stream should be {@linkplain InputStream#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Use {@link #getErrorStream()} and {@link #errorReader()} with extreme care.
-     * The {@code BufferedReader} may have buffered input from the error stream.
+     * Avoid using both {@link #getErrorStream} and {@link #inputReader(Charset)}.
+     * The error reader consumes and buffers bytes from the error stream.
+     * Bytes read from the error stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -207,6 +230,9 @@ public abstract class Process {
      * {@link Charset} named by the {@code native.encoding} system property.
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
+     *
+     * <p>The reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -238,6 +264,9 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * <p>Otherwise, if the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectErrorStream(boolean)
      * ProcessBuilder.redirectErrorStream} then the input reader returned by
@@ -245,9 +274,10 @@ public abstract class Process {
      * of the process.
      *
      * @apiNote
-     * Using both {@link #getInputStream} and {@link #inputReader(Charset)} has
-     * unpredictable behavior since the buffered reader reads ahead from the
-     * input stream.
+     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * The input reader consumes and buffers bytes from the input stream.
+     * Bytes read from the input stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * <p>When the process has terminated, and the standard input has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -283,6 +313,9 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * <p>The error reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
      *          {@link Charset#defaultCharset()}
@@ -314,10 +347,14 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The error reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Using both {@link #getErrorStream} and {@link #errorReader(Charset)} has
-     * unpredictable behavior since the buffered reader reads ahead from the
-     * error stream.
+     * Avoid using both {@link #getErrorStream} and {@link #errorReader(Charset)}.
+     * The error reader consumes and buffers bytes from the error stream.
+     * Bytes read from the error stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * <p>When the process has terminated, and the standard error has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -354,6 +391,9 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * <p>The output writer should be {@linkplain BufferedWriter#close closed}
+     * when it is no longer needed.
+     *
      * @return a {@code BufferedWriter} to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
      * @since 17
@@ -382,6 +422,9 @@ public abstract class Process {
      * {@link ProcessBuilder#redirectInput(Redirect)
      * ProcessBuilder.redirectInput} then the {@code OutputStreamWriter} writes to a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
+     *
+     * <p>The output writer should be {@linkplain BufferedWriter#close closed}
+     * when it is no longer needed.
      *
      * @apiNote
      * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
