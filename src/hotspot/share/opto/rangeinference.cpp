@@ -239,16 +239,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 
   3. Conclusion
     Our objective now is to find the largest value i that satisfies:
-    - lo[x] satisfies bits for 0 <= x < i
-    - zeros[i] = 0
-    - lo[i] = 0
-
-    Call j the largest value such that lo[x] satisfies bits for 0 <= x < j. This
-    means that j is the smallest value such that lo[j] does not satisfy bits. We
-    call this the first violation. i then can be computed as the largest value
-    <= j such that:
-
-    zeros[i] == lo[i] == 0
+    - lo[x] satisfies bits for 0 <= x < i (3.1)
+    - zeros[i] = 0                        (3.2)
+    - lo[i] = 0                           (3.3)
   */
 
   // The algorithm depends on whether the first violation violates zeros or
@@ -259,8 +252,18 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   if (zero_violation < one_violation) {
     // This means that the first bit that does not satisfy the bit requirement
     // is a 0 that should be a 1. Obviously, since the bit at that position in
-    // ones is 1, the same bit in zeros is 0. Which means this is the value of
-    // i we are looking for.
+    // ones is 1, the same bit in zeros is 0.
+    //
+    // From section 3 above, we know i is the largest bit index such that:
+    // - lo[x] satisfies bits for 0 <= x < i (3.1)
+    // - zeros[i] = 0                        (3.2)
+    // - lo[i] = 0                           (3.3)
+    //
+    // For the given i, we know that lo satisfies all bits before i, hence (3.1)
+    // holds. Further, lo[i] = 0 (3.3), and we have a one violation at i, hence
+    // zero[i] = 0 (3.2). Any smaller i would not be the largest possible such
+    // index. Any larger i would violate (3.1), since lo[i] does not satisfy bits.
+    // As a result, the first violation is the bit i we are looking for.
     //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 1 0 0 0 1 1 0
@@ -281,12 +284,12 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     constexpr U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
     // This is the bit at which we want to change the bit 0 in lo to a 1, and
     // all bits after to zero. This is similar to an operation that aligns lo
-    // up to this modulo
+    // up to a multiple of this modulo.
     //           0 0 0 1 0 0 0 0
     U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this. This is a standard
-    // operation to align a value up to a certain power of 2.
+    // operation to align a value up to a multiple of a certain power of 2.
     // Since alignment is a power of 2, -alignment is a value having all the
     // bits being 1 upto the location of the bit in alignment (in the example,
     // -alignment = 11110000). As a result, lo & -alignment set all bits after
@@ -297,24 +300,42 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // Note that this computation cannot overflow as the bit in lo that is at
     // the same position as the only bit 1 in alignment must be 0. As a result,
     // this operation just set that bit to 1 and set all the bits after to 0.
+    // We now have:
+    // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
+    // - new_lo[i] = 1                     (2.6)
+    // - new_lo[x] = 0, for x > i          (not yet 2.7)
     //           1 1 0 1 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
-    // Our current new_lo satisfies zeros, just OR it with ones to obtain the
-    // correct result
+    // Note that there exists no value x not larger than i such that
+    // new_lo[x] == 0 and ones[x] == 1. This is because all bits of lo before i
+    // should satisfy bits, and new_lo[i] == 1. As a result, doing
+    // new_lo |= bits.ones will give us a value such that:
+    // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
+    // - new_lo[i] = 1                     (2.6)
+    // - new_lo[x] = ones[x], for x > i    (2.7)
+    // This is the result we are looking for.
     //           1 1 0 1 0 0 1 0
     new_lo |= bits._ones;
     // Note that in this case, new_lo is always a valid answer. That is, it is
-    // a value not less than lo and satisfies bits. This is because there is
-    // always a bit up to first_violation that is 0 in both lo and zeros
-    // (trivially, it is the bit at first_violation).
+    // a value not less than lo and satisfies bits.
     assert(lo < new_lo, "this case cannot overflow");
     return new_lo;
   } else {
     assert(zero_violation > one_violation, "remaining case");
     // This means that the first bit that does not satisfy the bit requirement
-    // is a 1 that should be a 0. Trace backward to find the first bit we can
-    // flip from 0 to 1 (i in the formality section above), which is the last
-    // bit that is 0 in both lo and zeros.
+    // is a 1 that should be a 0.
+    //
+    // From section 3 above, we know i is the largest bit index such that:
+    // - lo[x] satisfies bits for 0 <= x < i (3.1)
+    // - zeros[i] = 0                        (3.2)
+    // - lo[i] = 0                           (3.3)
+    //
+    // We know that lo satisfies all bits before first_violation, hence (3.1)
+    // holds. However, first_violation is not the value i we are looking for
+    // because lo[first_violation] == 1. We can also see that any larger value
+    // of i would violate 3.1 since lo[first_violation] does not satisfy bits.
+    // As a result, we should find the last i upto first_violation such that
+    // lo[i] == zeros[i] == 0.
     //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 0 0 0 1 1 1 0
@@ -335,33 +356,48 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //           1 0 1 0 0 0 1 1
 
     juint first_violation = count_leading_zeros(zero_violation);
-    // This mask out all bits after the first violation
+    // This masks out all bits after the first violation
     //           1 1 1 1 1 0 0 0
     U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
     // A bit that is 0 in both lo and zeros must be 0 in either
     //           1 0 0 1 1 1 1 0
     U either = lo | bits._zeros;
     // This is all the bits that are not lower than first_violation and are 0
-    // in both lo and zeros
+    // in both lo and zeros. Note that there may not exist such bits. In those
+    // cases tmp == 0 and there is no value not less than lo and satisfies
+    // bits. We will expand the implication of such cases below.
     //           0 1 1 0 0 0 0 0
     U tmp = ~either & find_mask;
-    // i is the last bit being 0 in both lo and zeros that is up to the first
-    // violation, which is the last set bit of tmp. i == 2 here, we want to
-    // obtain the value with only the bit i set, this is equivalent to
-    // extracting the last set bit of tmp, do it directly without going through i
+    // According to the conclusion in the overview of this case above, i is the
+    // last bit being 0 in both lo and zeros that is upto the first violation,
+    // which is the last set bit of tmp.
+    // In our example, i == 2 here, we want to obtain the value with only the
+    // bit i set, this is equivalent to extracting the last set bit of tmp, do
+    // it directly without going through i.
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
     // Set the bit of lo at i and unset all the bits after, this is the smallest
     // value that satisfies bits._zeros. Similar to the above case, this is
     // similar to aligning lo upto alignment. Also similar to the above case,
     // this computation cannot overflow.
+    // We now have:
+    // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
+    // - new_lo[i] = 1                     (2.6)
+    // - new_lo[x] = 0, for x > i          (not yet 2.7)
     //           1 0 1 0 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
-    // Satisfy bits._ones
+    // Note that there exists no value x not larger than i such that
+    // new_lo[x] == 0 and ones[x] == 1. This is because all bits of lo before i
+    // should satisfy bits, and new_lo[i] == 1. As a result, doing
+    // new_lo |= bits.ones will give us a value such that:
+    // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
+    // - new_lo[i] = 1                     (2.6)
+    // - new_lo[x] = ones[x], for x > i    (2.7)
+    // This is the result we are looking for.
     //           1 0 1 0 0 0 1 1
     new_lo |= bits._ones;
     // In this case, new_lo may not always be a valid answer. This can happen
-    // if there is no bit up to first_violation that is 0 in both lo and zeros,
+    // if there is no bit upto first_violation that is 0 in both lo and zeros,
     // i.e. tmp == 0. In such cases, alignment == 0 && lo == bits._ones. It is
     // the only case when this function does not return a valid answer.
     // Note: it can be seen as an overflow because we can say that the
