@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +152,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorCeil() {
         double[] res = new double[SIZE];
@@ -162,7 +163,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorFloor() {
         double[] res = new double[SIZE];
@@ -173,7 +174,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorRint() {
         double[] res = new double[SIZE];
