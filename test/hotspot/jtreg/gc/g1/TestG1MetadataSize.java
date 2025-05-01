@@ -145,18 +145,18 @@ public class TestG1MetadataSize {
         // GC malloc is around 3877KB when heap is 16G, around 2231KB when heap is 64M.
 
         int expectedInK = 0;
-        // Top contributor 1: G1CollectedHeap::G1CollectedHeap 
+        // Top contributor 1: G1CollectedHeap::G1CollectedHeap
         // It grows along with parallelGCThreads. n parallelGCThreads -> n MB
         expectedInK += parallelGCThreads * K;
 
         // Top contributor 2: G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap*, G1RegionToSpaceMapper*)
-        // Grows with thread counts. 
+        // Grows with thread counts.
         expectedInK += Math.max(parallelGCThreads, concGCThreads) * K;
 
         // Top contributor 3: G1CardSetMemoryManager::G1CardSetMemoryManager
         // It grows along with heap size. heapsize 1024M -> ~1024K memory allocated by malloc
         expectedInK += maxHeapSizeMb;
-        
+
         // 10% headroom
         expectedInK += expectedInK / 10;
 
