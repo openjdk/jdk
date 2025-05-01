@@ -73,10 +73,20 @@ public class ToolProviderTest extends StartOptionTest {
     }
 
     @Override
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCombinedCommandUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    @Override
     protected int runShell(String... args) {
         //make sure the JShell running during the test is not using persisted preferences from the machine:
         Function<JavaShellToolBuilder, JavaShellToolBuilder> prevAugmentedToolBuilder =
-                getAndSetAugmentedToolBuilder(builder -> builder.persistence(new HashMap<>()));
+                getAndSetAugmentedToolBuilder(builder -> builder.persistence(getThisTestPersistence()));
         try {
             ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
             for (Tool provider : sl) {
