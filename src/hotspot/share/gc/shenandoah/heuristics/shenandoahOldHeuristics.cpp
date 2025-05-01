@@ -868,18 +868,11 @@ uint ShenandoahOldHeuristics::should_surge() {
   static const uint IdealMaxConcurrentOldCycles = 8;
   uint candidate_surge;
   if (_consecutive_concurrent_old_cycles > IdealMaxConcurrentOldCycles) {
-    uint surge_factor = (_consecutive_concurrent_old_cycles - IdealMaxConcurrentOldCycles);
+    candidate_surge = (_consecutive_concurrent_old_cycles - IdealMaxConcurrentOldCycles);
     assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
-    if (surge_factor > Max_Surge_Level * 2) {
-      surge_factor = Max_Surge_Level * 2;
+    if (candidate_surge > Max_Surge_Level) {
+      candidate_surge = Max_Surge_Level;
     }
-    // Attenuate extreme surging.  It steals too much CPU from service threads
-    uint map_surge_factor[Max_Surge_Level * 2 + 1] = { 0, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8 };
-    candidate_surge = map_surge_factor[surge_factor];
-#undef KELVIN_SURGE
-#ifdef KELVIN_SURGE
-    log_info(gc)("Old::should_surge(), surge_factor: %u mapped to %u", surge_factor, candidate_surge);
-#endif
     if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
       candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
 #ifdef KELVIN_SURGE

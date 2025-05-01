@@ -687,14 +687,10 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
   }
 #endif
 
-  uint surge_factor = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
-  assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
-  if (surge_factor > Max_Surge_Level * 2) {
-    surge_factor = Max_Surge_Level * 2;
+  uint candidate_surge = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
+  if (candidate_surge > Max_Surge_Level) {
+    candidate_surge = Max_Surge_Level;
   }
-  // Attenuate extreme surging.  It steals too much CPU from service threads and amplifies prediction of GC time
-  uint map_surge_factor[Max_Surge_Level * 2 + 1] = { 0, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8 };
-  uint candidate_surge = map_surge_factor[surge_factor];
   if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
     candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
   }

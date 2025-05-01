@@ -45,7 +45,7 @@
           "fail, resulting in stop-the-world full GCs.")                    \
           range(0,100)                                                      \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthPercent, 12.5, EXPERIMENTAL,     \
+  product(double, ShenandoahMinOldGenGrowthPercent, 25, EXPERIMENTAL,     \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of its live memory size "     \
           "at completion of the most recent old-generation marking "        \
@@ -53,7 +53,7 @@
           "collection.")                                                    \
           range(0.0,100.0)                                                  \
                                                                             \
-  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,10, EXPERIMENTAL, \
+  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage, 40, EXPERIMENTAL,\
           "(Generational mode only) If the total usage of the old "         \
           "generation is smaller than this percent, we do not trigger "     \
           "old gen collections even if old has grown, except when "         \
@@ -63,7 +63,7 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahDoNotIgnoreGrowthAfterYoungCycles,               \
-          50, EXPERIMENTAL,                                                 \
+          500, EXPERIMENTAL,                                                 \
           "(Generational mode only) Even if the usage of old generation "   \
           "is below ShenandoahIgnoreOldGrowthBelowPercentage, "             \
           "trigger an old-generation mark if old has grown and this "       \
