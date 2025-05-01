@@ -568,15 +568,25 @@ public class ML_DSA {
         return new ML_DSA_KeyPair(sk, pk);
     }
 
+    private static int[][] deepClone(int[][] array) {
+        int[][] clone = new int[array.length][];
+        for (int i = 0; i < array.length; i++) {
+            clone[i] = array[i].clone();
+        }
+        return clone;
+    }
+
     public ML_DSA_PublicKey privKeyToPubKey(ML_DSA_PrivateKey sk) {
-        //Sample A
+        // Sample A
         int[][][] keygenA = generateA(sk.rho); //A is in NTT domain
 
-        //Compute t and tr
-        mlDsaVectorNtt(sk.s1); //s1 now in NTT domain
+        // Compute t and tr
+        // make a copy of sk.s1 and modify it. Although we can also
+        // take it out of NTT domain later, it was modified for a while.
+        var s1 = deepClone(sk.s1);
+        mlDsaVectorNtt(s1); //s1 now in NTT domain
         int[][] As1 = new int[mlDsa_k][ML_DSA_N];
-        matrixVectorPointwiseMultiply(As1, keygenA, sk.s1);
-        mlDsaVectorInverseNtt(sk.s1); //take s1 out of NTT domain
+        matrixVectorPointwiseMultiply(As1, keygenA, s1);
 
         mlDsaVectorInverseNtt(As1);
         int[][] t = vectorAddPos(As1, sk.s2);

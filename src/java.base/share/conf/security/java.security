@@ -1551,16 +1551,18 @@ jdk.tls.alpnCharset=ISO_8859_1
 #jdk.security.krb5.name.case.sensitive=false
 
 #
-# The privateKey field for newly generated ML-KEM private keys in PKCS #8
+# The privateKey field for newly created ML-KEM private keys in PKCS #8
 #
-# draft-ietf-lamps-kyber-certificates specifies three formats for an ML-KEM
-# private key: a 64-octet seed, an (expanded) private key, or both.
+# The draft-ietf-lamps-kyber-certificates specification defines three formats
+# for an ML-KEM private key: a 64-byte seed, an expanded private key,
+# or a sequence containing both.
 #
-# This values can be "seed", "expandedKey", or "both" (case-insensitive).
-# The default value is "seed".
+# Valid values for this property are "seed", "expandedKey", and "both"
+# (case-insensitive). The default is "seed".
 #
-# When a new keypair is generated, its private key encoding will be determined
-# by this property.
+# This property determines the encoding format used when a new keypair is
+# generated using a KeyPairGenerator, as well as the output of the translateKey
+# method on an existing key using a KeyFactory.
 #
 # If a system property of the same name is also specified, it supersedes the
 # security property value defined here.
@@ -1572,16 +1574,18 @@ jdk.tls.alpnCharset=ISO_8859_1
 #jdk.mlkem.pkcs8.encoding = seed
 
 #
-# The privateKey field for newly generated ML-DSA private keys in PKCS #8
+# The privateKey field for newly created ML-DSA private keys in PKCS #8
 #
-# draft-ietf-lamps-dilithium-certificates specifies three formats for an ML-DSA
-# private key: a 32-octet seed, an (expanded) private key, or both.
+# The draft-ietf-lamps-dilithium-certificates specification defines three formats
+# for an ML-DSA private key: a 32-byte seed, an expanded private key,
+# or a sequence containing both.
 #
-# When a new keypair is generated, its private key encoding will be determined
-# by this property.
+# Valid values for this property are "seed", "expandedKey", and "both"
+# (case-insensitive). The default is "seed".
 #
-# This values can be "seed", "expandedKey", or "both" (case-insensitive).
-# The default value is "seed".
+# This property determines the encoding format used when a new keypair is
+# generated using a KeyPairGenerator, as well as the output of the translateKey
+# method on an existing key using a KeyFactory.
 #
 # If a system property of the same name is also specified, it supersedes the
 # security property value defined here.

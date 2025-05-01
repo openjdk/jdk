@@ -146,8 +146,12 @@ public final class ML_KEM_Impls {
                 var encoding = KeyUtil.writeToChoices(npk.getParams().getName(),
                         "mlkem", parts[0], parts[1],
                         ML_KEM_Impls::seedToExpanded);
-                if (parts[0] != null) Arrays.fill(parts[0], (byte)0);
-                if (parts[1] != null) Arrays.fill(parts[1], (byte)0);
+                if (parts[0] != null) {
+                    Arrays.fill(parts[0], (byte)0);
+                }
+                if (parts[1] != null) {
+                    Arrays.fill(parts[1], (byte)0);
+                }
                 if (encoding == null) {
                     throw new InvalidKeyException("key contains not enough info to translate");
                 }

@@ -492,7 +492,9 @@ public final class KeyUtil {
         byte[] skOctets;
         var prop = SecurityProperties.getOverridableProperty(
                 "jdk." + type + ".pkcs8.encoding");
-        if (prop == null) prop = "seed";
+        if (prop == null) {
+            prop = "seed";
+        }
 
         // Ensures using one-byte len in DER
         assert seed == null || seed.length < 128;
@@ -501,22 +503,30 @@ public final class KeyUtil {
 
         switch (prop.toLowerCase(Locale.ROOT)) {
             case "seed" -> {
-                if (seed == null) return null;
+                if (seed == null) {
+                    return null;
+                }
                 skOctets = new byte[seed.length + 2];
                 skOctets[0] = (byte)0x80;
                 skOctets[1] = (byte) seed.length;
                 System.arraycopy(seed, 0, skOctets, 2, seed.length);
             }
             case "expandedkey" -> {
-                if (expanded == null) expanded = expand.apply(pname, seed);
+                if (expanded == null) {
+                    expanded = expand.apply(pname, seed);
+                }
                 skOctets = new byte[expanded.length + 4];
                 skOctets[0] = 0x04;
                 writeShortLength(skOctets, 1, expanded.length);
                 System.arraycopy(expanded, 0, skOctets, 4, expanded.length);
             }
             case "both" -> {
-                if (seed == null) return null;
-                if (expanded == null) expanded = expand.apply(pname, seed);
+                if (seed == null) {
+                    return null;
+                }
+                if (expanded == null) {
+                    expanded = expand.apply(pname, seed);
+                }
                 skOctets = new byte[10 + seed.length + expanded.length];
                 skOctets[0] = 0x30;
                 writeShortLength(skOctets, 1, 6 + seed.length + expanded.length);
