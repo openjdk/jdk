@@ -168,8 +168,8 @@ jobs:
             echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
 
-      - name: 'Run tests on static'
-        id: run-tests
+      - name: 'Run tests on static JDK'
+        id: run-tests-static
         if: ${{ inputs.static-suffix == '-static' }}
         run: >
           make test-prebuilt
@@ -246,4 +246,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
-        if: steps.run-tests.outputs.failure == 'true'
+        if: steps.run-tests.outputs.failure == 'true' && ${{ inputs.static-suffix != '-static' }}
+
+      - name: 'Notify about test failures on static JDK'
+        uses: actions/github-script@v7
+        with:
+          script: core.setFailed('${{ steps.run-tests-static.outputs.error-message }}')
+        if: steps.run-tests-static.outputs.failure == 'true' && ${{ inputs.static-suffix == '-static' }}
