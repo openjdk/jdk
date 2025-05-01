@@ -207,24 +207,21 @@ void MacroAssembler::generate_libmCbrt() {
   address start = pc();
   enter(); // required for proper stackwalking of RuntimeStub frame
 
-  int r_zero = v0->encoding();
-  FloatRegister xmm0 = as_FloatRegister(r_zero++), xmm1 = as_FloatRegister(r_zero++),
-    xmm2 = as_FloatRegister(r_zero++), xmm3 = as_FloatRegister(r_zero++),
-    xmm4 = as_FloatRegister(r_zero++), xmm5 = as_FloatRegister(r_zero++),
-    xmm6 = as_FloatRegister(r_zero++), xmm7 = as_FloatRegister(r_zero++),
-    xmm_scratch = as_FloatRegister(r_zero++);
+  assert(v0 == c_farg0, "must be");
+  FloatRegister xmm0 = v0;
+  FloatRegSet temps = FloatRegSet::range(v1, v7) + FloatRegSet::range(v16, v31);
+  auto it = temps.begin();
+  FloatRegister xmm1 = *it++, xmm2 = *it++,
+    xmm3 = *it++, xmm4 = *it++, xmm5 = *it++,
+    xmm6 = *it++, xmm7 = *it++, xmm_scratch = *it++;
 
   Register rdx = r0, rax = r1, rcx = r2;
-
-  lea(rscratch1, Address((address)&ppp));
-  addmw(Address(rscratch1), 1, rscratch2);
 
   // __ bind(B1_1);
   // __ subq(rsp, 24);
   // __ movsd(Address(rsp), xmm0);
   __ bind(B1_1);
-  __ sub(rscratch1, sp, 3 * wordSize);
-  __ andr(sp, rscratch1, -16);
+  __ sub(sp, sp, align_up(3 * wordSize, 16));
   __ strd(xmm0, Address(sp, 0));
 
   // __ bind(B1_2);
@@ -243,6 +240,7 @@ void MacroAssembler::generate_libmCbrt() {
   __ ushr(xmm7, T2D, xmm7, 44);
   // __ pextrw(rcx, xmm7, 0);
   __ fmovs(rcx, xmm7);
+  // __ andr(rcx, rcx, 0xffff); // Unnecessary
   // __ movdl(rax, xmm7);
   __ fmovd(rax, xmm7);
   // __ movsd(xmm1, ExternalAddress(EXP_MASK), r11 /*rscratch*/);
@@ -254,7 +252,6 @@ void MacroAssembler::generate_libmCbrt() {
   // __ lea(r8, ExternalAddress(rcp_table));
   // __ movsd(xmm4, Address(r8, rcx, Address::times_1));
   __ lea(rscratch1, ExternalAddress(rcp_table));
-  // __ movsd(xmm4, Address(r8, rcx, Address::times_1));
   __ ldrd(xmm4, Address(rscratch1, rcx));
   // __ movq(r9, rax);
   // __ andl(rdx, rax);
@@ -315,12 +312,15 @@ void MacroAssembler::generate_libmCbrt() {
   // __ addq(rcx, r9);
   // __ psllq(xmm7, 52);
   __ addw(rax, rax, 682);
-  __ orr(rax, rax, rdx);
+  __ orrw(rax, rax, rdx);
   __ fmovd(xmm7, rax);
   __ add(rcx, rcx, r9);
   __ shl(xmm7, T2D, xmm7, 52);
 
   __ bind(L_2TAG_PACKET_2_0_1);
+  lea(rscratch1, Address((address)&ppp));
+  addmw(Address(rscratch1), 1, rscratch2);
+
   // __ movapd(xmm2, ExternalAddress(coeff_table + 32), r11 /*rscratch*/);
   // __ movapd(xmm0, ExternalAddress(coeff_table + 48), r11 /*rscratch*/);
   __ ldrq(xmm2, ExternalAddress(coeff_table + 32), rscratch1);
@@ -328,13 +328,13 @@ void MacroAssembler::generate_libmCbrt() {
   // __ subsd(xmm1, xmm3);
   // __ movq(xmm3, xmm7);
   // __ lea(r8, ExternalAddress(cbrt_table));
+  __ fsubd(xmm1, xmm1, xmm3);
+  __ fmovd(xmm3, xmm7);
+  __ lea(rscratch1, ExternalAddress(cbrt_table));
   // __ mulsd(xmm7, Address(r8, rcx, Address::times_1));
   // __ mulsd(xmm1, xmm4);
   // __ lea(r8, ExternalAddress(D_table));
   // __ mulsd(xmm3, Address(r8, rcx, Address::times_1));
-  __ fsubd(xmm1, xmm1, xmm3);
-  __ fmovd(xmm3, xmm7);
-  __ lea(rscratch1, ExternalAddress(cbrt_table));
   __ ldrd(xmm_scratch, Address(rscratch1, rcx));
   __ fmuld(xmm7, xmm7, xmm_scratch);
   __ fmuld(xmm1, xmm1, xmm4);
@@ -375,126 +375,158 @@ void MacroAssembler::generate_libmCbrt() {
   // __ mulsd(xmm0, xmm4);
   // __ addsd(xmm0, xmm3);
   // __ addsd(xmm0, xmm7);
-  __ faddd(xmm0, xmm0, xmm1);
-  __ fmuld(xmm0, xmm0, xmm4);
-  __ faddd(xmm0, xmm0, xmm3);
-  __ faddd(xmm0, xmm0, xmm7);
-
-  // __ movapd(xmm4, xmm1);
-  __ orr(xmm4, T16B, xmm1, xmm1);
-
-  // __ unpcklpd(xmm1, xmm1);
-  __ dup(xmm1, T2D, xmm1, 0);
-
-  // __ mulpd(xmm5, xmm1);
-  // __ mulpd(xmm6, xmm1);
-  // __ mulpd(xmm1, xmm1);
-  // __ addpd(xmm2, xmm5);
-  // __ addpd(xmm0, xmm6);
-  // __ mulpd(xmm2, xmm1);
-  // __ mulpd(xmm1, xmm1);
-  __ fmul(xmm5, T2D, xmm5, xmm1);
-  __ fmul(xmm6, T2D, xmm6, xmm1);
-  __ fmul(xmm1, T2D, xmm1, xmm1);
-  __ fadd(xmm2, T2D, xmm2, xmm5);
-  __ fadd(xmm0, T2D, xmm0, xmm6);
-  __ fmul(xmm2, T2D, xmm2, xmm1);
-  __ fmul(xmm1, T2D, xmm1, xmm1);
-
-  // __ mulsd(xmm4, xmm7);
-  __ fmuld(xmm4, xmm4, xmm7);
-
-  // __ addpd(xmm0, xmm2);
-  __ fadd(xmm0, T2D, xmm0, xmm2);
-
-  // __ mulsd(xmm1, xmm0);
-  __ fmuld(xmm1, xmm1, xmm0);
-
-  // __ unpckhpd(xmm0, xmm0);
-  __ dup(xmm0, T2D, xmm0, 1);
-
-  // __ addsd(xmm0, xmm1);
-  // __ mulsd(xmm0, xmm4);
-  // __ addsd(xmm0, xmm3);
-  // __ addsd(xmm0, xmm7);
-  // __ jmp(B1_4);
-  __ faddd(xmm0, xmm0, xmm1);
-  __ fmuld(xmm0, xmm0, xmm4);
-  __ faddd(xmm0, xmm0, xmm3);
-  __ faddd(xmm0, xmm0, xmm7);
+  __ faddd(xmm_scratch, xmm0, xmm1);
+  __ fmuld(xmm_scratch, xmm_scratch, xmm4);
+  __ faddd(xmm_scratch, xmm_scratch, xmm3);
+  __ faddd(xmm_scratch, xmm_scratch, xmm7);
+  __ ins(xmm0, 0, D, xmm_scratch, 0);
   __ b(B1_4);
 
   __ bind(L_2TAG_PACKET_0_0_1);
+
   // __ mulsd(xmm0, ExternalAddress(SCALE63), r11 /*rscratch*/);
+  __ ldrd(xmm_scratch, ExternalAddress(SCALE63), r11 /*rscratch*/);
+  __ fmuld(xmm0, xmm0, xmm_scratch);
+
   // __ movq(xmm7, xmm0);
+  __ orr(xmm7, T16B, xmm0, xmm0);
   // __ movl(rdx, 524032);
+  __ mov(rdx, 524032);
   // __ psrlq(xmm7, 44);
   // __ pextrw(rcx, xmm7, 0);
+  __ ushr(xmm7, T2D, xmm7, 44);
+  __ fmovs(rcx, xmm7);
   // __ movdl(rax, xmm7);
+  __ fmovd(rax, xmm7);
   // __ andl(rcx, 248);
+  __ andr(rcx, rcx, 248);
   // __ lea(r8, ExternalAddress(rcp_table));
   // __ movsd(xmm4, Address(r8, rcx, Address::times_1));
+  __ lea(rscratch1, ExternalAddress(rcp_table));
+  __ ldrd(xmm4, Address(rscratch1, rcx));
   // __ movq(r9, rax);
   // __ andl(rdx, rax);
   // __ shrl(rdx, 8);
   // __ shrq(r9, 8);
   // __ cmpl(rdx, 0);
+  __ mov(r9, rax);
+  __ andr(rdx, rdx, rax);
+  __ lsrw(rdx, rdx, 8);
+  __ lsr(r9, r9, 8);
+  __ cmp(rdx, (u1)0);
   // __ jcc(Assembler::equal, L_2TAG_PACKET_3_0_1); // Branch only if |x| is zero
+  __ br(__ EQ, L_2TAG_PACKET_3_0_1); // Branch only if |x| is zero
+
   // __ andpd(xmm2, xmm0);
   // __ andpd(xmm0, xmm5);
   // __ orpd(xmm3, xmm2);
   // __ orpd(xmm1, xmm0);
+  __ andr(xmm2, T16B, xmm2, xmm0);
+  __ andr(xmm0, T16B, xmm0, xmm5);
+  __ orr(xmm3, T16B, xmm3, xmm2);
+  __ orr(xmm1, T16B, xmm1, xmm0);
+
   // __ movapd(xmm5, ExternalAddress(coeff_table), r11 /*rscratch*/);
+  __ ldrq(xmm5, ExternalAddress(coeff_table), rscratch1);
   // __ movl(rax, 5462);
+  __ mov(rax, 5462);
   // __ movapd(xmm6, ExternalAddress(coeff_table + 16), r11 /*rscratch*/);
+  __ ldrq(xmm6, ExternalAddress(coeff_table + 16), rscratch1);
+
   // __ mull(rdx);
+  __ mulw(rax, rax, rdx);
   // __ movq(rdx, r9);
   // __ andq(r9, 2047);
   // __ shrl(rax, 14);
   // __ andl(rdx, 2048);
+  __ mov(rdx, r9);
+  __ andr(r9, r9, 2047);
+  __ lsr(rax, rax, 14);
+  __ andr(rdx, rdx, 2048);
   // __ subq(r9, rax);
   // __ subq(r9, rax);
   // __ subq(r9, rax);
   // __ shlq(r9, 8);
+  __ sub(r9, r9, rax);
+  __ sub(r9, r9, rax);
+  __ sub(r9, r9, rax);
+  __ lsl(r9, r9, 8);
+
   // __ addl(rax, 661);
   // __ orl(rax, rdx);
   // __ movdl(xmm7, rax);
   // __ addq(rcx, r9);
   // __ psllq(xmm7, 52);
+  __ addw(rax, rax, 661);
+  __ orrw(rax, rax, rdx);
+  __ fmovd(xmm7, rax);
+  __ add(rcx, rcx, r9);
+  __ shl(xmm7, T2D, xmm7, 52);
   // __ jmp(L_2TAG_PACKET_2_0_1);
+  __ b(L_2TAG_PACKET_2_0_1);
 
   __ bind(L_2TAG_PACKET_3_0_1);
   // __ cmpq(r9, 0);
   // __ jcc(Assembler::notEqual, L_2TAG_PACKET_4_0_1); // Branch only if x is negative zero
+  __ cmp(r9, (u1)0);
+  __ br(__ NE, L_2TAG_PACKET_4_0_1); // Branch only if x is negative zero
+
   // __ xorpd(xmm0, xmm0);
   // __ jmp(B1_4);
+  __ eor(xmm0, T16B, xmm0, xmm0);
+  __ b(B1_4);
 
   __ bind(L_2TAG_PACKET_4_0_1);
   // __ movsd(xmm0, ExternalAddress(ZERON), r11 /*rscratch*/);
   // __ jmp(B1_4);
+  __ ldrq(xmm0, ExternalAddress(ZERON), rscratch1);
+  __ b(B1_4);
 
   __ bind(L_2TAG_PACKET_1_0_1);
   // __ movl(rax, Address(rsp, 4));
   // __ movl(rdx, Address(rsp));
+  __ ldrw(rdx, Address(sp, 0));
+  __ ldrw(rax, Address(sp, 4));
   // __ movl(rcx, rax);
   // __ andl(rcx, 2147483647);
   // __ cmpl(rcx, 2146435072);
+  __ movw(rcx, rax);
+  __ mov(rscratch1, 2147483647);
+  __ andr(rcx, rcx, rscratch1);
+  __ mov(rscratch1, 2146435072);
+  __ cmp(rcx, rscratch1);
   // __ jcc(Assembler::above, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
+  __ br(Assembler::HI, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
+
   // __ cmpl(rdx, 0);
   // __ jcc(Assembler::notEqual, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
+  __ cmp(rdx, (u1)0);
+  __ br(Assembler::NE, L_2TAG_PACKET_5_0_1); // Branch only if |x| is NaN
+
   // __ cmpl(rax, 2146435072);
   // __ jcc(Assembler::notEqual, L_2TAG_PACKET_6_0_1); // Branch only if x is negative INF
+  __ mov(rscratch1, 2146435072);
+  __ cmp(rax, rscratch1);
+  __ br(Assembler::NE, L_2TAG_PACKET_6_0_1); // Branch only if x is negative INF
+
   // __ movsd(xmm0, ExternalAddress(INF), r11 /*rscratch*/);
   // __ jmp(B1_4);
+  __ ldrd(xmm0, ExternalAddress(INF), rscratch1);
+  __ b(B1_4);
 
   __ bind(L_2TAG_PACKET_6_0_1);
   // __ movsd(xmm0, ExternalAddress(NEG_INF), r11 /*rscratch*/);
   // __ jmp(B1_4);
+  __ ldrd(xmm0, ExternalAddress(NEG_INF), rscratch1);
+  __ b(B1_4);
 
   __ bind(L_2TAG_PACKET_5_0_1);
   // __ movsd(xmm0, Address(rsp));
   // __ addsd(xmm0, xmm0);
   // __ movq(Address(rsp, 8), xmm0);
+  __ ldrd(xmm0, Address(sp, 0));
+  __ faddd(xmm0, xmm0, xmm0);
+  // __ strd(xmm0, Address(sp, 8));   // <--- What is this for?
 
   __ bind(B1_4);
   // __ addq(rsp, 24);

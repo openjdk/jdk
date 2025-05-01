@@ -197,6 +197,16 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ mov(sp, r19_sender_sp);
     generate_transcendental_entry(kind, 2);
     break;
+  case Interpreter::java_lang_math_cbrt:
+    assert(StubRoutines::dcbrt() != nullptr, "not initialized");
+    entry_point = __ pc();
+    __ mov(r23, lr);
+    continuation = r23;
+    __ ldrd(v0, Address(esp));
+    __ mov(sp, r19_sender_sp);
+    __ mov(rscratch1, CAST_FROM_FN_PTR(address, StubRoutines::dcbrt()));
+    __ blr(rscratch1);
+    break;
   case Interpreter::java_lang_math_fmaD :
     if (UseFMA) {
       entry_point = __ pc();
