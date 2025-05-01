@@ -642,6 +642,7 @@ void VM_Version::initialize() {
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }
+  size_t features_offset = strnlen(buf, sizeof(buf));
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
   do {                                                          \
     if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
@@ -649,7 +650,11 @@ void VM_Version::initialize() {
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = extract_features_string(_cpu_info_string,
+                                             strnlen(_cpu_info_string, sizeof(buf)),
+                                             features_offset);
 }
 
 #if defined(LINUX)
@@ -718,7 +723,7 @@ void VM_Version::initialize_cpu_information(void) {
   int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
-  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
 
   _initialized = true;
 }

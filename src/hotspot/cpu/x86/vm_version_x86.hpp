@@ -672,7 +672,7 @@ public:
   static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
   static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
 
-  LP64_ONLY(static void clear_apx_test_state());
+  static void clear_apx_test_state();
 
   static void clean_cpuFeatures()   { memset(_dynamic_features_vector, 0, sizeof(uint64_t) * _dynamic_features_vector_size); }
   static void set_avx_cpuFeatures() {
@@ -892,12 +892,12 @@ public:
 
   // x86_64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() {
-    return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
+    return true;
   }
 
   // x86_64 supports secondary supers table
   constexpr static bool supports_secondary_supers_table() {
-    return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
+    return true;
   }
 
   constexpr static bool supports_stack_watermark_barrier() {
@@ -932,11 +932,7 @@ public:
   // synchronize with other memory ops. so, it needs preceding
   // and trailing StoreStore fences.
 
-#ifdef _LP64
   static bool supports_clflush(); // Can't inline due to header file conflict
-#else
-  static bool supports_clflush() { return  (SUPPORTS_CPU_FEATURE(CPU_FLUSH)); }
-#endif // _LP64
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return (SUPPORTS_CPU_FEATURE(CPU_FLUSHOPT)); }

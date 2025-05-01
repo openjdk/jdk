@@ -59,6 +59,8 @@ class Abstract_VM_Version: AllStatic {
 
   static const char* _features_string;
 
+  static const char* _cpu_info_string;
+
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
 
@@ -191,6 +193,10 @@ class Abstract_VM_Version: AllStatic {
   static const char* features_string() { return _features_string; }
 
   static void insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[], uint features_names_index = 0);
+  static const char* cpu_info_string() { return _cpu_info_string; }
+  static const char* extract_features_string(const char* cpu_info_string,
+                                             size_t cpu_info_string_len,
+                                             size_t features_offset);
 
   static VirtualizationType get_detected_virtualization() {
     return _detected_virtualization;
