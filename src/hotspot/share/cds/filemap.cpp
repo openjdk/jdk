@@ -824,7 +824,7 @@ bool FileMapRegion::check_region_crc(char* base) const {
 
 static const char* region_name(int region_index) {
   static const char* names[] = {
-    "rw", "ro", "bm", "hp"
+    "rw", "ro", "bm", "hp", "ac"
   };
   const int num_regions = sizeof(names)/sizeof(names[0]);
   assert(0 <= region_index && region_index < num_regions, "sanity");
@@ -910,6 +910,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
                    " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
+  } else {
+     log_info(cds)("Shared file region (%s) %d: %8zu"
+                   " bytes", region_name(region), region, size);
   }
 
   r->init(region, mapping_offset, size, read_only, allow_exec, crc);
@@ -1111,7 +1114,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap", "Heap" };
+static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap", "Heap", "Code" };
 
 MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
   DEBUG_ONLY(FileMapRegion* last_region = nullptr);
@@ -1272,6 +1275,42 @@ char* FileMapInfo::map_bitmap_region() {
                 MetaspaceShared::bm, p2i(r->mapped_base()), p2i(r->mapped_end()),
                 shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
+}
+
+bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
+  FileMapRegion* r = region_at(MetaspaceShared::ac);
+  assert(r->used() > 0 && r->used_aligned() == rs.size(), "must be");
+
+  char* requested_base = rs.base();
+  assert(requested_base != nullptr, "should be inside code cache");
+
+  char* mapped_base;
+  if (MetaspaceShared::use_windows_memory_mapping()) {
+    if (!read_region(MetaspaceShared::ac, requested_base, r->used_aligned(), /* do_commit = */ true)) {
+      log_info(cds)("Failed to read aot code shared space into reserved space at " INTPTR_FORMAT,
+                    p2i(requested_base));
+      return false;
+    }
+    mapped_base = requested_base;
+  } else {
+    // We do not execute in-place in the AOT code region.
+    // AOT code is copied to the CodeCache for execution.
+    bool read_only = false, allow_exec = false;
+    mapped_base = map_memory(_fd, _full_path, r->file_offset(),
+                             requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
+  }
+  if (mapped_base == nullptr) {
+    log_info(cds)("failed to map aot code region");
+    return false;
+  } else {
+    assert(mapped_base == requested_base, "must be");
+    r->set_mapped_from_file(true);
+    r->set_mapped_base(mapped_base);
+    log_info(cds)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+                  MetaspaceShared::ac, p2i(r->mapped_base()), p2i(r->mapped_end()),
+                  shared_region_name[MetaspaceShared::ac]);
+    return true;
+  }
 }
 
 class SharedDataRelocationTask : public ArchiveWorkerTask {
