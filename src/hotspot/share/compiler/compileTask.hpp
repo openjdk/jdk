@@ -104,7 +104,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   CompileTask*         _next, *_prev;
   bool                 _is_free;
   // Fields used for logging why the compilation was initiated:
-  jlong                _time_created;  // time when task was enqueued
+  jlong                _time_created;  // time when task was created
   jlong                _time_queued;   // time when task was enqueued
   jlong                _time_started;  // time when compilation started
   jlong                _time_finished; // time when compilation finished
