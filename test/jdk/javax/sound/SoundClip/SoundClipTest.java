@@ -80,9 +80,9 @@ public class SoundClipTest {
         }
 
         // Should also test play() but don't check isPlaying() for test reliability reasons.
-        clip.play(); 
+        clip.play();
         Thread.sleep(1000);
-        clip.stop(); 
+        clip.stop();
     }
 
    /**
