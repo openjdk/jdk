@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,11 @@ public class HtmlOptions extends BaseOptions {
      * Argument for command-line option {@code -stylesheetfile}.
      */
     private String stylesheetFile = "";
+
+    /**
+     * Argument for command line option {@code --syntax-highlight}.
+     */
+    private boolean syntaxHighlight = false;
 
     /**
      * Argument for command-line option {@code -tagletpath}.
@@ -419,6 +424,14 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         snippetPath = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--syntax-highlight") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        syntaxHighlight = true;
                         return true;
                     }
                 },
@@ -805,6 +818,13 @@ public class HtmlOptions extends BaseOptions {
     String stylesheetFile() {
         return stylesheetFile;
     }
+
+    /**
+     * Argument for command line option {@code --syntax-highlight}.
+     * True if command line option "--syntax-highlight" is used and syntax
+     * highlighting should be enabled. Default value is false.
+     */
+    public boolean syntaxHighlight() { return syntaxHighlight; }
 
     /**
      * Argument for command-line option {@code -tagletpath}.

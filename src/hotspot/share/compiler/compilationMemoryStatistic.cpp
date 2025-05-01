@@ -374,7 +374,7 @@ void ArenaStatCounter::on_arena_chunk_deallocation(size_t size, uint64_t stamp) 
 void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   st->print("Total Usage: %zu ", _peak);
   if (_peak > 0) {
-#ifdef COMPILER2
+#ifdef COMPILER1
     // C1: print allocations broken down by arena types
     if (_comp_type == CompilerType::compiler_c1) {
       st->print("[");
