@@ -342,9 +342,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // in both lo and zeros
     //           0 1 1 0 0 0 0 0
     U tmp = ~either & find_mask;
-    // i is the last bit being 0 in both lo and zeros that stands before the
-    // first violation, which is the last set bit of tmp. i == 2 here, we want
-    // to obtain the value with only the bit i set, this is equivalent to
+    // i is the last bit being 0 in both lo and zeros that is up to the first
+    // violation, which is the last set bit of tmp. i == 2 here, we want to
+    // obtain the value with only the bit i set, this is equivalent to
     // extracting the last set bit of tmp, do it directly without going through i
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
