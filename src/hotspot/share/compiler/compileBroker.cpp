@@ -339,6 +339,8 @@ void CompileQueue::add(CompileTask* task) {
   // Mark the method as being in the compile queue.
   task->method()->set_queued_for_compilation();
 
+  task->mark_queued(os::elapsed_counter());
+
   if (CIPrintCompileQueue) {
     print_tty();
   }
@@ -2155,10 +2157,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   elapsedTimer time;
 
   DirectiveSet* directive = task->directive();
-  if (directive->PrintCompilationOption) {
-    ResourceMark rm;
-    task->print_tty();
-  }
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2173,8 +2171,16 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != nullptr);
   bool should_break = false;
+  bool should_print_compilation = PrintCompilation || directive->PrintCompilationOption;
   const int task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
+
+  // Print the task before compilation.
+  if (should_print_compilation) {
+    ttyLocker ttyl;  // keep the following output all in one block
+    task->print(tty, "started", false, true);
+  }
+
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
@@ -2344,16 +2350,26 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
   }
 
+  task->mark_finished(os::elapsed_counter());
+
   if (failure_reason != nullptr) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation || directive->PrintCompilationOption) {
+    if (should_print_compilation) {
+      ttyLocker ttyl;  // keep the following output all in one block
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
+    }
+  } else {
+    if (should_print_compilation) {
+      if (should_print_compilation) {
+        task->print_tty();
+      }
+      task->print_ul();
     }
   }
 

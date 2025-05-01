@@ -75,6 +75,7 @@ class TimeHelper {
  public:
   static double counter_to_seconds(jlong counter);
   static double counter_to_millis(jlong counter);
+  static double counter_to_micros(jlong counter);
   static jlong millis_to_counter(jlong millis);
   static jlong micros_to_counter(jlong micros);
 };
