@@ -25,10 +25,13 @@
  * @test
  * @bug 8149411 8007632
  * @summary Get AES key from keystore (uses SecretKeySpec not SecretKeyFactory)
+ * @library /test/lib
  * @run main P12SecretKey pkcs12 AES 128
  * @run main P12SecretKey pkcs12 DES 56
  * @run main P12SecretKey pkcs12 DESede 168
  */
+
+import jdk.test.lib.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +68,7 @@ public class P12SecretKey {
         ks.setEntry(ALIAS, ske, kspp);
 
         // temporary files are created in scratch directory
-        final File ksFile = File.createTempFile("test", ".test", new File("."));
+        final File ksFile = Utils.createTempFile("test", ".test").toFile();
 
         try (FileOutputStream fos = new FileOutputStream(ksFile)) {
             ks.store(fos, pw);
