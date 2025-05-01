@@ -88,12 +88,12 @@ public:
 // value does not exists automatically follows.
 //
 // If there exists a value not less than lo and satisfies bits, then this
-// function will always find a such value. The conversion is also true, that is
-// if this function finds a value not less than lo and satisfies bits, then it
-// must trivially be the case that there exists a such value. As a result, the
-// negation of those statements are also equivalent, there does not exists a
-// value not less than lo and satisfies bits if and only if this function does
-// not return a such value.
+// function will always find one such value. The conversion is also true, that
+// is if this function finds a value not less than lo and satisfies bits, then
+// it must trivially be the case that there exists one such value. As a result,
+// the negation of those statements are also equivalent, there does not exists
+// a value not less than lo and satisfies bits if and only if this function
+// does not return one such value.
 //
 // In practice, since the algorithm always ensures that the returned value
 // satisfies bits, we only need to check if it is not less than lo.
@@ -300,6 +300,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // correct result
     //           1 1 0 1 0 0 1 0
     new_lo |= bits._ones;
+    // Note that in this case, new_lo is always a valid answer. That is, it is
+    // a value not less than lo and satisfies bits. This is because there is
+    // always a bit up to first_violation that is 0 in both lo and zeros
+    // (trivially, it is the bit at first_violation).
     assert(lo < new_lo, "this case cannot overflow");
     return new_lo;
   } else {
@@ -352,6 +356,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // Satisfy bits._ones
     //           1 0 1 0 0 0 1 1
     new_lo |= bits._ones;
+    // In this case, new_lo may not always be a valid answer. This can happen
+    // if there is no bit up to first_violation that is 0 in both lo and zeros,
+    // i.e. tmp == 0. In such cases, alignment == 0 && lo == bits._ones. It is
+    // the only case when this function does not return a valid answer.
     assert(lo < new_lo || new_lo == bits._ones, "overflow must return bits._ones");
     return new_lo;
   }
