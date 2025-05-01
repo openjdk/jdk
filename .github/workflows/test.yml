@@ -40,6 +40,9 @@ on:
       xcode-toolset-version:
         required: false
         type: string
+      debug-suffix:
+        required: true
+        type: string
       static-suffix:
         required: false
         type: string
@@ -89,35 +92,35 @@ jobs:
 
           - test-name: 'hs/tier1 common'
             test-suite: 'test/hotspot/jtreg/:tier1_common'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 1'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_1'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 2'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 compiler part 3'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 gc'
             test-suite: 'test/hotspot/jtreg/:tier1_gc'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 runtime'
             test-suite: 'test/hotspot/jtreg/:tier1_runtime'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'hs/tier1 serviceability'
             test-suite: 'test/hotspot/jtreg/:tier1_serviceability'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
           - test-name: 'lib-test/tier1'
             test-suite: 'test/lib-test/:tier1'
-            debug-suffix: -debug
+            debug-suffix: ${{ inputs.debug-suffix }}
 
     steps:
       - name: 'Checkout the JDK source'
@@ -178,7 +181,7 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=./test/hotspot/jtreg/ProblemList-StaticJdk.txt'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=$(pwd)/test/hotspot/jtreg/ProblemList-StaticJdk.txt'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
