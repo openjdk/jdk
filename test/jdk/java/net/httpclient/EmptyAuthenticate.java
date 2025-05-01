@@ -89,11 +89,13 @@ class EmptyAuthenticate {
     }
 
     static Stream<Arguments> args() {
-        return Stream
-                .of(Version.HTTP_1_1, Version.HTTP_2)
-                .flatMap(version -> Stream
-                        .of(true, false)
-                        .map(secure -> Arguments.of(version, secure)));
+        return Stream.concat(
+                Stream
+                        .of(Version.HTTP_1_1, Version.HTTP_2)
+                        .flatMap(version -> Stream
+                                .of(true, false)
+                                .map(secure -> Arguments.of(version, secure))),
+                Stream.of(Arguments.of(Version.HTTP_3, true)));
     }
 
     private static HttpTestServer createServer(Version version, boolean secure, String uriPath)
@@ -128,7 +130,7 @@ class EmptyAuthenticate {
     }
 
     private static HttpClient createClient(Version version, boolean secure) {
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
+        HttpClient.Builder clientBuilder = HttpServerAdapters.createClientBuilderFor(version).proxy(NO_PROXY);
         if (secure) {
             clientBuilder.sslContext(SSL_CONTEXT);
         }
