@@ -294,6 +294,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // multiple of alignment. Since lo is not divisible by alignment, to round
     // lo up to a multiple of alignment, we add alignment to the rounded down
     // value.
+    // Note that this computation cannot overflow as the bit in lo that is at
+    // the same position as the only bit 1 in alignment must be 0. As a result,
+    // this operation just set that bit to 1 and set all the bits after to 0.
     //           1 1 0 1 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
     // Our current new_lo satisfies zeros, just OR it with ones to obtain the
@@ -350,7 +353,8 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     U alignment = tmp & (-tmp);
     // Set the bit of lo at i and unset all the bits after, this is the smallest
     // value that satisfies bits._zeros. Similar to the above case, this is
-    // similar to aligning lo upto alignment
+    // similar to aligning lo upto alignment. Also similar to the above case,
+    // this computation cannot overflow.
     //           1 0 1 0 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
     // Satisfy bits._ones
@@ -360,6 +364,13 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // if there is no bit up to first_violation that is 0 in both lo and zeros,
     // i.e. tmp == 0. In such cases, alignment == 0 && lo == bits._ones. It is
     // the only case when this function does not return a valid answer.
+    // Note: it can be seen as an overflow because we can say that the
+    // computation of tmp above results in 0b...1100..00 with W trailing 0s.
+    // As a result, alignment should be 0b100...00 with W trailing 0s. This
+    // overflows the W-bit arithmetic and we obtain the value alignment == 0.
+    // We can say that the algorithm should round up lo to a multiple of 2**W.
+    // This overflows and the highest bit is discarded, leaving us with the
+    // result of rounding up being 0.
     assert(lo < new_lo || new_lo == bits._ones, "overflow must return bits._ones");
     return new_lo;
   }
