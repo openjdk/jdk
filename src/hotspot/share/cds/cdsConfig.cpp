@@ -540,9 +540,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     // run to another which resulting in non-determinstic CDS archives.
     // Disable UseStringDeduplication while dumping CDS archive.
     UseStringDeduplication = false;
-
-    // Don't use SoftReferences so that objects used by java.lang.invoke tables can be archived.
-    Arguments::PropertyList_add(new SystemProperty("java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE", "false", false));
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit

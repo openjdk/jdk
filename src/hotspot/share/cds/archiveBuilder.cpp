@@ -312,7 +312,8 @@ address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M) + AOTCodeCache::max_aot_code_size();
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtClassShared);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
