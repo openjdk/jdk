@@ -2153,7 +2153,6 @@ static void whitebox_lock_compilation() {
 // Compile a method.
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
-  task->print_ul();
   elapsedTimer time;
 
   DirectiveSet* directive = task->directive();
@@ -2180,6 +2179,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ttyLocker ttyl;  // keep the following output all in one block
     task->print(tty, "started", false, true);
   }
+  task->print_ul("started");
 
   {
     // create the handle inside it's own block so it can't
@@ -2366,11 +2366,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
   } else {
     if (should_print_compilation) {
-      if (should_print_compilation) {
-        task->print_tty();
-      }
-      task->print_ul();
+      task->print_tty();
     }
+    task->print_ul();
   }
 
   DirectivesStack::release(directive);
