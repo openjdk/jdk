@@ -155,7 +155,7 @@ public class AppContentTest {
                 String tagetName = dstPath.getFileName().toString().replace("Link", "");
                 Path targetPath = dstPath.getParent().resolve(tagetName);
                 Files.createFile(targetPath);
-                Files.createSymbolicLink(dstPath, targetPath.toAbsolutePath());
+                Files.createSymbolicLink(dstPath, targetPath.getFileName());
             } else {
                 FileUtils.copyRecursive(srcPath, dstPath);
             }
