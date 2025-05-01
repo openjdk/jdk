@@ -234,7 +234,7 @@ jobs:
       make-target: 'product-bundles test-bundles static-jdk-bundles'
       # There are issues with fastdebug static build in GHA due to space limit.
       # Only do release build for now.
-      debug-levels: '[ "release" ]'
+      debug-levels: '[ "debug" ]'
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
