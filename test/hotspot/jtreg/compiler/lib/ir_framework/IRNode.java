@@ -2436,34 +2436,29 @@ public class IRNode {
         machOnlyNameRegex(VMLA_MASKED, "vmla_masked");
     }
 
-    public static final String FMSUB_F = PREFIX + "FMSUB_F" + POSTFIX;
+    public static final String FMSUB = PREFIX + "FMSUB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FMSUB_F, "FmaF");
+        machOnlyNameRegex(FMSUB, "msub(F|D)_reg_reg");
     }
 
-    public static final String FMSUB_D = PREFIX + "FMSUB_D" + POSTFIX;
+    public static final String FNMADD = PREFIX + "FNMADD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FMSUB_D, "FmaD");
+        machOnlyNameRegex(FNMADD, "mnadd(F|D)_reg_reg");
     }
 
-    public static final String FNMADD_F = PREFIX + "FNMADD_F" + POSTFIX;
+    public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FNMADD_F, "FmaF");
+        machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
     }
 
-    public static final String FNMADD_D = PREFIX + "FNMADD_D" + POSTFIX;
+    public static final String FMA_F = PREFIX + "FMA_F" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FNMADD_D, "FmaD");
+        beforeMatchingNameRegex(FMA_F, "FmaF");
     }
 
-    public static final String FNMSUB_F = PREFIX + "FNFNMSUB_FMSUB" + POSTFIX;
+    public static final String FMA_D = PREFIX + "FMA_D" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FNMSUB_F, "FmaF");
-    }
-
-    public static final String FNMSUB_D = PREFIX + "FNMSUB_D" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(FNMSUB_D, "FmaD");
+        beforeMatchingNameRegex(FMA_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;
