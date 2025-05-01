@@ -123,7 +123,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   if( !k ) {                    // ?Miss?
     NOT_PRODUCT( _lookup_misses++ );
     _table[key] = n;            // Insert into table!
-    debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
+    DEBUG_ONLY(n->enter_hash_lock()); // Lock down the node while in the table.
     check_grow();               // Grow table if insert hit limit
     return nullptr;             // Miss!
   }
@@ -152,7 +152,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
       NOT_PRODUCT( _lookup_misses++ );
       key = (first_sentinel == 0) ? key : first_sentinel; // ?saw sentinel?
       _table[key] = n;          // Insert into table!
-      debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
+      DEBUG_ONLY(n->enter_hash_lock()); // Lock down the node while in the table.
       check_grow();             // Grow table if insert hit limit
       return nullptr;           // Miss!
     }
@@ -188,7 +188,7 @@ void NodeHash::hash_insert( Node *n ) {
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
   }
   _table[key] = n;              // Insert into table!
-  debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
+  DEBUG_ONLY(n->enter_hash_lock()); // Lock down the node while in the table.
   // if( conflict ) { n->dump(); }
 }
 
@@ -203,9 +203,9 @@ bool NodeHash::hash_delete( const Node *n ) {
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
-  debug_only( uint counter = 0; );
+  DEBUG_ONLY( uint counter = 0; );
   for( ; /* (k != nullptr) && (k != _sentinel) */; ) {
-    debug_only( counter++ );
+    DEBUG_ONLY( counter++ );
     NOT_PRODUCT( _delete_probes++ );
     k = _table[key];            // Get hashed value
     if( !k ) {                  // Miss?
@@ -215,7 +215,7 @@ bool NodeHash::hash_delete( const Node *n ) {
     else if( n == k ) {
       NOT_PRODUCT( _delete_hits++ );
       _table[key] = _sentinel;  // Hit! Label as deleted entry
-      debug_only(((Node*)n)->exit_hash_lock()); // Unlock the node upon removal from table.
+      DEBUG_ONLY(((Node*)n)->exit_hash_lock()); // Unlock the node upon removal from table.
       return true;
     }
     else {
@@ -257,7 +257,7 @@ void  NodeHash::grow() {
   for( uint i = 0; i < old_max; i++ ) {
     Node *m = *old_table++;
     if( !m || m == _sentinel ) continue;
-    debug_only(m->exit_hash_lock()); // Unlock the node upon removal from old table.
+    DEBUG_ONLY(m->exit_hash_lock()); // Unlock the node upon removal from old table.
     hash_insert(m);
   }
 }
@@ -289,7 +289,7 @@ void NodeHash::remove_useless_nodes(VectorSet &useful) {
   for( uint i = 0; i < max; ++i ) {
     Node *n = at(i);
     if(n != nullptr && n != sentinel_node && !useful.test(n->_idx)) {
-      debug_only(n->exit_hash_lock()); // Unlock the node when removed
+      DEBUG_ONLY(n->exit_hash_lock()); // Unlock the node when removed
       _table[i] = sentinel_node;       // Replace with placeholder
     }
   }

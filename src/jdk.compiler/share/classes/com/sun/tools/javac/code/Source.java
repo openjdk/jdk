@@ -267,8 +267,8 @@ public enum Source {
         UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         PRIMITIVE_PATTERNS(JDK23, Fragments.FeaturePrimitivePatterns, DiagKind.PLURAL),
         FLEXIBLE_CONSTRUCTORS(JDK22, Fragments.FeatureFlexibleConstructors, DiagKind.NORMAL),
-        MODULE_IMPORTS(JDK23, Fragments.FeatureModuleImports, DiagKind.PLURAL),
-        JAVA_BASE_TRANSITIVE(JDK24, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),
+        MODULE_IMPORTS(JDK25, Fragments.FeatureModuleImports, DiagKind.PLURAL),
+        JAVA_BASE_TRANSITIVE(JDK25, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),
         PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ERASE_POLY_SIG_RETURN_TYPE(JDK24),
         ;

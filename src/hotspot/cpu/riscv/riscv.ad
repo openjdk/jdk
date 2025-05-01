@@ -1596,7 +1596,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1614,7 +1615,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill_vmask(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vmask to vmask
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1914,9 +1916,10 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_FmaF:
     case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
-      return UseFMA;
+      return UseRVV && UseFMA;
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:

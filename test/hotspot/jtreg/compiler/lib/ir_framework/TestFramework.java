@@ -142,6 +142,7 @@ public class TestFramework {
                     "Xlog",
                     "LogCompilation",
                     "UseCompactObjectHeaders",
+                    "UseFMA",
                     // Riscv
                     "UseRVV",
                     "UseZbb",
