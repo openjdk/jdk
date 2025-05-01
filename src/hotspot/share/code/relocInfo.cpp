@@ -78,7 +78,7 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
   assert(prefix_limit >= p, "must be a valid span of data");
   int plen = checked_cast<int>(prefix_limit - p);
   if (plen == 0) {
-    debug_only(_value = 0xFFFF);
+    DEBUG_ONLY(_value = 0xFFFF);
     return this;                         // no data: remove self completely
   }
   if (plen == 1 && fits_into_immediate(p[0])) {
@@ -116,6 +116,9 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
+// A static dummy to serve as a safe pointer when there is no relocation info.
+static relocInfo dummy_relocInfo = relocInfo(relocInfo::none, 0);
+
 void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
@@ -127,8 +130,14 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   guarantee(nm != nullptr, "must be able to deduce nmethod from other arguments");
 
   _code    = nm;
-  _current = nm->relocation_begin() - 1;
-  _end     = nm->relocation_end();
+  if (nm->relocation_size() == 0) {
+    _current = &dummy_relocInfo - 1;
+    _end = &dummy_relocInfo;
+  } else {
+    assert(((nm->relocation_begin() != nullptr) && (nm->relocation_end() != nullptr)), "valid start and end pointer");
+    _current = nm->relocation_begin() - 1;
+    _end     = nm->relocation_end();
+  }
   _addr    = nm->content_begin();
 
   // Initialize code sections.
@@ -150,7 +159,7 @@ void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
   assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)), "valid start and end pointer");
-  _current = cs->locs_start()-1;
+  _current = cs->locs_start() - 1;
   _end     = cs->locs_end();
   _addr    = cs->start();
   _code    = nullptr; // Not cb->blob();
@@ -333,7 +342,7 @@ address Relocation::old_addr_for(address newa,
 
 address Relocation::new_addr_for(address olda,
                                  const CodeBuffer* src, CodeBuffer* dest) {
-  debug_only(const CodeBuffer* src0 = src);
+  DEBUG_ONLY(const CodeBuffer* src0 = src);
   int sect = CodeBuffer::SECT_NONE;
   // Look for olda in the source buffer, and all previous incarnations
   // if the source buffer has been expanded.

@@ -100,7 +100,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
+  PcDescCache() { DEBUG_ONLY(_pc_descs[0] = nullptr); }
   void    init_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -644,8 +644,8 @@ public:
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant();
-  bool  make_not_used()    { return make_not_entrant(); }
+  bool  make_not_entrant(const char* reason);
+  bool  make_not_used()    { return make_not_entrant("not used"); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -961,7 +961,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change() const;
+  void log_state_change(const char* reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;

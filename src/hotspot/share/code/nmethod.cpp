@@ -112,7 +112,7 @@
 // Cast from int value to narrow type
 #define CHECKED_CAST(result, T, thing)      \
   result = static_cast<T>(thing); \
-  assert(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
+  guarantee(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
 
 //---------------------------------------------------------------------------------
 // NMethod statistics
@@ -688,10 +688,6 @@ address nmethod::oops_reloc_begin() const {
     return code_begin() + frame_complete_offset();
   }
 
-  // It is not safe to read oops concurrently using entry barriers, if their
-  // location depend on whether the nmethod is entrant or not.
-  // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == nullptr, "Not safe oop scan");
-
   address low_boundary = verified_entry_point();
   if (!is_in_use()) {
     low_boundary += NativeJump::instruction_size;
@@ -1126,7 +1122,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
 
   if (nm != nullptr) {
     // verify nmethod
-    debug_only(nm->verify();) // might block
+    DEBUG_ONLY(nm->verify();) // might block
 
     nm->log_new_nmethod();
   }
@@ -1274,7 +1270,7 @@ void nmethod::post_init() {
   finalize_relocations();
 
   Universe::heap()->register_nmethod(this);
-  debug_only(Universe::heap()->verify_nmethod(this));
+  DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
 }
@@ -1301,7 +1297,7 @@ nmethod::nmethod(
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -1665,7 +1661,7 @@ nmethod::nmethod(
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -2193,21 +2189,27 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change() const {
+void nmethod::log_state_change(const char* reason) const {
+  assert(reason != nullptr, "Must provide a reason");
+
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='%zu'",
-                       os::current_thread_id());
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
+                       os::current_thread_id(), reason);
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
     }
   }
 
-  CompileTask::print_ul(this, "made not entrant");
+  ResourceMark rm;
+  stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
+  ss.print("made not entrant: %s", reason);
+
+  CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
-    print_on_with_msg(tty, "made not entrant");
+    print_on_with_msg(tty, ss.freeze());
   }
 }
 
@@ -2218,7 +2220,9 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant() {
+bool nmethod::make_not_entrant(const char* reason) {
+  assert(reason != nullptr, "Must provide a reason");
+
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2276,7 +2280,7 @@ bool nmethod::make_not_entrant() {
     assert(success, "Transition can't fail");
 
     // Log the transition once
-    log_state_change();
+    log_state_change(reason);
 
     // Remove nmethod from method.
     unlink_from_method();
@@ -3029,7 +3033,7 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, add
   }
 
   // Take giant steps at first (4096, then 256, then 16, then 1)
-  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ debug_only(-1);
+  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ DEBUG_ONLY(-1);
   const int RADIX = (1 << LOG2_RADIX);
   for (int step = (1 << (LOG2_RADIX*3)); step > 1; step >>= LOG2_RADIX) {
     while ((mid = lower + step) < upper) {

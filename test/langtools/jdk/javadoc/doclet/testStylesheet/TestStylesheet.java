@@ -117,9 +117,9 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    input#reset-search, input.reset-filter {
+                    input#reset-search, input.reset-filter, input#page-search-reset {
                         background-color: transparent;
-                        background-image:url('x.png');
+                        background-image:url('x.svg');
                         background-repeat:no-repeat;
                         background-size:contain;
                         border:0;
@@ -144,13 +144,13 @@ public class TestStylesheet extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>""");
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
                     <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");
 
         checkOutput("index.html", true,

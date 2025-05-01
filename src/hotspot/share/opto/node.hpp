@@ -155,6 +155,7 @@ class ParsePredicateNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
+class PhaseIdealLoop;
 class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseTransform;
@@ -335,8 +336,11 @@ protected:
   void grow( uint len );
   // Grow the output array to the next larger power-of-2 bigger than len.
   void out_grow( uint len );
+  // Resize input or output array to grow it to the next larger power-of-2
+  // bigger than len.
+  void resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing);
 
- public:
+public:
   // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
   // The value of _idx can be changed using the set_idx() method.
@@ -423,11 +427,11 @@ protected:
     assert(_outcnt > 0,"oob");
     #if OPTO_DU_ITERATOR_ASSERT
     // Record that a change happened here.
-    debug_only(_last_del = _out[i]; ++_del_tick);
+    DEBUG_ONLY(_last_del = _out[i]; ++_del_tick);
     #endif
     _out[i] = _out[--_outcnt];
     // Smash the old edge so it can't be used accidentally.
-    debug_only(_out[_outcnt] = (Node *)(uintptr_t)0xdeadbeef);
+    DEBUG_ONLY(_out[_outcnt] = (Node *)(uintptr_t)0xdeadbeef);
   }
 
 #ifdef ASSERT
@@ -529,10 +533,10 @@ private:
     } while (*--outp != n);
     *outp = _out[--_outcnt];
     // Smash the old edge so it can't be used accidentally.
-    debug_only(_out[_outcnt] = (Node *)(uintptr_t)0xdeadbeef);
+    DEBUG_ONLY(_out[_outcnt] = (Node *)(uintptr_t)0xdeadbeef);
     // Record that a change happened here.
     #if OPTO_DU_ITERATOR_ASSERT
-    debug_only(_last_del = n; ++_del_tick);
+    DEBUG_ONLY(_last_del = n; ++_del_tick);
     #endif
   }
   // Close gap after removing edge.
@@ -589,7 +593,7 @@ public:
   }
   // Swap input edge order.  (Edge indexes i1 and i2 are usually 1 and 2.)
   void swap_edges(uint i1, uint i2) {
-    debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
+    DEBUG_ONLY(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     // Def-Use info is unchanged
     Node* n1 = in(i1);
     Node* n2 = in(i2);
@@ -1427,15 +1431,15 @@ class DUIterator : public DUIterator_Common {
   #endif
 
   DUIterator(const Node* node, int dummy_to_avoid_conversion)
-    { _idx = 0;                         debug_only(sample(node)); }
+    { _idx = 0;                         DEBUG_ONLY(sample(node)); }
 
  public:
   // initialize to garbage; clear _vdui to disable asserts
   DUIterator()
-    { /*initialize to garbage*/         debug_only(_vdui = false); }
+    { /*initialize to garbage*/         DEBUG_ONLY(_vdui = false); }
 
   DUIterator(const DUIterator& that)
-    { _idx = that._idx;                 debug_only(_vdui = false; reset(that)); }
+    { _idx = that._idx;                 DEBUG_ONLY(_vdui = false; reset(that)); }
 
   void operator++(int dummy_to_specify_postfix_op)
     { _idx++;                           VDUI_ONLY(verify_increment()); }
@@ -1447,7 +1451,7 @@ class DUIterator : public DUIterator_Common {
     { VDUI_ONLY(verify_finish()); }
 
   void operator=(const DUIterator& that)
-    { _idx = that._idx;                 debug_only(reset(that)); }
+    { _idx = that._idx;                 DEBUG_ONLY(reset(that)); }
 };
 
 DUIterator Node::outs() const
@@ -1457,7 +1461,7 @@ DUIterator& Node::refresh_out_pos(DUIterator& i) const
 bool Node::has_out(DUIterator& i) const
   { I_VDUI_ONLY(i, i.verify(this,true));return i._idx < _outcnt; }
 Node*    Node::out(DUIterator& i) const
-  { I_VDUI_ONLY(i, i.verify(this));     return debug_only(i._last=) _out[i._idx]; }
+  { I_VDUI_ONLY(i, i.verify(this));     return DEBUG_ONLY(i._last=) _out[i._idx]; }
 
 
 // Faster DU iterator.  Disallows insertions into the out array.
@@ -1492,15 +1496,15 @@ class DUIterator_Fast : public DUIterator_Common {
 
   // Note:  offset must be signed, since -1 is sometimes passed
   DUIterator_Fast(const Node* node, ptrdiff_t offset)
-    { _outp = node->_out + offset;      debug_only(sample(node)); }
+    { _outp = node->_out + offset;      DEBUG_ONLY(sample(node)); }
 
  public:
   // initialize to garbage; clear _vdui to disable asserts
   DUIterator_Fast()
-    { /*initialize to garbage*/         debug_only(_vdui = false); }
+    { /*initialize to garbage*/         DEBUG_ONLY(_vdui = false); }
 
   DUIterator_Fast(const DUIterator_Fast& that)
-    { _outp = that._outp;               debug_only(_vdui = false; reset(that)); }
+    { _outp = that._outp;               DEBUG_ONLY(_vdui = false; reset(that)); }
 
   void operator++(int dummy_to_specify_postfix_op)
     { _outp++;                          VDUI_ONLY(verify(_node, true)); }
@@ -1518,7 +1522,7 @@ class DUIterator_Fast : public DUIterator_Common {
   }
 
   void operator=(const DUIterator_Fast& that)
-    { _outp = that._outp;               debug_only(reset(that)); }
+    { _outp = that._outp;               DEBUG_ONLY(reset(that)); }
 };
 
 DUIterator_Fast Node::fast_outs(DUIterator_Fast& imax) const {
@@ -1529,7 +1533,7 @@ DUIterator_Fast Node::fast_outs(DUIterator_Fast& imax) const {
 }
 Node* Node::fast_out(DUIterator_Fast& i) const {
   I_VDUI_ONLY(i, i.verify(this));
-  return debug_only(i._last=) *i._outp;
+  return DEBUG_ONLY(i._last=) *i._outp;
 }
 
 
@@ -1587,7 +1591,7 @@ DUIterator_Last Node::last_outs(DUIterator_Last& imin) const {
 }
 Node* Node::last_out(DUIterator_Last& i) const {
   I_VDUI_ONLY(i, i.verify(this));
-  return debug_only(i._last=) *i._outp;
+  return DEBUG_ONLY(i._last=) *i._outp;
 }
 
 #endif //OPTO_DU_ITERATOR_ASSERT
@@ -1742,7 +1746,7 @@ public:
   Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  bool member(const Node* n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {
@@ -2031,7 +2035,7 @@ protected:
 public:
   void set_type(const Type* t) {
     assert(t != nullptr, "sanity");
-    debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
+    DEBUG_ONLY(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     *(const Type**)&_type = t;   // cast away const-ness
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "type change must preserve hash code");
@@ -2041,12 +2045,17 @@ public:
     init_class_id(Class_Type);
   }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
+
+  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
+  void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
+  void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const;
 };
 
 #include "opto/opcodes.hpp"
@@ -2061,6 +2070,7 @@ public:
 }
 
 Op_IL(Add)
+Op_IL(And)
 Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)

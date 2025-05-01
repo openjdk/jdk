@@ -82,6 +82,7 @@ public:
   virtual int min_opcode() const = 0;
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
+  static MulNode* make_and(Node* in1, Node* in2, BasicType bt);
 
 protected:
   Node* AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt);
@@ -318,28 +319,42 @@ class RotateRightNode : public TypeNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+
+class RShiftNode : public Node {
+ public:
+  RShiftNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
+  Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  Node* IdentityIL(PhaseGVN* phase, BasicType bt);
+  const Type* ValueIL(PhaseGVN* phase, BasicType bt) const;
+  static RShiftNode* make(Node* in1, Node* in2, BasicType bt);
+};
+
 //------------------------------RShiftINode------------------------------------
 // Signed shift right
-class RShiftINode : public Node {
+class RShiftINode : public RShiftNode {
 public:
-  RShiftINode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  RShiftINode(Node* in1, Node* in2) : RShiftNode(in1, in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeInt::INT; }
+
+  const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------RShiftLNode------------------------------------
 // Signed shift right
-class RShiftLNode : public Node {
+class RShiftLNode : public RShiftNode {
 public:
-  RShiftLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  RShiftLNode(Node* in1, Node* in2) : RShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

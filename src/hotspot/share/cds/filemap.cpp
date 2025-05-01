@@ -173,7 +173,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     header_size = c_header_size;
 
     const char* default_base_archive_name = CDSConfig::default_archive_path();
-    const char* current_base_archive_name = CDSConfig::static_archive_path();
+    const char* current_base_archive_name = CDSConfig::input_static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -209,7 +209,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(CDSConfig::static_archive_path());
+    copy_base_archive_name(CDSConfig::input_static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -563,7 +563,7 @@ public:
 // true && (*base_archive_name) != nullptr:
 //      <archive_name> is a valid dynamic archive.
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
-                                                    char** base_archive_name) {
+                                                    const char** base_archive_name) {
   FileHeaderHelper file_helper(archive_name, false);
   *base_archive_name = nullptr;
 
@@ -619,7 +619,7 @@ bool FileMapInfo::init_from_file(int fd) {
       // Good
     } else {
       if (CDSConfig::new_aot_flags_used()) {
-        log_warning(cds)("Not a valid %s %s", file_type, _full_path);
+        log_warning(cds)("Not a valid %s (%s)", file_type, _full_path);
       } else {
         log_warning(cds)("Not a base shared archive: %s", _full_path);
       }
@@ -729,7 +729,7 @@ bool FileMapInfo::open_for_read() {
 
 // Write the FileMapInfo information to the file.
 
-void FileMapInfo::open_for_write() {
+void FileMapInfo::open_as_output() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
@@ -1066,10 +1066,10 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag = mtNone) {
+                        bool allow_exec, MemTag mem_tag) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             AlwaysPreTouch ? false : read_only,
-                             allow_exec, mem_tag);
+                             mem_tag, AlwaysPreTouch ? false : read_only,
+                             allow_exec);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -1094,7 +1094,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, size, false /* !read_only */,
+                              addr, size, mtNone, false /* !read_only */,
                               r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
@@ -1620,7 +1620,7 @@ bool FileMapInfo::map_heap_region_impl() {
   } else {
     base = map_memory(_fd, _full_path, r->file_offset(),
                       addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                      r->allow_exec());
+                      r->allow_exec(), mtJavaHeap);
     if (base == nullptr || base != addr) {
       dealloc_heap_region();
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
@@ -1759,7 +1759,7 @@ bool FileMapInfo::_memory_mapping_failed = false;
 // [1] validate_header() - done here.
 // [2] validate_shared_path_table - this is done later, because the table is in the RO
 //     region of the archive, which is not mapped yet.
-bool FileMapInfo::initialize() {
+bool FileMapInfo::open_as_input() {
   assert(CDSConfig::is_using_archive(), "UseSharedSpaces expected.");
   assert(Arguments::has_jimage(), "The shared archive file cannot be used with an exploded module build.");
 
@@ -1774,13 +1774,12 @@ bool FileMapInfo::initialize() {
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      log_info(cds)("Initialize static archive failed.");
+      log_info(cds)("Loading static archive failed.");
       return false;
     } else {
-      log_info(cds)("Initialize dynamic archive failed.");
+      log_info(cds)("Loading dynamic archive failed.");
       if (AutoCreateSharedArchive) {
-        CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
+        CDSConfig::enable_dumping_dynamic_archive(_full_path);
       }
       return false;
     }
