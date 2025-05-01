@@ -2348,27 +2348,34 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (event.should_commit()) {
       post_compilation_event(event, task);
     }
-  }
 
-  task->mark_finished(os::elapsed_counter());
+    task->mark_finished(os::elapsed_counter());
 
-  if (failure_reason != nullptr) {
-    task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
-    if (CompilationLog::log() != nullptr) {
-      CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
+    if (failure_reason != nullptr) {
+      task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
+      if (CompilationLog::log() != nullptr) {
+        CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
+      }
+      if (should_print_compilation) {
+        ttyLocker ttyl;
+        FormatBufferResource msg = retry_message != nullptr ?
+          FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
+          FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
+        task->print(tty, msg);
+      }
+    } else {
+      if (should_print_compilation) {
+        ttyLocker ttyl;
+        task->print_tty();
+
+        // Print inlining information for successful compilations
+        const char* inline_msgs = ci_env.inline_messages();
+        if (inline_msgs != nullptr) {
+          tty->print_raw_cr(inline_msgs);
+        }
+      }
+      task->print_ul();
     }
-    if (should_print_compilation) {
-      ttyLocker ttyl;  // keep the following output all in one block
-      FormatBufferResource msg = retry_message != nullptr ?
-        FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
-        FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
-      task->print(tty, msg);
-    }
-  } else {
-    if (should_print_compilation) {
-      task->print_tty();
-    }
-    task->print_ul();
   }
 
   DirectivesStack::release(directive);
