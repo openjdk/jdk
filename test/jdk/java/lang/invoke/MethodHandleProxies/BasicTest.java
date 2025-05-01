@@ -253,6 +253,10 @@ public class BasicTest {
         assertThrows(ClassCastException.class, proxy::iterator);
     }
 
+    /**
+     * Verifies {@code isWrapperInstance} works under race and is thread safe
+     * like {@code Class} objects are.
+     */
     @Test
     public void testRacyWrapperCheck() {
         MethodHandle noop = MethodHandles.zero(void.class);
@@ -272,7 +276,7 @@ public class BasicTest {
                 .map(cl -> MethodHandleProxies.asInterfaceInstance(cl, noop))
                 .limit(100)
                 .forEach(inst -> assertTrue(MethodHandleProxies.isWrapperInstance(inst),
-                        () -> Objects.toIdentityString(inst)));
+                        () -> Objects.toIdentityString(inst) + " should pass wrapper test"));
     }
 
     private static <T extends Throwable> Closeable throwing(Class<T> clz, T value) {
