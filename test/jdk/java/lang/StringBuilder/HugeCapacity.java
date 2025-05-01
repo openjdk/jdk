@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8149330 8218227
+ * @bug 8149330 8218227 8351443
  * @summary Capacity should not get close to Integer.MAX_VALUE unless
  *          necessary
  * @modules java.base/jdk.internal.util

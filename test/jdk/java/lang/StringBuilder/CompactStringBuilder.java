@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug 8054307 8077559
+ * @bug 8054307 8077559 8351443
  * @summary Tests Compact String. This test is testing StringBuilder
  *          behavior related to Compact String.
  * @run testng/othervm -XX:+CompactStrings CompactStringBuilder

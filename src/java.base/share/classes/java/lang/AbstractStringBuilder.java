@@ -727,16 +727,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     private AbstractStringBuilder appendNull() {
         byte coder = this.coder;
         int count = this.count;
-        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 4);
-        if (isLatin1(coder)) {
-            value[count++] = 'n';
-            value[count++] = 'u';
-            value[count++] = 'l';
-            value[count++] = 'l';
-        } else {
-            count = StringUTF16.putCharsAt(value, count, 'n', 'u', 'l', 'l');
-        }
-        this.count = count;
+        int newCount = count + 4;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
+        if (isLatin1(coder))
+            StringLatin1.putCharsAt(value, count, 'n', 'u', 'l', 'l');
+        else
+            StringUTF16.putCharsAt(value, count, 'n', 'u', 'l', 'l');
+        this.count = newCount;
         this.value = value;
         return this;
     }
@@ -881,25 +878,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
         int newCount = count + (b ? 4 : 5);
         byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
-        if (isLatin1(coder)) {
-            if (b) {
-                value[count] = 't';
-                value[count + 1] = 'r';
-                value[count + 2] = 'u';
-                value[count + 3] = 'e';
-            } else {
-                value[count] = 'f';
-                value[count + 1] = 'a';
-                value[count + 2] = 'l';
-                value[count + 3] = 's';
-                value[count + 4] = 'e';
-            }
+        if (b) {
+            if (isLatin1(coder))
+                StringLatin1.putCharsAt(value, count, 't', 'r', 'u', 'e');
+            else
+                StringUTF16.putCharsAt(value, count, 't', 'r', 'u', 'e');
         } else {
-            if (b) {
-                newCount = StringUTF16.putCharsAt(value, count, 't', 'r', 'u', 'e');
-            } else {
-                newCount = StringUTF16.putCharsAt(value, count, 'f', 'a', 'l', 's', 'e');
-            }
+            if (isLatin1(coder))
+                StringLatin1.putCharsAt(value, count, 'f', 'a', 'l', 's', 'e');
+            else
+                StringUTF16.putCharsAt(value, count, 'f', 'a', 'l', 's', 'e');
         }
         this.value = value;
         this.count = newCount;
@@ -1864,8 +1852,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return COMPACT_STRINGS ? coder : UTF16;
     }
 
+    // Package access for String and StringBuffer.
     final boolean isLatin1() {
-        return COMPACT_STRINGS && coder == LATIN1;
+        return isLatin1(coder);
     }
 
     private static boolean isLatin1(byte coder) {
