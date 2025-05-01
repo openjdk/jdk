@@ -427,7 +427,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 // adjust:           --------> lo                  hi <---
 template <class U>
 static AdjustResult<RangeInt<U>>
-adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
+adjust_unsigned_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
   U new_lo = adjust_lo(bounds._lo, bits);
   if (new_lo < bounds._lo) {
     // This means we wrapped around, which means no value not less than lo
@@ -488,18 +488,24 @@ adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
 //           010***
 template <class U>
 static AdjustResult<KnownBits<U>>
-adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
+adjust_bits_from_unsigned_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
   // Find the mask to filter the common prefix, all values between bounds._lo
   // and bounds._hi should share this common prefix in terms of bits
   U mismatch = bounds._lo ^ bounds._hi;
-  // Find the first mismatch, all bits before it is the same in bounds._lo and
+  // Find the first mismatch, all bits before it are the same in bounds._lo and
   // bounds._hi
   U match_mask = mismatch == U(0) ? std::numeric_limits<U>::max()
                                   : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
   // match_mask & bounds._lo is the common prefix, extract zeros and ones from
   // it
-  U new_zeros = bits._zeros | (match_mask & ~bounds._lo);
-  U new_ones = bits._ones | (match_mask & bounds._lo);
+  U common_prefix_zeros = match_mask & ~bounds._lo;
+  assert(common_prefix_zeros == (match_mask & ~bounds._hi), "");
+  U new_zeros = bits._zeros | common_prefix_zeros;
+
+  U common_prefix_ones = match_mask & bounds._lo;
+  assert(common_prefix_ones == (match_mask & bounds._hi), "");
+  U new_ones = bits._ones | common_prefix_ones;
+
   bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
   bool present = ((new_zeros & new_ones) == U(0));
   return {progress, present, {new_zeros, new_ones}};
@@ -515,7 +521,9 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
 template <class U>
 static SimpleCanonicalResult<U>
 canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
-  AdjustResult<KnownBits<U>> canonicalized_bits = adjust_bits_from_bounds(bits, bounds);
+  assert((bounds._lo ^ bounds._hi) < (std::numeric_limits<U>::max() >> 1) + U(1), "bounds must be a simple interval");
+
+  AdjustResult<KnownBits<U>> canonicalized_bits = adjust_bits_from_unsigned_bounds(bits, bounds);
   if (canonicalized_bits.empty()) {
     return SimpleCanonicalResult<U>::make_empty();
   }
@@ -524,11 +532,11 @@ canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& b
   // versa, if one does not show progress, the other will also not show
   // progress, so we terminate early
   while (true) {
-    canonicalized_bounds = adjust_bounds_from_bits(canonicalized_bounds._result, canonicalized_bits._result);
+    canonicalized_bounds = adjust_unsigned_bounds_from_bits(canonicalized_bounds._result, canonicalized_bits._result);
     if (!canonicalized_bounds._progress || canonicalized_bounds.empty()) {
       return SimpleCanonicalResult<U>(canonicalized_bounds._present, canonicalized_bounds._result, canonicalized_bits._result);
     }
-    canonicalized_bits = adjust_bits_from_bounds(canonicalized_bits._result, canonicalized_bounds._result);
+    canonicalized_bits = adjust_bits_from_unsigned_bounds(canonicalized_bits._result, canonicalized_bounds._result);
     if (!canonicalized_bits._progress || canonicalized_bits.empty()) {
       return SimpleCanonicalResult<U>(canonicalized_bits._present, canonicalized_bounds._result, canonicalized_bits._result);
     }
@@ -552,24 +560,33 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
     return CanonicalizedTypeIntPrototype::make_empty();
   }
 
-  // Trivially canonicalize the bounds so that srange._lo and urange._hi are
-  // both < 0 or >= 0. The same for srange._hi and urange._ulo. See TypeInt for
-  // detailed explanation.
+  // We try to make [srange._lo, S(urange._hi)] and
+  // [S(urange._lo), srange._hi] be both simple intervals (as defined in
+  // TypeInt at type.hpp)
   if (S(urange._lo) > S(urange._hi)) {
-    // This means that S(urange._lo) >= 0 and S(urange._hi) < 0
+    // This means that S(urange._lo) >= 0 and S(urange._hi) < 0 because here we
+    // know that U(urange._lo) <= U(urange._hi)
     if (S(urange._hi) < srange._lo) {
       // This means that there should be no element in the interval
       // [min_S, S(urange._hi)], tighten urange._hi to max_S
+      // Signed:
+      // min_S----uhi---------lo---------0--------ulo==========hi----max_S
+      // Unsigned:
+      //                                 0--------ulo==========hi----max_S min_S-----uhi---------lo---------
       urange._hi = U(std::numeric_limits<S>::max());
     } else if (S(urange._lo) > srange._hi) {
       // This means that there should be no element in the interval
       // [S(urange._lo), max_S], tighten urange._lo to min_S
+      // Signed:
+      // min_S----lo=========uhi---------0--------hi----------ulo----max_S
+      // Unsigned:
+      //                                 0--------hi----------ulo----max_S min_S----lo=========uhi---------
       urange._lo = U(std::numeric_limits<S>::min());
     }
   }
 
-  // Now [srange._lo, jint(urange._hi)] and [jint(urange._lo), srange._hi] are
-  // both simple intervals (as defined in TypeInt at type.hpp), we process them
+  // Now [srange._lo, S(urange._hi)] and [S(urange._lo), srange._hi] are both
+  // simple intervals (as defined in TypeInt at type.hpp), we process them
   // separately and combine the results
   if (S(urange._lo) <= S(urange._hi)) {
     // The 2 simple intervals should be tightened to the same result
@@ -623,7 +640,9 @@ int TypeIntPrototype<S, U>::normalize_widen(int widen) const {
 template <class S, class U>
 bool TypeIntPrototype<S, U>::contains(S v) const {
   U u(v);
-  return v >= _srange._lo && v <= _srange._hi && u >= _urange._lo && u <= _urange._hi && _bits.is_satisfied_by(u);
+  return v >= _srange._lo && v <= _srange._hi &&
+         u >= _urange._lo && u <= _urange._hi &&
+         _bits.is_satisfied_by(u);
 }
 
 // Verify that this set representation is canonical
@@ -635,17 +654,17 @@ void TypeIntPrototype<S, U>::verify_constraints() const {
 
   // Assert that the bits cannot be further tightened
   if (U(_srange._lo) == _urange._lo) {
-    assert(!adjust_bits_from_bounds(_bits, _urange)._progress, "");
+    assert(!adjust_bits_from_unsigned_bounds(_bits, _urange)._progress, "");
   } else {
     RangeInt<U> neg_range{U(_srange._lo), _urange._hi};
-    auto neg_bits = adjust_bits_from_bounds(_bits, neg_range);
+    auto neg_bits = adjust_bits_from_unsigned_bounds(_bits, neg_range);
     assert(neg_bits._present, "");
-    assert(!adjust_bounds_from_bits(neg_range, neg_bits._result)._progress, "");
+    assert(!adjust_unsigned_bounds_from_bits(neg_range, neg_bits._result)._progress, "");
 
     RangeInt<U> pos_range{_urange._lo, U(_srange._hi)};
-    auto pos_bits = adjust_bits_from_bounds(_bits, pos_range);
+    auto pos_bits = adjust_bits_from_unsigned_bounds(_bits, pos_range);
     assert(pos_bits._present, "");
-    assert(!adjust_bounds_from_bits(pos_range, pos_bits._result)._progress, "");
+    assert(!adjust_unsigned_bounds_from_bits(pos_range, pos_bits._result)._progress, "");
 
     assert((neg_bits._result._zeros & pos_bits._result._zeros) == _bits._zeros &&
            (neg_bits._result._ones & pos_bits._result._ones) == _bits._ones, "");
@@ -660,8 +679,12 @@ template class TypeIntPrototype<intn_t<2>, uintn_t<2>>;
 template class TypeIntPrototype<intn_t<3>, uintn_t<3>>;
 template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
 
-// Compute the meet of 2 types, when dual is true, we are actually computing the
-// join.
+// Compute the meet of 2 types. When dual is true, the subset relation in CT is
+// reversed. This means that the result of 2 CTs would be the intersection of
+// them if dual is true, and be the union of them if dual is false. The subset
+// relation in the Type hierarchy is still the same, however. E.g. the result
+// of 1 CT and Type::BOTTOM would always be Type::BOTTOM, and the result of 1
+// CT and Type::TOP would always be the CT instance itself.
 template <class CT, class S, class U>
 const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_type_t<S, U> make, bool dual) {
   // Perform a fast test for common case; meeting the same types together.
@@ -671,13 +694,13 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_typ
   const CT* i2 = t2->try_cast<CT>();
   if (i2 != nullptr) {
     if (!dual) {
-    // meet
+    // meet (a.k.a union)
       return make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
                                          {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
                                          {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
                   MAX2(i1->_widen, i2->_widen), false);
     }
-    // join
+    // join (a.k.a intersection)
     return make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
                                        {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
                                        {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
@@ -1013,7 +1036,7 @@ void TypeIntHelper::int_type_dump(const TypeLong* t, outputStream* st, bool verb
     st->print("long:%s", longname(buf1, sizeof(buf1), t->get_con()));
   } else {
     if (verbose) {
-      st->print("long:%s..%s ^ %s..%s, bits:%s",
+      st->print("long:%s..%s, %s..%s, bits:%s",
                 longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
                 ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi),
                 bitname(buf5, sizeof(buf5), t->_bits._zeros, t->_bits._ones));
@@ -1031,7 +1054,7 @@ void TypeIntHelper::int_type_dump(const TypeLong* t, outputStream* st, bool verb
           st->print("long:%s..%s", longname(buf1, sizeof(buf1), t->_lo), longname(buf2, sizeof(buf2), t->_hi));
         }
       } else {
-        st->print("long:%s..%s ^ %s..%s",
+        st->print("long:%s..%s, %s..%s",
                   longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
                   ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi));
       }
