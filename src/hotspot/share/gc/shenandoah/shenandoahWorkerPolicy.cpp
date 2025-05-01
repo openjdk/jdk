@@ -41,15 +41,28 @@ uint ShenandoahWorkerPolicy::calc_workers_for_any_concurrent_phase(ShenandoahHeu
   }
   if (surge_level > 0) {
     log_info(gc)("Surging to level %u, workers: %u", surge_level, active_workers);
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("  got the surge level from %s heuristics", heuristics->name());
+#endif
   }
   return active_workers;
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking(ShenandoahGeneration* generation) {
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_marking(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_rs_scanning(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_rs_scanning(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
@@ -58,14 +71,26 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_refs_processing(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_root_processing(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_evac(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_evac(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
@@ -78,6 +103,10 @@ uint ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_update_ref(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
@@ -86,9 +115,17 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_reset(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_reset(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(ShenandoahGeneration* generation) {
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = generation->type();
+  log_info(gc)("calc_workers_for_conc_cleanup(generation: %s)", shenandoah_generation_name(t));
+#endif
   return calc_workers_for_any_concurrent_phase(generation->heuristics());
 }

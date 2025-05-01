@@ -92,6 +92,12 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   _heuristics = _young_heuristics;
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
   confirm_heuristics_mode();
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  ShenandoahGenerationType t = this->type();
+  log_info(gc)("YoungGen::initialize_heuristics(type: %s)", shenandoah_generation_name(t));
+  log_info(gc)("  associated heuristics are: %s", _heuristics->name());
+#endif
   return _heuristics;
 }
 

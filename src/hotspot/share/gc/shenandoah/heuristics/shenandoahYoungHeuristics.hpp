@@ -83,6 +83,8 @@ public:
 
   bool should_start_gc() override;
 
+  const char* name() override;
+
   uint should_surge_phase(ShenandoahMajorGCPhase phase, double now) override;
 
   size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed);
@@ -185,10 +187,17 @@ public:
 
   // Setting this value to zero denotes current GC cycle to be "traditional young", so average GC cycle tine is best predictor.
   inline void set_anticipated_mark_words(size_t words) {
+#undef KELVIN_ANTICIPATION
+#ifdef KELVIN_ANTICIPATION
+    log_info(gc)("SYH::set_anticipated_mark_words(%zu)", words);
+#endif
     _anticipated_mark_words = words;
   }
 
   inline void set_anticipated_pip_words(size_t words) {
+#ifdef KELVIN_ANTICIPATION
+    log_info(gc)("SYH::set_anticipated_pip_words(%zu)", words);
+#endif
     _anticipated_pip_words = words;
   }
 

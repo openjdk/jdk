@@ -67,6 +67,7 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
   _next_old_collection_candidate(0),
   _last_old_region(0),
   _live_bytes_in_unprocessed_candidates(0),
+  _garbage_in_unprocessed_candidates(0),
   _old_generation(generation),
   _cannot_expand_trigger(false),
   _fragmentation_trigger(false),
@@ -209,15 +210,26 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
 }
 
 void ShenandoahOldHeuristics::recalibrate_old_collection_candidates_live_memory() {
-  size_t total_live_data;
+  size_t total_live_data = 0;
+#undef KELVIN_RECAL
+#ifdef KELVIN_RECAL
+  log_info(gc)("recalibrate_old_collection_candidates_live_memory() with [%u, %u) candidate regions",
+               _next_old_collection_candidate, _last_old_collection_candidate);
+#endif
   for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
     ShenandoahHeapRegion* r = _region_data[i].get_region();
     size_t region_live = r->get_mixed_candidate_live_data_bytes();
     total_live_data += region_live;
+#ifdef KELVIN_RECAL
+    log_info(gc)(" region %zu contributes %zu to total_live: %zu", r->index(), region_live, total_live_data);
+#endif
     _region_data[i].update_livedata(region_live);
   }
   QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
                               compare_by_live);
+#ifdef KELVIN_RECAL
+  log_info(gc)(" recalibrate sets live_bytes_unprocessed: %zu", total_live_data);
+#endif
   _live_bytes_in_unprocessed_candidates = total_live_data;
 }
 
@@ -582,11 +594,18 @@ size_t ShenandoahOldHeuristics::unprocessed_old_collection_candidates_live_memor
 }
 
 void ShenandoahOldHeuristics::set_unprocessed_old_collection_candidates_live_memory(size_t initial_live) {
+#ifdef KELVIN_RECAL
+  log_info(gc)("set_unprocessed_old_collection_candidates_live_memory(%zu)", initial_live);
+#endif
   _live_bytes_in_unprocessed_candidates = initial_live;
 }
 
 void ShenandoahOldHeuristics::decrease_unprocessed_old_collection_candidates_live_memory(size_t evacuated_live) {
   assert(evacuated_live <= _live_bytes_in_unprocessed_candidates, "Cannot evacuate more than was present");
+#ifdef KELVIN_RECAL
+  log_info(gc)("decrease_unprocessed_old_collection_candidates_live_memory(%zu), yielding: %zu",
+               evacuated_live, _live_bytes_in_unprocessed_candidates - evacuated_live);
+#endif
   _live_bytes_in_unprocessed_candidates -= evacuated_live;
 }
 
@@ -650,6 +669,10 @@ unsigned int ShenandoahOldHeuristics::get_coalesce_and_fill_candidates(Shenandoa
 }
 
 void ShenandoahOldHeuristics::abandon_collection_candidates() {
+#undef KELVIN_LIVE_UNPROCESSED
+#ifdef KELVIN_LIVE_UNPROCESSED
+  log_info(gc)("abandon_collection-candidates overwrites _live_bytes_in_unprocessed_candidates with zero");
+#endif
   _last_old_collection_candidate = 0;
   _next_old_collection_candidate = 0;
   _live_bytes_in_unprocessed_candidates = 0;
@@ -843,21 +866,31 @@ uint ShenandoahOldHeuristics::should_surge() {
   // If it takes more than IdealMaxConcurrentOldCycles to complete old GC, old is being starved. Surge the
   // concurrent old GC workers.
   static const uint IdealMaxConcurrentOldCycles = 8;
-  uint surge;
+  uint candidate_surge;
   if (_consecutive_concurrent_old_cycles > IdealMaxConcurrentOldCycles) {
-    surge = _consecutive_concurrent_old_cycles - 8;
-    if (surge > max_surge_level()) {
-      surge = max_surge_level();
+    uint surge_factor = (_consecutive_concurrent_old_cycles - IdealMaxConcurrentOldCycles);
+    assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
+    if (surge_factor > Max_Surge_Level * 2) {
+      surge_factor = Max_Surge_Level * 2;
     }
-    if (ConcGCThreads * (1 + surge * 0.25) > ParallelGCThreads) {
-      surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
+    // Attenuate extreme surging.  It steals too much CPU from service threads
+    uint map_surge_factor[Max_Surge_Level * 2 + 1] = { 0, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8 };
+    candidate_surge = map_surge_factor[surge_factor];
+#undef KELVIN_SURGE
+#ifdef KELVIN_SURGE
+    log_info(gc)("Old::should_surge(), surge_factor: %u mapped to %u", surge_factor, candidate_surge);
+#endif
+    if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
+      candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
+#ifdef KELVIN_SURGE
+      log_info(gc)("Old::should_surge(), downgraded to: %u", candidate_surge);
+#endif
     }
   } else {
-    surge = 0;
+    candidate_surge = 0;
   }
-
-  _surge_level = surge;
-  return surge;
+  _surge_level = candidate_surge;
+  return candidate_surge;
 }
 
 

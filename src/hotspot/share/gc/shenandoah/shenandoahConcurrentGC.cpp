@@ -517,6 +517,10 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_mark_roots);
   EventMark em("%s", msg);
 
+#ifdef KELVIN_GENERATIONS
+  log_info(gc)("entry_mark_roots, _generation is: %s", shenandoah_generation_name(generation->type());
+#endif
+
   ShenandoahWorkerScope scope(heap->workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_conc_marking(_generation),
                               "concurrent marking roots");

@@ -150,6 +150,7 @@ const char* major_phase_name(ShenandoahMajorGCPhase stage) {
   }
 }
 #endif
+#undef KELVIN_DEVELOPMENT
 
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
@@ -397,8 +398,8 @@ double ShenandoahAdaptiveHeuristics::predict_gc_time() {
   double result = mark_time + evac_time + update_time;
 #undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
-  log_info(gc)("predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu, %zu): %.3f, update(%zu): %.3f",
-	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(), get_anticipated_pip_words(),
+  log_info(gc)("AddaptiveHeuristics::predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu): %.3f, update(%zu): %.3f",
+	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(),
 	       evac_time, get_anticipated_update_words(), update_time);
 #endif
   return result;
@@ -407,39 +408,42 @@ double ShenandoahAdaptiveHeuristics::predict_gc_time() {
 // Marking effort is assumed to be a function of "time".  During steady state, marking efforts should be constant.  During
 // initialization, marking may increase linearly as data is retained for promotion.
 void ShenandoahAdaptiveHeuristics::record_mark_end(double now, size_t marked_words) {
-  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_mark].get_most_recent_start_time();
   // mark will be followed by evac or final_roots, we're not sure which
   _phase_stats[ShenandoahMajorGCPhase::_evac].set_most_recent_start_time(now);
   _phase_stats[ShenandoahMajorGCPhase::_final_roots].set_most_recent_start_time(now);
-  double duration = now - start_phase_time;
-  duration *= (1.0 + _surge_level * 0.25);
+  if (_surge_level == 0) {
+    double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_mark].get_most_recent_start_time();
+    double duration = now - start_phase_time;
+#undef KELVIN_MARK
 #ifdef KELVIN_MARK
-  log_info(gc)("Recording duration of _mark phase: %.6f for %zu words young live and surge level: %d",
-               duration, marked_words, _surge_level);
+    log_info(gc)("Recording duration of _mark phase: %.6f for %zu words young live and surge level: %d",
+                 duration, marked_words, _surge_level);
 #endif
-  record_phase_duration(ShenandoahMajorGCPhase::_mark, (double) marked_words, duration);
+    record_phase_duration(ShenandoahMajorGCPhase::_mark, (double) marked_words, duration);
+  }
 }
 
 // Evacuation effort is assumed to be a function of words evacuated or promoted in place.  In non-generational mode,
 // use promoted_in_place_words equal zero.
 void ShenandoahAdaptiveHeuristics::record_evac_end(double now, size_t evacuated_words, size_t promoted_in_place_words) {
-  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_evac].get_most_recent_start_time();
   // evac will be followed by update
   _phase_stats[ShenandoahMajorGCPhase::_update].set_most_recent_start_time(now);
-  double duration = now - start_phase_time;
-  duration *= (1.0 + _surge_level * 0.25);
+  if (_surge_level == 0) {
+    double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_evac].get_most_recent_start_time();
+    double duration = now - start_phase_time;
 #ifdef KELVIN_DEVELOPMENT
-  log_info(gc)("Recording duration of _evac phase with (evacuated: %zu, promoted in place: %zu): %.3f with surge level: %d",
-	       evacuated_words, promoted_in_place_words, duration, _surge_level);
+    log_info(gc)("Recording duration of _evac phase with (evacuated: %zu, promoted in place: %zu): %.3f with surge level: %d",
+                 evacuated_words, promoted_in_place_words, duration, _surge_level);
 #endif
-  // Evacuation time is a linear function of both evacuated_words and promoted_in_place_words.  Analysis of selected
-  // (not exhaustive) experiments shows that the proportionality constant for evacuated_words is 5 times larger than
-  // the proportionality constant for promoted_in_place_words.  This was determined by first analyzing multiple results
-  // for which promoted_in_place_words equals zero to first determine the proportionality constant for evacuated_words,
-  // and then feeding that result into the analysis of proportionality constant for promoted_in_place_words.  Our current
-  // thoughts are that analyzing two-dimensional linear equations in real time is not practical.  Instead, we convert this
-  // into a one-dimenstional problem by assuming a 5:1 ratio between the two dependencies.
-  record_phase_duration(ShenandoahMajorGCPhase::_evac, (double)(5 * evacuated_words + promoted_in_place_words), duration);
+    // Evacuation time is a linear function of both evacuated_words and promoted_in_place_words.  Analysis of selected
+    // (not exhaustive) experiments shows that the proportionality constant for evacuated_words is 5 times larger than
+    // the proportionality constant for promoted_in_place_words.  This was determined by first analyzing multiple results
+    // for which promoted_in_place_words equals zero to first determine the proportionality constant for evacuated_words,
+    // and then feeding that result into the analysis of proportionality constant for promoted_in_place_words.  Our current
+    // thoughts are that analyzing two-dimensional linear equations in real time is not practical.  Instead, we convert this
+    // into a one-dimenstional problem by assuming a 5:1 ratio between the two dependencies.
+    record_phase_duration(ShenandoahMajorGCPhase::_evac, (double)(5 * evacuated_words + promoted_in_place_words), duration);
+  }
 }
 
 // Update effort is assumed to be a function of live words updated.  For young collection, this is number of live words
@@ -451,26 +455,28 @@ void ShenandoahAdaptiveHeuristics::record_evac_end(double now, size_t evacuated_
 // words between young and mixed appears larger than it actually is.  But if I account better, then how do I predict update
 // word count for a young collection?
 void ShenandoahAdaptiveHeuristics::record_update_end(double now, size_t updated_words) {
-  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_update].get_most_recent_start_time();
-  double duration = now - start_phase_time;
-  duration *= (1.0 + _surge_level * 0.25);
+  if (_surge_level == 0) {
+    double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_update].get_most_recent_start_time();
+    double duration = now - start_phase_time;
 #ifdef KELVIN_DEVELOPMENT
-  log_info(gc)("Recording duration of _update phase with (updated_words: %zu): %.3f with surge_level: %d",
-               updated_words, duration, _surge_level);
+    log_info(gc)("Recording duration of _update phase with (updated_words: %zu): %.3f with surge_level: %d",
+                 updated_words, duration, _surge_level);
 #endif
-  record_phase_duration(ShenandoahMajorGCPhase::_update, (double) updated_words, duration);
+    record_phase_duration(ShenandoahMajorGCPhase::_update, (double) updated_words, duration);
+  }
 }
 
 // Final roots is assumed to be a function of pip_words.  For non-generational mode, use zero.
 void ShenandoahAdaptiveHeuristics::record_final_roots_end(double now, size_t promoted_in_place_words) {
-  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_final_roots].get_most_recent_start_time();
-  double duration = now - start_phase_time;
-  duration *= (1.0 + _surge_level * 0.25);
+  if (_surge_level == 0) {
+    double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_final_roots].get_most_recent_start_time();
+    double duration = now - start_phase_time;
 #ifdef KELVIN_DEVELOPMENT
-  log_info(gc)("Recording duration of _final_roots phase with (pip_words: %zu): %.3f with surge_level: %d",
-               promoted_in_place_words, duration, _surge_level);
+    log_info(gc)("Recording duration of _final_roots phase with (pip_words: %zu): %.3f with surge_level: %d",
+                 promoted_in_place_words, duration, _surge_level);
 #endif
-  record_phase_duration(ShenandoahMajorGCPhase::_final_roots, (double) promoted_in_place_words, duration);
+    record_phase_duration(ShenandoahMajorGCPhase::_final_roots, (double) promoted_in_place_words, duration);
+  }
 }
 
 double ShenandoahAdaptiveHeuristics::predict_mark_time(size_t anticipated_marked_words) {
@@ -497,17 +503,20 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
   size_t allocatable = ShenandoahHeap::heap()->free_set()->available();
   double time_to_finish_gc = 0.0;
 
+#undef KELVIN_SURGE
 #ifdef KELVIN_SURGE
   log_info(gc)("should_surge(), inherited surge_level %u, allocatable: %zu", surge, allocatable);
 #endif
 
+#ifdef KELVIN_DEPRECATE
   if (_previous_cycle_max_surge_level > Min_Surge_Level) {
     // If we required more than minimal surge in previous cycle, continue with a small surge now.  Assume we're catching up.
     if (surge < Min_Surge_Level) {
       surge = Min_Surge_Level;
     }
   }
-
+#endif
+  
   size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
   _phase_stats[phase].set_most_recent_bytes_allocated(bytes_allocated);
   double avg_alloc_rate = _allocation_rate.average_rate(_margin_of_error_sd);
@@ -518,7 +527,7 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
 	       bytes_allocated, alloc_rate / (1024 * 1024), _margin_of_error_sd);
 #endif
 
-  double predicted_gc_time = predict_gc_time();
+  double predicted_gc_time = 0.0;
   switch (phase) {
     case ShenandoahMajorGCPhase::_num_phases:
       assert(false, "Should not happen");
@@ -545,9 +554,12 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
 
     case ShenandoahMajorGCPhase::_mark:
     {
+      // If this is the start of a new GC cycle, reset default surge to 0.
+      surge = 0;
       time_to_finish_gc += predict_mark_time((double) get_anticipated_mark_words());
       // TODO: Use the larger of predict_gc_time(now) and avg_cycle_time if we integrate "accelerated triggers"
       double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+      predicted_gc_time = predict_gc_time();
 #ifdef KELVIN_SURGE
       log_info(gc)(" avg_cycle_time: %.3f, predicted_cycle_time: %.3f, time_to_finish_mark: %.3f",
                    avg_cycle_time, predicted_gc_time, time_to_finish_gc);
@@ -675,10 +687,14 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
   }
 #endif
 
-  uint candidate_surge = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
-  if (candidate_surge > Max_Surge_Level) {
-    candidate_surge = Max_Surge_Level;
+  uint surge_factor = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
+  assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
+  if (surge_factor > Max_Surge_Level * 2) {
+    surge_factor = Max_Surge_Level * 2;
   }
+  // Attenuate extreme surging.  It steals too much CPU from service threads and amplifies prediction of GC time
+  uint map_surge_factor[Max_Surge_Level * 2 + 1] = { 0, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8 };
+  uint candidate_surge = map_surge_factor[surge_factor];
   if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
     candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
   }
@@ -688,8 +704,8 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
 
 #ifdef KELVIN_SURGE
   const char* phase_name = major_phase_name(phase);
-  log_info(gc)("ShouldSurge(%s), allocatable: %zu, alloc_rate: %.3f MB/s, time_to_finish_gc: %.3fs, race_odds: %.3f returns %u",
-               phase_name, allocatable, alloc_rate / (1024 * 1024), time_to_finish_gc, race_odds, surge);
+  log_info(gc)("ShouldSurge(%s), allocatable: %zu, alloc_rate: %.3f MB/s, time_to_finish_gc: %.3fs, avg_odds: %.3f returns %u",
+               phase_name, allocatable, alloc_rate / (1024 * 1024), time_to_finish_gc, avg_odds, surge);
 #endif
   _surge_level = surge;
   if ((phase == ShenandoahMajorGCPhase::_update) || (phase == ShenandoahMajorGCPhase::_final_roots)) {
@@ -697,11 +713,6 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
   }
   return surge;
 }
-
-
-
-
-
 
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _last_sample_time(os::elapsedTime()),
@@ -775,29 +786,8 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
 
-#ifdef KELVIN_DEPRECATE
-/* we used this code in acceleratd-surge branch.  But adaptive sure
-   uses record_phase_duration() instead.
-*/
-void ShenandoahAdaptiveHeuristics::record_phase_end(ShenandoahMajorGCPhase phase, double now) {
-  double duration = now - _phase_stats[phase].get_most_recent_start_time();
-  assert (_surge_level <= Max_Surge_Level, "sanity");
-  double multiplier = 1.0 + 0.25 * _surge_level;
-  duration *= multiplier;
-
-#undef KELVIN_DEVELOPMENT
-#ifdef KELVIN_DEVELOPMENT
-  const char* phase_name = stage_name(phase);
-  log_info(gc)("Recording duration of phase %s, adjusted by surge_level %u: %.3f", phase_name, _surge_level, duration);
-#endif
-  _phase_stats[phase].add_sample(duration);
-}
-#endif
-
 void ShenandoahAdaptiveHeuristics::record_phase_duration(ShenandoahMajorGCPhase phase, double x, double duration) {
   assert (_surge_level <= Max_Surge_Level, "sanity");
-  double multiplier = 1.0 + 0.25 * _surge_level;
-  duration *= multiplier;
 #undef KELVIN_DEVELOPMENT
 #ifdef KELVIN_DEVELOPMENT
   const char* phase_name = stage_name(phase);
@@ -815,6 +805,43 @@ ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
   _sum_of_y(0.0),
   _sum_of_xx(0.0),
   _sum_of_xy(0.0) { }
+
+// We use the history of recent phase execution times to predict the time required to execute this phase in the future.
+// The x_value represents an input parameter for the size of the phase's work.  For example, the evacuation phase is
+// parameterized by the amount of memory that we expect to evacuate.  The y-value is the time required to execute the phase.
+//
+// The samples are calibrated under the assumption that workers are not surged.  In theory, we should be able to add
+// phase-time samples for phases that have experienced worker surge, adjusting the duration by the magnitude of the
+// surge.  For example, if we surged with 2x the number of normal workers, then we could record that the normal time
+// (without the worker surge) to execute this phase would have been 2x the time it took with the 2x worker surge.  We
+// have found this does not work.  It gets us into a death spiral.  In particular, this causes the triggering heuristic
+// to "believe" it will take too long to execute the phase, so it triggers early, but usually not early enough to safely
+// handle the anticipated long duration of the phase (because there is simply not enough allocation runway to handle that
+// very long anticipated duration even when we trigger back to back).  Then the surge heuristics observes the situation and
+// decides we have to surge with even more workers in order to handle the situation we are in.  Then at the end of the
+// phase, we record the result of executing the phase with the 2.25x as taking 2.25x as long without the surge.  It gets
+// worse and worse until we are stuck in maximum surge of 3x.  Meanwhile, the service is deprived of CPU attention
+// because almost all the cores (75%) are fully consumed by out-of-control GC worker surge.  So whenever they get CPU
+// time, the service threads are very hungry to allocate memory in order to catch up with pending work.
+//
+// We also experimented with scaling measured surge execution times to lower values.  For example, if surge was 2x, we
+// tried scaling the measured execution time to 1.5x.  This also resulted in the death spiral behavior, albeit at a slightly
+// slower pace.  Several considerations have motivated us to abandon the pursuit of the "perfect" scale factor:
+//
+//  1. If we accidentally undershoot the right scale value, we will end up with an overly optimistic scheduling heuristic.
+//     We will trigger too late for normal operation, and the surge trigger will not kick in because it will not recognize
+//     that we scheduled too late.
+//
+//  2. We expect that the "perfect" scale factor will differ for each surge percentage.  Typical experience is diminishing
+//     returns for each new concurrent processor thrown at a shared job due to increased contention for shared resources and
+//     locking mechanisms.
+//
+//  3. We expect that the scalability of different phases will be different.  Marking, for example, is especially difficulit
+//     to scale, because typical workloads have mostly small objects, and the current implementation requires synchronization
+//     between workers for each object that we mark through, and for each object added to the shared scan queue.  On the other
+//     hand, evacuation and updating is much more easily performed by many cores.
+//
+// Our current approach to this problem is to only add samples that result from measurement of "unsurged execution phases".
 
 void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   if (_num_samples >= MaxSamples) {
@@ -853,15 +880,15 @@ double ShenandoahPhaseTimeEstimator::predict_at(double x_value) {
       double y_value = _y_values[(_first_index + i) % MaxSamples];
       double delta = estimated_y - y_value;
       sum_of_squared_deviations += delta * delta;
-#undef KELVIN_DEVELOPMENT
-#ifdef KELVIN_DEVELOPMENT
+#undef KELVIN_ESTIMATOR
+#ifdef KELVIN_ESTIMATOR
       log_info(gc)("%s sample[%u] (x: %.3f, y: %.3f), predicted_y: %.3f, delta: %.3f",
 		   _name, i, x_value, y_value, estimated_y, delta);
 #endif
     }
     double standard_deviation = sqrt(sum_of_squared_deviations / _num_samples);
     double prediction_by_trend = b + m * x_value + standard_deviation;;
-#ifdef KELVIN_DEVELOPMENT
+#ifdef KELVIN_ESTIMATOR
     log_info(gc)(" m: %.3f, b: %3f, std_dev: %.3f, prediction_by_trend: %.3f", m, b, standard_deviation, prediction_by_trend);
 #endif
     _most_recent_prediction = prediction_by_trend;

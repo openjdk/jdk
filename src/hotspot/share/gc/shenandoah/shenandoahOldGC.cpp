@@ -148,7 +148,5 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // follow the end of OLD marking.
   heap->rebuild_free_set_within_phase();
   heap->free_set()->log_status_under_lock();
-
-
   return true;
 }

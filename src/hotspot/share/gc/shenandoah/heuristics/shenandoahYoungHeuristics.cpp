@@ -45,6 +45,10 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
       _regions_most_recently_promoted_in_place(0),
       _live_words_most_recently_promoted_in_place(0),
       _anticipated_pip_words(0) {
+#undef KELVIN_YOUNG
+#ifdef KELVIN_YOUNG
+  log_info(gc)("Instantiating ShenYoungHeuristics, my name is: %s", name());
+#endif
 }
 
 
@@ -372,6 +376,10 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     size_t proposed_promo_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
     size_t total_available_reserve = intended_young_reserve_words + allocation_runway_words;
 
+#ifdef KELVIN_DEBUG
+    log_info(gc)("No mixed evac candidates, but there is promo potential: %zu, so consider mark_words: %zu",
+                 promo_potential_words, anticipated_mark_words);
+#endif
     set_anticipated_mark_words(anticipated_mark_words);
     set_anticipated_evac_words(anticipated_evac_words);
     set_anticipated_pip_words(pip_potential_words);
@@ -410,7 +418,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 	       mixed_candidate_live_words);
 #endif
 
-  for (uint planned_mixed_collection_count = 1; planned_mixed_collection_count <= 16; planned_mixed_collection_count *= 2) {
+  for (uint planned_mixed_collection_count = 1; planned_mixed_collection_count <= 32; planned_mixed_collection_count *= 2) {
     assert(mixed_candidate_live_words > 0, "This loop is for mixed evacuations only");
 
     // Compute the mixed GC cycle time based on proposed configuration
@@ -421,6 +429,17 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     // During mixed evacs, prioritize mixed evacuation over promotions.  Assume we budget mainly for mixed evacuation.
     // Promotion happens only if there is extra available memory within the old-gen regions.
     size_t proposed_total_reserve = proposed_young_evac_reserve + proposed_old_evac_reserve;
+
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Can we do this load in %u mixed collections?", planned_mixed_collection_count);
+    log_info(gc)(" proposed_young_evac_reserve: %zu, proposed_old_evac_reserve: %zu, total_reserve: %zu",
+                 proposed_young_evac_reserve, proposed_old_evac_reserve, proposed_total_reserve);
+    log_info(gc)(" minimum_runway_words: %zu, intended_young_reserve_words: %zu, allocation_runway_words: %zu",
+                 minimum_runway_words, intended_young_reserve_words, allocation_runway_words);
+    log_info(gc)(" comparing %zu against %zu", proposed_total_reserve + minimum_runway_words,
+                 intended_young_reserve_words + allocation_runway_words);
+#endif
+
     if (proposed_total_reserve + minimum_runway_words <= intended_young_reserve_words + allocation_runway_words) {
 
       // TODO: Note that we are still "blind" to the possible increase of effort required for a bootstrap old GC cycle.
@@ -441,6 +460,10 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       size_t young_2b_updated = get_young_live_words_not_in_most_recent_cset();
       anticipated_update_words = old_2b_updated + young_2b_updated;
 
+#ifdef KELVIN_DEBUG
+      log_info(gc)("Exploring plan for %u mixed evacuation, anticipated_mark_words: %zu",
+                   planned_mixed_collection_count, anticipated_mark_words);
+#endif
       set_anticipated_mark_words(anticipated_mark_words);
       set_anticipated_evac_words(anticipated_evac_words);
       set_anticipated_pip_words(pip_potential_words);
@@ -465,6 +488,13 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 		     ShenandoahOldEvacRatioPercent, approximate_mix_count);
 	return;
       }
+#ifdef KELVIN_DEBUG
+      log_info(gc)("Rejected plan!");
+      log_info(gc)(" consumed_words_during_gc: %zu + proposed_old_evac_reserve: %zu + proposed_young_evac_budget: %zu >=",
+                   consumed_words_during_gc, proposed_old_evac_reserve, proposed_young_evac_budget);
+      log_info(gc)("            intended_young_reserve_words: %zu + allocation_runway_words: %zu",
+                   intended_young_reserve_words, allocation_runway_words);
+#endif
     }
     // Try again with a less aggressive planned_mixed_collection_count
   }
@@ -479,7 +509,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
   // in regions before the next old-mark runs, so the next time we visit these same candidate regions, we will be able to
   // reclaim their garbage with less total effort.
 
-  log_info(gc)("Adjusting ShenandoahOldEvacRatioPercent to 0 under duress, deferring mixed evacuations");
+  log_info(gc)("Adjusting ShenandoahOldEvacRatioPercent to 0 under duress (requiring more than 32 mixed evacs), deferring mixed evacuations");
   set_anticipated_mark_words(0);
   ShenandoahOldEvacRatioPercent = 0;
 }
@@ -494,15 +524,14 @@ double ShenandoahYoungHeuristics::predict_gc_time() {
   double evac_time = predict_evac_time(get_anticipated_evac_words(), get_anticipated_pip_words());
   double update_time = predict_update_time(get_anticipated_update_words());
   double result = mark_time + evac_time + update_time;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu, %zu): %.3f, update(%zu): %.3f",
+#undef KELVIN_PREDICT
+#ifdef KELVIN_PREDICT
+  log_info(gc)("YH::predict_gc: %.3f from mark(%zu): %.3f, evac(%zu, %zu): %.3f, update(%zu): %.3f returns %.3f",
 	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(), get_anticipated_pip_words(),
-	       evac_time, get_anticipated_update_words(), update_time);
+	       evac_time, get_anticipated_update_words(), update_time, result);
 #endif
   return result;
 }
-
 
 double ShenandoahYoungHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words + anticipated_pip_words));
@@ -524,12 +553,14 @@ uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase,
   log_info(gc)("should_surge(), inherited surge_level %u, allocatable: %zu", surge, allocatable);
 #endif
 
+#ifdef KELVIN_DEPRECATE
   if (_previous_cycle_max_surge_level > Min_Surge_Level) {
     // If we required more than minimal surge in previous cycle, continue with a small surge now.  Assume we're catching up.
     if (surge < Min_Surge_Level) {
       surge = Min_Surge_Level;
     }
   }
+#endif
 
   size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
   _phase_stats[phase].set_most_recent_bytes_allocated(bytes_allocated);
@@ -541,7 +572,7 @@ uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase,
 	       bytes_allocated, alloc_rate / (1024 * 1024), _margin_of_error_sd);
 #endif
 
-  double predicted_gc_time = predict_gc_time();
+  double predicted_gc_time = 0.0;
   switch (phase) {
     case ShenandoahMajorGCPhase::_num_phases:
       assert(false, "Should not happen");
@@ -568,9 +599,12 @@ uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase,
 
     case ShenandoahMajorGCPhase::_mark:
     {
+      // If this is the start of a new GC cycle, reset default surge to 0.
+      surge = 0;
       time_to_finish_gc += predict_mark_time((double) get_anticipated_mark_words());
       // TODO: Use the larger of predict_gc_time(now) and avg_cycle_time if we integrate "accelerated triggers"
       double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+      predicted_gc_time = predict_gc_time();
 #ifdef KELVIN_SURGE
       log_info(gc)(" avg_cycle_time: %.3f, predicted_cycle_time: %.3f, time_to_finish_mark: %.3f",
                    avg_cycle_time, predicted_gc_time, time_to_finish_gc);
@@ -698,12 +732,23 @@ uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase,
   }
 #endif
 
-  uint candidate_surge = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
-  if (candidate_surge > Max_Surge_Level) {
-    candidate_surge = Max_Surge_Level;
+  uint surge_factor = (avg_odds > 1.0)? (uint) ((avg_odds - 0.75) / 0.25): 0;
+  assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
+  if (surge_factor > Max_Surge_Level * 2) {
+    surge_factor = Max_Surge_Level * 2;
   }
+  // Attenuate extreme surging.  It steals too much CPU from service threads and amplifies prediction of GC time
+  uint map_surge_factor[Max_Surge_Level * 2 + 1] = { 0, 1, 2, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8 };
+  uint candidate_surge = map_surge_factor[surge_factor];
+#undef KELVIN_SURGE_X
+#ifdef KELVIN_SURGE_X
+    log_info(gc)("Young::should_surge(), surge_factor: %u mapped to %u", surge_factor, candidate_surge);
+#endif
   if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
     candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
+#ifdef KELVIN_SURGE_X
+      log_info(gc)("Young::should_surge(), downgraded to: %u", candidate_surge);
+#endif
   }
   if (candidate_surge > surge) {
     surge = candidate_surge;
@@ -719,5 +764,9 @@ uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase,
     _previous_cycle_max_surge_level = surge;
   }
   return surge;
+}
+
+const char* ShenandoahYoungHeuristics::name() {
+  return "Young";
 }
 

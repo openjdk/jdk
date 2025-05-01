@@ -232,6 +232,10 @@ protected:
   }
 
   inline void set_anticipated_evac_words(size_t words) {
+#undef KELVIN_ANTICIPATION
+#ifdef KELVIN_ANTICIPATION
+    log_info(gc)("SAH::set_anticipated_evac_words(%zu)", words);
+#endif
     _anticipated_evac_words = words;
   }
 
@@ -240,6 +244,9 @@ protected:
   }
 
   inline void set_anticipated_update_words(size_t words) {
+#ifdef KELVIN_ANTICIPATION
+    log_info(gc)("SAH::set_anticipated_update_words(%zu)", words);
+#endif
     _anticipated_update_words =  words;
   }
 
