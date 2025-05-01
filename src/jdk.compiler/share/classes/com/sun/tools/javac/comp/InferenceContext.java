@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -47,11 +48,21 @@ import com.sun.tools.javac.comp.Infer.GraphSolver;
 import com.sun.tools.javac.comp.Infer.GraphStrategy;
 import com.sun.tools.javac.comp.Infer.InferenceException;
 import com.sun.tools.javac.comp.Infer.InferenceStep;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.RichDiagnosticFormatter;
 import com.sun.tools.javac.util.Warner;
+
+import static com.sun.tools.javac.code.Flags.SYNTHETIC;
+import static com.sun.tools.javac.code.Kinds.kindName;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.ERROR;
+import static com.sun.tools.javac.code.TypeTag.NONE;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 
 /**
  * An inference context keeps track of the set of variables that are free
@@ -82,6 +93,15 @@ public class InferenceContext {
 
     Types types;
     Infer infer;
+
+    /* when an inference context is minimized from a given inference context (IC), the minimized one (MIC) contains a
+     * proper subset of IC's undetermined vars (IC_UV) and inference vars (IC_IV). In other words there will be at least
+     * one inference variable T that belongs to IC_IV which doesn't belong to MIC_IV.
+     * We need the field below to, among other things, check for set membership for cases where the minimized context
+     * or any other context derived from it needs to deal with an inference variable that has been eliminated from IC_IV
+     * while minimizing it
+     */
+    InferenceContext supplementaryIC;
 
     public InferenceContext(Infer infer, List<Type> inferencevars) {
         this(infer, inferencevars, inferencevars.map(infer.fromTypeVarFun));
@@ -243,7 +263,72 @@ public class InferenceContext {
      * fully instantiated, it will still be available in the resulting type.
      */
     Type asInstType(Type t) {
-        return types.subst(t, inferencevars, instTypes());
+        Type result = types.subst(t, inferencevars, instTypes());
+        InferenceContext next = supplementaryIC;
+        // stop as soon as there are no more supplementary inference context or
+        // no more type variables to be instantiated
+        if (next != null) {
+            HasTypeVars hasTypeVars = new HasTypeVars();
+            while (next != null && hasTypeVars.visit(result)) {
+                result = next.asInstType(result);
+                next = next.supplementaryIC;
+            }
+        }
+        return result;
+    }
+
+    private class HasTypeVars extends Types.UnaryVisitor<Boolean> {
+        public Boolean visit(List<Type> ts) {
+            for (Type t : ts)
+                if (visit(t)) {
+                    return true;
+                }
+            return false;
+        }
+
+        @Override
+        public Boolean visitForAll(Type.ForAll t, Void ignored) {
+            return visit(t.tvars) || visit(t.qtype);
+        }
+
+        @Override
+        public Boolean visitMethodType(Type.MethodType t, Void ignored) {
+            return visit(t.argtypes) || visit(t.restype);
+        }
+
+        @Override
+        public Boolean visitErrorType(Type.ErrorType t, Void ignored) {
+            return false;
+        }
+
+        @Override
+        public Boolean visitArrayType(ArrayType t, Void ignored) {
+            return visit(t.elemtype);
+        }
+
+        @Override
+        public Boolean visitWildcardType(WildcardType t, Void ignored) {
+            return visit(t.type);
+        }
+
+        public Boolean visitType(Type t, Void ignored) {
+            return false;
+        }
+
+        @Override
+        public Boolean visitCapturedType(Type.CapturedType t, Void ignored) {
+            return visit(t.wildcard) || visit(t.lower) || visit(t.getUpperBound());
+        }
+
+        @Override
+        public Boolean visitClassType(ClassType t, Void ignored) {
+            return visit(t.getTypeArguments()) || visit(t.getEnclosingType());
+        }
+
+        @Override
+        public Boolean visitTypeVar(TypeVar t, Void ignored) {
+            return true;
+        }
     }
 
     List<Type> asInstTypes(List<Type> ts) {
@@ -258,7 +343,23 @@ public class InferenceContext {
      * Add custom hook for performing post-inference action
      */
     void addFreeTypeListener(List<Type> types, FreeTypeListener ftl) {
-        freeTypeListeners.put(ftl, freeVarsIn(types));
+        List<Type> myFreeVars = freeVarsIn(types);
+        if (supplementaryIC == null) {
+            freeTypeListeners.put(ftl, myFreeVars);
+        } else {
+            InferenceContext icToAddListenerTo = this;
+            InferenceContext currentIC = this;
+            List<Type> varsToAdd = myFreeVars;
+            while (currentIC != null && currentIC.supplementaryIC != null) {
+                List<Type> suppFreeVars = currentIC.supplementaryIC.freeVarsIn(types);
+                if (suppFreeVars.size() > varsToAdd.size()) {
+                    varsToAdd = suppFreeVars;
+                    icToAddListenerTo = currentIC.supplementaryIC;
+                }
+                currentIC = currentIC.supplementaryIC;
+            }
+            icToAddListenerTo.freeTypeListeners.put(ftl, varsToAdd);
+        }
     }
 
     /**
@@ -551,8 +652,18 @@ public class InferenceContext {
 
     @Override
     public String toString() {
-        return "Inference vars: " + inferencevars + '\n' +
-               "Undet vars: " + undetvars;
+        String result = "Inference vars: " + inferencevars + '\n' +
+               "Undet vars: " + undetvars + '\n';
+        /*
+        // keep it for debugging
+        if (!freeTypeListeners.isEmpty()) {
+            result += "Free Listeners:\n";
+            for (Map.Entry<FreeTypeListener, List<Type>> entry : freeTypeListeners.entrySet()) {
+                result += "    " + entry.getKey().toString() + "  vars: " + entry.getValue() + '\n';
+            }
+        }
+        */
+        return result;
     }
 
     /* Method Types.capture() generates a new type every time it's applied
