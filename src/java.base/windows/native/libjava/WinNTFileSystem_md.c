@@ -649,7 +649,7 @@ Java_java_io_WinNTFileSystem_createFileExclusively0(JNIEnv *env, jclass cls,
 }
 
 static int
-removeFileOrDirectory(const jchar *path, jboolean deleteReadOnly)
+removeFileOrDirectory(const jchar *path, jboolean allowDeleteReadOnlyFiles)
 {
     /* Returns 0 on success */
     DWORD a = GetFileAttributesW(path);
@@ -660,14 +660,16 @@ removeFileOrDirectory(const jchar *path, jboolean deleteReadOnly)
         return !RemoveDirectoryW(path);
     } else {
         // unset read-only attribute if deleting read-only files is enabled
-        BOOL attrSet = FALSE;
-        if (deleteReadOnly && ((a & FILE_ATTRIBUTE_READONLY) != 0))
-            attrSet = SetFileAttributesW(path, a & (~FILE_ATTRIBUTE_READONLY));
+        BOOL readOnlyAttrCleared = FALSE;
+        if (allowDeleteReadOnlyFiles && ((a & FILE_ATTRIBUTE_READONLY) != 0)) {
+            DWORD notReadOnlyAttr = a & (~FILE_ATTRIBUTE_READONLY);
+            readOnlyAttrCleared = SetFileAttributesW(path, notReadOnlyAttr);
+        }
 
         BOOL deleted = !DeleteFileW(path);
 
         // reinstate the read-only attribute if it was unset but deletion failed
-        if (!deleted && attrSet)
+        if (!deleted && readOnlyAttrCleared)
             SetFileAttributesW(path, a);
 
         return deleted;
@@ -676,14 +678,14 @@ removeFileOrDirectory(const jchar *path, jboolean deleteReadOnly)
 
 JNIEXPORT jboolean JNICALL
 Java_java_io_WinNTFileSystem_delete0(JNIEnv *env, jobject this, jobject file,
-                                     jboolean deleteReadOnly)
+                                     jboolean allowDeleteReadOnlyFiles)
 {
     jboolean rv = JNI_FALSE;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL) {
         return JNI_FALSE;
     }
-    if (removeFileOrDirectory(pathbuf, deleteReadOnly) == 0) {
+    if (removeFileOrDirectory(pathbuf, allowDeleteReadOnlyFiles) == 0) {
         rv = JNI_TRUE;
     }
     free(pathbuf);

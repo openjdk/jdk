@@ -25,7 +25,7 @@
  * @bug 8355954
  * @summary Verify correct behavior of File.delete
  * @run junit DeleteReadOnly
- * @run junit/othervm -Djdk.io.File.deleteReadOnly=true DeleteReadOnly
+ * @run junit/othervm -Djdk.io.File.allowDeleteReadOnlyFiles=true DeleteReadOnly
  */
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DeleteReadOnly {
-    private static final String PROP = "jdk.io.File.deleteReadOnly";
+    private static final String PROP = "jdk.io.File.allowDeleteReadOnlyFiles";
     private static final boolean DELETE_READ_ONLY = Boolean.getBoolean(PROP);
 
     private static final File DIR = new File(".", "dir");
