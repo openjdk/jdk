@@ -28,6 +28,8 @@ package com.sun.media.sound;
 import java.applet.AudioClip;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -69,6 +71,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     private AutoClosingClip clip = null;
     private boolean clipLooping = false;
+    private boolean clipPlaying = false;
 
     private DataPusher datapusher = null;
 
@@ -90,12 +93,25 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private static final long CLIP_THRESHOLD = 1048576;
     private static final int STREAM_BUFFER_SIZE = 1024;
 
+    public static JavaSoundAudioClip create(final File file) throws IOException {
+        JavaSoundAudioClip clip = new JavaSoundAudioClip();
+        try (FileInputStream stream = new FileInputStream(file)) {
+            clip.init(stream);
+        } catch (final Exception e) {
+            // AudioClip will be no-op if some exception will occurred
+            if (e instanceof IOException) {
+                throw e;
+            }
+        }
+        return clip;
+    }
+
     public static JavaSoundAudioClip create(final URLConnection uc) {
         JavaSoundAudioClip clip = new JavaSoundAudioClip();
         try {
             clip.init(uc.getInputStream());
         } catch (final Exception ignored) {
-            // AudioClip will be no-op if some exception will occurred
+            // Playing the clip will be a no-op if an exception occured in inititialization.
         }
         return clip;
     }
@@ -105,7 +121,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         try {
             clip.init(url.openStream());
         } catch (final Exception ignored) {
-            // AudioClip will be no-op if some exception will occurred
+            // Playing the clip will be a no-op if an exception occurred in inititialization.
         }
         return clip;
     }
@@ -128,7 +144,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 }
             }
         } catch (UnsupportedAudioFileException e) {
-            // not an audio file
             try {
                 MidiFileFormat mff = MidiSystem.getMidiFileFormat(bis);
                 success = createSequencer(bis);
@@ -136,6 +151,23 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 success = false;
             }
         }
+    }
+
+    public synchronized boolean canPlay() {
+        return success;
+    }
+
+    public synchronized boolean isPlaying() {
+        if (!canPlay()) {
+            return false;
+        } else if (clip != null) {
+            return clipPlaying;
+        } else if (datapusher != null) {
+            return datapusher.isPlaying();
+        } else if (sequencer != null) {
+           return sequencer.isRunning();
+        }
+        return false;
     }
 
     @Override
@@ -258,6 +290,16 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     @Override
     public synchronized void update(LineEvent event) {
+       if (clip != null) {
+           if (clip == event.getSource()) {
+               if (event.getType() == LineEvent.Type.START) {
+                  clipPlaying = true;
+               } else if ((event.getType() == LineEvent.Type.STOP) ||
+                          (event.getType() == LineEvent.Type.CLOSE)) {
+                  clipPlaying = false;
+               }
+           }
+       }
     }
 
     // handle MIDI track end meta events for looping
@@ -381,6 +423,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
             }
             clip = (AutoClosingClip) line;
             clip.setAutoClosing(true);
+            clip.addLineListener(this);
         } catch (Exception e) {
             if (Printer.err) e.printStackTrace();
             // fail silently

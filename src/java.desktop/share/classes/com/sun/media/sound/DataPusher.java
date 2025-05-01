@@ -92,6 +92,10 @@ public final class DataPusher implements Runnable {
         start(false);
     }
 
+    public boolean isPlaying() {
+        return threadState == STATE_PLAYING;
+    }
+
     public synchronized void start(boolean loop) {
         try {
             if (threadState == STATE_STOPPING) {

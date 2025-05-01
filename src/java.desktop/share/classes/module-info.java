@@ -89,6 +89,7 @@ module java.desktop {
     exports javax.print.attribute;
     exports javax.print.attribute.standard;
     exports javax.print.event;
+    exports javax.sound;
     exports javax.sound.midi;
     exports javax.sound.midi.spi;
     exports javax.sound.sampled;
