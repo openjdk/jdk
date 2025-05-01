@@ -57,6 +57,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 
 bool NMTRecorder_Locker::_safe_to_use = false;
@@ -79,14 +80,15 @@ bool NMTRecorder_Locker::_safe_to_use = false;
 
 #define LD_FORMAT "%'ld"
 
-static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+static void* raw_realloc(void* old, size_t s) { return permit_forbidden_function::realloc(old, s); }
 #if defined(LINUX)
-  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_usable_size, return ::malloc_usable_size(ptr);) }
+static size_t raw_malloc_size(void* ptr)      { return ::malloc_usable_size(ptr); }
 #elif defined(_WIN64)
-  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::_msize, return ::_msize(ptr);) }
+static size_t raw_malloc_size(void* ptr)      { return ::_msize(ptr); }
 #elif defined(__APPLE__)
-  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_size, return ::malloc_size(ptr);) }
+static size_t raw_malloc_size(void* ptr)      { return ::malloc_size(ptr); }
 #endif
+
 
 #define NMT_HEADER_SIZE 16
 
