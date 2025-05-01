@@ -167,6 +167,9 @@ jobs:
           else
             echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
+          if [[ '${{ inputs.static-suffix }}' == '-static']]; then
+            echo "static-problemlist-path=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+          fi
 
       - name: 'Run tests on static JDK'
         id: run-tests-static
@@ -181,7 +184,7 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-problemlist-path }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
