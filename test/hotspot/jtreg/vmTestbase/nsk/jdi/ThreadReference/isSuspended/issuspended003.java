@@ -127,7 +127,6 @@ public class issuspended003 {
 
     ReferenceType     testedclass  = null;
     ThreadReference   thread2      = null;
-    ThreadReference   mainThread   = null;
 
     static int  testExitCode = PASSED;
 
