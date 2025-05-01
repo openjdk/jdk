@@ -71,7 +71,7 @@ final class LinuxPackageBuilder {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
-                Optional.ofNullable(category).orElseGet(DEFAULTS::category),
+                Optional.ofNullable(category),
                 Optional.ofNullable(additionalDependencies),
                 Optional.ofNullable(release),
                 pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
@@ -90,6 +90,10 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder category(String v) {
         category = v;
         return this;
+    }
+
+    Optional<String> category() {
+        return Optional.ofNullable(category);
     }
 
     LinuxPackageBuilder additionalDependencies(String v) {
@@ -164,7 +168,7 @@ final class LinuxPackageBuilder {
         }
     }
 
-    private record Defaults(String menuGroupName, String category) {
+    private record Defaults(String menuGroupName) {
     }
 
     private String literalName;
@@ -176,6 +180,6 @@ final class LinuxPackageBuilder {
     private final PackageBuilder pkgBuilder;
 
     private static final Defaults DEFAULTS = new Defaults(I18N.getString(
-            "param.menu-group.default"), "misc");
+            "param.menu-group.default"));
 
 }

@@ -37,6 +37,9 @@ final class LinuxDebPackageBuilder {
     }
 
     LinuxDebPackage create() throws ConfigException {
+        if (pkgBuilder.category().isEmpty()) {
+            pkgBuilder.category(DEFAULTS.category());
+        }
         var pkg = pkgBuilder.create();
         return LinuxDebPackage.create(pkg, new LinuxDebPackageMixin.Stub(
                 Optional.ofNullable(maintainerEmail).orElseGet(
@@ -48,12 +51,12 @@ final class LinuxDebPackageBuilder {
         return this;
     }
 
-    private record Defaults(String maintainerEmail) {
+    private record Defaults(String maintainerEmail, String category) {
     }
 
     private String maintainerEmail;
 
     private final LinuxPackageBuilder pkgBuilder;
 
-    private static final Defaults DEFAULTS = new Defaults("Unknown");
+    private static final Defaults DEFAULTS = new Defaults("Unknown", "misc");
 }

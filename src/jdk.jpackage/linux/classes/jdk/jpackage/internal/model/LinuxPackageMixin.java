@@ -52,7 +52,7 @@ public interface LinuxPackageMixin {
      *
      * @return the category of this package
      */
-    String category();
+    Optional<String> category();
 
     /**
      * Gets a string with the additional dependencies of this package. Returns an
@@ -89,7 +89,7 @@ public interface LinuxPackageMixin {
      * Default implementation of {@link LinuxPackageMixin} interface.
      */
     record Stub(AppImageLayout packageLayout, String menuGroupName,
-            String category, Optional<String> additionalDependencies,
+            Optional<String> category, Optional<String> additionalDependencies,
             Optional<String> release, String arch) implements LinuxPackageMixin {
     }
 }

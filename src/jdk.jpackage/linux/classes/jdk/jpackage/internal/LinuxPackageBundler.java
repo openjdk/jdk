@@ -35,8 +35,11 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
+import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
+import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
@@ -105,15 +108,25 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         final LinuxPackage pkg = pkgParam.fetchFrom(params);
         final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        LinuxPackagingPipeline.build()
+        final var pipelineBuilder = LinuxPackagingPipeline.build()
                 .excludeDirFromCopying(outputParentDir)
-                .task(PackagingPipeline.PackageTaskID.CREATE_CONFIG_FILES)
-                        .packageAction(this::buildConfigFiles)
-                        .add()
-                .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
+                .task(PackageTaskID.CREATE_PACKAGE_FILE)
                         .packageAction(this::buildPackage)
-                        .add()
-                .create().execute(env, pkg, outputParentDir);
+                        .add();
+
+        final var createConfigFilesTaskBuilder = pipelineBuilder
+                .task(PackageTaskID.CREATE_CONFIG_FILES)
+                .packageAction(this::buildConfigFiles);
+
+        if (pkg instanceof LinuxDebPackage) {
+            // Build deb config files after app image contents are ready because
+            // it calculates the size of the image and saves the value in one of the config files.
+            createConfigFilesTaskBuilder.addDependencies(PrimaryTaskID.BUILD_APPLICATION_IMAGE, PrimaryTaskID.COPY_APP_IMAGE);
+        }
+
+        createConfigFilesTaskBuilder.add();
+
+        pipelineBuilder.create().execute(env, pkg, outputParentDir);
 
         return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
     }

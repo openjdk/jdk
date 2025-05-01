@@ -346,7 +346,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         String licenseText = pkg.licenseFile().map(toFunction(Files::readString)).orElse("Unknown");
 
         data.put("APPLICATION_MAINTAINER", ((LinuxDebPackage) pkg).maintainer());
-        data.put("APPLICATION_SECTION", pkg.category());
+        data.put("APPLICATION_SECTION", pkg.category().orElseThrow());
         data.put("APPLICATION_COPYRIGHT", pkg.app().copyright());
         data.put("APPLICATION_LICENSE_TEXT", licenseText);
         data.put("APPLICATION_ARCH", pkg.arch());
