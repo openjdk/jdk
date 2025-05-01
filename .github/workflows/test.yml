@@ -169,7 +169,7 @@ jobs:
           fi
 
       - name: 'Run tests on static'
-        id: run-tests-on-static
+        id: run-tests
         if: ${{ inputs.static-suffix == '-static' }}
         run: >
           make test-prebuilt
@@ -230,7 +230,7 @@ jobs:
             echo '::warning ::Missing test-support directory'
           fi
 
-          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }}-${{ inputs.static-suffix }} | tr '/ ' '__')"
+          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }}${{ inputs.static-suffix }} | tr '/ ' '__')"
           echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
         if: always()
 
