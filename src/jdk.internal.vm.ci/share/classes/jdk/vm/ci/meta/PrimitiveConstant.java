@@ -160,7 +160,7 @@ public class PrimitiveConstant implements JavaConstant, SerializableConstant {
 
     @Override
     public int hashCode() {
-        return (int) (primitive ^ (primitive >>> 32)) * (getJavaKind().ordinal() + 31);
+        return Long.hashCode(primitive) * (getJavaKind().ordinal() + 31);
     }
 
     @Override
