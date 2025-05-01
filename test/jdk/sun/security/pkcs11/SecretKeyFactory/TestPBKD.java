@@ -43,7 +43,6 @@ import javax.crypto.spec.SecretKeySpec;
  * @bug 8301553 8348732
  * @summary test key derivation on a SunPKCS11 SecretKeyFactory service
  * @library /test/lib ..
- * @modules java.base/com.sun.crypto.provider:open
  * @run main/othervm/timeout=30 TestPBKD
  */
 
