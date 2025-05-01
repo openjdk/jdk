@@ -1737,6 +1737,11 @@ public final class String
 
     /**
      * {@inheritDoc CharSequence}
+     * @param srcBegin {@inheritDoc CharSequence}
+     * @param srcEnd   {@inheritDoc CharSequence}
+     * @param dst      {@inheritDoc CharSequence}
+     * @param dstBegin {@inheritDoc CharSequence}
+     * @throws    IndexOutOfBoundsException {@inheritDoc CharSequence}
      */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
