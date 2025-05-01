@@ -41,7 +41,7 @@ on:
         required: false
         type: string
       debug-suffix:
-        required: true
+        required: false
         type: string
       static-suffix:
         required: false
