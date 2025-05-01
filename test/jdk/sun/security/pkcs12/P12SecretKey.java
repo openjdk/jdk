@@ -31,8 +31,6 @@
  * @run main P12SecretKey pkcs12 DESede 168
  */
 
-import jdk.test.lib.Utils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -41,6 +39,8 @@ import java.util.Arrays;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
+import static jdk.test.lib.Utils.createTempFile;
 
 public class P12SecretKey {
 
@@ -68,7 +68,12 @@ public class P12SecretKey {
         ks.setEntry(ALIAS, ske, kspp);
 
         // temporary files are created in scratch directory
-        final File ksFile = Utils.createTempFile("test", ".test").toFile();
+        final File ksFile = createTempFile(
+                String.format("%s-%s-%d-",
+                                keystoreType,
+                                algName,
+                                keySize),
+                ".ks").toFile();
 
         try (FileOutputStream fos = new FileOutputStream(ksFile)) {
             ks.store(fos, pw);
@@ -85,8 +90,8 @@ public class P12SecretKey {
                 System.err.println("OK: worked just fine with " + keystoreType +
                                    " keystore");
             } else {
-                System.err.println("ERROR: keys are NOT equal after storing in "
-                                   + keystoreType + " keystore");
+                throw new RuntimeException("ERROR: keys are NOT equal after storing in "
+                                           + keystoreType + " keystore");
             }
         }
     }
