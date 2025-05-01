@@ -314,7 +314,7 @@ bool ciMethodData::load_data() {
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    if (k != nullptr && k->is_loader_present_and_alive() && is_klass_loaded(k)) {
+    if (k != nullptr && k->class_loader_data() != nullptr && is_klass_loaded(k)) {
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
         set_receiver(row, klass);
