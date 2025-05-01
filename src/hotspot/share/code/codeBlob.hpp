@@ -205,7 +205,6 @@ public:
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
-  ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 

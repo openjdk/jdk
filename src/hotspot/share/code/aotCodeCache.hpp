@@ -28,7 +28,7 @@
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
  * during application training run.
- * In following "production" runs this code and data can me loaded into
+ * In following "production" runs this code and data can be loaded into
  * Code Cache skipping its generation.
  */
 

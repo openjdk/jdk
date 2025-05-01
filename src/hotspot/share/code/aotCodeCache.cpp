@@ -53,20 +53,20 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-static void exit_vm_on_load_failure() {
+static void load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  log_info(aot, codecache, init)("Unable to use AOT Code Cache.");
+  log_warning(aot, codecache, init)("Unable to use AOT Code Cache.");
   AOTAdapterCaching = false;
 }
 
-static void exit_vm_on_store_failure() {
+static void store_failure() {
   if (AbortVMOnAOTCodeFailure) {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  log_info(aot, codecache, exit)("Unable to create AOT Code Cache.");
+  log_warning(aot, codecache, exit)("Unable to create AOT Code Cache.");
   AOTAdapterCaching = false;
 }
 
@@ -110,9 +110,9 @@ void AOTCodeCache::initialize() {
   }
   if (!open_cache(is_dumping, is_using)) {
     if (is_using) {
-      exit_vm_on_load_failure();
+      load_failure();
     } else {
-      exit_vm_on_store_failure();
+      store_failure();
     }
     return;
   }
@@ -128,7 +128,7 @@ void AOTCodeCache::init2() {
   }
   if (!verify_vm_config()) {
     close();
-    exit_vm_on_load_failure();
+    load_failure();
   }
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
@@ -452,7 +452,7 @@ address AOTCodeCache::reserve_bytes(uint nbytes) {
     log_warning(aot,codecache)("Failed to ensure %d bytes at offset %d in AOT Code Cache. Increase AOTCodeMaxSize.",
                                nbytes, _write_position);
     set_failed();
-    exit_vm_on_store_failure();
+    store_failure();
     return nullptr;
   }
   address buffer = (address)(_store_buffer + _write_position);
@@ -474,7 +474,7 @@ uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
     log_warning(aot, codecache)("Failed to write %d bytes at offset %d to AOT Code Cache. Increase AOTCodeMaxSize.",
                                 nbytes, _write_position);
     set_failed();
-    exit_vm_on_store_failure();
+    store_failure();
     return 0;
   }
   copy_bytes((const char* )buffer, (address)(_store_buffer + _write_position), nbytes);
@@ -765,7 +765,7 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     log_warning(aot, codecache, stubs)("Saved blob's name '%s' is different from the expected name '%s'",
                                        stored_name, name);
     ((AOTCodeCache*)_cache)->set_failed();
-    exit_vm_on_load_failure();
+    load_failure();
     return nullptr;
   }
 

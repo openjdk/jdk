@@ -2777,20 +2777,20 @@ AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handle
 }
 
 #ifndef PRODUCT
-void AdapterHandlerLibrary::print_adapter_handler_info(AdapterHandlerEntry* handler, AdapterBlob* adapter_blob) {
+void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob) {
   ttyLocker ttyl;
   ResourceMark rm;
   int insts_size = adapter_blob->code_size();
   handler->print_adapter_on(tty);
-  tty->print_cr("i2c argument handler for: %s %s (%d bytes generated)",
+  st->print_cr("i2c argument handler for: %s %s (%d bytes generated)",
                 handler->fingerprint()->as_basic_args_string(),
                 handler->fingerprint()->as_string(), insts_size);
-  tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(handler->get_c2i_entry()));
+  st->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(handler->get_c2i_entry()));
   if (Verbose || PrintStubCode) {
     address first_pc = handler->base_address();
     if (first_pc != nullptr) {
-      Disassembler::decode(first_pc, first_pc + insts_size, tty, &adapter_blob->asm_remarks());
-      tty->cr();
+      Disassembler::decode(first_pc, first_pc + insts_size, st, &adapter_blob->asm_remarks());
+      st->cr();
     }
   }
 }
@@ -2855,7 +2855,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
 #ifndef PRODUCT
   // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
-    print_adapter_handler_info(handler, adapter_blob);
+    print_adapter_handler_info(tty, handler, adapter_blob);
   }
 #endif
   return true;
@@ -2944,7 +2944,7 @@ AdapterBlob* AdapterHandlerLibrary::link_aot_adapter_handler(AdapterHandlerEntry
 #ifndef PRODUCT
   // debugging support
   if ((blob != nullptr) && (PrintAdapterHandlers || PrintStubCode)) {
-    print_adapter_handler_info(handler, blob);
+    print_adapter_handler_info(tty, handler, blob);
   }
 #endif
   return blob;

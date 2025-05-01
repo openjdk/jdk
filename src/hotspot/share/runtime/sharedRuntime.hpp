@@ -795,7 +795,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static void create_abstract_method_handler();
   static void lookup_simple_adapters() NOT_CDS_RETURN;
 #ifndef PRODUCT
-  static void print_adapter_handler_info(AdapterHandlerEntry* handler, AdapterBlob* adapter_blob);
+  static void print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob);
 #endif // PRODUCT
  public:
 
