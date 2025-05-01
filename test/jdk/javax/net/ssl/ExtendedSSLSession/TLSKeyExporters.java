@@ -28,7 +28,7 @@
  * @test
  * @bug 8341346
  * @summary Add support for exporting TLS Keying Material
- * @library /javax/net/ssl/templates
+ * @library /javax/net/ssl/templates /test/lib
  * @build SSLContextTemplate
  * @run main/othervm TLSKeyExporters
  */
@@ -39,6 +39,8 @@ import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.nio.ByteBuffer;
 import java.util.Random;
+
+import static jdk.test.lib.Asserts.*;
 
 /**
  * A SSLEngine usage example which simplifies the presentation
@@ -273,8 +275,8 @@ public class TLSKeyExporters extends SSLContextTemplate {
     }
 
     private static void runExporterTests(
-            ExtendedSSLSession cessls,
-            ExtendedSSLSession sessls) throws Exception {
+            ExtendedSSLSession clientSession,
+            ExtendedSSLSession serverSession) throws Exception {
 
         // Create output arrays
         byte[] clientBytes, serverBytes;
@@ -292,100 +294,93 @@ public class TLSKeyExporters extends SSLContextTemplate {
         random.nextBytes(bytesDiffSize);
 
         // Inputs exactly equal.  Use exportKeyMaterialKey()
-        clientBytes = cessls.exportKeyMaterialKey("hello",
+        clientBytes = clientSession.exportKeyMaterialKey("hello",
                 bytes, 128).getEncoded();
-        serverBytes = sessls.exportKeyMaterialKey("hello",
+        serverBytes = serverSession.exportKeyMaterialKey("hello",
                 bytes, 128).getEncoded();
-        if (!Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Equal inputs but exporters are not");
-        } else {
-            log("Equal inputs test passed");
-        }
+        assertEqualsByteArray(clientBytes, serverBytes,
+                "Equal inputs but exporters are not equal");
+        log("Equal inputs test passed");
 
         // Empty label.  I don't see anything that says this is
         // forbidden.  There is some verbiage about: labels being registered
         // with IANA, must not collide with existing PRF labels, SHOULD use
         // "EXPORTER"/"EXPERIMENTAL" prefixes, etc.
-        clientBytes = cessls.exportKeyMaterialKey("",
+        clientBytes = clientSession.exportKeyMaterialKey("",
                 bytes, 128).getEncoded();
-        serverBytes = sessls.exportKeyMaterialKey("",
+        serverBytes = serverSession.exportKeyMaterialKey("",
                 bytes, 128).getEncoded();
-        if (!Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Empty label and exporters are equal");
-        } else {
-            log("Empty label test passed");
-        }
+        assertEqualsByteArray(clientBytes, serverBytes,
+                "Empty label and exporters are equal");
+        log("Empty label test passed");
 
         // Different labels, now use exportKeyMaterialData() for coverage
-        clientBytes = cessls.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyMaterialData("hello",
                 bytes, 128);
-        serverBytes = sessls.exportKeyMaterialData("goodbye",
+        serverBytes = serverSession.exportKeyMaterialData("goodbye",
                 bytes, 128);
-        if (Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Different labels but exporters same");
-        } else {
-            log("Different labels test passed");
-        }
+        assertNotEqualsByteArray(clientBytes, serverBytes,
+                "Different labels but exporters same");
+        log("Different labels test passed");
 
         // Different output sizes
-        clientBytes = cessls.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyMaterialData("hello",
                 bytes, 128);
-        serverBytes = sessls.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyMaterialData("hello",
                 bytes, 127);
-        if ((clientBytes.length != 128) || (serverBytes.length != 127)) {
-            throw new Exception("Output sizes incorrect:  " +
-                    clientBytes.length + "/" + serverBytes.length);
-        }
-        if (Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Different output sizes but exporters same");
-        } else {
-            log("Different output size test passed");
-        }
+        assertEquals(clientBytes.length, 128, "client length != 128");
+        assertEquals(serverBytes.length, 127, "server length != 127");
+        assertNotEqualsByteArray(clientBytes, serverBytes,
+                "Different output sizes but exporters same");
+        log("Different output size test passed");
 
         // Different context values
-        clientBytes = cessls.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyMaterialData("hello",
                 bytes, 128);
-        serverBytes = sessls.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyMaterialData("hello",
                 bytesDiff, 128);
-        if (Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Different context but exporters same");
-        } else {
-            log("Different context test passed");
-        }
+        assertNotEqualsByteArray(clientBytes, serverBytes,
+                "Different context but exporters same");
+        log("Different context test passed");
 
         // Different context sizes
-        clientBytes = cessls.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyMaterialData("hello",
                 bytes, 128);
-        serverBytes = sessls.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyMaterialData("hello",
                 bytesDiffSize, 128);
-        if (Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("Different context sizes but exporters same.");
-        } else {
-            log("Different context sizes test passed");
-        }
+        assertNotEqualsByteArray(clientBytes, serverBytes,
+                "Different context sizes but exporters same");
+        log("Different context sizes test passed");
 
         // No context, but otherwise the same
-        clientBytes = cessls.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyMaterialData("hello",
                 null, 128);
-        serverBytes = sessls.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyMaterialData("hello",
                 null, 128);
-        if (!Arrays.equals(clientBytes, serverBytes)) {
-            throw new Exception("No context and exporters are not the same.");
-        } else {
-            log("No context test passed");
-        }
+        assertEqualsByteArray(clientBytes, serverBytes,
+                "No context and exporters are not the same");
+        log("No context test passed");
+
+        // Smaller key size
+        clientBytes = clientSession.exportKeyMaterialData("hello",
+                bytes, 40);
+        serverBytes = serverSession.exportKeyMaterialData("hello",
+                bytes, 40);
+        assertEqualsByteArray(clientBytes, serverBytes,
+                "Smaller key size should be the same");
+        log("Smaller key size test passed");
 
         // Check error conditions
         try {
-            cessls.exportKeyMaterialData(null, bytes, 128);
+            clientSession.exportKeyMaterialData(null, bytes, 128);
             throw new Exception("null label accepted");
         } catch (NullPointerException e) {
             log("null label test passed");
         }
 
         try {
-            cessls.exportKeyMaterialData("hello", new byte[1<<16], 128);
-            if (!cessls.getProtocol().equals("TLSv1.3")) {
+            clientSession.exportKeyMaterialData("hello", new byte[1<<16], 128);
+            if (!clientSession.getProtocol().equals("TLSv1.3")) {
                 throw new Exception("large context accepted in " +
                         "SSLv3/TLSv1/TLSv1.1/TLSv1.2");
             } else {
@@ -397,7 +392,7 @@ public class TLSKeyExporters extends SSLContextTemplate {
         }
 
         try {
-            cessls.exportKeyMaterialData("hello", bytes, -20);
+            clientSession.exportKeyMaterialData("hello", bytes, -20);
             throw new Exception("negative length accepted");
         } catch (IllegalArgumentException e) {
             log("negative length test passed");

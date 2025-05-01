@@ -1688,7 +1688,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
                 // ...now the final expand.
                 SecretKey key = hkdf.expand(derivedSecret, hkdfInfo, length,
-                        "label");
+                        label);
                 try {
                     // Best effort
                     derivedSecret.destroy();
