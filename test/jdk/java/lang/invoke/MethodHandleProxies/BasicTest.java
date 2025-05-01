@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 6983726 8206955 8269351
+ * @bug 6983726 8206955 8269351 8350549
  * @summary Basic sanity tests for MethodHandleProxies
  * @build BasicTest Client
  * @run junit BasicTest
