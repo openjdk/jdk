@@ -349,7 +349,7 @@ void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
       if (!always_clean && k->is_instance_klass() && InstanceKlass::cast(k)->is_not_initialized()) {
         continue; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
       }
-      if (always_clean || !k->is_loader_alive() || is_excluded(k)) {
+      if (always_clean || !k->is_loader_present_and_alive() || is_excluded(k)) {
         set_type(i, with_status((Klass*)nullptr, p));
       }
     }
@@ -370,7 +370,7 @@ void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
     if (!always_clean && k->is_instance_klass() && InstanceKlass::cast(k)->is_not_initialized()) {
       return; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
     }
-    if (always_clean || !k->is_loader_alive() || is_excluded(k)) {
+    if (always_clean || !k->is_loader_present_and_alive() || is_excluded(k)) {
       set_type(with_status((Klass*)nullptr, p));
     }
   }
@@ -460,7 +460,7 @@ void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
       if (!always_clean && p->is_instance_klass() && InstanceKlass::cast(p)->is_not_initialized()) {
         continue; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
       }
-      if (always_clean || !p->is_loader_alive() || is_excluded(p)) {
+      if (always_clean || !p->is_loader_present_and_alive() || is_excluded(p)) {
         clear_row(row);
       }
     }
