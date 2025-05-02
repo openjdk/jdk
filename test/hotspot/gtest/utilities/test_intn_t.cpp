@@ -25,16 +25,22 @@
 #include "utilities/intn_t.hpp"
 #include "unittest.hpp"
 
-template <unsigned int n>
+template <unsigned int nbits>
 static void test_intn_t() {
-  static_assert(std::numeric_limits<intn_t<n>>::min() <= intn_t<n>(-1) && intn_t<n>(-1) < intn_t<n>(0) && intn_t<n>(0) <= std::numeric_limits<intn_t<n>>::max(), "basic sanity");
-  for (int i = intn_t<n>::min; i <= intn_t<n>::max; i++) {
-    ASSERT_EQ(i, int(intn_t<n>(i)));
-    if (i > intn_t<n>::min) {
-      ASSERT_TRUE(intn_t<n>(i - 1) < intn_t<n>(i));
+  static_assert(std::numeric_limits<intn_t<nbits>>::min() <= intn_t<nbits>(-1) &&
+                intn_t<nbits>(-1) < intn_t<nbits>(0) &&
+                intn_t<nbits>(0) <= std::numeric_limits<intn_t<nbits>>::max(), "basic sanity");
+  for (int i = intn_t<nbits>::min; i <= intn_t<nbits>::max; i++) {
+    ASSERT_EQ(i, int(intn_t<nbits>(i)));
+    if (i > intn_t<nbits>::min) {
+      ASSERT_TRUE(intn_t<nbits>(i - 1) < intn_t<nbits>(i));
+    } else {
+      ASSERT_TRUE(intn_t<nbits>(i - 1) > intn_t<nbits>(i));
     }
-    if (i < intn_t<n>::max) {
-      ASSERT_TRUE(intn_t<n>(i) < intn_t<n>(i + 1));
+    if (i < intn_t<nbits>::max) {
+      ASSERT_TRUE(intn_t<nbits>(i) < intn_t<nbits>(i + 1));
+    } else {
+      ASSERT_TRUE(intn_t<nbits>(i) > intn_t<nbits>(i + 1));
     }
   }
 }

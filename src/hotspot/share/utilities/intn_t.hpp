@@ -29,34 +29,54 @@
 
 #include <limits>
 
-template <unsigned int n>
+template <unsigned int nbits>
 class uintn_t;
 
-template <unsigned int n>
+// This class represents a signed integer type with the width of exactly nbits
+// bits. Conceptually, nbits == 8 gives a type equivalent to int8_t,
+// nbits == 16 gives a type equivalent to int16_t, and so on. This class may be
+// used to verify the correctness of an algorithm that is supposed to be
+// applicable to all fixed-width integral types. With a few bits, it makes it
+// possible to perform an exhaustive test that exercises the algorithm with all
+// possible input values.
+// Implementation-wise, this class currently only supports 0 < nbits <= 8. Also
+// note that this class is implemented so that overflows in alrithmetic
+// operations are well-defined and wrap-around.
+template <unsigned int nbits>
 class intn_t {
-  static_assert(n > 0 && n <= 8, "should not be larger than char");
+  static_assert(0 < nbits && nbits <= 8, "should not be larger than char");
 
 private:
+  // Only the lowest nbits bits are important, operations should act as if it
+  // sign extends the lowest nbits to an int, performs the calculation on ints,
+  // then truncates the result to nbits. In practice, we do not need to
+  // truncate the result, as the lowest nbits will be sign extended in the next
+  // operations. We can also sign extends the operands sparingly, for example,
+  // addition or subtraction do not need this sign extension, and we can add or
+  // subtract the value of _v directly. This is because the lowest nbits bits
+  // of a sum or a difference only depends on the lowest nbits bits of the
+  // operands.
   uint _v;
 
-  constexpr static uint _mask = (1 << n) - 1;
+  constexpr static uint _mask = (1 << nbits) - 1;
 
-  friend class uintn_t<n>;
+  friend class uintn_t<nbits>;
 
 public:
   explicit constexpr intn_t(int v) : _v(v) {}
   constexpr intn_t() : _v(0) {}
   constexpr intn_t(const intn_t&) = default;
   constexpr intn_t& operator=(const intn_t&) = default;
-  explicit constexpr intn_t(uintn_t<n> v);
+  explicit constexpr intn_t(uintn_t<nbits> v);
 
+  // Sign extension
   explicit constexpr operator int() const {
-    int shift = 32 - n;
+    int shift = 32 - nbits;
     return int(_v << shift) >> shift;
   }
 
-  constexpr static int min = std::numeric_limits<unsigned int>::max() << (n - 1);
-  constexpr static int max = (1 << (n - 1)) - 1;
+  constexpr static int min = std::numeric_limits<unsigned int>::max() << (nbits - 1);
+  constexpr static int max = (1 << (nbits - 1)) - 1;
   static_assert(min < max, "");
 
   constexpr bool operator==(intn_t o) const { return (_v & _mask) == (o._v & _mask); }
@@ -66,28 +86,33 @@ public:
   constexpr bool operator>=(intn_t o) const { return int(*this) >= int(o); }
 };
 
-template <unsigned int n>
-unsigned count_leading_zeros(uintn_t<n>);
+template <unsigned int nbits>
+unsigned count_leading_zeros(uintn_t<nbits>);
 
-template <unsigned int n>
+// The unsigned version of intn_t<nbits>
+template <unsigned int nbits>
 class uintn_t {
-  static_assert(n > 0 && n <= 8, "should not be larger than char");
+  static_assert(0 < nbits && nbits <= 8, "should not be larger than char");
 
 private:
+  // Similar to intn_t<nbits>, the difference is that the operation should act
+  // as if it zero extends the lowest nbits bits of the operands.
   uint _v;
 
-  constexpr static uint _mask = (1 << n) - 1;
+  constexpr static uint _mask = (1 << nbits) - 1;
 
-  friend class intn_t<n>;
+  friend class intn_t<nbits>;
 
-  friend unsigned count_leading_zeros<n>(uintn_t<n>);
+  friend unsigned count_leading_zeros<nbits>(uintn_t<nbits>);
 
 public:
   explicit constexpr uintn_t(int v) : _v(v) {}
   constexpr uintn_t() : _v(0) {}
   constexpr uintn_t(const uintn_t&) = default;
   constexpr uintn_t& operator=(const uintn_t&) = default;
-  explicit constexpr uintn_t(intn_t<n> v) : _v(v._v) {}
+  explicit constexpr uintn_t(intn_t<nbits> v) : _v(v._v) {}
+
+  // Zero extension
   explicit constexpr operator uint() const { return _v & _mask; }
 
   constexpr static int min = 0;
@@ -112,30 +137,30 @@ public:
   constexpr uintn_t& operator|=(uintn_t o) { _v |= o._v; return *this; }
 };
 
-template <unsigned int n>
-constexpr intn_t<n>::intn_t(uintn_t<n> v) : _v(v._v) {}
+template <unsigned int nbits>
+constexpr intn_t<nbits>::intn_t(uintn_t<nbits> v) : _v(v._v) {}
 
 namespace std {
 
-template <unsigned int n>
-class numeric_limits<intn_t<n>> {
+template <unsigned int nbits>
+class numeric_limits<intn_t<nbits>> {
 public:
-  constexpr static intn_t<n> min() { return intn_t<n>(intn_t<n>::min); }
-  constexpr static intn_t<n> max() { return intn_t<n>(intn_t<n>::max); }
+  constexpr static intn_t<nbits> min() { return intn_t<nbits>(intn_t<nbits>::min); }
+  constexpr static intn_t<nbits> max() { return intn_t<nbits>(intn_t<nbits>::max); }
 };
 
-template <unsigned int n>
-class numeric_limits<uintn_t<n>> {
+template <unsigned int nbits>
+class numeric_limits<uintn_t<nbits>> {
 public:
-  constexpr static uintn_t<n> min() { return uintn_t<n>(uintn_t<n>::min); }
-  constexpr static uintn_t<n> max() { return uintn_t<n>(uintn_t<n>::max); }
+  constexpr static uintn_t<nbits> min() { return uintn_t<nbits>(uintn_t<nbits>::min); }
+  constexpr static uintn_t<nbits> max() { return uintn_t<nbits>(uintn_t<nbits>::max); }
 };
 
-}
+} // namespace std
 
-template <unsigned int n>
-inline unsigned count_leading_zeros(uintn_t<n> v) {
-  return count_leading_zeros<unsigned int>(v._v & uintn_t<n>::_mask) - (32 - n);
+template <unsigned int nbits>
+inline unsigned count_leading_zeros(uintn_t<nbits> v) {
+  return count_leading_zeros<unsigned int>(v._v & uintn_t<nbits>::_mask) - (32 - nbits);
 }
 
 #endif // SHARE_UTILITIES_INTN_T_HPP
