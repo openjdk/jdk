@@ -34,16 +34,11 @@ import java.security.KeyStore.Entry;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
-import sun.security.provider.certpath.AlgorithmChecker;
-import sun.security.validator.Validator;
-import sun.security.util.KnownOIDs;
 
 /**
  * The new X509 key manager implementation. The main differences to the
@@ -63,7 +58,7 @@ import sun.security.util.KnownOIDs;
  * @author  Andreas Sterbenz
  */
 final class X509KeyManagerImpl extends X509ExtendedKeyManager
-        implements X509KeyManager {
+        implements KeyManagerAlgorithmConstraints {
 
     // for unit testing only, set via privileged reflection
     private static Date verificationDate;
@@ -179,55 +174,6 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     //
     // implementation private methods
     //
-
-    // Gets algorithm constraints of the socket.
-    private AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
-        if (socket != null && socket.isConnected() &&
-                socket instanceof SSLSocket sslSocket) {
-
-            SSLSession session = sslSocket.getHandshakeSession();
-
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
-
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        peerSupportedSignAlgs =
-                            extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forSocket(
-                        sslSocket, peerSupportedSignAlgs, true);
-                }
-            }
-
-            return SSLAlgorithmConstraints.forSocket(sslSocket, true);
-        }
-
-        return SSLAlgorithmConstraints.DEFAULT;
-    }
-
-    // Gets algorithm constraints of the engine.
-    private AlgorithmConstraints getAlgorithmConstraints(SSLEngine engine) {
-        if (engine != null) {
-            SSLSession session = engine.getHandshakeSession();
-            if (session != null) {
-                if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
-
-                    if (session instanceof ExtendedSSLSession extSession) {
-                        peerSupportedSignAlgs =
-                            extSession.getPeerSupportedSignatureAlgorithms();
-                    }
-
-                    return SSLAlgorithmConstraints.forEngine(
-                        engine, peerSupportedSignAlgs, true);
-                }
-            }
-        }
-
-        return SSLAlgorithmConstraints.forEngine(engine, true);
-    }
 
     // we construct the alias we return to JSSE as seen in the code below
     // a unique id is included to allow us to reliably cache entries
@@ -506,188 +452,6 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         }
     }
 
-    // enum for the type of certificate check we want to perform
-    // (client or server)
-    // also includes the check code itself
-    private enum CheckType {
-
-        // enum constant for "no check" (currently not used)
-        NONE(Collections.emptySet()),
-
-        // enum constant for "tls client" check
-        // valid EKU for TLS client: any, tls_client
-        CLIENT(new HashSet<>(List.of(
-                KnownOIDs.anyExtendedKeyUsage.value(),
-                KnownOIDs.clientAuth.value()
-        ))),
-
-        // enum constant for "tls server" check
-        // valid EKU for TLS server: any, tls_server, ns_sgc, ms_sgc
-        SERVER(new HashSet<>(List.of(
-                KnownOIDs.anyExtendedKeyUsage.value(),
-                KnownOIDs.serverAuth.value(),
-                KnownOIDs.NETSCAPE_ExportApproved.value(),
-                KnownOIDs.MICROSOFT_ExportApproved.value()
-        )));
-
-        // set of valid EKU values for this type
-        final Set<String> validEku;
-
-        CheckType(Set<String> validEku) {
-            this.validEku = validEku;
-        }
-
-        private static boolean getBit(boolean[] keyUsage, int bit) {
-            return (bit < keyUsage.length) && keyUsage[bit];
-        }
-
-        // Check if this certificate is appropriate for this type of use
-        // first check extensions, if they match, check expiration.
-        //
-        // Note: we may want to move this code into the sun.security.validator
-        // package
-        CheckResult check(X509Certificate cert, Date date,
-                List<SNIServerName> serverNames, String idAlgorithm) {
-
-            if (this == NONE) {
-                return CheckResult.OK;
-            }
-
-            // check extensions
-            try {
-                // check extended key usage
-                List<String> certEku = cert.getExtendedKeyUsage();
-                if ((certEku != null) &&
-                        Collections.disjoint(validEku, certEku)) {
-                    // if extension is present and does not contain any of
-                    // the valid EKU OIDs, return extension_mismatch
-                    return CheckResult.EXTENSION_MISMATCH;
-                }
-
-                // check key usage
-                boolean[] ku = cert.getKeyUsage();
-                if (ku != null) {
-                    String algorithm = cert.getPublicKey().getAlgorithm();
-                    boolean supportsDigitalSignature = getBit(ku, 0);
-                    switch (algorithm) {
-                        case "RSA":
-                            // require either signature bit
-                            // or if server also allow key encipherment bit
-                            if (!supportsDigitalSignature) {
-                                if (this == CLIENT || !getBit(ku, 2)) {
-                                    return CheckResult.EXTENSION_MISMATCH;
-                                }
-                            }
-                            break;
-                        case "RSASSA-PSS":
-                            if (!supportsDigitalSignature && (this == SERVER)) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            break;
-                        case "DSA":
-                            // require signature bit
-                            if (!supportsDigitalSignature) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            break;
-                        case "DH":
-                            // require keyagreement bit
-                            if (!getBit(ku, 4)) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            break;
-                        case "EC":
-                            // require signature bit
-                            if (!supportsDigitalSignature) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            // For servers, also require key agreement.
-                            // This is not totally accurate as the keyAgreement
-                            // bit is only necessary for static ECDH key
-                            // exchange and not ephemeral ECDH. We leave it in
-                            // for now until there are signs that this check
-                            // causes problems for real world EC certificates.
-                            if (this == SERVER && !getBit(ku, 4)) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            break;
-                    }
-                }
-            } catch (CertificateException e) {
-                // extensions unparseable, return failure
-                return CheckResult.EXTENSION_MISMATCH;
-            }
-
-            try {
-                cert.checkValidity(date);
-            } catch (CertificateException e) {
-                return CheckResult.EXPIRED;
-            }
-
-            if (serverNames != null && !serverNames.isEmpty()) {
-                for (SNIServerName serverName : serverNames) {
-                    if (serverName.getType() ==
-                                StandardConstants.SNI_HOST_NAME) {
-                        if (!(serverName instanceof SNIHostName)) {
-                            try {
-                                serverName =
-                                    new SNIHostName(serverName.getEncoded());
-                            } catch (IllegalArgumentException iae) {
-                                // unlikely to happen, just in case ...
-                                if (SSLLogger.isOn &&
-                                        SSLLogger.isOn("keymanager")) {
-                                    SSLLogger.fine(
-                                       "Illegal server name: " + serverName);
-                                }
-
-                                return CheckResult.INSENSITIVE;
-                            }
-                        }
-                        String hostname =
-                                ((SNIHostName)serverName).getAsciiName();
-
-                        try {
-                            X509TrustManagerImpl.checkIdentity(hostname,
-                                                        cert, idAlgorithm);
-                        } catch (CertificateException e) {
-                            if (SSLLogger.isOn &&
-                                    SSLLogger.isOn("keymanager")) {
-                                SSLLogger.fine(
-                                    "Certificate identity does not match " +
-                                    "Server Name Indication (SNI): " +
-                                    hostname);
-                            }
-                            return CheckResult.INSENSITIVE;
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            return CheckResult.OK;
-        }
-
-        public String getValidator() {
-            if (this == CLIENT) {
-                return Validator.VAR_TLS_CLIENT;
-            } else if (this == SERVER) {
-                return Validator.VAR_TLS_SERVER;
-            }
-            return Validator.VAR_GENERIC;
-        }
-    }
-
-    // enum for the result of the extension check
-    // NOTE: the order of the constants is important as they are used
-    // for sorting, i.e. OK is best, followed by EXPIRED and EXTENSION_MISMATCH
-    private enum CheckResult {
-        OK,                     // ok or not checked
-        INSENSITIVE,            // server name indication insensitive
-        EXPIRED,                // extensions valid but cert expired
-        EXTENSION_MISMATCH,     // extensions invalid (expiration not checked)
-    }
-
     /*
      * Return a List of all candidate matches in the specified builder
      * that fit the parameters.
@@ -825,41 +589,5 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
         }
         return results;
-    }
-
-    private static boolean conformsToAlgorithmConstraints(
-            AlgorithmConstraints constraints, Certificate[] chain,
-            String variant) {
-
-        AlgorithmChecker checker = new AlgorithmChecker(constraints, variant);
-        try {
-            checker.init(false);
-        } catch (CertPathValidatorException cpve) {
-            // unlikely to happen
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine(
-                    "Cannot initialize algorithm constraints checker", cpve);
-            }
-
-            return false;
-        }
-
-        // It is a forward checker, so we need to check from trust to target.
-        for (int i = chain.length - 1; i >= 0; i--) {
-            Certificate cert = chain[i];
-            try {
-                // We don't care about the unresolved critical extensions.
-                checker.check(cert, Collections.emptySet());
-            } catch (CertPathValidatorException cpve) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                    SSLLogger.fine("Certificate does not conform to " +
-                            "algorithm constraints", cert, cpve);
-                }
-
-                return false;
-            }
-        }
-
-        return true;
     }
 }

@@ -54,7 +54,27 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
         return new KeyManager[] { keyManager };
     }
 
-    // Factory for the SunX509 keymanager
+    // Factory for the SunX509c key manager
+    public static final class SunX509c extends KeyManagerFactoryImpl {
+
+        @Override
+        protected void engineInit(KeyStore ks, char[] password) throws
+                KeyStoreException, NoSuchAlgorithmException,
+                UnrecoverableKeyException {
+            keyManager = new SunX509ConstraintsKeyManagerImpl(ks, password);
+            isInitialized = true;
+        }
+
+        @Override
+        protected void engineInit(ManagerFactoryParameters spec) throws
+                InvalidAlgorithmParameterException {
+            throw new InvalidAlgorithmParameterException(
+                    "SunX509ConstraintsKeyManager does not use ManagerFactoryParameters");
+        }
+
+    }
+
+    // Factory for the SunX509 key manager
     public static final class SunX509 extends KeyManagerFactoryImpl {
 
         @Override
@@ -74,7 +94,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
 
     }
 
-    // Factory for the X509 keymanager
+    // Factory for the X509 key manager
     public static final class X509 extends KeyManagerFactoryImpl {
 
         @Override
