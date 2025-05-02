@@ -165,7 +165,9 @@ class AOTCodeCache : public CHeapObj<mtCode> {
 protected:
   class Config {
     uint _compressedOopShift;
+    address _compressedOopBase;
     uint _compressedKlassShift;
+    address _compressedKlassBase;
     uint _contendedPaddingWidth;
     uint _objectAlignment;
     uint _gc;
@@ -404,35 +406,6 @@ public:
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
 #endif // PRODUCT
-};
-
-// code cache internal runtime constants area used by AOT code
-class AOTRuntimeConstants {
- friend class AOTCodeCache;
- private:
-  address _ccp_base;
-  static address _field_addresses_list[];
-  static AOTRuntimeConstants _aot_runtime_constants;
-  // private constructor for unique singleton
-  AOTRuntimeConstants() { }
-  // private for use by friend class AOTCodeCache
-  static void initialize_from_runtime();
- public:
-#if INCLUDE_CDS
-  static bool contains(address adr) {
-    address base = (address)&_aot_runtime_constants;
-    address hi = base + sizeof(AOTRuntimeConstants);
-    return (base <= adr && adr < hi);
-  }
-  static address ccp_base_address() { return (address)&_aot_runtime_constants._ccp_base; }
-  static address* field_addresses_list() {
-    return _field_addresses_list;
-  } 
-#else
-  static bool contains(address adr)      { return false; }
-  static address ccp_base_address()   { return nullptr; }
-  static address* field_addresses_list() { return nullptr; }
-#endif
 };
 
 #endif // SHARE_CODE_AOTCODECACHE_HPP

@@ -178,8 +178,6 @@ void AOTCodeCache::init2() {
     close();
     report_load_failure();
   }
-  // initialize aot runtime constants as appropriate to this runtime
-  AOTRuntimeConstants::initialize_from_runtime();
 
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
@@ -353,7 +351,9 @@ void AOTCodeCache::Config::record() {
     _flags |= restrictContendedPadding;
   }
   _compressedOopShift    = CompressedOops::shift();
+  _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
+  _compressedKlassBase   = CompressedKlassPointers::base();
   _contendedPaddingWidth = ContendedPaddingWidth;
   _objectAlignment       = ObjectAlignmentInBytes;
   _gc                    = (uint)Universe::heap()->kind();
@@ -408,8 +408,16 @@ bool AOTCodeCache::Config::verify() const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
+  if (_compressedOopBase != CompressedOops::base()) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::base() = %p vs current %p", _compressedOopBase, CompressedOops::base());
+    return false;
+  }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
+    return false;
+  }
+  if (_compressedKlassBase != CompressedKlassPointers::base()) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::base() = %p vs current %p", _compressedKlassBase, CompressedKlassPointers::base());
     return false;
   }
   if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
@@ -1320,12 +1328,6 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #endif // ZERO
 
-  // addresses of fields in AOT runtime constants area
-  address* p = AOTRuntimeConstants::field_addresses_list();
-  while (*p != nullptr) {
-    SET_ADDRESS(_extrs, *p++);
-  }
-
   _extrs_complete = true;
   log_debug(aot, codecache, init)("External addresses recorded");
 }
@@ -1689,17 +1691,3 @@ void AOTCodeCache::print_on(outputStream* st) {
     st->print_cr("failed to map code cache");
   }
 }
-
-void AOTRuntimeConstants::initialize_from_runtime() {
-  if (UseCompressedClassPointers) {
-    _aot_runtime_constants._ccp_base = CompressedKlassPointers::base();
-  }
-}
-
-AOTRuntimeConstants AOTRuntimeConstants::_aot_runtime_constants;
-
-address AOTRuntimeConstants::_field_addresses_list[] = {
-  ccp_base_address(),
-  nullptr
-};
-
