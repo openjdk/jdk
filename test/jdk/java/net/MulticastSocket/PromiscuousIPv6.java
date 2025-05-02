@@ -25,6 +25,8 @@
  * @test
  * @bug 8215294
  * @requires os.family == "linux" & !(os.version ~= "3\\.10\\.0.*")
+ * @comment This test should only be run on Linux.
+ *          The behavior under test is known NOT to work on Linux 3.10.0* kernels.
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        PromiscuousIPv6
