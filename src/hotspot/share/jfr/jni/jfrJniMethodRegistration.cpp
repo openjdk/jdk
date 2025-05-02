@@ -83,6 +83,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getUnloadedEventClassCount", (char*)"()J", (void*)jfr_get_unloaded_event_classes_count,
       (char*)"setMiscellaneous", (char*)"(JJ)V", (void*)jfr_set_miscellaneous,
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
+      (char*)"setCPUThrottle", (char*)"(DZ)Z", (void*)jfr_set_cpu_throttle,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,
       (char*)"exclude", (char*)"(Ljava/lang/Thread;)V", (void*)jfr_exclude_thread,

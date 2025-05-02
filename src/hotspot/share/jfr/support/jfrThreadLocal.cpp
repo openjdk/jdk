@@ -540,3 +540,84 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
   tl->_dcmd_arena = arena;
   return arena;
 }
+
+#ifdef LINUX
+
+void JfrThreadLocal::set_timerid(timer_t timer) {
+  _has_cpu_timer = true;
+  _cpu_timer = timer;
+}
+
+void JfrThreadLocal::unset_timerid() {
+  _has_cpu_timer = false;
+}
+
+timer_t JfrThreadLocal::timerid() const {
+  return _cpu_timer;
+}
+
+bool JfrThreadLocal::has_timerid() const {
+  return _has_cpu_timer;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
+}
+
+bool JfrThreadLocal::is_any_cpu_time_jfr_queue_lock_aquired() {
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) != UNLOCKED;
+}
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_out_of_safepoint_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, OUT_OF_SAFEPOINT) == UNLOCKED;
+}
+
+void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+}
+
+void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
+  Atomic::release_store(&_cpu_time_jfr_locked, UNLOCKED);
+}
+
+void JfrThreadLocal::set_has_cpu_time_jfr_events(bool has_events) {
+  Atomic::release_store(&_has_cpu_time_jfr_events, has_events);
+}
+
+bool JfrThreadLocal::has_cpu_time_jfr_events() {
+  return Atomic::load_acquire(&_has_cpu_time_jfr_events);
+}
+
+JfrCPUTimeTraceStack& JfrThreadLocal::cpu_time_jfr_stack() {
+  return _cpu_time_jfr_stack;
+}
+
+void JfrThreadLocal::increment_cpu_time_lost_samples() {
+  Atomic::inc(&_cpu_time_lost_samples);
+}
+
+u4 JfrThreadLocal::get_and_reset_cpu_time_lost_samples() {
+  u4 lost_samples = Atomic::load_acquire(&_cpu_time_lost_samples);
+  int count = 0;
+  while (Atomic::cmpxchg(&_cpu_time_lost_samples, lost_samples, (u4)0) != lost_samples) {
+    lost_samples = Atomic::load_acquire(&_cpu_time_lost_samples);
+  }
+  return lost_samples;
+}
+
+void JfrThreadLocal::set_wants_cpu_time_out_of_safepoint_recording(bool wants) {
+  Atomic::release_store(&_wants_cpu_time_out_of_safepoint_recording, wants);
+}
+
+bool JfrThreadLocal::wants_cpu_time_out_of_safepoint_recording() {
+  return Atomic::load(&_wants_cpu_time_out_of_safepoint_recording);
+}
+#endif

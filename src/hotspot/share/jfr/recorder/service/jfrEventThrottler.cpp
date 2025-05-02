@@ -61,6 +61,9 @@ void JfrEventThrottler::destroy() {
 // When introducing additional throttlers, also add a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
+  if (event_id == JfrCPUTimeSampleEvent) {
+    return nullptr;
+  }
   assert(event_id == JfrObjectAllocationSampleEvent, "Event type has an unconfigured throttler");
   return event_id == JfrObjectAllocationSampleEvent ? _throttler : nullptr;
 }

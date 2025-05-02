@@ -139,18 +139,6 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
   write_frame(cpw, _methodid, _line, _bci, _type);
 }
 
-class JfrVframeStream : public vframeStreamCommon {
- private:
-  bool _vthread;
-  const ContinuationEntry* _cont_entry;
-  bool _async_mode;
-  bool step_to_sender();
-  void next_frame();
- public:
-  JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode);
-  void next_vframe();
-};
-
 static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
   // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
   //       and load barriers. This code is run while generating stack traces for
@@ -163,11 +151,11 @@ static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
       : RegisterMap::WalkContinuation::include;
 }
 
-JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
+JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode, bool allow_continuation_walk) :
   vframeStreamCommon(jt,
                      RegisterMap::UpdateMap::skip,
                      RegisterMap::ProcessFrames::skip,
-                     walk_continuation(jt)),
+                     allow_continuation_walk ? walk_continuation(jt) : RegisterMap::WalkContinuation::skip),
     _vthread(JfrThreadLocal::is_vthread(jt)),
     _cont_entry(_vthread ? jt->last_continuation() : nullptr),
     _async_mode(async_mode) {
@@ -245,7 +233,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   // we have suspended could be the holder of the malloc lock. If there is no more available space, the attempt is aborted.
   const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(current_thread);
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
-  JfrVframeStream vfs(jt, frame, false, true);
+  JfrVframeStream vfs(jt, frame, false, true, true);
   u4 count = 0;
   _reached_root = true;
   _hash = 1;
@@ -296,7 +284,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, int64_t
   // This is because RegisterMap uses Handles to support continuations.
   ResetNoHandleMark rnhm;
   HandleMark hm(jt);
-  JfrVframeStream vfs(jt, frame, false, false);
+  JfrVframeStream vfs(jt, frame, false, false, true);
   u4 count = 0;
   _reached_root = true;
   for (int i = 0; i < skip; ++i) {

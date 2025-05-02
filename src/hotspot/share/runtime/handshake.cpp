@@ -45,6 +45,10 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 class HandshakeOperation : public CHeapObj<mtThread> {
   friend class HandshakeState;
  protected:
@@ -508,6 +512,19 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   }
 }
 
+bool HandshakeState::can_run() {
+  return has_operation() || _handshakee->has_cpu_time_jfr_events();
+}
+
+
+bool HandshakeState::can_run(bool allow_suspend, bool check_async_exception) {
+  return has_operation(allow_suspend, check_async_exception) || _handshakee->has_cpu_time_jfr_events();
+}
+
+bool HandshakeState::has_operation() {
+  return !_queue.is_empty();
+}
+
 bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
   // We must not block here as that could lead to deadlocks if we already hold an
   // "external" mutex. If the try_lock fails then we assume that there is an operation
@@ -519,7 +536,7 @@ bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exceptio
     ret = get_op_for_self(allow_suspend, check_async_exception) != nullptr;
     _lock.unlock();
   }
-  return ret;
+  return ret || _handshakee->has_cpu_time_jfr_events();
 }
 
 bool HandshakeState::has_async_exception_operation() {
@@ -568,6 +585,12 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   // Separate all the writes above for other threads reading state
   // set by this thread in case the operation is ThreadSuspendHandshake.
   OrderAccess::fence();
+
+#if INCLUDE_JFR
+  if (_handshakee->has_cpu_time_jfr_events()) {
+    Jfr::on_safepoint(_handshakee);
+  }
+#endif
 
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are

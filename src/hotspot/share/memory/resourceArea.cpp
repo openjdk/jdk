@@ -44,14 +44,18 @@ ResourceMark::ResourceMark(ResourceArea* area, Thread* thread) :
 }
 
 void ResourceArea::verify_has_resource_mark() {
-  if (_nesting <= 0 && !VMError::is_error_reported()) {
+  if ((_nesting <= 0 || _no_resource_mark_nesting > 0) && !VMError::is_error_reported()) {
     // Only report the first occurrence of an allocating thread that
     // is missing a ResourceMark, to avoid possible recursive errors
     // in error handling.
     static volatile bool reported = false;
     if (!Atomic::load(&reported)) {
       if (!Atomic::cmpxchg(&reported, false, true)) {
-        fatal("memory leak: allocating without ResourceMark");
+        if (_nesting <= 0) {
+          fatal("memory leak: allocating without ResourceMark");
+        } else {
+          fatal("memory leak: allocating with NoResourceMark");
+        }
       }
     }
   }
@@ -77,3 +81,20 @@ extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_s
 extern void resource_free_bytes( Thread* thread, char *old, size_t size ) {
   thread->resource_area()->Afree(old, size);
 }
+
+#ifdef ASSERT
+
+NoResourceMark::NoResourceMark() {
+  ResourceArea* area = Thread::current()->resource_area();
+  area->_no_resource_mark_nesting++;
+  assert(area->_no_resource_mark_nesting > 0, "must stack allocate NoResourceMark" );
+}
+
+
+NoResourceMark::~NoResourceMark() {
+  ResourceArea* area = Thread::current()->resource_area();
+  assert(area->_no_resource_mark_nesting > 0, "must stack allocate NoResourceMark" );
+  area->_no_resource_mark_nesting--;
+}
+
+#endif // ASSERT

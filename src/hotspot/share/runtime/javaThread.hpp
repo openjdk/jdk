@@ -1318,6 +1318,25 @@ public:
   static bool has_oop_handles_to_release() {
     return _oop_handle_list != nullptr;
   }
+
+ public:
+#if INCLUDE_JFR && defined(LINUX)
+  bool has_cpu_time_jfr_events() {
+    return jfr_thread_local() != nullptr && jfr_thread_local()->has_cpu_time_jfr_events();
+  }
+
+  bool is_jfr_sampling() const {
+    return jfr_thread_local() != nullptr && jfr_thread_local()->is_any_cpu_time_jfr_queue_lock_aquired();
+  }
+#else
+  bool has_cpu_time_jfr_events() {
+    return false;
+  }
+
+  bool is_jfr_sampling() const {
+    return false;
+  }
+#endif
 };
 
 inline JavaThread* JavaThread::current_or_null() {
