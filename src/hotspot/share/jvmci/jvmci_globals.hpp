@@ -184,8 +184,8 @@ class fileStream;
   NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
           "Enables aggressive reboxing of vectors"))                        \
                                                                             \
-  NOT_COMPILER2(product(bool, UseVectorStubs, false, EXPERIMENTAL,          \
-          "Use stubs for vector transcendental operations"))                \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
 
 // end of JVMCI_FLAGS
 
