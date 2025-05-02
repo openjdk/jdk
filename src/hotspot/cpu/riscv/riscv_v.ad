@@ -651,6 +651,144 @@ instruct vsubL_vx_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// -------- vector saturating integer operations
+
+// vector saturating signed integer addition
+
+instruct vsadd(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vsadd $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsadd_vv(as_VectorRegister($dst$$reg),
+                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating unsigned integer addition
+
+instruct vsaddu(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vsaddu $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsaddu_vv(as_VectorRegister($dst$$reg),
+                 as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating signed integer addition (predicated)
+
+instruct vsadd_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
+  predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src (SaturatingAddV (Binary dst_src src1) v0));
+  ins_cost(VEC_COST);
+  format %{ "vsadd_masked $dst_src, $dst_src, $src1" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsadd_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+                as_VectorRegister($src1$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating unsigned integer addition (predicated)
+
+instruct vsaddu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
+  predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src (SaturatingAddV (Binary dst_src src1) v0));
+  ins_cost(VEC_COST);
+  format %{ "vsaddu_masked $dst_src, $dst_src, $src1" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vsaddu_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+                 as_VectorRegister($src1$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating signed integer subtraction
+
+instruct vssub(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingSubV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vssub $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vssub_vv(as_VectorRegister($dst$$reg),
+                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating unsigned integer subtraction
+
+instruct vssubu(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingSubV src1 src2));
+  ins_cost(VEC_COST);
+  format %{ "vssubu $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vssubu_vv(as_VectorRegister($dst$$reg),
+                 as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating signed integer subtraction (predicated)
+
+instruct vssub_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
+  predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src (SaturatingSubV (Binary dst_src src1) v0));
+  ins_cost(VEC_COST);
+  format %{ "vssub_masked $dst_src, $dst_src, $src1" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vssub_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+                as_VectorRegister($src1$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector saturating unsigned integer subtraction (predicated)
+
+instruct vssubu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
+  predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src (SaturatingSubV (Binary dst_src src1) v0));
+  ins_cost(VEC_COST);
+  format %{ "vssubu_masked $dst_src, $dst_src, $src1" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vssubu_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
+                 as_VectorRegister($src1$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector and
 
 instruct vand(vReg dst, vReg src1, vReg src2) %{
