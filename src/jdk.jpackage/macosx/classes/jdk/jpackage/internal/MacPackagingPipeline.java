@@ -338,25 +338,31 @@ final class MacPackagingPipeline {
 
     private static void writeCFBundleDocumentTypes(XMLStreamWriter xml,
             MacApplication app) throws XMLStreamException, IOException {
-        writeKey(xml, "CFBundleDocumentTypes");
-        for (var fa : app.fileAssociations().toList()) {
-            writeArray(xml, toXmlConsumer(() -> {
-                writeDict(xml, toXmlConsumer(() -> {
-                    addFaToCFBundleDocumentTypes(xml, app, (MacFileAssociation) fa);
+        final var fas = app.fileAssociations().toList();
+        if (!fas.isEmpty()) {
+            writeKey(xml, "CFBundleDocumentTypes");
+            for (var fa : fas) {
+                writeArray(xml, toXmlConsumer(() -> {
+                    writeDict(xml, toXmlConsumer(() -> {
+                        addFaToCFBundleDocumentTypes(xml, app, (MacFileAssociation) fa);
+                    }));
                 }));
-            }));
+            }
         }
     }
 
     private static void writeUTExportedTypeDeclarations(XMLStreamWriter xml,
             MacApplication app) throws XMLStreamException, IOException {
-        writeKey(xml, "UTExportedTypeDeclarations");
-        for (var fa : app.fileAssociations().toList()) {
-            writeArray(xml, toXmlConsumer(() -> {
-                writeDict(xml, toXmlConsumer(() -> {
-                    addFaToUTExportedTypeDeclarations(xml, app, (MacFileAssociation) fa);
+        final var fas = app.fileAssociations().toList();
+        if (!fas.isEmpty()) {
+            writeKey(xml, "UTExportedTypeDeclarations");
+            for (var fa : fas) {
+                writeArray(xml, toXmlConsumer(() -> {
+                    writeDict(xml, toXmlConsumer(() -> {
+                        addFaToUTExportedTypeDeclarations(xml, app, (MacFileAssociation) fa);
+                    }));
                 }));
-            }));
+            }
         }
     }
 
