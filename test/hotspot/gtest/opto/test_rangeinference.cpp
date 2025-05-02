@@ -107,7 +107,7 @@ static void test_canonicalize_constraints_exhaustive() {
 
 template <class S, class U>
 static void test_canonicalize_constraints_simple() {
-  constexpr int parameters = 10;
+  constexpr int parameters = 1000;
   for (int i = 0; i < parameters; i++) {
     S a = uniform_random<U>();
     S b = uniform_random<U>();

@@ -25,6 +25,14 @@
 #include "utilities/intn_t.hpp"
 #include "unittest.hpp"
 
+// Sanity tests for off-by-one errors
+static_assert(intn_t<1>::min == -1 && intn_t<1>::max == 0, "");
+static_assert(intn_t<2>::min == -2 && intn_t<2>::max == 1, "");
+static_assert(intn_t<3>::min == -4 && intn_t<3>::max == 3, "");
+static_assert(uintn_t<1>::max == 1, "");
+static_assert(uintn_t<2>::max == 3, "");
+static_assert(uintn_t<3>::max == 7, "");
+
 template <unsigned int nbits>
 static void test_intn_t() {
   static_assert(std::numeric_limits<intn_t<nbits>>::min() <= intn_t<nbits>(-1) &&
