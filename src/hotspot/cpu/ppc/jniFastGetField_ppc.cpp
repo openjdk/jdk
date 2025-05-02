@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ ld(Rcounter, counter_offs, Rcounter_addr);
   __ andi_(R0, Rcounter, 1);
-  __ bne(CCR0, slow);
+  __ bne(CR0, slow);
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     // Field may be volatile.
@@ -91,8 +91,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     int fac_offs = __ load_const_optimized(Rtmp, JvmtiExport::get_field_access_count_addr(),
                                            R0, true);
     __ lwa(Rtmp, fac_offs, Rtmp);
-    __ cmpwi(CCR0, Rtmp, 0);
-    __ bne(CCR0, slow);
+    __ cmpwi(CR0, Rtmp, 0);
+    __ bne(CR0, slow);
   }
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -118,8 +118,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // Order preceding load(s) wrt. succeeding check (LoadStore for volatile field).
   if (is_fp) {
     Label next;
-    __ fcmpu(CCR0, F1_RET, F1_RET);
-    __ bne(CCR0, next);
+    __ fcmpu(CR0, F1_RET, F1_RET);
+    __ bne(CR0, next);
     __ bind(next);
   } else {
     __ twi_0(Rtmp);
@@ -127,8 +127,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ isync();
 
   __ ld(R0, counter_offs, Rcounter_addr);
-  __ cmpd(CCR0, R0, Rcounter);
-  __ bne(CCR0, slow);
+  __ cmpd(CR0, R0, Rcounter);
+  __ bne(CR0, slow);
 
   if (!is_fp) {
     __ mr(R3_RET, Rtmp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ public:
   void out_of_memory();
 
   // Heap metrics
-  size_t initial_capacity() const;
   size_t min_capacity() const;
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
@@ -99,13 +98,13 @@ public:
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
   void keep_alive(oop obj);
-  void mark_flush_and_free(Thread* thread);
+  void mark_flush(Thread* thread);
 
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page, bool allow_defragment);
-  size_t free_empty_pages(const ZArray<ZPage*>* pages);
+  void free_page(ZPage* page);
+  size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
 
   // Object allocation
   bool is_alloc_stalling() const;
@@ -131,8 +130,10 @@ public:
   ZServiceabilityCounters* serviceability_counters();
 
   // Printing
-  void print_on(outputStream* st) const;
-  void print_extended_on(outputStream* st) const;
+  void print_usage_on(outputStream* st) const;
+  void print_gc_on(outputStream* st) const;
+  void print_globals_on(outputStream* st) const;
+  void print_page_table_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
   bool print_location(outputStream* st, zaddress addr) const;
   bool print_location(outputStream* st, zpointer ptr) const;

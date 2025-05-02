@@ -1447,6 +1447,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         the potential leaking object was allocated is included in the
         information collected.
 
+    `report-on-exit=`*identifier*
+    :   Specifies the name of the view to display when the Java Virtual Machine
+        (JVM) shuts down. This option is not available if the disk option is set
+        to false. For a list of available views, see `jfr help view`. By default,
+        no report is generated.
+
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
         By default, the `default.jfc` file is used, which is located in
@@ -3357,16 +3363,18 @@ getting overwritten.
 ### -Xlog Output Mode
 
 By default logging messages are output synchronously - each log message is written to
-the designated output when the logging call is made. But you can instead use asynchronous
+the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async`
+`-Xlog:async[:[stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
 and a standalone thread is responsible for flushing them to the corresponding outputs. The
-intermediate buffer is bounded and on buffer exhaustion the enqueuing message is discarded.
-Log entry write operations are guaranteed non-blocking.
+intermediate buffer is bounded. On buffer exhaustion the enqueuing message is either discarded (`async:drop`),
+or logging threads are stalled until the flushing thread catches up (`async:stall`).
+If no specific mode is chosen, then `async:drop` is chosen by default.
+Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
 
 The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to
@@ -3978,12 +3986,12 @@ The values for these options (if specified), should be identical when creating a
 CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
 partially or completely disabled, leading to lower performance.
 
-- If the -XX:+AOTClassLinking options *was* used during CDS archive creation, the CDS archive
+- If the `AOTClassLinking` option (see below) *was* enabled during CDS archive creation, the CDS archive
   cannot be used, and the following error message is printed:
 
   `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
 
-- If the -XX:+AOTClassLinking options *was not* used during CDS archive creation, the CDS archive
+- If the `AOTClassLinking` option *was not* enabled during CDS archive creation, the CDS archive
   can be used, but the "archived module graph" feature will be disabled. This can lead to increased
   start-up time.
 
@@ -4011,34 +4019,34 @@ application is executed. One example is Class Data Sharing (CDS), as described a
 that parses classes ahead of time. AOT optimizations can improve the start-up and
 warm-up performance of Java applications.
 
-The Ahead-of-Time Cache (AOTCache) is a container introduced in JDK 24 for
-storing artifacts produced by AOT optimizations. The AOTCache currently contains
-Java classes and heap objects. The plans is to include other types of artifacts,
-such as execution profiles and compiled methods, in future JDK releases.
+The Ahead-of-Time Cache (AOT cache) is a container introduced in JDK 24 for
+storing artifacts produced by AOT optimizations. The AOT cache currently contains
+Java classes and heap objects. In future JDK releases, the AOT cache may contain additional
+artifacts, such as execution profiles and compiled methods.
 
-An AOTCache is specific to a combination of the following:
+An AOT cache is specific to a combination of the following:
 
 -   A particular application (as expressed by `-classpath`, `-jar`, or `--module-path`.)
 -   A particular JDK release.
 -   A particular OS and CPU architecture.
 
-If any of the above changes, you must recreate the AOTCache.
+If any of the above changes, you must recreate the AOT cache.
 
-The deployment of the AOTCache is divided into three phases:
+The deployment of the AOT cache is divided into three phases:
 
 -   **Training:** We execute the application with a representative work-load
     to gather statistical data that tell us what artifacts should be included
-    into the AOTCache. The data are saved in an *AOT Configuration* file.
+    into the AOT cache. The data are saved in an *AOT Configuration* file.
 
--   **Assembly:** We use the AOT Configuration file to produce an AOTCache.
+-   **Assembly:** We use the AOT Configuration file to produce an AOT cache.
 
--   **Production:** We execute the application with the AOTCache for better
+-   **Production:** We execute the application with the AOT cache for better
     start-up and warm-up performance.
 
-The AOTCache can be used with the following command-line options:
+The AOT cache can be used with the following command-line options:
 
 `-XX:AOTCache:=`*cachefile*
-:   Specifies the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
+:   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
     then `AOTMode` will be given the value of `auto`.
 
@@ -4050,7 +4058,7 @@ The AOTCache can be used with the following command-line options:
 `-XX:+AOTMode:=`*mode*
 :   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
 
--   `off`: AOTCache is not used.
+-   `off`: no AOT cache is used.
 
 -   `record`: Execute the application in the Training phase.
     `-XX:AOTConfiguration=`*configfile* must be specified. The JVM gathers
@@ -4063,49 +4071,54 @@ The AOTCache can be used with the following command-line options:
 
 -   `auto` or `on`: These modes should be used in the Production phase.
      If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
-     load *cachefile* as the AOTCache. Otherwise, the JVM tries to load
-     a *default CDS archive* from the JDK installation directory as the AOTCache.
+     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
+     a *default CDS archive* from the JDK installation directory as the AOT cache.
 
-     The loading of an AOTCache can fail for a number of reasons:
+     The loading of an AOT cache can fail for a number of reasons:
 
-     - You are trying to use the AOTCache with an incompatible application, JDK release,
+     - You are trying to use the AOT cache with an incompatible application, JDK release,
        or OS/CPU.
 
-     - The specified AOTCache file does not exist or is not accessible.
+     - The specified *cachefile* does not exist or is not accessible.
 
      - Incompatible JVM options are used (for example, certain JVMTI options).
 
-       Since AOTCache is an optimization feature, there's no guarantee that it will be
+       Since the AOT cache is an optimization feature, there's no guarantee that it will be
        compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
-       section **Consistency of training and subsequent runs** for a representitive
-       list of scenarios that may be incompatible with the AOTCache for JDK 24.
+       section **Consistency of training and subsequent runs** for a representative
+       list of scenarios that may be incompatible with the AOT cache for JDK 24.
 
        These scenarios usually involve arbitrary modification of classes for diagnostic
        purposes and are typically not relevant for production environments.
 
-     When the AOTCache fails to load:
+     When the AOT cache fails to load:
 
      - If `AOTMode` is `auto`, the JVM will continue execution without using the
-       AOTCache. This is the recommended mode for production environments, especially
+       AOT cache. This is the recommended mode for production environments, especially
        when you may not have complete control of the command-line (e.g., your
        application's launch script may allow users to inject options to the command-line).
        This allows your application to function correctly, although sometimes it may not
-       benefit from the AOTCache.
+       benefit from the AOT cache.
 
      - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
-       options are compatible with the AOTCache. An alternative is to run your application with
-       `-XX:AOTMode=auto -Xlog:cds` to see if the AOTCache can be used or not.
+       options are compatible with the AOT cache. An alternative is to run your application with
+       `-XX:AOTMode=auto -Xlog:cds` to see if the AOT cache can be used or not.
 
 `-XX:+AOTClassLinking`
-:   If this options is specified with `-XX:AOTMode=create`, the JVM will perform more
-    advanced optimizations (such as ahead-of-time resolution of invokedynamic instructions)
-    when creating the AOTCache. As a result, the appication will see further improvements
-    in start-up and warm-up performance.
-
-    Using `-XX:+AOTClassLinking` will impose further restrictions on command-line options
-    that can be used in the Production phase. Please see [JEP 483](https://openjdk.org/jeps/483) for a
+:   If this option is enabled, the JVM will perform more advanced optimizations (such
+    as ahead-of-time resolution of invokedynamic instructions)
+    when creating the AOT cache. As a result, the application will see further improvements
+    in start-up and warm-up performance. However, an AOT cache created with this option
+    cannot be used when certain command-line parameters are specified in
+    the Production phase. Please see [JEP 483](https://openjdk.org/jeps/483) for a
     detailed discussion of `-XX:+AOTClassLinking` and its restrictions.
+
+    When `-XX:AOTMode` *is used* in the command-line, `AOTClassLinking` is automatically
+    enabled. To disable it, you must explicitly pass the `-XX:-AOTClassLinking` option.
+
+    When `-XX:AOTMode` *is not used* in the command-line,  `AOTClassLinking` is disabled by
+    default to provide full compatibility with traditional CDS options such as `-Xshare:dump.
 
 
 ## Performance Tuning Examples

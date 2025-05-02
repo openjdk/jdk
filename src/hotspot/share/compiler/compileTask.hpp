@@ -199,6 +199,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
+  CompileReason compile_reason()                 { return _compile_reason; }
+
   AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
@@ -236,6 +238,9 @@ public:
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
 
+  /**
+   * @deprecated Please rely on Compile::inline_printer. Do not directly write inlining information to tty.
+   */
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
 
   void         print_tty();
@@ -253,7 +258,11 @@ public:
 
   bool         check_break_at_flags();
 
+  static void print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci);
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inline_inner_method_info(outputStream* st, ciMethod* method);
+  static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
+
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }

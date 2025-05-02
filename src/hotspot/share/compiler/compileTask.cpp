@@ -23,14 +23,15 @@
  */
 
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -284,21 +285,6 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   }
 }
 
-void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
-  //         1234567
-  st->print("        ");     // print timestamp
-  //         1234
-  st->print("     ");        // print compilation number
-  //         %s!bn
-  st->print("      ");       // print method attributes
-  if (TieredCompilation) {
-    st->print("  ");
-  }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
-}
-
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
@@ -412,45 +398,76 @@ bool CompileTask::check_break_at_flags() {
 // ------------------------------------------------------------------
 // CompileTask::print_inlining
 void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
+  print_inlining_header(st, method, inline_level, bci);
+  print_inlining_inner_message(st, result, msg);
+  st->cr();
+}
+
+void CompileTask::print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci) {
   //         1234567
-  st->print("        ");     // print timestamp
+  st->print("        "); // print timestamp
   //         1234
-  st->print("     ");        // print compilation number
+  st->print("     "); // print compilation number
 
   // method attributes
   if (method->is_loaded()) {
-    const char sync_char      = method->is_synchronized()        ? 's' : ' ';
+    const char sync_char = method->is_synchronized() ? 's' : ' ';
     const char exception_char = method->has_exception_handlers() ? '!' : ' ';
-    const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
+    const char monitors_char = method->has_monitor_bytecodes() ? 'm' : ' ';
 
     // print method attributes
     st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
   } else {
     //         %s!bn
-    st->print("      ");     // print method attributes
+    st->print("      "); // print method attributes
   }
 
   if (TieredCompilation) {
     st->print("  ");
   }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
+  st->print("     "); // more indent
+  st->print("    ");  // initial inlining indent
 
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
+  for (int i = 0; i < inline_level; i++) {
+    st->print("  ");
+  }
 
-  st->print("@ %d  ", bci);  // print bci
+  st->print("@ %d  ", bci); // print bci
+  print_inline_inner_method_info(st, method);
+}
+
+void CompileTask::print_inline_inner_method_info(outputStream* st, ciMethod* method) {
   method->print_short_name(st);
-  if (method->is_loaded())
+  if (method->is_loaded()) {
     st->print(" (%d bytes)", method->code_size());
-  else
+  } else {
     st->print(" (not loaded)");
+  }
+}
 
+void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
+  //         1234567
+  st->print("        "); // print timestamp
+  //         1234
+  st->print("     "); // print compilation number
+  //         %s!bn
+  st->print("      "); // print method attributes
+  if (TieredCompilation) {
+    st->print("  ");
+  }
+  st->print("     "); // more indent
+  st->print("    ");  // initial inlining indent
+  for (int i = 0; i < inline_level; i++) {
+    st->print("  ");
+  }
+}
+
+void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg) {
   if (msg != nullptr) {
     st->print("   %s%s", result == InliningResult::SUCCESS ? "" : "failed to inline: ", msg);
   } else if (result == InliningResult::FAILURE) {
     st->print("   %s", "failed to inline");
   }
-  st->cr();
 }
 
 void CompileTask::print_ul(const char* msg){

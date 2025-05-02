@@ -288,7 +288,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 template <typename Function>
 void ConstantPool::iterate_archivable_resolved_references(Function function) {
   objArrayOop rr = resolved_references();
-  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_invokedynamic()) {
+  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_method_handles()) {
     Array<ResolvedIndyEntry>* indy_entries = cache()->resolved_indy_entries();
     if (indy_entries != nullptr) {
       for (int i = 0; i < indy_entries->length(); i++) {
@@ -454,6 +454,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       }
     }
   }
+
+  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
+    objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
+    HeapShared::add_scratch_resolved_references(this, scratch_references);
+  }
 }
 
 void ConstantPool::remove_unshareable_info() {
@@ -471,9 +476,23 @@ void ConstantPool::remove_unshareable_info() {
     return;
   }
 
+  bool update_resolved_reference = true;
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    InstanceKlass* src_holder = src_cp->pool_holder();
+    if (src_holder->is_shared_unregistered_class()) {
+      // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
+      // is already saved during the training run.
+      precond(!src_holder->is_loaded());
+      precond(resolved_reference_length() >= 0);
+      precond(resolved_references() == nullptr);
+      update_resolved_reference = false;
+    }
+  }
+
   // resolved_references(): remember its length. If it cannot be restored
   // from the archived heap objects at run time, we need to dynamically allocate it.
-  if (cache() != nullptr) {
+  if (update_resolved_reference && cache() != nullptr) {
     set_resolved_reference_length(
         resolved_references() != nullptr ? resolved_references()->length() : 0);
     set_resolved_references(OopHandle());
@@ -570,8 +589,9 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
 
   if (!can_archive) {
     int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
-    resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    // This might be at a safepoint but do this in the right order.
     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+    resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
   LogStreamHandle(Trace, cds, resolve) log;
@@ -650,9 +670,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // the unresolved_klasses() array.
   if (this_cp->tag_at(cp_index).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    if (klass != nullptr) {
-      return klass;
-    }
+    assert(klass != nullptr, "must be resolved");
+    return klass;
   }
 
   // This tag doesn't change back to unresolved class unless at a safepoint.
@@ -705,12 +724,12 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     trace_class_resolution(this_cp, k);
   }
 
-  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
+  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
+  Atomic::release_store(adr, k);
 
   jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
                                   (jbyte)JVM_CONSTANT_UnresolvedClass,
@@ -719,7 +738,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    Atomic::store(adr, (Klass*)nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -739,7 +758,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 
   if (this_cp->tag_at(which).is_klass()) {
     Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(k != nullptr, "should be resolved");
+    assert(k != nullptr, "must be resolved");
     return k;
   } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
     return nullptr;
@@ -1128,16 +1147,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // don't trigger resolution if the constant might need it
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
-    {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
-        (*status_return) = false;
-        return nullptr;
-      }
-      // the klass is waiting in the CP; go get it
+      assert(this_cp->resolved_klass_at(cp_index) != nullptr, "must be resolved");
       break;
-    }
     case JVM_CONSTANT_String:
     case JVM_CONSTANT_Integer:
     case JVM_CONSTANT_Float:

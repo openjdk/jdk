@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
  * @test
  * @summary Test passing of a structure which contains a double with 4 Byte alignment on AIX.
  *
- * @run testng/othervm --enable-native-access=ALL-UNNAMED Test4BAlignedDouble
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED Test4BAlignedDouble
  */
 
 import java.lang.foreign.*;

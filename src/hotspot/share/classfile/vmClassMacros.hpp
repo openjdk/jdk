@@ -123,7 +123,6 @@
   do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
   do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
   do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \

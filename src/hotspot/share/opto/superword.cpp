@@ -33,7 +33,7 @@
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
-  _arena(mtCompiler),
+  _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer
@@ -158,7 +158,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     // Ignore nodes with non-primitive type.
     BasicType bt;
     if (n->is_Mem()) {
-      bt = n->as_Mem()->memory_type();
+      bt = n->as_Mem()->value_basic_type();
     } else {
       bt = n->bottom_type()->basic_type();
     }
@@ -191,7 +191,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       BasicType bt;
       Node* n = lpt->_body.at(i);
       if (n->is_Mem()) {
-        bt = n->as_Mem()->memory_type();
+        bt = n->as_Mem()->value_basic_type();
       } else {
         bt = n->bottom_type()->basic_type();
       }
@@ -564,7 +564,7 @@ void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) const {
     const VPointer& p = vpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
-        is_java_primitive(mem->memory_type())) {
+        is_java_primitive(mem->value_basic_type())) {
       memops.append(MemOp(mem, &p, original_index++));
     }
   });
@@ -764,8 +764,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
   if (!in_bb(s1)    || !in_bb(s2))    return false;
 
   // Do not use superword for non-primitives
-  if (!is_java_primitive(s1->as_Mem()->memory_type()) ||
-      !is_java_primitive(s2->as_Mem()->memory_type())) {
+  if (!is_java_primitive(s1->as_Mem()->value_basic_type()) ||
+      !is_java_primitive(s2->as_Mem()->value_basic_type())) {
     return false;
   }
 
@@ -1484,7 +1484,8 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
                          pack->size(),
                          pre_end->init_trip(),
                          pre_end->stride_con(),
-                         iv_stride()
+                         iv_stride(),
+                         _vloop.are_speculative_checks_possible()
                          DEBUG_ONLY(COMMA is_trace_align_vector()));
   return solver.solve();
 }
@@ -1896,6 +1897,7 @@ bool SuperWord::schedule_and_apply() const {
   VTransformTrace trace(_vloop.vtrace(),
                         is_trace_superword_rejections(),
                         is_trace_align_vector(),
+                        _vloop.is_trace_speculative_runtime_checks(),
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
@@ -1938,8 +1940,11 @@ void VTransform::apply() {
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
+  apply_speculative_runtime_checks();
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
+
   apply_vectorization();
-  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl());
+  C->print_method(PHASE_AUTO_VECTORIZATION5_AFTER_APPLY, 4, cl());
 }
 
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
@@ -2586,14 +2591,15 @@ void VLoopTypes::compute_vector_element_type() {
 
 // Smallest type containing range of values
 const Type* VLoopTypes::container_type(Node* n) const {
+  int opc = n->Opcode();
   if (n->is_Mem()) {
-    BasicType bt = n->as_Mem()->memory_type();
+    BasicType bt = n->as_Mem()->value_basic_type();
     if (n->is_Store() && (bt == T_CHAR)) {
       // Use T_SHORT type instead of T_CHAR for stored values because any
       // preceding arithmetic operation extends values to signed Int.
       bt = T_SHORT;
     }
-    if (n->Opcode() == Op_LoadUB) {
+    if (opc == Op_LoadUB) {
       // Adjust type for unsigned byte loads, it is important for right shifts.
       // T_BOOLEAN is used because there is no basic type representing type
       // TypeInt::UBYTE. Use of T_BOOLEAN for vectors is fine because only
@@ -2607,7 +2613,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
     // Float to half float conversion may be succeeded by a conversion from
     // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
-    if (n->Opcode() == Op_ConvF2HF) {
+    if (opc == Op_ConvF2HF || opc == Op_ReinterpretHF2S) {
       return TypeInt::SHORT;
     }
     // A narrow type of arithmetic operations will be determined by

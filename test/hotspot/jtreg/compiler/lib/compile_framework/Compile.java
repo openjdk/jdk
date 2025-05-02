@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
 import jdk.test.lib.JDKToolFinder;
@@ -47,7 +48,7 @@ class Compile {
      * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
      * then compile them to class-files which are stored in {@code classesDir}.
      */
-    public static void compileJavaSources(List<SourceCode> javaSources, Path sourceDir, Path classesDir) {
+    public static void compileJavaSources(List<SourceCode> javaSources, Path sourceDir, Path classesDir, String[] javacFlags) {
         if (javaSources.isEmpty()) {
             Utils.printlnVerbose("No java sources to compile.");
             return;
@@ -55,7 +56,7 @@ class Compile {
         Utils.printlnVerbose("Compiling Java sources: " + javaSources.size());
 
         List<Path> javaFilePaths = writeSourcesToFiles(javaSources, sourceDir);
-        compileJavaFiles(javaFilePaths, classesDir);
+        compileJavaFiles(javaFilePaths, classesDir, javacFlags);
         Utils.printlnVerbose("Java sources compiled.");
     }
 
@@ -63,10 +64,13 @@ class Compile {
      * Compile a list of files (i.e. {@code paths}) using javac and store
      * them in {@code classesDir}.
      */
-    private static void compileJavaFiles(List<Path> paths, Path classesDir) {
+    private static void compileJavaFiles(List<Path> paths, Path classesDir, String[] javacFlags) {
         List<String> command = new ArrayList<>();
 
         command.add(JAVAC_PATH);
+        if (javacFlags != null) {
+            command.addAll(Arrays.asList(javacFlags));
+        }
         command.add("-classpath");
         // Note: the backslashes from windows paths must be escaped!
         command.add(Utils.getEscapedClassPathAndClassesDir(classesDir));
@@ -192,8 +196,10 @@ class Compile {
             throw new CompileFrameworkException("InterruptedException during compilation", e);
         }
 
-        if (exitCode != 0 || !output.isEmpty()) {
+        // Note: the output can be non-empty even if the compilation succeeds, e.g. for warnings.
+        if (exitCode != 0) {
             System.err.println("Compilation failed.");
+            System.err.println("Command: " + command);
             System.err.println("Exit code: " + exitCode);
             System.err.println("Output: '" + output + "'");
             throw new CompileFrameworkException("Compilation failed.");

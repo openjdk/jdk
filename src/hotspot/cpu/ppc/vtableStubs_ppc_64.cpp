@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     // Check offset vs vtable length.
     const Register vtable_len = R12_scratch2;
     __ lwz(vtable_len, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
-    __ cmpwi(CCR0, vtable_len, vtable_index*vtableEntry::size());
-    __ bge(CCR0, L);
+    __ cmpwi(CR0, vtable_len, vtable_index*vtableEntry::size());
+    __ bge(CR0, L);
     __ li(R12_scratch2, vtable_index);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), R3_ARG1, R12_scratch2, false);
     __ bind(L);
@@ -108,8 +108,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
-    __ cmpdi(CCR0, R19_method, 0);
-    __ bne(CCR0, L);
+    __ cmpdi(CR0, R19_method, 0);
+    __ bne(CR0, L);
     __ stop("Vtable entry is ZERO");
     __ bind(L);
   }
@@ -194,8 +194,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label ok;
-    __ cmpdi(CCR0, R19_method, 0);
-    __ bne(CCR0, ok);
+    __ cmpdi(CR0, R19_method, 0);
+    __ bne(CR0, ok);
     __ stop("method is null");
     __ bind(ok);
   }

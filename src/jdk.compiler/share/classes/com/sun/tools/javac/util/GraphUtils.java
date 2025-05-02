@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,9 +251,9 @@ public class GraphUtils {
         }
 
         protected String formatProperties(Properties p) {
-            return p.toString().replaceAll(",", " ")
-                .replaceAll("\\{", "[")
-                .replaceAll("\\}", "]");
+            return p.toString().replace(',', ' ')
+                .replace('{', '[')
+                .replace('}', ']');
         }
 
         protected static String wrap(String s) {

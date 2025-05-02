@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
 ################################################################################
@@ -36,7 +38,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export, \
-    LIBS_linux := -lpthread, \
+    LIBS_linux := $(LIBPTHREAD), \
     LIBS_windows := iphlpapi.lib ws2_32.lib, \
 ))
 
@@ -51,7 +53,7 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
     OPTIMIZATION := LOW, \
-    CFLAGS := -DJDWP_LOGGING, \
+    CFLAGS := -DJDWP_LOGGING $(ICONV_CFLAGS), \
     DISABLED_WARNINGS_gcc_eventFilter.c := unused-variable, \
     DISABLED_WARNINGS_gcc_SDE.c := unused-function, \
     DISABLED_WARNINGS_gcc_threadControl.c := unused-but-set-variable \
@@ -66,14 +68,16 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     DISABLED_WARNINGS_clang_threadControl.c := unused-but-set-variable \
         unused-variable, \
     DISABLED_WARNINGS_clang_utf_util.c := unused-but-set-variable, \
+    LDFLAGS := $(ICONV_LDFLAGS), \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export \
         java.base:libjava, \
     JDK_LIBS := java.base:libjvm, \
+    LIBS := $(ICONV_LIBS), \
     LIBS_linux := $(LIBDL), \
-    LIBS_macosx := -liconv, \
-    LIBS_aix := -liconv, \
 ))
 
 TARGETS += $(BUILD_LIBJDWP)
+
+################################################################################

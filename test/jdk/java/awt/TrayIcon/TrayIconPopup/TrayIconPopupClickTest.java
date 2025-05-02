@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
 import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.AWTException;
 import java.awt.event.MouseEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.image.BufferedImage;
@@ -37,12 +38,18 @@ import java.awt.image.BufferedImage;
  * @key headful
  * @summary Check if a action performed event is received when TrayIcon display
  *          message is clicked on.
- * @author Shashidhara Veerabhadraiah (shashidhara.veerabhadraiah@oracle.com)
  * @modules java.desktop/java.awt:open
- * @library /java/awt/patchlib
- * @library /lib/client ../
- * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @library
+ *          /java/awt/patchlib
+ *          /java/awt/TrayIcon
+ *          /lib/client
+ *          /test/lib
+ * @build
+ *          java.desktop/java.awt.Helper
+ *          jdk.test.lib.Platform
+ *          jtreg.SkippedException
+ *          ExtendedRobot
+ *          SystemTrayIconHelper
  * @run main TrayIconPopupClickTest
  */
 
@@ -50,22 +57,29 @@ public class TrayIconPopupClickTest {
 
     TrayIcon icon;
     ExtendedRobot robot;
-    boolean actionPerformed = false;
+    volatile boolean actionPerformed = false;
 
     public static void main(String[] args) throws Exception {
-        if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray not supported on the platform under test. " +
-                    "Marking the test passed");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win"))
-                System.err.println("Test can fail if the icon hides to a tray icons pool " +
-                        "in Windows 7/10, which is behavior by default.\n" +
-                        "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
-                        "\"Always show all icons and notifications on the taskbar\" true " +
-                        "to avoid this problem. Or change behavior only for Java SE " +
-                        "tray icon.");
-            new TrayIconPopupClickTest().doTest();
+        if (Platform.isOnWayland()) {
+            // The current robot implementation does not support
+            // clicking in the system tray area.
+            throw new SkippedException("Skipped on Wayland");
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isWindows()) {
+            System.err.println("Test can fail if the icon hides to a tray icons pool " +
+                    "in Windows 7/10, which is behavior by default.\n" +
+                    "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
+                    "\"Always show all icons and notifications on the taskbar\" true " +
+                    "to avoid this problem. Or change behavior only for Java SE " +
+                    "tray icon.");
+        }
+
+        new TrayIconPopupClickTest().doTest();
     }
 
     TrayIconPopupClickTest() throws Exception {
@@ -89,33 +103,26 @@ public class TrayIconPopupClickTest {
             throw new RuntimeException(e);
         }
 
-        icon.getActionCommand();
-        icon.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                actionPerformed = true;
-            }
-        });
+        icon.addActionListener(e -> actionPerformed = true);
     }
 
     void doTest() throws Exception {
-
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
 
         robot.mouseMove(iconPosition.x, iconPosition.y + 10);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
 
         if (!actionPerformed)

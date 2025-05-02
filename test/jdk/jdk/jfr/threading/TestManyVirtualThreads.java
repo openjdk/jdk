@@ -40,7 +40,6 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @summary Tests starting virtual threads from a set of ordinary threads
- * @requires vm.flagless
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal

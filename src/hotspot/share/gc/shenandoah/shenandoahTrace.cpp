@@ -44,7 +44,7 @@ void ShenandoahTracer::send_evacuation_info_event(ShenandoahEvacuationInformatio
     e.set_regionsPromotedRegular(info->regions_promoted_regular());
     e.set_regularPromotedGarbage(info->regular_promoted_garbage());
     e.set_regularPromotedFree(info->regular_promoted_free());
-    e.set_regionsFreed(info->regions_freed());
+    e.set_freeRegions(info->free_regions());
     e.set_regionsImmediate(info->regions_immediate());
     e.set_immediateBytes(info->immediate_size());
 
