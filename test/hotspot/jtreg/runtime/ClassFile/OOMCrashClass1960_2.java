@@ -21,13 +21,10 @@
  * questions.
  */
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.RecordComponentVisitor;
 
 /*
 This is class is a dumper for the original OOMCrashClass1960_2.class, i.e. its dump() method

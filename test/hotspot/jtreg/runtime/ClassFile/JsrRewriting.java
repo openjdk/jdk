@@ -41,12 +41,10 @@
  * @run driver JsrRewriting
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
 import java.io.File;
 import java.nio.file.Files;
-
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class JsrRewriting {
 

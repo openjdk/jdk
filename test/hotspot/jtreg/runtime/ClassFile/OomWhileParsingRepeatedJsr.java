@@ -42,11 +42,10 @@
  * @run driver OomWhileParsingRepeatedJsr
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
 import java.io.File;
 import java.nio.file.Files;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class OomWhileParsingRepeatedJsr {
 
@@ -66,11 +65,11 @@ public class OomWhileParsingRepeatedJsr {
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-cp", ".",
+            "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
-            className );
+            className);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
