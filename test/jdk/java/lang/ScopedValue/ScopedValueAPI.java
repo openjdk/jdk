@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test ScopedValue API
- * @enablePreview
  * @run junit ScopedValueAPI
  */
 
