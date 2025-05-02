@@ -29,7 +29,6 @@
  * @run main bug8077409Test
  */
 
-
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -49,13 +48,10 @@ public class bug8077409Test extends Frame {
         super();
         setLayout(new BorderLayout());
         pane = new ScrollPane();
-
         myCanvas = new MyCanvas();
         pane.add(myCanvas);
-
         add(pane, BorderLayout.CENTER);
         setSize(320, 480);
-
     }
 
     public static void main(String[] args) throws AWTException, InterruptedException {
@@ -66,13 +62,10 @@ public class bug8077409Test extends Frame {
             Point scrollPosition = obj.pane.getScrollPosition();
             scrollPosition.translate(0, 1);
             obj.pane.setScrollPosition(scrollPosition);
-
             int y = obj.pane.getComponent(0).getLocation().y;
             obj.pane.validate();
             if (y != obj.pane.getComponent(0).getLocation().y) {
                 throw new RuntimeException("Wrong position of component in ScrollPane");
-            } else {
-                System.out.println("Passed.....");
             }
         } finally {
             obj.dispose();
@@ -82,14 +75,15 @@ public class bug8077409Test extends Frame {
     @Override
     protected void processKeyEvent(KeyEvent e) {
         super.processKeyEvent(e);
-
     }
 
     class MyCanvas extends Canvas {
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(400, 800);
         }
 
+        @Override
         public void paint(Graphics g) {
             g.setColor(Color.BLACK);
             g.drawLine(0, 0, 399, 0);
