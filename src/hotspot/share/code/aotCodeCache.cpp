@@ -1119,8 +1119,9 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
     if (n != sizeof(uint)) {
       return false;
     }
-    n = write_bytes(str, strlen(str) + 1);
-    if (n != strlen(str) + 1) {
+    uint len = (uint)strlen(str) + 1; // including '\0' char
+    n = write_bytes(str, len);
+    if (n != len) {
       return false;
     }
     count += 1;
@@ -1139,7 +1140,7 @@ void AOTCodeReader::read_asm_remarks(AsmRemarks& asm_remarks) {
     uint remark_offset = *(uint *)addr(offset);
     offset += sizeof(uint);
     const char* remark = (const char*)addr(offset);
-    offset += strlen(remark)+1;
+    offset += (uint)strlen(remark)+1;
     asm_remarks.insert(remark_offset, remark);
   }
   set_read_position(offset);
@@ -1154,8 +1155,9 @@ bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
   uint count = 0;
   bool result = cb.dbg_strings().iterate([&] (const char* str) -> bool {
     log_trace(aot, codecache, stubs)("dbg string=%s", str);
-    uint n = write_bytes(str, strlen(str) + 1);
-    if (n != strlen(str) + 1) {
+    uint len = (uint)strlen(str) + 1; // including '\0' char
+    uint n = write_bytes(str, len);
+    if (n != len) {
       return false;
     }
     count += 1;
@@ -1172,7 +1174,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
   offset += sizeof(uint);
   for (uint i = 0; i < count; i++) {
     const char* str = (const char*)addr(offset);
-    offset += strlen(str)+1;
+    offset += (uint)strlen(str)+1;
     dbg_strings.insert(str);
   }
   set_read_position(offset);
