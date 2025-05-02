@@ -27,7 +27,9 @@ package jdk.jpackage.internal.util;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 
 import java.io.IOException;
-
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -39,30 +41,41 @@ public final class PListWriter {
         xml.writeEmptyElement(Boolean.toString(value));
     }
 
+    public static void writeBooleanIf(XMLStreamWriter xml, String key, boolean value, boolean expectedValue)
+            throws XMLStreamException {
+        if (expectedValue == value) {
+            writeBoolean(xml, key, value);
+        }
+    }
+
     public static void writeString(XMLStreamWriter xml, String key, Object value)
             throws XMLStreamException {
         writeKey(xml, key);
         writeString(xml, value);
     }
 
-    public static void writeStringArray(XMLStreamWriter xml, String key, Iterable<?> values)
+    public static void writeStringOptional(XMLStreamWriter xml, String key, Optional<?> value)
+            throws XMLStreamException {
+        if (value.isPresent()) {
+            writeString(xml, key, value.orElseThrow());
+        }
+    }
+
+    public static void writeStringArray(XMLStreamWriter xml, String key, Collection<?> values)
             throws XMLStreamException, IOException {
-        writeKey(xml, key);
-        writeArray(xml, toXmlConsumer(() -> {
-            for (var v : values) {
-                writeString(xml, v);
-            }
-        }));
+        if (!values.isEmpty()) {
+            writeKey(xml, key);
+            writeArray(xml, toXmlConsumer(() -> {
+                for (var v : values) {
+                    writeString(xml, v);
+                }
+            }));
+        }
     }
 
     public static void writeStringArray(XMLStreamWriter xml, String key, Object... values)
             throws XMLStreamException, IOException {
-        writeKey(xml, key);
-        writeArray(xml, toXmlConsumer(() -> {
-            for (var v : values) {
-                writeString(xml, v);
-            }
-        }));
+        writeStringArray(xml, key, List.of(values));
     }
 
     public static void writeDict(XMLStreamWriter xml, XmlConsumer content)
