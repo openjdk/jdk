@@ -1003,9 +1003,6 @@ void MacroAssembler::c2bool(Register x) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  // address const_ptr = long_constant((jlong)Universe::non_oop_word());
-  // uintptr_t offset;
-  // ldr_constant(rscratch2, const_ptr);
   movptr(rscratch2, (intptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
 }
@@ -2041,7 +2038,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
   // Fast path check: class is fully initialized
   lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
   ldarb(scratch, scratch);
-  subs(zr, scratch, InstanceKlass::fully_initialized);
+  cmp(scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
   // Fast path check: current thread is initializer thread
@@ -5520,9 +5517,8 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
     mov(dst, Address((address)obj, rspec));
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
-    ldr_constant(dst, Address(dummy, rspec));
+    ldr(dst, Address(dummy, rspec));
   }
-
 }
 
 // Move a metadata address into a register.

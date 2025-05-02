@@ -27,9 +27,15 @@
             corrupted by win32 path processing
    @requires (os.family == "windows")
    @author Mark Reinhold
+   @library /test/lib
 */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import jtreg.SkippedException;
 
 
 public class SJIS {
@@ -47,8 +53,11 @@ public class SJIS {
 
         /* This test is only valid on win32 systems
            that use the SJIS encoding */
-        String enc = System.getProperty("file.encoding");
-        if ((enc == null) || !enc.equals("SJIS")) return;
+        String enc = System.getProperty("native.encoding");
+        if ((enc == null) || !enc.equals("MS932")) {
+            throw new SkippedException(
+                "native.encoding(%s) is not MS932".formatted(enc));
+        }
 
         File f = new File("\u30BD");
         if (f.exists()) rm(f);
