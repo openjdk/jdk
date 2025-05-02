@@ -64,7 +64,7 @@ public class RequiresIdentityTest extends RequiresIdentityHelper<Integer> // sho
     void m4() {
         this.<RequiresIdentityHelper<Integer>>m3();
     }
-    @SuppressWarnings("removal")
+
     MyIntFunction<Integer> field6 = Integer::new; // two warnings here
 
     class Run<T> {
