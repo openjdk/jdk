@@ -155,11 +155,8 @@ public:
     return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + U(1);
   }
 
-  template <class S, class U>
-  using make_type_t = const Type* (*)(const TypeIntPrototype<S, U>&, int, bool);
-
-  template <class CT, class S, class U>
-  static const Type* int_type_xmeet(const CT* i1, const Type* t2, make_type_t<S, U> make, bool dual);
+  template <class CT>
+  static const Type* int_type_xmeet(const CT* i1, const Type* t2);
 
   template <class CT>
   static bool int_type_is_equal(const CT* t1, const CT* t2) {
@@ -179,10 +176,10 @@ public:
   }
 
   template <class CT>
-  static const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt);
+  static const Type* int_type_widen(const CT* new_type, const CT* old_type, const CT* limit_type);
 
   template <class CT>
-  static const Type* int_type_narrow(const CT* nt, const CT* ot);
+  static const Type* int_type_narrow(const CT* new_type, const CT* old_type);
 
 #ifndef PRODUCT
   static const char* intname(char* buf, size_t buf_size, jint n);

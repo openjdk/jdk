@@ -685,26 +685,30 @@ template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
 // relation in the Type hierarchy is still the same, however. E.g. the result
 // of 1 CT and Type::BOTTOM would always be Type::BOTTOM, and the result of 1
 // CT and Type::TOP would always be the CT instance itself.
-template <class CT, class S, class U>
-const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_type_t<S, U> make, bool dual) {
+template <class CT>
+const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
   }
   const CT* i2 = t2->try_cast<CT>();
   if (i2 != nullptr) {
-    if (!dual) {
+    assert(i1->_is_dual == i2->_is_dual, "must have the same duality");
+    using S = std::remove_const_t<decltype(CT::_lo)>;
+    using U = std::remove_const_t<decltype(CT::_ulo)>;
+
+    if (!i1->_is_dual) {
     // meet (a.k.a union)
-      return make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
-                                         {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                         {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
-                  MAX2(i1->_widen, i2->_widen), false);
+      return CT::try_make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
+                                                 {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
+                                                 {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
+                          MAX2(i1->_widen, i2->_widen), false);
     }
     // join (a.k.a intersection)
-    return make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
-                                       {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                       {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
-                MIN2(i1->_widen, i2->_widen), true);
+    return CT::try_make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
+                                               {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
+                                               {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
+                        MIN2(i1->_widen, i2->_widen), true);
   }
 
   assert(t2->base() != i1->base(), "");
@@ -738,10 +742,8 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_typ
     return nullptr;
   }
 }
-template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const Type* t2,
-                                                   const Type* (*make)(const TypeIntPrototype<jint, juint>&, int, bool), bool dual);
-template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const Type* t2,
-                                                   const Type* (*make)(const TypeIntPrototype<jlong, julong>&, int, bool), bool dual);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const Type* t2);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const Type* t2);
 
 // Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
 // first, after WidenMax attempts, if the type has still not converged we speed up the

@@ -1802,16 +1802,20 @@ const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int widen)
 }
 
 bool TypeInt::contains(jint i) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
   juint u = i;
-  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
+  return i >= _lo && i <= _hi &&
+         u >= _ulo && u <= _uhi &&
+         _bits.is_satisfied_by(u);
 }
 
 bool TypeInt::contains(const TypeInt* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t);
 }
 
 const Type* TypeInt::xmeet(const Type* t) const {
-  return TypeIntHelper::int_type_xmeet(this, t, TypeInt::try_make, _is_dual);
+  return TypeIntHelper::int_type_xmeet(this, t);
 }
 
 const Type* TypeInt::xdual() const {
@@ -1926,16 +1930,20 @@ const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int wid
 }
 
 bool TypeLong::contains(jlong i) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
   julong u = i;
-  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
+  return i >= _lo && i <= _hi &&
+         u >= _ulo && u <= _uhi &&
+         _bits.is_satisfied_by(u);
 }
 
 bool TypeLong::contains(const TypeLong* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t);
 }
 
-const Type *TypeLong::xmeet(const Type* t) const {
-  return TypeIntHelper::int_type_xmeet(this, t, TypeLong::try_make, _is_dual);
+const Type* TypeLong::xmeet(const Type* t) const {
+  return TypeIntHelper::int_type_xmeet(this, t);
 }
 
 const Type* TypeLong::xdual() const {

@@ -767,8 +767,12 @@ public:
  *   [jint(_ulo), _hi] must lie in the lower half of the unsigned domain).
  */
 class TypeInt : public TypeInteger {
+private:
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
   static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen, bool dual);
+
+  friend class TypeIntHelper;
+
 protected:
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
@@ -843,8 +847,12 @@ public:
 
 // Similar to TypeInt
 class TypeLong : public TypeInteger {
+private:
   TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
   static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual);
+
+  friend class TypeIntHelper;
+
 protected:
   // Do not kill _widen bits.
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
