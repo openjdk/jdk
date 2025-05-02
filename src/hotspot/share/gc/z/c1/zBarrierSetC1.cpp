@@ -21,12 +21,12 @@
  * questions.
  */
 
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_MacroAssembler.hpp"
-#include "c1/c1_CodeStubs.hpp"
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"

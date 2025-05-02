@@ -77,12 +77,11 @@ public final class PackageTest extends RunnablePackageTest {
         disabledInstallers = new HashSet<>();
         disabledUninstallers = new HashSet<>();
         excludeTypes = new HashSet<>();
+        handlers = NATIVE.stream().collect(Collectors.toMap(v -> v, v -> new Handler()));
         forTypes();
         setExpectedExitCode(0);
         setExpectedInstallExitCode(0);
         namedInitializers = new HashSet<>();
-        handlers = NATIVE.stream()
-                .collect(Collectors.toMap(v -> v, v -> new Handler()));
     }
 
     public PackageTest excludeTypes(PackageType... types) {
@@ -102,6 +101,7 @@ public final class PackageTest extends RunnablePackageTest {
             newTypes = Stream.of(types).collect(Collectors.toSet());
         }
         currentTypes = newTypes.stream()
+                .filter(handlers.keySet()::contains)
                 .filter(isPackageTypeEnabled)
                 .filter(Predicate.not(excludeTypes::contains))
                 .collect(Collectors.toUnmodifiableSet());
@@ -456,9 +456,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     private List<Consumer<Action>> createPackageTypeHandlers() {
+        if (handlers.keySet().stream().noneMatch(isPackageTypeEnabled)) {
+            PackageType.throwSkippedExceptionIfNativePackagingUnavailable();
+        }
         return handlers.entrySet().stream()
                 .filter(entry -> !entry.getValue().isVoid())
-                .filter(entry -> NATIVE.contains(entry.getKey()))
                 .sorted(Comparator.comparing(Map.Entry::getKey))
                 .map(entry -> {
                     return  createPackageTypeHandler(entry.getKey(), entry.getValue());
