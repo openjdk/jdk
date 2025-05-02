@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,13 +192,13 @@ public class DerValue {
     public boolean isApplication()    { return ((tag & 0x0c0) == 0x040); }
 
     /**
-     * Returns true if the CONTEXT SPECIFIC bit is set in the type tag.
+     * Returns true iff the CONTEXT SPECIFIC bit is set in the type tag.
      * This is associated with the ASN.1 "DEFINED BY" syntax.
      */
     public boolean isContextSpecific() { return ((tag & 0x0c0) == 0x080); }
 
     /**
-     * Returns true if the CONTEXT SPECIFIC TAG matches the passed tag.
+     * Returns true iff the CONTEXT SPECIFIC TAG matches the passed tag.
      */
     public boolean isContextSpecific(byte cntxtTag) {
         if (!isContextSpecific()) {
@@ -209,11 +209,11 @@ public class DerValue {
 
     boolean isPrivate()        { return ((tag & 0x0c0) == 0x0c0); }
 
-    /** Returns true if the CONSTRUCTED bit is set in the type tag. */
+    /** Returns true iff the CONSTRUCTED bit is set in the type tag. */
     public boolean isConstructed()    { return ((tag & 0x020) == 0x020); }
 
     /**
-     * Returns true if the CONSTRUCTED TAG matches the passed tag.
+     * Returns true iff the CONSTRUCTED TAG matches the passed tag.
      */
     public boolean isConstructed(byte constructedTag) {
         if (!isConstructed()) {

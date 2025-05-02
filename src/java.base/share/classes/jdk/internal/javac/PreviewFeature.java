@@ -82,8 +82,7 @@ public @interface PreviewFeature {
         KEY_DERIVATION,
         @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
-        //XXX Number will change when assigned
-        @JEP(number=999, title="PEM API", status="Preview")
+        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
         PEM_API,
         LANGUAGE_MODEL,
         /**

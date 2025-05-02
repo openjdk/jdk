@@ -78,7 +78,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     private final byte[] encoded;
 
     /**
-     * Constructs an {@code EncryptedPrivateKeyInfo} from a given Encrypted
+     * Constructs an {@code EncryptedPrivateKeyInfo} from a given encrypted
      * PKCS#8 ASN.1 encoding.
      * @param encoded the ASN.1 encoding which is cloned and then parsed.
      * @throws NullPointerException if {@code encoded} is {@code null}.
@@ -321,30 +321,33 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     }
 
     /**
-     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * Create and encrypt an {@code EncryptedPrivateKeyInfo} from a given
      * PrivateKey.  A valid password-based encryption (PBE) algorithm and
      * password must be specified.
      *
-     * {@link AlgorithmParameterSpec} will use the provider default if
-     * {@code params} is {@code null}.  The {@link Provider} will be selected
-     * through the default provider list if {@code provider} is {@code null}
-     *
-     * The PBE algorithm string format details can be found in the
+     * <p> The PBE algorithm string format details can be found in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Cipher section</a> of the Java Security Standard Algorithm Names
      * Specification.
      *
      * @param key the PrivateKey object to encrypt.
-     * @param password the password used for generating the PBE key.
-     * @param algorithm the PBE encryption algorithm.
-     * @param params the parameters used with the PBE encryption.
-     * @param provider the Provider that will perform the encryption.
+     * @param password the password used during encryption.
+     * @param algorithm the PBE encryption algorithm.  The default algorithm is
+     *                  will be used if {@code null}.  However, {@code null} is
+     *                  not allowed when {@code params} is non-null.
+     * @param params the {@code AlgorithmParameterSpec} to be used with
+     *               encryption.  The provider default will be used if
+     *               {@code null}.
+     * @param provider the {@code Provider} is used for PBE
+     *                 {@link SecretKeyFactory} generation and {@link Cipher}
+     *                 encryption operations. The default provider list will be
+     *                 used if {@code null}.
      * @return an EncryptedPrivateKeyInfo.
      * @throws IllegalArgumentException when an argument causes an
      * initialization error.
      * @throws SecurityException on a cryptographic errors.
-     * @throws NullPointerException if the key, password, or algorithm are null.
-     * null.
+     * @throws NullPointerException if the key or password are null. Also, if
+     * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
      * @implNote The encryption uses the algorithm set by
      * `jdk.epkcs8.defaultAlgorithm` Security Property
@@ -359,7 +362,10 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
 
         PBEKeySpec keySpec = new PBEKeySpec(password);
         Objects.requireNonNull(key);
-        Objects.requireNonNull(algorithm);
+        if (algorithm == null && params != null) {
+            throw new NullPointerException("algorithm must be specified if " +
+                "params is non-null.");
+        }
         SecretKey skey;
 
         try {
@@ -413,37 +419,42 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
      * {@link PrivateKey} using the {@code encKey} and given parameters.
      *
-     * If {@code algorithm} is {@code null} the default algorithm will be used.
-     * {@code params} is null, the provider default will be used.
-     * {@code params} is {@code null}.  The {@code provider} or {@code random} will
-     * be selected through the default provider list if set to {@code null}.
-     *
-     * @param key the {@code PrivateKey} object to encrypt.
-     * @param encKey the encryption {@code Key}
-     * @param algorithm the password-based encryption (PBE) algorithm used to
-     *                  encrypt the key encoding.
+     * @param key is the {@code PrivateKey} to be encrypted.
+     * @param encKey the password-based encryption (PBE) {@code Key} used to
+     *              encrypt {@code key}.
+     * @param algorithm the PBE encryption algorithm.  The default algorithm is
+     *                 will be used if {@code null}.  However, {@code null} is
+     *                 not allowed when {@code params} is non-null.
      * @param params the {@code AlgorithmParameterSpec} to be used with
-     *               encryption.
+     *               encryption. The provider list default will be used if
+     *               {@code null}.
      * @param random the {@code SecureRandom} instance used during
-     *               encryption.
-     * @param provider the {@code Provider} is used for KeyFactory and
-     *                 encryption operations.
+     *               encryption.  The default will be used if {@code null}.
+     * @param provider the {@code Provider} is used for {@link Cipher}
+     *                encryption operation.  The default provider list will be
+     *                 used if {@code null}.
      * @return an {@code EncryptedPrivateKeyInfo}.
      * @throws IllegalArgumentException on initialization errors based on the
      *                                  arguments passed to the method.
-     * @throws SecurityException on a encryption errors.
-     * @throws NullPointerException when the {@code key} or {@code encKey} are
-     * null.
+     * @throws SecurityException on an encryption errors.
+     * @throws NullPointerException if the key or password are null. Also, if
+     * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
-     * @implNote The encryption uses the algorithm set by
-     * `jdk.epkcs8.defaultAlgorithm` Security Property by the default provider
-     * and default the {@code AlgorithmParameterSpec} of that provider.
+     * @implNote The `jdk.epkcs8.defaultAlgorithm` Security Property defines
+     * the default encryption algorithm and the {@code AlgorithmParameterSpec}
+     * are the provider's algorithm defaults.
+
      * @since 25
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key, Key encKey,
         String algorithm, AlgorithmParameterSpec params, Provider provider,
         SecureRandom random) {
+        if (algorithm == null && params != null) {
+            throw new NullPointerException("algorithm must be specified if " +
+                "params is non-null.");
+        }
+
         if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
             throw new SecurityException("Security property " +
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +

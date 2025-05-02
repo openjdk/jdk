@@ -40,7 +40,6 @@ import java.security.cert.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -103,8 +102,6 @@ public final class PEMEncoder {
     private SecretKey key;
     // Makes SecretKeyFactory generation thread-safe.
     private final ReentrantLock lock;
-    // Lazy initialize singleton encoder.
-    private static Base64.Encoder b64Encoder;
 
     /**
      * Instantiate a new PEMEncoder for Encrypted Private Keys.
@@ -113,36 +110,17 @@ public final class PEMEncoder {
      */
     private PEMEncoder(PBEKeySpec pbe) {
         keySpec = pbe;
+        key = null;
         lock = new ReentrantLock();
     }
 
     /**
-     * Returns an instance of PEMEncoder.
+     * Returns a new instance of PEMEncoder.
      *
      * @return PEMEncoder instance
      */
     static public PEMEncoder of() {
         return PEM_ENCODER;
-    }
-
-    /**
-     * Construct a String-based encoding based off the type type.
-     * @return the string
-     */
-    private String pemEncoded(PEMRecord pem) {
-        StringBuilder sb = new StringBuilder(1024);
-        sb.append("-----BEGIN ").append(pem.type()).append("-----");
-        sb.append(System.lineSeparator());
-        if (b64Encoder == null) {
-            b64Encoder = Base64.getMimeEncoder(64,
-                System.lineSeparator().getBytes());
-        }
-        sb.append(b64Encoder.encodeToString(
-            pem.pem().getBytes(StandardCharsets.ISO_8859_1)));
-        sb.append(System.lineSeparator());
-        sb.append("-----END ").append(pem.type()).append("-----");
-        sb.append(System.lineSeparator());
-        return sb.toString();
     }
 
     /**
@@ -182,8 +160,8 @@ public final class PEMEncoder {
                 buildKey(p.getEncoded(), null);
             case EncryptedPrivateKeyInfo epki -> {
                 try {
-                    yield pemEncoded(new PEMRecord(
-                        Pem.ENCRYPTED_PRIVATE_KEY, epki.getEncoded()));
+                    yield Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY,
+                        epki.getEncoded());
                 } catch (IOException e) {
                     throw new IllegalArgumentException(e);
                 }
@@ -194,8 +172,7 @@ public final class PEMEncoder {
                         throw new IllegalArgumentException("Certificates " +
                             "cannot be encrypted");
                     }
-                    yield pemEncoded(new PEMRecord(Pem.CERTIFICATE,
-                        c.getEncoded()));
+                    yield Pem.pemEncoded(Pem.CERTIFICATE, c.getEncoded());
                 } catch (CertificateEncodingException e) {
                     throw new IllegalArgumentException(e);
                 }
@@ -206,13 +183,12 @@ public final class PEMEncoder {
                         throw new IllegalArgumentException("CRLs cannot be " +
                             "encrypted");
                     }
-                    yield pemEncoded(new PEMRecord(Pem.X509_CRL,
-                        crl.getEncoded()));
+                    yield Pem.pemEncoded(Pem.X509_CRL, crl.getEncoded());
                 } catch (CRLException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
-            case PEMRecord rec -> pemEncoded(rec);
+            case PEMRecord rec -> Pem.pemEncoded(rec);
 
             default -> throw new IllegalArgumentException("PEM does not " +
                 "support " + de.getClass().getCanonicalName());
@@ -316,8 +292,8 @@ public final class PEMEncoder {
 
             try {
                 out.putOctetString(cipher.doFinal(privateBytes));
-                return pemEncoded(new PEMRecord(Pem.ENCRYPTED_PRIVATE_KEY,
-                    DerValue.wrap(DerValue.tag_Sequence, out).toByteArray()));
+                return Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY,
+                    DerValue.wrap(DerValue.tag_Sequence, out).toByteArray());
             } catch (GeneralSecurityException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -330,7 +306,7 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(Pem.PUBLIC_KEY, publicBytes));
+            return Pem.pemEncoded(Pem.PUBLIC_KEY, publicBytes);
         }
 
         // PKCS8 only
@@ -340,7 +316,7 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(Pem.PRIVATE_KEY, privateBytes));
+            return Pem.pemEncoded(Pem.PRIVATE_KEY, privateBytes);
         }
 
         // OneAsymmetricKey
@@ -355,8 +331,8 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(Pem.PRIVATE_KEY,
-                PKCS8Key.getEncoded(publicBytes, privateBytes)));
+            return Pem.pemEncoded(Pem.PRIVATE_KEY,
+                PKCS8Key.getEncoded(publicBytes, privateBytes));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }

@@ -29,23 +29,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * {@code PEMRecord} is a {@link DEREncodable} that stores Privacy-Enhanced Mail
- * (PEM) data and can be used with all PEM data types.  It serves as the default
- * decoding class when the PEM data lacks a Java API cryptographic
- * representation. Types with representation, such as a {@link PrivateKey},
+ * {@code PEMRecord} is a {@link DEREncodable} that represents Privacy-Enhanced
+ * Mail (PEM) data by its type and Base64 form.  {@link PEMDecoder} and
+ * {@link PEMEncoder} use {@code PEMRecord} when representing the data as a
+ * Java API cryptographic object is not desired or there is no other
+ * {@code DEREncodable} for the type.
+ *
+ * <p> Types with Java API representation, such as a {@link PrivateKey},
  * can return a {@code PEMRecord} when used with
  * {@linkplain PEMDecoder#decode(String, Class)}. Using {@code PEMRecord} can
  * be helpful when generating a representation is not desired or when used
  * with {@code leadingData}.
- * <p>
- * {@code PEMRecord} may have a null {@code type} and {@code pem} when
- * {@code PEMDecoder.decode()} methods encounter only non-PEM data and has
- * reached the end of the stream.
- * If there is PEM data, {@code type} and {@code pem} will both be non-null.
- * {@code leadingData} may be null if the input data only contains PEM data.
- * All values can never be null.
  *
- * During the instantiation of this record, there is no validation for the
+ * <p> {@code PEMRecord} may have a null {@code type} and {@code pem} when
+ * {@code PEMDecoder.decode()} methods encounter only non-PEM data and has
+ * reached the end of the stream. If there is PEM data, {@code type} and
+ * {@code pem} will both be non-null. {@code leadingData} may be null if the
+ * input data only contains PEM data. All values can never be null.
+ *
+ * <p> During the instantiation of this record, there is no validation for the
  * {@code type} or {@code pem}.
  *
  * @param type The type identifier in the PEM header.  For a public key,
@@ -65,7 +67,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * Return a PEMRecord instance with the given parameters.
      *
      * <p> When {@code type} is given a properly formatted PEM header, only the
-     * identifier will be set (ie: {@code PUBLIC KEY}.  Otherwise, {@code type}
+     * identifier will be set (ie: {@code PUBLIC KEY}).  Otherwise, {@code type}
      * will be set to what was passed in.
      *
      * <p> When {@code type} is given a correctly formatted PEM header, only the
@@ -77,9 +79,9 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * @param pem The data between the PEM header and footer.
      * @param leadingData Any non-PEM data read during the decoding process
      *                    before the PEM header.  This value maybe {@code null}.
+     * @throws IllegalArgumentException on incorrect input values.
      */
     public PEMRecord(String type, String pem, byte[] leadingData) {
-
         if (type == null && pem == null && leadingData == null) {
             throw new IllegalArgumentException("All values may not be null.");
         }
@@ -91,13 +93,13 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
 
         // With no validity checking on `type`, the constructor accept anything
         // including lowercase.  The onus is on the caller.
-        if (type != null && type.startsWith("-----")) {
-            // Remove PEM headers syntax if present.
-            this.type = type.substring(11, type.lastIndexOf('-') - 4);
-        } else {
-            this.type = type;
+        if (type != null && (type.startsWith("-") || type.contains("BEGIN") ||
+            type.contains("END") || type.endsWith("-"))) {
+            throw new IllegalArgumentException("Only the PEM type identifier " +
+                "is allowed");
         }
 
+        this.type = type;
         this.pem = pem;
         this.leadingData = leadingData;
     }
@@ -134,7 +136,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * Returns the binary encoding from the Base64 data contained in
      * {@code pem}.
      *
-     * @exception IllegalArgumentException if {@code pem} could not be decoded.
+     * @throws IllegalArgumentException if {@code pem} could not be decoded.
      * @return binary encoding or null if {@code pem} is null.
      */
     public byte[] getEncoded() {

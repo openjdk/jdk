@@ -74,6 +74,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private byte[] arrayS;      // private value as a little-endian array
     @SuppressWarnings("serial") // Type of field is not Serializable
     private ECParameterSpec params;
+    private byte[] domainParams;  //Currently unsupported
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -179,30 +180,12 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             }
             DerInputStream data = derValue.data;
             int version = data.getInteger();
-            if (version != 1) {
+            if (version != V2) {
                 throw new IOException("Version must be 1");
             }
             byte[] privData = data.getOctetString();
             ArrayUtil.reverse(privData);
             arrayS = privData;
-            while (data.available() != 0) {
-                DerValue value = data.getDerValue();
-                if (value.isContextSpecific((byte) 0)) {
-                    attributes = value.getDataBytes();  // Save DER sequence
-                    if (data.available() == 0) {
-                        return;
-                    }
-                    value = data.getDerValue();
-                }
-                if (value.isContextSpecific((byte) 1)) {
-                    DerValue bits = value.withTag(DerValue.tag_BitString);
-                    BitArray bitArray = bits.data.getUnalignedBitString();
-                    pubKeyEncoded = new X509Key(algid,
-                        bitArray).getEncoded();
-                } else {
-                    throw new InvalidKeyException("Unexpected value: " + value);
-                }
-            }
 
             // Validate parameters stored from PKCS8Key.decode()
             AlgorithmParameters algParams = this.algid.getParameters();
@@ -211,6 +194,28 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                     + "encoded in the algorithm identifier");
             }
             params = algParams.getParameterSpec(ECParameterSpec.class);
+
+            if (data.available() == 0) {
+                return;
+            }
+
+            DerValue value = data.getDerValue();
+            if (value.isContextSpecific((byte) 0)) {
+                domainParams = value.getDataBytes();  // Save DER sequence
+                if (data.available() == 0) {
+                    return;
+                }
+                value = data.getDerValue();
+            }
+
+            if (value.isContextSpecific((byte) 1)) {
+                DerValue bits = value.withTag(DerValue.tag_BitString);
+                pubKeyEncoded = new X509Key(algid,
+                    bits.data.getUnalignedBitString()).getEncoded();
+            } else {
+                throw new InvalidKeyException("Unexpected value: " + value);
+            }
+
         } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         }

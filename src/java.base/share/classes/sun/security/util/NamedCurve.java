@@ -48,7 +48,7 @@ public final class NamedCurve extends ECParameterSpec {
     private final byte[] encoded;
 
     NamedCurve(KnownOIDs ko, EllipticCurve curve,
-        ECPoint g, BigInteger n, int h) {
+            ECPoint g, BigInteger n, int h) {
         super(curve, g, n, h);
         String[] aliases = ko.aliases();
         this.nameAndAliases = new String[aliases.length + 1];

@@ -49,7 +49,7 @@ import java.util.Arrays;
 public abstract class EncodedKeySpec implements KeySpec {
 
     private final byte[] encodedKey;
-    private String algorithmName;
+    private final String algorithmName;
 
     static {
         SharedSecrets.setJavaSecuritySpecAccess(
@@ -69,11 +69,13 @@ public abstract class EncodedKeySpec implements KeySpec {
      */
     public EncodedKeySpec(byte[] encodedKey) {
         this.encodedKey = encodedKey.clone();
+        String algName = null;
         try {
-            algorithmName = KeyUtil.getAlgorithm(this.encodedKey).getName();
+            algName = KeyUtil.getAlgorithm(this.encodedKey).getName();
         } catch (IOException e) {
             // On error leave algorithmName as null.
         }
+        algorithmName = algName;
     }
 
     /**

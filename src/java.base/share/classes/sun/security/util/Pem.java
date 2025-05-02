@@ -53,6 +53,9 @@ public class Pem {
     // Lazy initialized PBES2 OID value
     private static ObjectIdentifier PBES2OID;
 
+    // Lazy initialize singleton encoder.
+    private static Base64.Encoder b64Encoder;
+
     static {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
         pbePattern = Pattern.compile("^PBEWith.*And.*");
@@ -282,10 +285,44 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
         }
 
-        return new PEMRecord(header, data, preData);
+        return new PEMRecord(
+            header.substring(11, header.lastIndexOf('-') - 4), data,
+            preData);
     }
 
     public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
+
+    /**
+     * Construct a String-based encoding based off the type.
+     * @return the string
+     */
+    public static String pemEncoded(String type, byte[] data) {
+        StringBuilder sb = new StringBuilder(1024);
+        sb.append("-----BEGIN ").append(type).append("-----");
+        sb.append(System.lineSeparator());
+        if (b64Encoder == null) {
+            b64Encoder = Base64.getMimeEncoder(64,
+                System.lineSeparator().getBytes());
+        }
+        sb.append(b64Encoder.encodeToString(data));
+        sb.append(System.lineSeparator());
+        sb.append("-----END ").append(type).append("-----");
+        sb.append(System.lineSeparator());
+        return sb.toString();
+    }
+
+    public static String pemEncoded(PEMRecord pem) {
+        StringBuilder sb = new StringBuilder(1024);
+        sb.append("-----BEGIN ").append(pem.type()).append("-----");
+        sb.append(System.lineSeparator());
+        sb.append(pem.pem());
+        sb.append(System.lineSeparator());
+        sb.append("-----END ").append(pem.type()).append("-----");
+        sb.append(System.lineSeparator());
+        return sb.toString();
+    }
+
+
 }

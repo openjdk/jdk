@@ -34,22 +34,24 @@ import sun.security.util.Pem;
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.spec.*;
 import java.util.Base64;
 import java.util.Objects;
 
 /**
- * {@code PEMDecoder} is an immutable class for Privacy-Enhanced Mail (PEM)
- * data.  PEM is a textual encoding used to store and transfer security
+ * {@code PEMDecoder} is an immutable class for decoding Privacy-Enhanced Mail
+ * (PEM) data.  PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRL).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
+ * lists (CRLs).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
  * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
  *
  * <p> Decoding methods return an instance of a class that matches the data
- * type and implements {@link DEREncodable} unless specified. The following
- * types are decoded into Java Cryptographic Extensions (JCE) object:
+ * type and implements {@link DEREncodable} unless otherwise specified. The
+ * following types are decoded into Java Cryptographic Extensions (JCE) object
+ * representations:
  * <pre>
  *     PRIVATE KEY, RSA PRIVATE KEY, PUBLIC KEY, CERTIFICATE,
  *     X509 CERTIFICATE, X509 CRL, and ENCRYPTED PRIVATE KEY.
@@ -59,29 +61,28 @@ import java.util.Objects;
  * appropriate JCE object class for the PEM; otherwise an
  * {@link IllegalArgumentException} is thrown.
  *
- * <p> If the PEM does not have a corresponding JCE object, it returns a
+ * <p> If the PEM does not have a JCE object representation, it returns a
  * {@link PEMRecord}. Any PEM can be decoded into a {@code PEMRecord} if the
- * class is specified. Decoding a {@code PEMRecord} returns corresponding
- * JCE object or throws a {@link IllegalArgumentException} if no object is
- * available.
+ * class is specified.
  *
- * <p> A new immutable {@code PEMDecoder} instance is created by using
- * {@linkplain #withFactory} and/or {@linkplain #withDecryption}.  Configuring
- * an instance for decryption does not prevent decoding with unencrypted PEM.
- * Any encrypted PEM that does not use the configured password will throw an
- * {@link SecurityException}. A decoder instance not configured with decryption
- * returns an {@link EncryptedPrivateKeyInfo} with encrypted PEM.
- * EncryptedPrivateKeyInfo methods must be used to retrieve the
+ * <p> A new immutable {@code PEMDecoder} instance is created when configured
+ * with {@linkplain #withFactory} and/or {@linkplain #withDecryption}.
+ * Configuring an instance for decryption does not prevent decoding with
+ * unencrypted PEM. Any encrypted PEM that does not use the configured password
+ * will throw an {@link SecurityException}.  A decoder instance not configured
+ * with decryption returns a {@link EncryptedPrivateKeyInfo} with encrypted
+ * PEM.  {@code EncryptedPrivateKeyInfo} methods must be used to retrieve the
  * {@link PrivateKey}.
  *
- * <p> {@code String} values returned by this class use character set
- * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1}
+ * <p> Byte streams consumed by methods in this class are assumed to represent
+ * characters encoded in the
+ * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1} charset.
  *
  * @apiNote
  * Here is an example of decoding a PrivateKey object:
  * <pre>
  *     PEMDecoder pd = PEMDecoder.of();
- *     PrivateKey priKey = pd.decode(PriKeyPEM);
+ *     PrivateKey priKey = pd.decode(priKeyPEM);
  * </pre>
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
@@ -199,10 +200,10 @@ public final class PEMDecoder {
     }
 
     /**
-     * Decodes and returns {@link DEREncodable} from the given string.
+     * Decodes and returns a {@link DEREncodable} from the given string.
      *
-     * @param str PEM data in a String.
-     * @return an {@code DEREncodable} generated from the PEM data.
+     * @param str a String containing PEM data.
+     * @return a {@code DEREncodable} generated from the PEM data.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
      * unsupported.
      * @throws NullPointerException when {@code str} is null.
@@ -210,7 +211,8 @@ public final class PEMDecoder {
     public DEREncodable decode(String str) {
         Objects.requireNonNull(str);
         try {
-            return decode(new ByteArrayInputStream(str.getBytes()));
+            return decode(new ByteArrayInputStream(
+                str.getBytes(StandardCharsets.ISO_8859_1)));
         } catch (IOException e) {
             // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
@@ -221,7 +223,7 @@ public final class PEMDecoder {
      * Decodes and returns a {@link DEREncodable} from the given
      * {@code InputStream}.
      *
-     * <p>The method will read the {@code InputStream} until PEM data is
+     * <p>This method will read the {@code InputStream} until PEM data is
      * found or until the end of the stream.  Non-PEM data in the
      * {@code InputStream} before the PEM header will be ignored by the decoder.
      * If only non-PEM data is found a {@link PEMRecord} is returned with that
@@ -257,18 +259,19 @@ public final class PEMDecoder {
      * <li> Store the PEM a {@link PEMRecord}.</li>
      *</ul>
      * @param <S> Class type parameter that extends {@code DEREncodable}.
-     * @param string the String containing PEM data.
+     * @param str the String containing PEM data.
      * @param tClass the returned object class that implements
      * {@code DEREncodable}.
-     * @return A {@code DEREncodable} typecast to {@code tClass}.
+     * @return a {@code DEREncodable} typecast to {@code tClass}.
      * @throws IllegalArgumentException on error in decoding.
      * @throws ClassCastException if the given class is invalid for the PEM.
      * @throws NullPointerException when any input values are null.
      */
-    public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
-        Objects.requireNonNull(string);
+    public <S extends DEREncodable> S decode(String str, Class<S> tClass) {
+        Objects.requireNonNull(str);
         try {
-            return decode(new ByteArrayInputStream(string.getBytes()), tClass);
+            return decode(new ByteArrayInputStream(
+                str.getBytes(StandardCharsets.ISO_8859_1)), tClass);
         } catch (IOException e) {
             // With all data contained in the String, there are no IO ops.
             throw new IllegalArgumentException(e);
@@ -284,7 +287,7 @@ public final class PEMDecoder {
      * @param is an InputStream containing PEM data.
      * @param tClass the returned object class that implements
      *   {@code DEREncodable}.
-     * @return A {@code DEREncodable} typecast to {@code tClass}.
+     * @return a {@code DEREncodable} typecast to {@code tClass}.
      * @throws IOException on IO error with the InputStream.
      * @throws IllegalArgumentException on error in decoding.
      * @throws ClassCastException if the given class is invalid for the PEM.
@@ -359,7 +362,7 @@ public final class PEMDecoder {
                 return KeyFactory.getInstance(algorithm);
             }
             return KeyFactory.getInstance(algorithm, factory);
-        } catch(GeneralSecurityException e){
+        } catch(GeneralSecurityException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -382,7 +385,7 @@ public final class PEMDecoder {
      * from the specified {@link Provider}.  Any errors using the
      * {@code provider} will occur during decoding.
      *
-     * <p>If {@code params} is {@code null}, a new instance is returned with
+     * <p>If {@code provider} is {@code null}, a new instance is returned with
      * the default provider configuration.
      *
      * @param provider the Factory provider.

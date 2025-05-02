@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Optional;
 
 /**
  * Holds a PKCS#8 key, for example a private key
@@ -80,8 +79,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     protected int version;
 
     /* The version for this key */
-    private static final int V1 = 0;
-    private static final int V2 = 1;
+    public static final int V1 = 0;
+    public static final int V2 = 1;
 
     /**
      * Default constructor. Constructors in subclasses that create a new key
