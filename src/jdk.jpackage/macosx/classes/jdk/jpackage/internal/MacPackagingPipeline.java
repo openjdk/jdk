@@ -88,6 +88,7 @@ final class MacPackagingPipeline {
 
     enum MacCopyAppImageTaskID implements TaskID {
         COPY_PACKAGE_FILE,
+        COPY_RUNTIME_INFO_PLIST,
         REPLACE_APP_IMAGE_FILE,
         COPY_SIGN
     }
@@ -112,7 +113,7 @@ final class MacPackagingPipeline {
                 .task(CopyAppImageTaskID.COPY)
                         .copyAction(MacPackagingPipeline::copyAppImage).add()
                 .task(MacBuildApplicationTaskID.RUNTIME_INFO_PLIST)
-                        .applicationAction(MacPackagingPipeline::writeRuntimeInfoPlist)
+                        .applicationAction(MacPackagingPipeline::writeApplicationRuntimeInfoPlist)
                         .addDependent(BuildApplicationTaskID.CONTENT).add()
                 .task(MacBuildApplicationTaskID.COPY_JLILIB)
                         .applicationAction(MacPackagingPipeline::copyJliLib)
@@ -132,6 +133,9 @@ final class MacPackagingPipeline {
                         .noaction().add()
                 .task(MacCopyAppImageTaskID.COPY_PACKAGE_FILE)
                         .packageAction(MacPackagingPipeline::writePackageFile)
+                        .addDependencies(CopyAppImageTaskID.COPY)
+                        .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
+                .task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacBuildApplicationTaskID.FA_ICONS)
@@ -173,6 +177,9 @@ final class MacPackagingPipeline {
                 // don't create ".package" file and don't sign it.
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
+//                if (p.isRuntimeInstaller()) {
+//                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST).packageAction(MacPackagingPipeline::writeRuntimeRuntimeInfoPlist).add();
+//                }
             }
 
             for (final var taskId : disabledTasks) {
@@ -238,10 +245,16 @@ final class MacPackagingPipeline {
                 "APPL????".getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    private static void writeRuntimeInfoPlist(
-            AppImageBuildEnv<MacApplication, MacApplicationLayout> env) throws IOException {
+    private static void writeRuntimeRuntimeInfoPlist(PackageBuildEnv<MacPackage, AppImageLayout> env) throws IOException {
+        writeRuntimeInfoPlist(env.pkg().app(), env.env(), env.resolvedLayout().rootDirectory());
+    }
 
-        final var app = env.app();
+    private static void writeApplicationRuntimeInfoPlist(
+            AppImageBuildEnv<MacApplication, MacApplicationLayout> env) throws IOException {
+        writeRuntimeInfoPlist(env.app(), env.env(), env.resolvedLayout().runtimeRootDirectory());
+    }
+
+    private static void writeRuntimeInfoPlist(MacApplication app, BuildEnv env, Path runtimeRootDirectory) throws IOException {
 
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
@@ -249,11 +262,11 @@ final class MacPackagingPipeline {
         data.put("CF_BUNDLE_VERSION", app.version());
         data.put("CF_BUNDLE_SHORT_VERSION_STRING", app.shortVersion().toString());
 
-        env.env().createResource("Runtime-Info.plist.template")
+        env.createResource("Runtime-Info.plist.template")
                 .setPublicName("Runtime-Info.plist")
                 .setCategory(I18N.getString("resource.runtime-info-plist"))
                 .setSubstitutionData(data)
-                .saveToFile(env.resolvedLayout().runtimeRootDirectory().resolve("Contents/Info.plist"));
+                .saveToFile(runtimeRootDirectory.resolve("Contents/Info.plist"));
     }
 
     private static void writeAppInfoPlist(
