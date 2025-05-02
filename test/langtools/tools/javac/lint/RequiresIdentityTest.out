@@ -25,7 +25,6 @@ RequiresIdentityTest.java:55:32: compiler.warn.attempt.to.use.value.based.where.
 RequiresIdentityTest.java:56:46: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:60:54: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:65:37: compiler.warn.attempt.to.use.value.based.where.identity.expected
-RequiresIdentityTest.java:68:37: compiler.warn.has.been.deprecated.for.removal: java.lang.Integer(int), java.lang.Integer
 RequiresIdentityTest.java:68:37: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:68:18: compiler.warn.attempt.to.use.value.based.where.identity.expected
 RequiresIdentityTest.java:75:32: compiler.warn.attempt.to.use.value.based.where.identity.expected
@@ -37,4 +36,4 @@ RequiresIdentityTest.java:81:31: compiler.warn.attempt.to.use.value.based.where.
 - compiler.note.unchecked.filename: RequiresIdentityTest.java
 - compiler.note.unchecked.recompile
 1 error
-35 warnings
+34 warnings
