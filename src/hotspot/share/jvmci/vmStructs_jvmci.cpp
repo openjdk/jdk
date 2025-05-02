@@ -54,8 +54,6 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #endif
