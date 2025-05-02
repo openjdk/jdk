@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import static java.io.IO.*;
+#ifndef SHARE_CDS_AOTCACHEACCESS_HPP
+#define SHARE_CDS_AOTCACHEACCESS_HPP
 
-public class Methods {
+#include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-    public static void main(String[] args) {
-        switch (args[0]) {
-            case "println" -> println("hello");
-            case "print" -> print("hello");
-            case "input" -> readln("hello");
-            default -> throw new IllegalArgumentException(args[0]);
-        }
-    }
-}
+class ReservedSpace;
+
+// AOT Cache API for AOT compiler
+
+class AOTCacheAccess : AllStatic {
+public:
+  static void* allocate_aot_code_region(size_t size) NOT_CDS_RETURN_(nullptr);
+
+  static size_t get_aot_code_region_size() NOT_CDS_RETURN_(0);
+
+  static bool map_aot_code_region(ReservedSpace rs) NOT_CDS_RETURN_(false);
+};
+
+#endif // SHARE_CDS_AOTCACHEACCESS_HPP

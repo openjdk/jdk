@@ -28,6 +28,7 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -58,6 +59,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -490,6 +492,8 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_ptr((void**)&_archived_method_handle_intrinsics);
 
   LambdaFormInvokers::serialize(soc);
+  AdapterHandlerLibrary::serialize_shared_table_header(soc);
+
   soc->do_tag(666);
 }
 
@@ -607,6 +611,10 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
+
+  if (AOTCodeCache::is_dumping_adapters()) {
+    AdapterHandlerLibrary::dump_aot_adapter_table();
+  }
 
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
@@ -962,22 +970,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     ArchiveHeapWriter::init();
+
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_method_handles()) {
-      // This assert means that the MethodType and MethodTypeForm tables won't be
-      // updated concurrently when we are saving their contents into a side table.
-      assert(CDSConfig::allow_only_single_java_thread(), "Required");
-
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
-                             vmSymbols::createArchivedObjects(),
-                             vmSymbols::void_method_signature(),
-                             CHECK);
-    }
+    AOTReferenceObjSupport::initialize(CHECK);
+    AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
     if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
@@ -1004,6 +1004,17 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
+
+  if (AOTCodeCache::is_on_for_dump() && CDSConfig::is_dumping_final_static_archive()) {
+    CDSConfig::enable_dumping_aot_code();
+    {
+      builder.start_ac_region();
+      // Write the contents to AOT code region and close AOTCodeCache before packing the region
+      AOTCodeCache::close();
+      builder.end_ac_region();
+    }
+    CDSConfig::disable_dumping_aot_code();
+  }
 
   if (!write_static_archive(&builder, op.map_info(), op.heap_info())) {
     THROW_MSG(vmSymbols::java_io_IOException(), "Encountered error while dumping");
@@ -1345,7 +1356,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         if (prot_zone_size > 0) {
           assert(prot_zone_size >= os::vm_allocation_granularity(), "must be"); // not just page size!
           char* p = os::attempt_reserve_memory_at(mapped_base_address, prot_zone_size,
-                                                  false, MemTag::mtClassShared);
+                                                  mtClassShared);
           assert(p == mapped_base_address || p == nullptr, "must be");
           if (p == nullptr) {
             log_debug(cds)("Failed to re-reserve protection zone");
@@ -1537,7 +1548,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                archive_space_size,
                                                archive_space_alignment,
-                                               os::vm_page_size());
+                                               os::vm_page_size(),
+                                               mtNone);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1605,11 +1617,13 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                  archive_space_size,
                                                  archive_space_alignment,
-                                                 os::vm_page_size());
+                                                 os::vm_page_size(),
+                                                 mtNone);
       class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
                                                  class_space_size,
                                                  class_space_alignment,
-                                                 os::vm_page_size());
+                                                 os::vm_page_size(),
+                                                 mtNone);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1622,7 +1636,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = MemoryReserver::reserve((char*) base_address,
                                                total_range_size,
                                                base_address_alignment,
-                                               os::vm_page_size());
+                                               os::vm_page_size(),
+                                               mtNone);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
@@ -1772,6 +1787,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   static_mapinfo->patch_heap_embedded_pointers();
   ArchiveHeapLoader::finish_initialization();
   Universe::load_archived_object_instances();
+  AOTCodeCache::initialize();
 
   // Close the mapinfo file
   static_mapinfo->close();
@@ -1821,6 +1837,11 @@ void MetaspaceShared::initialize_shared_spaces() {
       tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+    }
+
+    if (AOTCodeCache::is_on_for_use()) {
+      tty->print_cr("\n\nAOT Code");
+      AOTCodeCache::print_on(tty);
     }
 
     // collect shared symbols and strings
