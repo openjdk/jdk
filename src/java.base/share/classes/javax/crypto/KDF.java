@@ -478,7 +478,7 @@ public final class KDF {
     }
 
     // Rethrows the IAPE thrown by an implementation, adding an explanation
-    // on in which situation it fails.
+    // for the situation in which it fails.
     private void rethrow(InvalidAlgorithmParameterException e)
             throws InvalidAlgorithmParameterException {
         var source = serviceIterator == null
@@ -487,12 +487,13 @@ public final class KDF {
             pdebug.println("A " + this.getAlgorithm()
                     + " derivation cannot be performed "
                     + "using the supplied derivation "
-                    + "inputs, using the " + source + " "
+                    + "inputs with the " + source + " "
                     + theOne.provider().getName()
-                    + ".");
+                    + " provider.");
         }
-        throw new InvalidAlgorithmParameterException("The " + source + " provider "
-                + theOne.provider.getName() + " does not support this input", e);
+        throw new InvalidAlgorithmParameterException(
+                "The " + source + " " + theOne.provider.getName()
+                + " provider does not support this input", e);
     }
 
     /**
