@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciMethod.hpp"
@@ -501,8 +500,8 @@ bool ciTypeFlow::StateVector::meet_exception(ciInstanceKlass* exc,
   bool different = false;
 
   // Meet locals from incoming array.
-  Cell limit = local(_outer->max_locals()-1);
-  for (Cell c = start_cell(); c <= limit; c = next_cell(c)) {
+  Cell limit = local_limit_cell();
+  for (Cell c = start_cell(); c < limit; c = next_cell(c)) {
     ciType* t1 = type_at(c);
     ciType* t2 = incoming->type_at(c);
     if (!t1->equals(t2)) {
@@ -2925,7 +2924,7 @@ void ciTypeFlow::flow_types() {
 
   // Continue flow analysis until fixed point reached
 
-  debug_only(int max_block = _next_pre_order;)
+  DEBUG_ONLY(int max_block = _next_pre_order;)
 
   while (!work_list_empty()) {
     Block* blk = work_list_next();

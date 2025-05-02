@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -249,11 +248,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in r0
+        const char *detail_msg = (const char *)(uc->uc_mcontext.regs[0]);
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -355,7 +351,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 32 /* r0-r31 */;
+  const int register_count = 31 /* r0-r30 */;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {

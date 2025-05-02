@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
@@ -868,6 +868,8 @@ int java_lang_Class::_source_file_offset;
 int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
 int java_lang_Class::_reflectionData_offset;
+int java_lang_Class::_modifiers_offset;
+int java_lang_Class::_is_primitive_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1061,6 +1063,10 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Setup indirection from mirror->klass
   set_klass(mirror(), k);
 
+  // Set the modifiers flag.
+  u2 computed_modifiers = k->compute_modifier_flags();
+  set_modifiers(mirror(), computed_modifiers);
+
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
 
@@ -1242,8 +1248,8 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
 
 void java_lang_Class::set_oop_size(HeapWord* java_class, size_t size) {
   assert(_oop_size_offset != 0, "must be set");
-  assert(size > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, size);
-  assert(size <= INT_MAX, "Lossy conversion: " SIZE_FORMAT, size);
+  assert(size > 0, "Oop size must be greater than zero, not %zu", size);
+  assert(size <= INT_MAX, "Lossy conversion: %zu", size);
   *(int*)(((char*)java_class) + _oop_size_offset) = (int)size;
 }
 
@@ -1268,8 +1274,11 @@ void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
 
 void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
   assert(_component_mirror_offset != 0, "must be set");
-    java_class->obj_field_put(_component_mirror_offset, comp_mirror);
-  }
+  assert(java_lang_Class::as_Klass(java_class) != nullptr &&
+         java_lang_Class::as_Klass(java_class)->is_array_klass(), "must be");
+  java_class->obj_field_put(_component_mirror_offset, comp_mirror);
+}
+
 oop java_lang_Class::component_mirror(oop java_class) {
   assert(_component_mirror_offset != 0, "must be set");
   return java_class->obj_field(_component_mirror_offset);
@@ -1343,9 +1352,14 @@ void java_lang_Class::set_source_file(oop java_class, oop source_file) {
   java_class->obj_field_put(_source_file_offset, source_file);
 }
 
+void java_lang_Class::set_is_primitive(oop java_class) {
+  assert(_is_primitive_offset != 0, "must be set");
+  java_class->bool_field_put(_is_primitive_offset, true);
+}
+
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
-  // This should be improved by adding a field at the Java level or by
-  // introducing a new VM klass (see comment in ClassFileParser)
+  // Mirrors for basic types have a null klass field, which makes them special.
   oop java_class = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(nullptr, CHECK_NULL);
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlass(type);
@@ -1356,6 +1370,8 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(vmClasses::Class_klass());
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
+  set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+  set_is_primitive(java_class);
   return java_class;
 }
 
@@ -1494,7 +1510,10 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_name_offset,                k, "name",                string_signature,       false); \
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
-  macro(_signers_offset,             k, "signers",             object_array_signature, false);
+  macro(_signers_offset,             k, "signers",             object_array_signature, false); \
+  macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
+  macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
+  macro(_is_primitive_offset,        k, "primitive",           bool_signature,         false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
@@ -1526,6 +1545,16 @@ int java_lang_Class::classRedefinedCount(oop the_class_mirror) {
 void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
   assert(_classRedefinedCount_offset != 0, "offsets should have been initialized");
   the_class_mirror->int_field_put(_classRedefinedCount_offset, value);
+}
+
+int java_lang_Class::modifiers(oop the_class_mirror) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->char_field(_modifiers_offset);
+}
+
+void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  the_class_mirror->char_field_put(_modifiers_offset, value);
 }
 
 
@@ -4668,28 +4697,31 @@ int java_lang_invoke_MethodType::rtype_slot_count(oop mt) {
 // Support for java_lang_invoke_CallSite
 
 int java_lang_invoke_CallSite::_target_offset;
-int java_lang_invoke_CallSite::_context_offset;
+int java_lang_invoke_CallSite::_vmdependencies_offset;
+int java_lang_invoke_CallSite::_last_cleanup_offset;
 
 #define CALLSITE_FIELDS_DO(macro) \
   macro(_target_offset,  k, "target", java_lang_invoke_MethodHandle_signature, false); \
-  macro(_context_offset, k, "context", java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, false)
 
 void java_lang_invoke_CallSite::compute_offsets() {
   InstanceKlass* k = vmClasses::CallSite_klass();
   CALLSITE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_invoke_CallSite::serialize_offsets(SerializeClosure* f) {
   CALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
-oop java_lang_invoke_CallSite::context_no_keepalive(oop call_site) {
+DependencyContext java_lang_invoke_CallSite::vmdependencies(oop call_site) {
   assert(java_lang_invoke_CallSite::is_instance(call_site), "");
-
-  oop dep_oop = call_site->obj_field_access<AS_NO_KEEPALIVE>(_context_offset);
-  return dep_oop;
+  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
+  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
+  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
+  return dep_ctx;
 }
 
 // Support for java_lang_invoke_ConstantCallSite
@@ -4709,30 +4741,6 @@ void java_lang_invoke_ConstantCallSite::serialize_offsets(SerializeClosure* f) {
   CONSTANTCALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-// Support for java_lang_invoke_MethodHandleNatives_CallSiteContext
-
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_vmdependencies_offset;
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_last_cleanup_offset;
-
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
-  InstanceKlass* k = vmClasses::Context_klass();
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize_offsets(SerializeClosure* f) {
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
-  assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
-  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
-  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
-  return dep_ctx;
-}
 
 // Support for java_lang_ClassLoader
 
@@ -4814,7 +4822,7 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
   assert(is_instance(loader), "loader must be oop");
   assert(cl == nullptr || is_instance(cl), "cl argument must be oop");
   oop acl = loader;
-  debug_only(jint loop_count = 0);
+  DEBUG_ONLY(jint loop_count = 0);
   // This loop taken verbatim from ClassLoader.java:
   do {
     acl = parent(acl);
@@ -5383,7 +5391,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_invoke_MethodType) \
   f(java_lang_invoke_CallSite) \
   f(java_lang_invoke_ConstantCallSite) \
-  f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
   f(java_lang_reflect_AccessibleObject) \
   f(java_lang_reflect_Method) \
   f(java_lang_reflect_Constructor) \
@@ -5446,18 +5453,15 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
-  if (!CDSConfig::is_dumping_invokedynamic()) {
-    // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
+  if (!CDSConfig::is_dumping_method_handles()) {
+    // These are supported by CDS only when CDSConfig::is_dumping_method_handles() is enabled.
     if (klass == vmClasses::ResolvedMethodName_klass() ||
-        klass == vmClasses::MemberName_klass() ||
-        klass == vmClasses::Context_klass()) {
+        klass == vmClasses::MemberName_klass()) {
       return false;
     }
   }
 
-  if (klass->is_subclass_of(vmClasses::Reference_klass())) {
-    // It's problematic to archive Reference objects. One of the reasons is that
-    // Reference::discovered may pull in unwanted objects (see JDK-8284336)
+  if (!AOTReferenceObjSupport::is_enabled() && klass->is_subclass_of(vmClasses::Reference_klass())) {
     return false;
   }
 

@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -597,12 +596,13 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 }
 
 // ---------------------------------------------------------------
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
@@ -659,7 +659,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
@@ -802,7 +803,7 @@ static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegP
     if (args[i].first()->is_Register()) {
       x = x + args[i].first()->as_Register();
     } else if (args[i].first()->is_FloatRegister()) {
-      __ addi(sp, sp, -2 * wordSize);
+      __ subi(sp, sp, 2 * wordSize);
       __ fsd(args[i].first()->as_FloatRegister(), Address(sp, 0));
     }
   }
@@ -824,7 +825,7 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
       ;
     } else if (args[i].first()->is_FloatRegister()) {
       __ fld(args[i].first()->as_FloatRegister(), Address(sp, 0));
-      __ add(sp, sp, 2 * wordSize);
+      __ addi(sp, sp, 2 * wordSize);
     }
   }
 }
@@ -1715,7 +1716,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
       __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
+      __ mv(t0, 3 - (int)os::vm_page_size());
+      __ andr(swap_reg, swap_reg, t0);
 
       // Save the test result, for recursive case, the result is zero
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
@@ -2336,7 +2338,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop deoptimized frame
   __ lwu(x12, Address(x15, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
-  __ sub(x12, x12, 2 * wordSize);
+  __ subi(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
   __ ld(fp, Address(sp, 0));
   __ ld(ra, Address(sp, wordSize));
@@ -2379,7 +2381,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ bind(loop);
   __ ld(x9, Address(x14, 0));          // Load frame size
   __ addi(x14, x14, wordSize);
-  __ sub(x9, x9, 2 * wordSize);        // We'll push pc and fp by hand
+  __ subi(x9, x9, 2 * wordSize);       // We'll push pc and fp by hand
   __ ld(ra, Address(x12, 0));          // Load pc
   __ addi(x12, x12, wordSize);
   __ enter();                          // Save old & set new fp
@@ -2388,7 +2390,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ sd(sender_sp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize)); // Make it walkable
   __ mv(sender_sp, sp);                // Pass sender_sp to next frame
-  __ addi(x13, x13, -1);               // Decrement counter
+  __ subi(x13, x13, 1);                // Decrement counter
   __ bnez(x13, loop);
 
     // Re-push self-frame
@@ -2566,7 +2568,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 #endif
 
     // Adjust return pc forward to step over the safepoint poll instruction
-    __ add(x18, x18, NativeInstruction::instruction_size);
+    __ addi(x18, x18, NativeInstruction::instruction_size);
     __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
   }
 
@@ -2646,7 +2648,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ bnez(t1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(xmethod, xthread);
+  __ get_vm_result_metadata(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
   // x10 is where we want to jump, overwrite t1 which is saved and temporary
@@ -2664,7 +2666,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ sd(zr, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(zr, Address(xthread, JavaThread::vm_result_oop_offset()));
 
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -2736,7 +2738,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
   assert(is_even(framesize / 2), "sp not 16-byte aligned");
 
   // ra and fp are already in place
-  __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
+  __ subi(sp, fp, (unsigned)framesize << LogBytesPerInt); // prolog
 
   int frame_complete = __ pc() - start;
 

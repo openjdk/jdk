@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -77,10 +76,11 @@ void ContiguousSpace::mangle_unused_area(MemRegion mr) {
 
 #endif  // NOT_PRODUCT
 
-void ContiguousSpace::print() const { print_on(tty); }
+void ContiguousSpace::print() const { print_on(tty, ""); }
 
-void ContiguousSpace::print_on(outputStream* st) const {
-  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+void ContiguousSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print_cr("%sspace %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               prefix,
                capacity() / K, (int) ((double) used() * 100 / capacity()),
                p2i(bottom()), p2i(top()), p2i(end()));
 }

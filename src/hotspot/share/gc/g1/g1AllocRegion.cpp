@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
-#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -206,7 +205,6 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
   bool detailed_info = log.is_trace();
 
   if ((actual_word_size == 0 && result == nullptr) || detailed_info) {
-    ResourceMark rm;
     LogStream ls_trace(log.trace());
     LogStream ls_debug(log.debug());
     outputStream* out = detailed_info ? &ls_trace : &ls_debug;
@@ -225,10 +223,10 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 
     if (detailed_info) {
       if (result != nullptr) {
-        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
+        out->print(" min %zu desired %zu actual %zu " PTR_FORMAT,
                    min_word_size, desired_word_size, actual_word_size, p2i(result));
       } else if (min_word_size != 0) {
-        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
+        out->print(" min %zu desired %zu", min_word_size, desired_word_size);
       }
     }
     out->cr();
@@ -319,7 +317,7 @@ G1HeapRegion* MutatorAllocRegion::release() {
     _wasted_bytes += retire_internal(_retained_alloc_region, false);
     _retained_alloc_region = nullptr;
   }
-  log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: " SIZE_FORMAT "%s (%4.1f%%)",
+  log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: %zu%s (%4.1f%%)",
                                count(),
                                byte_size_in_proper_unit(_wasted_bytes),
                                proper_unit_for_byte_size(_wasted_bytes),

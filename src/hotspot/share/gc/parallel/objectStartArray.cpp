@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/memoryReserver.hpp"
@@ -122,7 +121,7 @@ void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
     assert(start_entry_for_region > end_entry, "Sanity check");
   }
 
-  debug_only(verify_for_block(blk_start, blk_end);)
+  DEBUG_ONLY(verify_for_block(blk_start, blk_end);)
 }
 
 void ObjectStartArray::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {

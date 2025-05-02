@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -438,6 +438,26 @@ public class Functions {
      */
     public static String mechanismInfoFlagsToString(long flags) {
         return mechanismInfoFlags.toString(flags);
+    }
+
+    private static final Flags hkdfSaltTypes = new Flags(new long[] {
+            CKF_HKDF_SALT_NULL,
+            CKF_HKDF_SALT_DATA,
+            CKF_HKDF_SALT_KEY
+    }, new String[] {
+            "CKF_HKDF_SALT_NULL",
+            "CKF_HKDF_SALT_DATA",
+            "CKF_HKDF_SALT_KEY"
+    });
+
+    /**
+     * converts a long value to a HKDF salt type string
+     *
+     * @param ulSaltType the HKDF salt type to be converted
+     * @return the HKDF salt type string representation
+     */
+    public static String saltTypeToString(long ulSaltType) {
+        return hkdfSaltTypes.toString(ulSaltType);
     }
 
     private static String getName(Map<Integer,String> nameMap, long id) {

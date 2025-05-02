@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,46 +319,40 @@ class FileTreeWalker implements Closeable {
             return null;      // stack is empty, we are done
 
         // continue iteration of the directory at the top of the stack
-        Event ev;
-        do {
-            Path entry = null;
-            IOException ioe = null;
+        Path entry = null;
+        IOException ioe = null;
 
-            // get next entry in the directory
-            if (!top.skipped()) {
-                Iterator<Path> iterator = top.iterator();
-                try {
-                    if (iterator.hasNext()) {
-                        entry = iterator.next();
-                    }
-                } catch (DirectoryIteratorException x) {
-                    ioe = x.getCause();
+        // get next entry in the directory
+        if (!top.skipped()) {
+            Iterator<Path> iterator = top.iterator();
+            try {
+                if (iterator.hasNext()) {
+                    entry = iterator.next();
+                }
+            } catch (DirectoryIteratorException x) {
+                ioe = x.getCause();
+            }
+        }
+
+        // no next entry so close and pop directory,
+        // creating corresponding event
+        if (entry == null) {
+            try {
+                top.stream().close();
+            } catch (IOException e) {
+                if (ioe == null) {
+                    ioe = e;
+                } else {
+                    ioe.addSuppressed(e);
                 }
             }
+            stack.pop();
+            return new Event(EventType.END_DIRECTORY, top.directory(), ioe);
+        }
 
-            // no next entry so close and pop directory,
-            // creating corresponding event
-            if (entry == null) {
-                try {
-                    top.stream().close();
-                } catch (IOException e) {
-                    if (ioe == null) {
-                        ioe = e;
-                    } else {
-                        ioe.addSuppressed(e);
-                    }
-                }
-                stack.pop();
-                return new Event(EventType.END_DIRECTORY, top.directory(), ioe);
-            }
-
-            // visit the entry
-            ev = visit(entry,
-                       true);  // canUseCached
-
-        } while (ev == null);
-
-        return ev;
+        // visit the entry
+        return visit(entry,
+                     true);  // canUseCached
     }
 
     /**

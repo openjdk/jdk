@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +26,9 @@
 #ifndef SHARE_RUNTIME_THREAD_HPP
 #define SHARE_RUNTIME_THREAD_HPP
 
-#include "jni.h"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -605,7 +605,7 @@ protected:
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock, const char * Name);
+  static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)

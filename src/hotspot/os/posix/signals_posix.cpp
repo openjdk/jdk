@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
@@ -50,6 +49,13 @@
 
 #include <signal.h>
 
+#define SEGV_BNDERR_value 3
+
+#if defined(SEGV_BNDERR)
+STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+#else
+#define SEGV_BNDERR SEGV_BNDERR_value
+#endif
 
 static const char* get_signal_name(int sig, char* out, size_t outlen);
 
@@ -141,7 +147,7 @@ public:
 };
 
 
-debug_only(static bool signal_sets_initialized = false);
+DEBUG_ONLY(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 
 // Our own signal handlers should never ever get replaced by a third party one.
@@ -970,6 +976,9 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGFPE,  FPE_FLTSUB,   "FPE_FLTSUB",   "Subscript out of range." },
     { SIGSEGV, SEGV_MAPERR,  "SEGV_MAPERR",  "Address not mapped to object." },
     { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
+#if defined(LINUX)
+    { SIGSEGV, SEGV_BNDERR,  "SEGV_BNDERR",  "Failed address bound checks." },
+#endif
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
@@ -1538,7 +1547,7 @@ static void signal_sets_init() {
   if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
   }
-  debug_only(signal_sets_initialized = true);
+  DEBUG_ONLY(signal_sets_initialized = true);
 }
 
 // These are signals that are unblocked while a thread is running Java.

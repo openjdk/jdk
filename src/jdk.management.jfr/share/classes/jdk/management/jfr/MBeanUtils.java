@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package jdk.management.jfr;
 
 import java.io.IOException;
-import java.lang.management.ManagementPermission;
-import java.security.Permission;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,30 +41,11 @@ import jdk.jfr.internal.management.ManagementSupport;
 
 final class MBeanUtils {
 
-    private static final Permission monitor = new ManagementPermission("monitor");
-    private static final Permission control = new ManagementPermission("control");
-
     static ObjectName createObjectName() {
         try {
             return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
         } catch (MalformedObjectNameException mne) {
             throw new Error("Can't happen", mne);
-        }
-    }
-
-    static void checkControl() {
-        @SuppressWarnings("removal")
-        SecurityManager secManager = System.getSecurityManager();
-        if (secManager != null) {
-            secManager.checkPermission(control);
-        }
-    }
-
-    static void checkMonitor() {
-        @SuppressWarnings("removal")
-        SecurityManager secManager = System.getSecurityManager();
-        if (secManager != null) {
-            secManager.checkPermission(monitor);
         }
     }
 

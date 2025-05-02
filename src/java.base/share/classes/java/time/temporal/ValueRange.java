@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,19 +96,19 @@ public final class ValueRange implements Serializable {
     private static final long serialVersionUID = -7317881728594519368L;
 
     /**
-     * The smallest minimum value.
+     * @serial The smallest minimum value.
      */
     private final long minSmallest;
     /**
-     * The largest minimum value.
+     * @serial The largest minimum value.
      */
     private final long minLargest;
     /**
-     * The smallest maximum value.
+     * @serial The smallest maximum value.
      */
     private final long maxSmallest;
     /**
-     * The largest maximum value.
+     * @serial The largest maximum value.
      */
     private final long maxLargest;
 

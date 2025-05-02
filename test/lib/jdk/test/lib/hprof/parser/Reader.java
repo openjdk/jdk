@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public abstract class Reader {
      * @param heapFile The name of a file containing a heap dump
      * @param callStack If true, read the call stack of allocaation sites
      */
+    @SuppressWarnings("try")
     public static Snapshot readFile(String heapFile, boolean callStack,
                                     int debugLevel)
             throws IOException {
@@ -136,6 +137,7 @@ public abstract class Reader {
      *
      * @param heapFile The name of a file containing a heap dump
      */
+    @SuppressWarnings("try")
     public static String getStack(String heapFile, int debugLevel)
             throws IOException {
         int dumpNumber = 1;

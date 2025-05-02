@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -935,7 +935,10 @@ cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
     if (!InitContextMutex()) return NULL;
 
     // Setup default memory allocators
-    memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
+    if (ContextID == NULL)
+        _cmsInstallAllocFunctions(NULL, &ctx->DefaultMemoryManager);
+    else
+        memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
 
     // Maintain the linked list
     _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);

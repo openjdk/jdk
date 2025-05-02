@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package jdk.test.lib.classloader;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -45,6 +46,9 @@ import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
     public static class TestFailure extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = -8108935949624559549L;
+
         TestFailure(String msg) {
             super(msg);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
  * @summary Tests HttpRequest.BodyPublishers::concat
  */
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -57,6 +55,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,12 +66,8 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import javax.net.ssl.SSLContext;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -419,9 +414,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     }
 
     static class RequestSubscriber implements Flow.Subscriber<ByteBuffer> {
-        CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
-        ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
-        CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
+        final CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
+        final ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
+        final CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
+
+        final Semaphore semaphore = new Semaphore(0);
 
         @Override
         public void onSubscribe(Subscription subscription) {
@@ -431,6 +428,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         @Override
         public void onNext(ByteBuffer item) {
             items.addLast(item);
+            int available = semaphore.availablePermits();
+            if (available > Integer.MAX_VALUE - 8) {
+                onError(new IllegalStateException("too many buffers in queue: " + available));
+            }
+            semaphore.release();
         }
 
         @Override
@@ -441,6 +443,18 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         @Override
         public void onComplete() {
             resultCF.complete(items.stream().collect(Collectors.toUnmodifiableList()));
+        }
+
+        public ByteBuffer take() {
+            // it is not guaranteed that the buffer will be added to
+            // the queue in the same thread that calls request(1).
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException x) {
+                Thread.currentThread().interrupt();
+                throw new CompletionException(x);
+            }
+            return items.pop();
         }
 
         CompletableFuture<List<ByteBuffer>> resultCF() { return resultCF; }
@@ -628,8 +642,9 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         publisher.subscribe(requestSubscriber1);
         Subscription subscription1 = requestSubscriber1.subscriptionCF.join();
         subscription1.request(16);
-        assertTrue(requestSubscriber1.resultCF().isDone());
+        // onNext() may not be called in the same thread than request()
         List<ByteBuffer> list1 = requestSubscriber1.resultCF().join();
+        assertTrue(requestSubscriber1.resultCF().isDone());
         String result1 = stringFromBytes(list1.stream());
         assertEquals(result1, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
         System.out.println("Got expected sentence with one request: \"%s\"".formatted(result1));
@@ -646,8 +661,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         subscription2.request(4);
         assertFalse(requestSubscriber2.resultCF().isDone());
         subscription2.request(1);
-        assertTrue(requestSubscriber2.resultCF().isDone());
         List<ByteBuffer> list2 = requestSubscriber2.resultCF().join();
+        assertTrue(requestSubscriber2.resultCF().isDone());
         String result2 = stringFromBytes(list2.stream());
         assertEquals(result2, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
         System.out.println("Got expected sentence with 4 requests: \"%s\"".formatted(result1));
@@ -689,7 +704,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             // receive half the data
             for (int i = 0; i < n; i++) {
                 subscription.request(1);
-                ByteBuffer buffer = subscriber.items.pop();
+                ByteBuffer buffer = subscriber.take();
             }
 
             // cancel subscription
@@ -789,7 +804,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) throws Exception {
         checkSkip();
-        System.out.println("Request to " + uri);
+        System.out.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
+        System.err.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
 
         HttpClient client = newHttpClient(sameClient);
 
@@ -802,7 +818,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 .POST(publisher)
                 .build();
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            System.out.println("Iteration: " + i);
+            System.out.println(uri + ": Iteration: " + i);
+            System.err.println(uri + ": Iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             int expectedResponse =  RESPONSE_CODE;
             if (response.statusCode() != expectedResponse)

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"

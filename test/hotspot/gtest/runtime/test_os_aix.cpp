@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
 #ifdef AIX
 
 #include "runtime/os.inline.hpp"
@@ -36,9 +34,9 @@
 TEST_VM(os_aix, aix_reserve_at_non_shmlba_aligned_address) {
   if (os::vm_page_size() != 4*K && !os::Aix::supports_64K_mmap_pages()) {
     // With this condition true shmget() is used inside
-    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
+    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M, mtTest);
     ASSERT_EQ(p, nullptr); // should have failed
-    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
+    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M, mtTest);
     ASSERT_EQ(p, nullptr); // should have failed
   }
 }

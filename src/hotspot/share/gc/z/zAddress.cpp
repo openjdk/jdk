@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/java.hpp"
@@ -36,6 +36,10 @@ size_t     ZAddressHeapBase;
 size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
 size_t     ZAddressOffsetMax;
+
+size_t     ZBackingOffsetMax;
+
+uint32_t   ZBackingIndexMax;
 
 uintptr_t  ZPointerRemapped;
 uintptr_t  ZPointerRemappedYoungMask;
@@ -106,7 +110,7 @@ void ZGlobalsPointers::initialize() {
   // Check max supported heap size
   if (MaxHeapSize > ZAddressOffsetMax) {
     vm_exit_during_initialization(
-        err_msg("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+        err_msg("Java heap too large (max supported heap size is %zuG)",
                 ZAddressOffsetMax / G));
   }
 
@@ -145,4 +149,11 @@ void ZGlobalsPointers::flip_old_mark_start() {
 void ZGlobalsPointers::flip_old_relocate_start() {
   ZPointerRemappedOldMask ^= ZPointerRemappedMask;
   set_good_masks();
+}
+
+size_t ZGlobalsPointers::min_address_offset_request() {
+  // See ZVirtualMemoryReserver for logic around setting up the heap for NUMA
+  const size_t desired_for_heap = MaxHeapSize * ZVirtualToPhysicalRatio;
+  const size_t desired_for_numa_multiplier = ZNUMA::count() > 1 ? 2 : 1;
+  return round_up_power_of_2(desired_for_heap * desired_for_numa_multiplier);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
+    /** flag: is the "preview" lint category enabled? */
+    private final boolean verbose;
+
     /** the diag handler to manage preview feature usage diagnostics */
     private final MandatoryWarningHandler previewHandler;
 
@@ -80,7 +83,6 @@ public class Preview {
     private final Set<JavaFileObject> sourcesWithPreviewFeatures = new HashSet<>();
 
     private final Names names;
-    private final Lint lint;
     private final Log log;
     private final Source source;
 
@@ -101,10 +103,9 @@ public class Preview {
         names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
-        lint = Lint.instance(context);
         source = Source.instance(context);
-        this.previewHandler =
-                new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
+        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
+        previewHandler = new MandatoryWarningHandler(log, source, verbose, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -152,9 +153,7 @@ public class Preview {
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(m)) ||
-               //the specification lists the java.se module as participating in preview:
-               m.name == names.java_se;
+                .anyMatch(ed -> ed.modules.contains(m));
     }
 
     /**
@@ -176,12 +175,10 @@ public class Preview {
     public void warnPreview(DiagnosticPosition pos, Feature feature) {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
-        if (!lint.isSuppressed(LintCategory.PREVIEW)) {
-            sourcesWithPreviewFeatures.add(log.currentSourceFile());
-            previewHandler.report(pos, feature.isPlural() ?
-                    LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                    LintWarnings.PreviewFeatureUse(feature.nameFragment()));
-        }
+        markUsesPreview(pos);
+        previewHandler.report(pos, feature.isPlural() ?
+                LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+                LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
 
     /**
@@ -191,12 +188,17 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (lint.isEnabled(LintCategory.PREVIEW)) {
+        if (verbose) {
             log.mandatoryWarning(null,
                     LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
     }
 
+    /**
+     * Mark the current source file as using a preview feature. The corresponding classfile
+     * will be generated with minor version {@link ClassFile#PREVIEW_MINOR_VERSION}.
+     * @param pos the position at which the preview feature was used.
+     */
     public void markUsesPreview(DiagnosticPosition pos) {
         sourcesWithPreviewFeatures.add(log.currentSourceFile());
     }
@@ -224,11 +226,8 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case IMPLICIT_CLASSES -> true;
             case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
-            case MODULE_IMPORTS -> true;
-            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

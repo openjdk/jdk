@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @requires vm.debug
- * @key jfr
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @summary Make sure that there are no Old->Old and Free->Free events sent.
  * @run main/othervm -XX:+G1GCAllocationFailureALot -XX:NewSize=2m -XX:MaxNewSize=2m -XX:MaxTenuringThreshold=1

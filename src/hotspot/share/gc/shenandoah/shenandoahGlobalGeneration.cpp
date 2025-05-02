@@ -21,10 +21,9 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"

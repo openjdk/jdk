@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ inline void G1ParScanThreadState::remember_root_into_optional_region(T* p) {
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   uint index = _g1h->heap_region_containing(o)->index_in_opt_cset();
   assert(index < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT, index, _max_num_optional_regions);
+         "Trying to access optional region idx %u beyond %zu", index, _max_num_optional_regions);
   _oops_into_optional_regions[index].push_root(p);
 }
 
@@ -84,14 +84,14 @@ inline void G1ParScanThreadState::remember_reference_into_optional_region(T* p) 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   uint index = _g1h->heap_region_containing(o)->index_in_opt_cset();
   assert(index < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT, index, _max_num_optional_regions);
+         "Trying to access optional region idx %u beyond %zu", index, _max_num_optional_regions);
   _oops_into_optional_regions[index].push_oop(p);
   verify_task(p);
 }
 
 G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const G1HeapRegion* hr) {
   assert(hr->index_in_opt_cset() < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT " " HR_FORMAT,
+         "Trying to access optional region idx %u beyond %zu " HR_FORMAT,
          hr->index_in_opt_cset(), _max_num_optional_regions, HR_FORMAT_PARAMS(hr));
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }

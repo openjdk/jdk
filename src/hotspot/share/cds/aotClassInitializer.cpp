@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+
+DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
 // Detector for class names we wish to handle specially.
 // It is either an exact string match or a string prefix match.
@@ -94,21 +98,13 @@ bool AOTClassInitializer::is_allowed(AllowedSpec* specs, InstanceKlass* ik) {
 
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
-  assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
+  assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;
   }
 
-  if (!ik->is_initialized()) {
+  if (!ik->is_initialized() && !ik->is_being_initialized()) {
     return false;
-  }
-
-  if (ik->is_hidden()) {
-    return HeapShared::is_archivable_hidden_klass(ik);
-  }
-
-  if (ik->is_enum_subclass()) {
-    return true;
   }
 
   // About "static field that may hold a different value" errors:
@@ -116,12 +112,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_initing_classes_at_dump_time() is enabled,
-  // HeapShared::find_all_aot_initialized_classes() finds the classes of all
+  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
+  // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
   // mirrors of these classes, and their <clinit> methods are NOT executed
-  // at runtime.
+  // at runtime. See aotArtifactFinder.hpp for more info.
   //
   // For example, with -XX:+AOTInvokeDynamicLinking, _run_time_special_subgraph
   // will contain some DirectMethodHandle objects. As a result, the DirectMethodHandle
@@ -268,16 +264,14 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       // everybody's favorite super
       {"java/lang/Object"},
 
-      // above we selected all enums; we must include their super as well
-      {"java/lang/Enum"},
-     {nullptr}
+      {nullptr}
     };
     if (is_allowed(specs, ik)) {
       return true;
     }
   }
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // This table was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
@@ -304,9 +298,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/LambdaForm"},
       {"java/lang/invoke/LambdaForm$Holder"},                 // UNSAFE.ensureClassInitialized()
       {"java/lang/invoke/LambdaForm$NamedFunction"},
+      {"java/lang/invoke/LambdaMetafactory"},
       {"java/lang/invoke/MethodHandle"},
       {"java/lang/invoke/MethodHandles"},
       {"java/lang/invoke/SimpleMethodHandle"},
+      {"java/lang/invoke/StringConcatFactory"},
+      {"java/lang/invoke/VarHandleGuards"},
       {"java/util/Collections"},
       {"java/util/stream/Collectors"},
       {"jdk/internal/constant/ConstantUtils"},
@@ -326,6 +323,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     }
   }
 
+#ifdef ASSERT
+  if (ik == _aot_init_class) {
+    return true;
+  }
+#endif
+
   return false;
 }
 
@@ -335,7 +338,8 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
   return ik == vmClasses::Class_klass() ||
          ik == vmClasses::internal_Unsafe_klass() ||
-         ik == vmClasses::ConcurrentHashMap_klass();
+         ik == vmClasses::ConcurrentHashMap_klass() ||
+         ik == vmClasses::Reference_klass();
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
@@ -357,3 +361,32 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
   }
 }
 
+#ifdef ASSERT
+void AOTClassInitializer::init_test_class(TRAPS) {
+  // -XX:AOTInitTestClass is used in regression tests for adding additional AOT-initialized classes
+  // and heap objects into the AOT cache. The tests must be carefully written to avoid including
+  // any classes that cannot be AOT-initialized.
+  //
+  // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
+  // the AOT cache. Therefore, this option is NOT available in product JVM.
+  if (AOTInitTestClass != nullptr && CDSConfig::is_initing_classes_at_dump_time()) {
+    log_info(cds)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
+    TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
+    Handle app_loader(THREAD, SystemDictionary::java_system_loader());
+    Klass* k = SystemDictionary::resolve_or_null(class_name, app_loader, CHECK);
+    if (k == nullptr) {
+      vm_exit_during_initialization("AOTInitTestClass not found", AOTInitTestClass);
+    }
+    if (!k->is_instance_klass()) {
+      vm_exit_during_initialization("Invalid name for AOTInitTestClass", AOTInitTestClass);
+    }
+
+    _aot_init_class = InstanceKlass::cast(k);
+    _aot_init_class->initialize(CHECK);
+  }
+}
+
+bool AOTClassInitializer::has_test_class() {
+  return _aot_init_class != nullptr;
+}
+#endif

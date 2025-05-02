@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -35,13 +34,15 @@ void ClassFileStream::truncated_file_error(TRAPS) const {
 ClassFileStream::ClassFileStream(const u1* buffer,
                                  int length,
                                  const char* source,
-                                 bool from_boot_loader_modules_image) :
+                                 bool from_boot_loader_modules_image,
+                                 bool from_class_file_load_hook) :
   _buffer_start(buffer),
   _buffer_end(buffer + length),
   _current(buffer),
   _source(source),
   _need_verify(true),  // may be reset by ClassFileParser when this stream is parsed.
-  _from_boot_loader_modules_image(from_boot_loader_modules_image) {
+  _from_boot_loader_modules_image(from_boot_loader_modules_image),
+  _from_class_file_load_hook(from_class_file_load_hook) {
     assert(buffer != nullptr, "caller should throw NPE");
 }
 
@@ -69,5 +70,6 @@ const ClassFileStream* ClassFileStream::clone() const {
   return new ClassFileStream(new_buffer_start,
                              length(),
                              clone_source(),
-                             from_boot_loader_modules_image());
+                             from_boot_loader_modules_image(),
+                             from_class_file_load_hook());
 }

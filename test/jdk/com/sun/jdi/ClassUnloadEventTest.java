@@ -202,7 +202,7 @@ public class ClassUnloadEventTest {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(ClassUnloadEventTest.class.getName());
-        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=info -Xlog:gc");
+        arguments.get("options").setValue("-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=info -Xlog:gc");
         return launchingConnector.launch(arguments);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_IR.hpp"
-#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_LinearScan.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/timerTrace.hpp"
@@ -92,9 +91,6 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _has_call(0)
  , _interval_in_loop(0)  // initialized later with correct length
  , _scope_value_cache(0) // initialized later with correct length
-#ifdef IA32
- , _fpu_stack_allocator(nullptr)
-#endif
 {
   assert(this->ir() != nullptr,          "check if valid");
   assert(this->compilation() != nullptr, "check if valid");
@@ -1091,43 +1087,23 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   // this operand is allowed to be on the stack in some cases
   BasicType opr_type = opr->type_register();
   if (opr_type == T_FLOAT || opr_type == T_DOUBLE) {
-    if (IA32_ONLY( (UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 ) NOT_IA32( true )) {
-      // SSE float instruction (T_DOUBLE only supported with SSE2)
-      switch (op->code()) {
-        case lir_cmp:
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
+    // SSE float instruction
+    switch (op->code()) {
+      case lir_cmp:
+      case lir_add:
+      case lir_sub:
+      case lir_mul:
+      case lir_div:
+      {
+        assert(op->as_Op2() != nullptr, "must be LIR_Op2");
+        LIR_Op2* op2 = (LIR_Op2*)op;
+        if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
+          assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
+          return shouldHaveRegister;
         }
-        default:
-          break;
       }
-    } else {
-      // FPU stack float instruction
-      switch (op->code()) {
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
-        }
-        default:
-          break;
-      }
+      default:
+        break;
     }
     // We want to sometimes use logical operations on pointers, in particular in GC barriers.
     // Since 64bit logical operations do not current support operands on stack, we have to make sure
@@ -1288,28 +1264,20 @@ void LinearScan::build_intervals() {
   // virtual fpu operands. Otherwise no allocation for fpu registers is
   // performed and so the temp ranges would be useless
   if (has_fpu_registers()) {
-#ifdef X86
-    if (UseSSE < 2) {
-#endif // X86
-      for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
-        LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
-#ifdef X86
+#ifndef X86
+    for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
+      LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
     }
-#endif // X86
-
-#ifdef X86
-    if (UseSSE > 0) {
-      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
-      for (i = 0; i < num_caller_save_xmm_regs; i ++) {
-        LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
+#else
+    int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
+    for (i = 0; i < num_caller_save_xmm_regs; i ++) {
+      LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
     }
 #endif // X86
   }
@@ -1869,15 +1837,12 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveRes
   int reg = interval->assigned_reg();
   int regHi = interval->assigned_regHi();
 
-  if ((reg < nof_regs && interval->always_in_memory()) ||
-      (use_fpu_stack_allocation() && reg >= pd_first_fpu_reg && reg <= pd_last_fpu_reg)) {
+  if ((reg < nof_regs && interval->always_in_memory())) {
     // the interval is split to get a short range that is located on the stack
-    // in the following two cases:
+    // in the following case:
     // * the interval started in memory (e.g. method parameter), but is currently in a register
     //   this is an optimization for exception handling that reduces the number of moves that
     //   are necessary for resolving the states when an exception uses this exception handler
-    // * the interval would be on the fpu stack at the begin of the exception handler
-    //   this is not allowed because of the complicated fpu stack handling on Intel
 
     // range that will be spilled to memory
     int from_op_id = block->first_lir_instruction_id();
@@ -2159,40 +2124,30 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 #ifndef __SOFTFP__
       case T_FLOAT: {
 #ifdef X86
-        if (UseSSE >= 1) {
-          int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-          if (UseAVX < 3) {
-            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-          }
-#endif // LP64
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
-          assert(interval->assigned_regHi() == any_reg, "must not have hi register");
-          return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+        int last_xmm_reg = pd_last_xmm_reg;
+        if (UseAVX < 3) {
+          last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
         }
-#endif // X86
-
+        assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+#else
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
         return LIR_OprFact::single_fpu(assigned_reg - pd_first_fpu_reg);
+#endif // !X86
       }
 
       case T_DOUBLE: {
-#ifdef X86
-        if (UseSSE >= 2) {
-          int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-          if (UseAVX < 3) {
-            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-          }
-#endif // LP64
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
-          assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
-          return LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
+#if defined(X86)
+        int last_xmm_reg = pd_last_xmm_reg;
+        if (UseAVX < 3) {
+          last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
         }
-#endif // X86
-
-#if defined(ARM32)
+        assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
+        LIR_Opr result = LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
+#elif defined(ARM32)
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
@@ -2666,17 +2621,9 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 
   } else if (opr->is_single_fpu()) {
-#ifdef IA32
-    // the exact location of fpu stack values is only known
-    // during fpu stack allocation, so the stack allocator object
-    // must be present
-    assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-    assert(_fpu_stack_allocator != nullptr, "must be present");
-    opr = _fpu_stack_allocator->to_fpu_stack(opr);
-#elif defined(AMD64)
+#if defined(AMD64)
     assert(false, "FPU not used on x86-64");
 #endif
-
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
 #ifndef __SOFTFP__
@@ -2779,16 +2726,6 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       // name for the other half.  *first and *second must represent the
       // least and most significant words, respectively.
 
-#ifdef IA32
-      // the exact location of fpu stack values is only known
-      // during fpu stack allocation, so the stack allocator object
-      // must be present
-      assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-      assert(_fpu_stack_allocator != nullptr, "must be present");
-      opr = _fpu_stack_allocator->to_fpu_stack(opr);
-
-      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
-#endif
 #ifdef AMD64
       assert(false, "FPU not used on x86-64");
 #endif
@@ -3022,15 +2959,9 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
       compute_oop_map(iw, visitor, op);
 
       // compute debug information
-      if (!use_fpu_stack_allocation()) {
-        // compute debug information if fpu stack allocation is not needed.
-        // when fpu stack allocation is needed, the debug information can not
-        // be computed here because the exact location of fpu operands is not known
-        // -> debug information is created inside the fpu stack allocator
-        int n = visitor.info_count();
-        for (int k = 0; k < n; k++) {
-          compute_debug_info(visitor.info_at(k), op_id);
-        }
+      int n = visitor.info_count();
+      for (int k = 0; k < n; k++) {
+        compute_debug_info(visitor.info_at(k), op_id);
       }
     }
 
@@ -3126,14 +3057,6 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_lir(2, "LIR after assignment of register numbers:"));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_after_asign));
-
-  { TIME_LINEAR_SCAN(timer_allocate_fpu_stack);
-
-    if (use_fpu_stack_allocation()) {
-      allocate_fpu_stack(); // Only has effect on Intel
-      NOT_PRODUCT(print_lir(2, "LIR after FPU stack allocation:"));
-    }
-  }
 
 #ifndef RISCV
   // Disable these optimizations on riscv temporarily, because it does not
@@ -5889,7 +5812,6 @@ bool LinearScanWalker::activate_current() {
 
   } else if (allocator()->gen()->is_vreg_flag_set(cur->reg_num(), LIRGenerator::must_start_in_memory)) {
     // activating an interval that must start in a stack slot, but may get a register later
-    // used for lir_roundfp: rounding is done by store to stack and reload later
     TRACE_LINEAR_SCAN(4, tty->print_cr("      interval must start in stack slot -> split it before first use"));
     assert(cur->assigned_reg() == any_reg && cur->assigned_regHi() == any_reg, "register already assigned");
 
@@ -6009,20 +5931,6 @@ bool EdgeMoveOptimizer::operations_different(LIR_Op* op1, LIR_Op* op2) {
       // these moves are exactly equal and can be optimized
       return false;
     }
-
-  } else if (op1->code() == lir_fxch && op2->code() == lir_fxch) {
-    assert(op1->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    assert(op2->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    LIR_Op1* fxch1 = (LIR_Op1*)op1;
-    LIR_Op1* fxch2 = (LIR_Op1*)op2;
-    if (fxch1->in_opr()->as_jint() == fxch2->in_opr()->as_jint()) {
-      // equal FPU stack operations can be optimized
-      return false;
-    }
-
-  } else if (op1->code() == lir_fpop_raw && op2->code() == lir_fpop_raw) {
-    // equal FPU stack operations can be optimized
-    return false;
   }
 
   // no optimization possible
@@ -6542,7 +6450,6 @@ const char* LinearScanStatistic::counter_name(int counter_idx) {
     case counter_throw:           return "throw";
     case counter_unwind:          return "unwind";
     case counter_typecheck:       return "type+null-checks";
-    case counter_fpu_stack:       return "fpu-stack";
     case counter_misc_inst:       return "other instructions";
     case counter_other_inst:      return "misc. instructions";
 
@@ -6739,7 +6646,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_abs:
         case lir_f2hf:
         case lir_hf2f:
-        case lir_log10:
         case lir_logic_and:
         case lir_logic_or:
         case lir_logic_xor:
@@ -6764,15 +6670,10 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_checkcast:
         case lir_store_check:     inc_counter(counter_typecheck); break;
 
-        case lir_fpop_raw:
-        case lir_fxch:
-        case lir_fld:             inc_counter(counter_fpu_stack); break;
-
         case lir_nop:
         case lir_push:
         case lir_pop:
         case lir_convert:
-        case lir_roundfp:
         case lir_cmove:           inc_counter(counter_misc_inst); break;
 
         default:                  inc_counter(counter_other_inst); break;
@@ -6821,7 +6722,6 @@ const char* LinearScanTimers::timer_name(int idx) {
     case timer_sort_intervals_after:     return "Sort Intervals After";
     case timer_eliminate_spill_moves:    return "Spill optimization";
     case timer_assign_reg_num:           return "Assign Reg Num";
-    case timer_allocate_fpu_stack:       return "Allocate FPU Stack";
     case timer_optimize_lir:             return "Optimize LIR";
     default: ShouldNotReachHere();       return "";
   }

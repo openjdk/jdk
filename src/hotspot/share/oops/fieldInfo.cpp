@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 

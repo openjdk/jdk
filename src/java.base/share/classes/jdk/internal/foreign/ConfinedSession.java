@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package jdk.internal.foreign;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
@@ -86,11 +86,20 @@ final class ConfinedSession extends MemorySessionImpl {
      * A confined resource list; no races are possible here.
      */
     static final class ConfinedResourceList extends ResourceList {
+        // The first element of the list is pulled into a separate field
+        // which helps escape analysis keep track of the instance, allowing
+        // it to be scalar replaced.
+        ResourceCleanup cache;
+
         @Override
         void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
-                cleanup.next = fst;
-                fst = cleanup;
+                if (cache == null) {
+                    cache = cleanup;
+                } else {
+                    cleanup.next = fst;
+                    fst = cleanup;
+                }
             } else {
                 throw alreadyClosed();
             }
@@ -101,7 +110,11 @@ final class ConfinedSession extends MemorySessionImpl {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 ResourceCleanup prev = fst;
                 fst = ResourceCleanup.CLOSED_LIST;
-                cleanup(prev);
+                RuntimeException pendingException = null;
+                if (cache != null) {
+                    pendingException = cleanupSingle(cache, pendingException);
+                }
+                cleanup(prev, pendingException);
             } else {
                 throw alreadyClosed();
             }

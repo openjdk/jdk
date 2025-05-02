@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"

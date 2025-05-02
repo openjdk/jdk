@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "unittest.hpp"
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"

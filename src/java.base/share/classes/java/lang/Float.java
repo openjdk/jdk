@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * decimal conversion issues} in {@code java.lang.Double} is also
  * applicable to {@code float} values.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -668,7 +668,7 @@ public final class Float extends Number
      * {@link #valueOf(float)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(float value) {
         this.value = value;
     }
@@ -684,7 +684,7 @@ public final class Float extends Number
      * static factory method {@link #valueOf(float)} method as follows:
      * {@code Float.valueOf((float)value)}.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(double value) {
         this.value = (float)value;
     }
@@ -705,7 +705,7 @@ public final class Float extends Number
      * {@code float} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Float} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(String s) throws NumberFormatException {
         value = parseFloat(s);
     }

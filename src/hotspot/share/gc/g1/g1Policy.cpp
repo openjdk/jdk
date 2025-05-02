@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,33 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
-
-#include "gc/shared/gcTraceTime.inline.hpp"
 
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor((100 - G1ConfidencePercent) / 100.0),
@@ -341,41 +339,47 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                               _reserve_regions,
                               max_to_eat_into_reserve);
 
+    uint survivor_regions_count = _g1h->survivor_regions_count();
+    uint desired_eden_length = desired_young_length - survivor_regions_count;
+    uint allocated_eden_length = allocated_young_length - survivor_regions_count;
+
     if (_free_regions_at_end_of_collection <= _reserve_regions) {
       // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
-      uint receiving_young = MIN3(_free_regions_at_end_of_collection,
-                                  desired_young_length,
+      uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
+                                  desired_eden_length,
                                   max_to_eat_into_reserve);
+      // Ensure that we provision for at least one Eden region.
+      receiving_eden = MAX2(receiving_eden, 1u);
       // We could already have allocated more regions than what we could get
       // above.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
-                                "receiving young %u receiving additional eden %u",
-                                receiving_young,
-                                receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_young_length + _reserve_regions)) {
+                                "receiving eden %u receiving additional eden %u",
+                                receiving_eden, receiving_additional_eden);
+    } else if (_free_regions_at_end_of_collection < (desired_eden_length + _reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
       uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
-      assert(free_outside_reserve < desired_young_length,
+      assert(free_outside_reserve < desired_eden_length,
              "must be %u %u",
-             free_outside_reserve, desired_young_length);
+             free_outside_reserve, desired_eden_length);
 
-      uint receiving_within_reserve = MIN2(desired_young_length - free_outside_reserve,
+      uint receiving_within_reserve = MIN2(desired_eden_length - free_outside_reserve,
                                            max_to_eat_into_reserve);
-      uint receiving_young = free_outside_reserve + receiving_within_reserve;
+      uint receiving_eden = free_outside_reserve + receiving_within_reserve;
+
       // Again, we could have already allocated more than we could get.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Partially eat into reserve "
                                 "free outside reserve %u "
                                 "receiving within reserve %u "
-                                "receiving young %u "
+                                "receiving eden %u "
                                 "receiving additional eden %u",
                                 free_outside_reserve, receiving_within_reserve,
-                                receiving_young, receiving_additional_eden);
+                                receiving_eden, receiving_additional_eden);
     } else {
       // No need to use the reserve.
       receiving_additional_eden = desired_young_length - allocated_young_length;
@@ -489,16 +493,15 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                           uint min_eden_length,
                                                           uint max_eden_length) const {
   uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
-                                     candidates()->marking_regions_length());
+                                     candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
-  for (G1CollectionSetCandidateInfo* ci : candidates()->marking_regions()) {
-    // We optimistically assume that any of these marking candidate regions will
-    // not be pinned, so just consider them as normal.
-    if (min_marking_candidates == 0) {
+  uint selected_candidates = 0;
+  for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
+    if (selected_candidates >= min_marking_candidates) {
       break;
     }
-    predicted_region_evac_time_ms += predict_region_total_time_ms(ci->_r, false /* for_young_only_phase */);
-    min_marking_candidates--;
+    predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
+    selected_candidates += gr->length();
   }
 
   return calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
@@ -524,12 +527,13 @@ double G1Policy::predict_retained_regions_evac_time() const {
 
   double result = 0.0;
 
-  G1CollectionCandidateList& list = candidates()->retained_regions();
+  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
   uint min_regions_left = MIN2(min_retained_old_cset_length(),
-                               list.length());
+                               retained_groups->num_regions());
 
-  for (G1CollectionSetCandidateInfo* ci : list) {
-    G1HeapRegion* r = ci->_r;
+  for (G1CSetCandidateGroup* group : *retained_groups) {
+    assert(group->length() == 1, "We should only have one region in a retained group");
+    G1HeapRegion* r = group->region_at(0); // We only have one region per group.
     // We optimistically assume that any of these marking candidate regions will
     // be reclaimable the next gc, so just consider them as normal.
     if (r->has_pinned_objects()) {
@@ -540,12 +544,12 @@ double G1Policy::predict_retained_regions_evac_time() const {
       break;
     }
     min_regions_left--;
-    result += predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+    result += group->predict_group_total_time_ms();
     num_regions++;
   }
 
   log_trace(gc, ergo, heap)("Selected %u of %u retained candidates (pinned %u) taking %1.3fms additional time",
-                            num_regions, list.length(), num_pinned_regions, result);
+                            num_regions, retained_groups->num_regions(), num_pinned_regions, result);
   return result;
 }
 
@@ -606,8 +610,8 @@ void G1Policy::record_full_collection_end() {
 
 static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
   log_debug(gc, refine, stats)
-           ("%s refinement: %.2fms, refined: " SIZE_FORMAT
-            ", precleaned: " SIZE_FORMAT ", dirtied: " SIZE_FORMAT,
+           ("%s refinement: %.2fms, refined: %zu"
+            ", precleaned: %zu, dirtied: %zu",
             kind,
             stats.refinement_time().seconds() * MILLIUNITS,
             stats.refined_cards(),
@@ -661,13 +665,6 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
 bool G1Policy::should_retain_evac_failed_region(uint index) const {
   size_t live_bytes = _g1h->region_at(index)->live_bytes();
-
-#ifdef ASSERT
-  G1HeapRegion* r = _g1h->region_at(index);
-  assert(live_bytes != 0,
-         "live bytes not set for %u used %zu garbage %zu cm-live %zu pinned %d",
-         index, r->used(), r->garbage_bytes(), live_bytes, r->has_pinned_objects());
-#endif
   size_t threshold = G1RetainRegionLiveThresholdPercent * G1HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }
@@ -757,7 +754,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
   bool result = false;
   if (marking_request_bytes > marking_initiating_used_threshold) {
     result = collector_state()->in_young_only_phase();
-    log_debug(gc, ergo, ihop)("%s occupancy: " SIZE_FORMAT "B allocation request: " SIZE_FORMAT "B threshold: " SIZE_FORMAT "B (%1.2f) source: %s",
+    log_debug(gc, ergo, ihop)("%s occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
                               cur_used_bytes, alloc_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
   }
@@ -1108,8 +1105,21 @@ size_t G1Policy::predict_bytes_to_copy(G1HeapRegion* hr) const {
   return bytes_to_copy;
 }
 
+double G1Policy::predict_gc_efficiency(G1HeapRegion* hr) {
+
+  double total_based_on_incoming_refs_ms = predict_merge_scan_time(hr->incoming_refs()) + // We use the number of incoming references as an estimate for remset cards.
+                                           predict_non_young_other_time_ms(1) +
+                                           predict_region_copy_time_ms(hr, false /* for_young_only_phase */);
+
+  return hr->reclaimable_bytes() / total_based_on_incoming_refs_ms;
+}
+
 double G1Policy::predict_young_region_other_time_ms(uint count) const {
   return _analytics->predict_young_other_time_ms(count);
+}
+
+double G1Policy::predict_non_young_other_time_ms(uint count) const {
+  return _analytics->predict_non_young_other_time_ms(count);
 }
 
 double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) const {
@@ -1128,13 +1138,12 @@ double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_on
   return _analytics->predict_object_copy_time_ms(bytes_to_copy, for_young_only_phase);
 }
 
-double G1Policy::predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t card_rs_length = hr->rem_set()->occupied();
-  size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, for_young_only_phase);
+double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
+  size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, false);
 
   return
-    _analytics->predict_card_merge_time_ms(card_rs_length, for_young_only_phase) +
-    _analytics->predict_card_scan_time_ms(scan_card_num, for_young_only_phase);
+    _analytics->predict_card_merge_time_ms(card_rs_length, false) +
+    _analytics->predict_card_scan_time_ms(scan_card_num, false);
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
@@ -1142,27 +1151,6 @@ double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_y
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);
-}
-
-double G1Policy::predict_region_non_copy_time_ms(G1HeapRegion* hr,
-                                                 bool for_young_only_phase) const {
-
-  double region_elapsed_time_ms = predict_region_merge_scan_time(hr, for_young_only_phase) +
-                                  predict_region_code_root_scan_time(hr, for_young_only_phase);
-  // The prediction of the "other" time for this region is based
-  // upon the region type and NOT the GC type.
-  if (hr->is_young()) {
-    region_elapsed_time_ms += _analytics->predict_young_other_time_ms(1);
-  } else {
-    region_elapsed_time_ms += _analytics->predict_non_young_other_time_ms(1);
-  }
-  return region_elapsed_time_ms;
-}
-
-double G1Policy::predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const {
-  return
-    predict_region_non_copy_time_ms(hr, for_young_only_phase) +
-    predict_region_copy_time_ms(hr, for_young_only_phase);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
@@ -1340,11 +1328,6 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
 }
 
 void G1Policy::abandon_collection_set_candidates() {
-  // Clear remembered sets of remaining candidate regions and the actual candidate
-  // set.
-  for (G1HeapRegion* r : *candidates()) {
-    r->rem_set()->clear(true /* only_cardset */);
-  }
   _collection_set->abandon_all_candidates();
 }
 

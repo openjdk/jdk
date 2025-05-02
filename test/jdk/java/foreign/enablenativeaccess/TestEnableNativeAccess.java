@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *        panama_jni_use_module/*
  *
  *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
- * @run testng/othervm/timeout=180 TestEnableNativeAccess
+ * @run testng/othervm/native/timeout=180 TestEnableNativeAccess
  * @summary Basic test for java --enable-native-access
  */
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
 # questions.
 #
 
+################################################################################
+
 include GensrcCommon.gmk
 
-include gensrc/GensrcCharacterData.gmk
-include gensrc/GensrcMisc.gmk
-include gensrc/GensrcCharsetMapping.gmk
-include gensrc/GensrcCharsetCoder.gmk
 include gensrc/GensrcBuffer.gmk
+include gensrc/GensrcCharacterData.gmk
+include gensrc/GensrcCharsetCoder.gmk
+include gensrc/GensrcCharsetMapping.gmk
 include gensrc/GensrcExceptions.gmk
-include gensrc/GensrcVarHandles.gmk
+include gensrc/GensrcMisc.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
-include gensrc/GensrcScopedMemoryAccess.gmk
 include gensrc/GensrcRegex.gmk
+include gensrc/GensrcScopedMemoryAccess.gmk
+include gensrc/GensrcVarHandles.gmk
 
 ################################################################################
 
@@ -78,16 +80,17 @@ $(eval $(call SetupCompileProperties, SUN_UTIL, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
-TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+$(eval $(call SetupCompileProperties, SECURITY_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/util/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-# Some resources bundles are already present as java files but still need to be
-# copied to zh_HK locale.
-$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(addprefix $(TOPDIR)/src/java.base/share/classes/, \
-        sun/security/util/AuthResources_zh_TW.java \
-        sun/security/util/Resources_zh_TW.java)))
+$(eval $(call SetupCompileProperties, KEYTOOL_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/tools/keytool/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-TARGETS += $(COPY_ZH_HK)
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES) $(KEYTOOL_RESOURCES)
 
 ################################################################################
 
@@ -113,3 +116,5 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(TOUCH) $@
 
 TARGETS += $(INTPOLY_GEN_DONE)
+
+################################################################################

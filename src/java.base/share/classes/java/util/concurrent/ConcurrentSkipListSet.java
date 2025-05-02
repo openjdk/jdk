@@ -35,7 +35,9 @@
 
 package java.util.concurrent;
 
-import java.lang.reflect.Field;
+import jdk.internal.misc.Unsafe;
+
+import java.lang.invoke.VarHandle;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +101,7 @@ public class ConcurrentSkipListSet<E>
     private static final long serialVersionUID = -2479143111061671589L;
 
     /**
-     * The underlying map. Uses Boolean.TRUE as value for each
+     * @serial The underlying map. Uses Boolean.TRUE as value for each
      * element.  This field is declared final for the sake of thread
      * safety, which entails some ugliness in clone().
      */
@@ -176,6 +178,8 @@ public class ConcurrentSkipListSet<E>
             ConcurrentSkipListSet<E> clone =
                 (ConcurrentSkipListSet<E>) super.clone();
             clone.setMap(new ConcurrentSkipListMap<E,Object>(m));
+            // Needed to ensure safe publication of setMap()
+            VarHandle.releaseFence();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new InternalError();
@@ -527,12 +531,11 @@ public class ConcurrentSkipListSet<E>
 
     /** Initializes map field; for use in clone. */
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        try {
-            Field mapField = ConcurrentSkipListSet.class.getDeclaredField("m");
-            mapField.setAccessible(true);
-            mapField.set(this, map);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new Error(e);
-        }
+        final Unsafe U = Unsafe.getUnsafe();
+        U.putReference(
+            this,
+            U.objectFieldOffset(ConcurrentSkipListSet.class, "m"),
+            map
+        );
     }
 }

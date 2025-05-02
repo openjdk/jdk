@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,19 +27,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahGenerationSizer.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -122,9 +122,9 @@ typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
-// Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
-// to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
-// See ShenandoahControlThread for GC cycle structure.
+// Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
+// for concurent evacuation and a snapshot-at-the-beginning write barrier for
+// concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
@@ -202,8 +202,8 @@ public:
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
-  void print_on(outputStream* st)              const override;
-  void print_extended_on(outputStream *st)     const override;
+  void print_heap_on(outputStream* st)         const override;
+  void print_gc_on(outputStream *st)           const override;
   void print_tracing_info()                    const override;
   void print_heap_regions_on(outputStream* st) const;
 
@@ -329,7 +329,7 @@ public:
     EVACUATION_BITPOS = 2,
 
     // Heap is under updating: needs no additional barriers.
-    UPDATEREFS_BITPOS = 3,
+    UPDATE_REFS_BITPOS = 3,
 
     // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
     WEAK_ROOTS_BITPOS  = 4,
@@ -346,7 +346,7 @@ public:
     HAS_FORWARDED = 1 << HAS_FORWARDED_BITPOS,
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
-    UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    UPDATE_REFS   = 1 << UPDATE_REFS_BITPOS,
     WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
     YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
     OLD_MARKING   = 1 << OLD_MARKING_BITPOS
@@ -363,18 +363,35 @@ private:
 
   size_t _gc_no_progress_count;
 
-  // This updates the singlular, global gc state. This must happen on a safepoint.
-  void set_gc_state(uint mask, bool value);
+  // This updates the singular, global gc state. This call must happen on a safepoint.
+  void set_gc_state_at_safepoint(uint mask, bool value);
+
+  // This also updates the global gc state, but does not need to be called on a safepoint.
+  // Critically, this method will _not_ flag that the global gc state has changed and threads
+  // will continue to use their thread local copy. This is expected to be used in conjunction
+  // with a handshake operation to propagate the new gc state.
+  void set_gc_state_concurrent(uint mask, bool value);
 
 public:
+  // This returns the raw value of the singular, global gc state.
   char gc_state() const;
 
-  // This copies the global gc state into a thread local variable for java threads.
-  // It is primarily intended to support quick access at barriers.
-  void propagate_gc_state_to_java_threads();
+  // Compares the given state against either the global gc state, or the thread local state.
+  // The global gc state may change on a safepoint and is the correct value to use until
+  // the global gc state has been propagated to all threads (after which, this method will
+  // compare against the thread local state). The thread local gc state may also be changed
+  // by a handshake operation, in which case, this function continues using the updated thread
+  // local value.
+  bool is_gc_state(GCState state) const;
+
+  // This copies the global gc state into a thread local variable for all threads.
+  // The thread local gc state is primarily intended to support quick access at barriers.
+  // All threads are updated because in some cases the control thread or the vm thread may
+  // need to execute the load reference barrier.
+  void propagate_gc_state_to_all_threads();
 
   // This is public to support assertions that the state hasn't been changed off of
-  // a safepoint and that any changes were propagated to java threads after the safepoint.
+  // a safepoint and that any changes were propagated to threads after the safepoint.
   bool has_gc_state_changed() const { return _gc_state_changed; }
 
   // Returns true if allocations have occurred in new regions or if regions have been
@@ -394,9 +411,7 @@ public:
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
 
-  inline bool is_stable() const;
   inline bool is_idle() const;
-
   inline bool is_concurrent_mark_in_progress() const;
   inline bool is_concurrent_young_mark_in_progress() const;
   inline bool is_concurrent_old_mark_in_progress() const;
@@ -415,35 +430,38 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
-  enum CancelState {
-    // Normal state. GC has not been cancelled and is open for cancellation.
-    // Worker threads can suspend for safepoint.
-    CANCELLABLE,
-
-    // GC has been cancelled. Worker threads can not suspend for
-    // safepoint but must finish their work as soon as possible.
-    CANCELLED
-  };
-
+  // Records the time of the first successful cancellation request. This is used to measure
+  // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
-  ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+
+  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
+  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc();
+  bool try_cancel_gc(GCCause::Cause cause);
 
 public:
+  // True if gc has been cancelled
   inline bool cancelled_gc() const;
+
+  // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
+  // This indicates the reason the last GC cycle was cancelled.
+  inline GCCause::Cause cancelled_cause() const;
+
+  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
+  // old mark does _not_ touch the oom handler).
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
-  void cancel_gc(GCCause::Cause cause);
 
-public:
+  // Returns true if and only if this call caused a gc to be cancelled.
+  bool cancel_gc(GCCause::Cause cause);
+
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -463,7 +481,14 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
+
+  // Retires LABs used for evacuation
+  void concurrent_prepare_for_update_refs();
+
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
+
   virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
@@ -615,6 +640,7 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
+  void collect_as_vm_thread(GCCause::Cause cause) override;
   void collect(GCCause::Cause cause) override;
   void do_full_collection(bool clear_all_soft_refs) override;
 
@@ -670,6 +696,9 @@ private:
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
+  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
+  bool should_retry_allocation(size_t original_full_gc_count) const;
+
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size, bool* what) override;
@@ -713,7 +742,7 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
+  // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 
   template<class T>

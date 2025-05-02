@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -211,8 +210,8 @@ void SplitInfo::verify_clear()
 #endif  // #ifdef ASSERT
 
 
-void PSParallelCompact::print_on_error(outputStream* st) {
-  _mark_bitmap.print_on_error(st);
+void PSParallelCompact::print_on(outputStream* st) {
+  _mark_bitmap.print_on(st);
 }
 
 ParallelCompactData::ParallelCompactData() :
@@ -247,27 +246,33 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
                                              rs_align,
-                                             page_sz);
+                                             page_sz,
+                                             mtGC);
+
+  if (!rs.is_reserved()) {
+    // Failed to reserve memory.
+    return nullptr;
+  }
 
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
-  if (vspace != nullptr) {
-    if (vspace->expand_by(_reserved_byte_size)) {
-      return vspace;
-    }
+
+  if (!vspace->expand_by(_reserved_byte_size)) {
+    // Failed to commit memory.
+
     delete vspace;
+
     // Release memory reserved in the space.
-    if (rs.is_reserved()) {
-      MemoryReserver::release(rs);
-      rs = {};
-    }
+    MemoryReserver::release(rs);
+
+    return nullptr;
   }
 
-  return nullptr;
+  return vspace;
 }
 
 bool ParallelCompactData::initialize_region_data(size_t heap_size)
@@ -584,16 +589,16 @@ bool PSParallelCompact::initialize_aux_data() {
 
   if (!_mark_bitmap.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB bitmaps for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB card tables for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
@@ -989,10 +994,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
-  if (GCLocker::check_active_before_gc()) {
-    return false;
-  }
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCIdMark gc_id_mark;
@@ -1075,7 +1076,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     if (UseAdaptiveSizePolicy) {
       log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
-      log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+      log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                           old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
       // Don't check if the size_policy is ready here.  Let
@@ -1210,12 +1211,9 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
   do {
-    oop obj = nullptr;
-    ObjArrayTask task;
-    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
-      cm->follow_array((objArrayOop)task.obj(), task.index());
-    } else if (ParCompactionManager::steal(worker_id, obj)) {
-      cm->follow_contents(obj);
+    ScannerTask task;
+    if (ParCompactionManager::steal(worker_id, task)) {
+      cm->follow_contents(task, true);
     }
     cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
@@ -1231,7 +1229,7 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _terminator(active_workers, ParCompactionManager::oop_task_queues()),
+      _terminator(active_workers, ParCompactionManager::marking_stacks()),
       _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
@@ -1269,7 +1267,7 @@ class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelCompactRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
-      _terminator(_max_workers, ParCompactionManager::oop_task_queues()) {}
+      _terminator(_max_workers, ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -1379,8 +1377,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
 #if TASKQUEUE_STATS
-  ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
-  ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+  ParCompactionManager::print_and_reset_taskqueue_stats();
 #endif
 }
 
@@ -1633,7 +1630,7 @@ void PSParallelCompact::forward_to_new_addr() {
   } task(nworkers);
 
   ParallelScavengeHeap::heap()->workers().run_task(&task);
-  debug_only(verify_forward();)
+  DEBUG_ONLY(verify_forward();)
 }
 
 #ifdef ASSERT
@@ -1688,7 +1685,7 @@ private:
 public:
   FillableRegionLogger() : _next_index(0), _enabled(log_develop_is_enabled(Trace, gc, compaction)), _total_regions(0) { }
   ~FillableRegionLogger() {
-    log.trace(SIZE_FORMAT " initially fillable regions", _total_regions);
+    log.trace("%zu initially fillable regions", _total_regions);
   }
 
   void print_line() {
@@ -1697,7 +1694,7 @@ public:
     }
     FormatBuffer<> line("Fillable: ");
     for (int i = 0; i < _next_index; i++) {
-      line.append(" " SIZE_FORMAT_W(7), _regions[i]);
+      line.append(" %7zu", _regions[i]);
     }
     log.trace("%s", line.buffer());
     _next_index = 0;
@@ -2478,4 +2475,3 @@ void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallel
     ParCompactionManager::push_shadow_region_mt_safe(_shadow);
   }
 }
-

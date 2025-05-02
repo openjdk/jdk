@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@
  * @bug 8228604
  *
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @library /test/lib
  *
  * @run main/othervm/native -agentlib:MissedStackMapFrames MissedStackMapFrames
  */
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 
 public class MissedStackMapFrames {

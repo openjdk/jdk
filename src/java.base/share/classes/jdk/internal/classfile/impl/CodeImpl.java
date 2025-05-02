@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.*;
 import java.util.ArrayList;
@@ -168,6 +169,7 @@ public final class CodeImpl
         generateCatchTargets(consumer);
         if (classReader.context().passDebugElements())
             generateDebugElements(consumer);
+        generateUserAttributes(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
                 consumer.accept(labels[pos - codeStart]);
@@ -202,6 +204,14 @@ public final class CodeImpl
             exceptionTable = Collections.unmodifiableList(exceptionTable);
         }
         return exceptionTable;
+    }
+
+    private void generateUserAttributes(Consumer<? super CodeElement> consumer) {
+        for (var attr : attributes) {
+            if (attr instanceof CustomAttribute || attr instanceof UnknownAttribute) {
+                consumer.accept((CodeElement) attr);
+            }
+        }
     }
 
     public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
@@ -254,14 +264,16 @@ public final class CodeImpl
                 //fallback to jump targets inflation without StackMapTableAttribute
                 for (int pos=codeStart; pos<codeEnd; ) {
                     var i = bcToInstruction(classReader.readU1(pos), pos);
-                    switch (i) {
-                        case BranchInstruction br -> br.target();
-                        case DiscontinuedInstruction.JsrInstruction jsr -> jsr.target();
-                        case LookupSwitchInstruction ls -> {
+                    switch (i.opcode().kind()) {
+                        case BRANCH -> ((BranchInstruction) i).target();
+                        case DISCONTINUED_JSR -> ((DiscontinuedInstruction.JsrInstruction) i).target();
+                        case LOOKUP_SWITCH -> {
+                            var ls = (LookupSwitchInstruction) i;
                             ls.defaultTarget();
                             ls.cases();
                         }
-                        case TableSwitchInstruction ts -> {
+                        case TABLE_SWITCH -> {
+                            var ts = (TableSwitchInstruction) i;
                             ts.defaultTarget();
                             ts.cases();
                         }
@@ -272,7 +284,6 @@ public final class CodeImpl
             }
             return;
         }
-        @SuppressWarnings("unchecked")
         int stackMapPos = ((BoundAttribute<StackMapTableAttribute>) a.get()).payloadStart;
 
         int bci = -1; //compensate for offsetDelta + 1

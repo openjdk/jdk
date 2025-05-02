@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.lang.invoke.VarHandle;
 /**
  * Static factories for certain VarHandle/MethodHandle variants.
  * <p>
+ * Some methods take no receiver argument. In these cases, the receiver is the
+ * lookup class.
+ * <p>
  * The methods will throw an {@link InternalError} if the lookup fails.
  * <p>
  * Here is an example of how one of these methods could be used:
@@ -63,6 +66,11 @@ public final class MhUtil {
         }
     }
 
+    public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
+                                           String name,
+                                           MethodType type) {
+        return findVirtual(lookup, lookup.lookupClass(), name, type);
+    }
 
     public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
                                            Class<?> refc,
@@ -70,6 +78,23 @@ public final class MhUtil {
                                            MethodType type) {
         try {
             return lookup.findVirtual(refc, name, type);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    public static MethodHandle findStatic(MethodHandles.Lookup lookup,
+                                          String name,
+                                          MethodType type) {
+        return findStatic(lookup, lookup.lookupClass(), name, type);
+    }
+
+    public static MethodHandle findStatic(MethodHandles.Lookup lookup,
+                                          Class<?> refc,
+                                          String name,
+                                          MethodType type) {
+        try {
+            return lookup.findStatic(refc, name, type);
         } catch (ReflectiveOperationException e) {
             throw new InternalError(e);
         }
