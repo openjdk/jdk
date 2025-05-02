@@ -25,6 +25,8 @@
 
 package jdk.internal.math;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.Arrays;
 
 /**
@@ -186,7 +188,7 @@ public class FloatingDecimal{
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
-        private boolean isNegative;
+        private final boolean isNegative;
 
         public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
             this.image = image;
@@ -241,9 +243,7 @@ public class FloatingDecimal{
     }
 
     private static final String INFINITY_REP = "Infinity";
-    private static final int INFINITY_LENGTH = INFINITY_REP.length();
     private static final String NAN_REP = "NaN";
-    private static final int NAN_LENGTH = NAN_REP.length();
 
     private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
@@ -2349,6 +2349,7 @@ public class FloatingDecimal{
 //    private static final int BINARY_256_IX = 4;
 
     /* The precision of the format. */
+    @Stable
     private static final int[] P = {
             11, 24, 53, // 113, 237,
     };
@@ -2359,6 +2360,7 @@ public class FloatingDecimal{
      * Less or equal values round to 0 when using roundTiesToEven.
      * Equivalently, EP_MIN = floor(log10(2^(Q_MIN-1))).
      */
+    @Stable
     private static final int[] EP_MIN = {
             -8, -46, -324, // -4_966, -78_985,
     };
@@ -2369,11 +2371,13 @@ public class FloatingDecimal{
      * Greater or equal values round to infinity when using roundTiesToEven.
      * Equivalently, EP_MAX = ceil(log10((2^P - 1/2) 2^Q_MAX)) + 1.
      */
+    @Stable
     private static final int[] EP_MAX = {
             6, 40, 310, // 4_934, 78_915,
     };
 
     /* Exponent width. */
+    @Stable
     private static final int[] W = {
             (1 << 4 + BINARY_16_IX) - P[BINARY_16_IX],
             (1 << 4 + BINARY_32_IX) - P[BINARY_32_IX],
@@ -2383,6 +2387,7 @@ public class FloatingDecimal{
     };
 
     /* Maximum exponent in the m 2^e representation. */
+    @Stable
     private static final int[] E_MAX = {
             (1 << W[BINARY_16_IX] - 1) - 1,
             (1 << W[BINARY_32_IX] - 1) - 1,
@@ -2392,6 +2397,7 @@ public class FloatingDecimal{
     };
 
     /* Minimum exponent in the m 2^e representation. */
+    @Stable
     private static final int[] E_MIN = {
             1 - E_MAX[BINARY_16_IX],
             1 - E_MAX[BINARY_32_IX],
@@ -2401,6 +2407,7 @@ public class FloatingDecimal{
     };
 
     /* Minimum exponent in the c 2^q representation. */
+    @Stable
     private static final int[] Q_MIN = {
             E_MIN[BINARY_16_IX] - (P[BINARY_16_IX] - 1),
             E_MIN[BINARY_32_IX] - (P[BINARY_32_IX] - 1),
@@ -2413,6 +2420,7 @@ public class FloatingDecimal{
      * The most significant P +1 rounding bit +1 sticky bit = P + 2 bits in a
      * hexadecimal string need up to HEX_COUNT = floor(P/4) + 2 hex digits.
      */
+    @Stable
     private static final int[] HEX_COUNT = {
             P[BINARY_16_IX] / 4 + 2,
             P[BINARY_32_IX] / 4 + 2,
