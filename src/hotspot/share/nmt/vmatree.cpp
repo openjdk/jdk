@@ -53,7 +53,11 @@ NativeCallStackStorage::StackIndex VMATree::get_new_reserve_callstack(NativeCall
                            {es, es, es},   // op == Commit
                            {es, es, es}    // op == Uncommit
                            };
-  return result[op][st_to_index(ex)];
+  if (op == 2 && ex == StateType::Released) {
+    return rq;
+  } else {
+    return result[op][st_to_index(ex)];
+  }
 }
 
 NativeCallStackStorage::StackIndex VMATree::get_new_commit_callstack(NativeCallStackStorage::StackIndex es, StateType ex, const RequestInfo& req){
@@ -139,7 +143,6 @@ void VMATree::compute_summary_diff(SingleDiff::delta region_size, MemTag t1, con
   SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(t1)];
   SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(t2)];
   int st = st_to_index(ex);
-  tty->print_cr("%d %d %d %d %ld %ld", (int)t1, (int)t2, op, st, from_rescom.reserve, to_rescom.reserve);
   from_rescom.reserve += reserve[op][st * 2    ];
     to_rescom.reserve += reserve[op][st * 2 + 1];
   from_rescom.commit  +=  commit[op][st * 2    ];
@@ -149,14 +152,10 @@ void VMATree::compute_summary_diff(SingleDiff::delta region_size, MemTag t1, con
 
 void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
   using SIndex = NativeCallStackStorage::StackIndex;
-  IntervalState exSt; // existing state info
+  IntervalState exSt = n1->val().out; // existing state info
   assert(n1 != nullptr,"sanity");
   assert(n2 != nullptr,"sanity");
-  if (n1->key() == req.A) {
-    exSt = n1->val().in;
-  } else {
-    exSt = n1->val().out;
-  }
+
 
   StateType existing_state              = exSt.type();
   MemTag    existing_tag                = exSt.mem_tag();
@@ -164,34 +163,34 @@ void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req
   SIndex    existing_commit_callstack   = exSt.committed_stack();
 
   StateType new_state                   = get_new_state(existing_state, req);
-  MemTag    new_tag                     = req.use_tag_inplace ? existing_tag : req.tag;
+  MemTag    new_tag                     = req.use_tag_inplace ? n1->val().out.mem_tag() : req.tag;
   SIndex    new_reserve_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
-  SIndex    new_committ_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
+  SIndex    new_committ_callstack       = get_new_commit_callstack(existing_commit_callstack, existing_state, req);
 
   n1->val().out.set_tag(new_tag);
   n1->val().out.set_type(new_state);
-  n1->val().out.set_commit_stack(new_committ_callstack);
   n1->val().out.set_reserve_stack(new_reserve_callstack);
+  n1->val().out.set_commit_stack(new_committ_callstack);
 
   n2->val().in.set_tag(new_tag);
   n2->val().in.set_type(new_state);
-  n2->val().in.set_commit_stack(new_committ_callstack);
   n2->val().in.set_reserve_stack(new_reserve_callstack);
+  n2->val().in.set_commit_stack(new_committ_callstack);
 
   SingleDiff::delta region_size = n2->key() - n1->key();
   compute_summary_diff(region_size, existing_tag, existing_state, req, new_tag, diff);
 }
 
 
-VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
+VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
 
-  if (A == B) {
+  if (_A == _B) {
     return SummaryDiff();
   }
-  assert(A < B, "should be");
+  assert(_A < _B, "should be");
   SummaryDiff diff;
-  RequestInfo req{A, B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
+  RequestInfo req{_A, _B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
   IntervalChange stA{
       IntervalState{StateType::Released, empty_regiondata},
       IntervalState{              state,   metadata}
@@ -200,8 +199,49 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       IntervalState{              state,   metadata},
       IntervalState{StateType::Released, empty_regiondata}
   };
-  VMATreap::Range rA = _tree.find_enclosing_range(A);
-  VMATreap::Range rB = _tree.find_enclosing_range(B);
+  auto upsert_if= [&](TreapNode* node) {
+    if (!node->val().is_noop()) {
+      _tree.upsert(node->key(), node->val());
+    }
+  };
+  auto update = [&](TreapNode* n1, TreapNode* n2) {
+    update_region(n1, n2, req, diff);
+  };
+  auto remove_if = [&](TreapNode* node) -> bool{
+    if (node->val().is_noop()) {
+      _tree.remove(node->key());
+      return true;
+    }
+    return false;
+  };
+  GrowableArrayCHeap<position, mtNMT> to_be_removed;
+  // update regions in [Y,W)
+  auto update_loop = [&]() {
+    /*(S,F)
+    n1 = S
+    while(n2 != F) {
+      n2=gt(n1);
+      update(n1,n2);
+      n1=n2;
+    }
+    */
+    TreapNode* prev = nullptr;
+    _tree.visit_range_in_order(_A + 1, _B + 1, [&](TreapNode* curr) {
+      if (prev != nullptr) {
+        update_region(prev, curr, req, diff);
+        // during visit, structure of the tree should not be changed
+        // keep the keys to be removed, and remove them later
+        if (prev->val().is_noop()) {
+          to_be_removed.push(prev->key());
+        }
+      }
+      prev = curr;
+    });
+  };
+  stA.out.set_commit_stack(NativeCallStackStorage::invalid);
+  stB.in.set_commit_stack(NativeCallStackStorage::invalid);
+  VMATreap::Range rA = _tree.find_enclosing_range(_A);
+  VMATreap::Range rB = _tree.find_enclosing_range(_B);
   // nodes:          .....X.......Y...Z......W........U
   // request:                 A------------------B
   // X,Y = enclosing_nodes(A)
@@ -211,391 +251,360 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // We update regions in 3 sections: 1) X..A..Y, 2) Y....W, 3) W..B..U
   // The regons in [Y,W) are updated in a loop. We update X..A..Y before the loop and W..B..U after the loop.
-  // The table below summarizes the cases and what to do.
-  // 'update'  for a region [a,b) means call 'update_region(node a, node b, req, diff)' to update the region based on existing State and the request.
+  // The table below summarizes the overlap cases.
 
 
-  //                                                                                              Regions before loop                                         Regions in
-  //                                                             X exists     Y exists    X == A   [X,A)         [A,Y)    remove X if        upsert A if       the loop                                    to do after loop
-  //                                                             --------     --------    ------   ------        -----    ---------------    --------------   -------------  ----------------------------------------------------------------
-  // row  0: nodes:          .........A..................B.....  no             no        --       --            --        --                 !A_is_noop()        --
-  // row  1: nodes:          .....X...A..................B.....  yes            no        no       A.in = X.out  --        --                 !A_is_noop()        --
-  // row  2: nodes:          .....XA.....................B.....  yes            no        yes      A.in = X.in   --        X.in == A.out      !remove_X           --
-  // row  3: nodes:          .........A...Y...Z......W...B....U  no             yes       --       --            update    --                 !A_is_noop()       [Y,W)
-  // row  4: nodes:          .....X...A...Y...Z......W...B....U  yes            yes       no       A.in = X.out  update    --                 !A_is_noop()       [Y,W)
-  // row  5: nodes:          .....XA......Y...Z......W...B....U  yes            yes       yes      A.in = X.in   update    X.in == A.out      !remove_X          [Y,W)
-  //       :
-  //       :                                                     W exists     U exists    W == B                                                                             [W,B)         [B,U)            remove W if       upsert B if
-  //       :                                                     --------     --------    ------   ------------------------------------------------------------------------  -----         ------          ----------------  ---------------
-  // row  6: nodes:          .........A..................B.....   no            no          --                                                                                --            --              --                !B.is_noop()
-  // row  7: nodes:          .........A..................B....U   no            yes         --                                                                                --           B.out = U.in     --                !B.is_noop()
-  // row  8: nodes:          .....X...A...Y...Z......W...B.....   yes           no          no                                                                                update        --              W.is_noop()       !B.is_noop()
-  // row  9: nodes:          .....X...A...Y...Z......WB........   yes           no          yes                                                                               --            --              W.in == B.out     !remove_W
-  // row 10: nodes:          .....X...A...Y...Z......W...B....U   yes           yes         no                                                                                update       B.out = U.in     W.is_noop()       !B.is_noop()
-  // row 11: nodes:          .....X...A...Y...Z......WB.......U   yes           yes         yes                                                                               --            --              W.in == B.out     !remove_W
+  // row  0:  .........A..................B.....
+  // row  1:  .........A...YW.............B.....
+  // row  2:  .........A...Y..........W...B.....
+  // row  3:  .........A...Y.............WB.....
 
-  // We intentionally did not summarize/compress the cases to have them as separate. This expanded way of describing the cases helps us to understand/analyze/verify/debug/maintain the corresponding code more easily.
-  // Mapping of table to row, row to switch-case, 'what to do' to code should be consistent. If one changes, the others have to be updated accordingly.
+  // row  4:  .....X...A..................B.....
+  // row  5:  .....X...A...YW.............B.....
+  // row  6:  .....X...A...Y..........W...B.....
+  // row  7:  .....X...A...Y.............WB.....
+
+  // row  8:  ........XA..................B.....
+  // row  9:  ........XA...YW.............B.....
+  // row 10:  ........XA...Y..........W...B.....
+  // row 11:  ........XA...Y.............WB.....
+
+  // row 12:  .........A..................B....U
+  // row 13:  .........A...YW.............B....U
+  // row 14:  .........A...Y..........W...B....U
+  // row 15:  .........A...Y.............WB....U
+
+  // row 16:  .....X...A..................B....U
+  // row 17:  .....X...A...YW.............B....U
+  // row 18:  .....X...A...Y..........W...B....U
+  // row 19:  .....X...A...Y.............WB....U
+
+  // row 20:  ........XA..................B....U
+  // row 21:  ........XA...YW.............B....U
+  // row 22:  ........XA...Y..........W...B....U
+  // row 23:  ........XA...Y.............WB....U
+
+
+  // We intentionally did not summarize/compress the cases to keep them as separate.
+  // This expanded way of describing the cases helps us to understand/analyze/verify/debug/maintain the corresponding code more easily.
+  // Mapping of table to row, row to switch-case should be consistent. If one changes, the others have to be updated accordingly.
   // The sequence of dependecies is: table -> row no -> switch(row)-case -> code. Meaning that whenever any of one item in this sequence is changed, the rest of the consequent items to be checked/changed.
 
   TreapNode* X = rA.start;
   TreapNode* Y = rA.end;
-  TreapNode nA{A, stA, 0}; // the node that represents A
-  bool X_exists = X != nullptr;
-  bool Y_exists = Y != nullptr;
-  bool X_eq_A = X_exists && rA.start->key() == A;
-  int row = -1;
-  if (!X_exists && !Y_exists           ) { row = 0; }
-  if ( X_exists && !Y_exists && !X_eq_A) { row = 1; }
-  if ( X_exists && !Y_exists &&  X_eq_A) { row = 2; }
-  if (!X_exists &&  Y_exists           ) { row = 3; }
-  if (!X_exists &&  Y_exists && !X_eq_A) { row = 4; }
-  if ( X_exists &&  Y_exists &&  X_eq_A) { row = 5; }
-
-  // ************************************************************************************ Before loop
-  switch(row) {
-    case 0:
-      if (!stA.is_noop()) { _tree.upsert(A, stA); }
-      break;
-    case 1:
-      stA.in = X->val().out;
-      if (!stA.is_noop()) { _tree.upsert(A, stA); }
-      break;
-    case 2:
-      stA.in = X->val().in;
-      if (X->val().in.equals(stA.out)) {
-        _tree.remove(X->key());
-      } else {
-        _tree.upsert(A, stA);
-      }
-      break;
-    case 3:
-      update_region(&nA, Y, req, diff);
-      if (!nA.val().is_noop()) { _tree.upsert(A, nA.val()); }
-      break;
-    case 4:
-      stA.in = X->val().out;
-      update_region(&nA, Y, req, diff);
-      if (!nA.val().is_noop()) { _tree.upsert(A, nA.val()); }
-      break;
-    case 5:
-      stA.in = X->val().in;
-      update_region(&nA, Y, req, diff);
-      if (X->val().in.equals(stA.out)) {
-        _tree.remove(X->key());
-      } else {
-        _tree.upsert(A, nA.val());
-      }
-      break;
-    default:
-      break;
-  }
-
-  // ************************************************************************************ Loop
-  GrowableArrayCHeap<position, mtNMT> to_be_removed;
-  TreapNode* prev = nullptr;
-  _tree.visit_range_in_order(Y->key(), B + 1, [&](TreapNode* curr){
-    if (prev != nullptr) {
-      update_region(prev, curr, req, diff);
-      // during visit, structure of the tree should not be changed
-      // keep the keys to be removed, and remove them later
-      if (prev->val().is_noop()) {
-        to_be_removed.push(prev->key());
-      }
-    }
-    prev = curr;
-  });
-
-  // ************************************************************************************ After loop
   TreapNode* W = rB.start;
   TreapNode* U = rB.end;
-  TreapNode nB{B, stB, 0}; // the node that represents B
-  bool W_exists = W != nullptr;
+  TreapNode nA{_A, stA, 0}; // the node that represents A
+  TreapNode nB{_B, stB, 0}; // the node that represents B
+  TreapNode* A = &nA;
+  TreapNode* B = &nB;
+  // update region of [A,T)
+  auto update_A = [&](TreapNode* T) {
+    A->val().out = A->val().in;
+    update(A, T);
+  };
+  bool X_exists = X != nullptr;
+  bool Y_exists = Y != nullptr && Y->key() <= _B;
+  bool W_exists = W != nullptr && W->key() > _A;
   bool U_exists = U != nullptr;
-  bool W_eq_B = W_exists && W->key() == B;
-  if (!W_exists && !U_exists           ) { row = 6; }
-  if (!W_exists &&  U_exists           ) { row = 7; }
-  if ( W_exists && !U_exists && !W_eq_B) { row = 8; }
-  if ( W_exists && !U_exists &&  W_eq_B) { row = 9; }
-  if ( W_exists &&  U_exists && !W_eq_B) { row = 10; }
-  if ( W_exists &&  U_exists &&  W_eq_B) { row = 11; }
+  bool X_eq_A = X_exists && X->key() == _A;
+  bool W_eq_B = W_exists && W->key() == _B;
+  bool Y_eq_W = Y_exists && W_exists && W->key() == Y->key();
+  int row = -1;
+#ifdef ASSERT
+  auto print_case = [&](int a = 1) {
+    tty->print(" req: %4d---%4d", (int)_A, (int)_B);
+    tty->print(" row: %2d", row);
+    if (a) {
+      tty->print(" X: %4ld", X_exists ? X->key() : -1);
+      tty->print(" Y: %4ld", Y_exists ? Y->key() : -1);
+      tty->print(" W: %4ld", W_exists ? W->key() : -1);
+      tty->print(" U: %4ld", U_exists ? U->key() : -1);
+    }
+    tty->print_cr("");
+  };
+#endif
+  // Order of the nodes if they exist are as: X <= A < Y <= W <= B < U
+  //             A---------------------------B
+  //       X           Y          YW         WB          U
+  //       XA          Y          YW         WB          U
+  if (!X_exists && !Y_exists                       && !U_exists) { row =  0; }
+  if (!X_exists &&  Y_exists &&  Y_eq_W && !W_eq_B && !U_exists) { row =  1; }
+  if (!X_exists &&  Y_exists && !Y_eq_W && !W_eq_B && !U_exists) { row =  2; }
+  if (!X_exists &&  Y_exists &&             W_eq_B && !U_exists) { row =  3; }
+
+  if ( X_exists && !Y_exists                       && !U_exists) { row =  4; }
+  if ( X_exists &&  Y_exists &&  Y_eq_W && !W_eq_B && !U_exists) { row =  5; }
+  if ( X_exists &&  Y_exists && !Y_eq_W && !W_eq_B && !U_exists) { row =  6; }
+  if ( X_exists &&  Y_exists &&             W_eq_B && !U_exists) { row =  7; }
+
+  if ( X_eq_A   && !Y_exists                       && !U_exists) { row =  8; }
+  if ( X_eq_A   &&  Y_exists &&  Y_eq_W && !W_eq_B && !U_exists) { row =  9; }
+  if ( X_eq_A   &&  Y_exists && !Y_eq_W && !W_eq_B && !U_exists) { row = 10; }
+  if ( X_eq_A   &&  Y_exists &&             W_eq_B && !U_exists) { row = 11; }
+
+  if (!X_exists && !Y_exists                       &&  U_exists) { row = 12; }
+  if (!X_exists &&  Y_exists &&  Y_eq_W && !W_eq_B &&  U_exists) { row = 13; }
+  if (!X_exists &&  Y_exists && !Y_eq_W && !W_eq_B &&  U_exists) { row = 14; }
+  if (!X_exists &&  Y_exists &&             W_eq_B &&  U_exists) { row = 15; }
+
+  if ( X_exists && !Y_exists                       &&  U_exists) { row = 16; }
+  if ( X_exists &&  Y_exists &&  Y_eq_W && !W_eq_B &&  U_exists) { row = 17; }
+  if ( X_exists &&  Y_exists && !Y_eq_W && !W_eq_B &&  U_exists) { row = 18; }
+  if ( X_exists &&  Y_exists &&             W_eq_B &&  U_exists) { row = 19; }
+
+  if ( X_eq_A   && !Y_exists                       &&  U_exists) { row = 20; }
+  if ( X_eq_A   &&  Y_exists &&  Y_eq_W && !W_eq_B &&  U_exists) { row = 21; }
+  if ( X_eq_A   &&  Y_exists && !Y_eq_W && !W_eq_B &&  U_exists) { row = 22; }
+  if ( X_eq_A   &&  Y_exists &&             W_eq_B &&  U_exists) { row = 23; }
+
+  DEBUG_ONLY(print_case();)
   switch(row) {
-    case 6:
-      if (!stB.is_noop()) { _tree.upsert(B, stB); }
+    // row  0:  .........A..................B.....
+    case 0: {
+      update_A(B);
+      upsert_if(A);
+      upsert_if(B);
       break;
-    case 7:
-      stB.out = U->val().in;
-      if (!stB.is_noop()) { _tree.upsert(B, stB); }
+    }
+    // row  1:  .........A...YW.............B.....
+    case 1: {
+      update_A(Y);
+      upsert_if(A);
+      update(W, B);
+      remove_if(W);
+      upsert_if(B);
       break;
-    case 8:
-      update_region(W, &nB, req, diff);
-      if (W->val().is_noop()) { _tree.remove(W->key()); }
-      if (!nB.val().is_noop()) { _tree.upsert(B, nB.val()); }
+    }
+    // row  2:  .........A...Y..........W...B.....
+    case 2: {
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      remove_if(Y);
+      update(W, B);
+      remove_if(W);
+      upsert_if(B);
       break;
-    case 9:
-      if (W->val().in.equals(stB.out)) {
-        _tree.remove(W->key());
-      } else {
-        _tree.upsert(B, stB);
-      }
+    }
+    // row  3:  .........A...Y.............WB.....
+    case 3: {
+      update_A(Y);
+      upsert_if(A);
+      update(Y, W);
+      remove_if(Y);
+      remove_if(W);
       break;
-    case 10:
-      stB.out = U->val().in;
-      update_region(W, &nB, req, diff);
-      if (W->val().in.equals(stB.out)) {
-        _tree.remove(W->key());
-      } else {
-        _tree.upsert(B, stB);
-      }
+    }
+    // row  4:  .....X...A..................B.....
+    case 4: {
+      A->val().in = X->val().out;
+      upsert_if(A);
+      update(A, B);
+      upsert_if(B);
       break;
-    case 11:
-      if (W->val().in.equals(stB.out)) {
-        _tree.remove(W->key());
-      } else {
-        _tree.upsert(B, stB);
-      }
+    }
+    // row  5:  .....X...A...YW.............B.....
+    case 5: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update(Y, B);
+      remove_if(Y);
+      upsert_if(B);
       break;
+    }
+    // row  6:  .....X...A...Y..........W...B.....
+    case 6: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      update(W, B);
+      remove_if(W);
+      upsert_if(B);
+      break;
+    }
+    // row  7:  .....X...A...Y.............WB.....
+    case 7: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      remove_if(W);
+      break;
+    }
+    // row  8:  ........XA..................B.....
+    case 8: {
+      update(X, B);
+      remove_if(X);
+      upsert_if(B);
+      break;
+    }
+    // row  9:  ........XA...YW.............B.....
+    case 9: {
+      update(X, Y);
+      remove_if(X);
+      update(W, B);
+      remove_if(W);
+      upsert_if(B);
+      break;
+    }
+    // row 10:  ........XA...Y..........W...B.....
+    case 10: {
+      update(X, Y);
+      remove_if(X);
+      update_loop();
+      update(W, B);
+      remove_if(W);
+      upsert_if(B);
+      break;
+    }
+    // row 11:  ........XA...Y.............WB.....
+    case 11: {
+      update(X, Y);
+      remove_if(X);
+      update_loop();
+      remove_if(W);
+      break;
+    }
+    // row 12:  .........A..................B....U
+    case 12: {
+      update_A(B);
+      upsert_if(A);
+      upsert_if(B);
+      break;
+    }
+    // row 13:  .........A...YW.............B....U
+    case 13: {
+      update_A(Y);
+      upsert_if(A);
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 14:  .........A...Y..........W...B....U
+    case 14: {
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 15:  .........A...Y.............WB....U
+    case 15: {
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      remove_if(W);
+      break;
+    }
+    // row 16:  .....X...A..................B....U
+    case 16: {
+      A->val().in = X->val().out;
+      update_A(B);
+      upsert_if(A);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 17:  .....X...A...YW.............B....U
+    case 17: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 18:  .....X...A...Y..........W...B....U
+    case 18: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 19:  .....X...A...Y.............WB....U
+    case 19: {
+      A->val().in = X->val().out;
+      update_A(Y);
+      upsert_if(A);
+      update_loop();
+      remove_if(W);
+      break;
+    }
+    // row 20:  ........XA..................B....U
+    case 20: {
+      update(X, B);
+      remove_if(X);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 21:  ........XA...YW.............B....U
+    case 21: {
+      update(X, Y);
+      remove_if(X);
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 22:  ........XA...Y..........W...B....U
+    case 22: {
+      update(X, Y);
+      remove_if(X);
+      update_loop();
+      update(W, B);
+      remove_if(W);
+      B->val().out = U->val().in;
+      upsert_if(B);
+      break;
+    }
+    // row 23:  ........XA...Y.............WB....U
+    case 23: {
+      update(X, Y);
+      remove_if(X);
+      update_loop();
+      remove_if(W);
+      break;
+    }
     default:
-      break;
+      ShouldNotReachHere();
   }
 
-
-  // ************************************************************************************ Delete noop nodes found in the loop
+  // ************************************************************************************ Remove the 'noop' nodes that found inside the loop
   while(to_be_removed.length() != 0) {
     _tree.remove(to_be_removed.pop());
   }
 
   return diff;
 }
-VMATree::SummaryDiff VMATree::register_mapping_new(position A, position B, StateType state,
-                                                   const RegionData& metadata, bool use_tag_inplace) {
-  assert(!use_tag_inplace || metadata.mem_tag == mtNone,
-         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
-  if (A == B) {
-    // A 0-sized mapping isn't worth recording.
-    return SummaryDiff();
-  }
-
-  IntervalChange stA{
-      IntervalState{StateType::Released, empty_regiondata},
-      IntervalState{              state,   metadata}
-  };
-  IntervalChange stB{
-      IntervalState{              state,   metadata},
-      IntervalState{StateType::Released, empty_regiondata}
-  };
-
-  bool is_reserve_operation = state == StateType::Reserved && !use_tag_inplace;
-  bool is_uncommit_operation = state == StateType::Reserved && use_tag_inplace;
-  bool is_commit_operation = state == StateType::Committed;
-  stA.out.set_reserve_stack(NativeCallStackStorage::invalid);
-  stB.in.set_reserve_stack(NativeCallStackStorage::invalid);
-  stA.out.set_commit_stack(NativeCallStackStorage::invalid);
-  stA.in.set_commit_stack(NativeCallStackStorage::invalid);
-  if (is_reserve_operation) {
-    stA.out.set_reserve_stack(metadata.stack_idx);
-    stB.in.set_reserve_stack(metadata.stack_idx);
-  }
-  if (is_commit_operation) {
-    stA.out.set_commit_stack(metadata.stack_idx);
-    stB.in.set_commit_stack(metadata.stack_idx);
-  }
-  // First handle A.
-  // Find closest node that is LEQ A
-  bool LEQ_A_found = false;
-  AddressState LEQ_A;
-  TreapNode* leqA_n = _tree.closest_leq(A);
-  if (leqA_n == nullptr) {
-    assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
-    if (use_tag_inplace) {
-      log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
-    }
-    stA.out.set_reserve_stack(metadata.stack_idx);
-    stB.in.set_reserve_stack(metadata.stack_idx);
-
-    // No match. We add the A node directly, unless it would have no effect.
-    if (!stA.is_noop()) {
-      _tree.upsert(A, stA);
-    }
-  } else {
-    LEQ_A_found = true;
-    LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
-    StateType leqA_state = leqA_n->val().out.type();
-    StateType new_state = stA.out.type();
-    // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
-    // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
-    if (use_tag_inplace) {
-      assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
-      MemTag tag = leqA_n->val().out.mem_tag();
-      stA.out.set_tag(tag);
-      stB.in.set_tag(tag);
-    }
-
-    // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
-    // Consider the case where the found node is the start of a region enclosing [A,B)
-    stB.out = out_state(leqA_n);
-
-    // Direct address match.
-    if (leqA_n->key() == A) {
-      if (is_commit_operation) {
-        if (leqA_n->val().out.has_reserved_stack()) {
-          stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        } else {
-          stA.out.set_reserve_stack(metadata.stack_idx);
-        }
-      }
-      if (is_uncommit_operation) {
-        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        stA.out.set_commit_stack(NativeCallStackStorage::invalid);
-      }
-      // Take over in state from old address.
-      stA.in = in_state(leqA_n);
-
-      // We may now be able to merge two regions:
-      // If the node's old state matches the new, it becomes a noop. That happens, for example,
-      // when expanding a committed area: commit [x1, A); ... commit [A, x3)
-      // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
-      // is not needed anymore. So we just remove the old node.
-      stB.in = stA.out;
-      if (stA.is_noop()) {
-        // invalidates leqA_n
-        _tree.remove(leqA_n->key());
-      } else {
-        // If the state is not matching then we have different operations, such as:
-        // reserve [x1, A); ... commit [A, x2); or
-        // reserve [x1, A), mem_tag1; ... reserve [A, x2), mem_tag2; or
-        // reserve [A, x1), mem_tag1; ... reserve [A, x2), mem_tag2;
-        // then we re-use the existing out node, overwriting its old metadata.
-        leqA_n->val() = stA;
-      }
-    } else {
-      // The address must be smaller.
-      assert(A > leqA_n->key(), "must be");
-      if (is_commit_operation) {
-        if (leqA_n->val().out.has_reserved_stack()) {
-          stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
-          stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        } else {
-          stA.out.set_reserve_stack(metadata.stack_idx);
-          stB.in.set_reserve_stack(metadata.stack_idx);
-        }
-      }
-      if (is_uncommit_operation) {
-        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
-      }
-
-      // We add a new node, but only if there would be a state change. If there would not be a
-      // state change, we just omit the node.
-      // That happens, for example, when reserving within an already reserved region with identical metadata.
-      stA.in = out_state(leqA_n); // .. and the region's prior state is the incoming state
-      if (stA.is_noop()) {
-        // Nothing to do.
-      } else {
-        // Add new node.
-        _tree.upsert(A, stA);
-      }
-    }
-  }
-
-  // Now we handle B.
-  // We first search all nodes that are (A, B]. All of these nodes
-  // need to be deleted and summary accounted for. The last node before B determines B's outgoing state.
-  // If there is no node between A and B, its A's incoming state.
-  GrowableArrayCHeap<AddressState, mtNMT> to_be_deleted_inbetween_a_b;
-  bool B_needs_insert = true;
-
-  // Find all nodes between (A, B] and record their addresses and values. Also update B's
-  // outgoing state.
-  _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
-    int cmp_B = PositionComparator::cmp(head->key(), B);
-    stB.out = out_state(head);
-    if (cmp_B < 0) {
-      // Record all nodes preceding B.
-      to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
-    } else if (cmp_B == 0) {
-      // Re-purpose B node, unless it would result in a noop node, in
-      // which case record old node at B for deletion and summary accounting.
-      if (stB.is_noop()) {
-        to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
-      } else {
-        head->val() = stB;
-      }
-      B_needs_insert = false;
-    }
-  });
-
-  // Insert B node if needed
-  if (B_needs_insert && // Was not already inserted
-      !stB.is_noop())   // The operation is differing
-    {
-    _tree.upsert(B, stB);
-  }
-
-  // We now need to:
-  // a) Delete all nodes between (A, B]. Including B in the case of a noop.
-  // b) Perform summary accounting
-  SummaryDiff diff;
-
-  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
-    // We must have smashed a hole in an existing region (or replaced it entirely).
-    // LEQ_A < A < B <= C
-    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
-    if (LEQ_A.out().type() == StateType::Reserved) {
-      rescom.reserve -= B - A;
-    } else if (LEQ_A.out().type() == StateType::Committed) {
-      rescom.commit -= B - A;
-      rescom.reserve -= B - A;
-    }
-  }
-
-  // Track the previous node.
-  AddressState prev{A, stA};
-  for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
-    const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
-    _tree.remove(delete_me.address);
-
-    // Perform summary accounting
-    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
-    if (delete_me.in().type() == StateType::Reserved) {
-      rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.in().type() == StateType::Committed) {
-      rescom.commit -= delete_me.address - prev.address;
-      rescom.reserve -= delete_me.address - prev.address;
-    }
-    prev = delete_me;
-  }
-
-  if (prev.address != A && prev.out().type() != StateType::Released) {
-    // The last node wasn't released, so it must be connected to a node outside of (A, B)
-    // A - prev - B - (some node >= B)
-    // It might be that prev.address == B == (some node >= B), this is fine.
-    if (prev.out().type() == StateType::Reserved) {
-      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
-      rescom.reserve -= B - prev.address;
-    } else if (prev.out().type() == StateType::Committed) {
-      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
-      rescom.commit -= B - prev.address;
-      rescom.reserve -= B - prev.address;
-    }
-  }
-
-  // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(stA.out.mem_tag())];
-  if (state == StateType::Reserved) {
-    rescom.reserve += B - A;
-  } else if (state == StateType::Committed) {
-    rescom.commit += B - A;
-    rescom.reserve += B - A;
-  }
-  return diff;
-}
 
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print("%zu (%s) - %s [%d, %d]- ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
-               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
+    if (current->val().out.has_committed_stack()) {
+      out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+                statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
+    } else {
+      out->print("%zu (%s) - %s [%d, --]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+                statetype_to_string(out_state(current).type()), current->val().out.reserved_stack());
+
+    }
 
   });
   out->cr();

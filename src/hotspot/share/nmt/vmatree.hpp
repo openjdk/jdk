@@ -55,7 +55,7 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Reserved, Committed, Released, LAST };
+  enum class StateType : uint8_t { Released, Reserved, Committed, LAST };
 
 private:
   static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
@@ -251,7 +251,6 @@ public:
 
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
-  SummaryDiff register_mapping_new(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
   StateType get_new_state(StateType existinting_state, const RequestInfo& req);
   NativeCallStackStorage::StackIndex get_new_reserve_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
   NativeCallStackStorage::StackIndex get_new_commit_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
