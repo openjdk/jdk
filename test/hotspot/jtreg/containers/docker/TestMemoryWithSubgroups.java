@@ -24,9 +24,9 @@
 import jdk.test.lib.Container;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
@@ -44,9 +44,9 @@ import jtreg.SkippedException;
  * @run main TestMemoryWithSubgroups
  */
 public class TestMemoryWithSubgroups {
-
     private static final String imageName = Common.imageName("subgroup");
     private static final boolean IS_DOCKER = Container.ENGINE_COMMAND.contains("docker");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
 
     static String getEngineInfo(String format) throws Exception {
         return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
@@ -71,8 +71,11 @@ public class TestMemoryWithSubgroups {
             System.out.println("Unable to run docker tests.");
             return;
         }
-        if (IS_DOCKER && TestMemoryWithSubgroups.DockerVersion.VERSION_20_10_0.compareTo(getDockerVersion()) > 0) {
+        if (IS_DOCKER && ContainerRuntimeVersionTestUtils.DOCKER_VERSION_20_10_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
             throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
+        }
+        if (IS_PODMAN && ContainerRuntimeVersionTestUtils.PODMAN_VERSION_1_5_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Podman version too old for this test. Expected >= 1.5.0");
         }
         if (isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
@@ -159,62 +162,6 @@ public class TestMemoryWithSubgroups {
         } catch (Exception e) {
             System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
             return null;
-        }
-    }
-
-    private static TestMemoryWithSubgroups.DockerVersion getDockerVersion() {
-        return TestMemoryWithSubgroups.DockerVersion.fromVersionString(getDockerVersionStr());
-    }
-
-    private static class DockerVersion implements Comparable<TestMemoryWithSubgroups.DockerVersion> {
-        private static final TestMemoryWithSubgroups.DockerVersion DEFAULT = new TestMemoryWithSubgroups.DockerVersion(0, 0, 0);
-        private static final TestMemoryWithSubgroups.DockerVersion VERSION_20_10_0 = new TestMemoryWithSubgroups.DockerVersion(20, 10, 0);
-        private final int major;
-        private final int minor;
-        private final int micro;
-
-        private DockerVersion(int major, int minor, int micro) {
-            this.major = major;
-            this.minor = minor;
-            this.micro = micro;
-        }
-
-        @Override
-        public int compareTo(TestMemoryWithSubgroups.DockerVersion other) {
-            if (this.major > other.major) {
-                return 1;
-            } else if (this.major < other.major) {
-                return -1;
-            } else { // equal major
-                if (this.minor > other.minor) {
-                    return 1;
-                } else if (this.minor < other.minor) {
-                    return -1;
-                } else { // equal majors and minors
-                    if (this.micro > other.micro) {
-                        return 1;
-                    } else if (this.micro < other.micro) {
-                        return -1;
-                    } else {
-                        // equal majors, minors, micro
-                        return 0;
-                    }
-                }
-            }
-        }
-
-        private static TestMemoryWithSubgroups.DockerVersion fromVersionString(String version) {
-            try {
-                // Example 'docker version 3.2.1'
-                String versNums = version.split("\\s+", 3)[2];
-                String[] numbers = versNums.split("\\.", 3);
-                return new TestMemoryWithSubgroups.DockerVersion(Integer.parseInt(numbers[0]),
-                        Integer.parseInt(numbers[1]),
-                        Integer.parseInt(numbers[2]));
-            } catch (Exception e) {
-                System.out.println("Failed to parse docker version: " + version);
-                return DEFAULT;
-            }
         }
     }
 }
