@@ -409,7 +409,6 @@ public final class ScopedValue<T> {
          * @return the result
          * @throws StructureViolationException if a structure violation is detected
          * @throws X if {@code op} completes with an exception
-         * @since 25
          */
         public <R, X extends Throwable> R call(CallableOp<? extends R, X> op) throws X {
             Objects.requireNonNull(op);
