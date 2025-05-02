@@ -495,14 +495,14 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::CC_LT    = TypeInt::make(-1,-1, WidenMin);  // == TypeInt::MINUS_1
   TypeInt::CC_GT    = TypeInt::make( 1, 1, WidenMin);  // == TypeInt::ONE
   TypeInt::CC_EQ    = TypeInt::make( 0, 0, WidenMin);  // == TypeInt::ZERO
-  TypeInt::CC_NE    = TypeInt::try_make(TypeIntPrototype<jint, juint>{{-1, 1}, {1, max_juint}, {0, 1}}, WidenMin)->is_int();
+  TypeInt::CC_NE    = TypeInt::make_or_top(TypeIntPrototype<jint, juint>{{-1, 1}, {1, max_juint}, {0, 1}}, WidenMin)->is_int();
   TypeInt::CC_LE    = TypeInt::make(-1, 0, WidenMin);
   TypeInt::CC_GE    = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
   TypeInt::BYTE     = TypeInt::make(-128, 127,     WidenMin); // Bytes
   TypeInt::UBYTE    = TypeInt::make(0, 255,        WidenMin); // Unsigned Bytes
   TypeInt::CHAR     = TypeInt::make(0, 65535,      WidenMin); // Java chars
   TypeInt::SHORT    = TypeInt::make(-32768, 32767, WidenMin); // Java shorts
-  TypeInt::NON_ZERO = TypeInt::try_make(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
+  TypeInt::NON_ZERO = TypeInt::make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
   TypeInt::POS      = TypeInt::make(0, max_jint,   WidenMin); // Non-neg values
   TypeInt::POS1     = TypeInt::make(1, max_jint,   WidenMin); // Positive values
   TypeInt::INT      = TypeInt::make(min_jint, max_jint, WidenMax); // 32-bit integers
@@ -521,7 +521,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::MINUS_1  = TypeLong::make(-1);   // -1
   TypeLong::ZERO     = TypeLong::make( 0);   //  0
   TypeLong::ONE      = TypeLong::make( 1);   //  1
-  TypeLong::NON_ZERO = TypeLong::try_make(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
+  TypeLong::NON_ZERO = TypeLong::make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
   TypeLong::POS      = TypeLong::make(0, max_jlong, WidenMin); // Non-neg values
   TypeLong::NEG      = TypeLong::make(min_jlong, -1, WidenMin);
   TypeLong::LONG     = TypeLong::make(min_jlong, max_jlong, WidenMax); // 64-bit integers
@@ -1778,7 +1778,7 @@ TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int widen, bool dual)
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int widen, bool dual) {
+const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen, bool dual) {
   auto canonicalized_t = t.canonicalize_constraints();
   if (canonicalized_t.empty()) {
     return dual ? Type::BOTTOM : Type::TOP;
@@ -1794,11 +1794,11 @@ const TypeInt* TypeInt::make(jint con) {
 
 const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
-  return try_make(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
+  return make_or_top(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
 }
 
-const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int widen) {
-  return try_make(t, widen, false);
+const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen) {
+  return make_or_top(t, widen, false);
 }
 
 bool TypeInt::contains(jint i) const {
@@ -1906,7 +1906,7 @@ TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int widen, bool dua
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual) {
+const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual) {
   auto canonicalized_t = t.canonicalize_constraints();
   if (canonicalized_t.empty()) {
     return dual ? Type::BOTTOM : Type::TOP;
@@ -1922,11 +1922,11 @@ const TypeLong* TypeLong::make(jlong con) {
 
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
-  return try_make(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+  return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
 }
 
-const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int widen) {
-  return try_make(t, widen, false);
+const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {
+  return make_or_top(t, widen, false);
 }
 
 bool TypeLong::contains(jlong i) const {

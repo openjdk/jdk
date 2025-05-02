@@ -699,16 +699,16 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2) {
 
     if (!i1->_is_dual) {
     // meet (a.k.a union)
-      return CT::try_make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
-                                                 {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                                 {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
-                          MAX2(i1->_widen, i2->_widen), false);
+      return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
+                                                    {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
+                                                    {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
+                             MAX2(i1->_widen, i2->_widen), false);
     }
     // join (a.k.a intersection)
-    return CT::try_make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
-                                               {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                               {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
-                        MIN2(i1->_widen, i2->_widen), true);
+    return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
+                                                  {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
+                                                  {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
+                           MIN2(i1->_widen, i2->_widen), true);
   }
 
   assert(t2->base() != i1->base(), "");
@@ -787,7 +787,7 @@ const Type* TypeIntHelper::int_type_widen(const CT* new_type, const CT* old_type
   if (new_type->_widen < Type::WidenMax) {
     // Returned widened new guy
     TypeIntPrototype<S, U> prototype{{new_type->_lo, new_type->_hi}, {new_type->_ulo, new_type->_uhi}, new_type->_bits};
-    return CT::try_make(prototype, new_type->_widen + 1);
+    return CT::make_or_top(prototype, new_type->_widen + 1);
   }
 
   // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
@@ -807,7 +807,7 @@ const Type* TypeIntHelper::int_type_widen(const CT* new_type, const CT* old_type
     ones |= limit_type->_bits._ones;
   }
   TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
-  return CT::try_make(prototype, Type::WidenMax);
+  return CT::make_or_top(prototype, Type::WidenMax);
 }
 template const Type* TypeIntHelper::int_type_widen(const TypeInt* new_type, const TypeInt* old_type, const TypeInt* limit_type);
 template const Type* TypeIntHelper::int_type_widen(const TypeLong* new_type, const TypeLong* old_type, const TypeLong* limit_type);

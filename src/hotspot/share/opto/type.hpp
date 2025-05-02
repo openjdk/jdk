@@ -289,6 +289,7 @@ public:
   virtual float getf() const;
   double getd() const;
 
+  // This has the same semantics as std::dynamic_cast<TypeClass*>(this)
   template <typename TypeClass>
   const TypeClass* try_cast() const;
 
@@ -633,7 +634,9 @@ public:
  * A TypeInt represents a set of non-empty jint values. A jint v is an element
  * of a TypeInt iff:
  *
- * v >= _lo && v <= _hi && juint(v) >= _ulo && juint(v) <= _uhi && _bits.is_satisfied_by(v)
+ *   v >= _lo && v <= _hi &&
+ *   juint(v) >= _ulo && juint(v) <= _uhi &&
+ *   _bits.is_satisfied_by(v)
  *
  * Multiple sets of parameters can represent the same set.
  * E.g: consider 2 TypeInt t1, t2
@@ -642,22 +645,25 @@ public:
  * t2._lo = 3, t2._hi = 5, t2._ulo = 3, t2._uhi = 5, t2._bits._zeros = 0xFFFFFFF8, t2._bits._ones = 0x1
  *
  * Then, t1 and t2 both represent the set {3, 5}. We can also see that the
- * constraints of t2 are tightest possible. I.e there exists no TypeInt t3
- * which also represents {3, 5} such that:
+ * constraints of t2 are the tightest possible. I.e there exists no TypeInt t3
+ * which also represents {3, 5} such that any of these would be true:
  *
- * t3._lo > t2._lo || t3._hi < t2._hi || t3._ulo > t2._ulo || t3._uhi < t2._uhi ||
- *     (t3._bits._zeros &~ t2._bis._zeros) != 0 || (t3._bits._ones &~ t2._bits._ones) != 0
+ *  1)  t3._lo  > t2._lo
+ *  2)  t3._hi  < t2._hi
+ *  3)  t3._ulo > t2._ulo
+ *  4)  t3._uhi < t2._uhi
+ *  5)  (t3._bits._zeros &~ t2._bis._zeros) != 0
+ *  6)  (t3._bits._ones  &~ t2._bits._ones) != 0
  *
  * The 5-th condition mean that the subtraction of the bitsets represented by
  * t3._bits._zeros and t2._bits._zeros is not empty, which means that the
  * bits in t3._bits._zeros is not a subset of those in t2._bits._zeros, the
  * same applies to _bits._ones
  *
- * As a result, every TypeInt is canonicalized to its tightest form upon
- * construction. This makes it easier to reason about them in optimizations.
- * E.g a TypeInt t with t._lo < 0 will definitely contain negative values. It
- * also makes it trivial to determine if a TypeInt instance is a subset of
- * another.
+ * To simplify reasoning about the types in optimizations, we canonicalize
+ * every TypeInt to its tightest form, already at construction. E.g a TypeInt
+ * t with t._lo < 0 will definitely contain negative values. It also makes it
+ * trivial to determine if a TypeInt instance is a subset of another.
  *
  * Lemmas:
  *
@@ -694,25 +700,23 @@ public:
  *
  *   The other inequalities can be proved in a similar manner.
  *
- * 3. Either _lo == jint(_ulo) and _hi == jint(_uhi), or all elements of a
- *   TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi] (note
- *   that these intervals are disjoint in this case).
- *
- *   Proof of lemma 3:
- *   Lemma 3.1: For 2 jint value x, y such that they are both >= 0 or both < 0.
- *   Then:
+ * 3. Given 2 jint values x, y where either both >= 0 or both < 0. Then:
  *
  *   x <= y iff juint(x) <= juint(y)
  *   I.e. x <= y in the signed domain iff x <= y in the unsigned domain
  *
- *   Then, we have:
+ * 4. Either _lo == jint(_ulo) and _hi == jint(_uhi), or each element of a
+ *   TypeInt lies in either interval [_lo, jint(_uhi)] or [jint(_ulo), _hi]
+ *   (note that these intervals are disjoint in this case).
+ *
+ *   Proof of lemma 4:
  *
  *   For a TypeInt t, there are 3 possible cases:
  *
  *   a. t._lo >= 0, we have:
  *
  *     0 <= t_lo <= jint(t._ulo)           (lemma 2.1)
- *     juint(t._lo) <= juint(jint(t._ulo)) (lemma 3.1)
+ *     juint(t._lo) <= juint(jint(t._ulo)) (lemma 3)
  *                  == t._ulo              (juint(jint(v)) == v with juint v)
  *                  <= juint(t._lo)        (lemma 2.4)
  *
@@ -724,13 +728,15 @@ public:
  *     0 <= t._lo <= jint(t._uhi)          (lemma 2.3)
  *     t._hi >= jint(t._uhi)               (lemma 2.9)
  *
- *     juint(t._hi) >= juint(jint(t._uhi)) (lemma 3.1)
+ *     juint(t._hi) >= juint(jint(t._uhi)) (lemma 3)
  *                  == t._uhi              (juint(jint(v)) == v with juint v)
  *                  >= juint(t._hi)        (lemma 2.12)
  *
- *     Which means that t._hi = jint(t._uhi)
+ *     Which means that t._hi == jint(t._uhi).
+ *     In this case, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
  *
- *   b. t._hi < 0. Similarly, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
+ *   b. t._hi < 0. Similarly, we can conclude that:
+ *     t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
  *
  *   c. t._lo < 0, t._hi >= 0.
  *
@@ -741,12 +747,12 @@ public:
  *     Since t._uhi >= juint(t._lo) (lemma 2.10), we must have jint(t._uhi) < 0
  *     similar to the reasoning above.
  *
- *     In this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
+ *     In this case, each element of t belongs to either [t._lo, jint(t._uhi)] or
  *     [jint(t._ulo), t._hi].
  *
- *     Below is an illustration of the TypeInt in this case, the intervals that the
- *     elements can be in are marked using the = symbol. Note how the negative range
- *     in the signed domain wrap around in the unsigned domain.
+ *     Below is an illustration of the TypeInt in this case, the intervals that
+ *     the elements can be in are marked using the = symbol. Note how the
+ *     negative range in the signed domain wrap around in the unsigned domain.
  *
  *     Signed:
  *     -----lo=========uhi---------0--------ulo==========hi-----
@@ -769,7 +775,7 @@ public:
 class TypeInt : public TypeInteger {
 private:
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
-  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen, bool dual);
+  static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen, bool dual);
 
   friend class TypeIntHelper;
 
@@ -791,7 +797,7 @@ public:
   static const TypeInt* make(jint con);
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int widen);
-  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen);
+  static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -849,7 +855,7 @@ public:
 class TypeLong : public TypeInteger {
 private:
   TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
-  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual);
+  static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual);
 
   friend class TypeIntHelper;
 
@@ -872,7 +878,7 @@ public:
   static const TypeLong* make(jlong con);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
-  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen);
+  static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
