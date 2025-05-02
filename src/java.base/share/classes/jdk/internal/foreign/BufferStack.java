@@ -47,10 +47,12 @@ import java.util.function.Consumer;
 public final class BufferStack {
 
     private final long byteSize;
+    private final long byteAlignment;
     private final CarrierThreadLocal<PerThread> tl;
 
-    public BufferStack(long byteSize, long byteAlignment) {
+    private BufferStack(long byteSize, long byteAlignment) {
         this.byteSize = byteSize;
+        this.byteAlignment = byteAlignment;
         this.tl = new CarrierThreadLocal<>() {
             @Override
             protected BufferStack.PerThread initialValue() {
@@ -95,10 +97,13 @@ public final class BufferStack {
 
     @Override
     public String toString() {
-        return "BufferStack[" + byteSize + "]";
+        return "BufferStack[byteSize=" + byteSize + ", byteAlignment=" + byteAlignment + "]";
     }
 
-    private record PerThread(ReentrantLock lock, Arena arena, SlicingAllocator stack) {
+    private record PerThread(ReentrantLock lock,
+                             Arena arena,
+                             SlicingAllocator stack,
+                             CleanupAction cleanupAction) {
 
         @ForceInline
         public Arena pushFrame(long size, long byteAlignment) {
@@ -118,34 +123,37 @@ public final class BufferStack {
             final Arena arena = Arena.ofAuto();
             return new PerThread(new ReentrantLock(),
                     arena,
-                    new SlicingAllocator(arena.allocate(byteSize, byteAlignment)));
+                    new SlicingAllocator(arena.allocate(byteSize, byteAlignment)),
+                    new CleanupAction(arena));
+        }
+
+        private record CleanupAction(Arena arena) implements Consumer<MemorySegment> {
+            @Override
+            public void accept(MemorySegment memorySegment) {
+                Reference.reachabilityFence(arena);
+            }
         }
 
         private final class Frame implements Arena {
+
             private final boolean locked;
             private final long parentOffset;
             private final long topOfStack;
-            private final Arena confinedArena = Arena.ofConfined();
+            private final Arena confinedArena;
             private final SegmentAllocator frame;
 
             @SuppressWarnings("restricted")
             @ForceInline
             public Frame(boolean locked, long byteSize, long byteAlignment) {
                 this.locked = locked;
-                parentOffset = stack.currentOffset();
-                MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
-                topOfStack = stack.currentOffset();
+                this.parentOffset = stack.currentOffset();
+                final MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
+                this.topOfStack = stack.currentOffset();
+                this.confinedArena = Arena.ofConfined();
                 // The cleanup action will keep the original automatic `arena` (from which
                 // the reusable segment is first allocated) alive even if this Frame
                 // becomes unreachable but there are reachable segments still alive.
-                frame = new SlicingAllocator(frameSegment.reinterpret(confinedArena, new CleanupAction(arena)));
-            }
-
-            record CleanupAction(Arena arena) implements Consumer<MemorySegment> {
-                @Override
-                public void accept(MemorySegment memorySegment) {
-                    Reference.reachabilityFence(arena);
-                }
+                this.frame = new SlicingAllocator(frameSegment.reinterpret(confinedArena, cleanupAction));
             }
 
             @ForceInline

@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -246,7 +245,7 @@ final class TestBufferStack extends NativeTestHelper {
     @Test
     void toStringTest() {
         BufferStack stack = newBufferStack();
-        assertEquals("BufferStack[" + POOL_SIZE + "]", stack.toString());
+        assertEquals("BufferStack[byteSize=" + POOL_SIZE + ", byteAlignment=1]", stack.toString());
     }
 
     @Test
