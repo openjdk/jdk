@@ -276,7 +276,7 @@ public class InferenceContext {
         return result;
     }
 
-    private class HasTypeVars extends Types.UnaryVisitor<Boolean> {
+    private static class HasTypeVars extends Types.UnaryVisitor<Boolean> {
         public Boolean visit(List<Type> ts) {
             for (Type t : ts)
                 if (visit(t)) {
