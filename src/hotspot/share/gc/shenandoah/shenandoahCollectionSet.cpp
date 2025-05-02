@@ -190,11 +190,11 @@ void ShenandoahCollectionSet::print_on(outputStream* out) const {
                 byte_size_in_proper_unit(live()),    proper_unit_for_byte_size(live()),
                 byte_size_in_proper_unit(used()),    proper_unit_for_byte_size(used()));
 
-  debug_only(size_t regions = 0;)
+  DEBUG_ONLY(size_t regions = 0;)
   for (size_t index = 0; index < _heap->num_regions(); index ++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);
-      debug_only(regions ++;)
+      DEBUG_ONLY(regions ++;)
     }
   }
   assert(regions == count(), "Must match");
