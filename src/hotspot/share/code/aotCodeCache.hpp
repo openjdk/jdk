@@ -199,14 +199,17 @@ protected:
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _adapters_count;
-    uint   _blobs_count;
+    uint   _shared_blobs_count;
+    uint   _C1_blobs_count;
+    uint   _C2_blobs_count;
     Config _config;
 
 public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
-              uint adapters_count, uint blobs_count) {
+              uint adapters_count, uint shared_blobs_count,
+              uint C1_blobs_count, uint C2_blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -214,8 +217,9 @@ public:
       _entries_count  = entries_count;
       _entries_offset = entries_offset;
       _adapters_count = adapters_count;
-      _blobs_count    = blobs_count;
-
+      _shared_blobs_count = shared_blobs_count;
+      _C1_blobs_count = C1_blobs_count;
+      _C2_blobs_count = C2_blobs_count;
       _config.record();
     }
 
@@ -226,7 +230,9 @@ public:
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint adapters_count() const { return _adapters_count; }
-    uint blobs_count()    const { return _blobs_count; }
+    uint shared_blobs_count()    const { return _shared_blobs_count; }
+    uint C1_blobs_count() const { return _C1_blobs_count; }
+    uint C2_blobs_count() const { return _C2_blobs_count; }
 
     bool verify_config(uint load_size)  const;
     bool verify_vm_config() const { // Called after Universe initialized
@@ -361,8 +367,8 @@ public:
   static bool is_dumping_adapters() NOT_CDS_RETURN_(false);
   static bool is_using_adapters() NOT_CDS_RETURN_(false);
 
-  static bool is_dumping_stubs() NOT_CDS_RETURN_(false); { return is_on_for_dump() && _cache->stub_caching(); }
-  static bool is_using_stubs() NOT_CDS_RETURN_(false); { return is_on_for_use() && _cache->stub_caching(); }
+  static bool is_dumping_stubs() NOT_CDS_RETURN_(false);
+  static bool is_using_stubs() NOT_CDS_RETURN_(false);
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 

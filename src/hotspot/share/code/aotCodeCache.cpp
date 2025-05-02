@@ -257,7 +257,9 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     }
     log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", _load_header->entries_count());
     log_debug(aot, codecache, init)("  Adapters:  total=%u", _load_header->adapters_count());
-    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->blobs_count());
+    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->shared_blobs_count());
+    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->C1_blobs_count());
+    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->C2_blobs_count());
     log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", _load_header->cache_size());
 
     // Read strings
@@ -667,9 +669,9 @@ bool AOTCodeCache::finish_write() {
 
     AOTCodeEntry* entries_address = _store_entries; // Pointer to latest entry
     uint adapters_count = 0;
-    uint total_shared_blobs_count = 0;
-    uint total_C1_blobs_count = 0;
-    uint total_C2_blobs_count = 0;
+    uint shared_blobs_count = 0;
+    uint C1_blobs_count = 0;
+    uint C2_blobs_count = 0;
     uint max_size = 0;
     // AOTCodeEntry entries were allocated in reverse in store buffer.
     // Process them in reverse order to cache first code first.
@@ -694,11 +696,11 @@ bool AOTCodeCache::finish_write() {
       if (kind == AOTCodeEntry::Adapter) {
         adapters_count++;
       } else if (kind == AOTCodeEntry::SharedBlob) {
-        total_shared_blobs_count++;
+        shared_blobs_count++;
       } else if (kind == AOTCodeEntry::C1Blob) {
-        total_C1_blobs_count++;
+        C1_blobs_count++;
       } else if (kind == AOTCodeEntry::C2Blob) {
-        total_C2_blobs_count++;
+        C2_blobs_count++;
       }
     }
     if (entries_count == 0) {
@@ -730,16 +732,17 @@ bool AOTCodeCache::finish_write() {
     assert(size <= total_size, "%d > %d", size , total_size);
 
     log_debug(aot, codecache, exit)("  Adapters:  total=%u", adapters_count);
-    log_debug(aot, codecache, exit)("  Shared Blobs:  total=%d", total_shared_blobs_count);
-    log_debug(aot, codecache, exit)("  C1 Blobs:      total=%d", total_C1_blobs_count);
-    log_debug(aot, codecache, exit)("  C2 Blobs:      total=%d", total_C2_blobs_count);
+    log_debug(aot, codecache, exit)("  Shared Blobs:  total=%d", shared_blobs_count);
+    log_debug(aot, codecache, exit)("  C1 Blobs:      total=%d", C1_blobs_count);
+    log_debug(aot, codecache, exit)("  C2 Blobs:      total=%d", C2_blobs_count);
     log_debug(aot, codecache, exit)("  AOT code cache size: %u bytes, max entry's size: %u bytes", size, max_size);
 
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size, (uint)strings_count, strings_offset,
                  entries_count, new_entries_offset,
-                 adapters_count, blobs_count);
+                 adapters_count, shared_blobs_count,
+                 C1_blobs_count, C2_blobs_count);
 
     log_info(aot, codecache, exit)("Wrote %d AOT code entries to AOT Code Cache", entries_count);
   }
@@ -855,10 +858,10 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   if (AOTCodeEntry::is_adapter(entry_kind) && !AOTAdapterCaching) {
     return nullptr;
   }
-  if (AOTCodeEntry::is_blob(entry_kind) && !cache->stub_caching()) {
+  if (AOTCodeEntry::is_blob(entry_kind) && !AOTStubCaching) {
     return nullptr;
   }
-  log_debug(aot, codecache, stubs)("Reading blob '%s' from AOT Code Cache", name);
+  log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
 
   AOTCodeEntry* entry = cache->find_entry(entry_kind, encode_id(entry_kind, id));
   if (entry == nullptr) {
@@ -1103,7 +1106,7 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
   }
   uint count = 0;
   bool result = cb.asm_remarks().iterate([&] (uint offset, const char* str) -> bool {
-    log_trace(aot, codecache, stubs)("asm remark offset=%d, str=%s", offset, str);
+    log_trace(aot, codecache, stubs)("asm remark offset=%d, str='%s'", offset, str);
     uint n = write_bytes(&offset, sizeof(uint));
     if (n != sizeof(uint)) {
       return false;
