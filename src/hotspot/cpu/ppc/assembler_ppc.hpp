@@ -2005,7 +2005,6 @@ class Assembler : public AbstractAssembler {
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
-  inline bool lxarx_hint_exclusive_access();
   inline void lbarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lharx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
