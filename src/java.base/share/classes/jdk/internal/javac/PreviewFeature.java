@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,11 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,
-        @JEP(number=494, title="Module Import Declarations", status="Second Preview")
-        MODULE_IMPORTS,
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

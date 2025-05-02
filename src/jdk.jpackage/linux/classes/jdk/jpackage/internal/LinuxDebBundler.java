@@ -47,6 +47,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
@@ -491,12 +494,20 @@ public class LinuxDebBundler extends LinuxPackageBundler {
 
     private Path buildDeb(Map<String, ? super Object> params,
             Path outdir) throws IOException {
+
+        PlatformPackage thePackage = createMetaPackage(params);
+
+        new ScriptRunner()
+              .setDirectory(thePackage.sourceRoot())
+              .setResourceCategoryId("resource.post-app-image-script")
+              .setScriptNameSuffix("post-image")
+              .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
+              .run(params);
+
         Path outFile = outdir.resolve(
                 FULL_PACKAGE_NAME.fetchFrom(params)+".deb");
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.outputting-to-location"), outFile.toAbsolutePath().toString()));
-
-        PlatformPackage thePackage = createMetaPackage(params);
 
         List<String> cmdline = new ArrayList<>();
         cmdline.addAll(List.of(TOOL_FAKEROOT, TOOL_DPKG_DEB));
