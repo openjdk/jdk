@@ -482,7 +482,6 @@ class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
   jvmtiError _result;
   // the fields below are set by the JvmtiHandshake::execute
   JavaThread* _target_jt;
-  Handle _target_h;
   bool _is_virtual;
   bool _self;
  public:
@@ -495,7 +494,6 @@ class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
 
   void set_result(jvmtiError err) { _result = err; }
   void set_target_jt(JavaThread* target_jt) { _target_jt = target_jt; }
-  void set_target_h(Handle target_h) { _target_h = target_h; }
   void set_is_virtual(bool val) { _is_virtual = val; }
   void set_self(bool val) { _self = val; }
   jvmtiError result() { return _result; }
@@ -659,22 +657,6 @@ public:
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
 };
-
-
-// HandshakeClosure to resume thread.
-class ResumeThreadClosure : public JvmtiUnitedHandshakeClosure {
- private:
-  bool _single_resume;
-
- public:
-  ResumeThreadClosure(bool single_resume)
-      : JvmtiUnitedHandshakeClosure("ResumeThread"),
-        _single_resume(single_resume) {}
-
-  void do_thread(Thread *target);
-  void do_vthread(Handle thread_h);
-};
-
 
 #ifdef ASSERT
 // HandshakeClosure to print stack trace in JvmtiVTMSTransitionDisabler error handling.

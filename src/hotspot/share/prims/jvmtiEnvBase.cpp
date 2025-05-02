@@ -1398,8 +1398,7 @@ JvmtiEnvBase::is_vthread_suspended(oop vt_oop, JavaThread* jt) {
   bool suspended = false;
   if (java_lang_VirtualThread::is_instance(vt_oop)) {
     suspended = JvmtiVTSuspender::is_vthread_suspended(vt_oop);
-  }
-  if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
+  } else if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
     suspended = jt->is_suspended();
   }
   return suspended;
@@ -1749,19 +1748,6 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
   return true;
 }
 
-
-/*
- * The JVMTI Suspend/Resume support includes suspend_thread and resume_thread internal functions.
- * A synchronization is needed between suspend_thread and resume_thread as they have to update
- * same context atomically which includes virtual thread suspension registration and a couple of
- * JavaThread flags, e.g. is_suspended and is_carrier_thread_suspended.
- * In most common case this synchronization is provided by JvmtiVTMSTransitionDisabler.
- * But a JvmtiVTMSTransitionDisabler can not be held in a case of self suspension.
- * To support such a case the resume_thread function is executed in a context of ResumeThreadClosure.
- * In contrast, the suspend_thread function is executed normally. To be thread safe these functions
- * should not trigger safepoints while the suspension state is inconsistent.
- */
-
 // java_thread - protected by ThreadsListHandle
 jvmtiError
 JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend) {
@@ -1769,58 +1755,47 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
-  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
-  if (is_virtual) {
-    if (single_suspend) {
-      if (JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
-        return JVMTI_ERROR_THREAD_SUSPENDED;
-      }
-      JvmtiVTSuspender::register_vthread_suspend(thread_h());
-      // Check if virtual thread is mounted and there is a java_thread.
-      // A non-null java_thread is always passed in the !single_suspend case.
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_h());
-      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+  // Unmounted vthread case.
+
+  if (is_virtual && java_thread == nullptr) {
+    assert(single_suspend, "sanity check");
+    if (JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
+      return JVMTI_ERROR_THREAD_SUSPENDED;
     }
-    // The java_thread can be still blocked in VTMS transition after a previous JVMTI resume call.
-    // There is no need to suspend the java_thread in this case. After vthread unblocking,
-    // it will check for ext_suspend request and suspend itself if necessary.
-    if (java_thread == nullptr || java_thread->is_suspended()) {
-      // We are done if the virtual thread is unmounted or
-      // the java_thread is externally suspended.
-      return JVMTI_ERROR_NONE;
-    }
-    // The virtual thread is mounted: suspend the java_thread.
+    JvmtiVTSuspender::register_vthread_suspend(thread_h());
+    return JVMTI_ERROR_NONE;
   }
+
+  // Platform thread or mounted vthread cases.
+
+  assert(java_thread != nullptr, "sanity check");
+  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
+
   // Don't allow hidden thread suspend request.
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
 
-  // A case of non-virtual thread.
-  if (!is_virtual) {
-    // Thread.suspend() is used in some tests. It sets jt->is_suspended() only.
-    if (java_thread->is_carrier_thread_suspended() ||
-        (!is_thread_carrying && java_thread->is_suspended())) {
-      return JVMTI_ERROR_THREAD_SUSPENDED;
-    }
-    java_thread->set_carrier_thread_suspended();
-  }
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
-
-  assert(!single_suspend || (!is_virtual && java_thread->is_carrier_thread_suspended()) ||
-          (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
-         "sanity check");
-
   // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
-  // and it will be actually suspended at virtual thread unmount transition.
-  if (!is_thread_carrying) {
+  // and it will be actually suspended at virtual thread unmount transition. 
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
+  if (is_thread_carrying) {
+    return java_thread->set_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_SUSPENDED;
+  } else {
+    // Platform thread (not carrying vthread) or mounted vthread cases.
     assert(thread_h() != nullptr, "sanity check");
     assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "SuspendAllVirtualThreads should never suspend non-virtual threads");
-    // Case of mounted virtual or attached carrier thread.
-    if (!java_thread->java_suspend()) {
+
+    // Ideally we would just need to check java_thread->is_suspended(), but we have to
+    // consider the case of trying to suspend a thread that was previously suspended while
+    // carrying a vthread but has already unmounted it.
+    if (java_thread->is_suspended() || (!is_virtual && java_thread->is_carrier_thread_suspended())) {
+      return JVMTI_ERROR_THREAD_SUSPENDED;
+    }
+    if (!java_thread->java_suspend(single_suspend)) {
       // Thread is already suspended or in process of exiting.
       if (java_thread->is_exiting()) {
         // The thread was in the process of exiting.
@@ -1828,72 +1803,63 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
       }
       return JVMTI_ERROR_THREAD_SUSPENDED;
     }
+    return JVMTI_ERROR_NONE;
   }
-  return JVMTI_ERROR_NONE;
 }
 
 // java_thread - protected by ThreadsListHandle
-// Synchronization is needed between suspend_thread and resume_thread
-// This function is executed in context of ResumeThreadClosure. In contrast, the suspend_thread
-// is executed normally without any HandshakeClosure.
 jvmtiError
 JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume) {
-  // current thread can be VMThread which is a NonJavaThread
-  Thread* current = Thread::current();
+  JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
-  ThreadsListHandle tlh(current);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
-  NoSafepointVerifier nsv;
 
-  if (is_virtual) {
-    if (single_resume) {
-      if (!JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
-        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      }
-      JvmtiVTSuspender::register_vthread_resume(thread_h());
-      // Check if virtual thread is mounted and there is a java_thread.
-      // A non-null java_thread is always passed in the !single_resume case.
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_h());
-      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
-    }
-    // The java_thread can be still blocked in VTMS transition after a previous JVMTI suspend call.
-    // There is no need to resume the java_thread in this case. After vthread unblocking,
-    // it will check for is_vthread_suspended request and remain resumed if necessary.
-    if (java_thread == nullptr || !java_thread->is_suspended()) {
-      // We are done if the virtual thread is unmounted or
-      // the java_thread is not externally suspended.
-      return JVMTI_ERROR_NONE;
-    }
-    // The virtual thread is mounted and java_thread is supended: resume the java_thread.
+  // Unmounted vthread case.
+
+  if (is_virtual && java_thread == nullptr) {
+    assert(single_resume, "sanity check");
+    if (!JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    } 
+    JvmtiVTSuspender::register_vthread_resume(thread_h());
+    return JVMTI_ERROR_NONE;
   }
+
+  // Platform thread or mounted vthread cases.
+
+  assert(java_thread != nullptr, "sanity check");
+  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
+ 
   // Don't allow hidden thread resume request.
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
+
   bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
-
-  // A case of a non-virtual thread.
-  if (!is_virtual) {
-    if (!java_thread->is_carrier_thread_suspended() &&
-        (is_thread_carrying || !java_thread->is_suspended())) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    }
-    java_thread->clear_carrier_thread_suspended();
-  }
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
-
-  if (!is_thread_carrying) {
+  if (is_thread_carrying) {
+    return java_thread->clear_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+  } else {
+    // Platform thread (not carrying vthread) or mounted vthread cases.
+ 
     assert(thread_h() != nullptr, "sanity check");
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
-    if (java_thread->is_suspended()) {
-      if (!java_thread->java_resume()) {
-        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      }
+
+    // Ideally we would not have to check this but we have to consider the case
+    // of trying to resume a thread that was previously suspended while carrying
+    // a vthread but has already unmounted it.
+    if (!is_virtual && java_thread->is_carrier_thread_suspended()) {
+      bool res = java_thread->clear_carrier_thread_suspended();
+      assert(res, "resume operations running concurrently?");
+      return JVMTI_ERROR_NONE;
     }
+
+    if (!java_thread->java_resume(single_resume)) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
+    return JVMTI_ERROR_NONE;
   }
-  return JVMTI_ERROR_NONE;
 }
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
@@ -2075,7 +2041,6 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
 
   assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
 
-  hs_cl->set_target_h(target_h);
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
   hs_cl->set_self(self);             // needed when suspend is required for non-current target thread
@@ -2630,16 +2595,6 @@ GetStackTraceClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase *)_env)->get_stack_trace(jvf,
                                                     _start_depth, _max_count,
                                                     _frame_buffer, _count_ptr);
-}
-
-void
-ResumeThreadClosure::do_thread(Thread *target) {
-  set_result(JvmtiEnvBase::resume_thread(_target_h(), _target_jt, _single_resume));
-}
-
-void
-ResumeThreadClosure::do_vthread(Handle thread_h) {
-  set_result(JvmtiEnvBase::resume_thread(_target_h(), _target_jt, _single_resume));
 }
 
 #ifdef ASSERT
