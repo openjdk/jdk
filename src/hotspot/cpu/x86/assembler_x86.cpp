@@ -12990,13 +12990,6 @@ void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_
   }
 }
 
-void Assembler::emit_demotable_int16(bool demote, int byte1, int byte2, int encode) {
-  if (demote) {
-    return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode);
-  }
-  emit_int16(byte1, (byte2 | encode));
-}
-
 void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                               int size, int byte1, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit);
@@ -13031,22 +13024,16 @@ void Assembler::evex_opcode_prefix_and_encode_swap(int dst_enc, int nds_enc, int
   }
 }
 
-int Assembler::evex_prefix_and_encode_ndd(bool demote, int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                          InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool is_map1) {
-  if (demote) {
+int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                          InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+  if (is_demotable(no_flags, dst_enc, nds_enc)) {
     if (pre == VEX_SIMD_66) {
       emit_int8(0x66);
     }
-    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc, is_map1) : prefix_and_encode(dst_enc, src_enc, is_map1);
+    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
   }
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
-}
-
-int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                          InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
-  bool demote = is_demotable(no_flags, dst_enc, nds_enc);
-  return evex_prefix_and_encode_ndd(demote, dst_enc, nds_enc, src_enc, pre, opc, attributes, no_flags, use_prefixq);
 }
 
 int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
