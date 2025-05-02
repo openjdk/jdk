@@ -54,6 +54,12 @@ class TypeVariableWithBound3<T extends @TA Object & CharSequence> {
 class TypeVariableWithBound4<T extends Object & @TA CharSequence> {
 }
 
+class TypeVariableWithBound5<T extends CharSequence> {
+}
+
+class TypeVariableWithBound6<T extends Object & CharSequence> {
+}
+
 @Target(ElementType.TYPE_USE)
 @interface TA {
 }

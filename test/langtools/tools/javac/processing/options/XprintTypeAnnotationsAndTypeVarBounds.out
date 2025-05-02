@@ -29,7 +29,7 @@ class TypeVariableWithBound2<T extends java.lang.@TA CharSequence> {
   TypeVariableWithBound2();
 }
 
-class TypeVariableWithBound3<T extends java.lang.@TA Object> {
+class TypeVariableWithBound3<T extends java.lang.@TA Object & java.lang.CharSequence> {
 
   TypeVariableWithBound3();
 }
@@ -37,6 +37,16 @@ class TypeVariableWithBound3<T extends java.lang.@TA Object> {
 class TypeVariableWithBound4<T extends java.lang.@TA CharSequence> {
 
   TypeVariableWithBound4();
+}
+
+class TypeVariableWithBound5<T extends java.lang.CharSequence> {
+
+  TypeVariableWithBound5();
+}
+
+class TypeVariableWithBound6<T extends java.lang.CharSequence> {
+
+  TypeVariableWithBound6();
 }
 
 @java.lang.annotation.Target({TYPE_USE})

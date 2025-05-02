@@ -790,6 +790,9 @@ public class PrintingProcessor extends AbstractProcessor {
             }
             TypeElement e2 = (TypeElement)
                 ((DeclaredType) type).asElement();
+            if (!e2.getKind().isClass()) {
+                return false;
+            }
             return e2.getSuperclass().getKind() == TypeKind.NONE;
         }
     }
