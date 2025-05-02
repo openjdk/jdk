@@ -672,9 +672,13 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     }
 #endif
 #ifdef _AIX
-    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
+    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently sometimes even more than one time...
     if (n < 0 && errno == EAGAIN) {
-        n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+        int countdown = 3;
+        while (n < 0 && errno == EAGAIN && countdown > 0) {
+            n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+            countdown--;
+        }
     }
 #endif
 
