@@ -41,19 +41,46 @@ public class VectorSubword {
 
     private byte[] bytes;
     private short[] shorts;
+    private char[] chars;
     private int[] ints;
+    private long[] longs;
 
     @Setup
     public void init() {
         bytes = new byte[SIZE];
         shorts = new short[SIZE];
+        chars = new char[SIZE];
         ints = new int[SIZE];
+        longs = new long[SIZE];
+    }
+
+    // Narrowing
+
+    @Benchmark
+    public void shortToByte() {
+        for (int i = 0; i < SIZE; i++) {
+            bytes[i] = (byte) shorts[i];
+        }
     }
 
     @Benchmark
-    public void intToShort() {
+    public void shortToChar() {
         for (int i = 0; i < SIZE; i++) {
-            shorts[i] = (short) ints[i];
+            chars[i] = (char) shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void charToByte() {
+        for (int i = 0; i < SIZE; i++) {
+            bytes[i] = (byte) chars[i];
+        }
+    }
+
+    @Benchmark
+    public void charToShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shorts[i] = (short) chars[i];
         }
     }
 
@@ -65,16 +92,60 @@ public class VectorSubword {
     }
 
     @Benchmark
-    public void shortToByte() {
+    public void intToShort() {
         for (int i = 0; i < SIZE; i++) {
-            bytes[i] = (byte) shorts[i];
+            shorts[i] = (short) ints[i];
         }
     }
 
     @Benchmark
-    public void shortToInt() {
+    public void intToChar() {
         for (int i = 0; i < SIZE; i++) {
-            ints[i] = shorts[i];
+            chars[i] = (char) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void longToByte() {
+        for (int i = 0; i < SIZE; i++) {
+            bytes[i] = (byte) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void longToShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shorts[i] = (short) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void longToChar() {
+        for (int i = 0; i < SIZE; i++) {
+            chars[i] = (char) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void longToInt() {
+        for (int i = 0; i < SIZE; i++) {
+            ints[i] = (int) longs[i];
+        }
+    }
+
+    // Widening
+
+    @Benchmark
+    public void byteToShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shorts[i] = bytes[i];
+        }
+    }
+
+    @Benchmark
+    public void byteToChar() {
+        for (int i = 0; i < SIZE; i++) {
+            chars[i] = (char) bytes[i];
         }
     }
 
@@ -86,9 +157,45 @@ public class VectorSubword {
     }
 
     @Benchmark
-    public void byteToShort() {
+    public void byteToLong() {
         for (int i = 0; i < SIZE; i++) {
-            shorts[i] = bytes[i];
+            longs[i] = bytes[i];
         }
     }
+
+    @Benchmark
+    public void shortToInt() {
+        for (int i = 0; i < SIZE; i++) {
+            ints[i] = shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void shortToLong() {
+        for (int i = 0; i < SIZE; i++) {
+            longs[i] = shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void charToInt() {
+        for (int i = 0; i < SIZE; i++) {
+            ints[i] = chars[i];
+        }
+    }
+
+    @Benchmark
+    public void charToLong() {
+        for (int i = 0; i < SIZE; i++) {
+            longs[i] = chars[i];
+        }
+    }
+
+    @Benchmark
+    public void intToLong() {
+        for (int i = 0; i < SIZE; i++) {
+            longs[i] = ints[i];
+        }
+    }
+
 }

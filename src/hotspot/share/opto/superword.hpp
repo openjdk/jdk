@@ -653,7 +653,7 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint def_size) const;
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const;
 
   bool schedule_and_apply() const;
 };
