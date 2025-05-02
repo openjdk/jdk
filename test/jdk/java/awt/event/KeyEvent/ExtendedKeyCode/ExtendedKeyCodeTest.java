@@ -70,7 +70,8 @@ public class ExtendedKeyCodeTest {
             robot.waitForIdle();
 
             if (eventsCount != 2 || !setExtendedKeyCode) {
-                throw new RuntimeException("Wrong extended key code");
+                throw new RuntimeException("Wrong extended key code\n" +
+                        "eventsCount: " + eventsCount);
             }
         } finally {
             EventQueue.invokeAndWait(() -> frame.dispose());
