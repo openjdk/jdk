@@ -26,7 +26,7 @@
  * @bug 4691089 4819436 4942982 5104960 6544471 6627549 7066203 7195759
  *      8039317 8074350 8074351 8145952 8187946 8193552 8202026 8204269
  *      8208746 8209775 8264792 8274658 8283277 8296239 8321480 8334653
- *      8354343 8354344
+ *      8354343 8354344 8356096
  * @summary Validate ISO 4217 data for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -119,7 +119,7 @@ public class ValidateISO4217 {
             "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
                     + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-HRK-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
                     + "PTE-ROL-RUR-SDD-SIT-SLL-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-VED-"
-                    + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
+                    + "XAD-XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
                     + "YUM-ZMK-ZWD-ZWL-ZWN-ZWR";
     private static final String[][] extraCodes = {
             /* Defined in ISO 4217 list, but don't have code and minor unit info. */
