@@ -97,7 +97,7 @@ public class SoundClipTest {
                 result = AudioSystem.getSourceDataLine(null) != null;
             }
         } catch (Exception e) {
-            System.err.println("Exception occured: "+e);
+            System.err.println("Exception occurred: "+e);
         }
         if (!result) {
             System.err.println("Soundcard does not exist or sound drivers not installed!");
