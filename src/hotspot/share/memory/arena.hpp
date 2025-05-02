@@ -37,6 +37,11 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
+class ChunkPoolLock : public StackObj {
+ public:
+  ChunkPoolLock();
+  ~ChunkPoolLock();
+};
 
 // Linked list of raw memory chunks
 class Chunk {

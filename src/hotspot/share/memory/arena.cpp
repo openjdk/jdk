@@ -37,6 +37,22 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
+// One global static mutex.
+// It is used very early in the vm's initialization, in allocation
+// code and other areas. It is allocated on first use when the vm is single threaded.
+static PlatformMutex* _global_arena_mutex = nullptr;
+
+ChunkPoolLock::ChunkPoolLock() {
+  if (_global_arena_mutex == nullptr) {
+    _global_arena_mutex = new PlatformMutex();
+  }
+  _global_arena_mutex->lock();
+};
+
+ChunkPoolLock::~ChunkPoolLock() {
+  _global_arena_mutex->unlock();
+};
+
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
 STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
@@ -68,7 +84,7 @@ class ChunkPool {
 
   // Returns null if pool is empty.
   Chunk* take_from_pool() {
-    ThreadCritical tc;
+    ChunkPoolLock lock;
     Chunk* c = _first;
     if (_first != nullptr) {
       _first = _first->next();
@@ -77,16 +93,16 @@ class ChunkPool {
   }
   void return_to_pool(Chunk* chunk) {
     assert(chunk->length() == _size, "wrong pool for this chunk");
-    ThreadCritical tc;
+    ChunkPoolLock lock;
     chunk->set_next(_first);
     _first = chunk;
   }
 
   // Clear this pool of all contained chunks
   void prune() {
-    // Free all chunks while in ThreadCritical lock
+    // Free all chunks with ChunkPoolLock lock
     // so NMT adjustment is stable.
-    ThreadCritical tc;
+    ChunkPoolLock lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
     while (cur != nullptr) {
@@ -198,7 +214,8 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+    // Free chunks under NMT lock so that NMT adjustment is stable.
+    ChunkPoolLock lock;
     os::free(c);
   }
 }
