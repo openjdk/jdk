@@ -153,8 +153,8 @@ public final class IO {
     /**
      * Writes a prompt and then reads a line of input.
      * <p>
-     * Writes a prompt as if by calling {@code print}, and then reads a single
-     * line of text as if by calling {@link readln readln()}.
+     * Writes a prompt as if by calling {@link #print print}, and then reads a single
+     * line of text as if by calling {@link #readln() readln}.
      * <p>
      * If necessary, this method first sets up charset decoding, as described in
      * above in the class specification.
@@ -174,9 +174,9 @@ public final class IO {
 
     /**
      * The BufferedReader used by readln(). Initialized under a class lock by
-     * the reader() method.
+     * the reader() method. All access should be through the reader() method.
      */
-    static BufferedReader br;
+    private static BufferedReader br;
 
     /**
      * On the first call, creates an InputStreamReader to decode characters from
