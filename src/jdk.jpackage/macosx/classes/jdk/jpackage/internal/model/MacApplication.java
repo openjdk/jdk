@@ -37,8 +37,13 @@ import jdk.jpackage.internal.util.CompositeProxy;
 public interface MacApplication extends Application, MacApplicationMixin {
 
     default DottedVersion shortVersion() {
-        var verComponents = DottedVersion.lazy(version()).getComponents();
-        return DottedVersion.greedy(IntStream.range(0, 3).mapToObj(idx -> {
+        final var verComponents = DottedVersion.lazy(version()).getComponents();
+        // Short version should have exactly three components according to
+        // https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring
+        int maxComponentCount = 3;
+        // However, if the number of components is less than three, historically, jpackage will not add missing components.
+        maxComponentCount = Integer.min(maxComponentCount, verComponents.length);
+        return DottedVersion.greedy(IntStream.range(0, maxComponentCount).mapToObj(idx -> {
             if (idx < verComponents.length) {
                 return verComponents[idx].toString();
             } else {

@@ -165,14 +165,16 @@ final class MacApplicationBuilder {
     private String validatedBundleName() throws ConfigException {
         final var value = Optional.ofNullable(bundleName).orElseGet(() -> {
             final var appName = app.name();
-            if (appName.length() > MAX_BUNDLE_NAME_LENGTH) {
-                return appName.substring(0, MAX_BUNDLE_NAME_LENGTH);
-            } else {
-                return appName;
-            }
+// Commented out for backward compatibility
+//            if (appName.length() > MAX_BUNDLE_NAME_LENGTH) {
+//                return appName.substring(0, MAX_BUNDLE_NAME_LENGTH);
+//            } else {
+//                return appName;
+//            }
+            return appName;
         });
 
-        if (value.length() > MAX_BUNDLE_NAME_LENGTH) {
+        if (value.length() > MAX_BUNDLE_NAME_LENGTH && (bundleName != null)) {
             Log.error(I18N.format("message.bundle-name-too-long-warning", "--mac-package-name", value));
         }
 
@@ -204,7 +206,7 @@ final class MacApplicationBuilder {
     }
 
     private String validatedCategory() throws ConfigException {
-        return Optional.ofNullable(category).orElseGet(DEFAULTS::category);
+        return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
     }
 
     private Optional<Path> validatedIcon() throws ConfigException {
