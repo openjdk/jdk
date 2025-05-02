@@ -71,6 +71,7 @@ final class LauncherBuilder {
     }
 
     LauncherBuilder faGroups(List<FileAssociationGroup> v) {
+        v.forEach(Objects::requireNonNull);
         faSources = v;
         return this;
     }
@@ -160,7 +161,7 @@ final class LauncherBuilder {
 
     private String name;
     private LauncherStartupInfo startupInfo;
-    private List<FileAssociationGroup> faSources;
+    private List<FileAssociationGroup> faSources = List.of();
     private FileAssociationTraits faTraits;
     private boolean isService;
     private String description;
