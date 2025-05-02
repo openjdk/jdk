@@ -536,7 +536,7 @@ class Assembler : public AbstractAssembler {
     // Vector-Scalar (VSX) instruction support.
     LXV_OPCODE     = (61u << OPCODE_SHIFT |    1u     ),
     STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
-    LXVX_OPCODE    = (31u << OPCODE_SHIFT |   12u << 1 | 4u << 7),
+    LXVX_OPCODE    = (31u << OPCODE_SHIFT | 4u << 7 | 12u << 1),
     STXVX_OPCODE   = (31u << OPCODE_SHIFT |  396u << 1),
     LXVP_OPCODE    = ( 6u << OPCODE_SHIFT             ),
     STXVP_OPCODE   = ( 6u << OPCODE_SHIFT |    1u     ),
