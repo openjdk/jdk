@@ -44,6 +44,23 @@ typedef enum {
 class outputStream;
 enum class vmIntrinsicID;
 
+class VM_Features {
+ public:
+  // Dynamically sized feature flags currently only used by x86 backend,
+  // can be affected by VM settings.
+  uint64_t* _dynamic_features_vector;
+  uint32_t _dynamic_features_vector_size;
+  uint32_t _dynamic_features_element_shift_count;
+
+  void init_vm_features(uint32_t size, uint32_t elem_shift_count);
+
+  void set_feature(uint32_t feature);
+
+  void clear_feature(uint32_t feature);
+
+  bool supports_feature(uint32_t feature);
+};
+
 // Abstract_VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {
@@ -64,12 +81,50 @@ class Abstract_VM_Version: AllStatic {
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
 
-  // Dynamically sized feature flags currently only used by x86 backend,
-  // can be affected by VM settings.
-  static uint64_t* _dynamic_features_vector;
-  static uint64_t _dynamic_features_vector_size;
-  static uint64_t _dynamic_features_element_shift_count;
-  static uint64_t* _dynamic_cpu_features_vector;
+  static VM_Features _dynamic_features;
+
+  static VM_Features _dynamic_cpu_features;
+
+#define SET_CPU_FEATURE(feature) \
+  _dynamic_features.set_feature(feature)
+
+#define CLEAR_CPU_FEATURE(feature) \
+  _dynamic_features.clear_feature(feature)
+
+#define SUPPORTS_CPU_FEATURE(feature) \
+  _dynamic_features.supports_feature(feature)
+
+#define SUPPORTS_CPU_FEATURE_AUX(feature) \
+  _dynamic_cpu_features.supports_feature(feature)
+
+  static void init_vm_features(uint32_t size, uint32_t elem_shift_count) {
+    _dynamic_features.init_vm_features(size, elem_shift_count);
+    _dynamic_cpu_features.init_vm_features(size, elem_shift_count);
+  }
+
+  static void sync_cpu_features() {
+    assert(_dynamic_cpu_features._dynamic_features_vector_size == _dynamic_features._dynamic_features_vector_size, "");
+    memcpy(_dynamic_cpu_features._dynamic_features_vector, _dynamic_features._dynamic_features_vector,
+           sizeof(uint64_t) * _dynamic_features._dynamic_features_vector_size);
+  }
+
+  static void clear_cpu_features() {
+    memset(_dynamic_features._dynamic_features_vector, 0, sizeof(uint64_t) * _dynamic_features._dynamic_features_vector_size);
+  }
+
+  static bool vm_features_exist() {
+    return (_dynamic_features._dynamic_features_vector_size > 0) &&
+           (_dynamic_features._dynamic_features_vector != nullptr);
+  }
+
+  static uint32_t dynamic_features_vector_size() {
+    return _dynamic_features._dynamic_features_vector_size;
+  }
+
+  static uint64_t dynamic_features_vector_elem(uint32_t elem) {
+    assert(elem < _dynamic_features._dynamic_features_vector_size, "");
+    return _dynamic_features._dynamic_features_vector[elem];
+  }
 
   // These are set by machine-dependent initializations
 #ifndef SUPPORTS_NATIVE_CX8
@@ -139,56 +194,6 @@ class Abstract_VM_Version: AllStatic {
   static uint64_t features() {
     return _features;
   }
-
-  static void set_dynamic_feature(uint32_t feature) {
-    uint32_t index = feature >> _dynamic_features_element_shift_count;
-    uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-    assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-    _dynamic_features_vector[index] |= (1ULL << (feature & index_mask));
-  }
-
-  static void clear_dynamic_feature(uint32_t feature) {
-    uint32_t index = feature >> _dynamic_features_element_shift_count;
-    uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-    assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-    _dynamic_features_vector[index] &= ~(1ULL << (feature & index_mask));
-  }
-
-  static bool supports_dynamic_feature(uint32_t feature) {
-    uint32_t index = feature >> _dynamic_features_element_shift_count;
-    uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-    assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-    return (_dynamic_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
-  }
-
-  static void set_cpu_feature_aux(uint32_t feature) {
-    uint32_t index = feature >> _dynamic_features_element_shift_count;
-    uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-    assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-    _dynamic_cpu_features_vector[index] |= (1ULL << (feature & index_mask));
-  }
-
-  static bool supports_cpu_feature_aux(uint32_t feature) {
-    uint32_t index = feature >> _dynamic_features_element_shift_count;
-    uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-    assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-    return (_dynamic_cpu_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
-  }
-
-#define SET_CPU_FEATURE(feature) \
-  Abstract_VM_Version::set_dynamic_feature(feature)
-
-#define CLEAR_CPU_FEATURE(feature) \
-  Abstract_VM_Version::clear_dynamic_feature(feature)
-
-#define SUPPORTS_CPU_FEATURE(feature) \
-  Abstract_VM_Version::supports_dynamic_feature(feature)
-
-#define SET_CPU_FEATURE_AUX(feature) \
-  Abstract_VM_Version::set_cpu_feature_aux(feature)
-
-#define SUPPORTS_CPU_FEATURE_AUX(feature) \
-  Abstract_VM_Version::supports_cpu_feature_aux(feature)
 
   static const char* features_string() { return _features_string; }
 

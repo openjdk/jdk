@@ -858,7 +858,7 @@ void VM_Version::get_processor_features() {
 
   if (cpu_family() > 4) { // it supports CPUID
     _cpuid_info.feature_flags(); // These can be changed by VM settings
-    memcpy(_dynamic_cpu_features_vector, _dynamic_features_vector, sizeof(uint64_t) * _dynamic_features_vector_size);   // Preserve features
+    Abstract_VM_Version::sync_cpu_features(); // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
     _logical_processors_per_package = logical_processor_count();
@@ -1097,9 +1097,10 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(cpu_info_size > 0, "not enough temporary space allocated");
-  for (uint64_t i = 0; i < _dynamic_features_vector_size; i++) {
-    insert_features_names(_dynamic_features_vector[i], buf + cpu_info_size, sizeof(buf) - cpu_info_size, _features_names, 64 * i);
-    cpu_info_size = strlen(buf);
+  size_t buf_iter = cpu_info_size;
+  for (uint64_t i = 0; i < dynamic_features_vector_size(); i++) {
+    insert_features_names(dynamic_features_vector_elem(i), buf + buf_iter, sizeof(buf) - buf_iter, _features_names, 64 * i);
+    buf_iter = strlen(buf);
   }
 
   _cpu_info_string = os::strdup(buf);
@@ -2101,12 +2102,7 @@ void VM_Version::clear_apx_test_state() {
 static bool _vm_version_initialized = false;
 
 void VM_Version::pre_initialize() {
-  _dynamic_features_element_shift_count = 6;
-  _dynamic_features_vector_size =  (MAX_CPU_FEATURES >> _dynamic_features_element_shift_count) + 1;
-  _dynamic_features_vector = NEW_C_HEAP_ARRAY(uint64_t, _dynamic_features_vector_size, mtInternal);
-  _dynamic_cpu_features_vector = NEW_C_HEAP_ARRAY(uint64_t, _dynamic_features_vector_size, mtInternal);
-  memset(_dynamic_features_vector, 0, sizeof(uint64_t) * _dynamic_features_vector_size);
-  memset(_dynamic_cpu_features_vector, 0, sizeof(uint64_t) * _dynamic_features_vector_size);
+  Abstract_VM_Version::init_vm_features((MAX_CPU_FEATURES >> 6) + 1, 6);
 }
 
 void VM_Version::initialize() {

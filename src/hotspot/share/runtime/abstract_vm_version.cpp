@@ -37,10 +37,8 @@ const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
-uint64_t* Abstract_VM_Version::_dynamic_features_vector = nullptr;
-uint64_t Abstract_VM_Version::_dynamic_features_vector_size = 0;
-uint64_t Abstract_VM_Version::_dynamic_features_element_shift_count = 0;
-uint64_t* Abstract_VM_Version::_dynamic_cpu_features_vector = nullptr;
+VM_Features Abstract_VM_Version::_dynamic_features = {nullptr, 0, 0};
+VM_Features Abstract_VM_Version::_dynamic_cpu_features = {nullptr, 0, 0};
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -420,4 +418,35 @@ const char* Abstract_VM_Version::cpu_description(void) {
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;
+}
+
+
+void VM_Features::init_vm_features(uint32_t size, uint32_t elem_shift_count) {
+  _dynamic_features_vector_size = size;
+  _dynamic_features_element_shift_count = elem_shift_count;
+
+  uint64_t* features_memory = NEW_C_HEAP_ARRAY(uint64_t, size, mtInternal);
+  memset(features_memory, 0, sizeof(uint64_t*) * size);
+  _dynamic_features_vector = features_memory;
+  }
+
+void VM_Features::set_feature(uint32_t feature) {
+  uint32_t index = feature >> _dynamic_features_element_shift_count;
+  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
+  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
+  _dynamic_features_vector[index] |= (1ULL << (feature & index_mask));
+}
+
+void VM_Features::clear_feature(uint32_t feature) {
+  uint32_t index = feature >> _dynamic_features_element_shift_count;
+  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
+  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
+  _dynamic_features_vector[index] &= ~(1ULL << (feature & index_mask));
+}
+
+bool VM_Features::supports_feature(uint32_t feature) {
+  uint32_t index = feature >> _dynamic_features_element_shift_count;
+  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
+  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
+  return (_dynamic_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
 }

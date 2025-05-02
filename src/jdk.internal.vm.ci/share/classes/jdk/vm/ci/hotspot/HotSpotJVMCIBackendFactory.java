@@ -89,9 +89,11 @@ public interface HotSpotJVMCIBackendFactory {
      * @param enumType the class of {@code CPUFeatureType}
      * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
      *            specifies a CPU feature and its value is a mask for a bit in {@code features}
-     * @param dynamic_features_vector_pointer pointer to dyanmic feature vector specifying CPU features
-     * @param dynamic_features_vector_size dyanmic feature array size
-     * @param dynamic_features_element_shift_count log of dyanmic feature vector element size in bits
+     * @param dynamic_features_vector_pointer pointer to dynamic feature bit vector of CPU features
+     * @param dynamic_features_vector_offset offset of dynamic_feature_vector field in {@code VM_Features}
+     * @param dynamic_features_vector_size_offset offset of dynamic_feature_vector_size field in {@code VM_Features}
+     * @param dynamic_features_element_shift_count_offset offset of dynamic_features_element_shift_count field in {@code VM_Features}
+     *             ,it holds the base2 logarithmic value of dynamic feature bit vector lanesize in bits.
      * @param renaming maps from VM feature names to enum constant names where the two differ
      * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
      *             enum value
@@ -100,12 +102,18 @@ public interface HotSpotJVMCIBackendFactory {
     static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertDynamicFeaturesVector(
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
-                    long dynamic_features_vector_pointer,
-                    long dynamic_features_vector_size,
-                    long dynamic_features_element_shift_count,
+                    long dynamic_features_pointer,
+                    long dynamic_features_vector_offset,
+                    long dynamic_features_vector_size_offset,
+                    long dynamic_features_element_shift_count_offset,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
+
+        long dynamic_features_vector_pointer = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_vector_offset);
+        long dynamic_features_vector_size = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_vector_size_offset);
+        long dynamic_features_element_shift_count = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_element_shift_count_offset);
+
         for (Entry<String, Long> e : constants.entrySet()) {
             String key = e.getKey();
             long bitIndex = e.getValue();

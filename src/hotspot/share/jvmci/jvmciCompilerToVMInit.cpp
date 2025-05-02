@@ -449,6 +449,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
                  strcmp(vmField.typeString, "OopHandle") == 0 ||
+                 strcmp(vmField.typeString, "VM_Features") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

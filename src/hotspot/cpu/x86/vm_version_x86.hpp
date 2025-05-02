@@ -674,7 +674,9 @@ public:
 
   static void clear_apx_test_state();
 
-  static void clean_cpuFeatures()   { memset(_dynamic_features_vector, 0, sizeof(uint64_t) * _dynamic_features_vector_size); }
+  static void clean_cpuFeatures()   {
+    Abstract_VM_Version::clear_cpu_features();
+  }
   static void set_avx_cpuFeatures() {
     SET_CPU_FEATURE(CPU_SSE);
     SET_CPU_FEATURE(CPU_SSE2);
@@ -750,7 +752,7 @@ public:
   //
   // Feature identification which can be affected by VM settings
   //
-  static bool supports_cpuid()        { return _dynamic_features_vector  != nullptr; }
+  static bool supports_cpuid()        { return Abstract_VM_Version::vm_features_exist(); }
   static bool supports_cmov()         { return SUPPORTS_CPU_FEATURE(CPU_CMOV); }
   static bool supports_fxsr()         { return SUPPORTS_CPU_FEATURE(CPU_FXSR); }
   static bool supports_ht()           { return SUPPORTS_CPU_FEATURE(CPU_HT); }
