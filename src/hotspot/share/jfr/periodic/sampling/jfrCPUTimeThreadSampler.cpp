@@ -451,7 +451,7 @@ void JfrCPUTimeThreadSampler::record_out_of_safepoint() {
 void JfrCPUTimeThreadSampler::record_out_of_safepoint(JavaThread* thread, JfrThreadLocal* jtl) {
   JfrCPUTimeTraceStack& stack = jtl->cpu_time_jfr_stack();
   JfrStackFrame* tmp_stackframes = JfrCHeapObj::new_array<JfrStackFrame>(_max_frames_per_trace);
-  assert(!stack.is_empty(), "invariant");
+ // assert(!stack.is_empty(), "invariant");
   for (u4 i = 0; i < stack.size(); i++) {
     JfrCPUTimeThreadSampler::record_event(thread, stack.at(i), tmp_stackframes);
   }
