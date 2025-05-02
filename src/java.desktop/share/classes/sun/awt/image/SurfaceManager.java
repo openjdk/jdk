@@ -185,6 +185,23 @@ public abstract class SurfaceManager {
 
     /**
      * An interface for GraphicsConfiguration objects to implement if
+     * they create their own VolatileSurfaceManager implementations.
+     */
+    public interface Factory {
+
+        /**
+         * Creates a new instance of a VolatileSurfaceManager given a
+         * compatible SunVolatileImage.
+         * An optional context Object can be supplied as a way for the caller
+         * to pass pipeline-specific context data to the VolatileSurfaceManager
+         * (such as a backbuffer handle, for example).
+         */
+        VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                     Object context);
+    }
+
+    /**
+     * An interface for GraphicsConfiguration objects to implement if
      * their surfaces accelerate images using SurfaceDataProxy objects.
      *
      * Implementing this interface facilitates the default
@@ -201,7 +218,8 @@ public abstract class SurfaceManager {
     }
 
     public static class ProxyCache {
-        private final Map<SurfaceManager, SurfaceDataProxy> map = Collections.synchronizedMap(new WeakHashMap<>());
+        private final Map<SurfaceManager, SurfaceDataProxy> map =
+                Collections.synchronizedMap(new WeakHashMap<>());
 
         /**
          * Return a cached SurfaceDataProxy object for a given SurfaceManager.
@@ -252,7 +270,8 @@ public abstract class SurfaceManager {
 
     void flush(boolean deaccelerate) {
         synchronized (weakCache) {
-            Iterator<WeakReference<SurfaceDataProxy>> i = weakCache.values().iterator();
+            Iterator<WeakReference<SurfaceDataProxy>> i =
+                    weakCache.values().iterator();
             while (i.hasNext()) {
                 SurfaceDataProxy sdp = i.next().get();
                 if (sdp == null || sdp.flush(deaccelerate)) {

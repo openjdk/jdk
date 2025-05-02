@@ -114,8 +114,8 @@ public final class BasicTest {
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
-        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
-        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output);
+        TKit.assertTextStream("jpackage.app-path=").apply(output);
     }
 
     @Test
@@ -169,9 +169,9 @@ public final class BasicTest {
         };
 
         TKit.trace("Check parameters in help text");
-        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)),
+        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)).longValue(),
                 "Check help text contains platform specific parameters");
-        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes),
+        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes).longValue(),
                 "Check help text doesn't contain unexpected parameters");
     }
 
@@ -221,12 +221,12 @@ public final class BasicTest {
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("regular output")
                     .predicate(String::contains).negate()
-                    .apply(nonVerboseOutput.stream());
+                    .apply(nonVerboseOutput);
         });
 
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("verbose output")
-                    .apply(verboseOutput[0].stream());
+                    .apply(verboseOutput[0]);
         });
     }
 
