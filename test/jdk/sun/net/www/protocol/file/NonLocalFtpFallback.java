@@ -179,7 +179,7 @@ public class NonLocalFtpFallback {
      */
     @Test
     public void verifyFtpUnknownHost() throws IOException {
-        URL url  = new URL("file://nonexistinghost/not-exist.txt");
+        URL url = new URL("file://nonexistinghost/not-exist.txt");
         assertThrows(UnknownHostException.class, () -> {
             InputStream in = url.openConnection(Proxy.NO_PROXY).getInputStream();
         });
