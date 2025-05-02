@@ -49,7 +49,7 @@ public class FileURLConnection extends URLConnection {
 
     // The feature of falling back to FTP for non-local file URLs is disabled
     // by default and can be re-enabled by setting a system property
-    private static boolean FTP_FALLBACK_ENABLED =
+    private static final boolean FTP_FALLBACK_ENABLED =
             Boolean.getBoolean("jdk.net.file.ftpfallback");
 
     private final File file;
