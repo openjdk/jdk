@@ -3472,14 +3472,15 @@ public final class Math {
     }
 
     /**
-     * Returns {@code x} raised to the power of {@code n}.
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an {@code int}.
      * When {@code n} is 0, the returned value is 1.
      *
      * @param x the base.
      * @param n the exponent.
      * @return {@code x} raised to the power of {@code n}.
      * @throws ArithmeticException when {@code n} is negative,
-     *      or when the result overflows an {@code int}.
+     *      or when the result overflows an int.
      * @since 25
      */
     public static int powExact(int x, int n) {
@@ -3509,14 +3510,15 @@ public final class Math {
     }
 
     /**
-     * Returns unsigned {@code x} raised to the power of {@code n}.
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code int}.
      * When {@code n} is 0, the returned value is 1.
      *
      * @param x the unsigned base.
      * @param n the exponent.
      * @return {@code x} raised to the power of {@code n}.
      * @throws ArithmeticException when {@code n} is negative,
-     *      or when the result overflows an unsigned {@code int}.
+     *      or when the result overflows an unsigned int.
      * @since 25
      */
     public static int unsignedPowExact(int x, int n) {
@@ -3543,14 +3545,15 @@ public final class Math {
     }
 
     /**
-     * Returns {@code x} raised to the power of {@code n}.
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows a {@code long}.
      * When {@code n} is 0, the returned value is 1.
      *
      * @param x the base.
      * @param n the exponent.
      * @return {@code x} raised to the power of {@code n}.
      * @throws ArithmeticException when {@code n} is negative,
-     *      or when the result overflows a {@code long}.
+     *      or when the result overflows a long.
      * @since 25
      */
     public static long powExact(long x, int n) {
@@ -3580,14 +3583,15 @@ public final class Math {
     }
 
     /**
-     * Returns unsigned {@code x} raised to the power of {@code n}.
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code long}.
      * When {@code n} is 0, the returned value is 1.
      *
      * @param x the unsigned base.
      * @param n the exponent.
      * @return {@code x} raised to the power of {@code n}.
      * @throws ArithmeticException when {@code n} is negative,
-     *      or when the result overflows an unsigned {@code long}.
+     *      or when the result overflows an unsigned long.
      * @since 25
      */
     public static long unsignedPowExact(long x, int n) {
