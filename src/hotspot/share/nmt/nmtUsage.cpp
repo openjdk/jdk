@@ -52,9 +52,9 @@ void NMTUsage::walk_thread_stacks() {
 }
 
 void NMTUsage::update_malloc_usage() {
-  // Thread critical needed keep values in sync, total area size
+  // Lock needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  ThreadCritical tc;
+  MutexLocker nal(NMTArena_lock, Mutex::_no_safepoint_check_flag);
   const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;

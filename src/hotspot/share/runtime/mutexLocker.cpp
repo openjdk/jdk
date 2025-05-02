@@ -134,7 +134,8 @@ Mutex*   SharedDecoder_lock           = nullptr;
 Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
 Mutex*   NMTCompilationCostHistory_lock = nullptr;
-Mutex*   NmtVirtualMemory_lock          = nullptr;
+Mutex*   NmtVirtualMemory_lock        = nullptr;
+Mutex*   NMTArena_lock                = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -348,6 +349,7 @@ void mutex_init() {
 #endif
   MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , JvmtiVTMSTransition_lock);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock); // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
+  MUTEX_DEFL(NMTArena_lock                  , PaddedMutex  , ExternalsRecorder_lock);
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();

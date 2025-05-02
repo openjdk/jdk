@@ -84,8 +84,9 @@ class ChunkPool {
 
   // Clear this pool of all contained chunks
   void prune() {
-    // Free all chunks while in ThreadCritical lock
+    // Free all chunks with ThreadCritical and nmt lock
     // so NMT adjustment is stable.
+    MutexLocker nal(NMTArena_lock, Mutex::_no_safepoint_check_flag);
     ThreadCritical tc;
     Chunk* cur = _first;
     Chunk* next = nullptr;
@@ -198,7 +199,8 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+    // Free chunks under NMT lock so that NMT adjustment is stable.
+    MutexLocker nal(NMTArena_lock, Mutex::_no_safepoint_check_flag);
     os::free(c);
   }
 }

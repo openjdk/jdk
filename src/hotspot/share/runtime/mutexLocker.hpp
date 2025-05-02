@@ -118,6 +118,7 @@ extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFact
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
 extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory updates
+extern Mutex*   NMTArena_lock;                   // guards NMT arena chunk deletion while accounting and printing
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
