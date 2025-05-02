@@ -58,8 +58,9 @@ public class LocaleNameProviderTest extends ProviderTest {
     /*
      * This is not an exhaustive test. Such a test would require iterating (1000x1000)+
      * inputs. Instead, we check against Japanese lang locales which guarantees
-     * we will run into cases where the CLDR is not preferred and the SPI has defined
-     * a value. See LocaleNameProviderImpl and LocaleNames ResourceBundle.
+     * we will run into cases where the CLDR is not the preferred provider as the
+     * SPI has defined variants of the Japanese locale (E.g. osaka).
+     * See LocaleNameProviderImpl and LocaleNames ResourceBundle.
      */
     @ParameterizedTest
     @MethodSource
@@ -89,17 +90,17 @@ public class LocaleNameProviderTest extends ProviderTest {
         String jreslang = null;
         String jresctry = null;
         String jresvrnt = null;
-        if (!lang.equals("")) {
+        if (!lang.isEmpty()) {
             try {
                 jreslang = rb.getString(lang);
             } catch (MissingResourceException mre) {}
         }
-        if (!ctry.equals("")) {
+        if (!ctry.isEmpty()) {
             try {
                 jresctry = rb.getString(ctry);
             } catch (MissingResourceException mre) {}
         }
-        if (!vrnt.equals("")) {
+        if (!vrnt.isEmpty()) {
             try {
                 jresvrnt = rb.getString("%%"+vrnt);
             } catch (MissingResourceException mre) {}
