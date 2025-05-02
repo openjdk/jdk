@@ -405,11 +405,14 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // bits. As a result, the negation of those statements are equivalent.
     // tmp == 0 if and only if there does not exists a value not smaller than
     // lo and satisfies bits. In this case, alignment == 0 and
-    // new_lo == bits._ones, since bits._ones satisfies bits. This function
-    // always returns a value satisfying bits, regardless whether if it is a
-    // formally valid one. As a result, the caller only needs to check
-    // lo <= new_lo to find the cases where there exists no value not smaller
-    // than lo and satisfies bits.
+    // new_lo == bits._ones. We know that, if the assumption of this function
+    // holds, we return a value satisfying bits, and if the assumption of this
+    // function does not hold, the returned value would be bits._ones, which
+    // also satisfies bits. As a result, this function always returns a value
+    // satisfying bits, regardless whether if the assumption of this function
+    // holds. In conclusion, the caller only needs to check lo <= new_lo to
+    // find the cases where there exists no value not smaller than lo and
+    // satisfies bits (see the overview of the function).
     assert(lo < new_lo || new_lo == bits._ones, "invalid result must be bits._ones");
     return new_lo;
   }
