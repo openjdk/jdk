@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,22 +476,8 @@ public abstract class SHA3 extends DigestBase {
 
         public void reset() {
             engineReset();
-            implReset();
         }
     }
-
-    public static final class SHAKE128h extends SHA3 {
-        public SHAKE128h() {
-            super("SHAKE128", 32, (byte) 0x1F, 32);
-        }
-    }
-
-    public static final class SHAKE256h extends SHA3XOF {
-        public SHAKE256h() {
-            super("SHAKE256", 64, (byte) 0x1F, 64);
-        }
-    }
-
 
     /*
      * The SHAKE128 extendable output function.

@@ -88,8 +88,8 @@ public class ML_DSA_Test {
             case "SHA2-256" -> "SHA-256";
             case "SHA2-384" -> "SHA-384";
             case "SHA2-512" -> "SHA-512";
-            case "SHAKE-128" -> "SHAKE128";
-            case "SHAKE-256" -> "SHAKE256";
+            case "SHAKE-128" -> "SHAKE128-256";
+            case "SHAKE-256" -> "SHAKE256-512";
             default -> in;
         };
     }
