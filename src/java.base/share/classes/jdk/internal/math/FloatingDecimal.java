@@ -47,7 +47,6 @@ public class FloatingDecimal{
     static final int    MAX_DECIMAL_DIGITS = 15;
     static final int    MAX_DECIMAL_EXPONENT = 308;
     static final int    MIN_DECIMAL_EXPONENT = -324;
-    static final int    BIG_DECIMAL_EXPONENT = 324; // i.e. abs(MIN_DECIMAL_EXPONENT)
     static final int    MAX_NDIGITS = 1100;
 
     static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
