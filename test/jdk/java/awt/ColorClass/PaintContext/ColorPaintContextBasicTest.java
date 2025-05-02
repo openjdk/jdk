@@ -73,6 +73,11 @@ public final class ColorPaintContextBasicTest {
             new Color(255, 0, 0, 128)
     };
 
+    /**
+     * Custom implementation of Paint that wraps a Color but is intentionally
+     * not a Color. This is used to bypass the "paint instanceof Color"
+     * optimization in Graphics2D#setPaint().
+     */
     private static final class CustomPaint implements Paint {
 
         private final Color color;
@@ -133,25 +138,23 @@ public final class ColorPaintContextBasicTest {
                 }
 
                 int transparency = goldBI.getTransparency();
-                var goldVI2BI = fillVI(gc, transparency,
-                                       g -> g.setColor(color));
-                var paintVI2BI = fillVI(gc, transparency,
-                                        g -> g.setPaint(color));
-                var customVI2BI = fillVI(gc, transparency,
-                                         g -> g.setPaint(new CustomPaint(color)));
+                var goldVI = fillVI(gc, transparency, g -> g.setColor(color));
+                var paintVI = fillVI(gc, transparency, g -> g.setPaint(color));
+                var customVI = fillVI(gc, transparency,
+                                      g -> g.setPaint(new CustomPaint(color)));
 
-                // Do no compare transparent BufferedImage and VolatileImage,
-                // they may have different alpha precision.
-                if (color.getAlpha() == 255 && !verify(goldBI, goldVI2BI)) {
-                    throw new RuntimeException("goldBI != goldVI2BI");
+                if (gc.getColorModel().getPixelSize() >= 24) {
+                    if (color.getAlpha() == 255 && !verify(goldBI, goldVI)) {
+                        throw new RuntimeException("goldBI != goldVI");
+                    }
                 }
 
-                if (!verify(paintVI2BI, goldVI2BI)) {
-                    throw new RuntimeException("setPaintVI != goldVI2BI");
+                if (!verify(paintVI, goldVI)) {
+                    throw new RuntimeException("paintVI != goldVI");
                 }
 
-                if (!verify(customVI2BI, goldVI2BI)) {
-                    throw new RuntimeException("setCustomVI != goldVI2BI");
+                if (!verify(customVI, goldVI)) {
+                    throw new RuntimeException("customVI != goldVI");
                 }
             }
         }
