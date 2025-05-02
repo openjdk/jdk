@@ -255,9 +255,9 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     }
     log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", _load_header->entries_count());
     log_debug(aot, codecache, init)("  Adapters:  total=%u", _load_header->adapters_count());
-    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->shared_blobs_count());
-    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->C1_blobs_count());
-    log_debug(aot, codecache, init)("  All Blobs: total=%u", _load_header->C2_blobs_count());
+    log_debug(aot, codecache, init)("  Shared Blobs: total=%u", _load_header->shared_blobs_count());
+    log_debug(aot, codecache, init)("  C1 Blobs: total=%u", _load_header->C1_blobs_count());
+    log_debug(aot, codecache, init)("  C2 Blobs: total=%u", _load_header->C2_blobs_count());
     log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", _load_header->cache_size());
 
     // Read strings

@@ -113,64 +113,53 @@ public class AOTCodeFlags {
             if (!isAdapterCachingOn() && !isStubCachingOn()) { // this is equivalent to completely disable AOT code cache
                 switch (runMode) {
                 case RunMode.ASSEMBLY:
-                    out.shouldNotMatch("Wrote .* bytes to AOT Code Cache");
-                    break;
                 case RunMode.PRODUCTION:
-                    out.shouldNotMatch("Read blob .* kind=Adapter");
-                    out.shouldNotMatch("Read blob .* kind=SharedBlob");
-                    out.shouldNotMatch("Read blob .* kind=C1Blob");
-                    out.shouldNotMatch("Read blob .* kind=C2Blob");
+                    out.shouldNotMatch("Adapters:\\s+total");
+                    out.shouldNotMatch("Shared Blobs:\\s+total");
+                    out.shouldNotMatch("C1 Blobs:\\s+total");
+                    out.shouldNotMatch("C2 Blobs:\\s+total");
                     break;
                 }
             } else {
-		if (isAdapterCachingOn()) {
-		    switch (runMode) {
-		    case RunMode.ASSEMBLY:
-			out.shouldMatch("Adapters:\\s+total=[1-9][0-9]+");
-			break;
-		    case RunMode.PRODUCTION:
-			out.shouldMatch("Read blob .* kind=Adapter");
-			break;
-		    }
-		} else {
-		    switch (runMode) {
-		    case RunMode.ASSEMBLY:
-			out.shouldMatch("Adapters:\\s+total=0");
-			break;
-		    case RunMode.PRODUCTION:
-			out.shouldNotMatch("Read blob .* kind=Adapter");
-			break;
-		    }
-		}
-		if (isStubCachingOn()) {
-		    switch (runMode) {
-		    case RunMode.ASSEMBLY:
-			out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
-			out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
-			out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
-			break;
-		    case RunMode.PRODUCTION:
-			out.shouldMatch("Read blob .* kind=SharedBlob");
-			out.shouldMatch("Read blob .* kind=C1Blob");
-			out.shouldMatch("Read blob .* kind=C2Blob");
-			break;
-		    }
-		} else {
-		    switch (runMode) {
-		    case RunMode.ASSEMBLY:
-			out.shouldMatch("Shared Blobs:\\s+total=0");
-			out.shouldMatch("C1 Blobs:\\s+total=0");
-			out.shouldMatch("C2 Blobs:\\s+total=0");
-			break;
-		    case RunMode.PRODUCTION:
-			out.shouldNotMatch("Read blob .* kind=SharedBlob");
-			out.shouldNotMatch("Read blob .* kind=C1Blob");
-			out.shouldNotMatch("Read blob .* kind=C2Blob");
-			break;
-		    }
-		}
+                if (isAdapterCachingOn()) {
+                    switch (runMode) {
+                    case RunMode.ASSEMBLY:
+                    case RunMode.PRODUCTION:
+                        // AOTAdapterCaching is on, non-zero adapters should be stored/loaded
+                        out.shouldMatch("Adapters:\\s+total=[1-9][0-9]+");
+                        break;
+                    }
+                } else {
+                    switch (runMode) {
+                    case RunMode.ASSEMBLY:
+                    case RunMode.PRODUCTION:
+                        // AOTAdapterCaching is off, no adapters should be stored/loaded
+                        out.shouldMatch("Adapters:\\s+total=0");
+                        break;
+                    }
+                }
+                if (isStubCachingOn()) {
+                    switch (runMode) {
+                    case RunMode.ASSEMBLY:
+                    case RunMode.PRODUCTION:
+                        // AOTStubCaching is on, non-zero stubs should be stored/loaded
+                        out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
+                        out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
+                        out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
+                        break;
+                    }
+                } else {
+                    switch (runMode) {
+                    case RunMode.ASSEMBLY:
+                    case RunMode.PRODUCTION:
+                        // AOTStubCaching is off, no stubs should be stored/loaded
+                        out.shouldMatch("Shared Blobs:\\s+total=0");
+                        out.shouldMatch("C1 Blobs:\\s+total=0");
+                        out.shouldMatch("C2 Blobs:\\s+total=0");
+                        break;
+                    }
+                }
             }
         }
-
     }
 }
