@@ -90,12 +90,12 @@ record LauncherFromParams(Optional<BiFunction<FileAssociation, Map<String, ? sup
             return toSupplier(() -> {
                 final var faGroupBuilder = FileAssociationGroup.build();
 
-                if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
+                if (OperatingSystem.current() == OperatingSystem.MACOS) {
+                    FA_DESCRIPTION.copyInto(faParams, faGroupBuilder::description);
+                } else {
                     faGroupBuilder.description(FA_DESCRIPTION.findIn(faParams).orElseGet(() -> {
                         return String.format("%s association", toSupplier(builder::create).get().name());
                     }));
-                } else {
-                    FA_DESCRIPTION.copyInto(faParams, faGroupBuilder::description);
                 }
 
                 FA_ICON.copyInto(faParams, faGroupBuilder::icon);
