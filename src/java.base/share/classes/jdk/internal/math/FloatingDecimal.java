@@ -34,7 +34,7 @@ import java.util.regex.*;
  * static convenience methods, although a <code>BinaryToASCIIConverter</code>
  * instance may be obtained and reused.
  */
-public class FloatingDecimal{
+public final class FloatingDecimal{
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
@@ -256,7 +256,7 @@ public class FloatingDecimal{
     /**
      * A buffered implementation of <code>BinaryToASCIIConverter</code>.
      */
-    static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
+    static final class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private boolean isNegative;
         private int decExponent;
         private int firstDigitIndex;
@@ -1002,25 +1002,7 @@ public class FloatingDecimal{
     /**
      * A <code>ASCIIToBinaryConverter</code> container for a <code>double</code>.
      */
-    static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        private final double doubleVal;
-        private final float floatVal;
-
-        public PreparedASCIIToBinaryBuffer(double doubleVal, float floatVal) {
-            this.doubleVal = doubleVal;
-            this.floatVal = floatVal;
-        }
-
-        @Override
-        public double doubleValue() {
-            return doubleVal;
-        }
-
-        @Override
-        public float floatValue() {
-            return floatVal;
-        }
-    }
+    record PreparedASCIIToBinaryBuffer(double doubleValue, float floatValue) implements ASCIIToBinaryConverter {}
 
     static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
     static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
@@ -1031,11 +1013,11 @@ public class FloatingDecimal{
     /**
      * A buffered implementation of <code>ASCIIToBinaryConverter</code>.
      */
-    static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        boolean     isNegative;
-        int         decExponent;
-        byte[]      digits;
-        int         nDigits;
+    static final class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
+        final boolean isNegative;
+        final int     decExponent;
+        final byte[]  digits;
+        int           nDigits;
 
         ASCIIToBinaryBuffer( boolean negSign, int decExponent, byte[] digits, int n)
         {
