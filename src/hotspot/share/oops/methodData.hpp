@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHODDATA_HPP
 
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
@@ -55,8 +56,7 @@ class BytecodeStream;
 // counter overflow, multiprocessor races during data collection, space
 // limitations, missing MDO blocks, etc.  Bad or missing data will degrade
 // optimization quality but will not affect correctness.  Also, each MDO
-// is marked with its birth-date ("creation_mileage") which can be used
-// to assess the quality ("maturity") of its data.
+// can be checked for its "maturity" by calling is_mature().
 //
 // Short (<32-bit) counters are designed to overflow to a known "saturated"
 // state.  Also, certain recorded per-BCI events are given one-bit counters
@@ -114,7 +114,7 @@ public:
   };
 
   // Tag values
-  enum {
+  enum : u1 {
     no_tag,
     bit_data_tag,
     counter_data_tag,
@@ -182,7 +182,7 @@ public:
   }
 
   u1 flags() const {
-    return _header._struct._flags;
+    return Atomic::load_acquire(&_header._struct._flags);
   }
 
   u2 bci() const {
@@ -203,11 +203,36 @@ public:
     return _cells[index];
   }
 
-  void set_flag_at(u1 flag_number) {
-    _header._struct._flags |= (0x1 << flag_number);
+  bool set_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == bit) {
+        // already set.
+        return false;
+      }
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
+    return true;
   }
+
+  bool clear_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    u1 exchange_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == 0) {
+        // already cleaed.
+        return false;
+      }
+      exchange_value = compare_value & ~bit;
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
+    return true;
+  }
+
   bool flag_at(u1 flag_number) const {
-    return (_header._struct._flags & (0x1 << flag_number)) != 0;
+    return (flags() & (1 << flag_number)) != 0;
   }
 
   // Low-level support for code generation.
@@ -233,7 +258,7 @@ public:
     return temp._header._struct._flags;
   }
   // Return a value which, when or-ed as a word into _header, sets the flag.
-  static u8 flag_mask_to_header_mask(uint byte_constant) {
+  static u8 flag_mask_to_header_mask(u1 byte_constant) {
     DataLayout temp; temp.set_header(0);
     temp._header._struct._flags = byte_constant;
     return temp._header._bits;
@@ -344,10 +369,10 @@ protected:
     return cast_to_oop(intptr_at(index));
   }
 
-  void set_flag_at(int flag_number) {
+  void set_flag_at(u1 flag_number) {
     data()->set_flag_at(flag_number);
   }
-  bool flag_at(int flag_number) const {
+  bool flag_at(u1 flag_number) const {
     return data()->flag_at(flag_number);
   }
 
@@ -355,7 +380,7 @@ protected:
   static ByteSize cell_offset(int index) {
     return DataLayout::cell_offset(index);
   }
-  static int flag_number_to_constant(int flag_number) {
+  static u1 flag_number_to_constant(u1 flag_number) {
     return DataLayout::flag_number_to_constant(flag_number);
   }
 
@@ -487,13 +512,15 @@ class BitData : public ProfileData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
-  enum {
+  enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
-      null_seen_flag              = DataLayout::first_flag + 0
+      null_seen_flag                  = DataLayout::first_flag + 0,
+      exception_handler_entered_flag  = null_seen_flag + 1,
+      deprecated_method_callsite_flag = exception_handler_entered_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = null_seen_flag + 1
+    , exception_seen_flag             = deprecated_method_callsite_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -517,6 +544,9 @@ public:
   // Consulting it allows the compiler to avoid setting up null_check traps.
   bool null_seen()     { return flag_at(null_seen_flag); }
   void set_null_seen()    { set_flag_at(null_seen_flag); }
+  bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
+  bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
+  bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
 
 #if INCLUDE_JVMCI
   // true if an exception was thrown at the specific BCI
@@ -524,8 +554,12 @@ public:
   void set_exception_seen() { set_flag_at(exception_seen_flag); }
 #endif
 
+  // true if a ex handler block at this bci was entered
+  bool exception_handler_entered() { return flag_at(exception_handler_entered_flag); }
+  void set_exception_handler_entered() { set_flag_at(exception_handler_entered_flag); }
+
   // Code generation support
-  static int null_seen_byte_constant() {
+  static u1 null_seen_byte_constant() {
     return flag_number_to_constant(null_seen_flag);
   }
 
@@ -1080,29 +1114,18 @@ public:
 // ReceiverTypeData
 //
 // A ReceiverTypeData is used to access profiling information about a
-// dynamic type check.  It consists of a counter which counts the total times
-// that the check is reached, and a series of (Klass*, count) pairs
-// which are used to store a type profile for the receiver of the check.
+// dynamic type check.  It consists of a series of (Klass*, count)
+// pairs which are used to store a type profile for the receiver of
+// the check, the associated count is incremented every time the type
+// is seen. A per ReceiverTypeData counter is incremented on type
+// overflow (when there's no more room for a not yet profiled Klass*).
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
   enum {
-#if INCLUDE_JVMCI
-    // Description of the different counters
-    // ReceiverTypeData for instanceof/checkcast/aastore:
-    //   count is decremented for failed type checks
-    //   JVMCI only: nonprofiled_count is incremented on type overflow
-    // VirtualCallData for invokevirtual/invokeinterface:
-    //   count is incremented on type overflow
-    //   JVMCI only: nonprofiled_count is incremented on method overflow
-
-    // JVMCI is interested in knowing the percentage of type checks involving a type not explicitly in the profile
-    nonprofiled_count_off_set = counter_cell_count,
-    receiver0_offset,
-#else
     receiver0_offset = counter_cell_count,
-#endif
     count0_offset,
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
   };
@@ -1117,7 +1140,7 @@ public:
   virtual bool is_ReceiverTypeData() const { return true; }
 
   static int static_cell_count() {
-    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count JVMCI_ONLY(+ 1);
+    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
   }
 
   virtual int cell_count() const {
@@ -1126,7 +1149,7 @@ public:
 
   // Direct accessors
   static uint row_limit() {
-    return TypeProfileWidth;
+    return (uint) TypeProfileWidth;
   }
   static int receiver_cell_index(uint row) {
     return receiver0_offset + row * receiver_type_row_cell_count;
@@ -1179,13 +1202,6 @@ public:
     set_count(0);
     set_receiver(row, nullptr);
     set_receiver_count(row, 0);
-#if INCLUDE_JVMCI
-    if (!this->is_VirtualCallData()) {
-      // if this is a ReceiverTypeData for JVMCI, the nonprofiled_count
-      // must also be reset (see "Description of the different counters" above)
-      set_nonprofiled_count(0);
-    }
-#endif
   }
 
   // Code generation support
@@ -1195,17 +1211,6 @@ public:
   static ByteSize receiver_count_offset(uint row) {
     return cell_offset(receiver_count_cell_index(row));
   }
-#if INCLUDE_JVMCI
-  static ByteSize nonprofiled_receiver_count_offset() {
-    return cell_offset(nonprofiled_count_off_set);
-  }
-  uint nonprofiled_count() const {
-    return uint_at(nonprofiled_count_off_set);
-  }
-  void set_nonprofiled_count(uint count) {
-    set_uint_at(nonprofiled_count_off_set, count);
-  }
-#endif // INCLUDE_JVMCI
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
   }
@@ -1430,7 +1435,7 @@ public:
   }
 
   static uint row_limit() {
-    return BciProfileWidth;
+    return (uint) BciProfileWidth;
   }
   static int bci_cell_index(uint row) {
     return bci0_offset + row * ret_row_cell_count;
@@ -1940,10 +1945,10 @@ class ciMethodData;
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
+  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1960,11 +1965,18 @@ private:
   Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method);
+
+  void initialize();
+
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-  void initialize();
+
+  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
+  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
+  // readers will see consistent profile data.
+  void reinitialize();
 
   // Whole-method sticky bits and flags
   enum {
@@ -2010,7 +2022,7 @@ public:
       assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       uint cnt1 = 1 + _trap_hist._array[reason];
       if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
-        _trap_hist._array[reason] = cnt1;
+        _trap_hist._array[reason] = (u1)cnt1;
         return cnt1;
       } else {
         return _trap_hist_mask + (++_nof_overflow_traps);
@@ -2048,8 +2060,6 @@ private:
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
 
-  int               _creation_mileage; // method mileage at MDO creation
-
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
   // We need those because in tiered a method can be concurrently
@@ -2064,11 +2074,6 @@ private:
   int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
-#if INCLUDE_RTM_OPT
-  // State of RTM code generation during compilation of the method
-  int               _rtm_state;
-#endif
-
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -2079,8 +2084,8 @@ private:
 
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int                _jvmci_ir_size;
   FailedSpeculation* _failed_speculations;
+  int                _jvmci_ir_size;
 #endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
@@ -2091,7 +2096,11 @@ private:
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
 
+  // data index of exception handler profiling data
+  int _exception_handler_data_di;
+
   // Beginning of the data entries
+  // See comment in ciMethodData::load_data
   intptr_t _data[1];
 
   // Helper for size computation
@@ -2104,6 +2113,22 @@ private:
   DataLayout* data_layout_at(int data_index) const {
     assert(data_index % sizeof(intptr_t) == 0, "unaligned");
     return (DataLayout*) (((address)_data) + data_index);
+  }
+
+  static int single_exception_handler_data_cell_count() {
+    return BitData::static_cell_count();
+  }
+
+  static int single_exception_handler_data_size() {
+    return DataLayout::compute_size_in_bytes(single_exception_handler_data_cell_count());
+  }
+
+  DataLayout* exception_handler_data_at(int exception_handler_index) const {
+    return data_layout_at(_exception_handler_data_di + (exception_handler_index * single_exception_handler_data_size()));
+  }
+
+  int num_exception_handler_data() const {
+    return exception_handlers_data_size() / single_exception_handler_data_size();
   }
 
   // Initialize an individual data segment.  Returns the size of
@@ -2142,7 +2167,7 @@ private:
   // What is the index of the first data entry?
   int first_di() const { return 0; }
 
-  ProfileData* bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent);
+  ProfileData* bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp);
   // Find or create an extra ProfileData:
   ProfileData* bci_to_extra_data(int bci, Method* m, bool create_if_missing);
 
@@ -2171,6 +2196,8 @@ private:
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
+  DataLayout* exception_handler_bci_to_data_helper(int bci);
+
 public:
   void clean_extra_data(CleanExtraDataClosure* cl);
 
@@ -2194,9 +2221,6 @@ public:
   // My size
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
-
-  int      creation_mileage() const { return _creation_mileage; }
-  void set_creation_mileage(int x)  { _creation_mileage = x; }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
@@ -2242,32 +2266,15 @@ public:
   }
 #endif
 
-#if INCLUDE_RTM_OPT
-  int rtm_state() const {
-    return _rtm_state;
-  }
-  void set_rtm_state(RTMState rstate) {
-    _rtm_state = (int)rstate;
-  }
-  void atomic_set_rtm_state(RTMState rstate) {
-    Atomic::store(&_rtm_state, (int)rstate);
-  }
-
-  static int rtm_state_offset_in_bytes() {
-    return offset_of(MethodData, _rtm_state);
-  }
-#endif
-
   void set_would_profile(bool p)              { _would_profile = p ? profile : no_profile; }
   bool would_profile() const                  { return _would_profile != no_profile; }
 
   int num_loops() const                       { return _num_loops;  }
-  void set_num_loops(int n)                   { _num_loops = n;     }
+  void set_num_loops(short n)                 { _num_loops = n;     }
   int num_blocks() const                      { return _num_blocks; }
-  void set_num_blocks(int n)                  { _num_blocks = n;    }
+  void set_num_blocks(short n)                { _num_blocks = n;    }
 
-  bool is_mature() const;  // consult mileage and ProfileMaturityPercentage
-  static int mileage_of(Method* m);
+  bool is_mature() const;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   enum EscapeFlag {
@@ -2282,20 +2289,12 @@ public:
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
-  uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   return aid->arg_modified(a); }
-
+  uint arg_modified(int a);
   void set_eflags(intx v)                        { _eflags = v; }
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
-  void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   aid->set_arg_modified(a, v); }
-
+  void set_arg_modified(int a, uint v);
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
 
   // Location and size of data area
@@ -2307,8 +2306,11 @@ public:
   }
 
   int parameters_size_in_bytes() const {
-    ParametersTypeData* param = parameters_type_data();
-    return param == nullptr ? 0 : param->size_in_bytes();
+    return pointer_delta_as_int((address) parameters_data_limit(), (address) parameters_data_base());
+  }
+
+  int exception_handlers_data_size() const {
+    return pointer_delta_as_int((address) exception_handler_data_limit(), (address) exception_handler_data_base());
   }
 
   // Accessors
@@ -2326,7 +2328,7 @@ public:
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {
-    return dp - ((address)_data);
+    return (int)(dp - ((address)_data));
   }
 
   // bci to di/dp conversion.
@@ -2340,6 +2342,8 @@ public:
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
+    check_extra_data_locked();
+
     ProfileData* data = nullptr;
     // If m not null, try to allocate a SpeculativeTrapData entry
     if (m == nullptr) {
@@ -2361,12 +2365,30 @@ public:
     return bci_to_extra_data(bci, nullptr, true);
   }
 
+  BitData* exception_handler_bci_to_data_or_null(int bci);
+  BitData exception_handler_bci_to_data(int bci);
+
   // Add a handful of extra data records, for trap tracking.
-  DataLayout* extra_data_base() const  { return limit_data_position(); }
+  // Only valid after 'set_size' is called at the end of MethodData::initialize
+  DataLayout* extra_data_base() const  {
+    check_extra_data_locked();
+    return limit_data_position();
+  }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
-  DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
-                                                              parameters_size_in_bytes()); }
-  int extra_data_size() const          { return (address)extra_data_limit() - (address)extra_data_base(); }
+  // pointers to sections in extra data
+  DataLayout* args_data_limit() const  { return parameters_data_base(); }
+  DataLayout* parameters_data_base() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di) : parameters_data_limit();
+  }
+  DataLayout* parameters_data_limit() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return exception_handler_data_base();
+  }
+  DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handler_data_di); }
+  DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
+
+  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)limit_data_position()); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.
@@ -2413,8 +2435,12 @@ public:
   }
 
   int parameters_type_data_di() const {
-    assert(_parameters_type_data_di != parameters_uninitialized && _parameters_type_data_di != no_parameters, "no args type data");
-    return _parameters_type_data_di;
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? _parameters_type_data_di : exception_handlers_data_di();
+  }
+
+  int exception_handlers_data_di() const {
+    return _exception_handler_data_di;
   }
 
   // Support for code generation
@@ -2478,7 +2504,8 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  Mutex* extra_data_lock() { return &_extra_data_lock; }
+  Mutex* extra_data_lock() const { return const_cast<Mutex*>(&_extra_data_lock); }
+  void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -32,13 +33,17 @@
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class ConstantPool;
+class DeoptimizationScope;
 class klassItable;
 class RecordComponent;
 
@@ -62,7 +67,6 @@ class ClassFileStream;
 class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
-class jniIdMapBase;
 class JNIid;
 class JvmtiCachedClassFieldMap;
 class nmethodBucket;
@@ -111,7 +115,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
@@ -139,15 +143,16 @@ class InstanceKlass: public Klass {
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool use_class_space, TRAPS) throw();
+
  public:
-  InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceKlass();
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
   enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
-    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
     fully_initialized,                  // initialized (successful final state)
@@ -218,28 +223,25 @@ class InstanceKlass: public Klass {
   u2              _nest_host_index;
   u2              _this_class_index;        // constant pool entry
   u2              _static_oop_field_count;  // number of static oop fields in this klass
-  u2              _java_fields_count;       // The number of declared Java fields
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
-  // _is_marked_dependent can be set concurrently, thus cannot be part of the
-  // _misc_flags right now.
-  bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
-
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
   volatile ClassState _init_state;          // state of class
 
-  u1              _reference_type;          // reference type
+  u1              _reference_type;                // reference type
 
-  // State is set while executing, eventually atomically to not disturb other state
+  // State is set either at parse time or while executing, atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
-  JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
-  jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
-  nmethodBucket*  volatile _dep_context;          // packed DependencyContext structure
+  JNIid*          _jni_ids;                  // First JNI identifier for static fields in this class
+  jmethodID* volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
+  nmethodBucket*  volatile _dep_context;     // packed DependencyContext structure
   uint64_t        volatile _dep_context_last_cleaned;
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
@@ -256,6 +258,7 @@ class InstanceKlass: public Klass {
 #endif
 
   NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
+  NOT_PRODUCT(volatile int _shared_class_load_count;) // ensure a shared class is loaded only once
 
   // Method array.
   Array<Method*>* _methods;
@@ -271,20 +274,9 @@ class InstanceKlass: public Klass {
   // offset matches _default_methods offset
   Array<int>*     _default_vtable_indices;
 
-  // Instance and static variable information, starts with 6-tuples of shorts
-  // [access, name index, sig index, initval index, low_offset, high_offset]
-  // for all fields, followed by the generic signature data at the end of
-  // the array. Only fields with generic signature attributes have the generic
-  // signature data set in the array. The fields array looks like following:
-  //
-  // f1: [access, name index, sig index, initial value index, low_offset, high_offset]
-  // f2: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //      ...
-  // fn: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //     [generic signature index]
-  //     [generic signature index]
-  //     ...
-  Array<u2>*      _fields;
+  // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
+  Array<u1>*          _fieldinfo_stream;
+  Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
@@ -329,6 +321,7 @@ class InstanceKlass: public Klass {
   void set_shared_loading_failed() { _misc_flags.set_shared_loading_failed(true); }
 
 #if INCLUDE_CDS
+  int  shared_class_loader_type() const;
   void set_shared_class_loader_type(s2 loader_type) { _misc_flags.set_shared_class_loader_type(loader_type); }
   void assign_class_loader_type() { _misc_flags.assign_class_loader_type(_class_loader_data); }
 #endif
@@ -357,6 +350,7 @@ class InstanceKlass: public Klass {
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
+  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -393,23 +387,25 @@ class InstanceKlass: public Klass {
 
  private:
   friend class fieldDescriptor;
-  FieldInfo* field(int index) const { return FieldInfo::from_field_array(_fields, index); }
+  FieldInfo field(int index) const;
 
  public:
-  int     field_offset      (int index) const { return field(index)->offset(); }
-  int     field_access_flags(int index) const { return field(index)->access_flags(); }
-  Symbol* field_name        (int index) const { return field(index)->name(constants()); }
-  Symbol* field_signature   (int index) const { return field(index)->signature(constants()); }
+  int     field_offset      (int index) const { return field(index).offset(); }
+  int     field_access_flags(int index) const { return field(index).access_flags().as_field_flags(); }
+  FieldInfo::FieldFlags field_flags(int index) const { return field(index).field_flags(); }
+  FieldStatus field_status(int index)   const { return fields_status()->at(index); }
+  inline Symbol* field_name        (int index) const;
+  inline Symbol* field_signature   (int index) const;
 
   // Number of Java declared fields
-  int java_fields_count() const           { return (int)_java_fields_count; }
+  int java_fields_count() const;
+  int total_fields_count() const;
 
-  Array<u2>* fields() const            { return _fields; }
-  void set_fields(Array<u2>* f, u2 java_fields_count) {
-    guarantee(_fields == nullptr || f == nullptr, "Just checking");
-    _fields = f;
-    _java_fields_count = java_fields_count;
-  }
+  Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
+  void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
+
+  Array<FieldStatus>* fields_status() const {return _fields_status; }
+  void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
 
   // inner classes
   Array<u2>* inner_classes() const       { return _inner_classes; }
@@ -431,6 +427,9 @@ class InstanceKlass: public Klass {
     _record_components = record_components;
   }
   bool is_record() const;
+
+  // test for enum class (or possibly an anonymous subclass within a sealed enum)
+  bool is_enum_subclass() const;
 
   // permitted subclasses
   Array<u2>* permitted_subclasses() const     { return _permitted_subclasses; }
@@ -457,8 +456,10 @@ public:
   // Check if this klass is a nestmate of k - resolves this nest-host and k's
   bool has_nestmate_access_to(InstanceKlass* k, TRAPS);
 
-  // Called to verify that k is a permitted subclass of this class
-  bool has_as_permitted_subclass(const InstanceKlass* k) const;
+  // Called to verify that k is a permitted subclass of this class.
+  // The incoming stringStream is used for logging, and for the caller to create
+  // a detailed exception message on failure.
+  bool has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const;
 
   enum InnerClassAttributeOffset {
     // From http://mirror.eng/products/jdk/1.1/docs/guide/innerclasses/spec/innerclasses.doc10.html#18814
@@ -478,6 +479,7 @@ public:
   // package
   PackageEntry* package() const     { return _package_entry; }
   ModuleEntry* module() const;
+  bool in_javabase_module() const;
   bool in_unnamed_package() const   { return (_package_entry == nullptr); }
   void set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS);
   // If the package for the InstanceKlass is in the boot loader's package entry
@@ -502,34 +504,24 @@ public:
   static void check_prohibited_package(Symbol* class_name,
                                        ClassLoaderData* loader_data,
                                        TRAPS);
+
+  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  const char* init_thread_name() {
+    return init_thread()->name_raw();
+  }
+
  public:
   // initialization state
   bool is_loaded() const                   { return init_state() >= loaded; }
   bool is_linked() const                   { return init_state() >= linked; }
-  bool is_being_linked() const             { return init_state() == being_linked; }
   bool is_initialized() const              { return init_state() == fully_initialized; }
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(JavaThread *thread)  { return thread == Atomic::load(&_init_thread); }
-  ClassState  init_state() const           { return Atomic::load(&_init_state); }
+  bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
+  ClassState  init_state() const           { return Atomic::load_acquire(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
-
-  class LockLinkState : public StackObj {
-    InstanceKlass* _ik;
-    JavaThread*    _current;
-   public:
-    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
-      ik->check_link_state_and_wait(current);
-    }
-    ~LockLinkState() {
-      if (!_ik->is_linked()) {
-        // Reset to loaded if linking failed.
-        _ik->set_initialization_state_and_notify(loaded, _current);
-      }
-    }
-  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -539,17 +531,20 @@ public:
   void set_should_verify_class(bool value) { _misc_flags.set_should_verify_class(value); }
 
   // marking
-  bool is_marked_dependent() const         { return _is_marked_dependent; }
-  void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
+  bool is_marked_dependent() const         { return _misc_flags.is_marked_dependent(); }
+  void set_is_marked_dependent(bool value) { _misc_flags.set_is_marked_dependent(value); }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
+  void initialize_with_aot_initialized_mirror(TRAPS);
+  void assert_no_clinit_will_run_for_aot_initialized_class() const NOT_DEBUG_RETURN;
   void initialize(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
   Method* class_initializer() const;
+  bool interface_needs_clinit_execution_as_super(bool also_check_supers=true) const;
 
   // reference type
   ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
@@ -558,7 +553,7 @@ public:
   u2 this_class_index() const             { return _this_class_index; }
   void set_this_class_index(u2 index)     { _this_class_index = index; }
 
-  static ByteSize reference_type_offset() { return in_ByteSize(offset_of(InstanceKlass, _reference_type)); }
+  static ByteSize reference_type_offset() { return byte_offset_of(InstanceKlass, _reference_type); }
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
@@ -656,15 +651,15 @@ public:
   void set_is_contended(bool value)        { _misc_flags.set_is_contended(value); }
 
   // source file name
-  Symbol* source_file_name() const               { return _constants->source_file_name(); }
-  u2 source_file_name_index() const              { return _constants->source_file_name_index(); }
-  void set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+  Symbol* source_file_name() const;
+  u2 source_file_name_index() const;
+  void set_source_file_name_index(u2 sourcefile_index);
 
   // minor and major version numbers of class file
-  u2 minor_version() const                 { return _constants->minor_version(); }
-  void set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
-  u2 major_version() const                 { return _constants->major_version(); }
-  void set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+  u2 minor_version() const;
+  void set_minor_version(u2 minor_version);
+  u2 major_version() const;
+  void set_major_version(u2 major_version);
 
   // source debug extension
   const char* source_debug_extension() const { return _source_debug_extension; }
@@ -687,18 +682,8 @@ public:
 
 #if INCLUDE_JVMTI
   // Redefinition locking.  Class can only be redefined by one thread at a time.
-  // The flag is in access_flags so that it can be set and reset using atomic
-  // operations, and not be reset by other misc_flag settings.
-  bool is_being_redefined() const          {
-    return _access_flags.is_being_redefined();
-  }
-  void set_is_being_redefined(bool value)  {
-    if (value) {
-      _access_flags.set_is_being_redefined();
-    } else {
-      _access_flags.clear_is_being_redefined();
-    }
-  }
+  bool is_being_redefined() const          { return _misc_flags.is_being_redefined(); }
+  void set_is_being_redefined(bool value)  { _misc_flags.set_is_being_redefined(value); }
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(InstanceKlass* ik, int emcp_method_count);
@@ -709,14 +694,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version) {
-    for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
-      if (ik->constants()->version() == version) {
-        return ik;
-      }
-    }
-    return nullptr;
-  }
+  InstanceKlass* get_klass_version(int version);
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -724,13 +702,9 @@ public:
   bool is_scratch_class() const { return _misc_flags.is_scratch_class(); }
   void set_is_scratch_class() { _misc_flags.set_is_scratch_class(true); }
 
-  bool has_resolved_methods() const {
-    return _access_flags.has_resolved_methods();
-  }
-
-  void set_has_resolved_methods() {
-    _access_flags.set_has_resolved_methods();
-  }
+  bool has_resolved_methods() const { return _misc_flags.has_resolved_methods(); }
+  void set_has_resolved_methods()   { _misc_flags.set_has_resolved_methods(true); }
+  void set_has_resolved_methods(bool value)   { _misc_flags.set_has_resolved_methods(value); }
 
 public:
 #if INCLUDE_JVMTI
@@ -740,7 +714,7 @@ public:
   }
 
  private:
-  static bool  _has_previous_versions;
+  static bool  _should_clean_previous_versions;
  public:
   static void purge_previous_versions(InstanceKlass* ik) {
     if (ik->has_been_redefined()) {
@@ -748,8 +722,8 @@ public:
     }
   }
 
-  static bool has_previous_versions_and_reset();
-  static bool has_previous_versions() { return _has_previous_versions; }
+  static bool should_clean_previous_versions_and_reset();
+  static bool should_clean_previous_versions() { return _should_clean_previous_versions; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -769,7 +743,7 @@ public:
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
-  static bool has_previous_versions_and_reset() { return false; }
+  static bool should_clean_previous_versions_and_reset() { return false; }
 
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     assert(data == nullptr, "unexpected call with JVMTI disabled");
@@ -784,14 +758,19 @@ public:
   bool declares_nonstatic_concrete_methods() const { return _misc_flags.declares_nonstatic_concrete_methods(); }
   void set_declares_nonstatic_concrete_methods(bool b) { _misc_flags.set_declares_nonstatic_concrete_methods(b); }
 
+  bool has_miranda_methods () const     { return _misc_flags.has_miranda_methods(); }
+  void set_has_miranda_methods()        { _misc_flags.set_has_miranda_methods(true); }
+  bool has_final_method() const         { return _misc_flags.has_final_method(); }
+  void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
 
   // generics support
-  Symbol* generic_signature() const                   { return _constants->generic_signature(); }
-  u2 generic_signature_index() const                  { return _constants->generic_signature_index(); }
-  void set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
+  Symbol* generic_signature() const;
+  u2 generic_signature_index() const;
+  void set_generic_signature_index(u2 sig_index);
 
   u2 enclosing_method_data(int offset) const;
   u2 enclosing_method_class_index() const {
@@ -805,14 +784,9 @@ public:
 
   // jmethodID support
   jmethodID get_jmethod_id(const methodHandle& method_h);
-  jmethodID get_jmethod_id_fetch_or_update(size_t idnum,
-                     jmethodID new_id, jmethodID* new_jmeths,
-                     jmethodID* to_dealloc_id_p,
-                     jmethodID** to_dealloc_jmeths_p);
-  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
-                size_t *length_p, jmethodID* id_p);
   void ensure_space_for_methodids(int start_offset = 0);
   jmethodID jmethod_id_or_null(Method* method);
+  void update_methods_jmethod_cache();
 
   // annotations support
   Annotations* annotations() const          { return _annotations; }
@@ -847,7 +821,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
+  void set_initialization_state_and_notify(ClassState state, TRAPS);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -859,18 +833,21 @@ public:
   void set_jni_ids(JNIid* ids)                   { _jni_ids = ids; }
   JNIid* jni_id_for(int offset);
 
+ public:
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(KlassDepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
+  // Setup link to hierarchy and deoptimize
+  void add_to_hierarchy(JavaThread* current);
 
   // On-stack replacement support
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   bool remove_osr_nmethod(nmethod* n);
-  int mark_osr_nmethods(const Method* m);
+  int mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
 #if INCLUDE_JVMTI
@@ -880,9 +857,9 @@ public:
 #endif
 
   // support for stub routines
-  static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
+  static ByteSize init_state_offset()  { return byte_offset_of(InstanceKlass, _init_state); }
   JFR_ONLY(DEFINE_KLASS_TRACE_ID_OFFSET;)
-  static ByteSize init_thread_offset() { return in_ByteSize(offset_of(InstanceKlass, _init_thread)); }
+  static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
@@ -900,9 +877,11 @@ public:
   void add_implementor(InstanceKlass* ik);  // ik is a new class that implements this interface
   void init_implementor();           // initialize
 
+ private:
   // link this class into the implementors list of every interface it implements
   void process_interfaces();
 
+ public:
   // virtual operations from Klass
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
@@ -956,7 +935,6 @@ public:
 
   inline intptr_t* start_of_itable() const;
   inline intptr_t* end_of_itable() const;
-  inline int itable_offset_in_words() const;
   inline oop static_field_base_raw();
 
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
@@ -972,7 +950,6 @@ public:
   // This bit is initialized in classFileParser.cpp.
   // It is false under any of the following conditions:
   //  - the class is abstract (including any interface)
-  //  - the class has a finalizer (if !RegisterFinalizersAtInit)
   //  - the class size is larger than FastAllocateSizeLimit
   //  - the class is java/lang/Class, which cannot be allocated directly
   bool can_be_fastpath_allocated() const {
@@ -1008,9 +985,7 @@ public:
   void static deallocate_record_components(ClassLoaderData* loader_data,
                                            Array<RecordComponent*>* record_component);
 
-  // The constant pool is on stack if any of the methods are executing or
-  // referenced by handles.
-  bool on_stack() const { return _constants->on_stack(); }
+  virtual bool on_stack() const;
 
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
@@ -1073,7 +1048,7 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
- private:
+private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags.set_rewritten(true); }
@@ -1083,29 +1058,31 @@ public:
     Atomic::store(&_init_thread, thread);
   }
 
-  // The RedefineClasses() API can cause new method idnums to be needed
-  // which will cause the caches to grow. Safety requires different
-  // cache management logic if the caches can grow instead of just
-  // going from null to non-null.
-  bool idnum_can_increment() const      { return has_been_redefined(); }
   inline jmethodID* methods_jmethod_ids_acquire() const;
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out jmethodIDs for all methods in 'klass'
+  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
-  // Lock during initialization
 public:
+  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
+  // Must be one per class and it has to be a VM internal object so java code
+  // cannot lock it (like the mirror).
+  // It has to be an object not a Mutex because it's held through java calls.
+  oop init_lock() const;
+
   // Returns the array class for the n'th dimension
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
-
-  Monitor* init_monitor() const { return _init_monitor; }
 private:
-  void check_link_state_and_wait(JavaThread* current);
+  void fence_and_clear_init_lock();
+
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
@@ -1140,13 +1117,15 @@ public:
 #if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
+  void remove_unshareable_flags();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+  void compute_has_loops_flag_for_methods();
 #endif
 
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
 public:
   // JVMTI support
@@ -1180,6 +1159,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods

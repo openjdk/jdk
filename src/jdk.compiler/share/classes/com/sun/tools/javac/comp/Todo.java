@@ -56,6 +56,7 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
     }
 
     /** Create a new todo list. */
+    @SuppressWarnings("this-escape")
     protected Todo(Context context) {
         context.put(todoKey, this);
     }

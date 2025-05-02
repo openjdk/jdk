@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "ci/compilerInterface.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
@@ -38,6 +38,22 @@
 #endif
 
 class nmethod;
+
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
+// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
+class DeoptimizeObjectsALotThread : public JavaThread {
+
+  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
+  void deoptimize_objects_alot_loop_single();
+  void deoptimize_objects_alot_loop_all();
+
+public:
+  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
+};
+#endif
 
 // CompilerCounters
 //
@@ -87,7 +103,10 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   CompileTask* _first_stale;
 
-  int _size;
+  volatile int _size;
+  int _peak_size;
+  uint _total_added;
+  uint _total_removed;
 
   void purge_stale_tasks();
  public:
@@ -96,6 +115,9 @@ class CompileQueue : public CHeapObj<mtCompiler> {
     _first = nullptr;
     _last = nullptr;
     _size = 0;
+    _total_added = 0;
+    _total_removed = 0;
+    _peak_size = 0;
     _first_stale = nullptr;
   }
 
@@ -112,6 +134,9 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   bool         is_empty() const                  { return _first == nullptr; }
   int          size()     const                  { return _size;          }
 
+  int         get_peak_size()     const          { return _peak_size; }
+  uint        get_total_added()   const          { return _total_added; }
+  uint        get_total_removed() const          { return _total_removed; }
 
   // Redefine Classes support
   void mark_on_stack();
@@ -209,18 +234,18 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_invalidated_compilation;
   static elapsedTimer _t_bailedout_compilation;
 
-  static int _total_compile_count;
-  static int _total_bailout_count;
-  static int _total_invalidated_count;
-  static int _total_native_compile_count;
-  static int _total_osr_compile_count;
-  static int _total_standard_compile_count;
-  static int _total_compiler_stopped_count;
-  static int _total_compiler_restarted_count;
-  static int _sum_osr_bytes_compiled;
-  static int _sum_standard_bytes_compiled;
-  static int _sum_nmethod_size;
-  static int _sum_nmethod_code_size;
+  static uint _total_compile_count;
+  static uint _total_bailout_count;
+  static uint _total_invalidated_count;
+  static uint _total_native_compile_count;
+  static uint _total_osr_compile_count;
+  static uint _total_standard_compile_count;
+  static uint _total_compiler_stopped_count;
+  static uint _total_compiler_restarted_count;
+  static uint _sum_osr_bytes_compiled;
+  static uint _sum_standard_bytes_compiled;
+  static uint _sum_nmethod_size;
+  static uint _sum_nmethod_code_size;
   static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];
@@ -232,7 +257,6 @@ class CompileBroker: AllStatic {
     deoptimizer_t
   };
 
-  static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
@@ -251,6 +275,8 @@ class CompileBroker: AllStatic {
 #if INCLUDE_JVMCI
   static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
 #endif
+
+  static void free_buffer_blob_if_allocated(CompilerThread* thread);
 
   static void invoke_compiler_on_method(CompileTask* task);
   static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
@@ -291,8 +317,7 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != nullptr ? q->size() : 0;
   }
-  static void compilation_init_phase1(JavaThread* THREAD);
-  static void compilation_init_phase2();
+  static void compilation_init(JavaThread* THREAD);
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
@@ -301,7 +326,10 @@ public:
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
+  static CompileQueue* c1_compile_queue();
+  static CompileQueue* c2_compile_queue();
 
+private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
@@ -311,6 +339,7 @@ public:
                                    DirectiveSet* directive,
                                    TRAPS);
 
+public:
   // Acquire any needed locks and assign a compile id
   static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 
@@ -397,6 +426,8 @@ public:
 
   static CompileLog* get_log(CompilerThread* ct);
 
+  static int get_c1_thread_count() {                return _compilers[0]->num_compiler_threads(); }
+  static int get_c2_thread_count() {                return _compilers[1]->num_compiler_threads(); }
   static int get_total_compile_count() {            return _total_compile_count; }
   static int get_total_bailout_count() {            return _total_bailout_count; }
   static int get_total_invalidated_count() {        return _total_invalidated_count; }

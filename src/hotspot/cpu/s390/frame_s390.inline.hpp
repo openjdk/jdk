@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,11 @@ inline void frame::setup() {
   assert(_on_heap || (is_aligned(_sp, alignment_in_bytes) && is_aligned(_fp, alignment_in_bytes)),
          "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -124,7 +124,7 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 // Accessors
 
 // Return unique id for this frame. The id must have a value where we
-// can distinguish identity and younger/older relationship. NULL
+// can distinguish identity and younger/older relationship. null
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
@@ -134,7 +134,7 @@ inline intptr_t* frame::id(void) const {
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
+  assert(this->id() != nullptr && id != nullptr, "null frame id");
   // Stack grows towards smaller addresses on z/Architecture.
   return this->id() > id;
 }
@@ -249,18 +249,7 @@ inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* monitors) 
 }
 
 inline int frame::interpreter_frame_monitor_size() {
-  // Number of stack slots for a monitor
-  return align_up(BasicObjectLock::size() /* number of stack slots */,
-                  WordsPerLong /* Number of stack slots for a Java long. */);
-}
-
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  // Number of bytes for a monitor.
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
-inline int frame::interpreter_frame_interpreterstate_size_in_bytes() {
-  return z_ijava_state_size;
+  return BasicObjectLock::size();
 }
 
 inline Method** frame::interpreter_frame_method_addr() const {
@@ -303,20 +292,6 @@ inline intptr_t* frame::real_fp() const {
   return fp();
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == NULL) return NULL;
-  if (_cb->oop_maps() != NULL) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != NULL && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return NULL;
-}
-
 inline int frame::compiled_frame_stack_argsize() const {
   Unimplemented();
   return 0;
@@ -352,12 +327,10 @@ inline frame frame::sender(RegisterMap* map) const {
   // update it accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
   if (_cb != nullptr) return sender_for_compiled_frame(map);
 

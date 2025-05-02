@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class PipedOutputStream extends OutputStream {
      * @param      snk   The piped input stream to connect to.
      * @throws     IOException  if an I/O error occurs.
      */
+    @SuppressWarnings("this-escape")
     public PipedOutputStream(PipedInputStream snk)  throws IOException {
         connect(snk);
     }
@@ -82,11 +83,13 @@ public class PipedOutputStream extends OutputStream {
      * If {@code snk} is an unconnected piped input stream and
      * {@code src} is an unconnected piped output stream, they may
      * be connected by either the call:
-     * <blockquote><pre>
-     * src.connect(snk)</pre></blockquote>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * or the call:
-     * <blockquote><pre>
-     * snk.connect(src)</pre></blockquote>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * The two calls have the same effect.
      *
      * @param      snk   the piped input stream to connect to.
@@ -161,6 +164,7 @@ public class PipedOutputStream extends OutputStream {
      */
     @Override
     public synchronized void flush() throws IOException {
+        var sink = this.sink;
         if (sink != null) {
             synchronized (sink) {
                 sink.notifyAll();

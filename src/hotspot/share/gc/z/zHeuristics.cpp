@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
@@ -39,14 +38,14 @@ void ZHeuristics::set_medium_page_size() {
   // becomes larger than ZPageSizeSmall.
   const size_t min = ZGranuleSize;
   const size_t max = ZGranuleSize * 16;
-  const size_t unclamped = MaxHeapSize * 0.03125;
+  const size_t unclamped = (size_t)(MaxHeapSize * 0.03125);
   const size_t clamped = clamp(unclamped, min, max);
   const size_t size = round_down_power_of_2(clamped);
 
   if (size > ZPageSizeSmall) {
     // Enable medium pages
     ZPageSizeMedium             = size;
-    ZPageSizeMediumShift        = log2i_exact(ZPageSizeMedium);
+    ZPageSizeMediumShift        = (size_t)log2i_exact(ZPageSizeMedium);
     ZObjectSizeLimitMedium      = ZPageSizeMedium / 8;
     ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;
@@ -56,25 +55,23 @@ void ZHeuristics::set_medium_page_size() {
 size_t ZHeuristics::relocation_headroom() {
   // Calculate headroom needed to avoid in-place relocation. Each worker will try
   // to allocate a small page, and all workers will share a single medium page.
-  const uint nworkers = UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
-  return (nworkers * ZPageSizeSmall) + ZPageSizeMedium;
+  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMedium;
 }
 
 bool ZHeuristics::use_per_cpu_shared_small_pages() {
-  // Use per-CPU shared small pages only if these pages occupy at most 3.125%
-  // of the max heap size. Otherwise fall back to using a single shared small
+  // Use per-CPU shared small pages only if these pages don't have a significant
+  // heap overhead. Otherwise fall back to using a single shared small
   // page. This is useful when using small heaps on large machines.
-  const size_t per_cpu_share = (MaxHeapSize * 0.03125) / ZCPU::count();
+  const size_t per_cpu_share = significant_heap_overhead() / ZCPU::count();
   return per_cpu_share >= ZPageSizeSmall;
 }
 
 static uint nworkers_based_on_ncpus(double cpu_share_in_percent) {
-  return ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
+  return (uint)ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
 }
 
 static uint nworkers_based_on_heap_size(double heap_share_in_percent) {
-  const int nworkers = (MaxHeapSize * (heap_share_in_percent / 100.0)) / ZPageSizeSmall;
-  return MAX2(nworkers, 1);
+  return (uint)(MaxHeapSize * (heap_share_in_percent / 100.0) / ZPageSizeSmall);
 }
 
 static uint nworkers(double cpu_share_in_percent) {
@@ -90,15 +87,22 @@ uint ZHeuristics::nparallel_workers() {
   // close to the number of processors tends to lead to over-provisioning and
   // scheduling latency issues. Using 60% of the active processors appears to
   // be a fairly good balance.
-  return nworkers(60.0);
+  return MAX2(nworkers(60.0), 1u);
 }
 
 uint ZHeuristics::nconcurrent_workers() {
   // The number of concurrent threads we would like to use heavily depends
   // on the type of workload we are running. Using too many threads will have
   // a negative impact on the application throughput, while using too few
-  // threads will prolong the GC-cycle and we then risk being out-run by the
-  // application. When in dynamic mode, use up to 25% of the active processors.
-  //  When in non-dynamic mode, use 12.5% of the active processors.
-  return nworkers(UseDynamicNumberOfGCThreads ? 25.0 : 12.5);
+  // threads will prolong the GC cycle and we then risk being out-run by the
+  // application.
+  return MAX2(nworkers(25.0), 1u);
+}
+
+size_t ZHeuristics::significant_heap_overhead() {
+  return (size_t)(MaxHeapSize * (ZFragmentationLimit / 100));
+}
+
+size_t ZHeuristics::significant_young_overhead() {
+  return (size_t)(MaxHeapSize * (ZYoungCompactionLimit / 100));
 }

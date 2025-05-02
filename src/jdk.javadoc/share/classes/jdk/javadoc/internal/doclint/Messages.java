@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ import javax.tools.Diagnostic;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.util.StringUtils;
-import jdk.javadoc.internal.doclint.Env.AccessKind;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Message reporting for DocLint.
@@ -96,6 +97,10 @@ public class Messages {
         report(group, Diagnostic.Kind.WARNING, tree, code, args);
     }
 
+    void note(Group group, String code, Object... args) {
+        report(group, Diagnostic.Kind.NOTE, code, args);
+    }
+
     void setOptions(String opts) {
         options.setOptions(opts);
     }
@@ -104,12 +109,24 @@ public class Messages {
         stats.setEnabled(b);
     }
 
-    boolean isEnabled(Group group, Env.AccessKind ak) {
-        return options.isEnabled(group, ak);
+    boolean isEnabled(Group group, AccessLevel al) {
+        return options.isEnabled(group, al);
     }
 
     void reportStats(PrintWriter out) {
         stats.report(out);
+    }
+
+    protected void report(Group group, Diagnostic.Kind dkind, String code, Object... args) {
+        if (options.isEnabled(group, env.currAccess)) {
+            if (dkind == Diagnostic.Kind.WARNING && env.suppressWarnings(group)) {
+                return;
+            }
+            String msg = (code == null) ? (String) args[0] : localize(code, args);
+            ((JavacTrees) env.trees).printMessage(dkind, msg);
+
+            stats.record(group, dkind, code);
+        }
     }
 
     protected void report(Group group, Diagnostic.Kind dkind, DocTree tree, String code, Object... args) {
@@ -159,7 +176,7 @@ public class Messages {
      * Handler for (sub)options specific to message handling.
      */
     static class Options {
-        Map<String, Env.AccessKind> map = new HashMap<>();
+        private final Map<String, AccessLevel> map = new HashMap<>();
         private final Stats stats;
 
         static boolean isValidOptions(String opts) {
@@ -178,7 +195,13 @@ public class Messages {
             int sep = opt.indexOf("/");
             String grp = opt.substring(begin, (sep != -1) ? sep : opt.length());
             return ((begin == 0 && grp.equals("all")) || Group.accepts(grp))
-                    && ((sep == -1) || AccessKind.accepts(opt.substring(sep + 1)));
+                    && ((sep == -1) || accepts(opt.substring(sep + 1)));
+        }
+
+        static boolean accepts(String opt) {
+            for (var level: AccessLevel.values())
+                if (opt.equals(StringUtils.toLowerCase(level.name()))) return true;
+            return false;
         }
 
         Options(Stats stats) {
@@ -186,19 +209,18 @@ public class Messages {
         }
 
         /** Determine if a message group is enabled for a particular access level. */
-        boolean isEnabled(Group g, Env.AccessKind access) {
+        boolean isEnabled(Group g, AccessLevel access) {
             if (map.isEmpty())
-                map.put("all", Env.AccessKind.PROTECTED);
+                map.put(ALL, AccessLevel.PROTECTED);
 
-            Env.AccessKind ak = map.get(g.optName());
-            if (ak != null && access.compareTo(ak) >= 0)
+            AccessLevel al = map.get(g.optName());
+            if (al != null && access.compareTo(al) >= 0)
                 return true;
 
-            ak = map.get(ALL);
-            if (ak != null && access.compareTo(ak) >= 0) {
-                ak = map.get(g.notOptName());
-                if (ak == null || access.compareTo(ak) > 0) // note >, not >=
-                    return true;
+            al = map.get(ALL);
+            if (al != null && access.compareTo(al) >= 0) {
+                al = map.get(g.notOptName());
+                return al == null || access.compareTo(al) > 0; // note >, not >=
             }
 
             return false;
@@ -206,7 +228,7 @@ public class Messages {
 
         void setOptions(String opts) {
             if (opts == null)
-                setOption(ALL, Env.AccessKind.PRIVATE);
+                setOption(ALL, AccessLevel.PRIVATE);
             else {
                 for (String opt: opts.split(","))
                     setOption(StringUtils.toLowerCase(opt.trim()));
@@ -221,16 +243,16 @@ public class Messages {
 
             int sep = arg.indexOf("/");
             if (sep > 0) {
-                Env.AccessKind ak = Env.AccessKind.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
-                setOption(arg.substring(0, sep), ak);
+                var al = AccessLevel.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
+                setOption(arg.substring(0, sep), al);
             } else {
                 setOption(arg, null);
             }
         }
 
-        private void setOption(String opt, Env.AccessKind ak) {
-            map.put(opt, (ak != null) ? ak
-                    : opt.startsWith("-") ? Env.AccessKind.PUBLIC : Env.AccessKind.PRIVATE);
+        private void setOption(String opt, AccessLevel al) {
+            map.put(opt, (al != null) ? al
+                    : opt.startsWith("-") ? AccessLevel.PUBLIC : AccessLevel.PRIVATE);
         }
 
         private static final String ALL = "all";

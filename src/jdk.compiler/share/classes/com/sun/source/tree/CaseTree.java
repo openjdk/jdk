@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package com.sun.source.tree;
 
 import java.util.List;
-
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A tree node for a {@code case} in a {@code switch} statement or expression.
@@ -63,7 +61,8 @@ public interface CaseTree extends Tree {
      * For default case, returns an empty list.
      *
      * @return labels for this case
-     * @since 12
+     *
+     * @since 14
      */
     List<? extends ExpressionTree> getExpressions();
 
@@ -72,10 +71,17 @@ public interface CaseTree extends Tree {
      * For {@code default} case return a list with a single element, {@link DefaultCaseLabelTree}.
      *
      * @return labels for this case
-     * @since 17
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     List<? extends CaseLabelTree> getLabels();
+
+    /**
+     * The guard for the case.
+     *
+     * @return the guard
+     * @since 21
+     */
+    ExpressionTree getGuard();
 
     /**
      * For case with kind {@linkplain CaseKind#STATEMENT},
@@ -93,7 +99,8 @@ public interface CaseTree extends Tree {
      * {@linkplain CaseKind#STATEMENT}.
      *
      * @return case value or null
-     * @since 12
+     *
+     * @since 14
      */
     public default Tree getBody() {
         return null;
@@ -103,7 +110,8 @@ public interface CaseTree extends Tree {
      * Returns the kind of this case.
      *
      * @return the kind of this case
-     * @since 12
+     *
+     * @since 14
      */
     public default CaseKind getCaseKind() {
         return CaseKind.STATEMENT;
@@ -116,7 +124,7 @@ public interface CaseTree extends Tree {
      *     <li>RULE: {@code case <expression> -> <expression>/<statement>}</li>
      * </ul>
      *
-     * @since 12
+     * @since 14
      */
     public enum CaseKind {
         /**

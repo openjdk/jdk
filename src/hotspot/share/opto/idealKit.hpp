@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ class IdealKit: public StackObj {
   void set_i_o(Node* c)                 { _cvstate->set_req(TypeFunc::I_O, c); }
   void set(IdealVariable& v, Node* rhs) { _cvstate->set_req(first_var + v.id(), rhs); }
   Node* value(IdealVariable& v)         { return _cvstate->in(first_var + v.id()); }
-  void dead(IdealVariable& v)           { set(v, (Node*)NULL); }
+  void dead(IdealVariable& v)           { set(v, (Node*)nullptr); }
   void if_then(Node* left, BoolTest::mask relop, Node* right,
                float prob = PROB_FAIR, float cnt = COUNT_UNKNOWN,
                bool push_new_state = true);
@@ -234,23 +234,14 @@ class IdealKit: public StackObj {
               bool require_atomic_access = false,
               bool mismatched = false);
 
-  // Store a card mark ordered after store_oop
-  Node* storeCM(Node* ctl,
-                Node* adr,
-                Node* val,
-                Node* oop_store,
-                int oop_adr_idx,
-                BasicType bt,
-                int adr_idx);
-
   // Trivial call
   Node* make_leaf_call(const TypeFunc *slow_call_type,
                        address slow_call,
                        const char *leaf_name,
                        Node* parm0,
-                       Node* parm1 = NULL,
-                       Node* parm2 = NULL,
-                       Node* parm3 = NULL);
+                       Node* parm1 = nullptr,
+                       Node* parm2 = nullptr,
+                       Node* parm3 = nullptr);
 
   void make_leaf_call_no_fp(const TypeFunc *slow_call_type,
                             address slow_call,

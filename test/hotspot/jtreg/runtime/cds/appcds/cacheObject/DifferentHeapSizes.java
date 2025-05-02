@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @test
  * @summary Test automatic relocation of archive heap regions dur to heap size changes.
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/Hello.java
  * @build jdk.test.whitebox.WhiteBox

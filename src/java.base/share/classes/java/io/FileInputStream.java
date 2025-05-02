@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
-import jdk.internal.misc.Blocker;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 /**
@@ -41,19 +42,13 @@ import sun.nio.ch.FileChannelImpl;
  * {@code FileReader}.
  *
  * @apiNote
- * To release resources used by this stream {@link #close} should be called
- * directly or by try-with-resources. Subclasses are responsible for the cleanup
- * of resources acquired by the subclass.
- * Subclasses that override {@link #finalize} in order to perform cleanup
- * should be modified to use alternative cleanup mechanisms such as
- * {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @implSpec
- * If this FileInputStream has been subclassed and the {@link #close}
- * method has been overridden, the {@link #close} method will be
- * called when the FileInputStream is unreachable.
- * Otherwise, it is implementation specific how the resource cleanup described in
- * {@link #close} is performed.
+ * Subclasses are responsible for the cleanup of resources acquired by the subclass.
+ * Subclasses requiring that resource cleanup take place after a stream becomes
+ * unreachable should use {@link java.lang.ref.Cleaner} or some other mechanism.
  *
  * @author  Arthur van Hoff
  * @see     java.io.File
@@ -65,6 +60,12 @@ import sun.nio.ch.FileChannelImpl;
 public class FileInputStream extends InputStream
 {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file reads should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
@@ -81,18 +82,18 @@ public class FileInputStream extends InputStream
 
     private volatile boolean closed;
 
+    // This field indicates whether the file is a regular file as some
+    // operations need the current position which requires seeking
+    private @Stable Boolean isRegularFile;
+
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the path name {@code name}
-     * in the file system.  A new {@code FileDescriptor}
+     * Creates a {@code FileInputStream} to read from an existing file
+     * named by the path name {@code name}.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@code FileDescriptor}
      * object is created to represent this file
      * connection.
-     * <p>
-     * First, if there is a security
-     * manager, its {@code checkRead} method
-     * is called with the {@code name} argument
-     * as its argument.
      * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
@@ -103,27 +104,18 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access
-     *             to the file.
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public FileInputStream(String name) throws FileNotFoundException {
         this(name != null ? new File(name) : null);
     }
 
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the {@code File}
-     * object {@code file} in the file system.
+     * Creates a {@code FileInputStream} to read from an existing file
+     * represented by the {@code File} object {@code file}.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object
      * is created to represent this file connection.
-     * <p>
-     * First, if there is a security manager,
-     * its {@code checkRead} method  is called
-     * with the path represented by the {@code file}
-     * argument as its argument.
      * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
@@ -134,28 +126,17 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file.
      * @see        java.io.File#getPath()
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
+    @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
-        String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-        }
-        if (name == null) {
-            throw new NullPointerException();
-        }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        path = file.getPath();
         fd = new FileDescriptor();
         fd.attach(this);
-        path = name;
-        open(name);
+        open(path);
         FileCleanable.register(fd);       // open set the fd, register the cleanup
     }
 
@@ -163,11 +144,6 @@ public class FileInputStream extends InputStream
      * Creates a {@code FileInputStream} by using the file descriptor
      * {@code fdObj}, which represents an existing connection to an
      * actual file in the file system.
-     * <p>
-     * If there is a security manager, its {@code checkRead} method is
-     * called with the file descriptor {@code fdObj} as its argument to
-     * see if it's ok to read the file descriptor. If read access is denied
-     * to the file descriptor a {@code SecurityException} is thrown.
      * <p>
      * If {@code fdObj} is null then a {@code NullPointerException}
      * is thrown.
@@ -178,19 +154,11 @@ public class FileInputStream extends InputStream
      * I/O on the stream, an {@code IOException} is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the
-     *             file descriptor.
-     * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
+    @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkRead(fdObj);
         }
         fd = fdObj;
         path = null;
@@ -214,12 +182,7 @@ public class FileInputStream extends InputStream
      * @param name the name of the file
      */
     private void open(String name) throws FileNotFoundException {
-        long comp = Blocker.begin();
-        try {
-            open0(name);
-        } finally {
-            Blocker.end(comp);
-        }
+        open0(name);
     }
 
     /**
@@ -232,15 +195,35 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return read0();
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceRead0();
         }
+        return read0();
     }
 
     private native int read0() throws IOException;
+
+    private int traceRead0() throws IOException {
+        int result = 0;
+        boolean endOfFile = false;
+        long bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            result = read0();
+            if (result < 0) {
+                endOfFile = true;
+            } else {
+                bytesRead = 1;
+            }
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
+            }
+        }
+        return result;
+    }
 
     /**
      * Reads a subarray as a sequence of bytes.
@@ -250,6 +233,25 @@ public class FileInputStream extends InputStream
      * @throws    IOException If an I/O error has occurred.
      */
     private native int readBytes(byte[] b, int off, int len) throws IOException;
+
+    private int traceReadBytes(byte b[], int off, int len) throws IOException {
+        int bytesRead = 0;
+        long start = 0;
+        try {
+            start = FileReadEvent.timestamp();
+            bytesRead = readBytes(b, off, len);
+        } finally {
+            long duration = FileReadEvent.timestamp() - start;
+            if (FileReadEvent.shouldCommit(duration)) {
+                if (bytesRead < 0) {
+                    FileReadEvent.commit(start, duration, path, 0L, true);
+                } else {
+                    FileReadEvent.commit(start, duration, path, bytesRead, false);
+                }
+            }
+        }
+        return bytesRead;
+    }
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
@@ -264,12 +266,10 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes(b, 0, b.length);
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes(b, 0, b.length);
         }
+        return readBytes(b, 0, b.length);
     }
 
     /**
@@ -288,16 +288,17 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes(b, off, len);
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes(b, off, len);
         }
+        return readBytes(b, off, len);
     }
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        if (!isRegularFile())
+            return super.readAllBytes();
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -339,12 +340,18 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    /**
+     * @since 11
+     */
     @Override
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
         if (len == 0)
             return new byte[0];
+
+        if (!isRegularFile())
+            return super.readNBytes(len);
 
         long length = length();
         long position = position();
@@ -382,7 +389,7 @@ public class FileInputStream extends InputStream
     @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
-        if (out instanceof FileOutputStream fos) {
+        if (out instanceof FileOutputStream fos && isRegularFile()) {
             FileChannel fc = getChannel();
             long pos = fc.position();
             transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
@@ -400,22 +407,12 @@ public class FileInputStream extends InputStream
     }
 
     private long length() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return length0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return length0();
     }
     private native long length0() throws IOException;
 
     private long position() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return position0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return position0();
     }
     private native long position0() throws IOException;
 
@@ -445,12 +442,10 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        long comp = Blocker.begin();
-        try {
+        if (isRegularFile())
             return skip0(n);
-        } finally {
-            Blocker.end(comp);
-        }
+
+        return super.skip(n);
     }
 
     private native long skip0(long n) throws IOException;
@@ -474,12 +469,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int available() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return available0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return available0();
     }
 
     private native int available0() throws IOException;
@@ -494,14 +484,17 @@ public class FileInputStream extends InputStream
      * @apiNote
      * Overriding {@link #close} to perform cleanup actions is reliable
      * only when called directly or when called by try-with-resources.
-     * Do not depend on finalization to invoke {@code close};
-     * finalization is not reliable and is deprecated.
-     * If cleanup of native resources is needed, other mechanisms such as
-     * {@linkplain java.lang.ref.Cleaner} should be used.
+     *
+     * @implSpec
+     * Subclasses requiring that resource cleanup take place after a stream becomes
+     * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
+     *
+     * <p>
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  {@inheritDoc}
-     *
-     * @revised 1.4
      */
     @Override
     public void close() throws IOException {
@@ -567,8 +560,8 @@ public class FileInputStream extends InputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, true,
-                        false, false, this);
+                    fc = FileChannelImpl.open(fd, path, true, false, false, false, this);
+                    this.channel = fc;
                     if (closed) {
                         try {
                             // possible race with close(), benign since
@@ -583,6 +576,18 @@ public class FileInputStream extends InputStream
         }
         return fc;
     }
+
+    /**
+     * Determine whether the file is a regular file.
+     */
+    private boolean isRegularFile() {
+        Boolean isRegularFile = this.isRegularFile;
+        if (isRegularFile == null) {
+            this.isRegularFile = isRegularFile = isRegularFile0(fd);
+        }
+        return isRegularFile;
+    }
+    private native boolean isRegularFile0(FileDescriptor fd);
 
     private static native void initIDs();
 

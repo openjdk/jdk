@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,16 @@ class fileStream;
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI")                                                   \
+          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
+                                                                            \
+  product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
+          "Select the Graal JVMCI compiler. This is an alias for: "         \
+          "  -XX:+EnableJVMCIProduct "                                      \
+          "  -Djvmci.Compiler=graal ")                                      \
                                                                             \
   product(bool, EnableJVMCIProduct, false, EXPERIMENTAL,                    \
           "Allow JVMCI to be used in product mode. This alters a subset of "\
@@ -122,9 +126,6 @@ class fileStream;
   product(bool, JVMCICountersExcludeCompiler, true, EXPERIMENTAL,           \
           "Exclude JVMCI compiler threads from benchmark counters")         \
                                                                             \
-  develop(bool, JVMCIUseFastLocking, true,                                  \
-          "Use fast inlined locking code")                                  \
-                                                                            \
   product(intx, JVMCINMethodSizeLimit, (80*K)*wordSize, EXPERIMENTAL,       \
           "Maximum size of a compiled method.")                             \
           range(0, max_jint)                                                \
@@ -139,18 +140,25 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
-          "true and a JVMCI native library is available.")                  \
+          "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
+          "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
-  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+  product(double, JVMCINativeLibraryThreadFraction, 0.66, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
-          "The remaining compiler threads are used by C1.")                 \
+          "The remaining compiler threads are used by C1. "                 \
+          "Reducing this value could reduce the max RSS but "               \
+          "also increase the warmup time.")                                 \
           range(0.0, 1.0)                                                   \
                                                                             \
   product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \
           "If an error in the JVMCI native library occurs, save the "       \
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
+                                                                            \
+  product(bool, LibJVMCICompilerThreadHidden, true, EXPERIMENTAL,           \
+          "If true then native JVMCI compiler threads are hidden from "     \
+          "JVMTI and FlightRecorder.  This must be set to false if you "    \
+          "wish to use a Java debugger against JVMCI threads.")             \
                                                                             \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
@@ -165,7 +173,19 @@ class fileStream;
           "Enables intrinsification of BigInteger.montgomeryMultiply()"))   \
                                                                             \
   NOT_COMPILER2(product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC, \
-          "Enables intrinsification of BigInteger.montgomerySquare()"))
+          "Enables intrinsification of BigInteger.montgomerySquare()"))     \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorSupport, false, EXPERIMENTAL,     \
+          "Enables VectorSupport intrinsics"))                              \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorReboxing, false, EXPERIMENTAL,    \
+          "Enables reboxing of vectors"))                                   \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
+          "Enables aggressive reboxing of vectors"))                        \
+                                                                            \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
 
 // end of JVMCI_FLAGS
 
@@ -185,7 +205,7 @@ class JVMCIGlobals {
   static bool check_jvmci_flags_are_consistent();
 
   // Convert JVMCI experimental flags to product
-  static bool enable_jvmci_product_mode(JVMFlagOrigin);
+  static bool enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit);
 
   // Returns true iff the GC fully supports JVMCI.
   static bool gc_supports_jvmci();

@@ -26,7 +26,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.RSAKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverSpi;

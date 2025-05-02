@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSetStackChunk.hpp"
-#include "runtime/atomic.hpp"
+#include "gc/z/zContinuation.hpp"
 #include "utilities/debug.hpp"
 
 void ZBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
-  // Do nothing
+  ZContinuation::ZColorStackOopClosure cl(chunk);
+  iterator->oops_do(&cl);
 }
 
 void ZBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
-  // Do nothing
+  ZContinuation::ZUncolorStackOopClosure cl;
+  iterator->oops_do(&cl);
 }
 
 oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
-  oop obj = Atomic::load(addr);
-  return ZBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)NULL, obj);
+  return ZContinuation::load_oop(chunk, addr);
 }
 
 oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }

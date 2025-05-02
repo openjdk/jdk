@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * bug 8290529
  * @summary verify that x <u 1 is transformed to x == 0
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.CmpUWithZero

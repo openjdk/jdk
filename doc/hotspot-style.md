@@ -135,8 +135,20 @@ change should be done with a "setter" accessor matched to the simple
 
 ### Source Files
 
-* All source files must have a globally unique basename.  The build
+* All source files must have a globally unique basename. The build
 system depends on this uniqueness.
+
+* Keep the include lines within a section alphabetically sorted by their
+lowercase value. If an include must be out of order for correctness,
+suffix with it a comment such as `// do not reorder`. Source code
+processing tools can also use this hint.
+
+* Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
+include lines. This also applies to macro-expanded includes of platform
+dependent files.
+
+* Put system includes in a section after the HotSpot include lines with a blank
+line separating the two sections.
 
 * Do not put non-trivial function implementations in .hpp files. If
 the implementation depends on other .hpp files, put it in a .cpp or
@@ -146,18 +158,22 @@ a .inline.hpp file.
 files.
 
 * All .inline.hpp files should include their corresponding .hpp file as
-the first include line. Declarations needed by other files should be put
-in the .hpp file, and not in the .inline.hpp file. This rule exists to
-resolve problems with circular dependencies between .inline.hpp files.
+the first include line with a blank line separating it from the rest of the
+include lines. Declarations needed by other files should be put in the .hpp
+file, and not in the .inline.hpp file. This rule exists to resolve problems
+with circular dependencies between .inline.hpp files.
 
-* All .cpp files include precompiled.hpp as the first include line.
+* Do not include a .hpp file if the corresponding .inline.hpp file is included.
 
-* precompiled.hpp is just a build time optimization, so don't rely on
-it to resolve include problems.
+* Use include guards for .hpp and .inline.hpp files. The name of the defined
+guard should be derived from the full search path of the file relative to the
+hotspot source directory. The guard should be all upper case with all paths
+separators and periods replaced by underscores.
 
-* Keep the include lines alphabetically sorted.
-
-* Put conditional inclusions (`#if ...`) at the end of the include list.
+* Some build configurations use precompiled headers to speed up the
+build times. The precompiled headers are included in the precompiled.hpp
+file. Note that precompiled.hpp is just a build time optimization, so
+don't rely on it to resolve include problems.
 
 ### JTReg Tests
 
@@ -572,8 +588,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
+* `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain restrictions apply to the declarations provided by `<type_traits>`.
+
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -721,12 +741,14 @@ for further discussion.
 
 ### nullptr
 
-Prefer `nullptr`
+Use `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
+rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
-For historical reasons there are widespread uses of both `NULL` and of
-integer 0 as a pointer value.
+Don't use (constant expression or literal) 0 for pointers.  Note that C++14
+removed non-literal 0 constants from _null pointer constants_, though some
+compilers continue to treat them as such.  For historical reasons there may be
+lingering uses of 0 as a pointer.
 
 ### &lt;atomic&gt;
 
@@ -1081,6 +1103,9 @@ The following attributes are expressly forbidden:
 * `[[deprecated]]` - Not relevant in HotSpot code.
 
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))

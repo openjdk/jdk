@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@ package com.sun.crypto.provider;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHGenParameterSpec;
 
 import sun.security.provider.ParameterCache;
+
 import static sun.security.util.SecurityProviderConstants.DEF_DH_KEY_SIZE;
 import static sun.security.util.SecurityProviderConstants.getDefDHPrivateExpSize;
 

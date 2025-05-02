@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
@@ -34,11 +33,10 @@ ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
   _section(file, shdr), _file(file), _index(index) {
   assert(file, "null file handle");
   // The actual function address (i.e. function entry point) is always the
-  // first value in the function descriptor (on IA64 and PPC64 they look as follows):
+  // first value in the function descriptor (on PPC64 they look as follows):
   // PPC64: [function entry point, TOC pointer, environment pointer]
-  // IA64 : [function entry point, GP (global pointer) value]
   // Unfortunately 'shdr.sh_entsize' doesn't always seem to contain this size (it's zero on PPC64) so we can't assert
-  // assert(IA64_ONLY(2) PPC64_ONLY(3) * sizeof(address) == shdr.sh_entsize, "Size mismatch for '.opd' section entries");
+  // assert(PPC64_ONLY(3) * sizeof(address) == shdr.sh_entsize, "Size mismatch for '.opd' section entries");
 
   _status = _section.status();
 }
@@ -46,7 +44,7 @@ ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
 ElfFuncDescTable::~ElfFuncDescTable() {
 }
 
-address ElfFuncDescTable::lookup(Elf_Word index) {
+address ElfFuncDescTable::lookup(Elf_Addr index) {
   if (NullDecoder::is_error(_status)) {
     return nullptr;
   }

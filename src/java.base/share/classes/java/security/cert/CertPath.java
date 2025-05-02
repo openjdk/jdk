@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ import java.util.List;
  * generally not difficult, since the {@code CertPath} and
  * {@code List} objects in question are immutable.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @see CertificateFactory
  * @see CertPathBuilder
  *
@@ -177,19 +178,20 @@ public abstract class CertPath implements Serializable {
      * @return true if the specified object is equal to this certification path,
      * false otherwise
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other)
             return true;
 
         return other instanceof CertPath that
-                && that.getType().equals(this.type)
+                && this.type.equals(that.getType())
                 && this.getCertificates().equals(that.getCertificates());
     }
 
     /**
-     * Returns the hashcode for this certification path. The hash code of
-     * a certification path is defined to be the result of the following
-     * calculation:
+     * {@return the hashcode value for this certification path}
+     * The hash code of a certification path is defined to be the result of
+     * the following calculation:
      * <pre>{@code
      *  hashCode = path.getType().hashCode();
      *  hashCode = 31*hashCode + path.getCertificates().hashCode();
@@ -198,9 +200,8 @@ public abstract class CertPath implements Serializable {
      * {@code path1.hashCode()==path2.hashCode()} for any two certification
      * paths, {@code path1} and {@code path2}, as required by the
      * general contract of {@code Object.hashCode}.
-     *
-     * @return the hashcode value for this certification path
      */
+    @Override
     public int hashCode() {
         int hashCode = type.hashCode();
         hashCode = 31*hashCode + getCertificates().hashCode();
@@ -301,9 +302,9 @@ public abstract class CertPath implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 3015633072427920915L;
 
-        /** The type of {@code Certificate}s in the {@code CertPath}. */
+        /** @serial The type of {@code Certificate}s in the {@code CertPath}. */
         private final String type;
-        /** The encoded form of the {@code CertPath}. */
+        /** @serial The encoded form of the {@code CertPath}. */
         private final byte[] data;
 
         /**

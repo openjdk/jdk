@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -69,11 +68,11 @@ void Parse::do_checkcast() {
   Node *obj = peek();
 
   // Throw uncommon trap if class is not loaded or the value we are casting
-  // _from_ is not loaded, and value is not null.  If the value _is_ NULL,
+  // _from_ is not loaded, and value is not null.  If the value _is_ null,
   // then the checkcast does nothing.
   const TypeOopPtr *tp = _gvn.type(obj)->isa_oopptr();
   if (!will_link || (tp && !tp->is_loaded())) {
-    if (C->log() != NULL) {
+    if (C->log() != nullptr) {
       if (!will_link) {
         C->log()->elem("assert_null reason='checkcast' klass='%d'",
                        C->log()->identify(klass));
@@ -113,7 +112,7 @@ void Parse::do_instanceof() {
   ciKlass* klass = iter().get_klass(will_link);
 
   if (!will_link) {
-    if (C->log() != NULL) {
+    if (C->log() != nullptr) {
       C->log()->elem("assert_null reason='instanceof' klass='%d'",
                      C->log()->identify(klass));
     }
@@ -157,7 +156,7 @@ void Parse::array_store_check() {
   int klass_offset = oopDesc::klass_offset_in_bytes();
   Node* p = basic_plus_adr( ary, ary, klass_offset );
   // p's type is array-of-OOPS plus klass_offset
-  Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS));
+  Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS));
   // Get the array klass
   const TypeKlassPtr *tak = _gvn.type(array_klass)->is_klassptr();
 
@@ -165,11 +164,10 @@ void Parse::array_store_check() {
   // cast array_klass to EXACT array and uncommon-trap if the cast fails.
   // Make constant out of the inexact array klass, but use it only if the cast
   // succeeds.
-  bool always_see_exact_class = false;
-  if (MonomorphicArrayCheck
-      && !too_many_traps(Deoptimization::Reason_array_check)
-      && !tak->klass_is_exact()
-      && tak != TypeInstKlassPtr::OBJECT) {
+  if (MonomorphicArrayCheck &&
+      !too_many_traps(Deoptimization::Reason_array_check) &&
+      !tak->klass_is_exact() &&
+      tak->isa_aryklassptr()) {
       // Regarding the fourth condition in the if-statement from above:
       //
       // If the compiler has determined that the type of array 'ary' (represented
@@ -191,16 +189,12 @@ void Parse::array_store_check() {
       //
       // See issue JDK-8057622 for details.
 
-    always_see_exact_class = true;
-    // (If no MDO at all, hope for the best, until a trap actually occurs.)
-
-    // Make a constant out of the inexact array klass
-    const TypeKlassPtr *extak = tak->cast_to_exactness(true);
-
-    if (extak->exact_klass(true) != NULL) {
+    // Make a constant out of the exact array klass
+    const TypeAryKlassPtr* extak = tak->cast_to_exactness(true)->is_aryklassptr();
+    if (extak->exact_klass(true) != nullptr) {
       Node* con = makecon(extak);
-      Node* cmp = _gvn.transform(new CmpPNode( array_klass, con ));
-      Node* bol = _gvn.transform(new BoolNode( cmp, BoolTest::eq ));
+      Node* cmp = _gvn.transform(new CmpPNode(array_klass, con));
+      Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
       Node* ctrl= control();
       { BuildCutout unless(this, bol, PROB_MAX);
         uncommon_trap(Deoptimization::Reason_array_check,
@@ -211,9 +205,9 @@ void Parse::array_store_check() {
         set_control(ctrl);      // Then Don't Do It, just fall into the normal checking
       } else {                  // Cast array klass to exactness:
         // Use the exact constant value we know it is.
-        replace_in_map(array_klass,con);
+        replace_in_map(array_klass, con);
         CompileLog* log = C->log();
-        if (log != NULL) {
+        if (log != nullptr) {
           log->elem("cast_up reason='monomorphic_array' from='%d' to='(exact)'",
                     log->identify(extak->exact_klass()));
         }
@@ -226,12 +220,9 @@ void Parse::array_store_check() {
 
   // Extract the array element class
   int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-  Node *p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
-  // We are allowed to use the constant type only if cast succeeded. If always_see_exact_class is true,
-  // we must set a control edge from the IfTrue node created by the uncommon_trap above to the
-  // LoadKlassNode.
-  Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, always_see_exact_class ? control() : NULL,
-                                                       immutable_memory(), p2, tak));
+  Node* p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
+  Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
+  assert(array_klass->is_Con() == a_e_klass->is_Con() || StressReflectiveCode, "a constant array type must come with a constant element type");
 
   // Check (the hard way) and throw if not a subklass.
   // Result is ignored, we just need the CFG effects.
@@ -287,8 +278,8 @@ void Parse::do_new() {
 // Debug dump of the mapping from address types to MergeMemNode indices.
 void Parse::dump_map_adr_mem() const {
   tty->print_cr("--- Mapping from address types to memory Nodes ---");
-  MergeMemNode *mem = map() == NULL ? NULL : (map()->memory()->is_MergeMem() ?
-                                      map()->memory()->as_MergeMem() : NULL);
+  MergeMemNode *mem = map() == nullptr ? nullptr : (map()->memory()->is_MergeMem() ?
+                                      map()->memory()->as_MergeMem() : nullptr);
   for (uint i = 0; i < (uint)C->num_alias_types(); i++) {
     C->alias_type(i)->print_on(tty);
     tty->print("\t");

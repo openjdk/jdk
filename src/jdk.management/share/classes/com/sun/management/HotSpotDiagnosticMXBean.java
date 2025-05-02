@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.management;
 
 import java.io.IOException;
 import java.lang.management.PlatformManagedObject;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Diagnostic management interface for the HotSpot Virtual Machine.
@@ -48,6 +47,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@code null} unless it's stated otherwise.
  *
  * @see java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+ *
+ * @since 1.6
  */
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**
@@ -68,11 +69,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws UnsupportedOperationException if this operation is not supported.
      * @throws IllegalArgumentException if {@code outputFile} does not end with ".hprof" suffix.
      * @throws NullPointerException if {@code outputFile} is {@code null}.
-     * @throws SecurityException
-     *         If a security manager exists and its {@link
-     *         java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *         method denies write access to the named file
-     *         or the caller does not have ManagmentPermission("control").
      */
     public void dumpHeap(String outputFile, boolean live) throws IOException;
 
@@ -112,10 +108,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the new value is invalid.
      * @throws IllegalArgumentException if the VM option is not writable.
      * @throws NullPointerException if name or value is {@code null}.
-     *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and the caller does not have
-     *     ManagementPermission("control").
      */
     public void setVMOption(String name, String value);
 
@@ -141,24 +133,17 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IOException if the file already exists or an I/O exception is
      *         thrown writing to the file
      * @throws NullPointerException if either parameter is {@code null}
-     * @throws SecurityException
-     *         if a security manager is set and its {@link
-     *         SecurityManager#checkWrite(java.lang.String)} method denies write
-     *         access to the file or {@link java.lang.management.ManagementPermission
-     *         ManagementPermission("control")} is denied
      * @throws UnsupportedOperationException if this operation is not supported
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Thread dump format.
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     public static enum ThreadDumpFormat {
         /**
          * Plain text format.

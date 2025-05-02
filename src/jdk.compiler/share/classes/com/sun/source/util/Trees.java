@@ -50,6 +50,8 @@ import com.sun.source.tree.Tree;
  * Bridges JSR 199, JSR 269, and the Tree API.
  *
  * @author Peter von der Ah&eacute;
+ *
+ * @since 1.6
  */
 public abstract class Trees {
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
@@ -222,6 +221,9 @@ void MethodLiveness::init_basic_blocks() {
           dest = _block_map->at(bytes.get_dest());
           assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
+          if (bci + Bytecodes::length_for(code) >= method_len) {
+            break;
+          }
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
           assert(jsrExit != nullptr, "jsr return bci must start a block.");
           jsr_exit_list->append(jsrExit);
@@ -232,6 +234,9 @@ void MethodLiveness::init_basic_blocks() {
           dest = _block_map->at(bytes.get_far_dest());
           assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
+          if (bci + Bytecodes::length_for(code) >= method_len) {
+            break;
+          }
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
           assert(jsrExit != nullptr, "jsr return bci must start a block.");
           jsr_exit_list->append(jsrExit);

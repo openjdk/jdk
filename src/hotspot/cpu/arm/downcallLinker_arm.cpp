@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/downcallLinker.hpp"
 #include "utilities/debug.hpp"
 
@@ -33,7 +32,13 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 const GrowableArray<VMStorage>& input_registers,
                                                 const GrowableArray<VMStorage>& output_registers,
                                                 bool needs_return_buffer,
-                                                int captured_state_mask) {
+                                                int captured_state_mask,
+                                                bool needs_transition) {
   Unimplemented();
   return nullptr;
+}
+
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset,
+                                                         VMStorage tmp1, VMStorage tmp2) const {
+  Unimplemented();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import java.util.Arrays;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-agentlib:retransform003-01=id=1 can_retransform_classes=1",
                 "-agentlib:retransform003-02=id=2 can_retransform_classes=0",
                 "-agentlib:retransform003-03=id=3 can_retransform_classes=1",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -45,15 +44,11 @@ import java.util.Objects;
  */
 public class PropertyResourceBundleCharset extends Charset {
 
-    private boolean strictUTF8 = false;
+    private final boolean strictUTF8;
 
     public PropertyResourceBundleCharset(boolean strictUTF8) {
-        this(PropertyResourceBundleCharset.class.getCanonicalName(), null);
+        super(PropertyResourceBundleCharset.class.getCanonicalName(), null);
         this.strictUTF8 = strictUTF8;
-    }
-
-    public PropertyResourceBundleCharset(String canonicalName, String[] aliases) {
-        super(canonicalName, aliases);
     }
 
     @Override
@@ -73,7 +68,7 @@ public class PropertyResourceBundleCharset extends Charset {
 
     private final class PropertiesFileDecoder extends CharsetDecoder {
 
-        private CharsetDecoder cdUTF_8 = UTF_8.INSTANCE.newDecoder()
+        private final CharsetDecoder cdUTF_8 = UTF_8.INSTANCE.newDecoder()
                                 .onMalformedInput(CodingErrorAction.REPORT)
                                 .onUnmappableCharacter(CodingErrorAction.REPORT);
         private CharsetDecoder cdISO_8859_1 = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.*;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
+import jdk.internal.access.JavaxSecurityAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.security.x509.X500Name;
 import sun.security.util.*;
 
@@ -58,6 +60,14 @@ import sun.security.util.*;
  * {@code X509Certificate} return X500Principals representing the
  * issuer and subject fields of the certificate.
  *
+ * @spec https://www.rfc-editor.org/info/rfc1779
+ *      RFC 1779: A String Representation of Distinguished Names
+ * @spec https://www.rfc-editor.org/info/rfc2253
+ *      RFC 2253: Lightweight Directory Access Protocol (v3):
+ *              UTF-8 String Representation of Distinguished Names
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @see java.security.cert.X509Certificate
  * @since 1.4
  */
@@ -82,16 +92,31 @@ public final class X500Principal implements Principal, java.io.Serializable {
     /**
      * The X500Name representing this principal.
      *
-     * NOTE: this field is reflectively accessed from within X500Name.
+     * NOTE: this field is accessed using shared secrets from within X500Name.
      */
     private transient X500Name thisX500Name;
+
+    static {
+        // Set up JavaxSecurityAccess in SharedSecrets
+        SharedSecrets.setJavaxSecurityAccess(
+            new JavaxSecurityAccess() {
+                @Override
+                public X500Name asX500Name(X500Principal principal) {
+                    return principal.thisX500Name;
+                }
+                @Override
+                public X500Principal asX500Principal(X500Name name) {
+                    return new X500Principal(name);
+                }
+        });
+    }
 
     /**
      * Creates an X500Principal by wrapping an X500Name.
      *
      * NOTE: The constructor is package private. It is intended to be accessed
-     * using privileged reflection from classes in sun.security.*.
-     * Currently, it is referenced from sun.security.x509.X500Name.asX500Principal().
+     * using shared secrets from classes in sun.security.*. Currently, it is
+     * referenced from sun.security.x509.X500Name.asX500Principal().
      */
     X500Principal(X500Name x500Name) {
         thisX500Name = x500Name;
@@ -124,6 +149,10 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *                  is {@code null}
      * @exception IllegalArgumentException if the {@code name}
      *                  is improperly specified
+     *
+     * @spec https://www.rfc-editor.org/info/rfc4512
+     *      RFC 4512: Lightweight Directory Access Protocol (LDAP):
+     *              Directory Information Models
      */
     public X500Principal(String name) {
         this(name, Collections.emptyMap());
@@ -164,6 +193,10 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * @exception IllegalArgumentException if the {@code name} is
      *   improperly specified or a keyword in the {@code name} maps to an
      *   OID that is not in the correct form
+     *
+     * @spec https://www.rfc-editor.org/info/rfc4512
+     *      RFC 4512: Lightweight Directory Access Protocol (LDAP):
+     *              Directory Information Models
      * @since 1.6
      */
     public X500Principal(String name, Map<String, String> keywordMap) {
@@ -457,6 +490,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * @return {@code true} if the specified {@code Object} is equal
      *          to this {@code X500Principal}, {@code false} otherwise
      */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -468,13 +502,12 @@ public final class X500Principal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a hash code for this {@code X500Principal}.
+     * {@return a hash code for this {@code X500Principal}}
      *
      * <p> The hash code is calculated via:
      * {@code getName(X500Principal.CANONICAL).hashCode()}
-     *
-     * @return a hash code for this {@code X500Principal}
      */
+    @Override
     public int hashCode() {
         return thisX500Name.hashCode();
     }

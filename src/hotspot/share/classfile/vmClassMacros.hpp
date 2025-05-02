@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
 
 // VM_CLASSES_DO iterates the classes that are directly referenced
-// by the VM, suhch as java.lang.Object and java.lang.String. These
+// by the VM, such as java.lang.Object and java.lang.String. These
 // classes are resolved at VM bootstrap, before any Java code is executed,
 // so no class loader is able to provide a different definition.
 //
@@ -60,10 +60,7 @@
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
-  do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
-  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
   do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
   do_klass(Record_klass,                                java_lang_Record                                      ) \
@@ -77,6 +74,7 @@
   do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
   do_klass(Reference_klass,                             java_lang_ref_Reference                               ) \
+  do_klass(IllegalCallerException_klass,                java_lang_IllegalCallerException                      ) \
                                                                                                                 \
   /* ref klasses and set reference types */                                                                     \
   do_klass(SoftReference_klass,                         java_lang_ref_SoftReference                           ) \
@@ -105,14 +103,10 @@
   do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
   do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
-  do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl                             ) \
   do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl                       ) \
-  do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
   do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl                 ) \
   do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
-  do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl                 ) \
+  do_klass(reflect_DirectConstructorHandleAccessor_NativeAccessor_klass, reflect_DirectConstructorHandleAccessor_NativeAccessor) \
                                                                                                                 \
   /* support for dynamic typing */                                                                              \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \
@@ -129,7 +123,6 @@
   do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
   do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
   do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \
@@ -144,7 +137,6 @@
   /* support for CDS */                                                                                         \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
-  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader                               ) \
   do_klass(Enum_klass,                                  java_lang_Enum                                        ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
   do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
@@ -162,6 +154,7 @@
   /* Stack Walking */                                                                                           \
   do_klass(StackWalker_klass,                           java_lang_StackWalker                                 ) \
   do_klass(AbstractStackWalker_klass,                   java_lang_StackStreamFactory_AbstractStackWalker      ) \
+  do_klass(ClassFrameInfo_klass,                        java_lang_ClassFrameInfo                              ) \
   do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo                              ) \
   do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo                          ) \
                                                                                                                 \
@@ -177,6 +170,7 @@
   do_klass(Short_klass,                                 java_lang_Short                                       ) \
   do_klass(Integer_klass,                               java_lang_Integer                                     ) \
   do_klass(Long_klass,                                  java_lang_Long                                        ) \
+  do_klass(Void_klass,                                  java_lang_Void                                        ) \
                                                                                                                 \
   /* force inline of iterators */                                                                               \
   do_klass(Iterator_klass,                              java_util_Iterator                                    ) \

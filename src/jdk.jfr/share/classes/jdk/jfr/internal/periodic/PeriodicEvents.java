@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
  */
 package jdk.jfr.internal.periodic;
 
-import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.jfr.Event;
+import jdk.internal.event.Event;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -58,16 +57,12 @@ public final class PeriodicEvents {
     // State only to be read and modified by periodic task thread
     private static long lastTimeMillis;
 
-    public static void addJDKEvent(Class<? extends Event> eventClass, Runnable runnable) {
-        taskRepository.add(new JDKEventTask(eventClass, runnable));
+    public static void addJavaEvent(Class<? extends Event> eventClass, Runnable runnable) {
+        taskRepository.add(new JavaEventTask(eventClass, runnable));
     }
 
     public static void addJVMEvent(PlatformEventType eventType) {
         taskRepository.add(new JVMEventTask(eventType));
-    }
-
-    public static void addUserEvent(@SuppressWarnings("removal") AccessControlContext acc, Class<? extends Event> eventClass, Runnable runnable) {
-        taskRepository.add(new UserEventTask(acc, eventClass, runnable));
     }
 
     public static boolean removeEvent(Runnable runnable) {
@@ -96,16 +91,8 @@ public final class PeriodicEvents {
 
     // Only to be called from periodic task thread
     public static long doPeriodic() {
-        try {
-            return runPeriodic(JVM.counterTime());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-    }
-
-    // Code copied from prior native implementation
-    private static long runPeriodic(long eventTimestamp) {
+        long eventTimestamp = JVM.counterTime();
+        // Code copied from prior native implementation
         long last = lastTimeMillis;
         // The interval for periodic events is typically at least 1 s, so
         // System.currentTimeMillis() is sufficient. JVM.counterTime() lacks

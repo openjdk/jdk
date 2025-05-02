@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -59,6 +58,8 @@ public:
 };
 
 void StackWatermarkFramesIterator::set_watermark(uintptr_t sp) {
+  assert(sp != 0, "Sanity check");
+
   if (!has_next()) {
     return;
   }
@@ -275,6 +276,10 @@ uintptr_t StackWatermark::last_processed() {
     // Already processed all; no last processed
     return 0;
   }
+  return _iterator->caller();
+}
+
+uintptr_t StackWatermark::last_processed_raw() {
   return _iterator->caller();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -33,10 +32,10 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
@@ -83,14 +82,14 @@ const char* KlassInfoEntry::name() const {
   if (_klass->name() != nullptr) {
     name = _klass->external_name();
   } else {
-    if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
-    if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
-    if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
-    if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
-    if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
-    if (_klass == Universe::intArrayKlassObj())          name = "<intArrayKlass>";          else
-    if (_klass == Universe::longArrayKlassObj())         name = "<longArrayKlass>";         else
+    if (_klass == Universe::boolArrayKlass())         name = "<boolArrayKlass>";         else
+    if (_klass == Universe::charArrayKlass())         name = "<charArrayKlass>";         else
+    if (_klass == Universe::floatArrayKlass())        name = "<floatArrayKlass>";        else
+    if (_klass == Universe::doubleArrayKlass())       name = "<doubleArrayKlass>";       else
+    if (_klass == Universe::byteArrayKlass())         name = "<byteArrayKlass>";         else
+    if (_klass == Universe::shortArrayKlass())        name = "<shortArrayKlass>";        else
+    if (_klass == Universe::intArrayKlass())          name = "<intArrayKlass>";          else
+    if (_klass == Universe::longArrayKlass())         name = "<longArrayKlass>";         else
       name = "<no name>";
   }
   return name;
@@ -170,7 +169,7 @@ public:
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;
-  _ref = (HeapWord*) Universe::boolArrayKlassObj();
+  _ref = (uintptr_t) Universe::boolArrayKlass();
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
        mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
@@ -196,7 +195,7 @@ KlassInfoTable::~KlassInfoTable() {
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
+  return (uint)(((uintptr_t)p - _ref) >> 2);
 }
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
@@ -564,27 +563,16 @@ void ParHeapInspectTask::work(uint worker_id) {
   }
 }
 
-uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, uint parallel_thread_num) {
-
+uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, WorkerThreads* workers) {
   // Try parallel first.
-  if (parallel_thread_num > 1) {
+  if (workers != nullptr) {
     ResourceMark rm;
-
-    WorkerThreads* workers = Universe::heap()->safepoint_workers();
-    if (workers != nullptr) {
-      // The GC provided a WorkerThreads to be used during a safepoint.
-
-      // Can't run with more threads than provided by the WorkerThreads.
-      const uint capped_parallel_thread_num = MIN2(parallel_thread_num, workers->max_workers());
-      WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
-
-      ParallelObjectIterator poi(workers->active_workers());
-      ParHeapInspectTask task(&poi, cit, filter);
-      // Run task with the active workers.
-      workers->run_task(&task);
-      if (task.success()) {
-        return task.missed_count();
-      }
+    ParallelObjectIterator poi(workers->active_workers());
+    ParHeapInspectTask task(&poi, cit, filter);
+    // Run task with the active workers.
+    workers->run_task(&task);
+    if (task.success()) {
+      return task.missed_count();
     }
   }
 
@@ -595,15 +583,15 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   return ric.missed_count();
 }
 
-void HeapInspection::heap_inspection(outputStream* st, uint parallel_thread_num) {
+void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
   ResourceMark rm;
 
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {
     // populate table with object allocation info
-    uintx missed_count = populate_table(&cit, nullptr, parallel_thread_num);
+    uintx missed_count = populate_table(&cit, nullptr, workers);
     if (missed_count != 0) {
-      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
+      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted %zu"
                                " total instances in data below",
                                missed_count);
     }

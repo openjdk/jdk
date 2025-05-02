@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,9 @@
  * @run main/othervm Spec
  */
 
-import com.sun.jarsigner.ContentSigner;
-import com.sun.jarsigner.ContentSignerParameters;
 import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.provider.certpath.X509CertPath;
 
 import java.io.File;
@@ -129,7 +128,6 @@ public class Spec {
         npe(()->b1.setProperty("sectionsonly", null));
         iae(()->b1.setProperty("sectionsonly", "OK"));
         npe(()->b1.setProperty("sectionsonly", null));
-        npe(()->b1.setProperty("altsigner", null));
         npe(()->b1.eventHandler(null));
 
         // default values
@@ -147,7 +145,6 @@ public class Spec {
         assertTrue(js2.getProperty("tsapolicyid") == null);
         assertTrue(js2.getProperty("internalsf").equals("false"));
         assertTrue(js2.getProperty("sectionsonly").equals("false"));
-        assertTrue(js2.getProperty("altsigner") == null);
         uoe(()->js2.getProperty("invalid"));
 
         // default values
@@ -163,7 +160,6 @@ public class Spec {
                 .setProperty("tsapolicyid", "1.2.3.4")
                 .setProperty("internalsf", "true")
                 .setProperty("sectionsonly", "true")
-                .setProperty("altsigner", "MyContentSigner")
                 .eventHandler(myeh);
         JarSigner js3 = b3.build();
 
@@ -175,21 +171,21 @@ public class Spec {
         assertTrue(js3.getProperty("tsapolicyid").equals("1.2.3.4"));
         assertTrue(js3.getProperty("internalsf").equals("true"));
         assertTrue(js3.getProperty("sectionsonly").equals("true"));
-        assertTrue(js3.getProperty("altsigner").equals("MyContentSigner"));
-        assertTrue(js3.getProperty("altsignerpath") == null);
 
         assertTrue(JarSigner.Builder.getDefaultDigestAlgorithm()
                 .equals("SHA-384"));
 
         // Calculating large DSA and RSA keys are too slow.
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(1024);
+        String kpgRSA = "RSA";
+        String kpgDSA = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgRSA);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgRSA));
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                     .equals("SHA384withRSA"));
 
-        kpg = KeyPairGenerator.getInstance("DSA");
-        kpg.initialize(1024);
+        kpg = KeyPairGenerator.getInstance(kpgDSA);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgDSA));
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA256withDSA"));
@@ -207,14 +203,6 @@ public class Spec {
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA512withECDSA"));
-
-        // altsigner does not support modern algorithms
-        JarSigner.Builder b4 = new JarSigner.Builder(
-                (PrivateKey)ks.getKey("e", pass),
-                CertificateFactory.getInstance("X.509")
-                        .generateCertPath(Arrays.asList(ks.getCertificateChain("e"))));
-        b4.setProperty("altsigner", "MyContentSigner");
-        iae(() -> b4.build());
     }
 
     interface RunnableWithException {
@@ -252,16 +240,5 @@ public class Spec {
 
     static void assertTrue(boolean x) throws Exception {
         if (!x) throw new Exception("Not true");
-    }
-
-    static class MyContentSigner extends ContentSigner {
-        @Override
-        public byte[] generateSignedData(
-                ContentSignerParameters parameters,
-                boolean omitContent,
-                boolean applyTimestamp) throws NoSuchAlgorithmException,
-                CertificateException, IOException {
-            return new byte[0];
-        }
     }
 }

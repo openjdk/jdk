@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,16 +173,22 @@ static jlong NSTimeIntervalToJavaMilliseconds(NSTimeInterval interval) {
     jint javaKind = 0;
 
     switch (kind) {
-        case NSLeftMouseUp: case NSRightMouseUp: case NSOtherMouseUp:
+        case NSEventTypeLeftMouseUp:
+        case NSEventTypeRightMouseUp:
+        case NSEventTypeOtherMouseUp:
             javaKind = java_awt_event_MouseEvent_MOUSE_RELEASED;
             break;
-        case NSLeftMouseDown: case NSRightMouseDown: case NSOtherMouseDown:
+        case NSEventTypeLeftMouseDown:
+        case NSEventTypeRightMouseDown:
+        case NSEventTypeOtherMouseDown:
             javaKind = java_awt_event_MouseEvent_MOUSE_PRESSED;
             break;
-        case NSMouseMoved:
+        case NSEventTypeMouseMoved:
             javaKind = java_awt_event_MouseEvent_MOUSE_MOVED;
             break;
-        case NSLeftMouseDragged: case NSRightMouseDragged: case NSOtherMouseDragged:
+        case NSEventTypeLeftMouseDragged:
+        case NSEventTypeRightMouseDragged:
+        case NSEventTypeOtherMouseDragged:
             javaKind = java_awt_event_MouseEvent_MOUSE_DRAGGED;
             break;
     }

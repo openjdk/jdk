@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ import org.testng.annotations.Test;
 /**
  * Test Instant.
  *
- * @bug 8133022
+ * @bug 8133022 8307466
  */
 @Test
 public class TCKInstant extends AbstractDateTimeTest {
@@ -187,10 +187,21 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now() {
-        Instant expected = Instant.now(Clock.systemUTC());
-        Instant test = Instant.now();
-        long diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
-        assertTrue(diff < 100);  // less than 0.1 secs
+        long beforeMillis, instantMillis, afterMillis, diff;
+        int retryRemaining = 5; // MAX_RETRY_COUNT
+        do {
+            beforeMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            instantMillis = Instant.now().toEpochMilli();
+            afterMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            diff = instantMillis - beforeMillis;
+            if (instantMillis < beforeMillis || instantMillis > afterMillis) {
+                throw new RuntimeException(": Invalid instant: (~" + instantMillis + "ms)"
+                        + " when systemUTC in millis is in ["
+                        + beforeMillis + ", "
+                        + afterMillis + "]");
+            }
+        } while (diff > 100 && --retryRemaining > 0);  // retry if diff more than 0.1 sec
+        assertTrue(retryRemaining > 0);
     }
 
     //-----------------------------------------------------------------------
@@ -1753,6 +1764,66 @@ public class TCKInstant extends AbstractDateTimeTest {
                 {5, 650, 6, 50, SECONDS, 0},
                 {5, 650, 7, 50, SECONDS, 1},
                 {5, 650, 8, 50, SECONDS, 2},
+
+                {5, 650_000_000, 5, 650_999_666, MILLIS, 0L},
+                {5, 999_777, 6, 0, MILLIS, 999L},
+                {5, 999_888, 6, 1000000, MILLIS, 1000L},
+
+                {5, 650_000_000, 3, 650_000_000, MILLIS, -2_000L},
+                {5, 650_000_000, 4, 650_000_000, MILLIS, -1_000L},
+                {5, 650_000_000, 5, 650_000_000, MILLIS, 0},
+                {5, 650_000_000, 6, 650_000_000, MILLIS, 1_000L},
+                {5, 650_000_000, 7, 650_000_000, MILLIS, 2_000L},
+
+                {5, 650_000_000, 3, 0, MILLIS, -2_650L},
+                {5, 650_000_000, 4, 0, MILLIS, -1_650L},
+                {5, 650_000_000, 5, 0, MILLIS, -650L},
+                {5, 650_000_000, 6, 0, MILLIS, 350L},
+                {5, 650_000_000, 7, 0, MILLIS, 1_350L},
+
+                {5, 650_000_000, -1, 950_000_000, MILLIS, -5_700L},
+                {5, 650_000_000, 0, 950_000_000, MILLIS, -4_700L},
+                {5, 650_000_000, 3, 950_000_000, MILLIS, -1_700L},
+                {5, 650_000_000, 4, 950_000_000, MILLIS, -700L},
+                {5, 650_000_000, 5, 950_000_000, MILLIS, 300L},
+                {5, 650_000_000, 6, 950_000_000, MILLIS, 1_300L},
+                {5, 650_000_000, 7, 950_000_000, MILLIS, 2_300L},
+
+                {5, 650_000_000, 4, 50_000_000, MILLIS, -1_600L},
+                {5, 650_000_000, 5, 50_000_000, MILLIS, -600L},
+                {5, 650_000_000, 6, 50_000_000, MILLIS, 400L},
+                {5, 650_000_000, 7, 50_000_000, MILLIS, 1_400L},
+                {5, 650_000_000, 8, 50_000_000, MILLIS, 2_400L},
+
+                {5, 650_000_000, 5, 650_999_000, MICROS, 999L},
+                {0, 999_000, 1, 0, MICROS, 999_001L},
+                {0, 999_000, 1, 1000000, MICROS, 1000_001L},
+
+                {5, 650_000_000, 3, 650_000_000, MICROS, -2_000_000L},
+                {5, 650_000_000, 4, 650_000_000, MICROS, -1_000_000L},
+                {5, 650_000_000, 5, 650_000_000, MICROS, 0},
+                {5, 650_000_000, 6, 650_000_000, MICROS, 1_000_000L},
+                {5, 650_000_000, 7, 650_000_000, MICROS, 2_000_000L},
+
+                {5, 650_000_000, 3, 0, MICROS, -2_650_000L},
+                {5, 650_000_000, 4, 0, MICROS, -1_650_000L},
+                {5, 650_000_000, 5, 0, MICROS, -650_000L},
+                {5, 650_000_000, 6, 0, MICROS, 350_000L},
+                {5, 650_000_000, 7, 0, MICROS, 1_350_000L},
+
+                {5, 650_000_000, -1, 950_000_000, MICROS, -5_700_000L},
+                {5, 650_000_000, 0, 950_000_000, MICROS, -4_700_000L},
+                {5, 650_000_000, 3, 950_000_000, MICROS, -1_700_000L},
+                {5, 650_000_000, 4, 950_000_000, MICROS, -700_000L},
+                {5, 650_000_000, 5, 950_000_000, MICROS, 300_000L},
+                {5, 650_000_000, 6, 950_000_000, MICROS, 1_300_000L},
+                {5, 650_000_000, 7, 950_000_000, MICROS, 2_300_000L},
+
+                {5, 650_000_000, 4, 50_000_000, MICROS, -1_600_000L},
+                {5, 650_000_000, 5, 50_000_000, MICROS, -600_000L},
+                {5, 650_000_000, 6, 50_000_000, MICROS, 400_000L},
+                {5, 650_000_000, 7, 50_000_000, MICROS, 1_400_000L},
+                {5, 650_000_000, 8, 50_000_000, MICROS, 2_400_000L},
 
                 {5, 650_000_000, -1, 650_000_000, NANOS, -6_000_000_000L},
                 {5, 650_000_000, 0, 650_000_000, NANOS, -5_000_000_000L},

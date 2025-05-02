@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,11 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class NestedModalDialogTest {
-    private static Frame frame;
+    private static StartFrame frame;
     private static IntermediateDialog interDiag;
     private static TextDialog txtDiag;
 
     // Global variables so the robot thread can locate things.
-    private static Button[] robot_button = new Button[2];
     private static TextField robot_text = null;
     private static Robot robot = null;
 
@@ -78,6 +77,9 @@ public class NestedModalDialogTest {
     }
 
     private static void clickOnComp(Component comp) {
+        robot.waitForIdle();
+        robot.delay(1000);
+
         Rectangle bounds = new Rectangle(comp.getLocationOnScreen(), comp.getSize());
         robot.mouseMove(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
         robot.waitForIdle();
@@ -94,11 +96,11 @@ public class NestedModalDialogTest {
             // launch first frame with firstButton
             frame = new StartFrame();
             blockTillDisplayed(frame);
-            clickOnComp(robot_button[0]);
+            clickOnComp(frame.button);
 
             // Dialog must be created and onscreen before we proceed.
             blockTillDisplayed(interDiag);
-            clickOnComp(robot_button[1]);
+            clickOnComp(interDiag.button);
 
             // Again, the Dialog must be created and onscreen before we proceed.
             blockTillDisplayed(robot_text);
@@ -144,6 +146,8 @@ public class NestedModalDialogTest {
      */
     class StartFrame extends Frame {
 
+        public volatile Button button;
+
         /**
          * Constructs a new instance.
          */
@@ -168,7 +172,7 @@ public class NestedModalDialogTest {
             pan.add(but);
             add(pan);
             setVisible(true);
-            robot_button[0] = but;
+            button = but;
         }
     }
 
@@ -177,6 +181,7 @@ public class NestedModalDialogTest {
     class IntermediateDialog extends Dialog {
 
         Dialog m_parent;
+        public volatile Button button;
 
         public IntermediateDialog(Frame parent) {
             super(parent, "Intermediate Modal", true /*Modal*/);
@@ -193,9 +198,7 @@ public class NestedModalDialogTest {
             pan.add(but);
             add(pan);
             pack();
-
-            // The robot needs to know about us, so set global
-            robot_button[1] = but;
+            button = but;
         }
     }
 
@@ -215,12 +218,12 @@ public class NestedModalDialogTest {
         }
     }
 
-    public static void main(String[] args) throws RuntimeException, Exception {
+    public static void main(String[] args) throws Exception {
         try {
             new NestedModalDialogTest().testModalDialogs();
         } catch (Exception e) {
             throw new RuntimeException("NestedModalDialogTest object creation "
-                    + "failed");
+                    + "failed", e);
         }
     }
 }

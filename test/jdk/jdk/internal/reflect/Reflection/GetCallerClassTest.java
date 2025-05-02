@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.reflect
  * @build SetupGetCallerClass boot.GetCallerClass
  * @run driver SetupGetCallerClass
- * @run main/othervm -Xbootclasspath/a:bcp -Djdk.reflect.useDirectMethodHandle=true GetCallerClassTest
+ * @run main/othervm -Xbootclasspath/a:bcp GetCallerClassTest
  */
 
 /*
@@ -40,25 +40,7 @@
  * @modules java.base/jdk.internal.reflect
  * @build SetupGetCallerClass boot.GetCallerClass
  * @run driver SetupGetCallerClass
- * @run main/othervm -Xbootclasspath/a:bcp -Djdk.reflect.useDirectMethodHandle=true -Djdk.reflect.useNativeAccessorOnly=true GetCallerClassTest
- */
-
-/*
- * @test
- * @summary Verify NativeMethodAccessorImpl
- * @modules java.base/jdk.internal.reflect
- * @build SetupGetCallerClass boot.GetCallerClass
- * @run driver SetupGetCallerClass
- * @run main/othervm -Xbootclasspath/a:bcp -Djdk.reflect.useDirectMethodHandle=false -Dsun.reflect.noInflation=false GetCallerClassTest
- */
-
-/*
- * @test
- * @summary Verify the old generated MethodAccessor
- * @modules java.base/jdk.internal.reflect
- * @build SetupGetCallerClass boot.GetCallerClass
- * @run driver SetupGetCallerClass
- * @run main/othervm -Xbootclasspath/a:bcp -Djdk.reflect.useDirectMethodHandle=false -Dsun.reflect.noInflation=true GetCallerClassTest
+ * @run main/othervm -Xbootclasspath/a:bcp -Djdk.reflect.useNativeAccessorOnly=true GetCallerClassTest
  */
 
 import boot.GetCallerClass;

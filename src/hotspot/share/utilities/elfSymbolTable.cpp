@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
 #include "memory/allocation.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/elfFuncDescTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 
@@ -48,7 +48,7 @@ ElfSymbolTable::~ElfSymbolTable() {
 
 bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
   if (STT_FUNC == ELF_ST_TYPE(sym->st_info)) {
-    Elf_Word st_size = sym->st_size;
+    Elf64_Xword st_size = sym->st_size;
     const Elf_Shdr* shdr = _section.section_header();
     address sym_addr;
     if (funcDescTable != nullptr && funcDescTable->get_index() == sym->st_shndx) {
@@ -77,7 +77,7 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
   }
 
   size_t  sym_size = sizeof(Elf_Sym);
-  int count = _section.section_header()->sh_size / sym_size;
+  int count = checked_cast<int>(_section.section_header()->sh_size / sym_size);
   Elf_Sym* symbols = (Elf_Sym*)_section.section_data();
 
   if (symbols != nullptr) {

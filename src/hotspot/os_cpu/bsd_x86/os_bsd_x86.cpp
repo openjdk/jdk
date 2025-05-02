@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -79,7 +77,7 @@
 # include <pthread_np.h>
 #endif
 
-// needed by current_stack_region() workaround for Mavericks
+// needed by current_stack_base_and_size() workaround for Mavericks
 #if defined(__APPLE__)
 # include <errno.h>
 # include <sys/types.h>
@@ -334,6 +332,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -351,7 +355,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__) || defined(__llvm__)
   intptr_t **ebp;
   __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
@@ -417,6 +421,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
+#if !defined(PRODUCT) && defined(_LP64)
+    if ((sig == SIGSEGV || sig == SIGBUS) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+      // Verify that OS save/restore APX registers.
+      stub = VM_Version::cpuinfo_cont_addr_apx();
+      VM_Version::clear_apx_test_state();
+    }
+#endif
+
     // We test if stub is already set (by the stack overflow code
     // above) so it is not overwritten by the code that follows. This
     // check is not required on other platforms, because on other
@@ -441,20 +453,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc);
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = Assembler::locate_next_instruction(pc);
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      }
-      else
-
+      } else
 #ifdef AMD64
-      if (sig == SIGFPE  &&
+      if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
            // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
            // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
@@ -524,8 +534,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
         address next_pc = Assembler::locate_next_instruction(pc);
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -709,13 +719,15 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //    |                        |/
 // P2 +------------------------+ Thread::stack_base()
 //
-// ** P1 (aka bottom) and size ( P2 = P1 - size) are the address and stack size returned from
-//    pthread_attr_getstack()
+// ** P1 (aka bottom) and size are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 + size
 
-static void current_stack_region(address * bottom, size_t * size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  void *stacktop = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
   // workaround for OS X 10.9.0 (Mavericks)
   // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
@@ -738,7 +750,7 @@ static void current_stack_region(address * bottom, size_t * size) {
       }
     }
   }
-  *bottom = (address) stacktop - *size;
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
@@ -746,8 +758,9 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
-  *size   = ss.ss_size;
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -762,30 +775,17 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
-    pthread_attr_getstacksize(&attr, size) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -841,66 +841,51 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Bsd::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
-  st->cr();
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->context_##id);
+  switch (n) {
 #ifdef AMD64
-  st->print("RAX="); print_location(st, uc->context_rax);
-  st->print("RBX="); print_location(st, uc->context_rbx);
-  st->print("RCX="); print_location(st, uc->context_rcx);
-  st->print("RDX="); print_location(st, uc->context_rdx);
-  st->print("RSP="); print_location(st, uc->context_rsp);
-  st->print("RBP="); print_location(st, uc->context_rbp);
-  st->print("RSI="); print_location(st, uc->context_rsi);
-  st->print("RDI="); print_location(st, uc->context_rdi);
-  st->print("R8 ="); print_location(st, uc->context_r8);
-  st->print("R9 ="); print_location(st, uc->context_r9);
-  st->print("R10="); print_location(st, uc->context_r10);
-  st->print("R11="); print_location(st, uc->context_r11);
-  st->print("R12="); print_location(st, uc->context_r12);
-  st->print("R13="); print_location(st, uc->context_r13);
-  st->print("R14="); print_location(st, uc->context_r14);
-  st->print("R15="); print_location(st, uc->context_r15);
+    CASE_PRINT_REG( 0, "RAX=", rax); break;
+    CASE_PRINT_REG( 1, "RBX=", rbx); break;
+    CASE_PRINT_REG( 2, "RCX=", rcx); break;
+    CASE_PRINT_REG( 3, "RDX=", rdx); break;
+    CASE_PRINT_REG( 4, "RSP=", rsp); break;
+    CASE_PRINT_REG( 5, "RBP=", rbp); break;
+    CASE_PRINT_REG( 6, "RSI=", rsi); break;
+    CASE_PRINT_REG( 7, "RDI=", rdi); break;
+    CASE_PRINT_REG( 8, "R8 =", r8); break;
+    CASE_PRINT_REG( 9, "R9 =", r9); break;
+    CASE_PRINT_REG(10, "R10=", r10); break;
+    CASE_PRINT_REG(11, "R11=", r11); break;
+    CASE_PRINT_REG(12, "R12=", r12); break;
+    CASE_PRINT_REG(13, "R13=", r13); break;
+    CASE_PRINT_REG(14, "R14=", r14); break;
+    CASE_PRINT_REG(15, "R15=", r15); break;
 #else
-  st->print("EAX="); print_location(st, uc->context_eax);
-  st->print("EBX="); print_location(st, uc->context_ebx);
-  st->print("ECX="); print_location(st, uc->context_ecx);
-  st->print("EDX="); print_location(st, uc->context_edx);
-  st->print("ESP="); print_location(st, uc->context_esp);
-  st->print("EBP="); print_location(st, uc->context_ebp);
-  st->print("ESI="); print_location(st, uc->context_esi);
-  st->print("EDI="); print_location(st, uc->context_edi);
+    CASE_PRINT_REG(0, "EAX=", eax); break;
+    CASE_PRINT_REG(1, "EBX=", ebx); break;
+    CASE_PRINT_REG(2, "ECX=", ecx); break;
+    CASE_PRINT_REG(3, "EDX=", edx); break;
+    CASE_PRINT_REG(4, "ESP=", esp); break;
+    CASE_PRINT_REG(5, "EBP=", ebp); break;
+    CASE_PRINT_REG(6, "ESI=", esi); break;
+    CASE_PRINT_REG(7, "EDI=", edi); break;
 #endif // AMD64
-
-  st->cr();
+    }
+# undef CASE_PRINT_REG
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

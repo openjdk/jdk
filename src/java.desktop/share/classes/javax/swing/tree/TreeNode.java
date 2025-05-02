@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public interface TreeNode
      * If the receiver does not contain <code>node</code>, -1 will be
      * returned.
      *
-     * @param   node        node to be loked for
+     * @param   node        node to be looked for
      * @return              index of specified node
      */
     int getIndex(TreeNode node);

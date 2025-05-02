@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -45,7 +44,7 @@
 const int AESBlockSize = 16;
 
 // Shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers.
-ATTRIBUTE_ALIGNED(16) uint64_t KEY_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t KEY_SHUFFLE_MASK[] = {
     0x0405060700010203UL, 0x0C0D0E0F08090A0BUL
 };
 static address key_shuffle_mask_addr() {
@@ -53,7 +52,7 @@ static address key_shuffle_mask_addr() {
 }
 
 // Shuffle mask for big-endian 128-bit integers.
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_SHUFFLE_MASK[] = {
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
@@ -64,7 +63,7 @@ static address counter_shuffle_mask_addr() {
 }
 
 // This mask is used for incrementing counter value
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC0[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC0[] = {
     0x0000000000000000UL, 0x0000000000000000UL,
     0x0000000000000001UL, 0x0000000000000000UL,
     0x0000000000000002UL, 0x0000000000000000UL,
@@ -74,14 +73,38 @@ static address counter_mask_linc0_addr() {
   return (address)COUNTER_MASK_LINC0;
 }
 
-ATTRIBUTE_ALIGNED(16) uint64_t COUNTER_MASK_LINC1[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t COUNTER_MASK_LINC1[] = {
     0x0000000000000001UL, 0x0000000000000000UL,
 };
 static address counter_mask_linc1_addr() {
   return (address)COUNTER_MASK_LINC1;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC4[] = {
+ATTRIBUTE_ALIGNED(16) uint64_t COUNTER_MASK_LINC1F[] = {
+    0x0000000000000000UL, 0x0100000000000000UL,
+};
+
+static address counter_mask_linc1f_addr() {
+  return (address)COUNTER_MASK_LINC1F;
+}
+
+ATTRIBUTE_ALIGNED(16) uint64_t COUNTER_MASK_LINC2[] = {
+    0x0000000000000002UL, 0x0000000000000000UL,
+};
+
+static address counter_mask_linc2_addr() {
+  return (address)COUNTER_MASK_LINC2;
+}
+
+ATTRIBUTE_ALIGNED(16) uint64_t COUNTER_MASK_LINC2F[] = {
+    0x0000000000000000UL, 0x0200000000000000UL,
+};
+
+static address counter_mask_linc2f_addr() {
+  return (address)COUNTER_MASK_LINC2F;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC4[] = {
     0x0000000000000004UL, 0x0000000000000000UL,
     0x0000000000000004UL, 0x0000000000000000UL,
     0x0000000000000004UL, 0x0000000000000000UL,
@@ -91,7 +114,7 @@ static address counter_mask_linc4_addr() {
   return (address)COUNTER_MASK_LINC4;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC8[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC8[] = {
     0x0000000000000008UL, 0x0000000000000000UL,
     0x0000000000000008UL, 0x0000000000000000UL,
     0x0000000000000008UL, 0x0000000000000000UL,
@@ -101,7 +124,7 @@ static address counter_mask_linc8_addr() {
   return (address)COUNTER_MASK_LINC8;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC16[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC16[] = {
     0x0000000000000010UL, 0x0000000000000000UL,
     0x0000000000000010UL, 0x0000000000000000UL,
     0x0000000000000010UL, 0x0000000000000000UL,
@@ -111,7 +134,7 @@ static address counter_mask_linc16_addr() {
   return (address)COUNTER_MASK_LINC16;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC32[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC32[] = {
     0x0000000000000020UL, 0x0000000000000000UL,
     0x0000000000000020UL, 0x0000000000000000UL,
     0x0000000000000020UL, 0x0000000000000000UL,
@@ -121,7 +144,17 @@ static address counter_mask_linc32_addr() {
   return (address)COUNTER_MASK_LINC32;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t GHASH_POLYNOMIAL_REDUCTION[] = {
+ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_ONES[] = {
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+};
+static address counter_mask_ones_addr() {
+  return (address)COUNTER_MASK_ONES;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint64_t GHASH_POLYNOMIAL_REDUCTION[] = {
     0x00000001C2000000UL, 0xC200000000000000UL,
     0x00000001C2000000UL, 0xC200000000000000UL,
     0x00000001C2000000UL, 0xC200000000000000UL,
@@ -131,13 +164,45 @@ static address ghash_polynomial_reduction_addr() {
   return (address)GHASH_POLYNOMIAL_REDUCTION;
 }
 
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_POLYNOMIAL_TWO_ONE[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL_TWO_ONE[] = {
     0x0000000000000001UL, 0x0000000100000000UL,
 };
 static address ghash_polynomial_two_one_addr() {
   return (address)GHASH_POLYNOMIAL_TWO_ONE;
 }
 
+// This mask is used for incrementing counter value
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_ADDBE_4444[] = {
+    0x0000000000000000ULL, 0x0400000000000000ULL,
+    0x0000000000000000ULL, 0x0400000000000000ULL,
+    0x0000000000000000ULL, 0x0400000000000000ULL,
+    0x0000000000000000ULL, 0x0400000000000000ULL,
+};
+static address counter_mask_addbe_4444_addr() {
+    return (address)COUNTER_MASK_ADDBE_4444;
+}
+
+// This mask is used for incrementing counter value
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_ADDBE_1234[] = {
+    0x0000000000000000ULL, 0x0100000000000000ULL,
+    0x0000000000000000ULL, 0x0200000000000000ULL,
+    0x0000000000000000ULL, 0x0300000000000000ULL,
+    0x0000000000000000ULL, 0x0400000000000000ULL,
+};
+static address counter_mask_addbe_1234_addr() {
+    return (address)COUNTER_MASK_ADDBE_1234;
+}
+
+// This mask is used for incrementing counter value
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_ADD_1234[] = {
+    0x0000000000000001ULL, 0x0000000000000000ULL,
+    0x0000000000000002ULL, 0x0000000000000000ULL,
+    0x0000000000000003ULL, 0x0000000000000000ULL,
+    0x0000000000000004ULL, 0x0000000000000000ULL,
+};
+static address counter_mask_add_1234_addr() {
+    return (address)COUNTER_MASK_ADD_1234;
+}
 
 // AES intrinsic stubs
 
@@ -153,6 +218,9 @@ void StubGenerator::generate_aes_stubs() {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     } else {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+      if (VM_Version::supports_avx2()) {
+          StubRoutines::_galoisCounterMode_AESCrypt = generate_avx2_galoisCounterMode_AESCrypt();
+      }
     }
   }
 
@@ -172,16 +240,17 @@ void StubGenerator::generate_aes_stubs() {
 //   len        = rdx (c_rarg1) | rdi (c_rarg1)
 //   ct         = r8  (c_rarg2) | rdx (c_rarg2)
 //   out        = r9  (c_rarg3) | rcx (c_rarg3)
-//   key        = r10           | r8  (c_rarg4)
-//   state      = r13           | r9  (c_rarg5)
-//   subkeyHtbl = r14           | r11
-//   counter    = rsi           | r12
+//   key        = rsi           | r8  (c_rarg4)
+//   state      = rdi           | r9  (c_rarg5)
+//   subkeyHtbl = r10           | r10
+//   counter    = r11           | r11
 //
 // Output:
 //   rax - number of processed bytes
 address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "galoisCounterMode_AESCrypt");
+  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register in = c_rarg0;
@@ -193,23 +262,108 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   const Register key = c_rarg4;
   const Register state = c_rarg5;
   const Address subkeyH_mem(rbp, 2 * wordSize);
-  const Register subkeyHtbl = r11;
-  const Register avx512_subkeyHtbl = r13;
+  const Register subkeyHtbl = r10;
+  const Register avx512_subkeyHtbl = r12;
   const Address counter_mem(rbp, 3 * wordSize);
-  const Register counter = r12;
+  const Register counter = r11;
 #else
   const Address key_mem(rbp, 6 * wordSize);
-  const Register key = r10;
+  const Register key = rsi;
   const Address state_mem(rbp, 7 * wordSize);
-  const Register state = r13;
+  const Register state = rdi;
   const Address subkeyH_mem(rbp, 8 * wordSize);
-  const Register subkeyHtbl = r14;
+  const Register subkeyHtbl = r10;
   const Register avx512_subkeyHtbl = r12;
   const Address counter_mem(rbp, 9 * wordSize);
-  const Register counter = rsi;
+  const Register counter = r11;
 #endif
   __ enter();
  // Save state before entering routine
+  __ push(r12);//holds pointer to avx512_subkeyHtbl
+  __ push(r14);//holds CTR_CHECK value to check for overflow
+  __ push(r15);//holds number of rounds
+  __ push(rbx);//scratch register
+#ifdef _WIN64
+  // on win64, fill len_reg from stack position
+  __ push(rsi);
+  __ push(rdi);
+  __ movptr(key, key_mem);
+  __ movptr(state, state_mem);
+#endif
+  __ movptr(subkeyHtbl, subkeyH_mem);
+  __ movptr(counter, counter_mem);
+// Align stack
+  __ andq(rsp, -64);
+  __ subptr(rsp, 200 * longSize); // Create space on the stack for 64 htbl entries and 8 zmm AES entries
+  __ movptr(avx512_subkeyHtbl, rsp);
+
+  aesgcm_avx512(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
+
+  __ vzeroupper();
+
+  // Restore state before leaving routine
+#ifdef _WIN64
+  __ lea(rsp, Address(rbp, -6 * wordSize));
+  __ pop(rdi);
+  __ pop(rsi);
+#else
+  __ lea(rsp, Address(rbp, -4 * wordSize));
+#endif
+  __ pop(rbx);
+  __ pop(r15);
+  __ pop(r14);
+  __ pop(r12);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  return start;
+}
+
+// AVX2 Vector AES Galois Counter Mode implementation.
+//
+// Inputs:           Windows    |   Linux
+//   in         = rcx (c_rarg0) | rsi (c_rarg0)
+//   len        = rdx (c_rarg1) | rdi (c_rarg1)
+//   ct         = r8  (c_rarg2) | rdx (c_rarg2)
+//   out        = r9  (c_rarg3) | rcx (c_rarg3)
+//   key        = rdi           | r8  (c_rarg4)
+//   state      = r13           | r9  (c_rarg5)
+//   subkeyHtbl = r11           | r11
+//   counter    = rsi           | r12
+//
+// Output:
+//   rax - number of processed bytes
+address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
+  __ align(CodeEntryAlignment);
+  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubCodeMark mark(this, stub_id);
+  address start = __ pc();
+
+  const Register in = c_rarg0;
+  const Register len = c_rarg1;
+  const Register ct = c_rarg2;
+  const Register out = c_rarg3;
+  // and updated with the incremented counter in the end
+ #ifndef _WIN64
+  const Register key = c_rarg4;
+  const Register state = c_rarg5;
+  const Address subkeyH_mem(rbp, 2 * wordSize);
+  const Register subkeyHtbl = r11;
+  const Address counter_mem(rbp, 3 * wordSize);
+  const Register counter = r12;
+ #else
+  const Address key_mem(rbp, 6 * wordSize);
+  const Register key = rdi;
+  const Address state_mem(rbp, 7 * wordSize);
+  const Register state = r13;
+  const Address subkeyH_mem(rbp, 8 * wordSize);
+  const Register subkeyHtbl = r11;
+  const Address counter_mem(rbp, 9 * wordSize);
+  const Register counter = rsi;
+ #endif
+  __ enter();
+  // Save state before entering routine
   __ push(r12);
   __ push(r13);
   __ push(r14);
@@ -218,30 +372,27 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
   __ push(rsi);
+  __ push(rdi);
   __ movptr(key, key_mem);
   __ movptr(state, state_mem);
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
-// Save rbp and rsp
-  __ push(rbp);
-  __ movq(rbp, rsp);
-// Align stack
+
+  // Save rsp
+  __ movq(r14, rsp);
+  // Align stack
   __ andq(rsp, -64);
-  __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
-  __ movptr(avx512_subkeyHtbl, rsp);
+  __ subptr(rsp, 16 * longSize); // Create space on the stack for saving AES entries
 
-  aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
-
+  aesgcm_avx2(in, len, ct, out, key, state, subkeyHtbl, counter);
   __ vzeroupper();
-
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
+  __ movq(rsp, r14);
   // Restore state before leaving routine
-#ifdef _WIN64
+ #ifdef _WIN64
+  __ pop(rdi);
   __ pop(rsi);
-#endif
+ #endif
   __ pop(rbx);
   __ pop(r15);
   __ pop(r14);
@@ -257,7 +408,8 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 // Vector AES Counter implementation
 address StubGenerator::generate_counterMode_VectorAESCrypt()  {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
+  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from = c_rarg0; // source array address
@@ -345,7 +497,8 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
+  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from = c_rarg0; // source array address
@@ -632,7 +785,8 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
 address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
   assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from = c_rarg0;  // source array address
@@ -914,7 +1068,8 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+  StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+  StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
 
@@ -1008,7 +1163,8 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
+  StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+  StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
 
@@ -1109,7 +1265,8 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_exit, L_key_192_256, L_key_256, L_loopTop_128, L_loopTop_192, L_loopTop_256;
@@ -1260,7 +1417,8 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from        = c_rarg0;  // source array address
@@ -1502,7 +1660,8 @@ __ opc(xmm_result3, src_reg);         \
 
 address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "electronicCodeBook_encryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_encryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from = c_rarg0;  // source array address
@@ -1522,7 +1681,8 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
 
 address StubGenerator::generate_electronicCodeBook_decryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "electronicCodeBook_decryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_decryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register from = c_rarg0;  // source array address
@@ -1623,6 +1783,17 @@ void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, Re
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
 }
 
+// Add 128-bit integers in xmmsrc1 to xmmsrc2, then place the result in xmmdst.
+// Clobber ktmp and rscratch.
+// Used by aesctr_encrypt.
+void StubGenerator::ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                              int vector_len, KRegister ktmp, XMMRegister ones) {
+  __ vpaddq(xmmdst, xmmsrc1, xmmsrc2, vector_len);
+  __ evpcmpuq(ktmp, xmmdst, xmmsrc2, __ lt, vector_len); // set mask[0/1] bit if addq to dst[0/1] wraps
+  __ kshiftlbl(ktmp, ktmp, 1);                        // mask[1] <- mask[0], mask[0] <- 0, etc
+
+  __ evpaddq(xmmdst, ktmp, xmmdst, ones, /*merge*/true, vector_len); // dst[1]++ if mask[1] set
+}
 
 // AES-ECB Encrypt Operation
 void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Register key, Register len) {
@@ -2046,13 +2217,13 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
 }
 
 
-
 // AES Counter Mode using VAES instructions
 void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
   Register len_reg, Register used, Register used_addr, Register saved_encCounter_start) {
 
   const Register rounds = rax;
   const Register pos = r12;
+  const Register tail = r15;
 
   Label PRELOOP_START, EXIT_PRELOOP, REMAINDER, REMAINDER_16, LOOP, END, EXIT, END_LOOP,
   AES192, AES256, AES192_REMAINDER16, REMAINDER16_END_LOOP, AES256_REMAINDER16,
@@ -2104,14 +2275,21 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // The counter is incremented after each block i.e. 16 bytes is processed;
   // each zmm register has 4 counter values as its MSB
   // the counters are incremented in parallel
-  __ vpaddd(xmm8,  xmm8,  ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm9,  xmm8,  ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm10, xmm9,  ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm11, xmm10, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm12, xmm11, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm13, xmm12, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm14, xmm13, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm15, xmm14, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+
+  const XMMRegister ones = xmm17;
+  // Vector value to propagate carries
+  __ evmovdquq(ones, ExternalAddress(counter_mask_ones_addr()), Assembler::AVX_512bit, r15);
+
+  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+  ev_add128(xmm9,  xmm8,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm10, xmm9,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm11, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm12, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm13, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm14, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm15, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
 
   // load linc32 mask in zmm register.linc32 increments counter by 32
   __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc32_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
@@ -2159,21 +2337,21 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // This is followed by incrementing counter values in zmm8-zmm15.
   // Since we will be processing 32 blocks at a time, the counter is incremented by 32.
   roundEnc(xmm21, 7);
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8,   xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm22, 7);
-  __ vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm9,   xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm23, 7);
-  __ vpaddq(xmm10, xmm10, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm10, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm24, 7);
-  __ vpaddq(xmm11, xmm11, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm11, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm25, 7);
-  __ vpaddq(xmm12, xmm12, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm12, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm26, 7);
-  __ vpaddq(xmm13, xmm13, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm13, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm27, 7);
-  __ vpaddq(xmm14, xmm14, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm14, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm28, 7);
-  __ vpaddq(xmm15, xmm15, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm15, xmm15, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   roundEnc(xmm29, 7);
 
   __ cmpl(rounds, 52);
@@ -2251,8 +2429,8 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ vpshufb(xmm3, xmm11, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm3, xmm3, xmm20, Assembler::AVX_512bit);
   // Increment counter values by 16
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
-  __ vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
+  ev_add128(xmm9, xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   // AES encode rounds
   roundEnc(xmm21, 3);
   roundEnc(xmm22, 3);
@@ -2319,7 +2497,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ vpshufb(xmm1, xmm9, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm1, xmm1, xmm20, Assembler::AVX_512bit);
   // increment counter by 8
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   // AES encode
   roundEnc(xmm21, 1);
   roundEnc(xmm22, 1);
@@ -2376,8 +2554,9 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // XOR counter with first roundkey
   __ vpshufb(xmm0, xmm8, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_512bit);
+
   // Increment counter
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, ones);
   __ vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_512bit);
   __ vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_512bit);
   __ vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_512bit);
@@ -2427,7 +2606,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_128bit);
   // Increment counter by 1
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_128bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_128bit, /*ktmp*/k1, ones);
   __ vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm24, Assembler::AVX_128bit);
@@ -2479,29 +2658,36 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // Save encrypted counter value in xmm0 for next invocation, before XOR operation
   __ movdqu(Address(saved_encCounter_start, 0), xmm0);
   // XOR encryted block cipher in xmm0 with PT to produce CT
-  __ evpxorq(xmm0, xmm0, Address(src_addr, pos, Address::times_1, 0), Assembler::AVX_128bit);
   // extract up to 15 bytes of CT from xmm0 as specified by length register
   __ testptr(len_reg, 8);
   __ jcc(Assembler::zero, EXTRACT_TAIL_4BYTES);
-  __ pextrq(Address(dest_addr, pos), xmm0, 0);
+  __ pextrq(tail, xmm0, 0);
+  __ xorq(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movq(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 8);
   __ addl(pos, 8);
   __ bind(EXTRACT_TAIL_4BYTES);
   __ testptr(len_reg, 4);
   __ jcc(Assembler::zero, EXTRACT_TAIL_2BYTES);
-  __ pextrd(Address(dest_addr, pos), xmm0, 0);
+  __ pextrd(tail, xmm0, 0);
+  __ xorl(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movl(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 4);
   __ addq(pos, 4);
   __ bind(EXTRACT_TAIL_2BYTES);
   __ testptr(len_reg, 2);
   __ jcc(Assembler::zero, EXTRACT_TAIL_1BYTE);
-  __ pextrw(Address(dest_addr, pos), xmm0, 0);
+  __ pextrw(tail, xmm0, 0);
+  __ xorw(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movw(Address(dest_addr, pos), tail);
   __ psrldq(xmm0, 2);
   __ addl(pos, 2);
   __ bind(EXTRACT_TAIL_1BYTE);
   __ testptr(len_reg, 1);
   __ jcc(Assembler::zero, END);
-  __ pextrb(Address(dest_addr, pos), xmm0, 0);
+  __ pextrb(tail, xmm0, 0);
+  __ xorb(tail, Address(src_addr, pos, Address::times_1, 0));
+  __ movb(Address(dest_addr, pos), tail);
   __ addl(pos, 1);
 
   __ bind(END);
@@ -2564,87 +2750,100 @@ void StubGenerator::gfmul_avx512(XMMRegister GH, XMMRegister HK) {
   __ vpternlogq(GH, 0x96, TMP1, TMP2, Assembler::AVX_512bit);
 }
 
-void StubGenerator::generateHtbl_48_block_zmm(Register htbl, Register avx512_htbl, Register rscratch) {
+// Holds 64 Htbl entries, 32 HKey and 32 HkKey (derived from HKey)
+void StubGenerator::generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl) {
   const XMMRegister HK = xmm6;
-  const XMMRegister ZT5 = xmm4;
-  const XMMRegister ZT7 = xmm7;
-  const XMMRegister ZT8 = xmm8;
-
-  Label GFMUL_AVX512;
+  const XMMRegister ZT1 = xmm0, ZT2 = xmm1, ZT3 = xmm2, ZT4 = xmm3;
+  const XMMRegister ZT5 = xmm4, ZT6 = xmm5, ZT7 = xmm7, ZT8 = xmm8;
+  const XMMRegister ZT10 = xmm10, ZT11 = xmm11, ZT12 = xmm12;
 
   __ movdqu(HK, Address(htbl, 0));
-  __ movdqu(xmm10, ExternalAddress(ghash_long_swap_mask_addr()), rscratch);
-  __ vpshufb(HK, HK, xmm10, Assembler::AVX_128bit);
-
-  __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), rscratch);
-  __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), rscratch);
+  __ movdqu(ZT10, ExternalAddress(ghash_long_swap_mask_addr()), r15);
+  __ vpshufb(HK, HK, ZT10, Assembler::AVX_128bit);
+  __ movdqu(ZT11, ExternalAddress(ghash_polynomial_addr()), r15);
+  __ movdqu(ZT12, ExternalAddress(ghash_polynomial_two_one_addr()), r15);
   // Compute H ^ 2 from the input subkeyH
-  __ movdqu(xmm2, xmm6);
-  __ vpsllq(xmm6, xmm6, 1, Assembler::AVX_128bit);
-  __ vpsrlq(xmm2, xmm2, 63, Assembler::AVX_128bit);
-  __ movdqu(xmm1, xmm2);
-  __ vpslldq(xmm2, xmm2, 8, Assembler::AVX_128bit);
-  __ vpsrldq(xmm1, xmm1, 8, Assembler::AVX_128bit);
-  __ vpor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+  __ movdqu(ZT3, HK);
+  __ vpsllq(HK, HK, 1, Assembler::AVX_128bit);
+  __ vpsrlq(ZT3, ZT3, 63, Assembler::AVX_128bit);
+  __ movdqu(ZT2, ZT3);
+  __ vpslldq(ZT3, ZT3, 8, Assembler::AVX_128bit);
+  __ vpsrldq(ZT2, ZT2, 8, Assembler::AVX_128bit);
+  __ vpor(HK, HK, ZT3, Assembler::AVX_128bit);
+  __ vpshufd(ZT3, ZT2, 0x24, Assembler::AVX_128bit);
+  __ vpcmpeqd(ZT3, ZT3, ZT12, Assembler::AVX_128bit);
+  __ vpand(ZT3, ZT3, ZT11, Assembler::AVX_128bit);
+  __ vpxor(HK, HK, ZT3, Assembler::AVX_128bit);
+  __ movdqu(Address(avx512_htbl, 16 * 31), HK); // H ^ 2
 
-  __ vpshufd(xmm2, xmm1, 0x24, Assembler::AVX_128bit);
-  __ vpcmpeqd(xmm2, xmm2, xmm12, Assembler::AVX_128bit);
-  __ vpand(xmm2, xmm2, xmm11, Assembler::AVX_128bit);
-  __ vpxor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
-  __ movdqu(Address(avx512_htbl, 16 * 47), xmm6); // H ^ 2
-  // Compute the remaining three powers of H using XMM registers and all following powers using ZMM
   __ movdqu(ZT5, HK);
-  __ vinserti32x4(ZT7, ZT7, HK, 3);
+  __ evinserti64x2(ZT7, ZT7, HK, 3, Assembler::AVX_512bit);
 
+  //calculate HashKey ^ 2 << 1 mod poly
   gfmul_avx512(ZT5, HK);
-  __ movdqu(Address(avx512_htbl, 16 * 46), ZT5); // H ^ 2 * 2
-  __ vinserti32x4(ZT7, ZT7, ZT5, 2);
+  __ movdqu(Address(avx512_htbl, 16 * 30), ZT5);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 2, Assembler::AVX_512bit);
 
+  //calculate HashKey ^ 3 << 1 mod poly
   gfmul_avx512(ZT5, HK);
-  __ movdqu(Address(avx512_htbl, 16 * 45), ZT5); // H ^ 2 * 3
-  __ vinserti32x4(ZT7, ZT7, ZT5, 1);
+  __ movdqu(Address(avx512_htbl, 16 * 29), ZT5);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 1, Assembler::AVX_512bit);
 
+  //calculate HashKey ^ 4 << 1 mod poly
   gfmul_avx512(ZT5, HK);
-  __ movdqu(Address(avx512_htbl, 16 * 44), ZT5); // H ^ 2 * 4
-  __ vinserti32x4(ZT7, ZT7, ZT5, 0);
+  __ movdqu(Address(avx512_htbl, 16 * 28), ZT5);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 0, Assembler::AVX_512bit);
+  // ZT5 amd ZT7 to be cleared(hash key)
+  //calculate HashKeyK = HashKey x POLY
+  __ evmovdquq(xmm11, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, r15);
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 60), ZT1, Assembler::AVX_512bit);
+  //**ZT1 amd ZT2 to be cleared(hash key)
 
-  __ evshufi64x2(ZT5, ZT5, ZT5, 0x00, Assembler::AVX_512bit);
-  __ evmovdquq(ZT8, ZT7, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 40), ZT7, Assembler::AVX_512bit);
-  __ evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);
-  gfmul_avx512(ZT8, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 36), ZT8, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 32), ZT7, Assembler::AVX_512bit);
-  gfmul_avx512(ZT8, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 28), ZT8, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 24), ZT7, Assembler::AVX_512bit);
-  gfmul_avx512(ZT8, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 20), ZT8, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 16), ZT7, Assembler::AVX_512bit);
-  gfmul_avx512(ZT8, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 12), ZT8, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 8), ZT7, Assembler::AVX_512bit);
-  gfmul_avx512(ZT8, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 4), ZT8, Assembler::AVX_512bit);
-  gfmul_avx512(ZT7, ZT5);
-  __ evmovdquq(Address(avx512_htbl, 16 * 0), ZT7, Assembler::AVX_512bit);
-  __ ret(0);
-}
+  //switch to 4x128 - bit computations now
+  __ evshufi64x2(ZT5, ZT5, ZT5, 0x00, Assembler::AVX_512bit); //;; broadcast HashKey ^ 4 across all ZT5
+  __ evmovdquq(ZT8, ZT7, Assembler::AVX_512bit);//; save HashKey ^ 4 to HashKey ^ 1 in ZT8
+  //**ZT8 to be cleared(hash key)
 
-#define vclmul_reduce(out, poly, hi128, lo128, tmp0, tmp1)      \
-__ evpclmulqdq(tmp0, poly, lo128, 0x01, Assembler::AVX_512bit); \
-__ vpslldq(tmp0, tmp0, 8, Assembler::AVX_512bit);               \
-__ evpxorq(tmp0, lo128, tmp0, Assembler::AVX_512bit);           \
-__ evpclmulqdq(tmp1, poly, tmp0, 0x00, Assembler::AVX_512bit);  \
-__ vpsrldq(tmp1, tmp1, 4, Assembler::AVX_512bit);               \
-__ evpclmulqdq(out, poly, tmp0, 0x10, Assembler::AVX_512bit);   \
-__ vpslldq(out, out, 4, Assembler::AVX_512bit);                 \
-__ vpternlogq(out, 0x96, tmp1, hi128, Assembler::AVX_512bit);   \
+  //calculate HashKey ^ 5 << 1 mod poly, HashKey ^ 6 << 1 mod poly, ... HashKey ^ 8 << 1 mod poly
+  gfmul_avx512(ZT7, ZT5);
+  __ evmovdquq(Address(avx512_htbl, 16 * 24), ZT7, Assembler::AVX_512bit);//; HashKey ^ 8 to HashKey ^ 5 in ZT7 now
+
+  //calculate HashKeyX = HashKey x POLY
+  __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+  __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+  __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_htbl, 16 * 56), ZT1, Assembler::AVX_512bit);
+
+  __ evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);//;; broadcast HashKey ^ 8 across all ZT5
+
+  for (int i = 20, j = 52; i > 0;) {
+    gfmul_avx512(ZT8, ZT5);
+    __ evmovdquq(Address(avx512_htbl, 16 * i), ZT8, Assembler::AVX_512bit);
+    //calculate HashKeyK = HashKey x POLY
+    __ evpclmulqdq(ZT1, ZT8, xmm11, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(ZT2, ZT8, 78, Assembler::AVX_512bit);
+    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+    __ evmovdquq(Address(avx512_htbl, 16 * j), ZT1, Assembler::AVX_512bit);
+
+    i -= 4;
+    j -= 4;
+    //compute HashKey ^ (8 + n), HashKey ^ (7 + n), ... HashKey ^ (5 + n)
+    gfmul_avx512(ZT7, ZT5);
+    __ evmovdquq(Address(avx512_htbl, 16 * i), ZT7, Assembler::AVX_512bit);
+
+    //calculate HashKeyK = HashKey x POLY
+    __ evpclmulqdq(ZT1, ZT7, xmm11, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(ZT2, ZT7, 78, Assembler::AVX_512bit);
+    __ evpxorq(ZT1, ZT1, ZT2, Assembler::AVX_512bit);
+    __ evmovdquq(Address(avx512_htbl, 16 * j), ZT1, Assembler::AVX_512bit);
+
+    i -= 4;
+    j -= 4;
+  }
+ }
 
 #define vhpxori4x128(reg, tmp)                    \
 __ vextracti64x4(tmp, reg, 1);                    \
@@ -2676,21 +2875,17 @@ __ evmovdquq(dst2, Address(src, position, Address::times_1, 1 * 64), Assembler::
 __ evmovdquq(dst3, Address(src, position, Address::times_1, 2 * 64), Assembler::AVX_512bit); \
 __ evmovdquq(dst4, Address(src, position, Address::times_1, 3 * 64), Assembler::AVX_512bit); \
 
-#define carrylessMultiply(dst00, dst01, dst10, dst11, ghdata, hkey) \
-__ evpclmulqdq(dst00, ghdata, hkey, 0x00, Assembler::AVX_512bit); \
-__ evpclmulqdq(dst01, ghdata, hkey, 0x01, Assembler::AVX_512bit); \
-__ evpclmulqdq(dst10, ghdata, hkey, 0x10, Assembler::AVX_512bit); \
-__ evpclmulqdq(dst11, ghdata, hkey, 0x11, Assembler::AVX_512bit); \
+#define carrylessMultiply(dst00, dst01, dst10, dst11, ghdata, hkey2, hkey1) \
+__ evpclmulqdq(dst00, ghdata, hkey2, 0x00, Assembler::AVX_512bit); \
+__ evpclmulqdq(dst01, ghdata, hkey2, 0x10, Assembler::AVX_512bit); \
+__ evpclmulqdq(dst10, ghdata, hkey1, 0x01, Assembler::AVX_512bit); \
+__ evpclmulqdq(dst11, ghdata, hkey1, 0x11, Assembler::AVX_512bit); \
 
-#define shuffleExorRnd1Key(dst0, dst1, dst2, dst3, shufmask, rndkey) \
-__ vpshufb(dst0, dst0, shufmask, Assembler::AVX_512bit); \
-__ evpxorq(dst0, dst0, rndkey, Assembler::AVX_512bit); \
-__ vpshufb(dst1, dst1, shufmask, Assembler::AVX_512bit); \
-__ evpxorq(dst1, dst1, rndkey, Assembler::AVX_512bit); \
-__ vpshufb(dst2, dst2, shufmask, Assembler::AVX_512bit); \
-__ evpxorq(dst2, dst2, rndkey, Assembler::AVX_512bit); \
-__ vpshufb(dst3, dst3, shufmask, Assembler::AVX_512bit); \
-__ evpxorq(dst3, dst3, rndkey, Assembler::AVX_512bit); \
+#define shuffle(dst0, dst1, dst2, dst3, src0, src1, src2, src3, shufmask) \
+__ vpshufb(dst0, src0, shufmask, Assembler::AVX_512bit); \
+__ vpshufb(dst1, src1, shufmask, Assembler::AVX_512bit); \
+__ vpshufb(dst2, src2, shufmask, Assembler::AVX_512bit); \
+__ vpshufb(dst3, src3, shufmask, Assembler::AVX_512bit); \
 
 #define xorBeforeStore(dst0, dst1, dst2, dst3, src0, src1, src2, src3) \
 __ evpxorq(dst0, dst0, src0, Assembler::AVX_512bit); \
@@ -2704,211 +2899,462 @@ __ vpternlogq(dst1, 0x96, src12, src13, Assembler::AVX_512bit); \
 __ vpternlogq(dst2, 0x96, src22, src23, Assembler::AVX_512bit); \
 __ vpternlogq(dst3, 0x96, src32, src33, Assembler::AVX_512bit); \
 
-void StubGenerator::ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
-                                               Register in, Register out, Register data, Register pos, bool first_time_reduction, XMMRegister addmask, bool ghash_input, Register rounds,
-                                               Register ghash_pos, bool final_reduction, int i, XMMRegister counter_inc_mask) {
-  Label AES_192, AES_256, LAST_AES_RND;
+//schoolbook multiply of 16 blocks(8 x 16 bytes)
+//it is assumed that data read is already shuffledand
+void StubGenerator::ghash16_avx512(bool start_ghash, bool do_reduction, bool uload_shuffle, bool hk_broadcast, bool do_hxor,
+                                   Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, XMMRegister SHUFM, int in_offset,
+                                   int in_disp, int displacement, int hashkey_offset) {
   const XMMRegister ZTMP0 = xmm0;
   const XMMRegister ZTMP1 = xmm3;
   const XMMRegister ZTMP2 = xmm4;
   const XMMRegister ZTMP3 = xmm5;
+  const XMMRegister ZTMP4 = xmm6;
   const XMMRegister ZTMP5 = xmm7;
   const XMMRegister ZTMP6 = xmm10;
   const XMMRegister ZTMP7 = xmm11;
   const XMMRegister ZTMP8 = xmm12;
   const XMMRegister ZTMP9 = xmm13;
-  const XMMRegister ZTMP10 = xmm15;
-  const XMMRegister ZTMP11 = xmm16;
-  const XMMRegister ZTMP12 = xmm17;
+  const XMMRegister ZTMPA = xmm26;
+  const XMMRegister ZTMPB = xmm23;
+  const XMMRegister GH = xmm24;
+  const XMMRegister GL = xmm25;
+  const int hkey_gap = 16 * 32;
 
-  const XMMRegister ZTMP13 = xmm19;
-  const XMMRegister ZTMP14 = xmm20;
-  const XMMRegister ZTMP15 = xmm21;
-  const XMMRegister ZTMP16 = xmm30;
-  const XMMRegister ZTMP17 = xmm31;
-  const XMMRegister ZTMP18 = xmm1;
-  const XMMRegister ZTMP19 = xmm2;
-  const XMMRegister ZTMP20 = xmm8;
-  const XMMRegister ZTMP21 = xmm22;
-  const XMMRegister ZTMP22 = xmm23;
-
-  // Pre increment counters
-  __ vpaddd(ZTMP0, ctr_blockx, counter_inc_mask, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP1, ZTMP0, counter_inc_mask, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP2, ZTMP1, counter_inc_mask, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP3, ZTMP2, counter_inc_mask, Assembler::AVX_512bit);
-  // Save counter value
-  __ evmovdquq(ctr_blockx, ZTMP3, Assembler::AVX_512bit);
-
-  // Reuse ZTMP17 / ZTMP18 for loading AES Keys
-  // Pre-load AES round keys
-  ev_load_key(ZTMP17, key, 0, xmm29);
-  ev_load_key(ZTMP18, key, 1 * 16, xmm29);
-
-  // ZTMP19 & ZTMP20 used for loading hash key
-  // Pre-load hash key
-  __ evmovdquq(ZTMP19, Address(subkeyHtbl, i * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
-  // Load data for computing ghash
-  __ evmovdquq(ZTMP21, Address(data, ghash_pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP21, ZTMP21, xmm24, Assembler::AVX_512bit);
-
-  // Xor cipher block 0 with input ghash, if available
-  if (ghash_input) {
-    __ evpxorq(ZTMP21, ZTMP21, aad_hashx, Assembler::AVX_512bit);
-  }
-  // Load data for computing ghash
-  __ evmovdquq(ZTMP22, Address(data, ghash_pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP22, ZTMP22, xmm24, Assembler::AVX_512bit);
-
-  // stitch AES rounds with GHASH
-  // AES round 0, xmm24 has shuffle mask
-  shuffleExorRnd1Key(ZTMP0, ZTMP1, ZTMP2, ZTMP3, xmm24, ZTMP17);
-  // Reuse ZTMP17 / ZTMP18 for loading remaining AES Keys
-  ev_load_key(ZTMP17, key, 2 * 16, xmm29);
-  // GHASH 4 blocks
-  carrylessMultiply(ZTMP6, ZTMP7, ZTMP8, ZTMP5, ZTMP21, ZTMP19);
-  // Load the next hkey and Ghash data
-  __ evmovdquq(ZTMP19, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP21, Address(data, ghash_pos, Address::times_1, 2 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP21, ZTMP21, xmm24, Assembler::AVX_512bit);
-
-  // AES round 1
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 3 * 16, xmm29);
-
-  // GHASH 4 blocks(11 to 8)
-  carrylessMultiply(ZTMP10, ZTMP12, ZTMP11, ZTMP9, ZTMP22, ZTMP20);
-  // Load the next hkey and GDATA
-  __ evmovdquq(ZTMP20, Address(subkeyHtbl, ++i * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP22, Address(data, ghash_pos, Address::times_1, 3 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP22, ZTMP22, xmm24, Assembler::AVX_512bit);
-
-  // AES round 2
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 4 * 16, xmm29);
-
-  // GHASH 4 blocks(7 to 4)
-  carrylessMultiply(ZTMP14, ZTMP16, ZTMP15, ZTMP13, ZTMP21, ZTMP19);
-  // AES rounds 3
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 5 * 16, xmm29);
-
-  // Gather(XOR) GHASH for 12 blocks
-  xorGHASH(ZTMP5, ZTMP6, ZTMP8, ZTMP7, ZTMP9, ZTMP13, ZTMP10, ZTMP14, ZTMP12, ZTMP16, ZTMP11, ZTMP15);
-
-  // AES rounds 4
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 6 * 16, xmm29);
-
-  // load plain / cipher text(recycle registers)
-  loadData(in, pos, ZTMP13, ZTMP14, ZTMP15, ZTMP16);
-
-  // AES rounds 5
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 7 * 16, xmm29);
-  // GHASH 4 blocks(3 to 0)
-  carrylessMultiply(ZTMP10, ZTMP12, ZTMP11, ZTMP9, ZTMP22, ZTMP20);
-
-  //  AES round 6
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 8 * 16, xmm29);
-
-  // gather GHASH in ZTMP6(low) and ZTMP5(high)
-  if (first_time_reduction) {
-    __ vpternlogq(ZTMP7, 0x96, ZTMP8, ZTMP12, Assembler::AVX_512bit);
-    __ evpxorq(xmm25, ZTMP7, ZTMP11, Assembler::AVX_512bit);
-    __ evpxorq(xmm27, ZTMP5, ZTMP9, Assembler::AVX_512bit);
-    __ evpxorq(xmm26, ZTMP6, ZTMP10, Assembler::AVX_512bit);
-  } else if (!first_time_reduction && !final_reduction) {
-    xorGHASH(ZTMP7, xmm25, xmm27, xmm26, ZTMP8, ZTMP12, ZTMP7, ZTMP11, ZTMP5, ZTMP9, ZTMP6, ZTMP10);
+  if (uload_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl,  in_offset * 16 + in_disp), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp), Assembler::AVX_512bit);
   }
 
-  if (final_reduction) {
-    // Phase one: Add mid products together
-    // Also load polynomial constant for reduction
-    __ vpternlogq(ZTMP7, 0x96, ZTMP8, ZTMP12, Assembler::AVX_512bit);
-    __ vpternlogq(ZTMP7, 0x96, xmm25, ZTMP11, Assembler::AVX_512bit);
-    __ vpsrldq(ZTMP11, ZTMP7, 8, Assembler::AVX_512bit);
-    __ vpslldq(ZTMP7, ZTMP7, 8, Assembler::AVX_512bit);
-    __ evmovdquq(ZTMP12, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  if (start_ghash) {
+    __ evpxorq(ZTMP9, ZTMP9, HASH, Assembler::AVX_512bit);
   }
-  // AES round 7
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 9 * 16, xmm29);
-  if (final_reduction) {
-    __ vpternlogq(ZTMP5, 0x96, ZTMP9, ZTMP11, Assembler::AVX_512bit);
-    __ evpxorq(ZTMP5, ZTMP5, xmm27, Assembler::AVX_512bit);
-    __ vpternlogq(ZTMP6, 0x96, ZTMP10, ZTMP7, Assembler::AVX_512bit);
-    __ evpxorq(ZTMP6, ZTMP6, xmm26, Assembler::AVX_512bit);
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 0 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 0 * 64), Assembler::AVX_512bit);
   }
-  // AES round 8
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 10 * 16, xmm29);
 
-  // Horizontal xor of low and high 4*128
-  if (final_reduction) {
-    vhpxori4x128(ZTMP5, ZTMP9);
-    vhpxori4x128(ZTMP6, ZTMP10);
-  }
-  // AES round 9
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  // First phase of reduction
-  if (final_reduction) {
-      __ evpclmulqdq(ZTMP10, ZTMP12, ZTMP6, 0x01, Assembler::AVX_128bit);
-      __ vpslldq(ZTMP10, ZTMP10, 8, Assembler::AVX_128bit);
-      __ evpxorq(ZTMP10, ZTMP6, ZTMP10, Assembler::AVX_128bit);
-  }
-  __ cmpl(rounds, 52);
-  __ jcc(Assembler::greaterEqual, AES_192);
-  __ jmp(LAST_AES_RND);
-  // AES rounds up to 11 (AES192) or 13 (AES256)
-  __ bind(AES_192);
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 11 * 16, xmm29);
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 12 * 16, xmm29);
-  __ cmpl(rounds, 60);
-  __ jcc(Assembler::aboveEqual, AES_256);
-  __ jmp(LAST_AES_RND);
+  carrylessMultiply(ZTMP0, ZTMP1, ZTMP2, ZTMP3, ZTMP9, ZTMPA, ZTMP8);
 
-  __ bind(AES_256);
-  roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP18, key, 13 * 16, xmm29);
-  roundEncode(ZTMP18, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  ev_load_key(ZTMP17, key, 14 * 16, xmm29);
-
-  __ bind(LAST_AES_RND);
-  // Second phase of reduction
-  if (final_reduction) {
-    __ evpclmulqdq(ZTMP9, ZTMP12, ZTMP10, 0x00, Assembler::AVX_128bit);
-    __ vpsrldq(ZTMP9, ZTMP9, 4, Assembler::AVX_128bit); // Shift-R 1-DW to obtain 2-DWs shift-R
-    __ evpclmulqdq(ZTMP11, ZTMP12, ZTMP10, 0x10, Assembler::AVX_128bit);
-    __ vpslldq(ZTMP11, ZTMP11, 4, Assembler::AVX_128bit); // Shift-L 1-DW for result
-    // ZTMP5 = ZTMP5 X ZTMP11 X ZTMP9
-    __ vpternlogq(ZTMP5, 0x96, ZTMP11, ZTMP9, Assembler::AVX_128bit);
+  //ghash blocks 4 - 7
+  if (uload_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 64), Assembler::AVX_512bit);
   }
-  // Last AES round
-  lastroundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  // XOR against plain / cipher text
-  xorBeforeStore(ZTMP0, ZTMP1, ZTMP2, ZTMP3, ZTMP13, ZTMP14, ZTMP15, ZTMP16);
-  // store cipher / plain text
-  storeData(out, pos, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);;
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 1 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  }
+
+  carrylessMultiply(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP9, ZTMPA, ZTMP8);
+
+  //update sums
+  if (start_ghash) {
+    __ evpxorq(GL, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
+    __ evpxorq(GH, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
+  } else { //mid, end, end_reduce
+    __ vpternlogq(GL, 0x96, ZTMP0, ZTMP2, Assembler::AVX_512bit);//T2 = THL + TLL
+    __ vpternlogq(GH, 0x96, ZTMP1, ZTMP3, Assembler::AVX_512bit);//T1 = THH + TLH
+  }
+  //ghash blocks 8 - 11
+  if (uload_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 128), Assembler::AVX_512bit);
+  }
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 2 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  }
+
+  carrylessMultiply(ZTMP0, ZTMP1, ZTMP2, ZTMP3, ZTMP9, ZTMPA, ZTMP8);
+
+  //update sums
+  __ vpternlogq(GL, 0x96, ZTMP6, ZTMP4, Assembler::AVX_512bit);//T2 = THL + TLL
+  __ vpternlogq(GH, 0x96, ZTMP7, ZTMP5, Assembler::AVX_512bit);//T1 = THH + TLH
+  //ghash blocks 12 - 15
+  if (uload_shuffle) {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
+    __ vpshufb(ZTMP9, ZTMP9, SHUFM, Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP9, Address(subkeyHtbl, in_offset * 16 + in_disp + 192), Assembler::AVX_512bit);
+  }
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(ZTMP8, Address(subkeyHtbl, hashkey_offset + displacement + 3 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(ZTMPA, Address(subkeyHtbl, hashkey_offset + displacement + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  }
+  carrylessMultiply(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP9, ZTMPA, ZTMP8);
+
+  //update sums
+  xorGHASH(GL, GH, GL, GH, ZTMP0, ZTMP2, ZTMP1, ZTMP3, ZTMP6, ZTMP4, ZTMP7, ZTMP5);
+
+  if (do_reduction) {
+  //new reduction
+    __ evmovdquq(ZTMPB, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+    __ evpclmulqdq(HASH, GL, ZTMPB, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(ZTMP0, GL, 78, Assembler::AVX_512bit);
+    __ vpternlogq(HASH, 0x96, GH, ZTMP0, Assembler::AVX_512bit);
+    if (do_hxor) {
+      vhpxori4x128(HASH, ZTMP0);
+    }
+  }
 }
 
-void StubGenerator::aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                                   Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
-  Label ENC_DEC_DONE, GENERATE_HTBL_48_BLKS, AES_192, AES_256, STORE_CT, GHASH_LAST_32,
-        AES_32_BLOCKS, GHASH_AES_PARALLEL, LOOP, ACCUMULATE, GHASH_16_AES_16;
-  const XMMRegister CTR_BLOCKx = xmm9;
+//Stitched GHASH of 16 blocks(with reduction) with encryption of 0 blocks
+void StubGenerator::gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, XMMRegister SHUFM, Register subkeyHtbl,
+                                            int ghashin_offset, int hashkey_offset, bool start_ghash, bool do_reduction) {
+  //there is 0 blocks to cipher so there are only 16 blocks for ghash and reduction
+  ghash16_avx512(start_ghash, do_reduction, false, false, true, in, pos, subkeyHtbl, HASH, SHUFM, ghashin_offset, 0, 0, hashkey_offset);
+}
+
+//Main GCM macro stitching cipher with GHASH
+//encrypts 16 blocks at a time
+//ghash the 16 previously encrypted ciphertext blocks
+void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out, Register ct, Register pos, Register avx512_subkeyHtbl,
+                                                      Register CTR_CHECK, Register NROUNDS, Register key, XMMRegister CTR_BE, XMMRegister GHASH_IN,
+                                                      XMMRegister ADDBE_4x4, XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHFMSK,
+                                                      bool hk_broadcast, bool is_hash_start, bool do_hash_reduction, bool do_hash_hxor,
+                                                      bool no_ghash_in, int ghashin_offset, int aesout_offset, int hashkey_offset) {
+  const XMMRegister B00_03 = xmm0;
+  const XMMRegister B04_07 = xmm3;
+  const XMMRegister B08_11 = xmm4;
+  const XMMRegister B12_15 = xmm5;
+  const XMMRegister THH1 = xmm6;
+  const XMMRegister THL1 = xmm7;
+  const XMMRegister TLH1 = xmm10;
+  const XMMRegister TLL1 = xmm11, THH2 = xmm12, THL2 = xmm13, TLH2 = xmm15;
+  const XMMRegister TLL2 = xmm16, THH3 = xmm17, THL3 = xmm19, TLH3 = xmm20;
+  const XMMRegister TLL3 = xmm21, DATA1 = xmm17, DATA2 = xmm19, DATA3 = xmm20, DATA4 = xmm21;
+  const XMMRegister AESKEY1 = xmm30, AESKEY2 = xmm31;
+  const XMMRegister GHKEY1 = xmm1, GHKEY2 = xmm18, GHDAT1 = xmm8, GHDAT2 = xmm22;
+  const XMMRegister ZT = xmm23, TO_REDUCE_L = xmm25, TO_REDUCE_H = xmm24;
+  const int hkey_gap = 16 * 32;
+
+  Label blocks_overflow, blocks_ok, skip_shuffle, cont, aes_256, aes_192, last_aes_rnd;
+
+  __ cmpb(CTR_CHECK, (256 - 16));
+  __ jcc(Assembler::aboveEqual, blocks_overflow);
+  __ vpaddd(B00_03, CTR_BE, ADDBE_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
+  __ jmp(blocks_ok);
+  __ bind(blocks_overflow);
+  __ vpshufb(CTR_BE, CTR_BE, SHFMSK, Assembler::AVX_512bit);
+  __ evmovdquq(B12_15, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ vpaddd(B00_03, CTR_BE, ADD_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
+  shuffle(B00_03, B04_07, B08_11, B12_15, B00_03, B04_07, B08_11, B12_15, SHFMSK);
+
+  __ bind(blocks_ok);
+
+  //pre - load constants
+  ev_load_key(AESKEY1, key, 0, rbx);
+  if (!no_ghash_in) {
+    __ evpxorq(GHDAT1, GHASH_IN, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * ghashin_offset), Assembler::AVX_512bit);
+  }
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 0 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 0 * 64), Assembler::AVX_512bit);
+  }
+
+  //save counter for the next round
+  //increment counter overflow check register
+  __ evshufi64x2(CTR_BE, B12_15, B12_15, 255, Assembler::AVX_512bit);
+  __ addb(CTR_CHECK, 16);
+
+  //pre - load constants
+  ev_load_key(AESKEY2, key, 1 * 16, rbx);
+  __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset +4)), Assembler::AVX_512bit);
+
+  //stitch AES rounds with GHASH
+  //AES round 0
+  __ evpxorq(B00_03, B00_03, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, AESKEY1, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, AESKEY1, Assembler::AVX_512bit);
+  ev_load_key(AESKEY1, key, 2 * 16, rbx);
+
+  //GHASH 4 blocks(15 to 12)
+  carrylessMultiply(TLL1, TLH1, THL1, THH1, GHDAT1, GHKEY2, GHKEY1);
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 1 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 1 * 64), Assembler::AVX_512bit);
+  }
+
+  __ evmovdquq(GHDAT1, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 8)), Assembler::AVX_512bit);
+
+  //AES round 1
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+
+  ev_load_key(AESKEY2, key, 3 * 16, rbx);
+
+  //GHASH 4 blocks(11 to 8)
+  carrylessMultiply(TLL2, TLH2, THL2, THH2, GHDAT2, GHKEY2, GHKEY1);
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 2 * 64 ), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 2 * 64), Assembler::AVX_512bit);
+  }
+  __ evmovdquq(GHDAT2, Address(avx512_subkeyHtbl, 16 * (ghashin_offset + 12)), Assembler::AVX_512bit);
+
+  //AES round 2
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 4 * 16, rbx);
+
+  //GHASH 4 blocks(7 to 4)
+  carrylessMultiply(TLL3, TLH3, THL3, THH3, GHDAT1, GHKEY2, GHKEY1);
+
+  if (hk_broadcast) {
+    __ evbroadcastf64x2(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
+    __ evbroadcastf64x2(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  } else {
+    __ evmovdquq(GHKEY1, Address(avx512_subkeyHtbl, hashkey_offset + 3 * 64), Assembler::AVX_512bit);
+    __ evmovdquq(GHKEY2, Address(avx512_subkeyHtbl, hashkey_offset + hkey_gap + 3 * 64), Assembler::AVX_512bit);
+  }
+
+  //AES rounds 3
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY2, key, 5 * 16, rbx);
+
+  //Gather(XOR) GHASH for 12 blocks
+  xorGHASH(TLL1, TLH1, THL1, THH1, TLL2, TLL3, TLH2, TLH3, THL2, THL3, THH2, THH3);
+
+  //AES rounds 4
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 6 * 16, rbx);
+
+  //load plain / cipher text(recycle GH3xx registers)
+  loadData(in, pos, DATA1, DATA2, DATA3, DATA4);
+
+  //AES rounds 5
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY2, key, 7 * 16, rbx);
+
+  //GHASH 4 blocks(3 to 0)
+  carrylessMultiply(TLL2, TLH2, THL2, THH2, GHDAT2, GHKEY2, GHKEY1);
+
+  //AES round 6
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 8 * 16, rbx);
+
+  //gather GHASH in TO_REDUCE_H / L
+  if (is_hash_start) {
+    __ evpxorq(TO_REDUCE_L, TLL2, THL2, Assembler::AVX_512bit);
+    __ evpxorq(TO_REDUCE_H, THH2, TLH2, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_L, 0x96, TLL1, THL1, Assembler::AVX_512bit);
+    __ vpternlogq(TO_REDUCE_H, 0x96, THH1, TLH1, Assembler::AVX_512bit);
+  } else {
+    //not the first round so sums need to be updated
+    xorGHASH(TO_REDUCE_L, TO_REDUCE_H, TO_REDUCE_L, TO_REDUCE_H, TLL2, THL2, THH2, TLH2, TLL1, THL1, THH1, TLH1);
+  }
+
+  //AES round 7
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY2, key, 9 * 16, rbx);
+
+  //new reduction
+  if (do_hash_reduction) {
+    __ evmovdquq(ZT, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+    __ evpclmulqdq(THH1, TO_REDUCE_L, ZT, 0x10, Assembler::AVX_512bit);
+    __ vpshufd(TO_REDUCE_L, TO_REDUCE_L, 78, Assembler::AVX_512bit);
+    __ vpternlogq(THH1, 0x96, TO_REDUCE_H, TO_REDUCE_L, Assembler::AVX_512bit);
+  }
+
+  //AES round 8
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 10 * 16, rbx);
+
+  //horizontalxor of 4 reduced hashes
+  if (do_hash_hxor) {
+    vhpxori4x128(THH1, TLL1);
+  }
+
+  //AES round 9
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY2, key, 11 * 16, rbx);
+  //AES rounds up to 11 (AES192) or 13 (AES256)
+  //AES128 is done
+  __ cmpl(NROUNDS, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_192);
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 12 * 16, rbx);
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+  __ cmpl(NROUNDS, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_256);
+  ev_load_key(AESKEY2, key, 13 * 16, rbx);
+  roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(AESKEY1, key, 14 * 16, rbx);
+  roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
+
+  __ bind(last_aes_rnd);
+  //the last AES round
+  lastroundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
+  //AESKEY1and AESKEY2 contain AES round keys
+
+  //XOR against plain / cipher text
+  xorBeforeStore(B00_03, B04_07, B08_11, B12_15, DATA1, DATA2, DATA3, DATA4);
+
+  //store cipher / plain text
+  storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
+  //**B00_03, B04_07, B08_011, B12_B15 may contain sensitive data
+
+  //shuffle cipher text blocks for GHASH computation
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::notEqual, skip_shuffle);
+  shuffle(B00_03, B04_07, B08_11, B12_15, B00_03, B04_07, B08_11, B12_15, SHFMSK);
+  __ jmp(cont);
+  __ bind(skip_shuffle);
+  shuffle(B00_03, B04_07, B08_11, B12_15, DATA1, DATA2, DATA3, DATA4, SHFMSK);
+
+  //**B00_03, B04_07, B08_011, B12_B15 overwritten with shuffled cipher text
+  __ bind(cont);
+  //store shuffled cipher text for ghashing
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * aesout_offset), B00_03, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 4)), B04_07, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 8)), B08_11, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (aesout_offset + 12)), B12_15, Assembler::AVX_512bit);
+}
+
+
+//Encrypt / decrypt the initial 16 blocks
+void StubGenerator::initial_blocks_16_avx512(Register in, Register out, Register ct, Register pos, Register key, Register avx512_subkeyHtbl,
+                                             Register CTR_CHECK, Register rounds, XMMRegister CTR, XMMRegister GHASH,  XMMRegister ADDBE_4x4,
+                                             XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHUF_MASK, int stack_offset) {
+  const XMMRegister B00_03 = xmm7;
+  const XMMRegister B04_07 = xmm10;
+  const XMMRegister B08_11 = xmm11;
+  const XMMRegister B12_15 = xmm12;
+  const XMMRegister T0 = xmm0;
+  const XMMRegister T1 = xmm3;
+  const XMMRegister T2 = xmm4;
+  const XMMRegister T3 = xmm5;
+  const XMMRegister T4 = xmm6;
+  const XMMRegister T5 = xmm30;
+
+  Label next_16_overflow, next_16_ok, cont, skip_shuffle, aes_256, aes_192, last_aes_rnd;
+  //prepare counter blocks
+  __ cmpb(CTR_CHECK, (256 - 16));
+  __ jcc(Assembler::aboveEqual, next_16_overflow);
+  __ vpaddd(B00_03, CTR, ADDBE_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, ADDBE_4x4, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, ADDBE_4x4, Assembler::AVX_512bit);
+  __ jmp(next_16_ok);
+  __ bind(next_16_overflow);
+  __ vpshufb(CTR, CTR, SHUF_MASK, Assembler::AVX_512bit);
+  __ evmovdquq(B12_15, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx);
+  __ vpaddd(B00_03, CTR, ADD_1234, Assembler::AVX_512bit);
+  __ vpaddd(B04_07, B00_03, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B08_11, B04_07, B12_15, Assembler::AVX_512bit);
+  __ vpaddd(B12_15, B08_11, B12_15, Assembler::AVX_512bit);
+  shuffle(B00_03, B04_07, B08_11, B12_15, B00_03, B04_07, B08_11, B12_15, SHUF_MASK);
+  __ bind(next_16_ok);
+  __ evshufi64x2(CTR, B12_15, B12_15, 255, Assembler::AVX_512bit);
+  __ addb(CTR_CHECK, 16);
+
+  //load 16 blocks of data
+  loadData(in, pos, T0, T1, T2, T3);
+
+  //move to AES encryption rounds
+  __ movdqu(T5, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
+  ev_load_key(T4, key, 0, T5);
+  __ evpxorq(B00_03, B00_03, T4, Assembler::AVX_512bit);
+  __ evpxorq(B04_07, B04_07, T4, Assembler::AVX_512bit);
+  __ evpxorq(B08_11, B08_11, T4, Assembler::AVX_512bit);
+  __ evpxorq(B12_15, B12_15, T4, Assembler::AVX_512bit);
+
+  for (int i = 1; i < 10; i++) {
+    ev_load_key(T4, key, i * 16, T5);
+    roundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+  }
+
+  ev_load_key(T4, key, 10 * 16, T5);
+  __ cmpl(rounds, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_192);
+  roundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(T4, key, 16 * 11, T5);
+  roundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(T4, key, 16 * 12, T5);
+  __ cmpl(rounds, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+  __ bind(aes_256);
+  roundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(T4, key, 16 * 13, T5);
+  roundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+  ev_load_key(T4, key, 16 * 14, T5);
+
+  __ bind(last_aes_rnd);
+  lastroundEncode(T4, B00_03, B04_07, B08_11, B12_15);
+
+  //xor against text
+  xorBeforeStore(B00_03, B04_07, B08_11, B12_15, T0, T1, T2, T3);
+
+  //store
+  storeData(out, pos, B00_03, B04_07, B08_11, B12_15);
+
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::equal, skip_shuffle);
+  //decryption - cipher text needs to go to GHASH phase
+  shuffle(B00_03, B04_07, B08_11, B12_15, T0, T1, T2, T3, SHUF_MASK);
+  __ jmp(cont);
+  __ bind(skip_shuffle);
+  shuffle(B00_03, B04_07, B08_11, B12_15, B00_03, B04_07, B08_11, B12_15, SHUF_MASK);
+
+  //B00_03, B04_07, B08_11, B12_15 overwritten with shuffled cipher text
+  __ bind(cont);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * stack_offset), B00_03, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 4)), B04_07, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 8)), B08_11, Assembler::AVX_512bit);
+  __ evmovdquq(Address(avx512_subkeyHtbl, 16 * (stack_offset + 12)), B12_15, Assembler::AVX_512bit);
+}
+
+void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Register out, Register key, Register state,
+                                  Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter) {
+  Label ENC_DEC_DONE, MESG_BELOW_32_BLKS, NO_BIG_BLKS, ENCRYPT_BIG_BLKS_NO_HXOR,
+        ENCRYPT_BIG_NBLKS, ENCRYPT_16_BLKS, ENCRYPT_N_GHASH_32_N_BLKS, GHASH_DONE;
+  const XMMRegister CTR_BLOCKx = xmm2;
   const XMMRegister AAD_HASHx = xmm14;
-  const Register pos = rax;
-  const Register rounds = r15;
-  const Register ghash_pos = NOT_WIN64( r14) WIN64_ONLY( r11 );
   const XMMRegister ZTMP0 = xmm0;
-  const XMMRegister ZTMP1 = xmm3;
-  const XMMRegister ZTMP2 = xmm4;
-  const XMMRegister ZTMP3 = xmm5;
+  const XMMRegister ZTMP1 = xmm3; //**sensitive
+  const XMMRegister ZTMP2 = xmm4; //**sensitive(small data)
+  const XMMRegister ZTMP3 = xmm5; //**sensitive(small data)
   const XMMRegister ZTMP4 = xmm6;
   const XMMRegister ZTMP5 = xmm7;
   const XMMRegister ZTMP6 = xmm10;
@@ -2922,235 +3368,710 @@ void StubGenerator::aesgcm_encrypt(Register in, Register len, Register ct, Regis
   const XMMRegister ZTMP14 = xmm20;
   const XMMRegister ZTMP15 = xmm21;
   const XMMRegister ZTMP16 = xmm30;
-  const XMMRegister COUNTER_INC_MASK = xmm18;
+  const XMMRegister ZTMP17 = xmm31;
+  const XMMRegister ZTMP18 = xmm1;
+  const XMMRegister ZTMP19 = xmm18;
+  const XMMRegister ZTMP20 = xmm8;
+  const XMMRegister ZTMP21 = xmm22;
+  const XMMRegister ZTMP22 = xmm23;
+  const XMMRegister ZTMP23 = xmm26;
+  const XMMRegister GH = xmm24;
+  const XMMRegister GL = xmm25;
+  const XMMRegister SHUF_MASK = xmm29;
+  const XMMRegister ADDBE_4x4 = xmm27;
+  const XMMRegister ADDBE_1234 = xmm28;
+  const XMMRegister ADD_1234 = xmm9;
+  const KRegister MASKREG = k1;
+  const Register pos = rax;
+  const Register rounds = r15;
+  const Register CTR_CHECK = r14;
 
-  __ movl(pos, 0); // Total length processed
-  // Min data size processed = 768 bytes
-  __ cmpl(len, 768);
-  __ jcc(Assembler::less, ENC_DEC_DONE);
+  const int stack_offset = 64;
+  const int ghashin_offset = 64;
+  const int aesout_offset = 64;
+  const int hashkey_offset = 0;
+  const int hashkey_gap = 16 * 32;
+  const int HashKey_32 = 0;
+  const int HashKey_16 = 16 * 16;
 
-  // Generate 48 constants for htbl
-  __ call(GENERATE_HTBL_48_BLKS, relocInfo::none);
-  int index = 0; // Index for choosing subkeyHtbl entry
-  __ movl(ghash_pos, 0); // Pointer for ghash read and store operations
+  __ movl(pos, 0);
+  __ cmpl(len, 256);
+  __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
 
-  // Move initial counter value and STATE value into variables
+  /* Structure of the Htbl is as follows:
+  *   Where 0 - 31 we have 32 Hashkey's and 32-63 we have 32 HashKeyK (derived from HashKey)
+  *   Rest 8 entries are for storing CTR values post AES rounds
+  * ----------------------------------------------------------------------------------------
+      Hashkey32 -> 16 * 0
+      Hashkey31 -> 16 * 1
+      Hashkey30 -> 16 * 2
+      ........
+      Hashkey1 -> 16 * 31
+      ---------------------
+      HaskeyK32 -> 16 * 32
+      HashkeyK31 -> 16 * 33
+      .........
+      HashkeyK1 -> 16 * 63
+      ---------------------
+      1st set of AES Entries
+      B00_03 -> 16 * 64
+      B04_07 -> 16 * 68
+      B08_11 -> 16 * 72
+      B12_15 -> 16 * 80
+      ---------------------
+      2nd set of AES Entries
+      B00_03 -> 16 * 84
+      B04_07 -> 16 * 88
+      B08_11 -> 16 * 92
+      B12_15 -> 16 * 96
+      ---------------------*/
+  generateHtbl_32_blocks_avx512(subkeyHtbl, avx512_subkeyHtbl);
+
+  //Move initial counter value and STATE value into variables
   __ movdqu(CTR_BLOCKx, Address(counter, 0));
   __ movdqu(AAD_HASHx, Address(state, 0));
-  // Load lswap mask for ghash
+
+  //Load lswap mask for ghash
   __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
-  // Shuffle input state using lswap mask
+  //Shuffle input state using lswap mask
   __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
 
   // Compute #rounds for AES based on the length of the key array
   __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-  // Broadcast counter value to 512 bit register
+  __ evmovdquq(ADDBE_4x4, ExternalAddress(counter_mask_addbe_4444_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADDBE_1234, ExternalAddress(counter_mask_addbe_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(SHUF_MASK, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+  __ evmovdquq(ADD_1234, ExternalAddress(counter_mask_add_1234_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
+
+  //Shuffle counter, subtract 1 from the pre-incremented counter value and broadcast counter value to 512 bit register
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
+  __ vpsubd(CTR_BLOCKx, CTR_BLOCKx, ADD_1234, Assembler::AVX_128bit);
   __ evshufi64x2(CTR_BLOCKx, CTR_BLOCKx, CTR_BLOCKx, 0, Assembler::AVX_512bit);
-  // Load counter shuffle mask
-  __ evmovdquq(xmm24, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  // Shuffle counter
-  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, xmm24, Assembler::AVX_512bit);
 
-  // Load mask for incrementing counter
-  __ evmovdquq(COUNTER_INC_MASK, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  // Pre-increment counter
-  __ vpaddd(ZTMP5, CTR_BLOCKx, ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  __ vpaddd(ZTMP6, ZTMP5, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP7, ZTMP6, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP8, ZTMP7, COUNTER_INC_MASK, Assembler::AVX_512bit);
+  __ movdl(CTR_CHECK, CTR_BLOCKx);
+  __ andl(CTR_CHECK, 255);
 
-  // Begin 32 blocks of AES processing
-  __ bind(AES_32_BLOCKS);
-  // Save incremented counter before overwriting it with AES data
-  __ evmovdquq(CTR_BLOCKx, ZTMP8, Assembler::AVX_512bit);
+  // Reshuffle counter
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
 
-  // Move 256 bytes of data
-  loadData(in, pos, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  // Load key shuffle mask
-  __ movdqu(xmm29, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
-  // Load 0th AES round key
-  ev_load_key(ZTMP4, key, 0, xmm29);
-  // AES-ROUND0, xmm24 has the shuffle mask
-  shuffleExorRnd1Key(ZTMP5, ZTMP6, ZTMP7, ZTMP8, xmm24, ZTMP4);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx,  ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK, stack_offset);
+  __ addl(pos, 16 * 16);
+  __ cmpl(len, 32 * 16);
+  __ jcc(Assembler::below, MESG_BELOW_32_BLKS);
 
-  for (int j = 1; j < 10; j++) {
-      ev_load_key(ZTMP4, key, j * 16, xmm29);
-      roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  }
-  ev_load_key(ZTMP4, key, 10 * 16, xmm29);
-  // AES rounds up to 11 (AES192) or 13 (AES256)
-  __ cmpl(rounds, 52);
-  __ jcc(Assembler::greaterEqual, AES_192);
-  lastroundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  __ jmp(STORE_CT);
+  initial_blocks_16_avx512(in, out, ct, pos, key, avx512_subkeyHtbl, CTR_CHECK, rounds, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK, stack_offset + 16);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
 
-  __ bind(AES_192);
-  roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  ev_load_key(ZTMP4, key, 11 * 16, xmm29);
-  roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  __ cmpl(rounds, 60);
-  __ jcc(Assembler::aboveEqual, AES_256);
-  ev_load_key(ZTMP4, key, 12 * 16, xmm29);
-  lastroundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  __ jmp(STORE_CT);
+  __ cmpl(len, 32 * 16);
+  __ jcc(Assembler::below, NO_BIG_BLKS);
 
-  __ bind(AES_256);
-  ev_load_key(ZTMP4, key, 12 * 16, xmm29);
-  roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  ev_load_key(ZTMP4, key, 13 * 16, xmm29);
-  roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  ev_load_key(ZTMP4, key, 14 * 16, xmm29);
-  // Last AES round
-  lastroundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
+  __ bind(ENCRYPT_BIG_BLKS_NO_HXOR);
+  __ cmpl(len, 2 * 32 * 16);
+  __ jcc(Assembler::below, ENCRYPT_BIG_NBLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK,
+                                    true, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
+  __ addl(pos, 16 * 16);
 
-  __ bind(STORE_CT);
-  // Xor the encrypted key with PT to obtain CT
-  xorBeforeStore(ZTMP5, ZTMP6, ZTMP7, ZTMP8, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
-  storeData(out, pos, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
-  // 16 blocks encryption completed
-  __ addl(pos, 256);
-  __ cmpl(pos, 512);
-  __ jcc(Assembler::aboveEqual, GHASH_AES_PARALLEL);
-  __ vpaddd(ZTMP5, CTR_BLOCKx, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP6, ZTMP5, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP7, ZTMP6, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ vpaddd(ZTMP8, ZTMP7, COUNTER_INC_MASK, Assembler::AVX_512bit);
-  __ jmp(AES_32_BLOCKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK,
+                                    true, false, true, false, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
+  __ evmovdquq(AAD_HASHx, ZTMP4, Assembler::AVX_512bit);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
+  __ jmp(ENCRYPT_BIG_BLKS_NO_HXOR);
 
-  __ bind(GHASH_AES_PARALLEL);
-  // Ghash16_encrypt16_parallel takes place in the order with three reduction values:
-  // 1) First time -> cipher xor input ghash
-  // 2) No reduction -> accumulate multiplication values
-  // 3) Final reduction post 48 blocks -> new ghash value is computed for the next round
-  // Reduction value = first time
-  ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
-  __ addl(pos, 256);
-  __ addl(ghash_pos, 256);
-  index += 4;
+  __ bind(ENCRYPT_BIG_NBLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK,
+                                    false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
+  __ addl(pos, 16 * 16);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK,
+                                    false, false, true, true, true, ghashin_offset + 16, aesout_offset + 16, HashKey_16);
 
-  // At this point we have processed 768 bytes of AES and 256 bytes of GHASH.
-  // If the remaining length is less than 768, process remaining 512 bytes of ghash in GHASH_LAST_32 code
-  __ subl(len, 768);
-  __ cmpl(len, 768);
-  __ jcc(Assembler::less, GHASH_LAST_32);
+  __ movdqu(AAD_HASHx, ZTMP4);
+  __ addl(pos, 16 * 16);
+  __ subl(len, 32 * 16);
 
-  // AES 16 blocks and GHASH 16 blocks in parallel
-  // For multiples of 48 blocks we will do ghash16_encrypt16 interleaved multiple times
-  // Reduction value = no reduction means that the carryless multiplication values are accumulated for further calculations
-  // Each call uses 4 subkeyHtbl values, so increment the index by 4.
-  __ bind(GHASH_16_AES_16);
-  // Reduction value = no reduction
-  ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
-  __ addl(pos, 256);
-  __ addl(ghash_pos, 256);
-  index += 4;
-  // Reduction value = final reduction means that the accumulated values have to be reduced as we have completed 48 blocks of ghash
-  ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, true, index, COUNTER_INC_MASK);
-  __ addl(pos, 256);
-  __ addl(ghash_pos, 256);
-  // Calculated ghash value needs to be __ moved to AAD_HASHX so that we can restart the ghash16-aes16 pipeline
-  __ movdqu(AAD_HASHx, ZTMP5);
-  index = 0; // Reset subkeyHtbl index
+  __ bind(NO_BIG_BLKS);
+  __ cmpl(len, 16 * 16);
+  __ jcc(Assembler::aboveEqual, ENCRYPT_16_BLKS);
 
-  // Restart the pipeline
-  // Reduction value = first time
-  ghash16_encrypt16_parallel(key, avx512_subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
-  __ addl(pos, 256);
-  __ addl(ghash_pos, 256);
-  index += 4;
+  __ bind(ENCRYPT_N_GHASH_32_N_BLKS);
+  ghash16_avx512(true, false, false, false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, SHUF_MASK, stack_offset, 0, 0, HashKey_32);
+  gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset + 16, HashKey_16, false, true);
+  __ jmp(GHASH_DONE);
 
-  __ subl(len, 768);
-  __ cmpl(len, 768);
-  __ jcc(Assembler::greaterEqual, GHASH_16_AES_16);
+  __ bind(ENCRYPT_16_BLKS);
+  ghash16_encrypt_parallel16_avx512(in, out, ct, pos, avx512_subkeyHtbl, CTR_CHECK, rounds, key, CTR_BLOCKx, AAD_HASHx, ADDBE_4x4, ADDBE_1234, ADD_1234, SHUF_MASK,
+                                    false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
 
-  // GHASH last 32 blocks processed here
-  // GHASH products accumulated in ZMM27, ZMM25 and ZMM26 during GHASH16-AES16 operation is used
-  __ bind(GHASH_LAST_32);
-  // Use rbx as a pointer to the htbl; For last 32 blocks of GHASH, use key# 4-11 entry in subkeyHtbl
-  __ movl(rbx, 256);
-  // Load cipher blocks
-  __ evmovdquq(ZTMP13, Address(ct, ghash_pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP14, Address(ct, ghash_pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP13, ZTMP13, xmm24, Assembler::AVX_512bit);
-  __ vpshufb(ZTMP14, ZTMP14, xmm24, Assembler::AVX_512bit);
-  // Load ghash keys
-  __ evmovdquq(ZTMP15, Address(avx512_subkeyHtbl, rbx, Address::times_1, 0 * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP16, Address(avx512_subkeyHtbl, rbx, Address::times_1, 1 * 64), Assembler::AVX_512bit);
+  ghash16_avx512(false, true, false, false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, SHUF_MASK, stack_offset, 16 * 16, 0, HashKey_16);
 
-  // Ghash blocks 0 - 3
-  carrylessMultiply(ZTMP2, ZTMP3, ZTMP4, ZTMP1, ZTMP13, ZTMP15);
-  // Ghash blocks 4 - 7
-  carrylessMultiply(ZTMP6, ZTMP7, ZTMP8, ZTMP5, ZTMP14, ZTMP16);
+  __ bind(MESG_BELOW_32_BLKS);
+  __ subl(len, 16 * 16);
+  __ addl(pos, 16 * 16);
+  gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
-  __ vpternlogq(ZTMP1, 0x96, ZTMP5, xmm27, Assembler::AVX_512bit); // ZTMP1 = ZTMP1 + ZTMP5 + zmm27
-  __ vpternlogq(ZTMP2, 0x96, ZTMP6, xmm26, Assembler::AVX_512bit); // ZTMP2 = ZTMP2 + ZTMP6 + zmm26
-  __ vpternlogq(ZTMP3, 0x96, ZTMP7, xmm25, Assembler::AVX_512bit); // ZTMP3 = ZTMP3 + ZTMP7 + zmm25
-  __ evpxorq(ZTMP4, ZTMP4, ZTMP8, Assembler::AVX_512bit);          // ZTMP4 = ZTMP4 + ZTMP8
-
-  __ addl(ghash_pos, 128);
-  __ addl(rbx, 128);
-
-  // Ghash remaining blocks
-  __ bind(LOOP);
-  __ cmpl(ghash_pos, pos);
-  __ jcc(Assembler::aboveEqual, ACCUMULATE);
-  // Load next cipher blocks and corresponding ghash keys
-  __ evmovdquq(ZTMP13, Address(ct, ghash_pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP14, Address(ct, ghash_pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
-  __ vpshufb(ZTMP13, ZTMP13, xmm24, Assembler::AVX_512bit);
-  __ vpshufb(ZTMP14, ZTMP14, xmm24, Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP15, Address(avx512_subkeyHtbl, rbx, Address::times_1, 0 * 64), Assembler::AVX_512bit);
-  __ evmovdquq(ZTMP16, Address(avx512_subkeyHtbl, rbx, Address::times_1, 1 * 64), Assembler::AVX_512bit);
-
-  // ghash blocks 0 - 3
-  carrylessMultiply(ZTMP6, ZTMP7, ZTMP8, ZTMP5, ZTMP13, ZTMP15);
-
-  // ghash blocks 4 - 7
-  carrylessMultiply(ZTMP10, ZTMP11, ZTMP12, ZTMP9, ZTMP14, ZTMP16);
-
-  // update sums
-  // ZTMP1 = ZTMP1 + ZTMP5 + ZTMP9
-  // ZTMP2 = ZTMP2 + ZTMP6 + ZTMP10
-  // ZTMP3 = ZTMP3 + ZTMP7 xor ZTMP11
-  // ZTMP4 = ZTMP4 + ZTMP8 xor ZTMP12
-  xorGHASH(ZTMP1, ZTMP2, ZTMP3, ZTMP4, ZTMP5, ZTMP9, ZTMP6, ZTMP10, ZTMP7, ZTMP11, ZTMP8, ZTMP12);
-  __ addl(ghash_pos, 128);
-  __ addl(rbx, 128);
-  __ jmp(LOOP);
-
-  // Integrate ZTMP3/ZTMP4 into ZTMP1 and ZTMP2
-  __ bind(ACCUMULATE);
-  __ evpxorq(ZTMP3, ZTMP3, ZTMP4, Assembler::AVX_512bit);
-  __ vpsrldq(ZTMP7, ZTMP3, 8, Assembler::AVX_512bit);
-  __ vpslldq(ZTMP8, ZTMP3, 8, Assembler::AVX_512bit);
-  __ evpxorq(ZTMP1, ZTMP1, ZTMP7, Assembler::AVX_512bit);
-  __ evpxorq(ZTMP2, ZTMP2, ZTMP8, Assembler::AVX_512bit);
-
-  // Add ZTMP1 and ZTMP2 128 - bit words horizontally
-  vhpxori4x128(ZTMP1, ZTMP11);
-  vhpxori4x128(ZTMP2, ZTMP12);
-  // Load reduction polynomial and compute final reduction
-  __ evmovdquq(ZTMP15, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_512bit, rbx /*rscratch*/);
-  vclmul_reduce(AAD_HASHx, ZTMP15, ZTMP1, ZTMP2, ZTMP3, ZTMP4);
-
-  // Pre-increment counter for next operation
-  __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, xmm18, Assembler::AVX_128bit);
-  // Shuffle counter and save the updated value
-  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, xmm24, Assembler::AVX_512bit);
+  __ bind(GHASH_DONE);
+  //Pre-increment counter for next operation, make sure that counter value is incremented on the LSB
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
+  __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ADD_1234, Assembler::AVX_128bit);
+  __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_128bit);
   __ movdqu(Address(counter, 0), CTR_BLOCKx);
-  // Load ghash lswap mask
+  //Load ghash lswap mask
   __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
-  // Shuffle ghash using lbswap_mask and store it
+  //Shuffle ghash using lbswap_mask and store it
   __ vpshufb(AAD_HASHx, AAD_HASHx, xmm24, Assembler::AVX_128bit);
   __ movdqu(Address(state, 0), AAD_HASHx);
-  __ jmp(ENC_DEC_DONE);
 
-  __ bind(GENERATE_HTBL_48_BLKS);
-  generateHtbl_48_block_zmm(subkeyHtbl, avx512_subkeyHtbl, rbx /*rscratch*/);
+  //Zero out sensitive data
+  __ evpxorq(ZTMP21, ZTMP21, ZTMP21, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP0, ZTMP0, ZTMP0, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP1, ZTMP1, ZTMP1, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP2, ZTMP2, ZTMP2, Assembler::AVX_512bit);
+  __ evpxorq(ZTMP3, ZTMP3, ZTMP3, Assembler::AVX_512bit);
 
   __ bind(ENC_DEC_DONE);
-  __ movq(rax, pos);
 }
+
+//Implements data * hashkey mod (128, 127, 126, 121, 0)
+//Inputs:
+//GH and HK - 128 bits each
+//Output:
+//GH = GH * Hashkey mod poly
+//Temp registers: xmm1, xmm2, xmm3, r15
+void StubGenerator::gfmul_avx2(XMMRegister GH, XMMRegister HK) {
+  const XMMRegister T1 = xmm1;
+  const XMMRegister T2 = xmm2;
+  const XMMRegister T3 = xmm3;
+
+  __ vpclmulqdq(T1, GH, HK, 0x11); // %%T1 = a1*b1
+  __ vpclmulqdq(T2, GH, HK, 0x00); // %%T2 = a0*b0
+  __ vpclmulqdq(T3, GH, HK, 0x01); // %%T3 = a1*b0
+  __ vpclmulqdq(GH, GH, HK, 0x10); // %%GH = a0*b1
+  __ vpxor(GH, GH, T3, Assembler::AVX_128bit);
+
+  __ vpsrldq(T3, GH, 8, Assembler::AVX_128bit); // shift-R %%GH 2 DWs
+  __ vpslldq(GH, GH, 8, Assembler::AVX_128bit); // shift-L %%GH 2 DWs
+
+  __ vpxor(T1, T1, T3, Assembler::AVX_128bit);
+  __ vpxor(GH, GH, T2, Assembler::AVX_128bit);
+
+  //first phase of the reduction
+  __ movdqu(T3, ExternalAddress(ghash_polynomial_reduction_addr()), r15 /*rscratch*/);
+  __ vpclmulqdq(T2, T3, GH, 0x01);
+  __ vpslldq(T2, T2, 8, Assembler::AVX_128bit); // shift-L %%T2 2 DWs
+
+  __ vpxor(GH, GH, T2, Assembler::AVX_128bit); // first phase of the reduction complete
+  //second phase of the reduction
+  __ vpclmulqdq(T2, T3, GH, 0x00);
+  __ vpsrldq(T2, T2, 4, Assembler::AVX_128bit); // shift-R %%T2 1 DW (Shift-R only 1-DW to obtain 2-DWs shift-R)
+
+  __ vpclmulqdq(GH, T3, GH, 0x10);
+  __ vpslldq(GH, GH, 4, Assembler::AVX_128bit); // shift-L %%GH 1 DW (Shift-L 1-DW to obtain result with no shifts)
+
+  __ vpxor(GH, GH, T2, Assembler::AVX_128bit); // second phase of the reduction complete
+  __ vpxor(GH, GH, T1, Assembler::AVX_128bit); // the result is in %%GH
+}
+
+//Generate 8 constants from the given subkeyH.
+//Input:
+//htbl - table containing the initial subkeyH
+//Output:
+//htbl - containing 8 H constants
+//Temp registers: xmm0, xmm1, xmm2, xmm3, xmm6, xmm11, xmm12, r15, rbx
+void StubGenerator::generateHtbl_8_block_avx2(Register htbl) {
+  const XMMRegister HK = xmm6;
+
+  __ movdqu(HK, Address(htbl, 0));
+  __ movdqu(xmm1, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
+  __ vpshufb(HK, HK, xmm1, Assembler::AVX_128bit);
+
+  __ movdqu(xmm11, ExternalAddress(ghash_polynomial_addr()), rbx /*rscratch*/);
+  __ movdqu(xmm12, ExternalAddress(ghash_polynomial_two_one_addr()), rbx /*rscratch*/);
+  // Compute H ^ 2 from the input subkeyH
+  __ vpsrlq(xmm1, xmm6, 63, Assembler::AVX_128bit);
+  __ vpsllq(xmm6, xmm6, 1, Assembler::AVX_128bit);
+  __ vpslldq(xmm2, xmm1, 8, Assembler::AVX_128bit);
+  __ vpsrldq(xmm1, xmm1, 8, Assembler::AVX_128bit);
+
+  __ vpor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+
+  __ vpshufd(xmm2, xmm1, 0x24, Assembler::AVX_128bit);
+  __ vpcmpeqd(xmm2, xmm2, xmm12, Assembler::AVX_128bit);
+  __ vpand(xmm2, xmm2, xmm11, Assembler::AVX_128bit);
+  __ vpxor(xmm6, xmm6, xmm2, Assembler::AVX_128bit);
+  __ movdqu(Address(htbl, 1 * 16), xmm6); // H * 2
+  __ movdqu(xmm0, xmm6);
+  for (int i = 2; i < 9; i++) {
+    gfmul_avx2(xmm6, xmm0);
+    __ movdqu(Address(htbl, i * 16), xmm6);
+  }
+}
+
+#define aesenc_step_avx2(t_key)\
+__ aesenc(xmm1, t_key);\
+__ aesenc(xmm2, t_key);\
+__ aesenc(xmm3, t_key);\
+__ aesenc(xmm4, t_key);\
+__ aesenc(xmm5, t_key);\
+__ aesenc(xmm6, t_key);\
+__ aesenc(xmm7, t_key);\
+__ aesenc(xmm8, t_key);\
+
+#define ghash_step_avx2(ghdata, hkey) \
+__ vpclmulqdq(xmm11, ghdata, hkey, 0x11);\
+__ vpxor(xmm12, xmm12, xmm11, Assembler::AVX_128bit);\
+__ vpclmulqdq(xmm11, ghdata, hkey, 0x00);\
+__ vpxor(xmm15, xmm15, xmm11, Assembler::AVX_128bit);\
+__ vpclmulqdq(xmm11, ghdata, hkey, 0x01);\
+__ vpxor(xmm14, xmm14, xmm11, Assembler::AVX_128bit);\
+__ vpclmulqdq(xmm11, ghdata, hkey, 0x10);\
+__ vpxor(xmm14, xmm14, xmm11, Assembler::AVX_128bit);\
+
+//Encrypts and hashes 8 blocks in an interleaved fashion.
+//Inputs:
+//key - key for aes operations
+//subkeyHtbl - table containing H constants
+//ctr_blockx - counter for aes operations
+//in - input buffer
+//out - output buffer
+//ct - ciphertext buffer
+//pos - holds the length processed in this method
+//in_order - boolean that indicates if incrementing counter without shuffling is needed
+//rounds - number of aes rounds calculated based on key length
+//xmm1-xmm8 - holds encrypted counter values
+//Outputs:
+//xmm1-xmm8 - updated encrypted counter values
+//ctr_blockx - updated counter value
+//out - updated output buffer
+//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15, rbx
+void StubGenerator::ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
+                                                  Register out, Register ct, Register pos, bool in_order, Register rounds,
+                                                  XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                                                  XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8) {
+  const XMMRegister t1 = xmm0;
+  const XMMRegister t2 = xmm10;
+  const XMMRegister t3 = xmm11;
+  const XMMRegister t4 = xmm12;
+  const XMMRegister t5 = xmm13;
+  const XMMRegister t6 = xmm14;
+  const XMMRegister t7 = xmm15;
+  Label skip_reload, last_aes_rnd, aes_192, aes_256;
+
+  __ movdqu(t2, xmm1);
+  for (int i = 0; i <= 6; i++) {
+    __ movdqu(Address(rsp, 16 * i), as_XMMRegister(i + 2));
+  }
+
+  if (in_order) {
+    __ vpaddd(xmm1, ctr_blockx, ExternalAddress(counter_mask_linc1_addr()), Assembler::AVX_128bit, rbx /*rscratch*/); //Increment counter by 1
+    __ movdqu(t5, ExternalAddress(counter_mask_linc2_addr()), rbx /*rscratch*/);
+    __ vpaddd(xmm2, ctr_blockx, t5, Assembler::AVX_128bit);
+    for (int rnum = 1; rnum <= 6; rnum++) {
+      __ vpaddd(as_XMMRegister(rnum + 2), as_XMMRegister(rnum), t5, Assembler::AVX_128bit);
+    }
+    __ movdqu(ctr_blockx, xmm8);
+
+    __ movdqu(t5, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
+    for (int rnum = 1; rnum <= 8; rnum++) {
+      __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t5, Assembler::AVX_128bit); //perform a 16Byte swap
+    }
+  } else {
+    __ vpaddd(xmm1, ctr_blockx, ExternalAddress(counter_mask_linc1f_addr()), Assembler::AVX_128bit, rbx /*rscratch*/); //Increment counter by 1
+    __ vmovdqu(t5, ExternalAddress(counter_mask_linc2f_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+    __ vpaddd(xmm2, ctr_blockx, t5, Assembler::AVX_128bit);
+    for (int rnum = 1; rnum <= 6; rnum++) {
+      __ vpaddd(as_XMMRegister(rnum + 2), as_XMMRegister(rnum), t5, Assembler::AVX_128bit);
+    }
+    __ movdqu(ctr_blockx, xmm8);
+  }
+
+  load_key(t1, key, 16 * 0, rbx /*rscratch*/);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ vpxor(as_XMMRegister(rnum), as_XMMRegister(rnum), t1, Assembler::AVX_128bit);
+  }
+
+  load_key(t1, key, 16 * 1, rbx /*rscratch*/);
+  aesenc_step_avx2(t1);
+
+  load_key(t1, key, 16 * 2, rbx /*rscratch*/);
+  aesenc_step_avx2(t1);
+
+  __ movdqu(t5, (Address(subkeyHtbl, 8 * 16)));
+  __ vpclmulqdq(t4, t2, t5, 0x11); //t4 = a1*b1
+  __ vpclmulqdq(t7, t2, t5, 0x00); //t7 = a0*b0
+  __ vpclmulqdq(t6, t2, t5, 0x01); //t6 = a1*b0
+  __ vpclmulqdq(t5, t2, t5, 0x10); //t5 = a0*b1
+  __ vpxor(t6, t6, t5, Assembler::AVX_128bit);
+
+  for (int i = 3, j = 0; i <= 8; i++, j++) {
+    load_key(t1, key, 16 * i, rbx /*rscratch*/);
+    aesenc_step_avx2(t1);
+    __ movdqu(t1, Address(rsp, 16 * j));
+    __ movdqu(t5, (Address(subkeyHtbl, (7 - j) * 16)));
+    ghash_step_avx2(t1, t5);
+  }
+
+  load_key(t1, key, 16 * 9, rbx /*rscratch*/);
+  aesenc_step_avx2(t1);
+
+  __ movdqu(t1, Address(rsp, 16 * 6));
+  __ movdqu(t5, (Address(subkeyHtbl, 1 * 16)));
+
+  __ vpclmulqdq(t3, t1, t5, 0x00);
+  __ vpxor(t7, t7, t3, Assembler::AVX_128bit);
+
+  __ vpclmulqdq(t3, t1, t5, 0x01);
+  __ vpxor(t6, t6, t3, Assembler::AVX_128bit);
+
+  __ vpclmulqdq(t3, t1, t5, 0x10);
+  __ vpxor(t6, t6, t3, Assembler::AVX_128bit);
+
+  __ vpclmulqdq(t3, t1, t5, 0x11);
+  __ vpxor(t1, t4, t3, Assembler::AVX_128bit);
+
+  __ vpslldq(t3, t6, 8, Assembler::AVX_128bit); //shift-L t3 2 DWs
+  __ vpsrldq(t6, t6, 8, Assembler::AVX_128bit); //shift-R t2 2 DWs
+  __ vpxor(t7, t7, t3, Assembler::AVX_128bit);
+  __ vpxor(t1, t1, t6, Assembler::AVX_128bit); // accumulate the results in t1:t7
+
+  load_key(t5, key, 16 * 10, rbx /*rscratch*/);
+  __ cmpl(rounds, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+
+  __ bind(aes_192);
+  aesenc_step_avx2(t5);
+  load_key(t5, key, 16 * 11, rbx /*rscratch*/);
+  aesenc_step_avx2(t5);
+  load_key(t5, key, 16 * 12, rbx /*rscratch*/);
+  __ cmpl(rounds, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+
+  __ bind(aes_256);
+  aesenc_step_avx2(t5);
+  load_key(t5, key, 16 * 13, rbx /*rscratch*/);
+  aesenc_step_avx2(t5);
+  load_key(t5, key, 16 * 14, rbx /*rscratch*/);
+  __ bind(last_aes_rnd);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ aesenclast(as_XMMRegister(rnum), t5);
+  }
+
+  for (int i = 0; i <= 7; i++) {
+    __ movdqu(t2, Address(in, pos, Address::times_1, 16 * i));
+    __ vpxor(as_XMMRegister(i + 1), as_XMMRegister(i + 1), t2, Assembler::AVX_128bit);
+  }
+
+  //first phase of the reduction
+  __ vmovdqu(t3, ExternalAddress(ghash_polynomial_reduction_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+
+  __ vpclmulqdq(t2, t3, t7, 0x01);
+  __ vpslldq(t2, t2, 8, Assembler::AVX_128bit); //shift-L xmm2 2 DWs
+
+  __ vpxor(t7, t7, t2, Assembler::AVX_128bit); //first phase of the reduction complete
+
+  //Write to the Ciphertext buffer
+  for (int i = 0; i <= 7; i++) {
+    __ movdqu(Address(out, pos, Address::times_1, 16 * i), as_XMMRegister(i + 1));
+  }
+
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::equal, skip_reload);
+  for (int i = 0; i <= 7; i++) {
+    __ movdqu(as_XMMRegister(i + 1), Address(in, pos, Address::times_1, 16 * i));
+  }
+
+  __ bind(skip_reload);
+  //second phase of the reduction
+  __ vpclmulqdq(t2, t3, t7, 0x00);
+  __ vpsrldq(t2, t2, 4, Assembler::AVX_128bit); //shift-R t2 1 DW (Shift-R only 1-DW to obtain 2-DWs shift-R)
+
+  __ vpclmulqdq(t4, t3, t7, 0x10);
+  __ vpslldq(t4, t4, 4, Assembler::AVX_128bit); //shift-L t4 1 DW (Shift-L 1-DW to obtain result with no shifts)
+  __ vpxor(t4, t4, t2, Assembler::AVX_128bit); //second phase of the reduction complete
+  __ vpxor(t1, t1, t4, Assembler::AVX_128bit); //the result is in t1
+
+  //perform a 16Byte swap
+  __ movdqu(t7, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t7, Assembler::AVX_128bit);
+  }
+  __ vpxor(xmm1, xmm1, t1, Assembler::AVX_128bit);
+}
+
+//GHASH the last 8 ciphertext blocks.
+//Input:
+//subkeyHtbl - table containing H constants
+//Output:
+//xmm14 - calculated aad hash
+//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm15, rbx
+void StubGenerator::ghash_last_8_avx2(Register subkeyHtbl) {
+  const XMMRegister t1 = xmm0;
+  const XMMRegister t2 = xmm10;
+  const XMMRegister t3 = xmm11;
+  const XMMRegister t4 = xmm12;
+  const XMMRegister t5 = xmm13;
+  const XMMRegister t6 = xmm14;
+  const XMMRegister t7 = xmm15;
+
+  //Karatsuba Method
+  __ movdqu(t5, Address(subkeyHtbl, 8 * 16));
+
+  __ vpshufd(t2, xmm1, 78, Assembler::AVX_128bit);
+  __ vpshufd(t3, t5, 78, Assembler::AVX_128bit);
+  __ vpxor(t2, t2, xmm1, Assembler::AVX_128bit);
+  __ vpxor(t3, t3, t5, Assembler::AVX_128bit);
+
+  __ vpclmulqdq(t6, xmm1, t5, 0x11);
+  __ vpclmulqdq(t7, xmm1, t5, 0x00);
+
+  __ vpclmulqdq(xmm1, t2, t3, 0x00);
+
+  for (int i = 7, rnum = 2; rnum <= 8; i--, rnum++) {
+    __ movdqu(t5, Address(subkeyHtbl, i * 16));
+    __ vpshufd(t2, as_XMMRegister(rnum), 78, Assembler::AVX_128bit);
+    __ vpshufd(t3, t5, 78, Assembler::AVX_128bit);
+    __ vpxor(t2, t2, as_XMMRegister(rnum), Assembler::AVX_128bit);
+    __ vpxor(t3, t3, t5, Assembler::AVX_128bit);
+    __ vpclmulqdq(t4, as_XMMRegister(rnum), t5, 0x11);
+    __ vpxor(t6, t6, t4, Assembler::AVX_128bit);
+    __ vpclmulqdq(t4, as_XMMRegister(rnum), t5, 0x00);
+    __ vpxor(t7, t7, t4, Assembler::AVX_128bit);
+    __ vpclmulqdq(t2, t2, t3, 0x00);
+    __ vpxor(xmm1, xmm1, t2, Assembler::AVX_128bit);
+  }
+
+  __ vpxor(xmm1, xmm1, t6, Assembler::AVX_128bit);
+  __ vpxor(t2, xmm1, t7, Assembler::AVX_128bit);
+
+  __ vpslldq(t4, t2, 8, Assembler::AVX_128bit);
+  __ vpsrldq(t2, t2, 8, Assembler::AVX_128bit);
+
+  __ vpxor(t7, t7, t4, Assembler::AVX_128bit);
+  __ vpxor(t6, t6, t2, Assembler::AVX_128bit); //<t6:t7> holds the result of the accumulated carry-less multiplications
+
+  //first phase of the reduction
+  __ movdqu(t3, ExternalAddress(ghash_polynomial_reduction_addr()), rbx /*rscratch*/);
+
+  __ vpclmulqdq(t2, t3, t7, 0x01);
+  __ vpslldq(t2, t2, 8, Assembler::AVX_128bit); // shift-L t2 2 DWs
+
+  __ vpxor(t7, t7, t2, Assembler::AVX_128bit);//first phase of the reduction complete
+
+  //second phase of the reduction
+  __ vpclmulqdq(t2, t3, t7, 0x00);
+  __ vpsrldq(t2, t2, 4, Assembler::AVX_128bit); //shift-R t2 1 DW (Shift-R only 1-DW to obtain 2-DWs shift-R)
+
+  __ vpclmulqdq(t4, t3, t7, 0x10);
+  __ vpslldq(t4, t4, 4, Assembler::AVX_128bit); //shift-L t4 1 DW (Shift-L 1-DW to obtain result with no shifts)
+  __ vpxor(t4, t4, t2, Assembler::AVX_128bit); //second phase of the reduction complete
+  __ vpxor(t6, t6, t4, Assembler::AVX_128bit); //the result is in t6
+}
+
+//Encrypt initial number of 8 blocks
+//Inputs:
+//ctr - counter for aes operations
+//rounds - number of aes rounds calculated based on key length
+//key - key for aes operations
+//len - input length to be processed
+//in - input buffer
+//out - output buffer
+//ct - ciphertext buffer
+//aad_hashx - input aad hash
+//pos - holds the length processed in this method
+//Outputs:
+//xmm1-xmm8 - holds updated encrypted counter values
+//ctr - updated counter value
+//pos - updated position
+//len - updated length
+//out - updated output buffer
+//Temp registers: xmm0, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
+void StubGenerator::initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len, Register in,
+                                        Register out, Register ct, XMMRegister aad_hashx, Register pos) {
+  const XMMRegister t1 = xmm12;
+  const XMMRegister t2 = xmm13;
+  const XMMRegister t3 = xmm14;
+  const XMMRegister t4 = xmm15;
+  const XMMRegister t5 = xmm11;
+  const XMMRegister t6 = xmm10;
+  const XMMRegister t_key = xmm0;
+
+  Label skip_reload, last_aes_rnd, aes_192, aes_256;
+  //Move AAD_HASH to temp reg t3
+  __ movdqu(t3, aad_hashx);
+  //Prepare 8 counter blocks and perform rounds of AES cipher on
+  //them, load plain/cipher text and store cipher/plain text.
+  __ movdqu(xmm1, ctr);
+  __ movdqu(t5, ExternalAddress(counter_mask_linc1_addr()), rbx /*rscratch*/);
+  __ movdqu(t6, ExternalAddress(counter_mask_linc2_addr()), rbx /*rscratch*/ );
+  __ vpaddd(xmm2, xmm1, t5, Assembler::AVX_128bit);
+  for (int rnum = 1; rnum <= 6; rnum++) {
+    __ vpaddd(as_XMMRegister(rnum + 2), as_XMMRegister(rnum), t6, Assembler::AVX_128bit);
+  }
+  __ movdqu(ctr, xmm8);
+
+  __ movdqu(t5, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t5, Assembler::AVX_128bit); //perform a 16Byte swap
+  }
+
+  load_key(t_key, key, 16 * 0, rbx /*rscratch*/);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ vpxor(as_XMMRegister(rnum), as_XMMRegister(rnum), t_key, Assembler::AVX_128bit);
+  }
+
+  for (int i = 1; i <= 9; i++) {
+    load_key(t_key, key, 16 * i, rbx /*rscratch*/);
+    aesenc_step_avx2(t_key);
+  }
+
+  load_key(t_key, key, 16 * 10, rbx /*rscratch*/);
+  __ cmpl(rounds, 52);
+  __ jcc(Assembler::less, last_aes_rnd);
+
+  __ bind(aes_192);
+  aesenc_step_avx2(t_key);
+  load_key(t_key, key, 16 * 11, rbx /*rscratch*/);
+  aesenc_step_avx2(t_key);
+  load_key(t_key, key, 16 * 12, rbx /*rscratch*/);
+  __ cmpl(rounds, 60);
+  __ jcc(Assembler::less, last_aes_rnd);
+
+  __ bind(aes_256);
+  aesenc_step_avx2(t_key);
+  load_key(t_key, key, 16 * 13, rbx /*rscratch*/);
+  aesenc_step_avx2(t_key);
+  load_key(t_key, key, 16 * 14, rbx /*rscratch*/);
+
+  __ bind(last_aes_rnd);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ aesenclast(as_XMMRegister(rnum), t_key);
+  }
+
+  //XOR and store data
+  for (int i = 0; i <= 7; i++) {
+    __ movdqu(t1, Address(in, pos, Address::times_1, 16 * i));
+    __ vpxor(as_XMMRegister(i + 1), as_XMMRegister(i + 1), t1, Assembler::AVX_128bit);
+    __ movdqu(Address(out, pos, Address::times_1, 16 * i), as_XMMRegister(i + 1));
+  }
+
+  __ cmpptr(ct, out);
+  __ jcc(Assembler::equal, skip_reload);
+  for (int i = 0; i <= 7; i++) {
+    __ movdqu(as_XMMRegister(i + 1), Address(in, pos, Address::times_1, 16 * i));
+  }
+
+  __ bind(skip_reload);
+  //Update len with the number of blocks processed
+  __ subl(len, 128);
+  __ addl(pos, 128);
+
+  __ movdqu(t4, ExternalAddress(counter_shuffle_mask_addr()), rbx /*rscratch*/);
+  for (int rnum = 1; rnum <= 8; rnum++) {
+    __ vpshufb(as_XMMRegister(rnum), as_XMMRegister(rnum), t4, Assembler::AVX_128bit);
+  }
+  // Combine GHASHed value with the corresponding ciphertext
+  __ vpxor(xmm1, xmm1, t3, Assembler::AVX_128bit);
+}
+
+//AES-GCM interleaved implementation
+//Inputs:
+//in - input buffer
+//len- message length to be processed
+//ct - cipher text buffer
+//out - output buffer
+//key - key for aes operations
+//state - address of aad hash for ghash computation
+//subkeyHtbl- table consisting of H constants
+//counter - address of counter for aes operations
+//Output:
+//(counter) - updated in memory counter value
+//(state) - updated in memory aad hash
+//rax - length processed
+//(out) - output buffer updated
+//len - updated length
+//Temp registers: xmm0-xmm15, r10, r15, rbx
+void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
+                                Register state, Register subkeyHtbl, Register counter) {
+  const Register pos = rax;
+  const Register rounds = r10;
+  const XMMRegister ctr_blockx = xmm9;
+  const XMMRegister aad_hashx = xmm8;
+  Label encrypt_done, encrypt_by_8_new, encrypt_by_8;
+
+  //This routine should be called only for message sizes of 128 bytes or more.
+  //Macro flow:
+  //process 8 16 byte blocks in initial_num_blocks.
+  //process 8 16 byte blocks at a time until all are done 'encrypt_by_8_new  followed by ghash_last_8'
+  __ xorl(pos, pos);
+
+  //Generate 8 constants for htbl
+  generateHtbl_8_block_avx2(subkeyHtbl);
+
+  //Compute #rounds for AES based on the length of the key array
+  __ movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+  //Load and shuffle state and counter values
+  __ movdqu(ctr_blockx, Address(counter, 0));
+  __ movdqu(aad_hashx, Address(state, 0));
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ vpshufb(aad_hashx, aad_hashx, ExternalAddress(ghash_long_swap_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+
+  initial_blocks_avx2(ctr_blockx, rounds, key, len, in, out, ct, aad_hashx, pos);
+
+  //We need at least 128 bytes to proceed further.
+  __ cmpl(len, 128);
+  __ jcc(Assembler::less, encrypt_done);
+
+  //in_order vs. out_order is an optimization to increment the counter without shuffling
+  //it back into little endian. r15d keeps track of when we need to increment in order so
+  //that the carry is handled correctly.
+  __ movdl(r15, ctr_blockx);
+  __ andl(r15, 255);
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+
+  __ bind(encrypt_by_8_new);
+  __ cmpl(r15, 255 - 8);
+  __ jcc(Assembler::greater, encrypt_by_8);
+
+  __ addb(r15, 8);
+  ghash8_encrypt8_parallel_avx2(key, subkeyHtbl, ctr_blockx, in, out, ct, pos, false, rounds,
+                                xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8);
+  __ addl(pos, 128);
+  __ subl(len, 128);
+  __ cmpl(len, 128);
+  __ jcc(Assembler::greaterEqual, encrypt_by_8_new);
+
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ jmp(encrypt_done);
+
+  __ bind(encrypt_by_8);
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+
+  __ addb(r15, 8);
+  ghash8_encrypt8_parallel_avx2(key, subkeyHtbl, ctr_blockx, in, out, ct, pos, true, rounds,
+                                xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8);
+
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ addl(pos, 128);
+  __ subl(len, 128);
+  __ cmpl(len, 128);
+  __ jcc(Assembler::greaterEqual, encrypt_by_8_new);
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+
+  __ bind(encrypt_done);
+  ghash_last_8_avx2(subkeyHtbl);
+
+  __ vpaddd(ctr_blockx, ctr_blockx, ExternalAddress(counter_mask_linc1_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ vpshufb(ctr_blockx, ctr_blockx, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ movdqu(Address(counter, 0), ctr_blockx); //current_counter = xmm9
+  __ vpshufb(xmm14, xmm14, ExternalAddress(ghash_long_swap_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
+  __ movdqu(Address(state, 0), xmm14); //aad hash = xmm14
+  //Xor out round keys
+  __ vpxor(xmm0, xmm0, xmm0, Assembler::AVX_128bit);
+  __ vpxor(xmm13, xmm13, xmm13, Assembler::AVX_128bit);
+
+ }
 
 #undef __

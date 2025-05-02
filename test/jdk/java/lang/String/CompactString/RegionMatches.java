@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,13 @@ public class RegionMatches extends CompactString {
                 // Turkish I with dot
                 new Object[] { "\u0130", false, 0, "i", 0, 1, false },
                 new Object[] { "\u0130", true,  0, "i", 0, 1, true },
+                new Object[] { "\u0130", false, 0, "I", 0, 1, false },
+                new Object[] { "\u0130", true,  0, "I", 0, 1, true },
                 // i without dot
                 new Object[] { "\u0131", false, 0, "i", 0, 1, false },
                 new Object[] { "\u0131", true,  0, "i", 0, 1, true },
+                new Object[] { "\u0131", false, 0, "I", 0, 1, false },
+                new Object[] { "\u0131", true,  0, "I", 0, 1, true },
                 // Exhaustive list of 1-char latin1 strings that match
                 // case-insensitively:
                 // for (char c1 = 0; c1 < 255; c1++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -35,9 +34,10 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/stack.inline.hpp"
 
-static jobject empty_java_util_arraylist = NULL;
+static jobject empty_java_util_arraylist = nullptr;
 
 static oop new_java_util_arraylist(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
@@ -57,10 +57,10 @@ static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
 static bool initialize(TRAPS) {
   static bool initialized = false;
   if (!initialized) {
-    assert(NULL == empty_java_util_arraylist, "invariant");
+    assert(nullptr == empty_java_util_arraylist, "invariant");
     const oop array_list = new_java_util_arraylist(CHECK_false);
     empty_java_util_arraylist = JfrJavaSupport::global_jni_handle(array_list, THREAD);
-    initialized = empty_java_util_arraylist != NULL;
+    initialized = empty_java_util_arraylist != nullptr;
   }
   return initialized;
 }
@@ -72,7 +72,7 @@ static bool initialize(TRAPS) {
  * trigger initialization.
  */
 static bool is_allowed(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   if (!JfrTraceId::is_jdk_jfr_event_sub(k)) {
     // Was excluded during initial class load.
     return false;
@@ -80,78 +80,72 @@ static bool is_allowed(const Klass* k) {
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
-static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
+static void fill_klasses(GrowableArray<jclass>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
   assert(event_subklasses.length() == 0, "invariant");
-  assert(event_klass != NULL, "invariant");
+  assert(event_klass != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+  // Do not safepoint while walking the ClassHierarchy, keeping klasses alive and storing their mirrors in JNI handles.
+  NoSafepointVerifier nsv;
 
   for (ClassHierarchyIterator iter(const_cast<InstanceKlass*>(event_klass)); !iter.done(); iter.next()) {
     Klass* subk = iter.klass();
     if (is_allowed(subk)) {
-      event_subklasses.append(subk);
+      // We are walking the class hierarchy and saving the relevant klasses in JNI handles.
+      // To be allowed to store the java mirror, we must ensure that the klass and its oops are kept alive,
+      // and perform the store before the next safepoint.
+      subk->keep_alive();
+      event_subklasses.append((jclass)JfrJavaSupport::local_jni_handle(subk->java_mirror(), thread));
     }
-  }
-}
-
-static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, JavaThread* thread) {
-  assert(event_subklasses.is_nonempty(), "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  for (int i = 0; i < event_subklasses.length(); ++i) {
-    const InstanceKlass* k = static_cast<const InstanceKlass*>(event_subklasses.at(i));
-    assert(is_allowed(k), "invariant");
-    event_subklasses.at_put(i, JfrJavaSupport::local_jni_handle(k->java_mirror(), thread));
   }
 }
 
 jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   initialize(THREAD);
-  assert(empty_java_util_arraylist != NULL, "should have been setup already!");
+  assert(empty_java_util_arraylist != nullptr, "should have been setup already!");
   static const char jdk_jfr_event_name[] = "jdk/internal/event/Event";
   Symbol* const event_klass_name = SymbolTable::probe(jdk_jfr_event_name, sizeof jdk_jfr_event_name - 1);
 
-  if (NULL == event_klass_name) {
+  if (nullptr == event_klass_name) {
     // not loaded yet
     return empty_java_util_arraylist;
   }
 
   const Klass* const klass = SystemDictionary::resolve_or_null(event_klass_name, THREAD);
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(klass->is_instance_klass(), "invariant");
   assert(JdkJfrEvent::is(klass), "invariant");
 
-  if (klass->subklass() == NULL) {
+  if (klass->subklass() == nullptr) {
     return empty_java_util_arraylist;
   }
 
   ResourceMark rm(THREAD);
-  GrowableArray<const void*> event_subklasses(initial_array_size);
+  GrowableArray<jclass> event_subklasses(initial_array_size);
   fill_klasses(event_subklasses, InstanceKlass::cast(klass), THREAD);
 
   if (event_subklasses.is_empty()) {
     return empty_java_util_arraylist;
   }
 
-  transform_klasses_to_local_jni_handles(event_subklasses, THREAD);
-
   Handle h_array_list(THREAD, new_java_util_arraylist(THREAD));
-  assert(h_array_list.not_null(), "invariant");
+  if (h_array_list.is_null()) {
+    return empty_java_util_arraylist;
+  }
 
   static const char add_method_name[] = "add";
   static const char add_method_signature[] = "(Ljava/lang/Object;)Z";
   const Klass* const array_list_klass = JfrJavaSupport::klass(empty_java_util_arraylist);
-  assert(array_list_klass != NULL, "invariant");
+  assert(array_list_klass != nullptr, "invariant");
 
   const Symbol* const add_method_sym = SymbolTable::new_symbol(add_method_name);
-  assert(add_method_sym != NULL, "invariant");
+  assert(add_method_sym != nullptr, "invariant");
 
   const Symbol* const add_method_sig_sym = SymbolTable::new_symbol(add_method_signature);
-  assert(add_method_signature != NULL, "invariant");
 
   JavaValue result(T_BOOLEAN);
   for (int i = 0; i < event_subklasses.length(); ++i) {
-    const jclass clazz = (const jclass)event_subklasses.at(i);
+    const jclass clazz = event_subklasses.at(i);
     assert(JdkJfrEvent::is_subklass(clazz), "invariant");
     JfrJavaArguments args(&result, array_list_klass, add_method_sym, add_method_sig_sym);
     args.set_receiver(h_array_list());

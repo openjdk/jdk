@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -39,17 +39,17 @@ G1RedirtyCardsLocalQueueSet::G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet*
 
 #ifdef ASSERT
 G1RedirtyCardsLocalQueueSet::~G1RedirtyCardsLocalQueueSet() {
-  assert(_buffers._head == NULL, "unflushed qset");
-  assert(_buffers._tail == NULL, "invariant");
+  assert(_buffers._head == nullptr, "unflushed qset");
+  assert(_buffers._tail == nullptr, "invariant");
   assert(_buffers._entry_count == 0, "invariant");
 }
 #endif // ASSERT
 
 void G1RedirtyCardsLocalQueueSet::enqueue_completed_buffer(BufferNode* node) {
-  _buffers._entry_count += buffer_size() - node->index();
+  _buffers._entry_count += node->size();
   node->set_next(_buffers._head);
   _buffers._head = node;
-  if (_buffers._tail == NULL) {
+  if (_buffers._tail == nullptr) {
     _buffers._tail = node;
   }
 }
@@ -64,10 +64,12 @@ void G1RedirtyCardsLocalQueueSet::enqueue(void* value) {
   }
 }
 
-void G1RedirtyCardsLocalQueueSet::flush() {
+BufferNodeList G1RedirtyCardsLocalQueueSet::flush() {
   flush_queue(_queue);
+  BufferNodeList cur_buffers = _buffers;
   _shared_qset->add_bufferlist(_buffers);
   _buffers = BufferNodeList();
+  return cur_buffers;
 }
 
 // G1RedirtyCardsLocalQueueSet::Queue
@@ -88,7 +90,7 @@ G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator)
   PtrQueueSet(allocator),
   _list(),
   _entry_count(0),
-  _tail(NULL)
+  _tail(nullptr)
   DEBUG_ONLY(COMMA _collecting(true))
 {}
 
@@ -99,7 +101,7 @@ G1RedirtyCardsQueueSet::~G1RedirtyCardsQueueSet() {
 #ifdef ASSERT
 void G1RedirtyCardsQueueSet::verify_empty() const {
   assert(_list.empty(), "precondition");
-  assert(_tail == NULL, "invariant");
+  assert(_tail == nullptr, "invariant");
   assert(_entry_count == 0, "invariant");
 }
 #endif // ASSERT
@@ -112,7 +114,7 @@ BufferNode* G1RedirtyCardsQueueSet::all_completed_buffers() const {
 BufferNodeList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
   DEBUG_ONLY(_collecting = false;)
   BufferNodeList result(_list.pop_all(), _tail, _entry_count);
-  _tail = NULL;
+  _tail = nullptr;
   _entry_count = 0;
   DEBUG_ONLY(_collecting = true;)
   return result;
@@ -120,25 +122,25 @@ BufferNodeList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
 
 void G1RedirtyCardsQueueSet::update_tail(BufferNode* node) {
   // Node is the tail of a (possibly single element) list just prepended to
-  // _list.  If, after that prepend, node's follower is NULL, then node is
+  // _list.  If, after that prepend, node's follower is null, then node is
   // also the tail of _list, so record it as such.
-  if (node->next() == NULL) {
-    assert(_tail == NULL, "invariant");
+  if (node->next() == nullptr) {
+    assert(_tail == nullptr, "invariant");
     _tail = node;
   }
 }
 
 void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
   assert(_collecting, "precondition");
-  Atomic::add(&_entry_count, buffer_size() - node->index());
+  Atomic::add(&_entry_count, node->size());
   _list.push(*node);
   update_tail(node);
 }
 
 void G1RedirtyCardsQueueSet::add_bufferlist(const BufferNodeList& buffers) {
   assert(_collecting, "precondition");
-  if (buffers._head != NULL) {
-    assert(buffers._tail != NULL, "invariant");
+  if (buffers._head != nullptr) {
+    assert(buffers._tail != nullptr, "invariant");
     Atomic::add(&_entry_count, buffers._entry_count);
     _list.prepend(*buffers._head, *buffers._tail);
     update_tail(buffers._tail);

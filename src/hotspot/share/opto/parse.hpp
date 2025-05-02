@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ protected:
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
-                            int caller_bci,
+                            JVMState* caller_jvms,
                             bool& should_delay,
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
@@ -87,8 +87,7 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
+  void print_inlining(ciMethod* callee_method, JVMState* jvm, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
@@ -188,14 +187,14 @@ class Parse : public GraphKit {
     void set_start_map(SafePointNode* m)   { assert(!is_merged(), ""); _start_map = m; }
 
     // True after any predecessor flows control into this block
-    bool is_merged() const                 { return _start_map != NULL; }
+    bool is_merged() const                 { return _start_map != nullptr; }
 
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
     bool has_merged_backedge() const       { return _has_merged_backedge; }
     void mark_merged_backedge(Block* pred) {
       assert(is_SEL_head(), "should be loop head");
-      if (pred != NULL && is_SEL_backedge(pred)) {
+      if (pred != nullptr && is_SEL_backedge(pred)) {
         assert(is_parsed(), "block should be parsed before merging backedges");
         _has_merged_backedge = true;
       }
@@ -285,7 +284,7 @@ class Parse : public GraphKit {
     // path number ("pnum").
     int add_new_path();
 
-    // Initialize me by recording the parser's map.  My own map must be NULL.
+    // Initialize me by recording the parser's map.  My own map must be null.
     void record_state(Parse* outer);
   };
 
@@ -358,7 +357,7 @@ class Parse : public GraphKit {
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  Node*         _alloc_with_final;   // An allocation node with final field
+  Node*         _alloc_with_final_or_stable; // An allocation node with final or @Stable field
 
   // Variables which track Java semantics during bytecode parsing:
 
@@ -403,10 +402,10 @@ class Parse : public GraphKit {
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  Node*    alloc_with_final() const   { return _alloc_with_final; }
-  void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
-    _alloc_with_final = n;
+  Node*    alloc_with_final_or_stable() const   { return _alloc_with_final_or_stable; }
+  void set_alloc_with_final_or_stable(Node* n)  {
+    assert((_alloc_with_final_or_stable == nullptr) || (_alloc_with_final_or_stable == n), "different init objects?");
+    _alloc_with_final_or_stable = n;
   }
 
   Block*             block()    const { return _block; }
@@ -416,14 +415,17 @@ class Parse : public GraphKit {
   void set_block(Block* b)            { _block = b; }
 
   // Derived accessors:
-  bool is_normal_parse() const  { return _entry_bci == InvocationEntryBci; }
-  bool is_osr_parse() const     { return _entry_bci != InvocationEntryBci; }
+  bool is_osr_parse() const {
+    assert(_entry_bci != UnknownBci, "uninitialized _entry_bci");
+    return _entry_bci != InvocationEntryBci;
+  }
+  bool is_normal_parse() const  { return !is_osr_parse(); }
   int osr_bci() const           { assert(is_osr_parse(),""); return _entry_bci; }
 
   void set_parse_bci(int bci);
 
   // Must this parse be aborted?
-  bool failing()                { return C->failing(); }
+  bool failing() const { return C->failing_internal(); } // might have cascading effects, not stressing bailouts for now.
 
   Block* rpo_at(int rpo) {
     assert(0 <= rpo && rpo < _block_count, "oob");
@@ -432,7 +434,7 @@ class Parse : public GraphKit {
   Block* start_block() {
     return rpo_at(flow()->start_block()->rpo());
   }
-  // Can return NULL if the flow pass did not complete a block.
+  // Can return null if the flow pass did not complete a block.
   Block* successor_for_bci(int bci) {
     return block()->successor_for_bci(bci);
   }
@@ -498,8 +500,6 @@ class Parse : public GraphKit {
 
   void clinit_deopt();
 
-  void rtm_deopt();
-
   // Pass current map to exits
   void return_current(Node* value);
 
@@ -529,8 +529,7 @@ class Parse : public GraphKit {
   void  do_instanceof();
 
   // Helper functions for shifting & arithmetic
-  void modf();
-  void modd();
+  Node* floating_point_mod(Node* a, Node* b, BasicType type);
   void l2f();
 
   // implementation of _get* and _put* bytecodes
@@ -561,7 +560,6 @@ class Parse : public GraphKit {
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
   bool    path_is_suitable_for_uncommon_trap(float prob) const;
-  bool    seems_stable_comparison() const;
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
@@ -612,6 +610,11 @@ class Parse : public GraphKit {
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
 
+  // Stress unstable if traps
+  void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
+  // Increment counter used by StressUnstableIfTraps
+  void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
+
  public:
 #ifndef PRODUCT
   // Handle PrintOpto, etc.
@@ -631,7 +634,7 @@ class UnstableIfTrap {
 
 public:
   UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
-    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+    assert(_unc != nullptr && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
     _next_bci = path != nullptr ? path->start() : -1;
   }

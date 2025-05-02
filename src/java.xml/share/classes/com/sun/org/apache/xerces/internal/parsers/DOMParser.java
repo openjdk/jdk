@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,8 +29,6 @@ import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -40,8 +38,11 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.CharConversionException;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.Node;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
@@ -60,7 +61,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: May 2021
+ * @LastModified: Apr 2025
  */
 public class DOMParser
     extends AbstractDOMParser {
@@ -450,11 +451,11 @@ public class DOMParser
                 return;
             }
 
-            //
-            // Default handling
-            //
+            if (!securityManager.setLimit(featureId, JdkProperty.State.APIPROPERTY, state)) {
+                //fall back to the default configuration
+                fConfiguration.setFeature(featureId, state);
+            }
 
-            fConfiguration.setFeature(featureId, state);
         }
         catch (XMLConfigurationException e) {
             String identifier = e.getIdentifier();
@@ -574,7 +575,7 @@ public class DOMParser
              * internally the support of this property is done through
              * XMLSecurityPropertyManager
              */
-            securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
+            securityPropertyManager.setValue(index, FeaturePropertyBase.State.APIPROPERTY, (String)value);
         } else {
             //check if the property is managed by security manager
             if (!securityManager.setLimit(propertyId, JdkProperty.State.APIPROPERTY, value)) {

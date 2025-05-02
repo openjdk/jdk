@@ -1,4 +1,4 @@
-CustomTagTest.java:17: error: unknown tag: unknownTag
+CustomTagTest.java:17: error: unknown tag. Unregistered custom tag?
  * @unknownTag Text for an unknown tag.
    ^
 1 error

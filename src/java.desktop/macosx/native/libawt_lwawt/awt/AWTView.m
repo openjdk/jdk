@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
 
 // keyboard layout
 static NSString *kbdLayout;
+
+// Constant for keyman layouts
+#define KEYMAN_LAYOUT "keyman"
 
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
@@ -259,7 +262,7 @@ static BOOL shouldUsePressAndHold() {
 
 - (void) keyDown: (NSEvent *)event {
     fProcessingKeystroke = YES;
-    fKeyEventsNeeded = YES;
+    fKeyEventsNeeded = ![(NSString *)kbdLayout containsString:@KEYMAN_LAYOUT];
 
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
@@ -354,9 +357,9 @@ static BOOL shouldUsePressAndHold() {
     NSEventType type = [event type];
 
     // check synthesized mouse entered/exited events
-    if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
+    if ((type == NSEventTypeMouseEntered && mouseIsOver) || (type == NSEventTypeMouseExited && !mouseIsOver)) {
         return;
-    }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
+    }else if ((type == NSEventTypeMouseEntered && !mouseIsOver) || (type == NSEventTypeMouseExited && mouseIsOver)) {
         mouseIsOver = !mouseIsOver;
     }
 
@@ -376,10 +379,10 @@ static BOOL shouldUsePressAndHold() {
     absP.y = screenRect.size.height - absP.y;
     jint clickCount;
 
-    if (type == NSMouseEntered ||
-        type == NSMouseExited ||
-        type == NSScrollWheel ||
-        type == NSMouseMoved) {
+    if (type == NSEventTypeMouseEntered ||
+        type == NSEventTypeMouseExited  ||
+        type == NSEventTypeScrollWheel  ||
+        type == NSEventTypeMouseMoved)  {
         clickCount = 0;
     } else {
         clickCount = [event clickCount];
@@ -458,7 +461,7 @@ static BOOL shouldUsePressAndHold() {
 
     jstring characters = NULL;
     jstring charactersIgnoringModifiers = NULL;
-    if ([event type] != NSFlagsChanged) {
+    if ([event type] != NSEventTypeFlagsChanged) {
         characters = NSStringToJavaString(env, [event characters]);
         charactersIgnoringModifiers = NSStringToJavaString(env, [event charactersIgnoringModifiers]);
     }
@@ -512,23 +515,6 @@ static BOOL shouldUsePressAndHold() {
     [super drawRect:dirtyRect];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     if (env != NULL) {
-        /*
-         if ([self inLiveResize]) {
-         NSRect rs[4];
-         NSInteger count;
-         [self getRectsExposedDuringLiveResize:rs count:&count];
-         for (int i = 0; i < count; i++) {
-         JNU_CallMethodByName(env, NULL, [m_awtWindow cPlatformView],
-         "deliverWindowDidExposeEvent", "(FFFF)V",
-         (jfloat)rs[i].origin.x, (jfloat)rs[i].origin.y,
-         (jfloat)rs[i].size.width, (jfloat)rs[i].size.height);
-         if ((*env)->ExceptionOccurred(env)) {
-         (*env)->ExceptionDescribe(env);
-         (*env)->ExceptionClear(env);
-         }
-         }
-         } else {
-         */
         DECLARE_CLASS(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
         DECLARE_METHOD(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
         jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
@@ -537,9 +523,6 @@ static BOOL shouldUsePressAndHold() {
             CHECK_EXCEPTION();
             (*env)->DeleteLocalRef(env, jlocal);
         }
-        /*
-         }
-         */
     }
 }
 
@@ -965,7 +948,7 @@ static jclass jc_CInputMethod = NULL;
 
     if ((utf16Length > 2) ||
         ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
-        ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
+        [(NSString *)kbdLayout containsString:@KEYMAN_LAYOUT]) {
 #ifdef IM_DEBUG
         NSLog(@"string complex ");
 #endif

@@ -1,31 +1,40 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
- * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED SafeFunctionAccessTest
+ * @test id=specialized
+ * @run testng/othervm/native
+ *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *  --enable-native-access=ALL-UNNAMED
+ *  SafeFunctionAccessTest
+ */
+
+/*
+ * @test id=interpreted
+ * @run testng/othervm/native
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   SafeFunctionAccessTest
  */
 
 import java.lang.foreign.Arena;
@@ -34,12 +43,10 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemoryLayout;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import java.lang.foreign.VaList;
 import java.util.stream.Stream;
 
 import org.testng.annotations.*;
@@ -58,7 +65,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
     @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedStruct() throws Throwable {
         MemorySegment segment;
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             segment = arena.allocate(POINT);
         }
         assertFalse(segment.scope().isAlive());
@@ -76,7 +83,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER));
         record Allocation(Arena drop, MemorySegment segment) {
             static Allocation of(MemoryLayout layout) {
-                Arena arena = Arena.openShared();
+                Arena arena = Arena.ofShared();
                 return new Allocation(arena, arena.allocate(layout));
             }
         }
@@ -113,25 +120,11 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void testClosedVaList() throws Throwable {
-        VaList list;
-        try (Arena arena = Arena.openConfined()) {
-            list = VaList.make(b -> b.addVarg(C_INT, 42), arena.scope());
-        }
-        assertFalse(list.segment().scope().isAlive());
-        MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                findNativeOrThrow("addr_func"),
-                FunctionDescriptor.ofVoid(C_POINTER));
-
-        handle.invokeExact(list.segment());
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedUpcall() throws Throwable {
         MemorySegment upcall;
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena.scope());
+            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
         }
         assertFalse(upcall.scope().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
@@ -144,24 +137,12 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
     static void dummy() { }
 
     @Test
-    public void testClosedVaListCallback() throws Throwable {
-        MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                findNativeOrThrow("addr_func_cb"),
-                FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
-
-        try (Arena arena = Arena.openConfined()) {
-            VaList list = VaList.make(b -> b.addVarg(C_INT, 42), arena.scope());
-            handle.invokeExact(list.segment(), sessionChecker(arena));
-        }
-    }
-
-    @Test
     public void testClosedStructCallback() throws Throwable {
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(POINT);
             handle.invokeExact(segment, sessionChecker(arena));
         }
@@ -173,9 +154,9 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena.scope());
+            MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
             handle.invokeExact(upcall, sessionChecker(arena));
         }
     }
@@ -185,7 +166,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
             MethodHandle handle = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "checkSession",
                     MethodType.methodType(void.class, Arena.class));
             handle = handle.bindTo(arena);
-            return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), SegmentScope.auto());
+            return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), Arena.ofAuto());
         } catch (Throwable ex) {
             throw new AssertionError(ex);
         }

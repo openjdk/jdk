@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "io_util.h"
 #include "jlong.h"
 #include "io_util_md.h"
-#include "dirent_md.h"
 #include "java_io_FileSystem.h"
 
 #define MAX_PATH_LENGTH 1024
@@ -47,31 +46,15 @@ static struct {
     jfieldID path;
 } ids;
 
-/**
- * GetFinalPathNameByHandle is available on Windows Vista and newer
- */
-typedef BOOL (WINAPI* GetFinalPathNameByHandleProc) (HANDLE, LPWSTR, DWORD, DWORD);
-static GetFinalPathNameByHandleProc GetFinalPathNameByHandle_func;
-
 JNIEXPORT void JNICALL
 Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 {
-    HMODULE handle;
     jclass fileClass;
 
     fileClass = (*env)->FindClass(env, "java/io/File");
     CHECK_NULL(fileClass);
     ids.path = (*env)->GetFieldID(env, fileClass, "path", "Ljava/lang/String;");
     CHECK_NULL(ids.path);
-
-    // GetFinalPathNameByHandle requires Windows Vista or newer
-    if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT),
-                           (LPCWSTR)&CreateFileW, &handle) != 0)
-    {
-        GetFinalPathNameByHandle_func = (GetFinalPathNameByHandleProc)
-            GetProcAddress(handle, "GetFinalPathNameByHandleW");
-    }
 }
 
 /* -- Path operations -- */
@@ -88,10 +71,6 @@ static WCHAR* getFinalPath(JNIEnv *env, const WCHAR *path)
     HANDLE h;
     WCHAR *result;
     DWORD error;
-
-    /* Need Windows Vista or newer to get the final path */
-    if (GetFinalPathNameByHandle_func == NULL)
-        return NULL;
 
     h = CreateFileW(path,
                     FILE_READ_ATTRIBUTES,
@@ -110,13 +89,13 @@ static WCHAR* getFinalPath(JNIEnv *env, const WCHAR *path)
      */
     result = (WCHAR*)malloc(MAX_PATH * sizeof(WCHAR));
     if (result != NULL) {
-        DWORD len = (*GetFinalPathNameByHandle_func)(h, result, MAX_PATH, 0);
+        DWORD len = GetFinalPathNameByHandleW(h, result, MAX_PATH, 0);
         if (len >= MAX_PATH) {
             /* retry with a buffer of the right size */
             WCHAR* newResult = (WCHAR*)realloc(result, (len+1) * sizeof(WCHAR));
             if (newResult != NULL) {
                 result = newResult;
-                len = (*GetFinalPathNameByHandle_func)(h, result, len, 0);
+                len = GetFinalPathNameByHandleW(h, result, len, 0);
             } else {
                 len = 0;
                 JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
@@ -349,6 +328,25 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
+    return rv;
+}
+
+JNIEXPORT jstring JNICALL
+Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pathname) {
+    jstring rv = NULL;
+
+    WITH_UNICODE_STRING(env, pathname, path) {
+        WCHAR* finalPath = getFinalPath(env, path);
+        if (finalPath != NULL) {
+            rv = (*env)->NewString(env, finalPath, (jsize)wcslen(finalPath));
+            free(finalPath);
+        }
+    } END_UNICODE_STRING(env, path);
+
+    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
+        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
+    }
+
     return rv;
 }
 

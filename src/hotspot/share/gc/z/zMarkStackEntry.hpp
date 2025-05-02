@@ -92,16 +92,16 @@ public:
     // what _entry is initialized to.
   }
 
-  ZMarkStackEntry(uintptr_t object_address, bool mark, bool inc_live, bool follow, bool finalizable) :
-      _entry(field_object_address::encode(object_address) |
+  ZMarkStackEntry(uintptr_t object_address, bool mark, bool inc_live, bool follow, bool finalizable)
+    : _entry(field_object_address::encode(object_address) |
              field_mark::encode(mark) |
              field_inc_live::encode(inc_live) |
              field_follow::encode(follow) |
              field_partial_array::encode(false) |
              field_finalizable::encode(finalizable)) {}
 
-  ZMarkStackEntry(size_t partial_array_offset, size_t partial_array_length, bool finalizable) :
-      _entry(field_partial_array_offset::encode(partial_array_offset) |
+  ZMarkStackEntry(size_t partial_array_offset, size_t partial_array_length, bool finalizable)
+    : _entry(field_partial_array_offset::encode(partial_array_offset) |
              field_partial_array_length::encode(partial_array_length) |
              field_partial_array::encode(true) |
              field_finalizable::encode(finalizable)) {}

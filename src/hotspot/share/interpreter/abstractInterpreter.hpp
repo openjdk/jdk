@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,10 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
+    java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
+    java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
     java_lang_math_log,                                         // implementation of java.lang.Math.log   (x)
     java_lang_math_log10,                                       // implementation of java.lang.Math.log10 (x)
     java_lang_math_pow,                                         // implementation of java.lang.Math.pow   (x,y)
@@ -86,10 +88,8 @@ class AbstractInterpreter: AllStatic {
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
     java_util_zip_CRC32C_updateBytes,                           // implementation of java.util.zip.CRC32C.updateBytes(crc, b[], off, end)
     java_util_zip_CRC32C_updateDirectByteBuffer,                // implementation of java.util.zip.CRC32C.updateDirectByteBuffer(crc, address, off, end)
-    java_lang_Float_intBitsToFloat,                             // implementation of java.lang.Float.intBitsToFloat()
-    java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
-    java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
-    java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
+    java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
+    java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
@@ -103,6 +103,9 @@ class AbstractInterpreter: AllStatic {
       return vmIntrinsics::_none;
   }
 
+  // Conversion from the above enum to vmIntrinsics::ID
+  static vmIntrinsics::ID method_intrinsic(MethodKind kind);
+
   enum SomeConstants {
     number_of_result_handlers = 10                              // number of result handlers for native calls
   };
@@ -112,15 +115,14 @@ class AbstractInterpreter: AllStatic {
 
   static bool       _notice_safepoints;                         // true if safepoints are activated
 
-  static address    _native_entry_begin;                        // Region for native entry code
-  static address    _native_entry_end;
-
   // method entry points
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
   static address    _native_abi_to_tosca[number_of_result_handlers];  // for native method result handlers
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
 
   static address    _rethrow_exception_entry;                   // rethrows an activation in previous frame
+
+  static bool       _should_print_instructions;                 // only with PrintInterpreter and when printing all InterpreterCodelet
 
   friend class      AbstractInterpreterGenerator;
   friend class      InterpreterMacroAssembler;
@@ -129,6 +131,7 @@ class AbstractInterpreter: AllStatic {
   // Initialization/debugging
   static void       initialize();
   static StubQueue* code()                                      { return _code; }
+  static bool       should_print_instructions()                 { return _should_print_instructions; }
 
 
   // Method activation
@@ -148,6 +151,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dsin  : // fall thru
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
+      case vmIntrinsics::_dtanh : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
       case vmIntrinsics::_dsqrt_strict : // fall thru
@@ -157,6 +161,8 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dexp  : // fall thru
       case vmIntrinsics::_fmaD  : // fall thru
       case vmIntrinsics::_fmaF  : // fall thru
+      case vmIntrinsics::_floatToFloat16       : // fall thru
+      case vmIntrinsics::_float16ToFloat       : // fall thru
       case vmIntrinsics::_Continuation_doYield : // fall thru
         return false;
 
@@ -219,7 +225,6 @@ class AbstractInterpreter: AllStatic {
   static address    slow_signature_handler()                    { return _slow_signature_handler; }
   static address    result_handler(BasicType type)              { return _native_abi_to_tosca[BasicType_as_index(type)]; }
   static int        BasicType_as_index(BasicType type);         // computes index into result_handler_by_index table
-  static bool       in_native_entry(address pc)                 { return _native_entry_begin <= pc && pc < _native_entry_end; }
   // Debugging/printing
   static void       print();                                    // prints the interpreter code
 

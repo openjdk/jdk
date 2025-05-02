@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,17 +76,10 @@ class BootstrapInfo : public StackObj {
   // derived accessors
   InstanceKlass* caller() const         { return _pool->pool_holder(); }
   oop caller_mirror() const             { return caller()->java_mirror(); }
-  int decode_indy_index() const         { return ConstantPool::decode_invokedynamic_index(_indy_index); }
   int bsms_attr_index() const           { return _pool->bootstrap_methods_attribute_index(_bss_index); }
   int bsm_index() const                 { return _pool->bootstrap_method_ref_index_at(_bss_index); }
   //int argc() is eagerly cached in _argc
   int arg_index(int i) const            { return _pool->bootstrap_argument_index_at(_bss_index, i); }
-
-  // CP cache entry for call site (indy only)
-  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry() const {
-    assert(is_method_call(), "");
-    return _pool->invokedynamic_cp_cache_entry_at(_indy_index);
-  }
 
   // If there is evidence this call site was already linked, set the
   // existing linkage data into result, or throw previous exception.

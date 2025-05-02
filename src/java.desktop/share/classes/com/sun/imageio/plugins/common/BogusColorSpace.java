@@ -90,7 +90,7 @@ public class BogusColorSpace extends ColorSpace {
         System.arraycopy(colorvalue, 0, rgbvalue, 0,
                          Math.min(3, getNumComponents()));
 
-        return colorvalue;
+        return rgbvalue;
     }
 
     public float[] fromRGB(float[] rgbvalue) {
@@ -104,7 +104,7 @@ public class BogusColorSpace extends ColorSpace {
         System.arraycopy(rgbvalue, 0, colorvalue, 0,
                          Math.min(3, colorvalue.length));
 
-        return rgbvalue;
+        return colorvalue;
     }
 
     public float[] toCIEXYZ(float[] colorvalue) {
@@ -118,7 +118,7 @@ public class BogusColorSpace extends ColorSpace {
         System.arraycopy(colorvalue, 0, xyzvalue, 0,
                          Math.min(3, getNumComponents()));
 
-        return colorvalue;
+        return xyzvalue;
     }
 
     public float[] fromCIEXYZ(float[] xyzvalue) {
@@ -132,6 +132,6 @@ public class BogusColorSpace extends ColorSpace {
         System.arraycopy(xyzvalue, 0, colorvalue, 0,
                          Math.min(3, colorvalue.length));
 
-        return xyzvalue;
+        return colorvalue;
     }
 }

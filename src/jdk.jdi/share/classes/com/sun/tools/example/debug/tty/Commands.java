@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,9 +719,13 @@ class Commands {
             } catch (InvalidTypeException e) {
                 MessageOutput.println("Invalid exception object");
             } catch (IllegalThreadStateException its) {
-                MessageOutput.println("Illegal thread state");
-            } catch (UnsupportedOperationException uoe) {
-                MessageOutput.println("Operation is not supported on the target VM");
+                if (!thread.isSuspended() && thread.isVirtual()) {
+                    MessageOutput.println("Illegal thread state (virtual thread not suspended)");
+                } else {
+                    MessageOutput.println("Illegal thread state");
+                }
+            } catch (OpaqueFrameException ope) {
+                MessageOutput.println("Operation is not supported on the current frame");
             }
         } else {
             MessageOutput.println("Expression must evaluate to an object");

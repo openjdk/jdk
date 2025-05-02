@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -43,41 +42,10 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class StringBuffers {
 
-    private String name;
-    private String blaha;
-    private Sigurd sig;
-
-    @Setup
-    public void setup() {
-        name = "joe";
-        blaha = "sniglogigloienlitenapasomarengrodasjukadjavelhej";
-        sig = new Sigurd();
-    }
+    StringBuffer sb = new StringBuffer();
 
     @Benchmark
-    public String appendAndToString() {
-        return "MyStringBuffer named:" + ((name == null) ? "unknown" : name) + ".";
+    public String emptyToString() {
+        return sb.toString();
     }
-
-    @Benchmark
-    public String toStringComplex() {
-        return sig.toString();
-    }
-
-    static class Sigurd {
-        int x;
-        byte y;
-        String z = "yahoo";
-
-        @Override
-        public String toString() {
-            return Integer.toString(x) + "_" + Integer.toString((int) y) + "_" + z + "_";
-        }
-    }
-
-    @Benchmark
-    public String substring() {
-        return blaha.substring(30, 35);
-    }
-
 }

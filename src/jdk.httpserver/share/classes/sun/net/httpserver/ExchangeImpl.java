@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ class ExchangeImpl {
         }
         this.rcode = rCode;
         String statusLine = "HTTP/1.1 "+rCode+Code.msg(rCode)+"\r\n";
-        OutputStream tmpout = new BufferedOutputStream (ros);
+        ByteArrayOutputStream tmpout = new ByteArrayOutputStream();
         PlaceholderOutputStream o = getPlaceholderResponseBody();
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
@@ -240,6 +240,7 @@ class ExchangeImpl {
             }
             noContentToSend = true;
             contentLen = 0;
+            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
             if (contentLen == 0) {
                 if (http10) {
@@ -277,14 +278,12 @@ class ExchangeImpl {
 
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;
-        tmpout.flush() ;
-        tmpout = null;
+        tmpout.writeTo(ros);
         sentHeaders = true;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
-            WriteFinishedEvent e = new WriteFinishedEvent (this);
-            server.addEvent (e);
-            closed = true;
+            ros.flush();
+            close();
         }
         server.logReply (rCode, req.requestLine(), null);
     }
@@ -378,7 +377,11 @@ class ExchangeImpl {
         if (attributes == null) {
             attributes = getHttpContext().getAttributes();
         }
-        attributes.put (name, value);
+        if (value != null) {
+            attributes.put (name, value);
+        } else {
+            attributes.remove (name);
+        }
     }
 
     public void setStreams (InputStream i, OutputStream o) {

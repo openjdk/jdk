@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,20 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
+
+void InstanceKlassFlags::print_on(outputStream* st) const {
+#define IK_FLAGS_PRINT(name, ignore)          \
+  if (name()) st->print(#name " ");
+  IK_FLAGS_DO(IK_FLAGS_PRINT)
+  IK_STATUS_DO(IK_FLAGS_PRINT)
+#undef IK_FLAGS_PRINT
+}
 
 #if INCLUDE_CDS
 void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {

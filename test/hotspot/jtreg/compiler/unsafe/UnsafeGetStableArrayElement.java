@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,12 +224,12 @@ public class UnsafeGetStableArrayElement {
     }
 
     static void testMismatched(Callable<?> c, Runnable setDefaultAction) throws Exception {
-        testMismatched(c, setDefaultAction, false);
+        testMismatched(c, setDefaultAction, false, true);
     }
 
-    static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray) throws Exception {
-        if (Compiler.isGraalEnabled() && !objectArray) {
-            // Graal will constant fold mismatched reads from primitive stable arrays
+    static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray, boolean aligned) throws Exception {
+        if (Compiler.isGraalEnabled() && !objectArray && aligned) {
+            // Graal will constant fold mismatched reads from primitive stable arrays, except unaligned ones
             run(c, setDefaultAction, null);
         } else {
             run(c, null, setDefaultAction);
@@ -244,9 +244,9 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testZ_S, Test::changeZ);
         testMismatched(Test::testZ_C, Test::changeZ);
         testMismatched(Test::testZ_I, Test::changeZ);
-        testMismatched(Test::testZ_J, Test::changeZ);
+        testMismatched(Test::testZ_J, Test::changeZ, false, ARRAY_BOOLEAN_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMismatched(Test::testZ_F, Test::changeZ);
-        testMismatched(Test::testZ_D, Test::changeZ);
+        testMismatched(Test::testZ_D, Test::changeZ, false, ARRAY_BOOLEAN_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // byte[], aligned accesses
         testMismatched(Test::testB_Z, Test::changeB);
@@ -254,9 +254,9 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testB_S, Test::changeB);
         testMismatched(Test::testB_C, Test::changeB);
         testMismatched(Test::testB_I, Test::changeB);
-        testMismatched(Test::testB_J, Test::changeB);
+        testMismatched(Test::testB_J, Test::changeB, false, ARRAY_BYTE_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMismatched(Test::testB_F, Test::changeB);
-        testMismatched(Test::testB_D, Test::changeB);
+        testMismatched(Test::testB_D, Test::changeB, false, ARRAY_BYTE_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // short[], aligned accesses
         testMismatched(Test::testS_Z, Test::changeS);
@@ -264,9 +264,9 @@ public class UnsafeGetStableArrayElement {
         testMatched(   Test::testS_S, Test::changeS);
         testMismatched(Test::testS_C, Test::changeS);
         testMismatched(Test::testS_I, Test::changeS);
-        testMismatched(Test::testS_J, Test::changeS);
+        testMismatched(Test::testS_J, Test::changeS, false, ARRAY_SHORT_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMismatched(Test::testS_F, Test::changeS);
-        testMismatched(Test::testS_D, Test::changeS);
+        testMismatched(Test::testS_D, Test::changeS, false, ARRAY_SHORT_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // char[], aligned accesses
         testMismatched(Test::testC_Z, Test::changeC);
@@ -274,9 +274,9 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testC_S, Test::changeC);
         testMatched(   Test::testC_C, Test::changeC);
         testMismatched(Test::testC_I, Test::changeC);
-        testMismatched(Test::testC_J, Test::changeC);
+        testMismatched(Test::testC_J, Test::changeC, false, ARRAY_CHAR_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMismatched(Test::testC_F, Test::changeC);
-        testMismatched(Test::testC_D, Test::changeC);
+        testMismatched(Test::testC_D, Test::changeC, false, ARRAY_CHAR_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // int[], aligned accesses
         testMismatched(Test::testI_Z, Test::changeI);
@@ -284,9 +284,9 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testI_S, Test::changeI);
         testMismatched(Test::testI_C, Test::changeI);
         testMatched(   Test::testI_I, Test::changeI);
-        testMismatched(Test::testI_J, Test::changeI);
+        testMismatched(Test::testI_J, Test::changeI, false, ARRAY_INT_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMismatched(Test::testI_F, Test::changeI);
-        testMismatched(Test::testI_D, Test::changeI);
+        testMismatched(Test::testI_D, Test::changeI, false, ARRAY_INT_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // long[], aligned accesses
         testMismatched(Test::testJ_Z, Test::changeJ);
@@ -304,9 +304,9 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testF_S, Test::changeF);
         testMismatched(Test::testF_C, Test::changeF);
         testMismatched(Test::testF_I, Test::changeF);
-        testMismatched(Test::testF_J, Test::changeF);
+        testMismatched(Test::testF_J, Test::changeF, false, ARRAY_FLOAT_BASE_OFFSET == ARRAY_LONG_BASE_OFFSET);
         testMatched(   Test::testF_F, Test::changeF);
-        testMismatched(Test::testF_D, Test::changeF);
+        testMismatched(Test::testF_D, Test::changeF, false, ARRAY_FLOAT_BASE_OFFSET == ARRAY_DOUBLE_BASE_OFFSET);
 
         // double[], aligned accesses
         testMismatched(Test::testD_Z, Test::changeD);
@@ -319,15 +319,15 @@ public class UnsafeGetStableArrayElement {
         testMatched(   Test::testD_D, Test::changeD);
 
         // Object[], aligned accesses
-        testMismatched(Test::testL_J, Test::changeL, true); // long & double are always as large as an OOP
-        testMismatched(Test::testL_D, Test::changeL, true);
+        testMismatched(Test::testL_J, Test::changeL, true, true); // long & double are always as large as an OOP
+        testMismatched(Test::testL_D, Test::changeL, true, true);
         testMatched(   Test::testL_L, Test::changeL);
 
         // Unaligned accesses
-        testMismatched(Test::testS_U, Test::changeS);
-        testMismatched(Test::testC_U, Test::changeC);
-        testMismatched(Test::testI_U, Test::changeI);
-        testMismatched(Test::testJ_U, Test::changeJ);
+        testMismatched(Test::testS_U, Test::changeS, false, false);
+        testMismatched(Test::testC_U, Test::changeC, false, false);
+        testMismatched(Test::testI_U, Test::changeI, false, false);
+        testMismatched(Test::testJ_U, Test::changeJ, true, false);
 
         // No way to reliably check the expected behavior:
         //   (1) OOPs change during GC;

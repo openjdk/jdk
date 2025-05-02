@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 class GraphKit;
 
 class ArrayCopyNode : public CallNode {
+  static const TypeFunc* _arraycopy_type_Type;
 private:
 
   // What kind of arraycopy variant is this?
@@ -65,7 +66,15 @@ private:
 
   bool _arguments_validated;
 
+public:
+
   static const TypeFunc* arraycopy_type() {
+    assert(_arraycopy_type_Type != nullptr, "should be initialized");
+    return _arraycopy_type_Type;
+  }
+
+  static void initialize_arraycopy_Type() {
+    assert(_arraycopy_type_Type == nullptr, "should be");
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
     fields[Src]       = TypeInstPtr::BOTTOM;
     fields[SrcPos]    = TypeInt::INT;
@@ -83,9 +92,10 @@ private:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-    return TypeFunc::make(domain, range);
+    _arraycopy_type_Type =  TypeFunc::make(domain, range);
   }
 
+private:
   ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard);
 
   intptr_t get_length_if_constant(PhaseGVN *phase) const;
@@ -111,7 +121,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
-  static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call);
+  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac);
 public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
 private:
@@ -142,8 +152,8 @@ public:
                              Node* length,
                              bool alloc_tightly_coupled,
                              bool has_negative_length_guard,
-                             Node* src_klass = NULL, Node* dest_klass = NULL,
-                             Node* src_length = NULL, Node* dest_length = NULL);
+                             Node* src_klass = nullptr, Node* dest_klass = nullptr,
+                             Node* src_length = nullptr, Node* dest_length = nullptr);
 
   void connect_outputs(GraphKit* kit, bool deoptimize_on_exception = false);
 
@@ -173,17 +183,17 @@ public:
   virtual bool guaranteed_safepoint()  { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
 
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
-  static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
+  static bool may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac);
 
   static int get_partial_inline_vector_lane_count(BasicType type, int const_len);
 
-  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const;
+  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues* phase, bool must_modify) const;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

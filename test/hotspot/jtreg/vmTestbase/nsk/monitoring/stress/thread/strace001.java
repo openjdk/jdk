@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,13 +140,19 @@ public class strace001 {
     private static boolean fillTrace() {
         expectedSystemTrace = new String[]{
                 "java.lang.Thread.sleep",
-                "java.lang.Thread.sleep0",
+                "java.lang.Thread.sleepNanos",
+                "java.lang.Thread.sleepNanos0",
+                "java.lang.Thread.beforeSleep",
+                "java.lang.Thread.afterSleep",
                 "java.lang.Thread.yield",
                 "java.lang.Thread.yield0",
                 "java.lang.Thread.currentCarrierThread",
                 "java.lang.Thread.currentThread",
+                "java.util.concurrent.TimeUnit.toNanos",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
-                "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
+                "java.lang.Object.<init>",
+                "jdk.internal.event.Event.<init>",
+                "jdk.internal.event.ThreadSleepEvent.<init>",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled"
         };
 
@@ -201,13 +207,15 @@ public class strace001 {
     // The method performs checks of the stack trace
     private static boolean checkTrace(StackTraceElement[] elements) {
         int length = elements.length;
-        int expectedLength = depth + 5;
+        // The length of the trace must not be greater than
+        // expectedLength.  Number of recursionJava() or
+        // recursionNative() methods must not be greater than depth,
+        // also one run() and one waitForSign(), plus whatever can be
+        // reached from Thread.yield or Thread.sleep.
+        int expectedLength = depth + 7;
         boolean result = true;
 
-        // Check the length of the trace. It must not be greater than
-        // expectedLength. Number of recursionJava() or recursionNative()
-        // methods must not ne greater than depth, also one Object.wait() or
-        // Thread.yield() method, one run( ) and one waitForSign().
+        // Check the length of the trace
         if (length > expectedLength) {
             log.complain("Length of the stack trace is " + length + ", but "
                        + "expected to be not greater than " + expectedLength);

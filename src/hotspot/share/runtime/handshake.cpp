@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
@@ -238,6 +237,8 @@ class VM_HandshakeAllThreads: public VM_Operation {
  public:
   VM_HandshakeAllThreads(HandshakeOperation* op) : _op(op) {}
 
+  const char* cause() const { return _op->name(); }
+
   bool evaluate_at_safepoint() const { return false; }
 
   void doit() {
@@ -249,8 +250,13 @@ class VM_HandshakeAllThreads: public VM_Operation {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
+
+    // Separate the arming of the poll in add_operation() above from
+    // the read of JavaThread state in the try_process() call below.
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
+    } else {
+      OrderAccess::fence();
     }
 
     if (number_of_threads_issued < 1) {
@@ -378,6 +384,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
   }
 
   // Keeps count on how many of own emitted handshakes
@@ -485,6 +493,12 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
+#if INCLUDE_JVMTI
+  if (allow_suspend && _handshakee->is_disable_suspend()) {
+    // filter out suspend operations while JavaThread is in disable_suspend mode
+    allow_suspend = false;
+  }
+#endif
   if (!allow_suspend) {
     return _queue.peek(no_suspend_no_async_exception_filter);
   } else if (check_async_exception && !_async_exceptions_blocked) {
@@ -495,13 +509,22 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
 }
 
 bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  return get_op_for_self(allow_suspend, check_async_exception) != nullptr;
+  // We must not block here as that could lead to deadlocks if we already hold an
+  // "external" mutex. If the try_lock fails then we assume that there is an operation
+  // and force the caller to check more carefully in a safer context. If we can't get
+  // the lock it means another thread is trying to handshake with us, so it can't
+  // happen during thread termination and destruction.
+  bool ret = true;
+  if (_lock.try_lock()) {
+    ret = get_op_for_self(allow_suspend, check_async_exception) != nullptr;
+    _lock.unlock();
+  }
+  return ret;
 }
 
 bool HandshakeState::has_async_exception_operation() {
   if (!has_operation()) return false;
-  MutexLocker ml(_lock.owned_by_self() ? nullptr :  &_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(&_lock, !_lock.owned_by_self(), Mutex::_no_safepoint_check_flag);
   return _queue.peek(async_exception_filter) != nullptr;
 }
 
@@ -541,6 +564,10 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   _handshakee->frame_anchor()->make_walkable();
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
+
+  // Separate all the writes above for other threads reading state
+  // set by this thread in case the operation is ThreadSuspendHandshake.
+  OrderAccess::fence();
 
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are

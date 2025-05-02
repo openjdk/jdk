@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:+UseSHA1Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics
@@ -45,8 +45,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:-UseSHA1Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics

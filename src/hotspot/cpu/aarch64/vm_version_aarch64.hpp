@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,7 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+  static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
 
@@ -110,7 +111,8 @@ enum Ampere_CPU_Model {
     CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
-    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
 };
 
 #define CPU_FEATURE_FLAGS(decl)               \
@@ -123,6 +125,8 @@ enum Ampere_CPU_Model {
     decl(SHA2,          sha256,        6)     \
     decl(CRC32,         crc32,         7)     \
     decl(LSE,           lse,           8)     \
+    decl(FPHP,          fphp,          9)     \
+    decl(ASIMDHP,       asimdhp,       10)    \
     decl(DCPOP,         dcpop,         16)    \
     decl(SHA3,          sha3,          17)    \
     decl(SHA512,        sha512,        21)    \
@@ -151,6 +155,10 @@ enum Ampere_CPU_Model {
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
 
+  static bool model_is(int cpu_model) {
+    return _model == cpu_model || _model2 == cpu_model;
+  }
+
   static bool is_zva_enabled() { return 0 <= _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
@@ -159,16 +167,23 @@ enum Ampere_CPU_Model {
 
   static int icache_line_size() { return _icache_line_size; }
   static int dcache_line_size() { return _dcache_line_size; }
-  static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
+  static int get_initial_sve_vector_length()        { return _initial_sve_vector_length; };
+  static int get_max_supported_sve_vector_length()  { return _max_supported_sve_vector_length; };
 
+  // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
 
   static void get_compatible_board(char *buf, int buflen);
 
   static const SpinWait& spin_wait_desc() { return _spin_wait; }
 
   static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
+
+  static bool supports_float16() { return true; }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)

@@ -39,7 +39,7 @@ import java.util.function.IntUnaryOperator;
 @State(Scope.Thread)
 @Warmup(iterations = 3, time = 5)
 @Measurement(iterations = 3, time = 5)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class BlackScholes {
 
     @Param("1024")

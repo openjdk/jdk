@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,7 @@ class NativeCall: public NativeInstruction {
     call_far_pcrelative_displacement_alignment =  4
   };
 
+  static int byte_size() { return instruction_size; }
 
   // Maximum size (in bytes) of a call to an absolute address.
   // Used when emitting call to deopt handler blob, which is a
@@ -257,7 +258,7 @@ class NativeCall: public NativeInstruction {
 
     ((NativeCall*)iaddr)->print();
     guarantee(false, "Not a NativeCall site");
-    return NULL;
+    return nullptr;
   }
 
   address return_address() const {
@@ -325,7 +326,7 @@ class NativeCall: public NativeInstruction {
   //    instruction, is always prepended with a NOP. This measure avoids
   //    ambiguities with load_const_from_toc_call.
   friend NativeCall* nativeCall_before(address return_address) {
-    NativeCall *call = NULL;
+    NativeCall *call = nullptr;
 
     // Make sure not to return garbage
     address instp = return_address - MacroAssembler::load_const_call_size();
@@ -486,8 +487,8 @@ class NativeMovConstReg: public NativeInstruction {
   // Patch narrow oop constant in code stream.
   void set_narrow_oop(intptr_t data);
   void set_narrow_klass(intptr_t data);
-  void set_pcrel_addr(intptr_t addr, CompiledMethod *nm = NULL);
-  void set_pcrel_data(intptr_t data, CompiledMethod *nm = NULL);
+  void set_pcrel_addr(intptr_t addr, nmethod *nm = nullptr);
+  void set_pcrel_data(intptr_t data, nmethod *nm = nullptr);
 
   void verify();
 
@@ -657,20 +658,20 @@ class NativeGeneralJump: public NativeInstruction {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { Unimplemented(); return false; }
-  int displacement() const { return 0; }
-  void patch(jint diff) { Unimplemented(); }
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }
   void make_deopt() { Unimplemented(); }
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
   // Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {
 public:
-  address instruction_address() const       { Unimplemented(); return NULL; }
-  address next_instruction_address() const  { Unimplemented(); return NULL; }
+  address instruction_address() const       { Unimplemented(); return nullptr; }
+  address next_instruction_address() const  { Unimplemented(); return nullptr; }
 
   void  verify() { Unimplemented(); }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
@@ -148,6 +147,9 @@ class StubGenerator: public StubCodeGenerator {
     // Shared code tests for "null" to discover the stub is not generated.
     StubRoutines::_unsafe_arraycopy          = nullptr;
 
+    // Shared code tests for "null" to discover the stub is not generated.
+    StubRoutines::_unsafe_setmemory          = nullptr;
+
     // We don't generate specialized code for HeapWord-aligned source
     // arrays, so just use the code we've already generated
     StubRoutines::_arrayof_jbyte_disjoint_arraycopy =
@@ -176,9 +178,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
-  void generate_initial() {
-    // Generates all stubs and initializes the entry points
-
+  void generate_initial_stubs() {
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
     // benefit seems to be smaller than the disadvantage of having a
@@ -197,42 +197,44 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 
-  void generate_all() {
-    // Generates all stubs and initializes the entry points
+  void generate_continuation_stubs() {
+    // do nothing
+  }
 
-    // These entry points require SharedInfo::stack0 to be set up in
-    // non-core builds and need to be relocatable, so they each
-    // fabricate a RuntimeStub internally.
-    StubRoutines::_throw_AbstractMethodError_entry =
-      ShouldNotCallThisStub();
+  void generate_compiler_stubs() {
+    // do nothing
+  }
 
-    StubRoutines::_throw_NullPointerException_at_call_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_StackOverflowError_entry =
-      ShouldNotCallThisStub();
-
-    // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry =
-      ShouldNotCallThisStub();
-
+  void generate_final_stubs() {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
-      generate_initial();
-    }
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+    switch(blob_id) {
+    case initial_id:
+      generate_initial_stubs();
+      break;
+     case continuation_id:
+       generate_continuation_stubs();
+      break;
+    case compiler_id:
+       // do nothing
+      break;
+    case final_id:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected blob id: %d", blob_id);
+      break;
+    };
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }
 
 EntryFrame *EntryFrame::build(const intptr_t*  parameters,

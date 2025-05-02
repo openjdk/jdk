@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,34 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.meta.Constant;
 
 /**
- * Marker interface for hotspot specific constants.
+ * A value in a space managed by Hotspot (e.g. heap or metaspace).
+ * Some of these values can be referenced with a compressed pointer
+ * instead of a full word-sized pointer.
  */
 public interface HotSpotConstant extends Constant {
 
+    /**
+     * Determines if this constant is compressed.
+     */
     boolean isCompressed();
 
+    /**
+     * Determines if this constant is compressible.
+     */
+    boolean isCompressible();
+
+    /**
+     * Gets a compressed version of this uncompressed constant.
+     *
+     * @throws IllegalArgumentException if this constant is not compressible
+     */
     Constant compress();
 
+    /**
+     * Gets an uncompressed version of this compressed constant.
+     *
+     * @throws IllegalArgumentException if this is an uncompressed constant
+     *         or this constant is not compressible
+     */
     Constant uncompress();
 }

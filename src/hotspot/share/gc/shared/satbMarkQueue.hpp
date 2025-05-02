@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public:
 
 class SATBMarkQueueSet: public PtrQueueSet {
 
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
   PaddedEnd<BufferNode::Stack> _list;
   volatile size_t _count_and_process_flag;
   // These are rarely (if ever) changed, so same cache line as count.
@@ -93,7 +93,7 @@ class SATBMarkQueueSet: public PtrQueueSet {
   size_t _buffer_enqueue_threshold;
   // SATB is only active during marking.  Enqueuing is only done when active.
   bool _all_active;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, 4 * sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, 4 * sizeof(size_t));
 
   BufferNode* get_completed_buffer();
   void abandon_completed_buffers();
@@ -175,13 +175,13 @@ inline void SATBMarkQueueSet::apply_filter(Filter filter_out, SATBMarkQueue& que
   void** buf = queue.buffer();
 
   if (buf == nullptr) {
-    // nothing to do
+    // Nothing to do, and avoid pointer arithmetic on nullptr below.
     return;
   }
 
   // Two-fingered compaction toward the end.
-  void** src = &buf[queue.index()];
-  void** dst = &buf[buffer_size()];
+  void** src = buf + queue.index();
+  void** dst = buf + queue.current_capacity();
   assert(src <= dst, "invariant");
   for ( ; src < dst; ++src) {
     // Search low to high for an entry to keep.

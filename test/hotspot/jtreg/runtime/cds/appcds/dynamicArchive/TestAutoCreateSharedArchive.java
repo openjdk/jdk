@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,7 +337,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                       .shouldContain(HELLO_WORLD)
                       .shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
                       .shouldContain("The shared archive file has the wrong version")
-                      .shouldContain("Initialize dynamic archive failed")
+                      .shouldContain("Loading dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
             });
         ft2 = Files.getLastModifiedTime(Paths.get(modVersion));
@@ -663,7 +663,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("Specified shared archive not found (" + nonExistTop + ")")
+                 output.shouldContain("Specified shared archive file not found (" + nonExistTop + ")")
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
@@ -688,7 +688,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("Specified shared archive not found (" + nonExistBase + ")")
+                 output.shouldContain("Specified shared archive file not found (" + nonExistBase + ")")
                        .shouldContain(HELLO_WORLD)
                        .shouldNotContain("Dumping shared data to file:");
              });

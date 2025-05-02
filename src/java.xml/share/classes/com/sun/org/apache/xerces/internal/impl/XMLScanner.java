@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +30,6 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -41,6 +39,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.xml.internal.stream.Entity;
+import jdk.xml.internal.XMLLimitAnalyzer;
+import jdk.xml.internal.XMLSecurityManager;
 
 //import com.sun.xml.stream.XMLEntityManager;
 //import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -67,7 +67,7 @@ import com.sun.xml.internal.stream.Entity;
  * @author Eric Ye, IBM
  * @author K.Venugopal SUN Microsystems
  * @author Sunitha Reddy, SUN Microsystems
- * @LastModified: Aug 2021
+ * @LastModified: Nov 2024
  */
 public abstract class XMLScanner
         implements XMLComponent {
@@ -1527,7 +1527,7 @@ public abstract class XMLScanner
                 reportFatalError("MaxEntitySizeLimit", new Object[]{"%" + entityName,
                     fLimitAnalyzer.getValue(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT),
                     fSecurityManager.getLimit(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT),
-                    fSecurityManager.getStateLiteral(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT)});
+                    XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT.systemProperty()});
             }
         } else {
             fLimitAnalyzer.addValue(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT, entityName, len);
@@ -1536,7 +1536,7 @@ public abstract class XMLScanner
                 reportFatalError("MaxEntitySizeLimit", new Object[]{entityName,
                     fLimitAnalyzer.getValue(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT),
                     fSecurityManager.getLimit(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT),
-                    fSecurityManager.getStateLiteral(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT)});
+                    XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT.systemProperty()});
             }
         }
         if (fSecurityManager.isOverLimit(XMLSecurityManager.Limit.TOTAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {

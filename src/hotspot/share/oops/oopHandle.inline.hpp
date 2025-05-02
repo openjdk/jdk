@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,23 @@
 #include "gc/shared/oopStorage.inline.hpp"
 
 inline oop OopHandle::resolve() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<>::oop_load(_obj);
+  if (_obj == nullptr) {
+    return (oop) nullptr;
+  } else {
+    oop oop = NativeAccess<>::oop_load(_obj);
+    assert(oopDesc::is_oop_or_null(oop), "Should be oop: " PTR_FORMAT, p2i(oop));
+    return oop;
+  }
 }
 
 inline oop OopHandle::peek() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
+  if (_obj == nullptr) {
+    return (oop) nullptr;
+  } else {
+    oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
+    assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
+    return obj;
+  }
 }
 
 inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
@@ -44,6 +56,7 @@ inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
     vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
                           "Cannot create oop handle");
   }
+  assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
   NativeAccess<>::oop_store(_obj, obj);
 }
 
@@ -52,17 +65,28 @@ inline void OopHandle::release(OopStorage* storage) {
     // Clear the OopHandle first
     NativeAccess<>::oop_store(_obj, nullptr);
     storage->release(_obj);
+    _obj = nullptr;
   }
 }
 
 inline void OopHandle::replace(oop obj) {
-  oop* ptr = ptr_raw();
-  assert(ptr != nullptr, "should not use replace");
-  NativeAccess<>::oop_store(ptr, obj);
+  assert(!is_empty(), "should not use replace");
+  assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
+  NativeAccess<>::oop_store(_obj, obj);
 }
 
 inline oop OopHandle::xchg(oop new_value) {
-  return NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
+  assert(oopDesc::is_oop_or_null(new_value), "Should be oop: " PTR_FORMAT, p2i(new_value));
+  oop obj = NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
+  assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
+  return obj;
+}
+
+inline oop OopHandle::cmpxchg(oop old_value, oop new_value) {
+  assert(oopDesc::is_oop_or_null(new_value), "Should be oop: " PTR_FORMAT, p2i(new_value));
+  oop obj = NativeAccess<MO_SEQ_CST>::oop_atomic_cmpxchg(_obj, old_value, new_value);
+  assert(oopDesc::is_oop_or_null(obj), "Should be oop: " PTR_FORMAT, p2i(obj));
+  return obj;
 }
 
 #endif // SHARE_OOPS_OOPHANDLE_INLINE_HPP

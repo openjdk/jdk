@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.util.OperatingSystem;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import jdk.internal.event.ProcessStartEvent;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class is used to create operating system processes.
@@ -190,6 +190,9 @@ import sun.security.action.GetPropertyAction;
 
 public final class ProcessBuilder
 {
+    // Lazily and racy initialize when needed, racy is ok, any logger is ok
+    private static System.Logger LOGGER;
+
     private List<String> command;
     private File directory;
     private Map<String,String> environment;
@@ -326,32 +329,16 @@ public final class ProcessBuilder
      *
      * <p>The returned map is typically case-sensitive on all platforms.
      *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkPermission checkPermission} method
-     * is called with a
-     * {@link RuntimePermission}{@code ("getenv.*")} permission.
-     * This may result in a {@link SecurityException} being thrown.
-     *
      * <p>When passing information to a Java subprocess,
      * <a href=System.html#EnvironmentVSSystemProperties>system properties</a>
      * are generally preferred over environment variables.
      *
      * @return this process builder's environment
      *
-     * @throws SecurityException
-     *         if a security manager exists and its
-     *         {@link SecurityManager#checkPermission checkPermission}
-     *         method doesn't allow access to the process environment
-     *
      * @see    Runtime#exec(String[],String[],java.io.File)
      * @see    System#getenv()
      */
     public Map<String,String> environment() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkPermission(new RuntimePermission("getenv.*"));
-
         if (environment == null)
             environment = ProcessEnvironment.environment();
 
@@ -469,9 +456,8 @@ public final class ProcessBuilder
      * @since 1.7
      */
     public abstract static class Redirect {
-        private static final File NULL_FILE = new File(
-                (GetPropertyAction.privilegedGetProperty("os.name")
-                        .startsWith("Windows") ? "NUL" : "/dev/null")
+        private static final File NULL_FILE =
+                new File((OperatingSystem.isWindows() ? "NUL" : "/dev/null")
         );
 
         /**
@@ -1007,12 +993,6 @@ public final class ProcessBuilder
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
      *
-     * <p>If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of this object's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
-     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -1040,33 +1020,23 @@ public final class ProcessBuilder
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
      *
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *
-     *         </ul>
-     *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes.
      *
      * @throws IOException if an I/O error occurs
+     *
+     * @implNote
+     * In the reference implementation, logging of the command, arguments, directory,
+     * stack trace, and process id can be enabled.
+     * The logged information may contain sensitive security information and the potential exposure
+     * of the information should be carefully reviewed.
+     * Logging of the information is enabled when the logging level of the
+     * {@linkplain System#getLogger(String) system logger} named {@code java.lang.ProcessBuilder}
+     * is {@link System.Logger.Level#DEBUG Level.DEBUG} or {@link System.Logger.Level#TRACE Level.TRACE}.
+     * When enabled for {@code Level.DEBUG} only the process id, directory, command, and stack trace
+     * are logged.
+     * When enabled for {@code Level.TRACE} the arguments are included with the process id,
+     * directory, command, and stack trace.
      *
      * @see Runtime#exec(String[], String[], java.io.File)
      */
@@ -1094,15 +1064,10 @@ public final class ProcessBuilder
         // Throws IndexOutOfBoundsException if command is empty
         String prog = cmdarray[0];
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkExec(prog);
-
         String dir = directory == null ? null : directory.toString();
 
-        for (int i = 1; i < cmdarray.length; i++) {
-            if (cmdarray[i].indexOf('\u0000') >= 0) {
+        for (String s : cmdarray) {
+            if (s.indexOf('\u0000') >= 0) {
                 throw new IOException("invalid null character in command");
             }
         }
@@ -1120,26 +1085,30 @@ public final class ProcessBuilder
                 event.pid = process.pid();
                 event.commit();
             }
+            // Racy initialization for logging; errors in configuration may throw exceptions
+            System.Logger logger = LOGGER;
+            if (logger == null) {
+                LOGGER = logger = System.getLogger("java.lang.ProcessBuilder");
+            }
+            if (logger.isLoggable(System.Logger.Level.DEBUG)) {
+                boolean detail = logger.isLoggable(System.Logger.Level.TRACE);
+                var level = (detail) ? System.Logger.Level.TRACE : System.Logger.Level.DEBUG;
+                var cmdargs = (detail) ? String.join("\" \"", cmdarray) : cmdarray[0];
+                RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
+                LOGGER.log(level, "ProcessBuilder.start(): pid: " + process.pid() +
+                        ", dir: " + dir +
+                        ", cmd: \"" + cmdargs + "\"",
+                        stackTraceEx);
+            }
             return process;
         } catch (IOException | IllegalArgumentException e) {
-            String exceptionInfo = ": " + e.getMessage();
-            Throwable cause = e;
-            if ((e instanceof IOException) && security != null) {
-                // Can not disclose the fail reason for read-protected files.
-                try {
-                    security.checkRead(prog);
-                } catch (SecurityException se) {
-                    exceptionInfo = "";
-                    cause = se;
-                }
-            }
             // It's much easier for us to create a high-quality error
             // message than the low-level C code which found the problem.
             throw new IOException(
                 "Cannot run program \"" + prog + "\""
                 + (dir == null ? "" : " (in directory \"" + dir + "\")")
-                + exceptionInfo,
-                cause);
+                + ": " + e.getMessage(),
+                e);
         }
     }
 
@@ -1185,12 +1154,6 @@ public final class ProcessBuilder
      * settings beyond those in the process builder's {@link #environment()}.
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
-     * <p>
-     * If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of each process builder's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
      * <p>
      * Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
@@ -1242,27 +1205,13 @@ public final class ProcessBuilder
      *         the builders argument is null
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *         </ul>
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes
+     *
+     * @implNote
+     * In the reference implementation, logging of each process created can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @throws IOException if an I/O error occurs
      * @since 9

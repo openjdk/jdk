@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8194652
  * @summary Printing native stack shows an "error occurred during error reporting".
  * @modules java.base/jdk.internal.misc
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.flavor != "zero"
  * @library /test/lib
@@ -44,7 +45,7 @@ import jdk.test.lib.process.ProcessTools;
 // This test was adapted from SafeFetchInErrorHandlingTest.java.
 public class BadNativeStackInErrorHandlingTest {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:ErrorHandlerTest=14",

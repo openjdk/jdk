@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,22 @@
 /**
  * @test
  * @bug 4322313 4833268 6302990 6304305
- * @library /java/text/testlib
  * @summary Make sure that new implementation for
  * SimpleDateFormat.parse('z' or 'Z') and format('z' or 'Z') work correctly.
+ * @run junit Bug4322313
  */
 
 import java.io.*;
 import java.text.*;
 import java.util.*;
 
-public class Bug4322313 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class Bug4322313 {
+
+    @Test
     public void Test4322313() {
         Locale savedLocale = Locale.getDefault();
         TimeZone savedTimeZone = TimeZone.getDefault();
@@ -200,7 +205,7 @@ public class Bug4322313 extends IntlTest {
                                 ", got:" + date.getTime() + ", " + date);
                         } else {
 /*
-                            logln("\tParse  Okay  [Locale=" +
+                            System.out.println("\tParse  Okay  [Locale=" +
                                 locale) + ", " + formats[j] +
                                 "/\"" + valids[k][0] +
                                 "\"] expected:" + valids[k][1] +
@@ -252,7 +257,7 @@ public class Bug4322313 extends IntlTest {
                                     ", got:" + s + ", " + date);
                             } else {
 /*
-                                logln("\tFormat Okay  [Locale=" +
+                                System.out.println("\tFormat Okay  [Locale=" +
                                     locale + ", " +
                                     formats[j] + "/\"" + valids[k][0] +
                                     "\"] expected:" + valids[k][2+j] +
@@ -286,7 +291,7 @@ public class Bug4322313 extends IntlTest {
                                     invalids[k][1] + ", got: " + offset);
                             } else {
 /*
-                                logln("\tParse  Okay  [Locale=" +
+                                System.out.println("\tParse  Okay  [Locale=" +
                                     locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] correct offset: " + offset);
@@ -322,7 +327,7 @@ public class Bug4322313 extends IntlTest {
                                     invalids[k][1] + ", got: " + offset);
                             } else {
 /*
-                                logln("\tParse  Okay  [Locale=" +
+                                System.out.println("\tParse  Okay  [Locale=" +
                                     locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] Expected exception occurred with an correct offset: "
@@ -354,12 +359,9 @@ public class Bug4322313 extends IntlTest {
             Locale.setDefault(savedLocale);
             TimeZone.setDefault(savedTimeZone);
             if (err) {
-                errln("SimpleDateFormat.parse()/format() test failed");
+                fail("SimpleDateFormat.parse()/format() test failed");
             }
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        new Bug4322313().run(args);
-    }
 }

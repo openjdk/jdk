@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,6 @@ enum DCmdSource {
   DCmd_Source_MBean     = 0x04U   // invocation via a MBean
 };
 
-// Warning: strings referenced by the JavaPermission struct are passed to
-// the native part of the JDK. Avoid use of dynamically allocated strings
-// that could be de-allocated before the JDK native code had time to
-// convert them into Java Strings.
-struct JavaPermission {
-  const char* _class;
-  const char* _name;
-  const char* _action;
-};
-
 // CmdLine is the class used to handle a command line containing a single
 // diagnostic command and its arguments. It provides methods to access the
 // command name and the beginning of the arguments. The class is also
@@ -67,7 +57,7 @@ public:
   const char* cmd_addr() const    { return _cmd; }
   size_t cmd_len() const          { return _cmd_len; }
   bool is_empty() const           { return _cmd_len == 0; }
-  bool is_executable() const      { return is_empty() || _cmd[0] != '#'; }
+  bool is_executable() const      { return !is_empty() && _cmd[0] != '#'; }
   bool is_stop() const            { return !is_empty() && strncmp("stop", _cmd, _cmd_len) == 0; }
 };
 
@@ -127,26 +117,22 @@ protected:
   const char* const _name;           /* Name of the diagnostic command */
   const char* const _description;    /* Short description */
   const char* const _impact;         /* Impact on the JVM */
-  const JavaPermission _permission;  /* Java Permission required to execute this command if any */
   const int         _num_arguments;  /* Number of supported options or arguments */
   const bool        _is_enabled;     /* True if the diagnostic command can be invoked, false otherwise */
 public:
   DCmdInfo(const char* name,
           const char* description,
           const char* impact,
-          JavaPermission permission,
           int num_arguments,
           bool enabled)
-  : _name(name), _description(description), _impact(impact), _permission(permission),
+  : _name(name), _description(description), _impact(impact),
     _num_arguments(num_arguments), _is_enabled(enabled) {}
   const char* name() const          { return _name; }
+  bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
-  const JavaPermission& permission() const { return _permission; }
   int num_arguments() const         { return _num_arguments; }
   bool is_enabled() const           { return _is_enabled; }
-
-  static bool by_name(void* name, DCmdInfo* info);
 };
 
 // A DCmdArgumentInfo instance provides a description of a diagnostic command
@@ -262,23 +248,8 @@ public:
   // impact depends on the heap size.
   static const char* impact()       { return "Low: No impact"; }
 
-  // The permission() method returns the description of Java Permission. This
-  // permission is required when the diagnostic command is invoked via the
-  // DiagnosticCommandMBean. The rationale for this permission check is that
-  // the DiagnosticCommandMBean can be used to perform remote invocations of
-  // diagnostic commands through the PlatformMBeanServer. The (optional) Java
-  // Permission associated with each diagnostic command should ease the work
-  // of system administrators to write policy files granting permissions to
-  // execute diagnostic commands to remote users. Any diagnostic command with
-  // a potential impact on security should overwrite this method.
-  static const JavaPermission permission() {
-    JavaPermission p = {nullptr, nullptr, nullptr};
-    return p;
-  }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
-  // - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments().
-  // - Other subclasses of DCmd have zero arguments by default. You can change this
-  //   by defining your own version of MyDCmd::num_arguments().
+  // All subclasses should override this to report the actual number of arguments.
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }
@@ -307,6 +278,19 @@ public:
     return array;
   }
 
+  // helper class to invoke the framework
+  class Executor : public StackObj {
+    DCmdSource _source;
+    outputStream* _out;
+  public:
+    Executor(DCmdSource source, outputStream* out): _source(source), _out(out) {}
+
+    void parse_and_execute(const char* cmdline, char delim, TRAPS);
+
+  protected:
+    virtual void execute(DCmd* command, TRAPS);
+  };
+
   // main method to invoke the framework
   static void parse_and_execute(DCmdSource source, outputStream* out, const char* cmdline,
                                 char delim, TRAPS);
@@ -315,6 +299,9 @@ public:
   // management.cpp every time.
   static void register_dcmds();
 
+  // Helper method to substitute help options "<cmd> -h|-help|--help"
+  // for "help <cmd>".
+  static bool reorder_help_cmd(CmdLine line, stringStream& updated_line);
 };
 
 class DCmdWithParser : public DCmd {
@@ -387,7 +374,6 @@ public:
   virtual const char* name() const = 0;
   virtual const char* description() const = 0;
   virtual const char* impact() const = 0;
-  virtual const JavaPermission permission() const = 0;
   virtual const char* disabled_message() const = 0;
   // Register a DCmdFactory to make a diagnostic command available.
   // Once registered, a diagnostic command must not be unregistered.
@@ -431,21 +417,19 @@ public:
   const char* impact() const {
     return DCmdClass::impact();
   }
-  const JavaPermission permission() const {
-    return DCmdClass::permission();
-  }
   const char* disabled_message() const {
      return DCmdClass::disabled_message();
   }
 
 private:
+#ifdef ASSERT
   template <typename T, ENABLE_IF(!std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     return T::num_arguments();
   }
 
   template <typename T, ENABLE_IF(std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     ResourceMark rm;
     DCmdClass* dcmd = new DCmdClass(nullptr, false);
     if (dcmd != nullptr) {
@@ -455,6 +439,20 @@ private:
       return 0;
     }
   }
+#endif
+
+  template <typename T, ENABLE_IF(std::is_convertible<T, DCmd>::value)>
+  static int get_num_arguments() {
+    int n_args = T::num_arguments();
+#ifdef ASSERT
+    int n_parsed_args = get_parsed_num_arguments<T>();
+    assert(n_args == n_parsed_args,
+           "static argument count %d does not match parsed argument count %d",
+           n_args, n_parsed_args);
+#endif
+    return n_args;
+  }
+
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP

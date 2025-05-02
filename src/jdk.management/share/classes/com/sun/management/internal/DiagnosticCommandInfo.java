@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ class DiagnosticCommandInfo {
     private final String name;
     private final String description;
     private final String impact;
-    private final String permissionClass;
-    private final String permissionName;
-    private final String permissionAction;
     private final boolean enabled;
     private final List<DiagnosticCommandArgumentInfo> arguments;
 
@@ -74,43 +71,6 @@ class DiagnosticCommandInfo {
     }
 
     /**
-     * Returns the name of the permission class required to be allowed
-     *         to invoke the diagnostic command, or null if no permission
-     *         is required.
-     *
-     * @return the name of the permission class name required to be allowed
-     *         to invoke the diagnostic command, or null if no permission
-     *         is required
-     */
-    String getPermissionClass() {
-        return permissionClass;
-    }
-
-    /**
-     * Returns the permission name required to be allowed to invoke the
-     *         diagnostic command, or null if no permission is required.
-     *
-     * @return the permission name required to be allowed to invoke the
-     *         diagnostic command, or null if no permission is required
-     */
-    String getPermissionName() {
-        return permissionName;
-    }
-
-    /**
-     * Returns the permission action required to be allowed to invoke the
-     *         diagnostic command, or null if no permission is required or
-     *         if the permission has no action specified.
-     *
-     * @return the permission action required to be allowed to invoke the
-     *         diagnostic command, or null if no permission is required or
-     *         if the permission has no action specified
-     */
-    String getPermissionAction() {
-        return permissionAction;
-    }
-
-    /**
      * Returns {@code true} if the diagnostic command is enabled,
      *         {@code false} otherwise. The enabled/disabled
      *         status of a diagnostic command can evolve during
@@ -134,17 +94,13 @@ class DiagnosticCommandInfo {
     }
 
     DiagnosticCommandInfo(String name, String description,
-                                    String impact, String permissionClass,
-                                    String permissionName, String permissionAction,
+                                    String impact,
                                     boolean enabled,
                                     List<DiagnosticCommandArgumentInfo> arguments)
     {
         this.name = name;
         this.description = description;
         this.impact = impact;
-        this.permissionClass = permissionClass;
-        this.permissionName = permissionName;
-        this.permissionAction = permissionAction;
         this.enabled = enabled;
         this.arguments = arguments;
     }

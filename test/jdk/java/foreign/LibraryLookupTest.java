@@ -1,36 +1,38 @@
 /*
- *  Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.lang.foreign.*;
 import java.lang.foreign.Arena;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +40,19 @@ import java.util.concurrent.TimeUnit;
 import static org.testng.Assert.*;
 
 /*
- * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED LibraryLookupTest
+ * @test id=specialized
+ * @run testng/othervm/native
+ *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
+ *  --enable-native-access=ALL-UNNAMED
+ *  LibraryLookupTest
+ */
+
+/*
+ * @test id=interpreted
+ * @run testng/othervm/native
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
+ *   --enable-native-access=ALL-UNNAMED
+ *   LibraryLookupTest
  */
 public class LibraryLookupTest {
 
@@ -51,12 +62,12 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryConfined() {
-        try (Arena arena0 = Arena.openConfined()) {
-            callFunc(loadLibrary(arena0.scope()));
-            try (Arena arena1 = Arena.openConfined()) {
-                callFunc(loadLibrary(arena1.scope()));
-                try (Arena arena2 = Arena.openConfined()) {
-                    callFunc(loadLibrary(arena2.scope()));
+        try (Arena arena0 = Arena.ofConfined()) {
+            callFunc(loadLibrary(arena0));
+            try (Arena arena1 = Arena.ofConfined()) {
+                callFunc(loadLibrary(arena1));
+                try (Arena arena2 = Arena.ofConfined()) {
+                    callFunc(loadLibrary(arena2));
                 }
             }
         }
@@ -65,16 +76,62 @@ public class LibraryLookupTest {
     @Test(expectedExceptions = IllegalStateException.class)
     void testLoadLibraryConfinedClosed() {
         MemorySegment addr;
-        try (Arena arena = Arena.openConfined()) {
-            addr = loadLibrary(arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            addr = loadLibrary(arena);
         }
         callFunc(addr);
     }
 
-    private static MemorySegment loadLibrary(SegmentScope session) {
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testLoadLibraryBadName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
+        }
+    }
+
+    @Test
+    void testLoadLibraryBadLookupName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup lookup = SymbolLookup.libraryLookup(LIB_PATH, arena);
+            assertTrue(lookup.find("inc\u0000foobar").isEmpty());
+        }
+    }
+
+    @Test
+    void testLoadLibraryNonDefaultFileSystem() throws URISyntaxException, IOException {
+        try (FileSystem customFs = fsFromJarOfClass(org.testng.annotations.Test.class)) {
+            try (Arena arena = Arena.ofConfined()) {
+                Path p = customFs.getPath(".");
+                try {
+                    SymbolLookup.libraryLookup(p, arena);
+                    fail("Did not throw IAE");
+                } catch (IllegalArgumentException iae) {
+                    assertTrue(iae.getMessage().contains("not in default file system"));
+                }
+            }
+        }
+    }
+
+    private static FileSystem fsFromJarOfClass(Class<?> clazz) throws URISyntaxException, IOException {
+        String name = clazz.getName();
+        final int lastDot = name.lastIndexOf('.');
+        if (lastDot != -1) {
+            name = name.substring(lastDot + 1);
+        }
+        URI uri = clazz.getResource(name + ".class").toURI();
+        if (uri.getScheme().equals("jar")) {
+            final String[] parts = uri.toString().split("!");
+            if (parts.length == 2) {
+                return FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>());
+            }
+        }
+        throw new AssertionError("Unable to create file system from " + clazz);
+    }
+
+    private static MemorySegment loadLibrary(Arena session) {
         SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, session);
         MemorySegment addr = lib.find("inc").get();
-        assertEquals(addr.scope(), session);
+        assertEquals(addr.scope(), session.scope());
         return addr;
     }
 
@@ -94,12 +151,12 @@ public class LibraryLookupTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadLibraryLookupName() {
-        SymbolLookup.libraryLookup("nonExistent", SegmentScope.global());
+        SymbolLookup.libraryLookup("nonExistent", Arena.global());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadLibraryLookupPath() {
-        SymbolLookup.libraryLookup(Path.of("nonExistent"), SegmentScope.global());
+        SymbolLookup.libraryLookup(Path.of("nonExistent"), Arena.global());
     }
 
     @Test
@@ -116,8 +173,8 @@ public class LibraryLookupTest {
         @Override
         public void run() {
             for (int i = 0 ; i < ITERATIONS ; i++) {
-                try (Arena arena = Arena.openConfined()) {
-                    callFunc(loadLibrary(arena.scope()));
+                try (Arena arena = Arena.ofConfined()) {
+                    callFunc(loadLibrary(arena));
                 }
             }
         }
@@ -125,8 +182,8 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibrarySharedClosed() throws Throwable {
-        Arena arena = Arena.openShared();
-        MemorySegment addr = loadLibrary(arena.scope());
+        Arena arena = Arena.ofShared();
+        MemorySegment addr = loadLibrary(arena);
         ExecutorService accessExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < NUM_ACCESSORS ; i++) {
             accessExecutor.execute(new LibraryAccess(addr));

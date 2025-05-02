@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,10 @@ public class JVMOptionsUtils {
     private static Map<String, JVMOption> optionsAsMap;
 
     static {
-        if (Platform.isServer()) {
+        if (Platform.isStatic()) {
+            // -server|-client|-minimal flags are not supported on static JDK.
+            VMType = null;
+        } else if (Platform.isServer()) {
             VMType = "-server";
         } else if (Platform.isClient()) {
             VMType = "-client";
@@ -469,7 +472,7 @@ public class JVMOptionsUtils {
         runJava.add(PRINT_FLAGS_RANGES);
         runJava.add("-version");
 
-        p = ProcessTools.createJavaProcessBuilder(runJava).start();
+        p = ProcessTools.createLimitedTestJavaProcessBuilder(runJava).start();
 
         result = getJVMOptions(new InputStreamReader(p.getInputStream()), withRanges, acceptOrigin);
 

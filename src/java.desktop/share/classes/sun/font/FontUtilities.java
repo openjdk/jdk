@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@ package sun.font;
 import java.awt.Font;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
-import java.security.AccessController;
 
-import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -58,66 +57,57 @@ public final class FontUtilities {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
     private static void initStatic() {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
-            @Override
-            public Object run() {
-                String osName = System.getProperty("os.name", "unknownOS");
 
-                isLinux = osName.startsWith("Linux");
+        isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
 
-                isMacOSX = osName.contains("OS X"); // TODO: MacOSX
-                if (isMacOSX) {
-                    // os.version has values like 10.13.6, 10.14.6
-                    // If it is not positively recognised as 10.13 or less,
-                    // assume it means 10.14 or some later version.
-                    isMacOSX14 = true;
-                    String version = System.getProperty("os.version", "");
-                    if (version.startsWith("10.")) {
-                        version = version.substring(3);
-                        int periodIndex = version.indexOf('.');
-                        if (periodIndex != -1) {
-                            version = version.substring(0, periodIndex);
-                        }
-                        try {
-                            int v = Integer.parseInt(version);
-                            isMacOSX14 = (v >= 14);
-                        } catch (NumberFormatException e) {
-                        }
-                     }
-                 }
-                /* If set to "jdk", use the JDK's scaler rather than
-                 * the platform one. This may be a no-op on platforms where
-                 * JDK has been configured so that it always relies on the
-                 * platform scaler. The principal case where it has an
-                 * effect is that on Windows, 2D will never use GDI.
-                 */
-                String scalerStr = System.getProperty("sun.java2d.font.scaler");
-                if (scalerStr != null) {
-                    useJDKScaler = "jdk".equals(scalerStr);
-                } else {
-                    useJDKScaler = false;
+        isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
+        if (isMacOSX) {
+            // os.version has values like 10.13.6, 10.14.6
+            // If it is not positively recognised as 10.13 or less,
+            // assume it means 10.14 or some later version.
+            isMacOSX14 = true;
+            String version = System.getProperty("os.version", "");
+            if (version.startsWith("10.")) {
+                version = version.substring(3);
+                int periodIndex = version.indexOf('.');
+                if (periodIndex != -1) {
+                    version = version.substring(0, periodIndex);
                 }
-                isWindows = osName.startsWith("Windows");
-                String debugLevel =
-                    System.getProperty("sun.java2d.debugfonts");
-
-                if (debugLevel != null && !debugLevel.equals("false")) {
-                    debugFonts = true;
-                    logger = PlatformLogger.getLogger("sun.java2d");
-                    if (debugLevel.equals("warning")) {
-                        logger.setLevel(PlatformLogger.Level.WARNING);
-                    } else if (debugLevel.equals("severe")) {
-                        logger.setLevel(PlatformLogger.Level.SEVERE);
-                    }
-                    logging = logger.isEnabled();
+                try {
+                    int v = Integer.parseInt(version);
+                    isMacOSX14 = (v >= 14);
+                } catch (NumberFormatException e) {
                 }
+             }
+         }
+        /* If set to "jdk", use the JDK's scaler rather than
+         * the platform one. This may be a no-op on platforms where
+         * JDK has been configured so that it always relies on the
+         * platform scaler. The principal case where it has an
+         * effect is that on Windows, 2D will never use GDI.
+         */
+        String scalerStr = System.getProperty("sun.java2d.font.scaler");
+        if (scalerStr != null) {
+            useJDKScaler = "jdk".equals(scalerStr);
+        } else {
+            useJDKScaler = false;
+        }
+        isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
+        String debugLevel =
+            System.getProperty("sun.java2d.debugfonts");
 
-                return null;
+        if (debugLevel != null && !debugLevel.equals("false")) {
+            debugFonts = true;
+            logger = PlatformLogger.getLogger("sun.java2d");
+            if (debugLevel.equals("warning")) {
+                logger.setLevel(PlatformLogger.Level.WARNING);
+            } else if (debugLevel.equals("severe")) {
+                logger.setLevel(PlatformLogger.Level.SEVERE);
             }
-        });
+            logging = logger.isEnabled();
+        }
     }
 
     /**
@@ -230,7 +220,7 @@ public final class FontUtilities {
      * which would mean all ranges would need to be checked so be sure
      * CTL is not needed, the method returns as soon as it recognises
      * the code point is outside of a CTL ranges.
-     * NOTE: Since this method accepts an 'int' it is asssumed to properly
+     * NOTE: Since this method accepts an 'int' it is assumed to properly
      * represent a CHARACTER. ie it assumes the caller has already
      * converted surrogate pairs into supplementary characters, and so
      * can handle this case and doesn't need to be told such a case is
@@ -306,6 +296,77 @@ public final class FontUtilities {
             return true;
         }
         return false;
+    }
+
+    /**
+     * <p>Checks whether or not the specified codepoint is ignorable by default, per the
+     * Unicode standard (with exceptions for HarfBuzz and Uniscribe compatibility).
+     * The codepoints categorized as ignorable should remain in sync with HarfBuzz's
+     * is_default_ignorable() in hb-unicode.hh.
+     *
+     * <p>See the original Unicode list of default-ignorable codepoints
+     * <a href="https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt">here</a>:
+     *
+     * <pre>
+     * 00AD         # Cf       SOFT HYPHEN
+     * 034F         # Mn       COMBINING GRAPHEME JOINER
+     * 061C         # Cf       ARABIC LETTER MARK
+     * 115F..1160   # Lo   [2] HANGUL CHOSEONG FILLER..HANGUL JUNGSEONG FILLER
+     * 17B4..17B5   # Mn   [2] KHMER VOWEL INHERENT AQ..KHMER VOWEL INHERENT AA
+     * 180B..180D   # Mn   [3] MONGOLIAN FREE VARIATION SELECTOR ONE..MONGOLIAN FREE VARIATION SELECTOR THREE
+     * 180E         # Cf       MONGOLIAN VOWEL SEPARATOR
+     * 180F         # Mn       MONGOLIAN FREE VARIATION SELECTOR FOUR
+     * 200B..200F   # Cf   [5] ZERO WIDTH SPACE..RIGHT-TO-LEFT MARK
+     * 202A..202E   # Cf   [5] LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE
+     * 2060..2064   # Cf   [5] WORD JOINER..INVISIBLE PLUS
+     * 2065         # Cn       <reserved-2065>
+     * 2066..206F   # Cf  [10] LEFT-TO-RIGHT ISOLATE..NOMINAL DIGIT SHAPES
+     * 3164         # Lo       HANGUL FILLER
+     * FE00..FE0F   # Mn  [16] VARIATION SELECTOR-1..VARIATION SELECTOR-16
+     * FEFF         # Cf       ZERO WIDTH NO-BREAK SPACE
+     * FFA0         # Lo       HALFWIDTH HANGUL FILLER
+     * FFF0..FFF8   # Cn   [9] <reserved-FFF0>..<reserved-FFF8>
+     * 1BCA0..1BCA3 # Cf   [4] SHORTHAND FORMAT LETTER OVERLAP..SHORTHAND FORMAT UP STEP
+     * 1D173..1D17A # Cf   [8] MUSICAL SYMBOL BEGIN BEAM..MUSICAL SYMBOL END PHRASE
+     * E0000        # Cn       <reserved-E0000>
+     * E0001        # Cf       LANGUAGE TAG
+     * E0002..E001F # Cn  [30] <reserved-E0002>..<reserved-E001F>
+     * E0020..E007F # Cf  [96] TAG SPACE..CANCEL TAG
+     * E0080..E00FF # Cn [128] <reserved-E0080>..<reserved-E00FF>
+     * E0100..E01EF # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
+     * E01F0..E0FFF # Cn [3600] <reserved-E01F0>..<reserved-E0FFF>
+     * </pre>
+     */
+    public static boolean isDefaultIgnorable(int charCode) {
+        if (charCode < 0x00AD) {
+            return false;
+        }
+        int plane = charCode >> 16;
+        if (plane == 0) {
+            // basic multilingual plane (BMP)
+            int page = charCode >> 8;
+            switch (page) {
+                case 0x00: return (charCode == 0x00AD);
+                case 0x03: return (charCode == 0x034F);
+                case 0x06: return (charCode == 0x061C);
+                case 0x17: return (charCode >= 0x17B4 && charCode <= 0x17B5);
+                case 0x18: return (charCode >= 0x180B && charCode <= 0x180E);
+                case 0x20: return (charCode >= 0x200B && charCode <= 0x200F) ||
+                                  (charCode >= 0x202A && charCode <= 0x202E) ||
+                                  (charCode >= 0x2060 && charCode <= 0x206F);
+                case 0xFE: return (charCode >= 0xFE00 && charCode <= 0xFE0F) ||
+                                  (charCode == 0xFEFF);
+                case 0xFF: return (charCode >= 0xFFF0 && charCode <= 0xFFF8);
+                default: return false;
+            }
+        } else {
+            // other planes
+            switch (plane) {
+                case 0x01: return (charCode >= 0x1D173 && charCode <= 0x1D17A);
+                case 0x0E: return (charCode >= 0xE0000 && charCode <= 0xE0FFF);
+                default: return false;
+            }
+        }
     }
 
     public static PlatformLogger getLogger() {

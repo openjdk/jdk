@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.dom.DOMResult;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
@@ -44,11 +43,9 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6347190 8139584 8216408
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @run testng/othervm stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @summary Tests XMLStreamWriter.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XMLStreamWriterTest {
     /**
      * @bug 8139584

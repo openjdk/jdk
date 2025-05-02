@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/stackValueCollection.hpp"
 
 jint StackValueCollection::int_at(int slot) const {
-  intptr_t val =  at(slot)->get_int();
-  jint ival = *((jint*) (&val));
-  return ival;
+  return at(slot)->get_jint();
 }
 
 jlong StackValueCollection::long_at(int slot) const {
 #ifdef _LP64
-  return at(slot+1)->get_int();
+  return at(slot+1)->get_intptr();
 #else
   union {
     jlong jl;
@@ -41,8 +38,8 @@ jlong StackValueCollection::long_at(int slot) const {
   } value;
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
-  value.array[0] = at(slot+1)->get_int();
-  value.array[1] = at(slot  )->get_int();
+  value.array[0] = at(slot+1)->get_intptr();
+  value.array[1] = at(slot  )->get_intptr();
   return value.jl;
 #endif
 }
@@ -52,13 +49,13 @@ Handle StackValueCollection::obj_at(int slot) const {
 }
 
 jfloat StackValueCollection::float_at(int slot) const {
-  intptr_t res = at(slot)->get_int();
+  intptr_t res = at(slot)->get_intptr();
   return *((jfloat*) (&res));
 }
 
 jdouble StackValueCollection::double_at(int slot) const {
 #ifdef _LP64
-  intptr_t res = at(slot+1)->get_int();
+  intptr_t res = at(slot+1)->get_intptr();
   return *((jdouble*) (&res));
 #else
   union {
@@ -67,21 +64,19 @@ jdouble StackValueCollection::double_at(int slot) const {
   } value;
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
-  value.array[0] = at(slot+1)->get_int();
-  value.array[1] = at(slot  )->get_int();
+  value.array[0] = at(slot+1)->get_intptr();
+  value.array[1] = at(slot  )->get_intptr();
   return value.jd;
 #endif
 }
 
 void StackValueCollection::set_int_at(int slot, jint value) {
-  intptr_t val;
-  *((jint*) (&val)) = value;
-  at(slot)->set_int(val);
+  at(slot)->set_jint(value);
 }
 
 void StackValueCollection::set_long_at(int slot, jlong value) {
 #ifdef _LP64
-  at(slot+1)->set_int(value);
+  at(slot+1)->set_intptr(value);
 #else
   union {
     jlong jl;
@@ -90,8 +85,8 @@ void StackValueCollection::set_long_at(int slot, jlong value) {
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
   x.jl = value;
-  at(slot+1)->set_int(x.array[0]);
-  at(slot+0)->set_int(x.array[1]);
+  at(slot+1)->set_intptr(x.array[0]);
+  at(slot+0)->set_intptr(x.array[1]);
 #endif
 }
 
@@ -108,15 +103,15 @@ void StackValueCollection::set_float_at(int slot, jfloat value) {
   // Interpreter stores 32 bit floats in first half of 64 bit word.
   val.array[0] = *(jint*)(&value);
   val.array[1] = 0;
-  at(slot)->set_int(val.jd);
+  at(slot)->set_intptr(val.jd);
 #else
-  at(slot)->set_int(*(jint*)(&value));
+  at(slot)->set_intptr(*(jint*)(&value));
 #endif
 }
 
 void StackValueCollection::set_double_at(int slot, jdouble value) {
 #ifdef _LP64
-  at(slot+1)->set_int(*(intptr_t*)(&value));
+  at(slot+1)->set_intptr(*(intptr_t*)(&value));
 #else
   union {
     jdouble jd;
@@ -125,8 +120,8 @@ void StackValueCollection::set_double_at(int slot, jdouble value) {
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
   x.jd = value;
-  at(slot+1)->set_int(x.array[0]);
-  at(slot+0)->set_int(x.array[1]);
+  at(slot+1)->set_intptr(x.array[0]);
+  at(slot+0)->set_intptr(x.array[1]);
 #endif
 }
 

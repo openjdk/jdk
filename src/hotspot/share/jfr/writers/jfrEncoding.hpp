@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,22 +49,22 @@ class EncoderHost : public AllStatic {
 
   template <typename T>
   static u1* be_write(const T* value, size_t len, u1* pos) {
-    assert(value != NULL, "invariant");
-    assert(pos != NULL, "invariant");
+    assert(value != nullptr, "invariant");
+    assert(pos != nullptr, "invariant");
     assert(len > 0, "invariant");
     return pos + BaseEncoder::encode(value, len, pos);
   }
 
   template <typename T>
   static u1* write_padded(T value, u1* pos) {
-    assert(pos != NULL, "invariant");
+    assert(pos != nullptr, "invariant");
     return write_padded(&value, 1, pos);
   }
 
   template <typename T>
   static u1* write_padded(const T* value, size_t len, u1* pos) {
-    assert(value != NULL, "invariant");
-    assert(pos != NULL, "invariant");
+    assert(value != nullptr, "invariant");
+    assert(pos != nullptr, "invariant");
     assert(len > 0, "invariant");
     return pos + IntegerEncoder::encode_padded(value, len, pos);
   }
@@ -81,8 +81,8 @@ class EncoderHost : public AllStatic {
 
   template <typename T>
   static u1* write(const T* value, size_t len, u1* pos) {
-    assert(value != NULL, "invariant");
-    assert(pos != NULL, "invariant");
+    assert(value != nullptr, "invariant");
+    assert(pos != nullptr, "invariant");
     assert(len > 0, "invariant");
     return pos + IntegerEncoder::encode(value, len, pos);
   }
@@ -101,7 +101,7 @@ class EncoderHost : public AllStatic {
 
   static u1* write(const char* value, u1* pos) {
     u2 len = 0;
-    if (value != NULL) {
+    if (value != nullptr) {
       len = MIN2<u2>(max_jushort, (jushort)strlen(value));
     }
     pos = write(len, pos);

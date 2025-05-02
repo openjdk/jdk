@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class DBCS {
     {
         String clzName = cs.clzName;
         String csName  = cs.csName;
-        String hisName = cs.hisName;
+        String histName = cs.histName;
         String pkgName = cs.pkgName;
         boolean isASCII = cs.isASCII;
         int b1Min = cs.b1Min;
@@ -152,8 +152,8 @@ public class DBCS {
         Scanner s = new Scanner(new File(srcDir, template));
         PrintStream ops = new PrintStream(new FileOutputStream(
                              new File(dstDir, clzName + ".java")));
-        if (hisName == null)
-            hisName = "";
+        if (histName == null)
+            histName = "";
 
         // (5) c2b replacement, only used for JIs0208/0212, which
         // are two pure db charsets so default '3f' does not work
@@ -174,7 +174,7 @@ public class DBCS {
                 continue;
             }
             line = line.replace("$PACKAGE$" , pkgName)
-                       .replace("$IMPLEMENTS$", (hisName == null)?
+                       .replace("$IMPLEMENTS$", (histName == null)?
                                 "" : "implements HistoricallyNamedCharset")
                        .replace("$NAME_CLZ$", clzName)
                        .replace("$NAME_ALIASES$",
@@ -189,8 +189,8 @@ public class DBCS {
                                  "return ((cs.name().equals(\"US-ASCII\")) || (cs instanceof " + clzName + "));":
                                  "return (cs instanceof " + clzName + ");"))
                        .replace("$HISTORICALNAME$",
-                                (hisName == null)? "" :
-                                "    public String historicalName() { return \"" + hisName + "\"; }")
+                                (histName == null)? "" :
+                                "    public String historicalName() { return \"" + histName + "\"; }")
                        .replace("$DECTYPE$", type)
                        .replace("$ENCTYPE$", type)
                        .replace("$B1MIN$"   , "0x" + Integer.toString(b1Min, 16))

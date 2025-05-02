@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define CPU_ARM_GLOBALDEFINITIONS_ARM_HPP
 
 const int StackAlignmentInBytes = 8;
+const size_t pd_segfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
@@ -47,6 +48,12 @@ const bool HaveVFP = true;
 
 // arm32 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC
+
+// The expected size in bytes of a cache line.
+#define DEFAULT_CACHE_LINE_SIZE 64
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #define STUBROUTINES_MD_HPP    "stubRoutines_arm.hpp"
 #define INTERP_MASM_MD_HPP     "interp_masm_arm.hpp"

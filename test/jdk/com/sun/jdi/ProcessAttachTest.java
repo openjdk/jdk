@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ class ProcessAttachTestTarg {
 
 public class ProcessAttachTest {
 
-    public static final String TESTCLASSES = System.getProperty("test.classes");
-
     public static void main(String[] args) throws Exception {
 
         System.out.println("Test 1: Debuggee start with suspend=n");
@@ -71,9 +69,8 @@ public class ProcessAttachTest {
     }
 
     private static void runTest(String jdwpArg) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 jdwpArg,
-                "-classpath", TESTCLASSES,
                 "ProcessAttachTestTarg");
         Process p = null;
         try {

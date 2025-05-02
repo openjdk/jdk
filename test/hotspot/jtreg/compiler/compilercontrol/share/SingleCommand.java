@@ -47,7 +47,7 @@ public class SingleCommand extends AbstractTestBase {
         Executable exec = Utils.getRandomElement(METHODS).first;
         MethodDescriptor md = getValidMethodDescriptor(exec);
         CommandGenerator cmdGen = new CommandGenerator();
-        CompileCommand compileCommand = cmdGen.generateCompileCommand(command,
+        CompileCommand compileCommand = cmdGen.generateCompileCommand(command, true,
                 md, type);
         builder.add(compileCommand);
         Scenario scenario = builder.build();

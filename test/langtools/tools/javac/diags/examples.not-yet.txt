@@ -16,6 +16,7 @@ compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen
 compiler.err.limit.dimensions                           # Gen
 compiler.err.limit.locals                               # Code
+compiler.err.annotation.array.too.large                 # Code
 compiler.err.limit.parameters                           # Gen
 compiler.err.limit.pool                                 # Gen,JavaCompiler
 compiler.err.limit.pool.in.class                        # UNUSED?
@@ -33,7 +34,6 @@ compiler.err.proc.bad.config.file                       # JavacProcessingEnviron
 compiler.err.proc.cant.access                           # completion failure
 compiler.err.proc.cant.access.1                         # completion failure, no stack trace
 compiler.err.proc.cant.create.loader                    # security exception from service loader
-compiler.err.proc.no.service                            # JavacProcessingEnvironment: no service loader available
 compiler.err.proc.processor.bad.option.name             # cannot happen? masked by javac.err.invalid.A.key
 compiler.err.proc.service.problem                       # JavacProcessingEnvironment: catch Throwable from service loader
 compiler.err.proc.cant.load.class                       # JavacProcessingEnvironment: cant load the class/jar file
@@ -41,6 +41,7 @@ compiler.err.signature.doesnt.match.intf                # UNUSED
 compiler.err.signature.doesnt.match.supertype           # UNUSED
 compiler.err.source.cant.overwrite.input.file
 compiler.err.stack.sim.error
+compiler.err.cant.attach.type.annotations               # bad class file
 compiler.err.type.var.more.than.once                    # UNUSED
 compiler.err.type.var.more.than.once.in.result          # UNUSED
 compiler.err.unexpected.type
@@ -54,9 +55,11 @@ compiler.misc.bad.constant.range                        # bad class file
 compiler.misc.bad.constant.value                        # bad class file
 compiler.misc.bad.enclosing.class                       # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
-compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
+compiler.warn.runtime.invisible.parameter.annotations   # bad class file
+compiler.warn.runtime.visible.invisible.param.annotations.mismatch   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
+compiler.misc.bad.utf8.byte.sequence.at                 # bad class file
 compiler.misc.bad.type.annotation.value
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
@@ -116,8 +119,10 @@ compiler.warn.future.attr                               # ClassReader
 compiler.warn.illegal.char.for.encoding
 compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
+compiler.warn.invalid.utf8.in.classfile                 # bad class file
 compiler.warn.is.preview                                # difficult to produce reliably despite future changes to java.base
 compiler.warn.is.preview.reflective                     # difficult to produce reliably despite future changes to java.base
+compiler.warn.output.file.clash                         # this warning is not generated on Linux
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars
 compiler.warn.proc.type.already.exists                  # JavacFiler: just mentioned in TODO
@@ -203,11 +208,18 @@ compiler.err.two.class.loaders.2
 compiler.err.unmatched.quote
 compiler.err.unsupported.release.version
 compiler.warn.profile.target.conflict
-compiler.warn.source.target.conflict
-compiler.warn.target.default.source.conflict
+compiler.err.source.target.conflict
+compiler.err.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
 compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing
 
 # this one needs a forged class file to be reproduced
 compiler.err.annotation.unrecognized.attribute.name
+
+# this one is transitional (waiting for FFM API to exit preview)
+compiler.warn.restricted.method
+
+# Pending removal
+compiler.note.implicit.annotation.processing
+compiler.warn.proc.use.proc.or.implicit

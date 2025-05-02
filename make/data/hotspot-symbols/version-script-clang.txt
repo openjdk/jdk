@@ -1,0 +1,8 @@
+SUNWprivate_1.1 {
+  global:
+    *;
+
+  local:
+    _fini;
+    _init;
+};

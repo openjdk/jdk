@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -30,7 +29,9 @@
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Static initialization
 const u2 ConstMethod::MAX_IDNUM   = 0xFFFE;
@@ -70,6 +71,20 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_result_type((BasicType)0);
 }
 
+// Derive size of parameters, return type, and fingerprint,
+// all in one pass, which is run at load time.
+// We need the first two, and might as well grab the third.
+void ConstMethod::compute_from_signature(Symbol* sig, bool is_static) {
+  // At this point, since we are scanning the signature,
+  // we might as well compute the whole fingerprint.
+  Fingerprinter fp(sig, is_static);
+  set_size_of_parameters(fp.size_of_parameters());
+  set_num_stack_arg_slots(fp.num_stack_arg_slots());
+  set_result_type(fp.return_type());
+  set_fingerprint(fp.fingerprint());
+}
+
+
 // Accessor that copies to metadata.
 void ConstMethod::copy_stackmap_data(ClassLoaderData* loader_data,
                                      u1* sd, int length, TRAPS) {
@@ -105,16 +120,16 @@ int ConstMethod::size(int code_size,
   }
   if (sizes->checked_exceptions_length() > 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->checked_exceptions_length() * sizeof(CheckedExceptionElement);
+    extra_bytes += sizes->checked_exceptions_length() * (int)sizeof(CheckedExceptionElement);
   }
   if (sizes->localvariable_table_length() > 0) {
     extra_bytes += sizeof(u2);
     extra_bytes +=
-              sizes->localvariable_table_length() * sizeof(LocalVariableTableElement);
+              sizes->localvariable_table_length() * (int)sizeof(LocalVariableTableElement);
   }
   if (sizes->exception_table_length() > 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->exception_table_length() * sizeof(ExceptionTableElement);
+    extra_bytes += sizes->exception_table_length() * (int)sizeof(ExceptionTableElement);
   }
   if (sizes->generic_signature_index() != 0) {
     extra_bytes += sizeof(u2);
@@ -125,7 +140,7 @@ int ConstMethod::size(int code_size,
   // cause the reflection API to throw a MalformedParametersException.
   if (sizes->method_parameters_length() >= 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->method_parameters_length() * sizeof(MethodParametersElement);
+    extra_bytes += sizes->method_parameters_length() * (int)sizeof(MethodParametersElement);
   }
 
   // Align sizes up to a word.
@@ -133,16 +148,16 @@ int ConstMethod::size(int code_size,
 
   // One pointer per annotation array
   if (sizes->method_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->parameter_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->type_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->default_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
 
   int extra_words = align_up(extra_bytes, BytesPerWord) / BytesPerWord;
@@ -199,7 +214,7 @@ u2* ConstMethod::checked_exceptions_length_addr() const {
 }
 
 u2* ConstMethod::exception_table_length_addr() const {
-  assert(has_exception_handler(), "called only if table is present");
+  assert(has_exception_table(), "called only if table is present");
   if (has_checked_exceptions()) {
     // If checked_exception present, locate immediately before them.
     return (u2*) checked_exceptions_start() - 1;
@@ -217,7 +232,7 @@ u2* ConstMethod::exception_table_length_addr() const {
 
 u2* ConstMethod::localvariable_table_length_addr() const {
   assert(has_localvariable_table(), "called only if table is present");
-  if (has_exception_handler()) {
+  if (has_exception_table()) {
     // If exception_table present, locate immediately before them.
     return (u2*) exception_table_start() - 1;
   } else {
@@ -239,30 +254,29 @@ u2* ConstMethod::localvariable_table_length_addr() const {
 
 // Update the flags to indicate the presence of these optional fields.
 void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
-  _flags = 0;
   if (sizes->compressed_linenumber_size() > 0)
-    _flags |= _has_linenumber_table;
+    set_has_linenumber_table();
   if (sizes->generic_signature_index() != 0)
-    _flags |= _has_generic_signature;
+    set_has_generic_signature();
   if (sizes->method_parameters_length() >= 0)
-    _flags |= _has_method_parameters;
+    set_has_method_parameters();
   if (sizes->checked_exceptions_length() > 0)
-    _flags |= _has_checked_exceptions;
+    set_has_checked_exceptions();
   if (sizes->exception_table_length() > 0)
-    _flags |= _has_exception_table;
+    set_has_exception_table();
   if (sizes->localvariable_table_length() > 0)
-    _flags |= _has_localvariable_table;
+    set_has_localvariable_table();
 
   // annotations, they are all pointer sized embedded objects so don't have
   // a length embedded also.
   if (sizes->method_annotations_length() > 0)
-    _flags |= _has_method_annotations;
+    set_has_method_annotations();
   if (sizes->parameter_annotations_length() > 0)
-    _flags |= _has_parameter_annotations;
+    set_has_parameter_annotations();
   if (sizes->type_annotations_length() > 0)
-    _flags |= _has_type_annotations;
+    set_has_type_annotations();
   if (sizes->default_annotations_length() > 0)
-    _flags |= _has_default_annotations;
+    set_has_default_annotations();
 
   // This code is extremely brittle and should possibly be revised.
   // The *_length_addr functions walk backwards through the
@@ -277,16 +291,16 @@ void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
   // anything is added here.  It might be advisable to have some sort
   // of indication of this inline.
   if (sizes->generic_signature_index() != 0)
-    *(generic_signature_index_addr()) = sizes->generic_signature_index();
+    *(generic_signature_index_addr()) = checked_cast<u2>(sizes->generic_signature_index());
   // New data should probably go here.
   if (sizes->method_parameters_length() >= 0)
-    *(method_parameters_length_addr()) = sizes->method_parameters_length();
+    *(method_parameters_length_addr()) = checked_cast<u2>(sizes->method_parameters_length());
   if (sizes->checked_exceptions_length() > 0)
-    *(checked_exceptions_length_addr()) = sizes->checked_exceptions_length();
+    *(checked_exceptions_length_addr()) = checked_cast<u2>(sizes->checked_exceptions_length());
   if (sizes->exception_table_length() > 0)
-    *(exception_table_length_addr()) = sizes->exception_table_length();
+    *(exception_table_length_addr()) = checked_cast<u2>(sizes->exception_table_length());
   if (sizes->localvariable_table_length() > 0)
-    *(localvariable_table_length_addr()) = sizes->localvariable_table_length();
+    *(localvariable_table_length_addr()) = checked_cast<u2>(sizes->localvariable_table_length());
 }
 
 int ConstMethod::method_parameters_length() const {
@@ -301,7 +315,7 @@ MethodParametersElement* ConstMethod::method_parameters_start() const {
 }
 
 
-int ConstMethod::checked_exceptions_length() const {
+u2 ConstMethod::checked_exceptions_length() const {
   return has_checked_exceptions() ? *(checked_exceptions_length_addr()) : 0;
 }
 
@@ -315,7 +329,7 @@ CheckedExceptionElement* ConstMethod::checked_exceptions_start() const {
 }
 
 
-int ConstMethod::localvariable_table_length() const {
+u2 ConstMethod::localvariable_table_length() const {
   return has_localvariable_table() ? *(localvariable_table_length_addr()) : 0;
 }
 
@@ -328,8 +342,8 @@ LocalVariableTableElement* ConstMethod::localvariable_table_start() const {
   return (LocalVariableTableElement*) addr;
 }
 
-int ConstMethod::exception_table_length() const {
-  return has_exception_handler() ? *(exception_table_length_addr()) : 0;
+u2 ConstMethod::exception_table_length() const {
+  return has_exception_table() ? *(exception_table_length_addr()) : 0;
 }
 
 ExceptionTableElement* ConstMethod::exception_table_start() const {
@@ -369,7 +383,7 @@ AnnotationArray** ConstMethod::default_annotations_addr() const {
   return (AnnotationArray**)constMethod_end() - offset;
 }
 
-Array<u1>* copy_annotations(ClassLoaderData* loader_data, AnnotationArray* from, TRAPS) {
+static Array<u1>* copy_annotations(ClassLoaderData* loader_data, AnnotationArray* from, TRAPS) {
   int length = from->length();
   Array<u1>* a = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
   memcpy((void*)a->adr_at(0), (void*)from->adr_at(0), length);
@@ -431,13 +445,14 @@ void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("%s", internal_name());
   Method* m = method();
-  st->print(" - method:       " PTR_FORMAT " ", p2i(m));
+  st->print(" - method:           " PTR_FORMAT " ", p2i(m));
   if (m != nullptr) {
     m->print_value_on(st);
   }
   st->cr();
+  st->print(" - flags:            0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   if (has_stackmap_table()) {
-    st->print(" - stackmap data:       ");
+    st->print(" - stackmap data:    ");
     stackmap_data()->print_value_on(st);
     st->cr();
   }
@@ -484,7 +499,7 @@ void ConstMethod::verify_on(outputStream* st) {
     u2* addr = checked_exceptions_length_addr();
     guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
   }
-  if (has_exception_handler()) {
+  if (has_exception_table()) {
     u2* addr = exception_table_length_addr();
      guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
   }
@@ -496,7 +511,7 @@ void ConstMethod::verify_on(outputStream* st) {
   u2* uncompressed_table_start;
   if (has_localvariable_table()) {
     uncompressed_table_start = (u2*) localvariable_table_start();
-  } else if (has_exception_handler()) {
+  } else if (has_exception_table()) {
     uncompressed_table_start = (u2*) exception_table_start();
   } else if (has_checked_exceptions()) {
       uncompressed_table_start = (u2*) checked_exceptions_start();
@@ -505,7 +520,7 @@ void ConstMethod::verify_on(outputStream* st) {
   } else {
       uncompressed_table_start = (u2*) m_end;
   }
-  int gap = (intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end;
+  int gap = int((intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end);
   int max_gap = align_metadata_size(1)*BytesPerWord;
   guarantee(gap >= 0 && gap < max_gap, "invalid method layout");
 }

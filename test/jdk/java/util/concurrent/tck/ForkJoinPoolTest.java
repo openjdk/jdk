@@ -510,7 +510,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -529,7 +529,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -553,7 +553,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -621,6 +621,22 @@ public class ForkJoinPoolTest extends JSR166TestCase {
                     .get();
                 shouldThrow();
             } catch (ExecutionException success) {
+                assertTrue(success.getCause() instanceof ArithmeticException);
+            }
+        }
+    }
+
+    /**
+     * invoke throws a RuntimeException if task throws unchecked exception
+     */
+    public void testInvokeUncheckedException() throws Throwable {
+        ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            try {
+                p.invoke(ForkJoinTask.adapt(new Callable<Object>() {
+                        public Object call() { throw new ArithmeticException(); }}));
+                shouldThrow();
+            } catch (RuntimeException success) {
                 assertTrue(success.getCause() instanceof ArithmeticException);
             }
         }

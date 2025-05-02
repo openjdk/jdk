@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -50,7 +48,7 @@
  *      3.) Provide a +1 increment for the second set of 4 AVX
  *          registers at offset 16 (128-bit load)
  */
-ATTRIBUTE_ALIGNED(64) uint64_t CC20_COUNTER_ADD_AVX[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t CC20_COUNTER_ADD_AVX[] = {
     0x0000000000000000UL, 0x0000000000000000UL,
     0x0000000000000001UL, 0x0000000000000000UL,
     0x0000000000000002UL, 0x0000000000000000UL,
@@ -66,7 +64,7 @@ static address chacha20_ctradd_avx() {
  * The second 512 bits is a +4/+4/+4/+4 add overlay.  This
  * can be used to increment the counter fields for the next 4 blocks.
  */
-ATTRIBUTE_ALIGNED(64) uint64_t CC20_COUNTER_ADD_AVX512[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t CC20_COUNTER_ADD_AVX512[] = {
     0x0000000000000000UL, 0x0000000000000000UL,
     0x0000000000000001UL, 0x0000000000000000UL,
     0x0000000000000002UL, 0x0000000000000000UL,
@@ -86,7 +84,7 @@ static address chacha20_ctradd_avx512() {
  * for an 8-bit left-rotation on 32-bit lanes.
  * The second 256 bits is a 16-bit rotation on 32-bit lanes.
  */
-ATTRIBUTE_ALIGNED(64) uint64_t CC20_LROT_CONSTS[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t CC20_LROT_CONSTS[] = {
     0x0605040702010003UL, 0x0E0D0C0F0A09080BUL,
     0x0605040702010003UL, 0x0E0D0C0F0A09080BUL,
 
@@ -114,7 +112,8 @@ void StubGenerator::generate_chacha_stubs() {
 /* The 2-block AVX/AVX2-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+  StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_twoRounds;
@@ -291,6 +290,9 @@ address StubGenerator::generate_chacha20Block_avx() {
   // registers.  That length should be returned through %rax.
   __ mov64(rax, outlen);
 
+  if (outlen == 256) {
+    __ vzeroupper();
+  }
   __ leave();
   __ ret(0);
   return start;
@@ -299,7 +301,8 @@ address StubGenerator::generate_chacha20Block_avx() {
 /* The 4-block AVX512-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx512() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+  StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_twoRounds;
@@ -460,6 +463,7 @@ address StubGenerator::generate_chacha20Block_avx512() {
   // and that length should be returned through %rax.
   __ mov64(rax, 1024);
 
+  __ vzeroupper();
   __ leave();
   __ ret(0);
   return start;

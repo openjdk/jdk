@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,11 @@ enum GCName {
   G1New,
   G1Old,
   G1Full,
-  Z,
+  ZMinor,
+  ZMajor,
   Shenandoah,
+  ShenandoahYoung,
+  ShenandoahOld,
   NA,
   GCNameEndSentinel
 };
@@ -52,8 +55,11 @@ class GCNameHelper {
       case G1New: return "G1New";
       case G1Old: return "G1Old";
       case G1Full: return "G1Full";
-      case Z: return "Z";
+      case ZMinor: return "ZGC Minor";
+      case ZMajor: return "ZGC Major";
       case Shenandoah: return "Shenandoah";
+      case ShenandoahYoung: return "Shenandoah Young";
+      case ShenandoahOld: return "Shenandoah Old";
       case NA: return "N/A";
       default: ShouldNotReachHere(); return nullptr;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 // cross platform development for JSR292.
 // Last synchronization: changeset f8c9417e3571
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,6 +38,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -140,7 +140,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, bool for_comp
 
   __ bind(L_no_such_method);
   // throw exception
-  __ jump(StubRoutines::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
+  __ jump(SharedRuntime::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -218,7 +218,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   if (VerifyMethodHandles) {
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ ldrh(rdi_temp, Address(rbx_method, Method::intrinsic_id_offset_in_bytes()));
+    __ ldrh(rdi_temp, Address(rbx_method, Method::intrinsic_id_offset()));
     __ sub_slow(rdi_temp, rdi_temp, (int) iid);
     __ cbz(rdi_temp, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
@@ -331,7 +331,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg, temp3);
       } else {
         // load receiver klass itself
-        __ load_klass_check_null(temp1_recv_klass, receiver_reg, temp3);
+        __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -461,7 +461,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
+      __ jump(SharedRuntime::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
     }
   }
 }
@@ -496,7 +496,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (!has_mh) {
     mh_reg_name = "R5";
   }
-  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+" INTX_FORMAT ") stack_size=" INTX_FORMAT " bp=" PTR_FORMAT,
+  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+%zd) stack_size=%zd bp=" PTR_FORMAT,
                           adaptername, mh_reg_name, mh_reg,
                           (intptr_t)entry_sp, (intptr_t)saved_sp - (intptr_t)entry_sp, (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
 

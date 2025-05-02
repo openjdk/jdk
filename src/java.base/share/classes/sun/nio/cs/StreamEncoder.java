@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,12 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import jdk.internal.misc.InternalLock;
 
 public final class StreamEncoder extends Writer {
 
@@ -58,14 +56,10 @@ public final class StreamEncoder extends Writer {
                                                       String charsetName)
         throws UnsupportedEncodingException
     {
-        String csn = charsetName;
-        if (csn == null) {
-            csn = Charset.defaultCharset().name();
-        }
         try {
-            return new StreamEncoder(out, lock, Charset.forName(csn));
+            return new StreamEncoder(out, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
-            throw new UnsupportedEncodingException (csn);
+            throw new UnsupportedEncodingException (charsetName);
         }
     }
 
@@ -83,16 +77,11 @@ public final class StreamEncoder extends Writer {
         return new StreamEncoder(out, lock, enc);
     }
 
-
-    // Factory for java.nio.channels.Channels.newWriter
-
-    public static StreamEncoder forEncoder(WritableByteChannel ch,
-                                           CharsetEncoder enc,
-                                           int minBufferCap)
+    public static StreamEncoder forOutputStreamWriter(OutputStream out,
+                                                      CharsetEncoder enc)
     {
-        return new StreamEncoder(ch, enc, minBufferCap);
+        return new StreamEncoder(out, enc);
     }
-
 
     // -- Public methods corresponding to those in OutputStreamWriter --
 
@@ -107,26 +96,12 @@ public final class StreamEncoder extends Writer {
     }
 
     public void flushBuffer() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedFlushBuffer();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedFlushBuffer();
-            }
+        synchronized (lock) {
+            if (isOpen())
+                implFlushBuffer();
+            else
+                throw new IOException("Stream closed");
         }
-    }
-
-    private void lockedFlushBuffer() throws IOException {
-        if (isOpen())
-            implFlushBuffer();
-        else
-            throw new IOException("Stream closed");
     }
 
     public void write(int c) throws IOException {
@@ -136,30 +111,16 @@ public final class StreamEncoder extends Writer {
     }
 
     public void write(char[] cbuf, int off, int len) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedWrite(cbuf, off, len);
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedWrite(cbuf, off, len);
-            }
-        }
-    }
-
-    private void lockedWrite(char[] cbuf, int off, int len) throws IOException {
-        ensureOpen();
-        if ((off < 0) || (off > cbuf.length) || (len < 0) ||
+        synchronized (lock) {
+            ensureOpen();
+            if ((off < 0) || (off > cbuf.length) || (len < 0) ||
                 ((off + len) > cbuf.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return;
+            }
+            implWrite(cbuf, off, len);
         }
-        implWrite(cbuf, off, len);
     }
 
     public void write(String str, int off, int len) throws IOException {
@@ -174,73 +135,31 @@ public final class StreamEncoder extends Writer {
     public void write(CharBuffer cb) throws IOException {
         int position = cb.position();
         try {
-            Object lock = this.lock;
-            if (lock instanceof InternalLock locker) {
-                locker.lock();
-                try {
-                    lockedWrite(cb);
-                } finally {
-                    locker.unlock();
-                }
-            } else {
-                synchronized (lock) {
-                    lockedWrite(cb);
-                }
+            synchronized (lock) {
+                ensureOpen();
+                implWrite(cb);
             }
         } finally {
             cb.position(position);
         }
     }
 
-    private void lockedWrite(CharBuffer cb) throws IOException {
-        ensureOpen();
-        implWrite(cb);
-    }
-
     public void flush() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedFlush();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                lockedFlush();
-            }
+        synchronized (lock) {
+            ensureOpen();
+            implFlush();
         }
-    }
-
-    private void lockedFlush() throws IOException {
-        ensureOpen();
-        implFlush();
     }
 
     public void close() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
+        synchronized (lock) {
+            if (closed)
+                return;
             try {
-                lockedClose();
+                implClose();
             } finally {
-                locker.unlock();
+                closed = true;
             }
-        } else {
-            synchronized (lock) {
-                lockedClose();
-            }
-        }
-    }
-
-    private void lockedClose() throws IOException {
-        if (closed)
-            return;
-        try {
-            implClose();
-        } finally {
-            closed = true;
         }
     }
 
@@ -256,9 +175,7 @@ public final class StreamEncoder extends Writer {
     private ByteBuffer bb;
     private final int maxBufferCapacity;
 
-    // Exactly one of these is non-null
     private final OutputStream out;
-    private final WritableByteChannel ch;
 
     // Leftover first char in a surrogate pair
     private boolean haveLeftoverChar = false;
@@ -275,7 +192,6 @@ public final class StreamEncoder extends Writer {
     private StreamEncoder(OutputStream out, Object lock, CharsetEncoder enc) {
         super(lock);
         this.out = out;
-        this.ch = null;
         this.cs = enc.charset();
         this.encoder = enc;
 
@@ -283,19 +199,14 @@ public final class StreamEncoder extends Writer {
         this.maxBufferCapacity = MAX_BYTE_BUFFER_CAPACITY;
     }
 
-    private StreamEncoder(WritableByteChannel ch, CharsetEncoder enc, int mbc) {
-        this.out = null;
-        this.ch = ch;
+    private StreamEncoder(OutputStream out, CharsetEncoder enc) {
+        super();
+        this.out = out;
         this.cs = enc.charset();
         this.encoder = enc;
 
-        if (mbc > 0) {
-            this.bb = ByteBuffer.allocate(mbc);
-            this.maxBufferCapacity = mbc;
-        } else {
-            this.bb = ByteBuffer.allocate(INITIAL_BYTE_BUFFER_CAPACITY);
-            this.maxBufferCapacity = MAX_BYTE_BUFFER_CAPACITY;
-        }
+        this.bb = ByteBuffer.allocate(INITIAL_BYTE_BUFFER_CAPACITY);
+        this.maxBufferCapacity = MAX_BYTE_BUFFER_CAPACITY;
     }
 
     private void writeBytes() throws IOException {
@@ -306,12 +217,7 @@ public final class StreamEncoder extends Writer {
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (rem > 0) {
-            if (ch != null) {
-                int wc = ch.write(bb);
-                assert wc == rem : rem;
-            } else {
-                out.write(bb.array(), bb.arrayOffset() + pos, rem);
-            }
+            out.write(bb.array(), bb.arrayOffset() + pos, rem);
         }
         bb.clear();
     }
@@ -412,14 +318,12 @@ public final class StreamEncoder extends Writer {
 
     void implFlush() throws IOException {
         implFlushBuffer();
-        if (out != null) {
-            out.flush();
-        }
+        out.flush();
     }
 
     void implClose() throws IOException {
-        flushLeftoverChar(null, true);
-        try {
+        try (out) {
+            flushLeftoverChar(null, true);
             for (;;) {
                 CoderResult cr = encoder.flush(bb);
                 if (cr.isUnderflow())
@@ -434,15 +338,7 @@ public final class StreamEncoder extends Writer {
 
             if (bb.position() > 0)
                 writeBytes();
-            if (ch != null)
-                ch.close();
-            else {
-                try {
-                    out.flush();
-                } finally {
-                    out.close();
-                }
-            }
+            out.flush();
         } catch (IOException x) {
             encoder.reset();
             throw x;

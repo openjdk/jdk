@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -30,27 +29,20 @@
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/vmError.hpp"
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
-//
-// Note that the following pointers are effectively final -- after having been
-// set at JVM startup-time, they should never be subsequently mutated.
-// Instead of using pointers to malloc()ed monitors and mutexes we should consider
-// eliminating the indirection and using instances instead.
-// Consider using GCC's __read_mostly.
 
-Mutex*   Patching_lock                = nullptr;
-Mutex*   CompiledMethod_lock          = nullptr;
+Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
-Mutex*   InvokeMethodTable_lock       = nullptr;
+Mutex*   InvokeMethodTypeTable_lock   = nullptr;
+Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
 Mutex*   SharedDictionary_lock        = nullptr;
 Monitor* ClassInitError_lock          = nullptr;
 Mutex*   Module_lock                  = nullptr;
 Mutex*   CompiledIC_lock              = nullptr;
-Mutex*   InlineCacheBuffer_lock       = nullptr;
 Mutex*   VMStatistic_lock             = nullptr;
 Mutex*   JmethodIdCreation_lock       = nullptr;
 Mutex*   JfieldIdCreation_lock        = nullptr;
@@ -59,7 +51,7 @@ Mutex*   JvmtiThreadState_lock        = nullptr;
 Monitor* EscapeBarrier_lock           = nullptr;
 Monitor* JvmtiVTMSTransition_lock     = nullptr;
 Monitor* Heap_lock                    = nullptr;
-#ifdef INCLUDE_PARALLELGC
+#if INCLUDE_PARALLELGC
 Mutex*   PSOldGenExpand_lock      = nullptr;
 #endif
 Mutex*   AdapterHandlerLibrary_lock   = nullptr;
@@ -72,6 +64,7 @@ Monitor* CodeCache_lock               = nullptr;
 Mutex*   TouchedMethodLog_lock        = nullptr;
 Mutex*   RetData_lock                 = nullptr;
 Monitor* VMOperation_lock             = nullptr;
+Monitor* ThreadsLockThrottle_lock     = nullptr;
 Monitor* Threads_lock                 = nullptr;
 Mutex*   NonJavaThreadsList_lock      = nullptr;
 Mutex*   NonJavaThreadsListSync_lock  = nullptr;
@@ -91,7 +84,6 @@ Monitor* Compilation_lock             = nullptr;
 Mutex*   CompileTaskAlloc_lock        = nullptr;
 Mutex*   CompileStatistics_lock       = nullptr;
 Mutex*   DirectivesStack_lock         = nullptr;
-Mutex*   MultiArray_lock              = nullptr;
 Monitor* Terminator_lock              = nullptr;
 Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
@@ -106,7 +98,6 @@ Mutex*   tty_lock                     = nullptr;
 Mutex*   RawMonitor_lock              = nullptr;
 Mutex*   PerfDataMemAlloc_lock        = nullptr;
 Mutex*   PerfDataManager_lock         = nullptr;
-Mutex*   OopMapCacheAlloc_lock        = nullptr;
 
 Mutex*   FreeList_lock                = nullptr;
 Mutex*   OldSets_lock                 = nullptr;
@@ -120,7 +111,6 @@ Monitor* Notification_lock            = nullptr;
 Monitor* PeriodicTask_lock            = nullptr;
 Monitor* RedefineClasses_lock         = nullptr;
 Mutex*   Verify_lock                  = nullptr;
-Monitor* Zip_lock                     = nullptr;
 
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = nullptr;
@@ -129,10 +119,11 @@ Mutex*   JfrBuffer_lock               = nullptr;
 Monitor* JfrThreadSampler_lock        = nullptr;
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-Mutex*   UnsafeJlong_lock             = nullptr;
-#endif
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
+
+Mutex*   ExternalsRecorder_lock       = nullptr;
+
+Mutex*   AOTCodeCStrings_lock         = nullptr;
 
 Monitor* ContinuationRelativize_lock  = nullptr;
 
@@ -144,6 +135,8 @@ Mutex*   ThreadIdTableCreate_lock     = nullptr;
 Mutex*   SharedDecoder_lock           = nullptr;
 Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
+Mutex*   NMTCompilationCostHistory_lock = nullptr;
+Mutex*   NmtVirtualMemory_lock          = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -156,6 +149,7 @@ Mutex*   ClassListFile_lock           = nullptr;
 Mutex*   UnregisteredClassesTable_lock= nullptr;
 Mutex*   LambdaFormInvokers_lock      = nullptr;
 Mutex*   ScratchObjects_lock          = nullptr;
+Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
 
@@ -164,14 +158,12 @@ Monitor* JVMCI_lock                   = nullptr;
 Monitor* JVMCIRuntime_lock            = nullptr;
 #endif
 
-
-#define MAX_NUM_MUTEX 128
-static Mutex* _mutex_array[MAX_NUM_MUTEX];
-static int _num_mutex;
+// Only one RecursiveMutex
+RecursiveMutex* MultiArray_lock       = nullptr;
 
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
-  if (DebuggingContext::is_enabled()) return;
+  if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
   // check if this thread owns the lock (common case)
   assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
@@ -180,214 +172,204 @@ void assert_locked_or_safepoint(const Mutex* lock) {
   fatal("must own lock %s", lock->name());
 }
 
-// a weaker assertion than the above
-void assert_locked_or_safepoint_weak(const Mutex* lock) {
-  if (DebuggingContext::is_enabled()) return;
-  assert(lock != nullptr, "Need non-null lock");
-  if (lock->is_locked()) return;
-  if (SafepointSynchronize::is_at_safepoint()) return;
-  if (!Universe::is_fully_initialized()) return;
-  fatal("must own lock %s", lock->name());
-}
-
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
-  if (DebuggingContext::is_enabled()) return;
+  if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
   assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
 }
 #endif
 
-static void add_mutex(Mutex* var) {
-  assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
-  _mutex_array[_num_mutex++] = var;
+#define MUTEX_STORAGE_NAME(name) name##_storage
+#define MUTEX_STORAGE(name, type) alignas(type) static uint8_t MUTEX_STORAGE_NAME(name)[sizeof(type)]
+#define MUTEX_DEF(name, type, pri, ...) {                                                       \
+  assert(name == nullptr, "Mutex/Monitor initialized twice");                                   \
+  MUTEX_STORAGE(name, type);                                                                    \
+  name = ::new(static_cast<void*>(MUTEX_STORAGE_NAME(name))) type((pri), #name, ##__VA_ARGS__); \
+  Mutex::add_mutex(name);                                                                       \
 }
-
-#define def(var, type, pri, ...) {            \
-  var = new type(Mutex::pri, #var, ##__VA_ARGS__); \
-  add_mutex(var);                             \
-}
+#define MUTEX_DEFN(name, type, pri, ...) MUTEX_DEF(name, type, Mutex::pri, ##__VA_ARGS__)
 
 // Specify relative ranked lock
 #ifdef ASSERT
-#define defl(var, type, held_lock, ...) {         \
-  var = new type(held_lock->rank()-1, #var, ##__VA_ARGS__); \
-  add_mutex(var);                                      \
-}
+#define MUTEX_DEFL(name, type, held_lock, ...) MUTEX_DEF(name, type, (held_lock)->rank() - 1, ##__VA_ARGS__)
 #else
-#define defl(var, type, held_lock, ...) {         \
-  var = new type(Mutex::safepoint, #var, ##__VA_ARGS__); \
-  add_mutex(var);                                      \
-}
+#define MUTEX_DEFL(name, type, held_lock, ...) MUTEX_DEFN(name, type, safepoint, ##__VA_ARGS__)
 #endif
 
 // Using Padded subclasses to prevent false sharing of these global monitors and mutexes.
 void mutex_init() {
-  def(tty_lock                     , PaddedMutex  , tty);      // allow to lock in VM
+  MUTEX_DEFN(tty_lock                        , PaddedMutex  , tty);      // allow to lock in VM
 
-  def(STS_lock                     , PaddedMonitor, nosafepoint);
+  MUTEX_DEFN(STS_lock                        , PaddedMonitor, nosafepoint);
 
   if (UseG1GC) {
-    def(CGC_lock                   , PaddedMonitor, nosafepoint);
+    MUTEX_DEFN(CGC_lock                      , PaddedMonitor, nosafepoint);
 
-    def(G1DetachedRefinementStats_lock, PaddedMutex, nosafepoint-2);
+    MUTEX_DEFN(G1DetachedRefinementStats_lock, PaddedMutex  , nosafepoint-2);
 
-    def(FreeList_lock              , PaddedMutex  , service-1);
-    def(OldSets_lock               , PaddedMutex  , nosafepoint);
-    def(Uncommit_lock              , PaddedMutex  , service-2);
-    def(RootRegionScan_lock        , PaddedMonitor, nosafepoint-1);
+    MUTEX_DEFN(FreeList_lock                 , PaddedMutex  , service-1);
+    MUTEX_DEFN(OldSets_lock                  , PaddedMutex  , nosafepoint);
+    MUTEX_DEFN(Uncommit_lock                 , PaddedMutex  , service-2);
+    MUTEX_DEFN(RootRegionScan_lock           , PaddedMonitor, nosafepoint-1);
 
-    def(MarkStackFreeList_lock     , PaddedMutex  , nosafepoint);
-    def(MarkStackChunkList_lock    , PaddedMutex  , nosafepoint);
-
-    def(MonitoringSupport_lock     , PaddedMutex  , service-1);      // used for serviceability monitoring support
+    MUTEX_DEFN(MarkStackFreeList_lock        , PaddedMutex  , nosafepoint);
+    MUTEX_DEFN(MarkStackChunkList_lock       , PaddedMutex  , nosafepoint);
   }
-  def(StringDedup_lock             , PaddedMonitor, nosafepoint);
-  def(StringDedupIntern_lock       , PaddedMutex  , nosafepoint);
-  def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
+  MUTEX_DEFN(MonitoringSupport_lock          , PaddedMutex  , service-1);        // used for serviceability monitoring support
 
-  def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
-  def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-1);
+  MUTEX_DEFN(StringDedup_lock                , PaddedMonitor, nosafepoint);
+  MUTEX_DEFN(StringDedupIntern_lock          , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(RawMonitor_lock                 , PaddedMutex  , nosafepoint-1);
 
-  def(Patching_lock                , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
-  def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
-  def(Service_lock                 , PaddedMonitor, service);      // used for service thread operations
+  MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-3);
+  MUTEX_DEFN(MetaspaceCritical_lock          , PaddedMonitor, nosafepoint-1);
 
-  if (UseNotificationThread) {
-    def(Notification_lock          , PaddedMonitor, service);  // used for notification thread operations
-  } else {
-    Notification_lock = Service_lock;
-  }
+  MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
+  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
+  MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
-  def(JmethodIdCreation_lock       , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
-  def(InvokeMethodTable_lock       , PaddedMutex  , safepoint);
-  def(SharedDictionary_lock        , PaddedMutex  , safepoint);
-  def(VMStatistic_lock             , PaddedMutex  , safepoint);
-  def(SignatureHandlerLibrary_lock , PaddedMutex  , safepoint);
-  def(SymbolArena_lock             , PaddedMutex  , nosafepoint);
-  def(ExceptionCache_lock          , PaddedMutex  , safepoint);
+  MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
+  MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
+  MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
+  MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);
+  MUTEX_DEFN(SharedDictionary_lock           , PaddedMutex  , safepoint);
+  MUTEX_DEFN(VMStatistic_lock                , PaddedMutex  , safepoint);
+  MUTEX_DEFN(SignatureHandlerLibrary_lock    , PaddedMutex  , safepoint);
+  MUTEX_DEFN(SymbolArena_lock                , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(ExceptionCache_lock             , PaddedMutex  , safepoint);
 #ifndef PRODUCT
-  def(FullGCALot_lock              , PaddedMutex  , safepoint); // a lock to make FullGCALot MT safe
+  MUTEX_DEFN(FullGCALot_lock                 , PaddedMutex  , safepoint); // a lock to make FullGCALot MT safe
 #endif
-  def(BeforeExit_lock              , PaddedMonitor, safepoint);
+  MUTEX_DEFN(BeforeExit_lock                 , PaddedMonitor, safepoint);
 
-  def(NonJavaThreadsList_lock      , PaddedMutex,   nosafepoint-1);
-  def(NonJavaThreadsListSync_lock  , PaddedMutex,   nosafepoint);
+  MUTEX_DEFN(NonJavaThreadsList_lock         , PaddedMutex  , nosafepoint-1);
+  MUTEX_DEFN(NonJavaThreadsListSync_lock     , PaddedMutex  , nosafepoint);
 
-  def(RetData_lock                 , PaddedMutex  , safepoint);
-  def(Terminator_lock              , PaddedMonitor, safepoint, true);
-  def(InitCompleted_lock           , PaddedMonitor, nosafepoint);
-  def(Notify_lock                  , PaddedMonitor, safepoint, true);
+  MUTEX_DEFN(RetData_lock                    , PaddedMutex  , safepoint);
+  MUTEX_DEFN(Terminator_lock                 , PaddedMonitor, safepoint, true);
+  MUTEX_DEFN(InitCompleted_lock              , PaddedMonitor, nosafepoint);
+  MUTEX_DEFN(Notify_lock                     , PaddedMonitor, safepoint, true);
 
-  def(Heap_lock                    , PaddedMonitor, safepoint); // Doesn't safepoint check during termination.
-  def(JfieldIdCreation_lock        , PaddedMutex  , safepoint);
+  MUTEX_DEFN(JfieldIdCreation_lock           , PaddedMutex  , safepoint);
 
-  def(CompiledIC_lock              , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
-  def(MethodCompileQueue_lock      , PaddedMonitor, safepoint);
-  def(CompileStatistics_lock       , PaddedMutex  , safepoint);
-  def(DirectivesStack_lock         , PaddedMutex  , nosafepoint);
-  def(MultiArray_lock              , PaddedMutex  , safepoint);
+  MUTEX_DEFN(CompiledIC_lock                 , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock
+  MUTEX_DEFN(MethodCompileQueue_lock         , PaddedMonitor, safepoint);
+  MUTEX_DEFN(CompileStatistics_lock          , PaddedMutex  , safepoint);
+  MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
 
-  def(JvmtiThreadState_lock        , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
-  def(EscapeBarrier_lock           , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
-  def(JvmtiVTMSTransition_lock     , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
-  def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
+  MUTEX_DEFN(JvmtiVTMSTransition_lock        , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
+  MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
+  MUTEX_DEFN(Management_lock                 , PaddedMutex  , safepoint);   // used for JVM management
 
-  def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
-  def(TouchedMethodLog_lock        , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ConcurrentGCBreakpoints_lock    , PaddedMonitor, safepoint, true);
+  MUTEX_DEFN(TouchedMethodLog_lock           , PaddedMutex  , safepoint);
 
-  def(CompileThread_lock           , PaddedMonitor, safepoint);
-  def(PeriodicTask_lock            , PaddedMonitor, safepoint, true);
-  def(RedefineClasses_lock         , PaddedMonitor, safepoint);
-  def(Verify_lock                  , PaddedMutex,   safepoint);
+  MUTEX_DEFN(CompileThread_lock              , PaddedMonitor, safepoint);
+  MUTEX_DEFN(PeriodicTask_lock               , PaddedMonitor, safepoint, true);
+  MUTEX_DEFN(RedefineClasses_lock            , PaddedMonitor, safepoint);
+  MUTEX_DEFN(Verify_lock                     , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ClassLoaderDataGraph_lock       , PaddedMutex  , safepoint);
 
   if (WhiteBoxAPI) {
-    def(Compilation_lock           , PaddedMonitor, nosafepoint);
+    MUTEX_DEFN(Compilation_lock              , PaddedMonitor, nosafepoint);
   }
 
 #if INCLUDE_JFR
-  def(JfrBuffer_lock               , PaddedMutex  , nosafepoint);
-  def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3);
-  def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1);
-  def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint);
+  MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
+  MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
+  MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
+  MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-  def(UnsafeJlong_lock             , PaddedMutex  , nosafepoint);
-#endif
-
-  def(ContinuationRelativize_lock  , PaddedMonitor, nosafepoint-3);
-  def(CodeHeapStateAnalytics_lock  , PaddedMutex  , safepoint);
-  def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3); // Holds ConcurrentHashTableResize_lock
-  def(ThreadIdTableCreate_lock     , PaddedMutex  , safepoint);
-  def(SharedDecoder_lock           , PaddedMutex  , tty-1);
-  def(DCmdFactory_lock             , PaddedMutex  , nosafepoint);
-  def(NMTQuery_lock                , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
+  MUTEX_DEFN(CodeHeapStateAnalytics_lock     , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, service-2); // Holds ConcurrentHashTableResize_lock
+  MUTEX_DEFN(ThreadIdTableCreate_lock        , PaddedMutex  , safepoint);
+  MUTEX_DEFN(DCmdFactory_lock                , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
+  MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(NmtVirtualMemory_lock           , PaddedMutex  , service-4); // Must be lower than G1Mapper_lock used from G1RegionsSmallerThanCommitSizeMapper::commit_regions
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
-  def(CDSClassFileStream_lock      , PaddedMutex  , safepoint);
+  MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
 #endif
-  def(DumpTimeTable_lock           , PaddedMutex  , nosafepoint);
-  def(CDSLambda_lock               , PaddedMutex  , nosafepoint);
-  def(DumpRegion_lock              , PaddedMutex  , nosafepoint);
-  def(ClassListFile_lock           , PaddedMutex  , nosafepoint);
-  def(LambdaFormInvokers_lock      , PaddedMutex  , safepoint);
-  def(ScratchObjects_lock          , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFN(DumpTimeTable_lock              , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(CDSLambda_lock                  , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(DumpRegion_lock                 , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(ClassListFile_lock              , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
+  MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
-  def(Bootclasspath_lock           , PaddedMutex  , nosafepoint);
-  def(Zip_lock                     , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
 
 #if INCLUDE_JVMCI
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
-  def(JVMCIRuntime_lock            , PaddedMonitor, safepoint, true);
+  MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
 #endif
+
+  MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
 
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
-  defl(InlineCacheBuffer_lock      , PaddedMutex  , CompiledIC_lock);
-  defl(VtableStubs_lock            , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
-  defl(CodeCache_lock              , PaddedMonitor, VtableStubs_lock);
-  defl(CompiledMethod_lock         , PaddedMutex  , CodeCache_lock);
+  MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
+  MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
+  MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
 
-  defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true);
-  defl(Compile_lock                , PaddedMutex  , MethodCompileQueue_lock);
-  defl(AdapterHandlerLibrary_lock  , PaddedMutex  , InvokeMethodTable_lock);
-  defl(Heap_lock                   , PaddedMonitor, AdapterHandlerLibrary_lock);
+  // tty_lock is held when printing nmethod and its relocations which use this lock.
+  MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
 
-  defl(PerfDataMemAlloc_lock       , PaddedMutex  , Heap_lock);
-  defl(PerfDataManager_lock        , PaddedMutex  , Heap_lock);
-  defl(ClassLoaderDataGraph_lock   , PaddedMutex  , MultiArray_lock);
-  defl(VMOperation_lock            , PaddedMonitor, Heap_lock, true);
-  defl(ClassInitError_lock         , PaddedMonitor, Threads_lock);
+  MUTEX_DEFL(AOTCodeCStrings_lock           , PaddedMutex  , tty_lock);
+
+  MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
+  MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
+  MUTEX_DEFL(JNICritical_lock               , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
+  MUTEX_DEFL(Heap_lock                      , PaddedMonitor, JNICritical_lock);
+
+  MUTEX_DEFL(PerfDataMemAlloc_lock          , PaddedMutex  , Heap_lock);
+  MUTEX_DEFL(PerfDataManager_lock           , PaddedMutex  , Heap_lock);
+  MUTEX_DEFL(VMOperation_lock               , PaddedMonitor, Heap_lock, true);
+  MUTEX_DEFL(ClassInitError_lock            , PaddedMonitor, Threads_lock);
 
   if (UseG1GC) {
-    defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
-    defl(G1RareEvent_lock          , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
+    MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
   }
 
-  defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
-#ifdef INCLUDE_PARALLELGC
+  MUTEX_DEFL(CompileTaskAlloc_lock          , PaddedMutex  ,  MethodCompileQueue_lock);
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
-    defl(PSOldGenExpand_lock   , PaddedMutex , Heap_lock, true);
+    MUTEX_DEFL(PSOldGenExpand_lock          , PaddedMutex  , Heap_lock, true);
   }
 #endif
-  defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
-  defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
-  defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);
-  defl(JNICritical_lock            , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
+  MUTEX_DEFL(Module_lock                    , PaddedMutex  ,  ClassLoaderDataGraph_lock);
+  MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
-  defl(JVMCI_lock                  , PaddedMonitor, JVMCIRuntime_lock);
+  MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+  MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , JvmtiVTMSTransition_lock);   // Used by JvmtiThreadState/JvmtiEventController
+  MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock); // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
+
+  // Allocate RecursiveMutex
+  MultiArray_lock = new RecursiveMutex();
 }
 
-void MutexLocker::post_initialize() {
+#undef MUTEX_DEFL
+#undef MUTEX_DEFN
+#undef MUTEX_DEF
+#undef MUTEX_STORAGE
+#undef MUTEX_STORAGE_NAME
+
+void MutexLockerImpl::post_initialize() {
   // Print mutex ranks if requested.
   LogTarget(Info, vmmutex) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-    print_lock_ranks(&ls);
+    Mutex::print_lock_ranks(&ls);
   }
 }
 
@@ -399,60 +381,4 @@ GCMutexLocker::GCMutexLocker(Mutex* mutex) {
     _locked = true;
     _mutex->lock();
   }
-}
-
-// Print all mutexes/monitors that are currently owned by a thread; called
-// by fatal error handler.
-void print_owned_locks_on_error(outputStream* st) {
-  st->print("VM Mutex/Monitor currently owned by a thread: ");
-  bool none = true;
-  for (int i = 0; i < _num_mutex; i++) {
-     // see if it has an owner
-     if (_mutex_array[i]->owner() != nullptr) {
-       if (none) {
-          // print format used by Mutex::print_on_error()
-          st->print_cr(" ([mutex/lock_event])");
-          none = false;
-       }
-       _mutex_array[i]->print_on_error(st);
-       st->cr();
-     }
-  }
-  if (none) st->print_cr("None");
-}
-
-void print_lock_ranks(outputStream* st) {
-  st->print_cr("VM Mutex/Monitor ranks: ");
-
-#ifdef ASSERT
-  // Be extra defensive and figure out the bounds on
-  // ranks right here. This also saves a bit of time
-  // in the #ranks*#mutexes loop below.
-  int min_rank = INT_MAX;
-  int max_rank = INT_MIN;
-  for (int i = 0; i < _num_mutex; i++) {
-    Mutex* m = _mutex_array[i];
-    int r = (int) m->rank();
-    if (min_rank > r) min_rank = r;
-    if (max_rank < r) max_rank = r;
-  }
-
-  // Print the listings rank by rank
-  for (int r = min_rank; r <= max_rank; r++) {
-    bool first = true;
-    for (int i = 0; i < _num_mutex; i++) {
-      Mutex* m = _mutex_array[i];
-      if (r != (int) m->rank()) continue;
-
-      if (first) {
-        st->cr();
-        st->print_cr("Rank \"%s\":", m->rank_name());
-        first = false;
-      }
-      st->print_cr("  %s", m->name());
-    }
-  }
-#else
-  st->print_cr("  Only known in debug builds.");
-#endif // ASSERT
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +121,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive) throws Exception {
+                     boolean interactive, Size size) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -141,7 +143,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
                 enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
             } else {
-                Size size = null;
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {
@@ -153,10 +154,15 @@ class ConsoleIOContext extends IOContext {
             setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
-            terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
+            //on platforms which are known to be fully supported by
+            //the FFMTerminalProvider, do not permit the ExecTerminalProvider:
+            boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
+                                        !OSUtils.IS_LINUX &&
+                                        !OSUtils.IS_OSX;
+            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
                 input.setInputStream(in);
                 return nonBlockingInput;
-            }).build();
+            }).nativeSignals(false).build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -830,7 +836,8 @@ class ConsoleIOContext extends IOContext {
     @Override
     public void beforeUserCode() {
         synchronized (this) {
-            inputBytes = null;
+            pendingBytes = null;
+            pendingLine = null;
         }
         input.setState(State.BUFFER);
     }
@@ -961,33 +968,78 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
-    private byte[] inputBytes;
-    private int inputBytesPointer;
+    private String pendingLine;
+    private int pendingLinePointer;
+    private byte[] pendingBytes;
+    private int pendingBytesPointer;
 
     @Override
     public synchronized int readUserInput() throws IOException {
-        while (inputBytes == null || inputBytes.length <= inputBytesPointer) {
-            History prevHistory = in.getHistory();
-            boolean prevDisableCr = Display.DISABLE_CR;
-            Parser prevParser = in.getParser();
-
-            try {
-                in.setParser((line, cursor, context) -> new ArgumentLine(line, cursor));
-                input.setState(State.WAIT);
-                Display.DISABLE_CR = true;
-                in.setHistory(userInputHistory);
-                inputBytes = (in.readLine("") + System.getProperty("line.separator")).getBytes();
-                inputBytesPointer = 0;
-            } catch (UserInterruptException ex) {
-                throw new InterruptedIOException();
-            } finally {
-                in.setParser(prevParser);
-                in.setHistory(prevHistory);
-                input.setState(State.BUFFER);
-                Display.DISABLE_CR = prevDisableCr;
-            }
+        if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
+            char userChar = readUserInputChar();
+            pendingBytes = String.valueOf(userChar).getBytes();
+            pendingBytesPointer = 0;
         }
-        return inputBytes[inputBytesPointer++];
+        return pendingBytes[pendingBytesPointer++];
+    }
+
+    @Override
+    public synchronized char readUserInputChar() throws IOException {
+        while (pendingLine == null || pendingLine.length() <= pendingLinePointer) {
+            pendingLine = doReadUserLine("", null) + System.getProperty("line.separator");
+            pendingLinePointer = 0;
+        }
+        return pendingLine.charAt(pendingLinePointer++);
+    }
+
+    @Override
+    public synchronized String readUserLine(String prompt) throws IOException {
+        //TODO: correct behavior w.r.t. pre-read stuff?
+        if (pendingLine != null && pendingLine.length() > pendingLinePointer) {
+            return pendingLine.substring(pendingLinePointer);
+        }
+        return doReadUserLine(prompt, null);
+    }
+
+    @Override
+    public String readUserLine() throws IOException {
+        return readUserLine("");
+    }
+
+    private synchronized String doReadUserLine(String prompt, Character mask) throws IOException {
+        History prevHistory = in.getHistory();
+        boolean prevDisableCr = Display.DISABLE_CR;
+        Parser prevParser = in.getParser();
+
+        try {
+            in.setParser((line, cursor, context) -> new ArgumentLine(line, cursor));
+            input.setState(State.WAIT);
+            Display.DISABLE_CR = true;
+            in.setHistory(userInputHistory);
+            return in.readLine(prompt.replace("%", "%%"), mask);
+        } catch (UserInterruptException ex) {
+            throw new InterruptedIOException();
+        } finally {
+            in.setParser(prevParser);
+            in.setHistory(prevHistory);
+            input.setState(State.BUFFER);
+            Display.DISABLE_CR = prevDisableCr;
+        }
+    }
+
+    public char[] readPassword(String prompt) throws IOException {
+        //TODO: correct behavior w.r.t. pre-read stuff?
+        return doReadUserLine(prompt, '\0').toCharArray();
+    }
+
+    @Override
+    public Charset charset() {
+        return in.getTerminal().encoding();
+    }
+
+    @Override
+    public Writer userOutput() {
+        return in.getTerminal().writer();
     }
 
     private int countPendingOpenBraces(String code) {
@@ -1269,6 +1321,7 @@ class ConsoleIOContext extends IOContext {
 
     private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
+        protected static final int DEFAULT_WIDTH = 80;
         protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
@@ -1277,9 +1330,9 @@ class ConsoleIOContext extends IOContext {
         public ProgrammaticInTerminal(InputStream input, OutputStream output,
                                        boolean interactive, Size size) throws Exception {
             this(input, output, interactive ? "ansi" : "dumb",
-                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size : new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT),
                  size != null ? size
-                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                              : interactive ? new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
                                             : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
@@ -1323,7 +1376,7 @@ class ConsoleIOContext extends IOContext {
             } catch (Throwable ex) {
                 // ignore
             }
-            return new Size(80, h);
+            return new Size(DEFAULT_WIDTH, h);
         }
         public TestTerminal(InputStream input, OutputStream output) throws Exception {
             this(input, output, computeSize());

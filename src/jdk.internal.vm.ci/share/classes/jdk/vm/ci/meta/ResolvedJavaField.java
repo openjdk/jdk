@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.lang.reflect.Modifier;
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved
  * through {@link ConstantPool constant pools}.
  */
-public interface ResolvedJavaField extends JavaField, ModifiersProvider, AnnotatedElement {
+public interface ResolvedJavaField extends JavaField, ModifiersProvider, AnnotatedElement, Annotated {
 
     /**
      * {@inheritDoc}

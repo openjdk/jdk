@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
@@ -173,7 +172,7 @@ static const char* indent_str(size_t i) {
   return indents[MIN2(i, max_indents_index)];
 }
 
-#define TIME_FORMAT "%.1lfms"
+#define TIME_FORMAT "%.2lfms"
 
 void WeakProcessorTimes::log_summary(OopStorageSet::WeakId id, uint indent) const {
   LogTarget(Debug, gc, phases) lt;

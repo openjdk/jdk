@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,21 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif
 
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   if (inst->is_call() || inst->is_jump() || inst->is_blr()) {
@@ -122,55 +125,76 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
+  NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
-      break;
+      return;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE: {
       assert(!method->is_static(), "cannot call static method with invokeinterface");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), virtual_call_Relocation::spec(_invoke_mark_pc));
-      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_virtual_call_stub());
+      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_virtual_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESTATIC: {
       assert(method->is_static(), "cannot call non-static method with invokestatic");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::static_call_type);
-      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub());
+      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESPECIAL: {
       assert(!method->is_static(), "cannot call static method with invokespecial");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type);
-      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub());
+      call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub(), JVMCI_CHECK);
       break;
     }
     default:
       JVMCI_ERROR("invalid _next_call_type value");
       break;
   }
+  if (Continuations::enabled()) {
+    // Check for proper post_call_nop
+    NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
+    if (nop == nullptr) {
+      JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
+    } else {
+      _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);
+    }
+  }
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
+bool CodeInstaller::pd_relocate(address pc, jint mark) {
   switch (mark) {
     case POLL_NEAR:
-      JVMCI_ERROR("unimplemented");
-      break;
+      // This is unhandled and will be reported by the caller
+      return false;
     case POLL_FAR:
       _instructions->relocate(pc, relocInfo::poll_type);
-      break;
+      return true;
     case POLL_RETURN_NEAR:
-      JVMCI_ERROR("unimplemented");
-      break;
+      // This is unhandled and will be reported by the caller
+      return false;
     case POLL_RETURN_FAR:
       _instructions->relocate(pc, relocInfo::poll_return_type);
-      break;
-    default:
-      JVMCI_ERROR("invalid mark value");
-      break;
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_BEFORE_MOV:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_BEFORE_MOV:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeMov);
+      return true;
+
   }
+  return false;
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers

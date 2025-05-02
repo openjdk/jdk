@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
@@ -41,13 +40,13 @@
 // Optimization - Graph Style
 
 // Check whether val is not-null-decoded compressed oop,
-// i.e. will grab into the base of the heap if it represents NULL.
+// i.e. will grab into the base of the heap if it represents null.
 static bool accesses_heap_base_zone(Node *val) {
-  if (CompressedOops::base() != NULL) { // Implies UseCompressedOops.
+  if (CompressedOops::base() != nullptr) { // Implies UseCompressedOops.
     if (val && val->is_Mach()) {
       if (val->as_Mach()->ideal_Opcode() == Op_DecodeN) {
         // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
-        // decode NULL to point to the heap base (Decode_NN).
+        // decode null to point to the heap base (Decode_NN).
         if (val->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull) {
           return true;
         }
@@ -78,8 +77,8 @@ static bool needs_explicit_null_check_for_read(Node *val) {
 }
 
 //------------------------------implicit_null_check----------------------------
-// Detect implicit-null-check opportunities.  Basically, find NULL checks
-// with suitable memory ops nearby.  Use the memory op to do the NULL check.
+// Detect implicit-null-check opportunities.  Basically, find null checks
+// with suitable memory ops nearby.  Use the memory op to do the null check.
 // I can generate a memory op if there is not one nearby.
 // The proj is the control projection for the not-null case.
 // The val is the pointer being checked for nullness or
@@ -122,7 +121,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();
@@ -150,16 +149,25 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   bool is_decoden = ((intptr_t)val) & 1;
   val = (Node*)(((intptr_t)val) & ~1);
 
-  assert(!is_decoden || (val->in(0) == NULL) && val->is_Mach() &&
-         (val->as_Mach()->ideal_Opcode() == Op_DecodeN), "sanity");
+  assert(!is_decoden ||
+         ((val->in(0) == nullptr) && val->is_Mach() &&
+          (val->as_Mach()->ideal_Opcode() == Op_DecodeN)), "sanity");
 
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
-  MachNode *best = NULL;        // Best found so far
+  MachNode *best = nullptr;        // Best found so far
   for (DUIterator i = val->outs(); val->has_out(i); i++) {
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
+    if (mach->barrier_data() != 0) {
+      // Using memory accesses with barriers to perform implicit null checks is
+      // not supported. These operations might expand into multiple assembly
+      // instructions during code emission, including new memory accesses (e.g.
+      // in G1's pre-barrier), which would invalidate the implicit null
+      // exception table.
+      continue;
+    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {
@@ -182,7 +190,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       break;
     case Op_StoreB:
     case Op_StoreC:
-    case Op_StoreCM:
     case Op_StoreD:
     case Op_StoreF:
     case Op_StoreI:
@@ -224,7 +231,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         Node* base;
         Node* index;
         const MachOper* oper = mach->memory_inputs(base, index);
-        if (oper == NULL || oper == (MachOper*)-1) {
+        if (oper == nullptr || oper == (MachOper*)-1) {
           continue;             // Not an memory op; skip it
         }
         if (val == base ||
@@ -247,7 +254,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Check that node's control edge is not-null block's head or dominates it,
     // otherwise we can't hoist it because there are other control dependencies.
     Node* ctrl = mach->in(0);
-    if (ctrl != NULL && !(ctrl == not_null_block->head() ||
+    if (ctrl != nullptr && !(ctrl == not_null_block->head() ||
         get_block_for_node(ctrl)->dominates(not_null_block))) {
       continue;
     }
@@ -255,9 +262,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // check if the offset is not too high for implicit exception
     {
       intptr_t offset = 0;
-      const TypePtr *adr_type = NULL;  // Do not need this return value here
+      const TypePtr *adr_type = nullptr;  // Do not need this return value here
       const Node* base = mach->get_base_and_disp(offset, adr_type);
-      if (base == NULL || base == NodeSentinel) {
+      if (base == nullptr || base == NodeSentinel) {
         // Narrow oop address doesn't have base, only index.
         // Give up if offset is beyond page size or if heap base is not protected.
         if (val->bottom_type()->isa_narrowoop() &&
@@ -267,8 +274,8 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
-        if ((UseCompressedOops || UseCompressedClassPointers) &&
-            (CompressedOops::shift() == 0 || CompressedKlassPointers::shift() == 0)) {
+        if ((UseCompressedOops && CompressedOops::shift() == 0) ||
+            (UseCompressedClassPointers && CompressedKlassPointers::shift() == 0)) {
           // 32-bits narrow oop can be the base of address expressions
           tptr = base->get_ptr_type();
         } else {
@@ -354,23 +361,23 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Make sure this memory op is not already being used for a NullCheck
     Node *e = mb->end();
     if( e->is_MachNullCheck() && e->in(1) == mach )
-      continue;                 // Already being used as a NULL check
+      continue;                 // Already being used as a null check
 
     // Found a candidate!  Pick one with least dom depth - the highest
     // in the dom tree should be closest to the null check.
-    if (best == NULL || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
+    if (best == nullptr || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
       best = mach;
       bidx = vidx;
     }
   }
   // No candidate!
-  if (best == NULL) {
+  if (best == nullptr) {
     return;
   }
 
   // ---- Found an implicit null check
 #ifndef PRODUCT
-  extern int implicit_null_checks;
+  extern uint implicit_null_checks;
   implicit_null_checks++;
 #endif
 
@@ -415,9 +422,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   map_node_to_block(best, block);
 
   // Move the control dependence if it is pinned to not-null block.
-  // Don't change it in other cases: NULL or dominating control.
+  // Don't change it in other cases: null or dominating control.
   Node* ctrl = best->in(0);
-  if (ctrl != NULL && get_block_for_node(ctrl) == not_null_block) {
+  if (ctrl != nullptr && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -435,10 +442,10 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // proj==Op_True --> ne test; proj==Op_False --> eq test.
   // One of two graph shapes got matched:
-  //   (IfTrue  (If (Bool NE (CmpP ptr NULL))))
-  //   (IfFalse (If (Bool EQ (CmpP ptr NULL))))
-  // NULL checks are always branch-if-eq.  If we see a IfTrue projection
-  // then we are replacing a 'ne' test with a 'eq' NULL check test.
+  //   (IfTrue  (If (Bool NE (CmpP ptr null))))
+  //   (IfFalse (If (Bool EQ (CmpP ptr null))))
+  // null checks are always branch-if-eq.  If we see a IfTrue projection
+  // then we are replacing a 'ne' test with a 'eq' null check test.
   // We need to flip the projections to keep the same semantics.
   if( proj->Opcode() == Op_IfTrue ) {
     // Swap order of projections in basic block to swap branch targets
@@ -446,11 +453,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *tmp2 = block->get_node(block->end_idx()+2);
     block->map_node(tmp2, block->end_idx()+1);
     block->map_node(tmp1, block->end_idx()+2);
-    Node *tmp = new Node(C->top()); // Use not NULL input
+    Node *tmp = new Node(C->top()); // Use not null input
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
-    tmp->destruct(NULL);
+    tmp->destruct(nullptr);
   }
 
   // Remove the existing null check; use a new implicit null check instead.
@@ -466,7 +473,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Clean-up any dead code
   for (uint i3 = 0; i3 < old_tst->req(); i3++) {
     Node* in = old_tst->in(i3);
-    old_tst->set_req(i3, NULL);
+    old_tst->set_req(i3, nullptr);
     if (in->outcnt() == 0) {
       // Remove dead input node
       in->disconnect_inputs(C);
@@ -485,6 +492,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
         insert_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }
@@ -525,7 +535,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
+  bool block_size_threshold_ok = (recalc_pressure_nodes != nullptr) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -695,7 +705,7 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
   for (uint i = 1; i < n->req(); i++) {
     bool lrg_ends = false;
     Node *src_n = n->in(i);
-    if (src_n == NULL) continue;
+    if (src_n == nullptr) continue;
     if (!src_n->is_Mach()) continue;
     uint src = _regalloc->_lrg_map.find(src_n);
     if (src == 0) continue;
@@ -714,7 +724,6 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         switch (iop) {
         case Op_StoreB:
         case Op_StoreC:
-        case Op_StoreCM:
         case Op_StoreD:
         case Op_StoreF:
         case Op_StoreI:
@@ -755,9 +764,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
     // if none, this live range ends and we can adjust register pressure
     if (lrg_ends) {
       if (finalize_mode) {
-        _regalloc->lower_pressure(block, 0, lrg_src, NULL, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
+        _regalloc->lower_pressure(block, 0, lrg_src, nullptr, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
       } else {
-        _regalloc->lower_pressure(block, 0, lrg_src, NULL, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
+        _regalloc->lower_pressure(block, 0, lrg_src, nullptr, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
       }
     }
   }
@@ -805,7 +814,7 @@ void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
 // carry lots of stuff live across a call.
 void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call) {
   // Find the next control-defining Node in this block
-  Node* call = NULL;
+  Node* call = nullptr;
   for (DUIterator_Fast imax, i = this_call->fast_outs(imax); i < imax; i++) {
     Node* m = this_call->fast_out(i);
     if (get_block_for_node(m) == block && // Local-block user
@@ -815,7 +824,7 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
       break;
     }
   }
-  if (call == NULL)  return;    // No next call (e.g., block end is near)
+  if (call == nullptr)  return;    // No next call (e.g., block end is near)
   // Set next-call for all inputs to this call
   set_next_call(block, call, next_call);
 }
@@ -886,7 +895,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   block->insert_node(proj, node_cnt++);
 
   // Select the right register save policy.
-  const char *save_policy = NULL;
+  const char *save_policy = nullptr;
   switch (op) {
     case Op_CallRuntime:
     case Op_CallLeaf:
@@ -956,7 +965,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
+  bool block_size_threshold_ok = (recalc_pressure_nodes != nullptr) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is available to be scheduled.
@@ -995,21 +1004,6 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
           local++;              // One more block-local input
       }
       ready_cnt.at_put(n->_idx, local); // Count em up
-
-#ifdef ASSERT
-      if (UseG1GC) {
-        if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
-          // Check the precedence edges
-          for (uint prec = n->req(); prec < n->len(); prec++) {
-            Node* oop_store = n->in(prec);
-            if (oop_store != NULL) {
-              assert(get_block_for_node(oop_store)->_dom_depth <= block->_dom_depth, "oop_store must dominate card-mark");
-            }
-          }
-        }
-      }
-#endif
-
       // A few node types require changing a required edge to a precedence edge
       // before allocation.
       if( n->is_Mach() && n->req() > TypeFunc::Parms &&
@@ -1022,7 +1016,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
         // and the edge will be lost. This is why this code should be
         // executed only when Precedent (== TypeFunc::Parms) edge is present.
         Node *x = n->in(TypeFunc::Parms);
-        if (x != NULL && get_block_for_node(x) == block && n->find_prec_edge(x) != -1) {
+        if (x != nullptr && get_block_for_node(x) == block && n->find_prec_edge(x) != -1) {
           // Old edge to node within same block will get removed, but no precedence
           // edge will get added because it already exists. Update ready count.
           int cnt = ready_cnt.at(n->_idx);
@@ -1195,7 +1189,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // to the Compile object, and the C2Compiler will see it and retry.
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
-      assert(false, "graph should be schedulable");
+      assert(C->failure_is_artificial(), "graph should be schedulable");
     }
     // assert( phi_cnt == end_idx(), "did not schedule all" );
     return false;
@@ -1259,7 +1253,7 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
     use_blk = use_blk->_idom;
 
   // Find the successor
-  Node *fixup = NULL;
+  Node *fixup = nullptr;
 
   uint j;
   for( j = 0; j < def_blk->_num_succs; j++ )
@@ -1269,7 +1263,7 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
   if( j == def_blk->_num_succs ) {
     // Block at same level in dom-tree is not a successor.  It needs a
     // PhiNode, the PhiNode uses from the def and IT's uses need fixup.
-    Node_Array inputs = new Node_List();
+    Node_Array inputs;
     for(uint k = 1; k < use_blk->num_preds(); k++) {
       Block* block = get_block_for_node(use_blk->pred(k));
       inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, n_clone_idx));
@@ -1284,14 +1278,14 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
       for (uint k = 1; k < use_blk->num_preds(); k++) {
         if (phi->in(k) != inputs[k]) {
           // Not a match
-          fixup = NULL;
+          fixup = nullptr;
           break;
         }
       }
     }
 
     // If an existing PhiNode was not found, make a new one.
-    if (fixup == NULL) {
+    if (fixup == nullptr) {
       Node *new_phi = PhiNode::make(use_blk->head(), def);
       use_blk->insert_node(new_phi, 1);
       map_node_to_block(new_phi, use_blk);
@@ -1370,6 +1364,9 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       map_node_to_block(clone, sb);
       if (clone->needs_anti_dependence_check()) {
         insert_anti_dependences(sb, clone);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }

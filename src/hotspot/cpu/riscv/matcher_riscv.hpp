@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = true;
 
-  static const bool supports_scalable_vector() {
+  static bool supports_scalable_vector() {
     return UseRVV;
   }
 
@@ -93,12 +93,12 @@
 
   static bool const_oop_prefer_decode() {
     // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-    return CompressedOops::base() == NULL;
+    return CompressedOops::base() == nullptr;
   }
 
   static bool const_klass_prefer_decode() {
     // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-    return CompressedKlassPointers::base() == NULL;
+    return CompressedKlassPointers::base() == nullptr;
   }
 
   // Is it better to copy float constants, or load them directly from
@@ -114,9 +114,6 @@
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during
   // deoptimization?
   static constexpr bool float_in_double() { return false; }
@@ -128,28 +125,33 @@
   static const bool int_in_long = true;
 
   // Does the CPU supports vector variable shift instructions?
-  static constexpr bool supports_vector_variable_shifts(void) {
+  static bool supports_vector_variable_shifts(void) {
+    return UseRVV;
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 
   // Does the CPU supports vector variable rotate instructions?
-  static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+  static bool supports_vector_variable_rotates(void) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+  static bool supports_vector_constant_rotates(int shift) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    return false;
+  static bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return UseRVV;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
-    return false;
+  static bool has_predicated_vectors(void) {
+    return UseRVV;
   }
 
   // true means we have fast l2f conversion
@@ -159,7 +161,7 @@
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
-  static const bool supports_encode_ascii_array = false;
+  static const bool supports_encode_ascii_array = true;
 
   // Some architecture needs a helper to check for alltrue vector
   static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
@@ -168,7 +170,7 @@
 
   // BoolTest mask for vector test intrinsics
   static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
-    return BoolTest::illegal;
+    return is_alltrue ? BoolTest::eq : BoolTest::ne;
   }
 
   // Returns pre-selection estimated size of a vector operation.
@@ -190,6 +192,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP

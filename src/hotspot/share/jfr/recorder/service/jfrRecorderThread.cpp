@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -39,23 +38,23 @@
 
 static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAPS) {
   assert(thread_oop.not_null(), "invariant");
-  assert(proc != NULL, "invariant");
+  assert(proc != nullptr, "invariant");
 
   JavaThread* new_thread = new JavaThread(proc);
 
   // At this point it may be possible that no
   // osthread was created for the JavaThread due to lack of resources.
-  if (new_thread->osthread() == NULL) {
+  if (new_thread->osthread() == nullptr) {
     delete new_thread;
     JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", THREAD);
-    return NULL;
+    return nullptr;
   } else {
     JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NormPriority);
     return new_thread;
   }
 }
 
-JfrPostBox* JfrRecorderThread::_post_box = NULL;
+JfrPostBox* JfrRecorderThread::_post_box = nullptr;
 
 JfrPostBox& JfrRecorderThread::post_box() {
   return *_post_box;
@@ -65,8 +64,8 @@ JfrPostBox& JfrRecorderThread::post_box() {
 void recorderthread_entry(JavaThread*, JavaThread*);
 
 bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post_box, TRAPS) {
-  assert(cp_manager != NULL, "invariant");
-  assert(post_box != NULL, "invariant");
+  assert(cp_manager != nullptr, "invariant");
+  assert(post_box != nullptr, "invariant");
   _post_box = post_box;
 
   static const char klass[] = "jdk/jfr/internal/JVMUpcalls";

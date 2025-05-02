@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.PlatformSocketImpl;
-import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.SocketExceptions;
 
@@ -182,6 +181,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round up any excess nanos to the nearest millisecond to
+                    // avoid parking for less than requested.
+                    millis++;
+                }
             }
             Net.poll(fd, event, millis);
         }
@@ -450,20 +454,12 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         synchronized (stateLock) {
             if (state != ST_NEW)
                 throw new IOException("Already created");
-            if (!stream)
-                ResourceManager.beforeUdpCreate();
             FileDescriptor fd;
-            try {
-                if (server) {
-                    assert stream;
-                    fd = Net.serverSocket(true);
-                } else {
-                    fd = Net.socket(stream);
-                }
-            } catch (IOException ioe) {
-                if (!stream)
-                    ResourceManager.afterUdpClose();
-                throw ioe;
+            if (server) {
+                assert stream;
+                fd = Net.serverSocket(true);
+            } else {
+                fd = Net.socket(stream);
             }
             Runnable closer = closerFor(fd, stream);
             this.fd = fd;
@@ -603,8 +599,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
-            if (ioe instanceof InterruptedIOException) {
+            if (ioe instanceof SocketTimeoutException) {
                 throw ioe;
+            } else if (ioe instanceof InterruptedIOException) {
+                assert Thread.currentThread().isVirtual();
+                throw new SocketException("Closed by interrupt");
             } else {
                 throw SocketExceptions.of(ioe, isa);
             }
@@ -895,20 +894,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             // then the socket is pre-closed and the thread(s) signalled. The
             // last thread will close the file descriptor.
             if (!tryClose()) {
-                long reader = readerThread;
-                long writer = writerThread;
-                if (NativeThread.isVirtualThread(reader)
-                        || NativeThread.isVirtualThread(writer)) {
-                    Poller.stopPoll(fdVal(fd));
-                }
-                if (NativeThread.isNativeThread(reader)
-                        || NativeThread.isNativeThread(writer)) {
-                    nd.preClose(fd);
-                    if (NativeThread.isNativeThread(reader))
-                        NativeThread.signal(reader);
-                    if (NativeThread.isNativeThread(writer))
-                        NativeThread.signal(writer);
-                }
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }
@@ -957,8 +943,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         synchronized (stateLock) {
             ensureOpen();
             if (opt == StandardSocketOptions.IP_TOS) {
-                // maps to IP_TOS or IPV6_TCLASS
-                Net.setSocketOption(fd, family(), opt, value);
+                // maps to IPV6_TCLASS and/or IP_TOS
+                Net.setIpSocketOption(fd, family(), opt, value);
             } else if (opt == StandardSocketOptions.SO_REUSEADDR) {
                 boolean b = (boolean) value;
                 if (Net.useExclusiveBind()) {
@@ -1032,7 +1018,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 }
                 case IP_TOS: {
                     int i = intValue(value, "IP_TOS");
-                    Net.setSocketOption(fd, family(), StandardSocketOptions.IP_TOS, i);
+                    Net.setIpSocketOption(fd, family(), StandardSocketOptions.IP_TOS, i);
                     break;
                 }
                 case TCP_NODELAY: {
@@ -1216,9 +1202,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                     nd.close(fd);
                 } catch (IOException ioe) {
                     throw new UncheckedIOException(ioe);
-                } finally {
-                    // decrement
-                    ResourceManager.afterUdpClose();
                 }
             };
         }

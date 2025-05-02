@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,24 +141,15 @@ final class Int256Vector extends IntVector {
     @ForceInline
     Int256Shuffle iotaShuffle() { return Int256Shuffle.IOTA; }
 
+    @Override
     @ForceInline
     Int256Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Int256Shuffle)VectorSupport.shuffleIota(ETYPE, Int256Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Int256Shuffle)VectorSupport.shuffleIota(ETYPE, Int256Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (Int256Shuffle) iotaShuffleTemplate(start, step, wrap);
     }
 
     @Override
     @ForceInline
-    Int256Shuffle shuffleFromBytes(byte[] reorder) { return new Int256Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Int256Shuffle shuffleFromArray(int[] indexes, int i) { return new Int256Shuffle(indexes, i); }
+    Int256Shuffle shuffleFromArray(int[] indices, int i) { return new Int256Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -357,9 +348,16 @@ final class Int256Vector extends IntVector {
         return (long) super.reduceLanesTemplate(op, Int256Mask.class, (Int256Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Integer> toShuffle() {
-        return super.toShuffleTemplate(Int256Shuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        return bitsToShuffleTemplate(dsp);
+    }
+
+    @Override
+    @ForceInline
+    public final Int256Shuffle toShuffle() {
+        return (Int256Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -503,9 +501,16 @@ final class Int256Vector extends IntVector {
                                    VectorMask<Integer> m) {
         return (Int256Vector)
             super.selectFromTemplate((Int256Vector) v,
-                                     (Int256Mask) m);  // specialize
+                                     Int256Mask.class, (Int256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int256Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int256Vector)
+            super.selectFromTemplate((Int256Vector) v1, (Int256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -523,6 +528,7 @@ final class Int256Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -549,6 +555,7 @@ final class Int256Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public Int256Vector withLaneHelper(int i, int e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -663,14 +670,6 @@ final class Int256Vector extends IntVector {
 
         @Override
         @ForceInline
-        public Int256Mask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            Int256Mask m = (Int256Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Int256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Int256Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -717,9 +716,9 @@ final class Int256Vector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Int256Mask xor(VectorMask<Integer> mask) {
+        public Int256Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int256Mask m = (Int256Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Int256Mask.class, null, int.class, VLENGTH,
@@ -760,6 +759,16 @@ final class Int256Vector extends IntVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Int256Mask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -796,23 +805,26 @@ final class Int256Vector extends IntVector {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Integer> ETYPE = int.class; // used by the JVM
 
-        Int256Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Int256Shuffle(int[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Int256Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Int256Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Int256Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Int256Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Int256Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        int[] indices() {
+            return (int[])getPayload();
         }
 
         @Override
+        @ForceInline
         public IntSpecies vspecies() {
             return VSPECIES;
         }
@@ -820,40 +832,98 @@ final class Int256Vector extends IntVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Integer.MAX_VALUE);
+            assert(Integer.MIN_VALUE <= -VLENGTH);
         }
         static final Int256Shuffle IOTA = new Int256Shuffle(IDENTITY);
 
         @Override
         @ForceInline
         public Int256Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Int256Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Int256Vector)(((AbstractShuffle<Integer>)(s)).toVectorTemplate())));
+            return toBitsVector();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        Int256Vector toBitsVector() {
+            return (Int256Vector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        Int256Vector toBitsVector0() {
+            return ((Int256Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+        }
+
+        @Override
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public final Int256Mask laneIsValid() {
+            return (Int256Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
         }
 
         @ForceInline
         @Override
-        public Int256Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            Int256Shuffle s = (Int256Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        public final Int256Shuffle rearrange(VectorShuffle<Integer> shuffle) {
+            Int256Shuffle concreteShuffle = (Int256Shuffle) shuffle;
+            return (Int256Shuffle) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Int256Shuffle wrapIndexes() {
+            Int256Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Int256Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Int256Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
             }
-            return new Int256Shuffle(r);
+            return (Int256Shuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static int[] prepare(int[] indices, int offset) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static int[] prepare(IntUnaryOperator f) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(int[] indices) {
+            int length = indices.length;
+            for (int si : indices) {
+                if (si >= (int)length || si < (int)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 

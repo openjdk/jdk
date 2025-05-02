@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,10 @@
 # questions.
 #
 
-include JavaCompilation.gmk
-include Modules.gmk
-
 ################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, modules/jdk.javadoc/Gendata.gmk))
+include JavaCompilation.gmk
+include Modules.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -43,6 +40,7 @@ CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim,jdk.javadoc.interim \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \
@@ -53,7 +51,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/langtools/src/classes \
         $(TOPDIR)/src/jdk.jdeps/share/classes, \
-    INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
+    INCLUDES := build/tools/symbolgenerator, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
@@ -114,3 +112,5 @@ $(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker: $(JDK_JAVADOC_DIR)/_element_li
 
 TARGETS += $(JDK_JAVADOC_DIR)/_element_lists.marker \
     $(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker
+
+################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023 8263432
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023 8263432 8305225
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -1781,7 +1781,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                     if (type == null) {
                         throw new AssertionError("Did not find the expected type.");
                     } else {
-                        processingEnv.getMessager().printMessage(Kind.NOTE, name + " found in module: " + processingEnv.getElementUtils().getModuleOf(type));
+                        processingEnv.getMessager().printNote(name + " found in module: " + processingEnv.getElementUtils().getModuleOf(type));
                     }
                 } else {
                     if (type != null) {
@@ -2129,6 +2129,94 @@ public class AnnotationProcessing extends ModuleTestBase {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             return false;
+        }
+
+    }
+
+    @Test
+    public void testCreateProvidesWithAP(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m1 = src.resolve("m");
+
+        tb.writeJavaFiles(m1,
+                          """
+                          module m {
+                              provides api1.Api with test.Test;
+                              uses api1.Api;
+                              uses api2.Api;
+                          }
+                          """);
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> expectedErrors = List.of(
+                "module-info.java:2:18: compiler.err.doesnt.exist: api1",
+                "module-info.java:2:32: compiler.err.doesnt.exist: test",
+                "module-info.java:3:14: compiler.err.doesnt.exist: api1",
+                "module-info.java:4:14: compiler.err.doesnt.exist: api2",
+                "4 errors");
+        List<String> actualErrors = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        tb.checkEqual(expectedErrors, actualErrors);
+
+        new JavacTask(tb)
+                .options("-processor", CreateProvidesWithAP.class.getName())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll();
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class CreateProvidesWithAP extends AbstractProcessor {
+
+        int round;
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getElementUtils().getModuleElement("m").getDirectives();
+            if (round++ == 0) {
+                try (Writer w = processingEnv.getFiler().createSourceFile("test.Test").openWriter()) {
+                    w.append("""
+                             package test;
+                             public class Test implements api1.Api {
+                             }
+                             """);
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+                try (Writer w = processingEnv.getFiler().createSourceFile("api1.Api").openWriter()) {
+                    w.append("""
+                             package api1;
+                             public interface Api {
+                             }
+                             """);
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+                try (Writer w = processingEnv.getFiler().createSourceFile("api2.Api").openWriter()) {
+                    w.append("""
+                             package api2;
+                             public interface Api {
+                             }
+                             """);
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
         }
 
     }

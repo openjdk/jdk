@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,7 @@ public class ReservedStackTest {
         // In order to dynamicaly determine if the platform supports the reserved
         // stack area, run with -XX:StackReservedPages=1 and see if we get the
         // expected warning message for platforms that don't support it.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:StackReservedPages=1", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:StackReservedPages=1", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println("StackReservedPages=1 log: [" + output.getOutput() + "]");
         if (output.getExitValue() != 0) {

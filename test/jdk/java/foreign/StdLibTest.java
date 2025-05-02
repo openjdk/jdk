@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED StdLibTest
  */
 
@@ -41,7 +39,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,7 +49,6 @@ import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
-@Test
 public class StdLibTest extends NativeTestHelper {
 
     final static Linker abi = Linker.nativeLinker();
@@ -122,32 +118,26 @@ public class StdLibTest extends NativeTestHelper {
 
     @Test(dataProvider = "printfArgs")
     void test_printf(List<PrintfArg> args) throws Throwable {
-        String formatArgs = args.stream()
-                .map(a -> a.format)
+        String javaFormatArgs = args.stream()
+                .map(a -> a.javaFormat)
+                .collect(Collectors.joining(","));
+        String nativeFormatArgs = args.stream()
+                .map(a -> a.nativeFormat)
                 .collect(Collectors.joining(","));
 
-        String formatString = "hello(" + formatArgs + ")\n";
+        String javaFormatString = "hello(" + javaFormatArgs + ")\n";
+        String nativeFormatString = "hello(" + nativeFormatArgs + ")\n";
 
-        String expected = String.format(formatString, args.stream()
+        String expected = String.format(javaFormatString, args.stream()
                 .map(a -> a.javaValue).toArray());
 
-        int found = stdLibHelper.printf(formatString, args);
+        int found = stdLibHelper.printf(nativeFormatString, args);
         assertEquals(found, expected.length());
     }
 
-    @Test(dataProvider = "printfArgs")
-    void test_vprintf(List<PrintfArg> args) throws Throwable {
-        String formatArgs = args.stream()
-                .map(a -> a.format)
-                .collect(Collectors.joining(","));
-
-        String formatString = "hello(" + formatArgs + ")\n";
-
-        String expected = String.format(formatString, args.stream()
-                .map(a -> a.javaValue).toArray());
-
-        int found = stdLibHelper.vprintf(formatString, args);
-        assertEquals(found, expected.length());
+    @Test
+    void testSystemLibraryBadLookupName() {
+        assertTrue(LINKER.defaultLookup().find("strlen\u0000foobar").isEmpty());
     }
 
     static class StdLibHelper {
@@ -165,12 +155,14 @@ public class StdLibTest extends NativeTestHelper {
                 FunctionDescriptor.of(C_INT, C_POINTER));
 
         final static MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().find("gmtime").get(),
-                FunctionDescriptor.of(C_POINTER, C_POINTER));
+                FunctionDescriptor.of(C_POINTER.withTargetLayout(Tm.LAYOUT), C_POINTER));
 
+        // void qsort( void *ptr, size_t count, size_t size, int (*comp)(const void *, const void *) );
         final static MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().find("qsort").get(),
-                FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER));
+                FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER));
 
-        final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER);
+        final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT,
+                C_POINTER.withTargetLayout(C_INT), C_POINTER.withTargetLayout(C_INT));
 
         final static MethodHandle qsortCompar;
 
@@ -195,38 +187,38 @@ public class StdLibTest extends NativeTestHelper {
         }
 
         String strcat(String s1, String s2) throws Throwable {
-            try (var arena = Arena.openConfined()) {
+            try (var arena = Arena.ofConfined()) {
                 MemorySegment buf = arena.allocate(s1.length() + s2.length() + 1);
-                buf.setUtf8String(0, s1);
-                MemorySegment other = arena.allocateUtf8String(s2);
-                return ((MemorySegment)strcat.invokeExact(buf, other)).getUtf8String(0);
+                buf.setString(0, s1);
+                MemorySegment other = arena.allocateFrom(s2);
+                return ((MemorySegment)strcat.invokeExact(buf, other)).getString(0);
             }
         }
 
         int strcmp(String s1, String s2) throws Throwable {
-            try (var arena = Arena.openConfined()) {
-                MemorySegment ns1 = arena.allocateUtf8String(s1);
-                MemorySegment ns2 = arena.allocateUtf8String(s2);
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment ns1 = arena.allocateFrom(s1);
+                MemorySegment ns2 = arena.allocateFrom(s2);
                 return (int)strcmp.invokeExact(ns1, ns2);
             }
         }
 
         int puts(String msg) throws Throwable {
-            try (var arena = Arena.openConfined()) {
-                MemorySegment s = arena.allocateUtf8String(msg);
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocateFrom(msg);
                 return (int)puts.invokeExact(s);
             }
         }
 
         int strlen(String msg) throws Throwable {
-            try (var arena = Arena.openConfined()) {
-                MemorySegment s = arena.allocateUtf8String(msg);
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocateFrom(msg);
                 return (int)strlen.invokeExact(s);
             }
         }
 
         Tm gmtime(long arg) throws Throwable {
-            try (var arena = Arena.openConfined()) {
+            try (var arena = Arena.ofConfined()) {
                 MemorySegment time = arena.allocate(8);
                 time.set(C_LONG_LONG, 0, arg);
                 return new Tm((MemorySegment)gmtime.invokeExact(time));
@@ -238,10 +230,21 @@ public class StdLibTest extends NativeTestHelper {
             //Tm pointer should never be freed directly, as it points to shared memory
             private final MemorySegment base;
 
-            static final long SIZE = 56;
+            static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
+                    C_INT.withName("sec"),
+                    C_INT.withName("min"),
+                    C_INT.withName("hour"),
+                    C_INT.withName("mday"),
+                    C_INT.withName("mon"),
+                    C_INT.withName("year"),
+                    C_INT.withName("wday"),
+                    C_INT.withName("yday"),
+                    C_BOOL.withName("isdst"),
+                    MemoryLayout.paddingLayout(3)
+            );
 
             Tm(MemorySegment addr) {
-                this.base = addr.asSlice(0, SIZE);
+                this.base = addr;
             }
 
             int sec() {
@@ -275,13 +278,17 @@ public class StdLibTest extends NativeTestHelper {
 
         int[] qsort(int[] arr) throws Throwable {
             //init native array
-            try (var arena = Arena.openConfined()) {
-                MemorySegment nativeArr = arena.allocateArray(C_INT, arr);
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment nativeArr = arena.allocateFrom(C_INT, arr);
 
                 //call qsort
-                MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena.scope());
+                MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena);
 
-                qsort.invokeExact(nativeArr, (long)arr.length, C_INT.byteSize(), qsortUpcallStub);
+                // both of these fit in an int
+                // automatically widen them to long on x64
+                int count = arr.length;
+                int size = (int) C_INT.byteSize();
+                qsort.invoke(nativeArr, count, size, qsortUpcallStub);
 
                 //convert back to Java array
                 return nativeArr.toArray(C_INT);
@@ -298,18 +305,10 @@ public class StdLibTest extends NativeTestHelper {
         }
 
         int printf(String format, List<PrintfArg> args) throws Throwable {
-            try (var arena = Arena.openConfined()) {
-                MemorySegment formatStr = arena.allocateUtf8String(format);
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment formatStr = arena.allocateFrom(format);
                 return (int)specializedPrintf(args).invokeExact(formatStr,
                         args.stream().map(a -> a.nativeValue(arena)).toArray());
-            }
-        }
-
-        int vprintf(String format, List<PrintfArg> args) throws Throwable {
-            try (var arena = Arena.openConfined()) {
-                MemorySegment formatStr = arena.allocateUtf8String(format);
-                VaList vaList = VaList.make(b -> args.forEach(a -> a.accept(b, arena)), arena.scope());
-                return (int)vprintf.invokeExact(formatStr, vaList.segment());
             }
         }
 
@@ -384,40 +383,27 @@ public class StdLibTest extends NativeTestHelper {
                 .toArray(Object[][]::new);
     }
 
-    enum PrintfArg implements BiConsumer<VaList.Builder, Arena> {
-
-        INTEGRAL(int.class, C_INT, "%d", arena -> 42, 42, VaList.Builder::addVarg),
-        STRING(MemorySegment.class, C_POINTER, "%s", arena -> {
-            return arena.allocateUtf8String("str");
-        }, "str", VaList.Builder::addVarg),
-        CHAR(byte.class, C_CHAR, "%c", arena -> (byte) 'h', 'h', (builder, layout, value) -> builder.addVarg(C_INT, (int)value)),
-        DOUBLE(double.class, C_DOUBLE, "%.4f", arena ->1.2345d, 1.2345d, VaList.Builder::addVarg);
+    enum PrintfArg {
+        INT(int.class, C_INT, "%d", "%d", arena -> 42, 42),
+        LONG(long.class, C_LONG_LONG, "%lld", "%d", arena -> 84L, 84L),
+        DOUBLE(double.class, C_DOUBLE, "%.4f", "%.4f", arena -> 1.2345d, 1.2345d),
+        STRING(MemorySegment.class, C_POINTER, "%s", "%s", arena -> arena.allocateFrom("str"), "str");
 
         final Class<?> carrier;
         final ValueLayout layout;
-        final String format;
+        final String nativeFormat;
+        final String javaFormat;
         final Function<Arena, ?> nativeValueFactory;
         final Object javaValue;
-        @SuppressWarnings("rawtypes")
-        final VaListBuilderCall builderCall;
 
-        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String format, Function<Arena, Z> nativeValueFactory, Object javaValue, VaListBuilderCall<Z, L> builderCall) {
+        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String nativeFormat, String javaFormat,
+                                             Function<Arena, Z> nativeValueFactory, Object javaValue) {
             this.carrier = carrier;
             this.layout = layout;
-            this.format = format;
+            this.nativeFormat = nativeFormat;
+            this.javaFormat = javaFormat;
             this.nativeValueFactory = nativeValueFactory;
             this.javaValue = javaValue;
-            this.builderCall = builderCall;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void accept(VaList.Builder builder, Arena arena) {
-            builderCall.build(builder, layout, nativeValueFactory.apply(arena));
-        }
-
-        interface VaListBuilderCall<V, L> {
-            void build(VaList.Builder builder, L layout, V value);
         }
 
         public Object nativeValue(Arena arena) {

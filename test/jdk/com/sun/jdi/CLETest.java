@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@ import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import java.util.*;
 
-class t1 {
+class CLEClass1 {
     public static void foo() {
     }
 }
-class t2 {
+class CLEClass2 {
     public static void foo() {
     }
 }
@@ -72,10 +72,10 @@ class CLEDebugee {
     // verify that the generated MethodEntry events during class loading are not improperly
     // co-located as described the the CR.
     public static void test1() {
-        t1.foo();  // BREAKPOINT_1
+        CLEClass1.foo();  // BREAKPOINT_1
     }
     public static void test2() {
-        t2.foo();  // BREAKPOINT_2
+        CLEClass2.foo();  // BREAKPOINT_2
     }
 
     // Tests that MethodEntry, Step, and Breakpoint events that occur at the same

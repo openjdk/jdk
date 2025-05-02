@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
- * 8280403 8264160 8281315
+ * 8280403 8264160 8281315 8305107
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
@@ -49,7 +49,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
@@ -62,8 +61,8 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.testng.Assert;
 
 
 import jdk.test.lib.RandomFactory;
@@ -2041,6 +2040,58 @@ public class RegExTest {
         check(pattern, toSupplementaries("abcdefghijkk"), true);
     }
 
+    @Test
+    public static void ciBackRefTest() {
+        Pattern pattern = Pattern.compile("(?i)(a*)bc\\1");
+        check(pattern, "zzzaabcazzz", true);
+
+        pattern = Pattern.compile("(?i)(a*)bc\\1");
+        check(pattern, "zzzaabcaazzz", true);
+
+        pattern = Pattern.compile("(?i)(abc)(def)\\1");
+        check(pattern, "abcdefabc", true);
+
+        pattern = Pattern.compile("(?i)(abc)(def)\\3");
+        check(pattern, "abcdefabc", false);
+
+        for (int i = 1; i < 10; i++) {
+            // Make sure backref 1-9 are always accepted
+            pattern = Pattern.compile("(?i)abcdef\\" + i);
+            // and fail to match if the target group does not exit
+            check(pattern, "abcdef", false);
+        }
+
+        pattern = Pattern.compile("(?i)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\11");
+        check(pattern, "abcdefghija", false);
+        check(pattern, "abcdefghija1", true);
+
+        pattern = Pattern.compile("(?i)(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\\11");
+        check(pattern, "abcdefghijkk", true);
+
+        pattern = Pattern.compile("(?i)(a)bcdefghij\\11");
+        check(pattern, "abcdefghija1", true);
+
+        // Supplementary character tests
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a*)bc\\1"));
+        check(pattern, toSupplementaries("zzzaabcazzz"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a*)bc\\1"));
+        check(pattern, toSupplementaries("zzzaabcaazzz"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(abc)(def)\\1"));
+        check(pattern, toSupplementaries("abcdefabc"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(abc)(def)\\3"));
+        check(pattern, toSupplementaries("abcdefabc"), false);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\11"));
+        check(pattern, toSupplementaries("abcdefghija"), false);
+        check(pattern, toSupplementaries("abcdefghija1"), true);
+
+        pattern = Pattern.compile("(?i)" + toSupplementaries("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\\11"));
+        check(pattern, toSupplementaries("abcdefghijkk"), true);
+    }
+
     /**
      * Unicode Technical Report #18, section 2.6 End of Line
      * There is no empty line to be matched in the sequence \u000D\u000A
@@ -3717,7 +3768,6 @@ public class RegExTest {
 
         Matcher lower  = Pattern.compile("\\p{Lower}").matcher("");
         Matcher upper  = Pattern.compile("\\p{Upper}").matcher("");
-        Matcher ASCII  = Pattern.compile("\\p{ASCII}").matcher("");
         Matcher alpha  = Pattern.compile("\\p{Alpha}").matcher("");
         Matcher digit  = Pattern.compile("\\p{Digit}").matcher("");
         Matcher alnum  = Pattern.compile("\\p{Alnum}").matcher("");
@@ -3728,12 +3778,10 @@ public class RegExTest {
         Matcher cntrl  = Pattern.compile("\\p{Cntrl}").matcher("");
         Matcher xdigit = Pattern.compile("\\p{XDigit}").matcher("");
         Matcher space  = Pattern.compile("\\p{Space}").matcher("");
-        Matcher bound  = Pattern.compile("\\b").matcher("");
         Matcher word   = Pattern.compile("\\w++").matcher("");
         // UNICODE_CHARACTER_CLASS
         Matcher lowerU  = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher upperU  = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher ASCIIU  = Pattern.compile("\\p{ASCII}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher alphaU  = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher digitU  = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher alnumU  = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
@@ -3766,6 +3814,13 @@ public class RegExTest {
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
         Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
         Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
+        // Emoji properties
+        Matcher emojiP   = Pattern.compile("\\p{IsEmoji}").matcher("");
+        Matcher emojiPP  = Pattern.compile("\\p{IsEmoji_Presentation}").matcher("");
+        Matcher emojiMP  = Pattern.compile("\\p{IsEmoji_Modifier}").matcher("");
+        Matcher emojiMBP = Pattern.compile("\\p{IsEmoji_Modifier_Base}").matcher("");
+        Matcher emojiCP  = Pattern.compile("\\p{IsEmoji_Component}").matcher("");
+        Matcher extPP    = Pattern.compile("\\p{IsExtended_Pictographic}").matcher("");
         // javaMethod
         Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
         Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
@@ -3839,6 +3894,13 @@ public class RegExTest {
                 (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
                 POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
                 POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches() ||
+                // Emoji properties
+                Character.isEmoji(cp) != emojiP.reset(str).matches() ||
+                Character.isEmojiPresentation(cp) != emojiPP.reset(str).matches() ||
+                Character.isEmojiModifier(cp) != emojiMP.reset(str).matches() ||
+                Character.isEmojiModifierBase(cp)!= emojiMBP.reset(str).matches() ||
+                Character.isEmojiComponent(cp) != emojiCP.reset(str).matches() ||
+                Character.isExtendedPictographic(cp) != extPP.reset(str).matches() ||
                 // gc_C
                 (Character.CONTROL == type || Character.FORMAT == type ||
                  Character.PRIVATE_USE == type || Character.SURROGATE == type ||
@@ -4085,87 +4147,85 @@ public class RegExTest {
             Pattern.compile("(?imsducxU).(?-imsducxU).");
     }
 
-    @Test
-    public static void grapheme() throws Exception {
-        final int[] lineNumber = new int[1];
-        Stream.concat(Files.lines(UCDFiles.GRAPHEME_BREAK_TEST),
+    @DataProvider
+    private static String[] graphemeTestCases() throws Exception {
+        return Stream.concat(Files.lines(UCDFiles.GRAPHEME_BREAK_TEST),
                 Files.lines(Paths.get(System.getProperty("test.src", "."), "GraphemeTestCases.txt")))
-            .forEach( ln -> {
-                    lineNumber[0]++;
-                    if (ln.length() == 0 || ln.startsWith("#")) {
-                        return;
-                    }
-                    ln = ln.replaceAll("\\s+|\\([a-zA-Z]+\\)|\\[[a-zA-Z]]+\\]|#.*", "");
-                    // System.out.println(str);
-                    String[] strs = ln.split("\u00f7|\u00d7");
-                    StringBuilder src = new StringBuilder();
-                    ArrayList<String> graphemes = new ArrayList<>();
-                    StringBuilder buf = new StringBuilder();
-                    int offBk = 0;
-                    for (String str : strs) {
-                        if (str.length() == 0)  // first empty str
-                            continue;
-                        int cp = Integer.parseInt(str, 16);
-                        src.appendCodePoint(cp);
-                        buf.appendCodePoint(cp);
-                        offBk += (str.length() + 1);
-                        if (ln.charAt(offBk) == '\u00f7') {    // DIV
-                            graphemes.add(buf.toString());
-                            buf = new StringBuilder();
-                        }
-                    }
-                    Pattern p = Pattern.compile("\\X");
-                    // (1) test \X directly
-                    Matcher m = p.matcher(src.toString());
-                    for (String g : graphemes) {
-                        // System.out.printf("     grapheme:=[%s]%n", g);
-                        String group = null;
-                        if (!m.find() || !(group = m.group()).equals(g)) {
-                                 fail("Failed pattern \\X [" + ln + "] : "
-                                    + "expected: " + g + " - actual: " + group
-                                    + "(line " + lineNumber[0] + ")");
-                        }
-                    }
-                    assertFalse(m.find());
-                    // test \b{g} without \X via Pattern
-                    Pattern pbg = Pattern.compile("\\b{g}");
-                    m = pbg.matcher(src.toString());
-                    m.find();
-                    int prev = m.end();
-                    for (String g : graphemes) {
-                        String group = null;
-                        if (!m.find() || !(group = src.substring(prev, m.end())).equals(g)) {
-                                 fail("Failed pattern \\b{g} [" + ln + "] : "
-                                    + "expected: " + g + " - actual: " + group
-                                    + "(line " + lineNumber[0] + ")");
-                        }
-                        assertEquals("", m.group());
-                        prev = m.end();
-                    }
-                    assertFalse(m.find());
-                    // (2) test \b{g} + \X  via Scanner
-                    Scanner s = new Scanner(src.toString()).useDelimiter("\\b{g}");
-                    for (String g : graphemes) {
-                        String next = null;
-                        if (!s.hasNext(p) || !(next = s.next(p)).equals(g)) {
-                                 fail("Failed \\b{g} [" + ln + "] : "
-                                    + "expected: " + g + " - actual: " + next
-                                    + " (line " + lineNumber[0] + ")");
-                        }
-                    }
-                    assertFalse(s.hasNext(p));
-                    // test \b{g} without \X via Scanner
-                    s = new Scanner(src.toString()).useDelimiter("\\b{g}");
-                    for (String g : graphemes) {
-                        String next = null;
-                        if (!s.hasNext() || !(next = s.next()).equals(g)) {
-                                 fail("Failed \\b{g} [" + ln + "] : "
-                                    + "expected: " + g + " - actual: " + next
-                                    + " (line " + lineNumber[0] + ")");
-                        }
-                    }
-                    assertFalse(s.hasNext());
-                });
+            .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+            .toArray(String[]::new);
+    }
+
+    @Test(dataProvider = "graphemeTestCases")
+    public static void grapheme(String line) throws Exception {
+        String tc = line.replaceAll("\\s+|\\([a-zA-Z]+\\)|\\[[a-zA-Z]]+]|#.*", "");
+        String[] strs = tc.split("\u00f7|\u00d7");
+        StringBuilder src = new StringBuilder();
+        ArrayList<String> graphemes = new ArrayList<>();
+        StringBuilder buf = new StringBuilder();
+        int offBk = 0;
+        for (String str : strs) {
+            if (str.length() == 0)  // first empty str
+                continue;
+            int cp = Integer.parseInt(str, 16);
+            src.appendCodePoint(cp);
+            buf.appendCodePoint(cp);
+            offBk += (str.length() + 1);
+            if (tc.charAt(offBk) == '\u00f7') {    // DIV
+                graphemes.add(buf.toString());
+                buf = new StringBuilder();
+            }
+        }
+        Pattern p = Pattern.compile("\\X");
+        // (1) test \X directly
+        Matcher m = p.matcher(src.toString());
+        for (String g : graphemes) {
+            // System.out.printf("     grapheme:=[%s]%n", g);
+            String group = null;
+            if (!m.find() || !(group = m.group()).equals(g)) {
+                fail("Failed pattern \\X [" + tc + "] : "
+                    + "expected: " + g + " - actual: " + group);
+            }
+        }
+        assertFalse(m.find());
+        // test \b{g} without \X via Pattern
+        Pattern pbg = Pattern.compile("\\b{g}");
+        m = pbg.matcher(src.toString());
+        m.find();
+        int prev = m.end();
+        for (String g : graphemes) {
+            String group = null;
+            if (!m.find() || !(group = src.substring(prev, m.end())).equals(g)) {
+                fail("Failed pattern \\b{g} [" + tc + "] : "
+                    + "expected: " + g + " - actual: " + group);
+            }
+            assertEquals("", m.group());
+            prev = m.end();
+        }
+        assertFalse(m.find());
+        // (2) test \b{g} + \X  via Scanner
+        Scanner s = new Scanner(src.toString()).useDelimiter("\\b{g}");
+        for (String g : graphemes) {
+            String next = null;
+            if (!s.hasNext(p) || !(next = s.next(p)).equals(g)) {
+                fail("Failed \\b{g} [" + tc + "] : "
+                    + "expected: " + g + " - actual: " + next);
+            }
+        }
+        assertFalse(s.hasNext(p));
+        // test \b{g} without \X via Scanner
+        s = new Scanner(src.toString()).useDelimiter("\\b{g}");
+        for (String g : graphemes) {
+            String next = null;
+            if (!s.hasNext() || !(next = s.next()).equals(g)) {
+                fail("Failed \\b{g} [" + tc + "] : "
+                    + "expected: " + g + " - actual: " + next);
+            }
+        }
+        assertFalse(s.hasNext());
+    }
+
+    @Test
+    public static void graphemeSanity() {
         // some sanity checks
         assertTrue(Pattern.compile("\\X{10}").matcher("abcdefghij").matches() &&
                    Pattern.compile("\\b{g}(?:\\X\\b{g}){5}\\b{g}").matcher("abcde").matches() &&

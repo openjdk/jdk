@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,60 @@ package java.lang.reflect;
  * added to model future releases of the Java Virtual Machine
  * Specification.
  *
+ * @apiNote
+ * The complete version used in a class file includes a major version
+ * and a minor version; this enum only models the major version. A
+ * Java virtual machine implementation is required to support a range
+ * of major versions; see the corresponding edition of the <cite>The
+ * Java Virtual Machine Specification</cite> for details.
+ *
  * @since 20
  * @see System#getProperties System property {@code java.class.version}
  * @see java.compiler/javax.lang.model.SourceVersion
  */
 @SuppressWarnings("doclint:reference") // cross-module links
 public enum ClassFileFormatVersion {
+    /*
+     * Summary of class file format evolution; previews are listed for
+     * convenience, but they are not modeled by this enum.
+     * 1.1: InnerClasses, Synthetic, Deprecated attributes
+     * 1.2: ACC_STRICT modifier
+     * 1.3: no changes
+     * 1.4: no changes
+     * 1.5: Annotations (Runtime(Inv/V)isible(Parameter)Annotations attributes);
+     *      Generics (Signature, LocalVariableTypeTable attributes);
+     *      EnclosingMethod attribute
+     * 1.6: Verification by type checking (StackMapTable attribute)
+     * 1.7: Verification by type checking enforced (jsr and ret opcodes
+     *      obsolete); java.lang.invoke support (JSR 292) (CONSTANT_MethodHandle,
+     *      CONSTANT_MethodType, CONSTANT_InvokeDynamic constant pool entries,
+     *      BoostrapMethods attribute); <clinit> method must be ACC_STATIC
+     * 1.8: private, static, and non-abstract (default) methods in interfaces;
+     *      Type Annotations (JEP 104) (Runtime(Inv/V)isibleTypeAnnotations
+     *      attribute); MethodParameters attribute
+     *   9: JSR 376 - modules (JSR 376, JEP 261) (Module, ModuleMainClass,
+     *      ModulePackages attributes, CONSTANT_Module, CONSTANT_Package
+     *      constant pool entries, ACC_MODULE modifier)
+     *  10: minor tweak to requires_flags in Module attribute
+     *  11: Nest mates (JEP 181) (NestHost, NestMembers attributes);
+     *      CONSTANT_Dynamic (JEP 309) constant pool entry
+     *  12: Preview Features (JEP 12) (minor version must be 0 or 65535)
+     *  13: no changes
+     *  14: no changes; (JEP 359 Records in Preview)
+     *  15: no changes; (JEP 384 Records in 2nd Preview, JEP 360 Sealed Classes
+     *      in Preview)
+     *  16: Records (JEP 395) (Record attribute); (JEP 397 Sealed Classes in 2nd
+     *      Preview)
+     *  17: Sealed Classes (JEP 409) (PermittedSubclasses attribute); ACC_STRICT
+     *      modifier obsolete (JEP 306)
+     *  18: no changes
+     *  19: no changes
+     *  20: no changes
+     *  21: no changes
+     *  22: no changes
+     *  23: no changes
+     *  24: no changes
+     */
 
     /**
      * The original version.
@@ -64,7 +112,7 @@ public enum ClassFileFormatVersion {
     RELEASE_1(45),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.2.
      *
      * The format described in <cite>The Java Virtual Machine
@@ -74,19 +122,19 @@ public enum ClassFileFormatVersion {
     RELEASE_2(46),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.3.
      */
     RELEASE_3(47),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.4.
      */
     RELEASE_4(48),
 
     /**
-     * The version recognized by the Java 2 Platform, Standard
+     * The version introduced by the Java 2 Platform, Standard
      * Edition 5.0.
      *
      * @see <a
@@ -100,7 +148,7 @@ public enum ClassFileFormatVersion {
     RELEASE_5(49),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 6.
      *
      * @see <a
@@ -110,7 +158,7 @@ public enum ClassFileFormatVersion {
     RELEASE_6(50),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 7.
      *
      * @see <a
@@ -120,7 +168,7 @@ public enum ClassFileFormatVersion {
     RELEASE_7(51),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 8.
      *
      * @see <a
@@ -132,7 +180,7 @@ public enum ClassFileFormatVersion {
     RELEASE_8(52),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 9.
      *
      * @see <a
@@ -144,7 +192,7 @@ public enum ClassFileFormatVersion {
      RELEASE_9(53),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 10.
      *
      * @see <a
@@ -154,7 +202,7 @@ public enum ClassFileFormatVersion {
     RELEASE_10(54),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 11.
      *
      * @see <a
@@ -166,7 +214,7 @@ public enum ClassFileFormatVersion {
     RELEASE_11(55),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 12.
      *
      * @see <a
@@ -176,7 +224,7 @@ public enum ClassFileFormatVersion {
     RELEASE_12(56),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 13.
      *
      * @see <a
@@ -186,7 +234,7 @@ public enum ClassFileFormatVersion {
     RELEASE_13(57),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 14.
      *
      * @see <a
@@ -196,7 +244,7 @@ public enum ClassFileFormatVersion {
     RELEASE_14(58),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 15.
      *
      * @see <a
@@ -208,7 +256,7 @@ public enum ClassFileFormatVersion {
     RELEASE_15(59),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 16.
      *
      * @see <a
@@ -218,7 +266,7 @@ public enum ClassFileFormatVersion {
     RELEASE_16(60),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 17.
      *
      * Additions in this release include sealed classes and
@@ -235,7 +283,7 @@ public enum ClassFileFormatVersion {
     RELEASE_17(61),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 18.
      *
      * @see <a
@@ -245,7 +293,7 @@ public enum ClassFileFormatVersion {
     RELEASE_18(62),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 19.
      *
      * @see <a
@@ -255,7 +303,7 @@ public enum ClassFileFormatVersion {
     RELEASE_19(63),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 20.
      *
      * @see <a
@@ -265,7 +313,7 @@ public enum ClassFileFormatVersion {
     RELEASE_20(64),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 21.
      *
      * @since 21
@@ -274,7 +322,56 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se21/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 21 Edition</cite></a>
      */
-    RELEASE_21(65);
+    RELEASE_21(65),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 22.
+     *
+     * @since 22
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se22/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 22 Edition</cite></a>
+     */
+    RELEASE_22(66),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se23/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23(67),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 24.
+     *
+     * @since 24
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se24/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 24 Edition</cite></a>
+     */
+    RELEASE_24(68),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 25.
+     *
+     * @since 25
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se25/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 25 Edition</cite></a>
+     */
+    RELEASE_25(69),
+    ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
     // the implementation of latest() must be updated too.
@@ -289,7 +386,7 @@ public enum ClassFileFormatVersion {
      * {@return the latest class file format version}
      */
     public static ClassFileFormatVersion latest() {
-        return RELEASE_21;
+        return RELEASE_25;
     }
 
     /**
@@ -363,7 +460,7 @@ public enum ClassFileFormatVersion {
     public static ClassFileFormatVersion fromMajor(int major) {
         if (major < 45  // RELEASE_0.major()
             || major > latest().major()) {
-            throw new IllegalArgumentException("Out of range major class file vesion "
+            throw new IllegalArgumentException("Out of range major class file version "
                                                + major);
         }
         // RELEASE_0 and RELEASE_1 both have a major version of 45;

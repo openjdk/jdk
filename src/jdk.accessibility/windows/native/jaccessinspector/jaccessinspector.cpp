@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,7 +609,7 @@ void HandlePropertyChildChange( long vmID, PropertyChangeEvent event,
     char buffer[HUGE_BUFSIZE];
     char *bufOffset;
 
-    sprintf( buffer,
+    snprintf( buffer, sizeof(buffer),
              "Child property changed event:\r\n=======================\r\n\r\n" );
 
     if (oldChild != 0) {
@@ -647,7 +647,7 @@ void HandlePropertyActiveDescendentChange( long vmID, PropertyChangeEvent event,
                                            JOBJECT64 newActiveDescendent ) {
     char buffer[HUGE_BUFSIZE];
 
-    sprintf( buffer,
+    snprintf( buffer, sizeof(buffer),
              "ActiveDescendent property changed event:\r\n=======================\r\n\r\n" );
 
 #ifdef _notdef
@@ -1526,8 +1526,8 @@ BOOL UpdateMessageNumber () {
     size_t messageNumber = g_MessageHistory.GetCurrentMessageIndex() + 1;
     char text [32] = {0};
     if ( 0 != messageCount ) {
-        ::_snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
-                                                    (int) messageCount);
+        ::snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
+                                                   (int) messageCount);
     }
     return ::SetWindowText(dlgItem, text);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,22 +86,22 @@ public class AWTKeyStroke implements Serializable {
     private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
 
     /**
-     * The character value for a keyboard key.
+     * @serial The character value for a keyboard key.
      */
     private char keyChar = KeyEvent.CHAR_UNDEFINED;
 
     /**
-     * The key code for this {@code AWTKeyStroke}.
+     * @serial The key code for this {@code AWTKeyStroke}.
      */
     private int keyCode = KeyEvent.VK_UNDEFINED;
 
     /**
-     * The bitwise-ored combination of any modifiers.
+     * @serial The bitwise-ored combination of any modifiers.
      */
     private int modifiers;
 
     /**
-     * {@code true} if this {@code AWTKeyStroke} corresponds to a key release;
+     * @serial {@code true} if this {@code AWTKeyStroke} corresponds to a key release;
      * {@code false} otherwise.
      */
     private boolean onKeyRelease;

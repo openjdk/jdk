@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,21 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 
-class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
- public:
-  VM_ParallelGCFailedAllocation(size_t word_size, uint gc_count);
+class VM_ParallelCollectForAllocation : public VM_CollectForAllocation {
+  bool _is_tlab;
+public:
+  VM_ParallelCollectForAllocation(size_t word_size, bool is_tlab, uint gc_count);
 
   virtual VMOp_Type type() const {
-    return VMOp_ParallelGCFailedAllocation;
+    return VMOp_ParallelCollectForAllocation;
   }
   virtual void doit();
 };
 
-class VM_ParallelGCSystemGC: public VM_GC_Operation {
+class VM_ParallelGCCollect: public VM_GC_Operation {
  public:
-  VM_ParallelGCSystemGC(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
+  VM_ParallelGCCollect(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
+  virtual VMOp_Type type() const { return VMOp_ParallelGCCollect; }
   virtual void doit();
 };
 

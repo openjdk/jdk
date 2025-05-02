@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.nio.LongBuffer;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.util.ArraysSupport;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
@@ -1015,8 +1017,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Returns the hash code value for this bit set. The hash code depends
-     * only on which bits are set within this {@code BitSet}.
+     * {@return the hash code value for this bit set}
+     *
+     * The hash code depends only on which bits are set within this
+     * {@code BitSet}.
      *
      * <p>The hash code is defined to be the result of the following
      * calculation:
@@ -1029,9 +1033,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *     return (int)((h >> 32) ^ h);
      * }}</pre>
      * Note that the hash code changes if the set of bits is altered.
-     *
-     * @return the hash code value for this bit set
      */
+    @Override
     public int hashCode() {
         long h = 1234;
         for (int i = wordsInUse; --i >= 0; )
@@ -1052,7 +1055,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Compares this object against the specified object.
+     * Compares this bit set against the specified object.
      * The result is {@code true} if and only if the argument is
      * not {@code null} and is a {@code BitSet} object that has
      * exactly the same set of bits set to {@code true} as this bit
@@ -1065,11 +1068,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *         {@code false} otherwise
      * @see    #size()
      */
+    @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof BitSet set))
-            return false;
         if (this == obj)
             return true;
+        if (!(obj instanceof BitSet set))
+            return false;
 
         checkInvariants();
         set.checkInvariants();
@@ -1078,11 +1082,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
             return false;
 
         // Check words in use by both BitSets
-        for (int i = 0; i < wordsInUse; i++)
-            if (words[i] != set.words[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(words, 0, set.words, 0, wordsInUse) == -1;
     }
 
     /**
@@ -1184,7 +1184,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public String toString() {
         checkInvariants();
 
-        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        final int MAX_INITIAL_CAPACITY = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
         int numBits = (wordsInUse > 128) ?
             cardinality() : wordsInUse * BITS_PER_WORD;
         // Avoid overflow in the case of a humongous numBits

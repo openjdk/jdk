@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -82,7 +81,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
-  if (_cb != NULL ) {
+  if (_cb != nullptr ) {
 
     // First check if the frame is complete and the test is reliable.
     // Unfortunately we can only check frame completeness for runtime stubs.
@@ -111,19 +110,19 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // At this point, there still is a chance that fp_safe is false.
-    // In particular, (fp == NULL) might be true. So let's check and
+    // In particular, fp might be null. So let's check and
     // bail out before we actually dereference from fp.
     if (!fp_safe) {
       return false;
     }
 
-    z_abi_16* sender_abi = (z_abi_16*)fp;
+    z_common_abi* sender_abi = (z_common_abi*)fp;
     intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address)   sender_abi->return_pc;
 
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
-    if (sender_blob == NULL) {
+    if (sender_blob == nullptr) {
       return false;
     }
 
@@ -196,7 +195,7 @@ intptr_t* frame::interpreter_frame_sender_sp() const {
 }
 
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C. Skip all C frames and return top C
   // frame of that chunk as the sender.
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -208,7 +207,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
   assert(map->include_argument_oops(), "should be set by clear");
 
-  if (jfa->last_Java_pc() != NULL) {
+  if (jfa->last_Java_pc() != nullptr) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
@@ -218,13 +217,37 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 }
 
 UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
-  ShouldNotCallThis();
-  return nullptr;
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_upcall_stub_frame(), "must be optimized entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == nullptr;
+}
+
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+
+  return fr;
+}
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
@@ -241,22 +264,22 @@ void frame::patch_pc(Thread* thread, address pc) {
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
-  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+  assert(_pc == *pc_addr || pc == *pc_addr || nullptr == *pc_addr,
          "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
          " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
          p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
   DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->return_pc = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  address original_pc = get_deopt_original_pc();
+  if (original_pc != nullptr) {
     // assert(original_pc == _pc, "expected original to be stored before patching");
     _deopt_state = is_deoptimized;
     _pc = original_pc;
   } else {
     _deopt_state = not_deoptimized;
   }
-  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+  assert(!is_compiled_frame() || !_cb->as_nmethod()->is_deopt_entry(_pc), "must be");
 
   #ifdef ASSERT
   {
@@ -272,13 +295,13 @@ void frame::patch_pc(Thread* thread, address pc) {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
-  int min_frame_slots = (z_abi_16_size + z_ijava_state_size) / sizeof(intptr_t);
+  int min_frame_slots = (z_common_abi_size + z_ijava_state_size) / sizeof(intptr_t);
   if (fp() - min_frame_slots < sp()) {
     return false;
   }
@@ -396,19 +419,19 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
                            ? (address) top_pc
                            : (address) *((intptr_t*)(((address) current_sp) + _z_abi(return_pc)));
 
-    if ((intptr_t*) current_fp != 0 && (intptr_t*) current_fp <= current_sp) {
+    if ((intptr_t*) current_fp != nullptr && (intptr_t*) current_fp <= current_sp) {
       st->print_cr("ERROR: corrupt stack");
       return;
     }
 
     st->print("#%-3d ", num);
     const char* type_name = "    ";
-    const char* function_name = NULL;
+    const char* function_name = nullptr;
 
     // Detect current frame's frame_type, default to 'C frame'.
     frame_type = 0;
 
-    CodeBlob* blob = NULL;
+    CodeBlob* blob = nullptr;
 
     if (Interpreter::contains(current_pc)) {
       frame_type = 1;
@@ -479,7 +502,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
       case 0: // C frame:
         {
           st->print("    ");
-          if (current_pc == 0) {
+          if (current_pc == nullptr) {
             st->print("? ");
           } else {
              // name
@@ -653,7 +676,6 @@ intptr_t *frame::initial_deoptimization_info() {
   return fp();
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return interpreter_frame_monitors();
 }

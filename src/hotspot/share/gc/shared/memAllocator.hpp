@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,21 +47,19 @@ protected:
 
 private:
   // Allocate in a TLAB. Could allocate a new TLAB, and therefore potentially safepoint.
-  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
   HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
 
   // Allocate outside a TLAB. Could safepoint.
   HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
-
-  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
-  HeapWord* mem_allocate_slow(Allocation& allocation) const;
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
     : _thread(thread),
       _klass(klass),
       _word_size(word_size)
-  { }
+  {
+    assert(_thread == Thread::current(), "must be");
+  }
 
   // Initialization provided by subclasses.
   virtual oop initialize(HeapWord* mem) const = 0;
@@ -77,10 +75,6 @@ protected:
   // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
   // back to calling CollectedHeap::mem_allocate().
   HeapWord* mem_allocate(Allocation& allocation) const;
-
-  virtual MemRegion obj_memory_range(oop obj) const {
-    return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
-  }
 
 public:
   // Allocate and fully construct the object, and perform various instrumentation. Could safepoint.
@@ -100,7 +94,8 @@ protected:
   const int  _length;
   const bool _do_zero;
 
-  virtual MemRegion obj_memory_range(oop obj) const;
+  void mem_zap_start_padding(HeapWord* mem) const PRODUCT_RETURN;
+  void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
 
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
@@ -118,6 +113,33 @@ public:
     : MemAllocator(klass, word_size, thread) {}
 
   virtual oop initialize(HeapWord* mem) const;
+};
+
+// Manages a scope where a failed heap allocation results in
+// suppression of JVMTI "resource exhausted" events and
+// throwing a shared, backtrace-less OOME instance.
+// Used for OOMEs that will not be propagated to user code.
+class InternalOOMEMark: public StackObj {
+ private:
+  bool _outer;
+  JavaThread* _thread;
+
+ public:
+  explicit InternalOOMEMark(JavaThread* thread) {
+    assert(thread != nullptr, "nullptr is not supported");
+    _outer = thread->is_in_internal_oome_mark();
+    thread->set_is_in_internal_oome_mark(true);
+    _thread = thread;
+  }
+
+  ~InternalOOMEMark() {
+    // Check that only InternalOOMEMark sets
+    // JavaThread::_is_in_internal_oome_mark
+    assert(_thread->is_in_internal_oome_mark(), "must be");
+    _thread->set_is_in_internal_oome_mark(_outer);
+  }
+
+  JavaThread* thread() const  { return _thread; }
 };
 
 #endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP

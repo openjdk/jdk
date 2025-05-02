@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territory type="ZA"/>
 	</identity>
 	<characters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[á à ă â å ä ā æ ç ḓ é è ĕ ê ë ē í ì ĭ î ï ī ḽ ñ ṅ ṋ ó ò ŏ ô ö ø ō œ š ṱ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[áàăâåäā æ ç ḓ éèĕêëē íìĭîïī ḽ ñṅṋ óòŏôöøō œ š ṱ úùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -237,8 +237,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
+			<decimal alt="us">.</decimal>
 			<group> </group>
+			<group alt="us">,</group>
 		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="ZAR">
 				<symbol>R</symbol>

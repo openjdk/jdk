@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,10 @@ import java.nio.file.StandardCopyOption;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -44,11 +46,13 @@ import jtreg.SkippedException;
 // This class contains common test utilities for testing CDS
 public class CDSTestUtils {
     public static final String MSG_RANGE_NOT_WITHIN_HEAP =
-        "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
+        "Unable to allocate region, range is not within java heap.";
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
         "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
+    public static final String MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE =
+        "an object points to a static field that may hold a different value at runtime";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -264,7 +268,7 @@ public class CDSTestUtils {
         for (String s : opts.suffix) cmd.add(s);
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         return executeAndLog(pb, "dump");
     }
 
@@ -282,6 +286,7 @@ public class CDSTestUtils {
             output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
 
         for (String match : extraMatches) {
             output.shouldContain(match);
@@ -294,6 +299,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkBaseDump(OutputAnalyzer output) throws Exception {
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         return output;
     }
 
@@ -424,7 +430,8 @@ public class CDSTestUtils {
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = opts.getRuntimePrefix();
+        ArrayList<String> cmd = new ArrayList<String>();
+        cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
@@ -441,7 +448,7 @@ public class CDSTestUtils {
         for (String s : opts.suffix) cmd.add(s);
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         return executeAndLog(pb, "exec");
     }
 
@@ -599,11 +606,83 @@ public class CDSTestUtils {
         return new File(dir, name);
     }
 
+    // Check commandline for the last instance of Xshare to see if the process can load
+    // a CDS archive
+    public static boolean isRunningWithArchive(List<String> cmd) {
+        // -Xshare only works for the java executable
+        if (!cmd.get(0).equals(JDKToolFinder.getJDKTool("java")) || cmd.size() < 2) {
+            return false;
+        }
+
+        // -Xshare options are likely at the end of the args list
+        for (int i = cmd.size() - 1; i >= 1; i--) {
+            String s = cmd.get(i);
+            if (s.equals("-Xshare:dump") || s.equals("-Xshare:off")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isGCOption(String s) {
+        return s.startsWith("-XX:+Use") && s.endsWith("GC");
+    }
+
+    public static boolean hasGCOption(List<String> cmd) {
+        for (String s : cmd) {
+            if (isGCOption(s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Handle and insert test.cds.runtime.options to commandline
+    // The test.cds.runtime.options property is used to inject extra VM options to
+    // subprocesses launched by the CDS test cases using executeAndLog().
+    // The injection applies only to subprocesses that:
+    //   - are launched by the standard java launcher (bin/java)
+    //   - are not dumping the CDS archive with -Xshare:dump
+    //   - do not explicitly disable CDS via -Xshare:off
+    //
+    // The main purpose of this property is to test the runtime loading of
+    // the CDS "archive heap region" with non-default garbage collectors. E.g.,
+    //
+    // jtreg -vmoptions:-Dtest.cds.runtime.options=-XX:+UnlockExperimentalVMOptions,-XX:+UseEpsilonGC \
+    //       test/hotspot/jtreg/runtime/cds
+    //
+    // Note that the injection is not applied to -Xshare:dump, so that the CDS archives
+    // will be dumped with G1, which is the only collector that supports dumping
+    // the archive heap region. Similarly, if a UseXxxGC option already exists in the command line,
+    // the UseXxxGC option added in test.cds.runtime.options will be ignored.
+    public static void handleCDSRuntimeOptions(ProcessBuilder pb) {
+        List<String> cmd = pb.command();
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null && isRunningWithArchive(cmd)) {
+            // There cannot be multiple GC options in the command line so some
+            // options may be ignored
+            ArrayList<String> cdsRuntimeOpts = new ArrayList<String>();
+            boolean hasGCOption = hasGCOption(cmd);
+            for (String s : jtropts.split(",")) {
+                if (!CDSOptions.disabledRuntimePrefixes.contains(s) &&
+                    !(hasGCOption && isGCOption(s))) {
+                    cdsRuntimeOpts.add(s);
+                }
+            }
+            pb.command().addAll(1, cdsRuntimeOpts);
+        }
+    }
 
     // ============================= Logging
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
+        handleCDSRuntimeOptions(pb);
+        return executeAndLog(pb.start(), logName);
+    }
+
+    public static OutputAnalyzer executeAndLog(Process process, String logName) throws Exception {
         long started = System.currentTimeMillis();
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        OutputAnalyzer output = new OutputAnalyzer(process);
         String logFileNameStem =
             String.format("%04d", getNextLogCounter()) + "-" + logName;
 
@@ -620,6 +699,9 @@ public class CDSTestUtils {
         if (copyChildStdoutToMainStdout)
             System.out.println("[STDOUT]\n" + output.getStdout());
 
+        if (output.getExitValue() != 0 && output.getStdout().contains("A fatal error has been detected")) {
+          throw new RuntimeException("Hotspot crashed");
+        }
         return output;
     }
 
@@ -780,5 +862,25 @@ public class CDSTestUtils {
         Path destPath = newDir.resolve(jarName);
         Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
         return destPath;
+    }
+
+    // Some tests were initially written without the knowledge of -XX:+AOTClassLinking. These tests need to
+    // be adjusted if -XX:+AOTClassLinking is specified in jtreg -vmoptions or -javaoptions:
+    public static boolean isAOTClassLinkingEnabled() {
+        return isBooleanVMOptionEnabledInCommandLine("AOTClassLinking");
+    }
+
+    public static boolean isBooleanVMOptionEnabledInCommandLine(String optionName) {
+        String lastMatch = null;
+        String pattern = "^-XX:." + optionName + "$";
+        for (String s : Utils.getTestJavaOpts()) {
+            if (s.matches(pattern)) {
+                lastMatch = s;
+            }
+        }
+        if (lastMatch != null && lastMatch.equals("-XX:+" + optionName)) {
+            return true;
+        }
+        return false;
     }
 }

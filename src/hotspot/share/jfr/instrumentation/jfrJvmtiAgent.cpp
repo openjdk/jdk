@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
@@ -40,17 +39,17 @@
 #include "utilities/exceptions.hpp"
 
 static const size_t ERROR_MSG_BUFFER_SIZE = 256;
-static JfrJvmtiAgent* agent = NULL;
-static jvmtiEnv* jfr_jvmti_env = NULL;
+static JfrJvmtiAgent* agent = nullptr;
+static jvmtiEnv* jfr_jvmti_env = nullptr;
 
 static void check_jvmti_error(jvmtiEnv* jvmti, jvmtiError errnum, const char* str) {
   if (errnum != JVMTI_ERROR_NONE) {
-    char* errnum_str = NULL;
+    char* errnum_str = nullptr;
     jvmti->GetErrorName(errnum, &errnum_str);
     log_error(jfr, system)("ERROR: JfrJvmtiAgent: " INT32_FORMAT " (%s): %s\n",
                            errnum,
-                           NULL == errnum_str ? "Unknown" : errnum_str,
-                           NULL == str ? "" : str);
+                           nullptr == errnum_str ? "Unknown" : errnum_str,
+                           nullptr == str ? "" : str);
   }
 }
 
@@ -58,14 +57,14 @@ static bool set_event_notification_mode(jvmtiEventMode mode,
                                         jvmtiEvent event,
                                         jthread event_thread,
                                         ...) {
-  assert(jfr_jvmti_env != NULL, "invariant");
+  assert(jfr_jvmti_env != nullptr, "invariant");
   const jvmtiError jvmti_ret_code = jfr_jvmti_env->SetEventNotificationMode(mode, event, event_thread);
   check_jvmti_error(jfr_jvmti_env, jvmti_ret_code, "SetEventNotificationMode");
   return jvmti_ret_code == JVMTI_ERROR_NONE;
 }
 
 static bool update_class_file_load_hook_event(jvmtiEventMode mode) {
-  return set_event_notification_mode(mode, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
+  return set_event_notification_mode(mode, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
 }
 
 // jvmti event callbacks require C linkage
@@ -79,7 +78,7 @@ extern "C" void JNICALL jfr_on_class_file_load_hook(jvmtiEnv *jvmti_env,
                                                     const unsigned char* class_data,
                                                     jint* new_class_data_len,
                                                     unsigned char** new_class_data) {
-  if (class_being_redefined == NULL) {
+  if (class_being_redefined == nullptr) {
     return;
   }
   JavaThread* jt = JavaThread::thread_from_jni_environment(jni_env);
@@ -100,10 +99,10 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   ThreadInVMfromNative tvmfn(THREAD);
   jclass* const classes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jclass, classes_count);
-  if (NULL == classes) {
+  if (nullptr == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
     jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,
-      "Thread local allocation (native) of " SIZE_FORMAT " bytes failed "
+      "Thread local allocation (native) of %zu bytes failed "
       "in retransform classes", sizeof(jclass) * classes_count);
     log_error(jfr, system)("%s", error_buffer);
     JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_NULL);
@@ -119,7 +118,7 @@ static void log_and_throw(jvmtiError error, TRAPS) {
     const char base_error_msg[] = "JfrJvmtiAgent::retransformClasses failed: ";
     size_t length = sizeof base_error_msg; // includes terminating null
     const char* const jvmti_error_name = JvmtiUtil::error_name(error);
-    assert(jvmti_error_name != NULL, "invariant");
+    assert(jvmti_error_name != nullptr, "invariant");
     length += strlen(jvmti_error_name);
     char* error_msg = NEW_RESOURCE_ARRAY(char, length);
     jio_snprintf(error_msg, length, "%s%s", base_error_msg, jvmti_error_name);
@@ -132,8 +131,8 @@ static void log_and_throw(jvmtiError error, TRAPS) {
 }
 
 static void check_exception_and_log(JNIEnv* env, TRAPS) {
-  assert(env != NULL, "invariant");
-  if (env->ExceptionOccurred()) {
+  assert(env != nullptr, "invariant");
+  if (env->ExceptionCheck()) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn(THREAD);
@@ -147,8 +146,8 @@ static bool is_valid_jvmti_phase() {
 }
 
 void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array, TRAPS) {
-  assert(env != NULL, "invariant");
-  assert(classes_array != NULL, "invariant");
+  assert(env != nullptr, "invariant");
+  assert(classes_array != nullptr, "invariant");
   assert(is_valid_jvmti_phase(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   const jint classes_count = env->GetArrayLength(classes_array);
@@ -156,8 +155,10 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
     return;
   }
   ResourceMark rm(THREAD);
+  // WXWrite is needed before entering the vm below and in callee methods.
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, THREAD));
   jclass* const classes = create_classes_array(classes_count, CHECK);
-  assert(classes != NULL, "invariant");
+  assert(classes != nullptr, "invariant");
   for (jint i = 0; i < classes_count; i++) {
     jclass clz = (jclass)env->GetObjectArrayElement(classes_array, i);
     check_exception_and_log(env, THREAD);
@@ -182,7 +183,7 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
 }
 
 static bool register_callbacks(JavaThread* jt) {
-  assert(jfr_jvmti_env != NULL, "invariant");
+  assert(jfr_jvmti_env != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   jvmtiEventCallbacks callbacks;
   /* Set callbacks */
@@ -193,7 +194,7 @@ static bool register_callbacks(JavaThread* jt) {
 }
 
 static bool register_capabilities(JavaThread* jt) {
-  assert(jfr_jvmti_env != NULL, "invariant");
+  assert(jfr_jvmti_env != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   jvmtiCapabilities capabilities;
   /* Add JVMTI capabilities */
@@ -206,7 +207,7 @@ static bool register_capabilities(JavaThread* jt) {
 }
 
 static jint create_jvmti_env(JavaThread* jt) {
-  assert(jfr_jvmti_env == NULL, "invariant");
+  assert(jfr_jvmti_env == nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   extern struct JavaVM_ main_vm;
   JavaVM* vm = &main_vm;
@@ -214,7 +215,7 @@ static jint create_jvmti_env(JavaThread* jt) {
 }
 
 static bool unregister_callbacks(JavaThread* jt) {
-  assert(jfr_jvmti_env != NULL, "invariant");
+  assert(jfr_jvmti_env != nullptr, "invariant");
   jvmtiEventCallbacks callbacks;
   /* Set empty callbacks */
   memset(&callbacks, 0, sizeof(callbacks));
@@ -228,24 +229,24 @@ JfrJvmtiAgent::JfrJvmtiAgent() {}
 JfrJvmtiAgent::~JfrJvmtiAgent() {
   JavaThread* jt = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
-  if (jfr_jvmti_env != NULL) {
+  if (jfr_jvmti_env != nullptr) {
     ThreadToNativeFromVM transition(jt);
     update_class_file_load_hook_event(JVMTI_DISABLE);
     unregister_callbacks(jt);
     jfr_jvmti_env->DisposeEnvironment();
-    jfr_jvmti_env = NULL;
+    jfr_jvmti_env = nullptr;
   }
 }
 
 static bool initialize(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   ThreadToNativeFromVM transition(jt);
   if (create_jvmti_env(jt) != JNI_OK) {
-    assert(jfr_jvmti_env == NULL, "invariant");
+    assert(jfr_jvmti_env == nullptr, "invariant");
     return false;
   }
-  assert(jfr_jvmti_env != NULL, "invariant");
+  assert(jfr_jvmti_env != nullptr, "invariant");
   if (!register_capabilities(jt)) {
     return false;
   }
@@ -265,27 +266,27 @@ static void log_and_throw_illegal_state_exception(TRAPS) {
 }
 
 bool JfrJvmtiAgent::create() {
-  assert(agent == NULL, "invariant");
+  assert(agent == nullptr, "invariant");
   JavaThread* const jt = JavaThread::current();
   if (!is_valid_jvmti_phase()) {
     log_and_throw_illegal_state_exception(jt);
     return false;
   }
   agent = new JfrJvmtiAgent();
-  if (agent == NULL) {
+  if (agent == nullptr) {
     return false;
   }
   if (!initialize(jt)) {
     delete agent;
-    agent = NULL;
+    agent = nullptr;
     return false;
   }
   return true;
 }
 
 void JfrJvmtiAgent::destroy() {
-  if (agent != NULL) {
+  if (agent != nullptr) {
     delete agent;
-    agent = NULL;
+    agent = nullptr;
   }
 }

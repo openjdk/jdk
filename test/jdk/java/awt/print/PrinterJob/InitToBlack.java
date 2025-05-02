@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4184565
+ * @key printer
  * @summary Confirm that the default foreground color on a printer
  *          graphics object is black so that rendering will appear
  *          without having to execute setColor first.

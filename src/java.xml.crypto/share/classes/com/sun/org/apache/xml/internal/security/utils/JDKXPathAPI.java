@@ -57,6 +57,7 @@ class JDKXPathAPI implements XPathAPI {
      *
      * @throws TransformerException
      */
+    @Override
     public NodeList selectNodeList(
         Node contextNode, Node xpathnode, String str, Node namespaceNode
     ) throws TransformerException {
@@ -92,6 +93,7 @@ class JDKXPathAPI implements XPathAPI {
      *  @param str The XPath expression
      *  @param namespaceNode The node from which prefixes in the XPath will be resolved to namespaces.
      */
+    @Override
     public boolean evaluate(Node contextNode, Node xpathnode, String str, Node namespaceNode)
         throws TransformerException {
         if (!str.equals(xpathStr) || xpathExpression == null) {
@@ -122,6 +124,7 @@ class JDKXPathAPI implements XPathAPI {
     /**
      * Clear any context information from this object
      */
+    @Override
     public void clear() {
         xpathStr = null;
         xpathExpression = null;

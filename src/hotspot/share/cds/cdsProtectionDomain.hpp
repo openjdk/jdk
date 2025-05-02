@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
-#define SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
+#ifndef SHARE_CDS_CDSPROTECTIONDOMAIN_HPP
+#define SHARE_CDS_CDSPROTECTIONDOMAIN_HPP
 
 #include "classfile/moduleEntry.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -80,6 +80,7 @@ public:
   static Handle create_jar_manifest(const char* man, size_t size, TRAPS);
   static Handle get_shared_jar_manifest(int shared_path_index, TRAPS);
   static Handle get_shared_jar_url(int shared_path_index, TRAPS);
+  static oop to_file_URL(const char* path, Handle url_h, TRAPS);
   static Handle get_protection_domain_from_classloader(Handle class_loader,
                                                        Handle url, TRAPS);
   static Handle get_shared_protection_domain(Handle class_loader,
@@ -113,4 +114,4 @@ public:
   }
 };
 
-#endif // SHARED_CDS_CDSPROTECTIONDOMAIN_HPP
+#endif // SHARE_CDS_CDSPROTECTIONDOMAIN_HPP

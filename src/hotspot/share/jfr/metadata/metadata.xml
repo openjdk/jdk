@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,10 @@
        $ jfr print dump.jfr
 
        Programmatic access:
-       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+       try (var rf = new RecordingFile(Path.of("dump.jfr"))) {
            while (rf.hasMoreEvents()) {
                RecordedEvent e = rf.readEvent();
-               System.out.println(e.getName() + " " + e.getDuration()));
+               System.out.println(e.getName() + " " + e.getDuration());
            }
        };
   !-->
@@ -71,6 +71,11 @@
   <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" internal="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
     <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="ResidentSetSize" category="Java Virtual Machine, Memory" label="Resident Set Size" description="Resident set size of the process" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="size" label="Resident Set Size" description="Resident set size of the process" />
+    <Field type="ulong" contentType="bytes" name="peak" label="Resident Set Size Peak Value" description="Resident set size peak value of the process" />
   </Event>
 
   <!-- Ordinary and experimental events !-->
@@ -105,10 +110,25 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorNotify" category="Java Application" label="Java Monitor Notify" description="Notifying a Java monitor" thread="true" stackTrace="true">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
+    <Field type="uint" name="notifiedCount" label="Notified Threads" description="Number of actually notified threads" />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
+  </Event>
+
   <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
+  </Event>
+
+  <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
+  </Event>
+
+  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
+    <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors" />
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
@@ -149,6 +169,12 @@
 
   <Event name="ContinuationThawSlow" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Slow" thread="true" stackTrace="false" startTime="false">
     <Field type="ulong" name="id" label="Continuation ID" />
+  </Event>
+
+  <Event name="VirtualThreadPinned" category="Java Application" label="Virtual Thread Pinned" thread="true" stackTrace="true">
+    <Field type="string" name="blockingOperation" label="Blocking Operation" />
+    <Field type="string" name="pinnedReason" label="Pinned Reason" />
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
@@ -260,6 +286,19 @@
     <Field type="ulong" contentType="bytes" name="heapUsed" label="Heap Used" description="Bytes allocated by objects in the heap" />
   </Event>
 
+  <Event name="GCHeapMemoryUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Usage" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="used" label="Heap Used" description="Bytes allocated for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Heap Committed" description="Bytes committed for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="max" label="Heap Max" description="Max size for the heap" />
+  </Event>
+
+  <Event name="GCHeapMemoryPoolUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Pool Usage" period="everyChunk">
+    <Field type="string" name="name" label="Name" description="GC Heap Memory Pool Name" />
+    <Field type="ulong" contentType="bytes" name="used" label="GC Heap Memory Pool Used" description="Bytes used for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="committed" label="GC Heap Memory Pool Committed" description="Bytes committed for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="max" label="GC Heap Memory Pool Max" description="Max size for storing objects in this memory pool" />
+  </Event>
+
   <Type name="MetaspaceSizes">
     <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Committed memory for this space" />
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Bytes allocated by objects in the space" />
@@ -333,7 +372,7 @@
     <Field type="uint" name="numberOfRegions" label="Number of Regions" />
   </Event>
 
-  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM">
+  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="GCName" name="name" label="Name" description="The name of the Garbage Collector" />
     <Field type="GCCause" name="cause" label="Cause" description="The reason for triggering this Garbage Collection" />
@@ -414,10 +453,10 @@
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
     <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
     <Field type="ulong" name="numPlabsFilled" label="PLAB Fills" description="Number of PLABs filled" />
-    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
-    <Field type="ulong" name="numDirectAllocated" label="Direct allocations" description="Number of direct allocations" />
-    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
-    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (Direct)" description="Total memory allocated using direct allocation outside of PLABs" />
+    <Field type="ulong" name="numDirectAllocated" label="Direct Allocations" description="Number of direct allocations" />
+    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (Failure)" description="Total memory occupied by objects in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (Failure)" description="Total memory left unused in regions where evacuation failed" />
   </Type>
 
   <Event name="G1EvacuationYoungStatistics" category="Java Virtual Machine, GC, Detailed" label="G1 Evacuation Statistics for Young" startTime="false"
@@ -484,7 +523,7 @@
   <Event name="PromotionFailed" category="Java Virtual Machine, GC, Detailed" label="Promotion Failed" startTime="false" description="Promotion of an object failed">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="CopyFailed" struct="true" name="promotionFailed" label="Promotion Failed Data" />
-    <Field type="Thread" name="thread" label="Running thread" />
+    <Field type="Thread" name="thread" label="Running Thread" />
   </Event>
 
   <Event name="EvacuationFailed" category="Java Virtual Machine, GC, Detailed" label="Evacuation Failed" startTime="false" description="Evacuation of an object failed">
@@ -539,6 +578,11 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="GCPhaseConcurrentLevel2" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 2" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="GCPhaseParallel" category="Java Virtual Machine, GC, Phases" label="GC Phase Parallel"
          startTime="true" thread="true" description="GC phases for parallel workers">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
@@ -585,6 +629,7 @@
     <Field type="boolean" name="isOsr" label="On Stack Replacement" />
     <Field type="ulong" contentType="bytes" name="codeSize" label="Compiled Code Size" />
     <Field type="ulong" contentType="bytes" name="inlinedBytes" label="Inlined Code Size" />
+    <Field type="ulong" contentType="bytes" name="arenaBytes" label="Arena Usage" />
   </Event>
 
   <Event name="CompilerPhase" category="Java Virtual Machine, Compiler" label="Compiler Phase"
@@ -661,17 +706,6 @@
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
   </Event>
 
-  <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-  </Event>
-
-  <Event name="SafepointCleanupTask" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup Task" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="string" name="name" label="Task Name" description="The task name" />
-  </Event>
-
   <Event name="SafepointEnd" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint End" description="Safepointing end" thread="true">
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
@@ -717,12 +751,12 @@
     <Field type="Tickspan" name="objectAge" label="Object Age" />
     <Field type="ulong" contentType="bytes" name="lastKnownHeapUsage" label="Last Known Heap Usage" />
     <Field type="OldObject" name="object" label="Object" />
-    <Field type="int" name="arrayElements" label="Array Elements" description="If the object is an array, the number of elements, or -1 if it is not an array" />
+    <Field type="int" name="arrayElements" label="Array Elements" description="If the object is an array, the number of elements, or minimum value for the type int if it is not an array" />
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
   <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
-    description="Native memory usage for a given memory type in the JVM" period="everyChunk">
+    description="Native memory usage for a given memory tag in the JVM" period="everyChunk">
     <Field type="NMTType" name="type" label="Memory Type" description="Type used for the native memory allocation" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
@@ -825,6 +859,19 @@
     <Field type="float" contentType="hertz" name="switchRate" label="Switch Rate" description="Number of context switches per second" />
   </Event>
 
+  <Event name="CompilerQueueUtilization" category="Java Virtual Machine, Compiler" label="Compiler Queue Utilization" period="everyChunk">
+    <Field type="CompilerType" name="compiler" label="Compiler" />
+    <Field type="long" contentType="hertz" name="addedRate" label="Requets Added Rate" description="Requests added per second"/>
+    <Field type="long" contentType="hertz" name="removedRate" label="Requests Removed Rate" description="Requests removed per second"/>
+    <Field type="long" name="queueSize" label="Queue Size"/>
+    <Field type="long" name="peakQueueSize" label="Peak Queue Size"/>
+    <Field type="long" name="addedCount" label="Requests Added"/>
+    <Field type="long" name="removedCount" label="Requests Removed"/>
+    <Field type="long" name="totalAddedCount" label="Total Requests Added"/>
+    <Field type="long" name="totalRemovedCount" label="Total Requests Removed"/>
+    <Field type="int" name="compilerThreadCount" label="Compiler Thread Count"/>
+  </Event>
+
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
     <Field type="NetworkInterfaceName" name="networkInterface" label="Network Interface" description="Network Interface Name"/>
     <Field type="long" contentType="bits-per-second" name="readRate" label="Read Rate" description="Number of incoming bits per second"/>
@@ -891,6 +938,11 @@
     <Field type="ulong" contentType="bytes" name="usedSize" label="Used Size" description="Total amount of physical memory in use" />
   </Event>
 
+  <Event name="SwapSpace" category="Operating System, Memory" label="Swap Space" description="OS Swap Space" period="everyChunk">
+    <Field type="long" contentType="bytes" name="totalSize" label="Total Size" description="Total swap space available to the OS" />
+    <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
+  </Event>
+
   <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample" description="Snapshot of a threads state"
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
@@ -909,10 +961,27 @@
     <Field type="string" name="result" label="Thread Dump" />
   </Event>
 
-  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk">
+  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk"
+    description="Information about a dynamic library or other native image loaded by the JVM process">
     <Field type="string" name="name" label="Name" />
     <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Starting address of the module" />
-    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module" />
+    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
+  </Event>
+
+  <Event name="NativeLibraryLoad" category="Java Virtual Machine, Runtime" label="Native Library Load" thread="true" stackTrace="true" startTime="true"
+    description="Information about a dynamic library or other native image load operation">
+    <Field type="string" name="name" label="Name" />
+    <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
+    <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
+    <Field type="boolean" name="fpuCorrectionAttempt" label="FPU Environment Correction" description="In case of IEEE conformance issues we might reset the FP environment" />
+    <Field type="boolean" name="fpuCorrectionSuccess" label="FPU Environment Correction Result" description="Stores the result in the case of an FP environment correction" />
+  </Event>
+
+  <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="true" stackTrace="true" startTime="true"
+    description="Information about a dynamic library or other native image unload operation">
+    <Field type="string" name="name" label="Name" />
+    <Field type="boolean" name="success" label="Success" description="Success or failure of the unload operation" />
+    <Field type="string" name="errorMessage" label="Error Message" description="In case of an unload error, error description" />
   </Event>
 
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"
@@ -938,7 +1007,7 @@
     <Field type="ulong" contentType="bytes" name="nmethodsSize" label="Compilation Resulting Size" />
     <Field type="ulong" contentType="bytes" name="nmethodCodeSize" label="Compilation Resulting Code Size" />
     <Field type="long" contentType="millis" name="peakTimeSpent" label="Peak Time" />
-    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total time" />
+    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total Time" />
   </Event>
 
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
@@ -961,10 +1030,10 @@
   <Event name="CodeCacheConfiguration" category="Java Virtual Machine, Code Cache" label="Code Cache Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="ulong" contentType="bytes" name="initialSize" label="Initial Size" />
     <Field type="ulong" contentType="bytes" name="reservedSize" label="Reserved Size" />
-    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-nmethod Size" />
+    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-Nmethod Size" />
     <Field type="ulong" contentType="bytes" name="profiledSize" label="Profiled Size" />
-    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-profiled Size" />
-    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion size" />
+    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-Profiled Size" />
+    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion Size" />
     <Field type="ulong" contentType="bytes" name="minBlockLength" label="Minimum Block Length" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="reservedTopAddress" label="Reserved Top" />
@@ -1071,18 +1140,29 @@
     <Field type="uint" name="newRatio" label="New Ratio" description="The size of the young generation relative to the tenured generation" />
   </Event>
 
-  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true">
+  <Event name="ZYoungGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Young Garbage Collection" description="Extra information specific to ZGC Young Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="uint" name="tenuringThreshold" label="Tenuring Threshold" />
+  </Event>
+
+  <Event name="ZOldGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Old Garbage Collection" description="Extra information specific to ZGC Old Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+  </Event>
+
+  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true" stackTrace="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
   </Event>
 
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
-     <Field type="ZPageTypeType" name="type" label="Type" />
-     <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
-     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
-     <Field type="uint" name="segments" label="Segments" />
-     <Field type="boolean" name="nonBlocking" label="Non-blocking" />
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+    <Field type="ulong" contentType="bytes" name="harvested" label="Harvested" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+    <Field type="uint" name="harvestedRanges" label="Harvested Ranges" description="Number of harvested memory ranges" />
+    <Field type="boolean" name="multiPartition" label="Multi-Partition" />
+    <Field type="boolean" name="successful" label="Successful" />
+    <Field type="boolean" name="nonBlocking" label="Non-Blocking" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1093,9 +1173,10 @@
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
-    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" name="candidatePages" label="Candidate Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" name="selectedPages" label="Selected Pages" />
     <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
@@ -1119,10 +1200,6 @@
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
   </Event>
 
-  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
-  </Event>
-
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
     startTime="false">
     <Field type="uint" name="index" label="Index" />
@@ -1144,6 +1221,23 @@
     <Field type="string" name="state" label="State" />
   </Type>
 
+  <Event name="ShenandoahEvacuationInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Evacuation Information" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
+    <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
+    <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
+    <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
+    <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
+    <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
+    <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
+    <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
+  </Event>
+  
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />
@@ -1160,16 +1254,37 @@
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
   </Event>
 
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
-  </Event>
-
   <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">
     <Field type="Class" name="finalizableClass" label="Class Overriding Finalize" />
     <Field type="Symbol" name="codeSource" label="Code Source" description="URL from where the class was loaded" />
     <Field type="ulong" name="objects" label="Finalizable Objects on Heap" description="Number of objects on heap that can be finalized" />
     <Field type="ulong" name="totalFinalizersRun" label="Finalizers Run" description="Total number of finalizers run since JVM start" />
+  </Event>
+
+  <Event name="JavaAgent" category="Java Virtual Machine, Diagnostics" label="Java Agent" description="A Java programming language agent making use of the java.lang.instrument package for instrumenting programs running on the JVM"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the agent attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the initialization method, either premain or agentmain" />
+  </Event>
+
+  <Event name="NativeAgent" category="Java Virtual Machine, Diagnostics" label="Native Agent" description="A native programming language agent making use of the JVMTI interface used by development, profiling and monitoring tools"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the library attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
+    <Field type="string" name="path" label="Path" description="The path of the library" />
+  </Event>
+
+  <Event name="DeprecatedInvocation" description= "A unique invocation of a method that is annotated with @Deprecated. Packages and modules that are deprecated are ignored. At most 10 000 invocation sites and only the first invocation from a class is guaranteed to be included."
+   category="Java Application, Statistics" label="Deprecated Method Invocation" thread="false" stackTrace="true" startTime="false" level="forRemoval,all">
+    <Field type="Method" name="method" label="Deprecated Method" />
+    <Field type="Ticks" name="invocationTime" label="Invocation Time" description="The time the deprecated method was invoked for the first time" />
+    <Field type="boolean" name="forRemoval" label="For Removal" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

@@ -71,6 +71,7 @@ public abstract class Dependencies {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Dependencies(Context context) {
         context.put(dependenciesKey, this);
     }

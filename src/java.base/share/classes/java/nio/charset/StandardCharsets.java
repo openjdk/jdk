@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,4 +74,23 @@ public final class StandardCharsets {
      * optional byte-order mark.
      */
     public static final Charset UTF_16 = new sun.nio.cs.UTF_16();
+
+    /**
+     * Thirty-two-bit UCS Transformation Format, big-endian byte order.
+     * @since 22
+     */
+    public static final Charset UTF_32BE = new sun.nio.cs.UTF_32BE();
+
+    /**
+     * Thirty-two-bit UCS Transformation Format, little-endian byte order.
+     * @since 22
+     */
+    public static final Charset UTF_32LE = new sun.nio.cs.UTF_32LE();
+
+    /**
+     * Thirty-two-bit UCS Transformation Format, byte order identified by an
+     * optional byte-order mark.
+     * @since 22
+     */
+    public static final Charset UTF_32 = new sun.nio.cs.UTF_32();
 }

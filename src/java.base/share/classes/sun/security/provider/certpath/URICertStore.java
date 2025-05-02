@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import sun.security.action.GetIntegerAction;
+
 import sun.security.x509.AccessDescription;
 import sun.security.x509.GeneralNameInterface;
 import sun.security.x509.URIName;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
+import sun.security.util.SecurityProperties;
 
 /**
  * A <code>CertStore</code> that retrieves <code>Certificates</code> or
@@ -127,8 +128,12 @@ class URICertStore extends CertStoreSpi {
     // allowed when downloading CRLs
     private static final int DEFAULT_CRL_READ_TIMEOUT = 15000;
 
+    // Default connect and read timeouts for CA certificate fetching (15 sec)
+    private static final int DEFAULT_CACERT_CONNECT_TIMEOUT = 15000;
+    private static final int DEFAULT_CACERT_READ_TIMEOUT = 15000;
+
     /**
-     * Integer value indicating the connect timeout, in seconds, to be
+     * Integer value indicating the connect timeout, in milliseconds, to be
      * used for the CRL download. A timeout of zero is interpreted as
      * an infinite timeout.
      */
@@ -137,7 +142,7 @@ class URICertStore extends CertStoreSpi {
                           DEFAULT_CRL_CONNECT_TIMEOUT);
 
     /**
-     * Integer value indicating the read timeout, in seconds, to be
+     * Integer value indicating the read timeout, in milliseconds, to be
      * used for the CRL download. A timeout of zero is interpreted as
      * an infinite timeout.
      */
@@ -146,21 +151,35 @@ class URICertStore extends CertStoreSpi {
                           DEFAULT_CRL_READ_TIMEOUT);
 
     /**
+     * Integer value indicating the connect timeout, in milliseconds, to be
+     * used for the CA certificate download. A timeout of zero is interpreted
+     * as an infinite timeout.
+     */
+    private static final int CACERT_CONNECT_TIMEOUT =
+            initializeTimeout("com.sun.security.cert.timeout",
+                    DEFAULT_CACERT_CONNECT_TIMEOUT);
+
+    /**
+     * Integer value indicating the read timeout, in milliseconds, to be
+     * used for the CA certificate download. A timeout of zero is interpreted
+     * as an infinite timeout.
+     */
+    private static final int CACERT_READ_TIMEOUT =
+            initializeTimeout("com.sun.security.cert.readtimeout",
+                    DEFAULT_CACERT_READ_TIMEOUT);
+
+    /**
      * Initialize the timeout length by getting the specified CRL timeout
      * system property. If the property has not been set, or if its
      * value is negative, set the timeout length to the specified default.
      */
     private static int initializeTimeout(String prop, int def) {
-        Integer tmp = GetIntegerAction.privilegedGetProperty(prop);
-        if (tmp == null || tmp < 0) {
-            return def;
-        }
+        int timeoutVal =
+                SecurityProperties.getTimeoutSystemProp(prop, def, debug);
         if (debug != null) {
-            debug.println(prop + " set to " + tmp + " seconds");
+            debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }
-        // Convert to milliseconds, as the system property will be
-        // specified in seconds
-        return tmp * 1000;
+        return timeoutVal;
     }
 
     /**
@@ -276,6 +295,8 @@ class URICertStore extends CertStoreSpi {
                 connection.setIfModifiedSince(lastModified);
             }
             long oldLastModified = lastModified;
+            connection.setConnectTimeout(CACERT_CONNECT_TIMEOUT);
+            connection.setReadTimeout(CACERT_READ_TIMEOUT);
             try (InputStream in = connection.getInputStream()) {
                 lastModified = connection.getLastModified();
                 if (oldLastModified != 0) {

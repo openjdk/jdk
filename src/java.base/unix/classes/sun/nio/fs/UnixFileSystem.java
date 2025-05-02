@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
-import java.nio.file.LinkPermission;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
@@ -51,10 +51,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import jdk.internal.misc.Blocker;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
-import sun.security.action.GetPropertyAction;
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 
@@ -87,8 +85,7 @@ abstract class UnixFileSystem
         // if process-wide chdir is allowed or default directory is not the
         // process working directory then paths must be resolved against the
         // default directory.
-        String propValue = GetPropertyAction
-                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
+        String propValue = System.getProperty("sun.nio.fs.chdirAllowed", "false");
         boolean chdirAllowed = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
         if (chdirAllowed) {
             this.needToResolveAgainstDefaultDirectory = true;
@@ -179,20 +176,7 @@ abstract class UnixFileSystem
      */
     @Override
     public final Iterable<Path> getRootDirectories() {
-        final List<Path> allowedList = List.of(rootDirectory);
-        return new Iterable<>() {
-            public Iterator<Path> iterator() {
-                try {
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null)
-                        sm.checkRead(rootDirectory.toString());
-                    return allowedList.iterator();
-                } catch (SecurityException x) {
-                    return Collections.emptyIterator(); //disallowed
-                }
-            }
-        };
+        return List.of(rootDirectory);
     }
 
     /**
@@ -228,16 +212,6 @@ abstract class UnixFileSystem
                 if (entry.isIgnored())
                     continue;
 
-                // check permission to read mount point
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    try {
-                        sm.checkRead(Util.toString(entry.dir()));
-                    } catch (SecurityException x) {
-                        continue;
-                    }
-                }
                 try {
                     return getFileStore(entry);
                 } catch (IOException ignore) {
@@ -275,20 +249,7 @@ abstract class UnixFileSystem
 
     @Override
     public final Iterable<FileStore> getFileStores() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
-            } catch (SecurityException se) {
-                return Collections.emptyList();
-            }
-        }
-        return new Iterable<>() {
-            public Iterator<FileStore> iterator() {
-                return new FileStoreIterator();
-            }
-        };
+        return FileStoreIterator::new;
     }
 
     @Override
@@ -519,6 +480,8 @@ abstract class UnixFileSystem
         try {
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
 
@@ -575,14 +538,14 @@ abstract class UnixFileSystem
             // copy time stamps last
             if (flags.copyBasicAttributes) {
                 try {
-                    if (dfd >= 0 && futimesSupported()) {
-                        futimes(dfd,
-                                attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                    if (dfd >= 0) {
+                        futimens(dfd,
+                                 attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                 attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS));
                     } else {
-                        utimes(target,
-                               attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                               attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                        utimensat(AT_FDCWD, target,
+                                  attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                  attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS), 0);
                     }
                 } catch (UnixException x) {
                     // unable to set times
@@ -665,6 +628,8 @@ abstract class UnixFileSystem
                             O_EXCL),
                            attrs.mode());
             } catch (UnixException x) {
+                if (x.errno() == EEXIST && flags.replaceExisting)
+                    throw new FileSystemException(target.toString());
                 x.rethrowAsIOException(target);
             }
 
@@ -677,7 +642,6 @@ abstract class UnixFileSystem
                 // Some forms of direct copy do not work on zero size files
                 if (!directCopyNotSupported && attrs.size() > 0) {
                     // copy bytes to target using platform function
-                    long comp = Blocker.begin();
                     try {
                         int res = directCopy(fo, fi, addressToPollForCancel);
                         if (res == 0) {
@@ -687,8 +651,6 @@ abstract class UnixFileSystem
                         }
                     } catch (UnixException x) {
                         x.rethrowAsIOException(source, target);
-                    } finally {
-                        Blocker.end(comp);
                     }
                 }
 
@@ -698,14 +660,11 @@ abstract class UnixFileSystem
                     ByteBuffer buf =
                         sun.nio.ch.Util.getTemporaryDirectBuffer(bufferSize);
                     try {
-                        long comp = Blocker.begin();
                         try {
                             bufferedCopy(fo, fi, ((DirectBuffer)buf).address(),
                                           bufferSize, addressToPollForCancel);
                         } catch (UnixException x) {
                             x.rethrowAsIOException(source, target);
-                        } finally {
-                            Blocker.end(comp);
                         }
                     } finally {
                         sun.nio.ch.Util.releaseTemporaryDirectBuffer(buf);
@@ -729,15 +688,9 @@ abstract class UnixFileSystem
                 // copy time attributes
                 if (flags.copyBasicAttributes) {
                     try {
-                        if (futimesSupported()) {
-                            futimes(fo,
-                                    attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                    attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        } else {
-                            utimes(target,
-                                   attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                   attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        }
+                        futimens(fo,
+                                 attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                 attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS));
                     } catch (UnixException x) {
                         if (flags.failIfUnableToCopyBasic)
                             x.rethrowAsIOException(target);
@@ -783,6 +736,8 @@ abstract class UnixFileSystem
                 }
             }
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
     }
@@ -797,6 +752,8 @@ abstract class UnixFileSystem
         try {
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
         boolean done = false;
@@ -812,9 +769,10 @@ abstract class UnixFileSystem
             }
             if (flags.copyBasicAttributes) {
                 try {
-                    utimes(target,
-                           attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                           attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                    utimensat(AT_FDCWD, target,
+                              attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                              attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS),
+                              0);
                 } catch (UnixException x) {
                     if (flags.failIfUnableToCopyBasic)
                         x.rethrowAsIOException(target);
@@ -848,14 +806,6 @@ abstract class UnixFileSystem
     void move(UnixPath source, UnixPath target, CopyOption... options)
         throws IOException
     {
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkWrite();
-            target.checkWrite();
-        }
-
         // translate options into flags
         Flags flags = Flags.fromMoveOptions(options);
 
@@ -882,6 +832,12 @@ abstract class UnixFileSystem
         // get attributes of source file (don't follow links)
         try {
             sourceAttrs = UnixFileAttributes.get(source, false);
+            if (sourceAttrs.isDirectory()) {
+                // ensure source can be moved
+                int errno = access(source, W_OK);
+                if (errno != 0)
+                    new UnixException(errno).rethrowAsIOException(source);
+            }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);
         }
@@ -901,10 +857,9 @@ abstract class UnixFileSystem
         if (targetExists) {
             if (sourceAttrs.isSameFile(targetAttrs))
                 return;  // nothing to do as files are identical
-            if (!flags.replaceExisting) {
+            if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
-            }
 
             // attempt to delete target
             try {
@@ -916,12 +871,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 
@@ -984,14 +941,6 @@ abstract class UnixFileSystem
               final UnixPath target,
               CopyOption... options) throws IOException
     {
-        // permission checks
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkRead();
-            target.checkWrite();
-        }
-
         // translate options into flags
         final Flags flags = Flags.fromCopyOptions(options);
 
@@ -1005,9 +954,13 @@ abstract class UnixFileSystem
             x.rethrowAsIOException(source);
         }
 
-        // if source file is symbolic link then we must check LinkPermission
-        if (sm != null && sourceAttrs.isSymbolicLink()) {
-            sm.checkPermission(new LinkPermission("symbolic"));
+        // ensure source can be copied
+        if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
+            // the access(2) system call always follows links so it
+            // is suppressed if the source is an unfollowed link
+            int errno = access(source, R_OK);
+            if (errno != 0)
+                new UnixException(errno).rethrowAsIOException(source);
         }
 
         // get attributes of target file (don't follow links)
@@ -1028,6 +981,7 @@ abstract class UnixFileSystem
             if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
+
             try {
                 if (targetAttrs.isDirectory()) {
                     rmdir(target);
@@ -1037,12 +991,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import static org.testng.Assert.assertEquals;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
@@ -40,10 +39,8 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.SAXParserFactTest
  * @run testng/othervm javax.xml.parsers.ptests.SAXParserFactTest
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SAXParserFactTest {
 
     private static final String NAMESPACES = "http://xml.org/sax/features/namespaces";

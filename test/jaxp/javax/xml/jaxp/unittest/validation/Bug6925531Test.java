@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,46 +24,38 @@
 package validation;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.AllPermission;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-
 import javax.xml.XMLConstants;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
-import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 
 /*
  * @test
  * @bug 6925531
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6925531Test
- * @run testng/othervm -Djava.security.manager=allow validation.Bug6925531Test
- * @summary Test Validator can validate SAXSource when SecurityManager is set or FEATURE_SECURE_PROCESSING is on.
+ * @run testng/othervm validation.Bug6925531Test
+ * @summary Test Validator can validate SAXSource when FEATURE_SECURE_PROCESSING is on.
+ * Note that the run with the Java Security Manager was removed.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6925531Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
-    String xsd = "<?xml version='1.0'?>\n" + "<schema xmlns='http://www.w3.org/2001/XMLSchema'\n" + "        xmlns:test='jaxp13_test'\n"
-            + "        targetNamespace='jaxp13_test'\n" + "        elementFormDefault='qualified'>\n" + "    <element name='test' type='string'/>\n"
+    String xsd = "<?xml version='1.0'?>\n" + "<schema xmlns='http://www.w3.org/2001/XMLSchema'\n"
+            + "        xmlns:test='jaxp13_test'\n"
+            + "        targetNamespace='jaxp13_test'\n"
+            + "        elementFormDefault='qualified'>\n"
+            + "    <element name='test' type='string'/>\n"
             + "</schema>\n";
 
-    String xml = "<?xml version='1.0'?>\n" + "<ns:test xmlns:ns='jaxp13_test'>\n" + "    abc\n" + "</ns:test>\n";
+    String xml = "<?xml version='1.0'?>\n"
+            + "<ns:test xmlns:ns='jaxp13_test'>\n"
+            + "    abc\n"
+            + "</ns:test>\n";
 
     StreamSource xsdSource;
     SAXSource xmlSource;
@@ -77,136 +69,34 @@ public class Bug6925531Test {
     }
 
     /**
-     * when security manager is present, secure feature is on automatically
+     * Verifies validation with FEATURE_SECURE_PROCESSING (FSP) turned on explicitly
+     * on SchemaFactory.
+     * Note: the test with Java Security Manager was removed.
+     * @throws Exception if the test fails
      */
     @Test
-    public void test_SM() {
+    public void test_SF() throws Exception {
         init();
-        Permissions granted = new java.security.Permissions();
-        granted.add(new AllPermission());
-
-        System.setSecurityManager(new MySM(granted));
 
         SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-
-        Schema schema = null;
-        try {
-            schema = schemaFactory.newSchema(xsdSource);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        }
-
+        schemaFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        Schema schema = schemaFactory.newSchema(xsdSource);
         Validator validator = schema.newValidator();
-
-        try {
-            validator.validate(xmlSource, null);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        } catch (IOException e) {
-            Assert.fail(e.toString());
-        } finally {
-            System.setSecurityManager(null);
-        }
-
-        System.out.println("OK");
+        validator.validate(xmlSource, null);
     }
 
     /**
-     * set secure feature on SchemaFactory
+     * Verifies validation with FEATURE_SECURE_PROCESSING (FSP) turned on explicitly
+     * on the Validator.
+     * @throws Exception if the test fails
      */
     @Test
-    public void test_SF() {
+    public void test_Val() throws Exception {
         init();
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                System.setSecurityManager(null);
-                return null; // nothing to return
-            }
-        });
-
         SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        try {
-            schemaFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (SAXNotRecognizedException ex) {
-            System.out.println(ex.getMessage());
-        } catch (SAXNotSupportedException ex) {
-            System.out.println(ex.getMessage());
-        }
-
-        Schema schema = null;
-        try {
-            schema = schemaFactory.newSchema(xsdSource);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        }
-
+        Schema schema = schemaFactory.newSchema(xsdSource);
         Validator validator = schema.newValidator();
-
-        try {
-            validator.validate(xmlSource, null);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        } catch (IOException e) {
-            Assert.fail(e.toString());
-        }
-        System.out.println("OK");
-    }
-
-    /**
-     * set secure feature on the Validator
-     */
-    @Test
-    public void test_Val() {
-        init();
-        System.setSecurityManager(null);
-        SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-
-        Schema schema = null;
-        try {
-            schema = schemaFactory.newSchema(xsdSource);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        }
-
-        Validator validator = schema.newValidator();
-        try {
-            validator.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (SAXNotRecognizedException ex) {
-            System.out.println(ex.getMessage());
-        } catch (SAXNotSupportedException ex) {
-            System.out.println(ex.getMessage());
-        }
-
-        try {
-            validator.validate(xmlSource, null);
-        } catch (SAXException e) {
-            Assert.fail(e.toString());
-        } catch (IOException e) {
-            Assert.fail(e.toString());
-        }
-        System.out.println("OK");
-    }
-
-    class MySM extends SecurityManager {
-        Permissions granted;
-
-        public MySM(Permissions perms) {
-            granted = perms;
-        }
-
-        /**
-         * The central point in checking permissions. Overridden from
-         * java.lang.SecurityManager
-         *
-         * @param perm The permission requested.
-         */
-        @Override
-        public void checkPermission(Permission perm) {
-            if (granted.implies(perm)) {
-                return;
-            }
-            super.checkPermission(perm);
-        }
-
+        validator.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        validator.validate(xmlSource, null);
     }
 }

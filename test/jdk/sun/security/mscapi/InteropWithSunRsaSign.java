@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8205445
+ * @bug 8205445 8314148
  * @summary Interop test between SunMSCAPI and SunRsaSign on RSASSA-PSS
  * @requires os.family == "windows"
  */
@@ -103,11 +103,13 @@ public class InteropWithSunRsaSign {
                 "-------", "----------------", "------", "--------", "------");
 
         // KeyPairGenerator chooses SPI when getInstance() is called.
-        String[] provsForKPG = {"SunRsaSign", "SunMSCAPI"};
+        String[] provsForKPG = {System.getProperty("test.provider.name", "SunRsaSign"),
+                "SunMSCAPI"};
 
         // "-" means no preferred provider. In this case, SPI is chosen
         // when initSign/initVerify is called. Worth testing.
-        String[] provsForSignature = {"SunRsaSign", "SunMSCAPI", "-"};
+        String[] provsForSignature = {System.getProperty("test.provider.name", "SunRsaSign"),
+                "SunMSCAPI", "-"};
 
         int pos = 0;
         for (String pg : provsForKPG) {

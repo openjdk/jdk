@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.lang.reflect.*;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * InvocationHandler for dynamic proxy implementation of Annotation.
@@ -271,7 +269,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private static String toSourceString(char c) {
         StringBuilder sb = new StringBuilder(4);
         sb.append('\'');
-        sb.append(quote(c));
+        sb.append(quote(c, true));
         return sb.append('\'') .toString();
     }
 
@@ -279,15 +277,21 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * Escapes a character if it has an escape sequence or is
      * non-printable ASCII.  Leaves non-ASCII characters alone.
      */
-    private static String quote(char ch) {
+    private static String quote(char ch, boolean charContext) {
+        /*
+         * In a char context, single quote (') must be escaped and
+         * double quote (") need not be escaped. In a non-char
+         * context, in other words a string context, the reverse is
+         * true.
+         */
         switch (ch) {
         case '\b':  return "\\b";
         case '\f':  return "\\f";
         case '\n':  return "\\n";
         case '\r':  return "\\r";
         case '\t':  return "\\t";
-        case '\'':  return "\\'";
-        case '\"':  return "\\\"";
+        case '\'':  return (charContext ? "\\'" : "'");
+        case '\"':  return (charContext ? "\""  : "\\\"");
         case '\\':  return "\\\\";
         default:
             return (isPrintableAscii(ch))
@@ -323,7 +327,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append('"');
         for (int i = 0; i < s.length(); i++) {
-            sb.append(quote(s.charAt(i)));
+            sb.append(quote(s.charAt(i), false));
         }
         sb.append('"');
         return sb.toString();
@@ -383,20 +387,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
-            Object hisValue = null;
-            AnnotationInvocationHandler hisHandler = asOneOfUs(o);
-            if (hisHandler != null) {
-                hisValue = hisHandler.memberValues.get(member);
+            Object otherValue = null;
+            AnnotationInvocationHandler otherHandler = asOneOfUs(o);
+            if (otherHandler != null) {
+                otherValue = otherHandler.memberValues.get(member);
             } else {
                 try {
-                    hisValue = memberMethod.invoke(o);
+                    otherValue = memberMethod.invoke(o);
                 } catch (InvocationTargetException e) {
                     return false;
                 } catch (IllegalAccessException e) {
                     throw new AssertionError(e);
                 }
             }
-            if (!memberValueEquals(ourValue, hisValue))
+            if (!memberValueEquals(ourValue, otherValue))
                 return false;
         }
         return true;
@@ -434,8 +438,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         // Check for array of string, class, enum const, annotation,
         // or ExceptionProxy
-        if (v1 instanceof Object[] && v2 instanceof Object[])
-            return Arrays.equals((Object[]) v1, (Object[]) v2);
+        if (v1 instanceof Object[] a1 && v2 instanceof Object[] a2)
+            return Arrays.equals(a1, a2);
 
         // Check for ill formed annotation(s)
         if (v2.getClass() != type)
@@ -475,16 +479,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         return value;
     }
 
-    @SuppressWarnings("removal")
     private Method[] computeMemberMethods() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Method[]>() {
-                public Method[] run() {
-                    final Method[] methods = type.getDeclaredMethods();
-                    validateAnnotationMethods(methods);
-                    AccessibleObject.setAccessible(methods, true);
-                    return methods;
-                }});
+        final Method[] methods = type.getDeclaredMethods();
+        validateAnnotationMethods(methods);
+        AccessibleObject.setAccessible(methods, true);
+        return methods;
     }
 
     private transient volatile Method[] memberMethods;
@@ -675,6 +674,13 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         UnsafeAccessor.setType(this, t);
         UnsafeAccessor.setMemberValues(this, mv);
+    }
+
+    /**
+     * Gets an unmodifiable view on the member values.
+     */
+    Map<String, Object> memberValues() {
+        return Collections.unmodifiableMap(memberValues);
     }
 
     private static class UnsafeAccessor {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
+class CompilationFailureInfo;
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;
@@ -72,7 +72,6 @@ class Compilation: public StackObj {
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
-  int                _max_spills;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
   bool               _has_exception_handlers;
@@ -83,8 +82,11 @@ class Compilation: public StackObj {
   bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
+  bool               _has_scoped_access; // For shared scope closure
   bool               _install_code;
   const char*        _bailout_msg;
+  CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
+  bool               _oom;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
   ImplicitExceptionTable _implicit_exception_table;
@@ -140,13 +142,13 @@ class Compilation: public StackObj {
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
   bool has_monitors() const                      { return _has_monitors; }
+  bool has_scoped_access() const                 { return _has_scoped_access; }
   bool has_irreducible_loops() const             { return _has_irreducible_loops; }
   int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
   bool is_osr_compile() const                    { return osr_bci() >= 0; }
   IR* hir() const                                { return _hir; }
-  int max_spills() const                         { return _max_spills; }
   FrameMap* frame_map() const                    { return _frame_map; }
   CodeBuffer* code()                             { return &_code; }
   C1_MacroAssembler* masm() const                { return _masm; }
@@ -172,6 +174,7 @@ class Compilation: public StackObj {
   void set_would_profile(bool f)                 { _would_profile = f; }
   void set_has_access_indexed(bool f)            { _has_access_indexed = f; }
   void set_has_monitors(bool f)                  { _has_monitors = f; }
+  void set_has_scoped_access(bool f)             { _has_scoped_access = f; }
   // Add a set of exception handlers covering the given PC offset
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
@@ -198,20 +201,25 @@ class Compilation: public StackObj {
 #ifndef PRODUCT
   void maybe_print_current_instruction();
   CFGPrinterOutput* cfg_printer_output() {
-    guarantee(_cfg_printer_output != NULL, "CFG printer output not initialized");
+    guarantee(_cfg_printer_output != nullptr, "CFG printer output not initialized");
     return _cfg_printer_output;
   }
 #endif // PRODUCT
 
+  // MemLimit handling
+  bool oom() const { return _oom; }
+  void set_oom() { _oom = true; }
+
   // error handling
   void bailout(const char* msg);
-  bool bailed_out() const                        { return _bailout_msg != NULL; }
+  bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static int desired_max_code_buffer_size() {
-    return (int)NMethodSizeLimit;  // default 64K
+  static uint desired_max_code_buffer_size() {
+    return (uint)NMethodSizeLimit;  // default 64K
   }
-  static int desired_max_constant_size() {
+  static uint desired_max_constant_size() {
     return desired_max_code_buffer_size() / 10;
   }
 

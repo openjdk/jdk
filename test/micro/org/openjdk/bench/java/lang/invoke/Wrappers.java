@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import sun.invoke.util.Wrapper;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Fork(value = 3, jvmArgsAppend = "--add-exports=java.base/sun.invoke.util=ALL-UNNAMED")
+@Fork(value = 3, jvmArgs = "--add-exports=java.base/sun.invoke.util=ALL-UNNAMED")
 public class Wrappers {
 
     public static Class<?>[] PRIM_CLASSES = {
@@ -110,13 +110,6 @@ public class Wrappers {
     public void forBasicType(Blackhole bh) throws Throwable {
         for (char c : BASIC_TYPES) {
             bh.consume(Wrapper.forBasicType(c));
-        }
-    }
-
-    @Benchmark
-    public void forPrimitiveType(Blackhole bh) throws Throwable {
-        for (char c : PRIM_TYPES) {
-            bh.consume(Wrapper.forPrimitiveType(c));
         }
     }
 }

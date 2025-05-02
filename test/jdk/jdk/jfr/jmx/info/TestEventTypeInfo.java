@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,18 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Test for EventTypeInfo
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jmx.info.TestEventTypeInfo
+ * @run main/othervm -Djdk.attach.allowAttachSelf=true -Dcom.sun.management.jmxremote jdk.jfr.jmx.info.TestEventTypeInfo
  */
 public class TestEventTypeInfo {
     public static void main(String[] args) throws Throwable {
         FlightRecorder jfr = FlightRecorder.getFlightRecorder();
 
-        FlightRecorderMXBean bean = JmxHelper.getFlighteRecorderMXBean();
+        long selfPID = JmxHelper.getPID();
+        FlightRecorderMXBean bean = JmxHelper.getFlighteRecorderMXBean(selfPID);
         List<EventTypeInfo> typeInfos = bean.getEventTypes();
 
         Map<String, EventType> types = new HashMap<>();

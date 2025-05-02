@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,17 +83,23 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   };
 
   static void freeze();
+  static void unfreeze();
 
   const char* group() const                      { return _group; }
   const char* name() const                       { return _name; }
   address     begin() const                      { return _begin; }
   address     end() const                        { return _end; }
   uint        disp() const                       { return _disp; }
-  int         size_in_bytes() const              { return _end - _begin; }
+  int         size_in_bytes() const              { return pointer_delta_as_int(_end, _begin); }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
   void        print_on(outputStream* st) const;
   void        print() const;
 };
+
+// forward declare blob and stub id enums
+
+enum StubGenBlobId : int;
+enum StubGenStubId : int;
 
 // The base class for all stub-generating code generators.
 // Provides utility functions.
@@ -101,20 +107,25 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 class StubCodeGenerator: public StackObj {
  private:
   bool _print_code;
-
+  StubGenBlobId _blob_id;
  protected:
   MacroAssembler*  _masm;
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
+  StubCodeGenerator(CodeBuffer* code, StubGenBlobId blob_id, bool print_code = false);
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }
+  StubGenBlobId blob_id()                        { return _blob_id; }
 
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
-};
 
+#ifdef ASSERT
+  void verify_stub(StubGenStubId stub_id);
+#endif
+};
 
 // Stack-allocated helper class used to associate a stub code with a name.
 // All stub code generating functions that use a StubCodeMark will be registered
@@ -128,6 +139,7 @@ class StubCodeMark: public StackObj {
 
  public:
   StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name);
+  StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id);
   ~StubCodeMark();
 
 };

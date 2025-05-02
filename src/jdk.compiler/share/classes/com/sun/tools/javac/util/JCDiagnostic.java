@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -68,13 +69,11 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         final Set<DiagnosticFlag> defaultErrorFlags;
 
         /** Create a new diagnostic factory. */
+        @SuppressWarnings("this-escape")
         protected Factory(Context context) {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
-
-            final Options options = Options.instance(context);
-            initOptions(options);
-            options.addListener(() -> initOptions(options));
+            Options.instance(context).whenReady(this::initOptions);
         }
 
         private void initOptions(Options options) {
@@ -109,7 +108,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic error(
                 DiagnosticFlag flag, DiagnosticSource source, DiagnosticPosition pos, Error errorKey) {
-            JCDiagnostic diag = create(null, EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey);
+            JCDiagnostic diag = create(EnumSet.copyOf(defaultErrorFlags), source, pos, errorKey);
             if (flag != null) {
                 diag.setFlag(flag);
             }
@@ -128,21 +127,19 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         public JCDiagnostic mandatoryWarning(
                 LintCategory lc,
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return mandatoryWarning(lc, source, pos, warningKey(key, args));
+            return mandatoryWarning(source, pos, warningKey(lc, key, args));
         }
 
         /**
          * Create a warning diagnostic that will not be hidden by the -nowarn or -Xlint:none options.
-         *  @param lc     The lint category for the diagnostic
          *  @param source The source of the compilation unit, if any, in which to report the warning.
          *  @param pos    The source position at which to report the warning.
          *  @param warningKey    The key for the localized warning message.
          *  @see MandatoryWarningHandler
          */
         public JCDiagnostic mandatoryWarning(
-                LintCategory lc,
                 DiagnosticSource source, DiagnosticPosition pos, Warning warningKey) {
-            return create(lc, EnumSet.of(DiagnosticFlag.MANDATORY), source, pos, warningKey);
+            return create(EnumSet.of(DiagnosticFlag.MANDATORY), source, pos, warningKey);
         }
 
         /**
@@ -156,20 +153,19 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic warning(
                 LintCategory lc, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return warning(lc, source, pos, warningKey(key, args));
+            return warning(source, pos, warningKey(lc, key, args));
         }
 
         /**
          * Create a warning diagnostic.
-         *  @param lc     The lint category for the diagnostic
          *  @param source The source of the compilation unit, if any, in which to report the warning.
          *  @param pos    The source position at which to report the warning.
          *  @param warningKey    The key for the localized warning message.
          *  @see MandatoryWarningHandler
          */
         public JCDiagnostic warning(
-                LintCategory lc, DiagnosticSource source, DiagnosticPosition pos, Warning warningKey) {
-            return create(lc, EnumSet.noneOf(DiagnosticFlag.class), source, pos, warningKey);
+                DiagnosticSource source, DiagnosticPosition pos, Warning warningKey) {
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, warningKey);
         }
 
         /**
@@ -189,7 +185,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @see MandatoryWarningHandler
          */
         public JCDiagnostic mandatoryNote(DiagnosticSource source, Note noteKey) {
-            return create(null, EnumSet.of(DiagnosticFlag.MANDATORY), source, null, noteKey);
+            return create(EnumSet.of(DiagnosticFlag.MANDATORY), source, null, noteKey);
         }
 
         /**
@@ -210,7 +206,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic note(
                 DiagnosticSource source, DiagnosticPosition pos, Note noteKey) {
-            return create(null, EnumSet.noneOf(DiagnosticFlag.class), source, pos, noteKey);
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, noteKey);
         }
 
         /**
@@ -227,7 +223,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @param fragmentKey    The key for the localized subdiagnostic message.
          */
         public JCDiagnostic fragment(Fragment fragmentKey) {
-            return create(null, EnumSet.noneOf(DiagnosticFlag.class), null, null, fragmentKey);
+            return create(EnumSet.noneOf(DiagnosticFlag.class), null, null, fragmentKey);
         }
 
         /**
@@ -241,7 +237,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(
                 DiagnosticType kind, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return create(null, EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args));
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args));
         }
 
         /**
@@ -256,7 +252,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(
                 DiagnosticType kind, DiagnosticSource source, DiagnosticPosition pos, String key, UnaryOperator<JCDiagnostic> rewriter, Object... args) {
-            return create(null, EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args), rewriter);
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args), rewriter);
         }
 
         /**
@@ -268,7 +264,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(
                 DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo) {
-            return create(null, EnumSet.noneOf(DiagnosticFlag.class), source, pos, diagnosticInfo);
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, diagnosticInfo);
         }
 
         /**
@@ -283,30 +279,31 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(DiagnosticType kind,
                 LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return create(lc, flags, source, pos, DiagnosticInfo.of(kind, prefix, key, args));
+            return create(flags, source, pos, DiagnosticInfo.of(kind, lc, prefix, key, args));
         }
 
         /**
          * Create a new diagnostic with given key.
-         *  @param lc          The lint category, if applicable, or null
          *  @param flags       The set of flags for the diagnostic
          *  @param source      The source of the compilation unit, if any, in which to report the message.
          *  @param pos         The source position at which to report the message.
          *  @param diagnosticInfo    The key for the localized message.
          */
         public JCDiagnostic create(
-                LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo) {
-            return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos);
+                Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo) {
+            return new JCDiagnostic(formatter, normalize(diagnosticInfo), flags, source, pos);
         }
 
         public JCDiagnostic create(
-                LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, UnaryOperator<JCDiagnostic> rewriter) {
-            return new JCDiagnostic(formatter, normalize(diagnosticInfo), lc, flags, source, pos, rewriter);
+                Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, DiagnosticInfo diagnosticInfo, UnaryOperator<JCDiagnostic> rewriter) {
+            return new JCDiagnostic(formatter, normalize(diagnosticInfo), flags, source, pos, rewriter);
         }
         //where
             DiagnosticInfo normalize(DiagnosticInfo diagnosticInfo) {
                 //replace all nested FragmentKey with full-blown JCDiagnostic objects
-                return DiagnosticInfo.of(diagnosticInfo.type, diagnosticInfo.prefix, diagnosticInfo.code,
+                LintCategory category = diagnosticInfo instanceof LintWarning lintWarning ?
+                        lintWarning.category : null;
+                return DiagnosticInfo.of(diagnosticInfo.type, category, diagnosticInfo.prefix, diagnosticInfo.code,
                         Stream.of(diagnosticInfo.args).map(o -> {
                             return (o instanceof Fragment frag) ?
                                     fragment(frag) : o;
@@ -323,8 +320,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /**
          * Create a new warning key.
          */
-        Warning warningKey(String code, Object... args) {
-            return (Warning)DiagnosticInfo.of(WARNING, prefix, code, args);
+        Warning warningKey(LintCategory lintCategory, String code, Object... args) {
+            return (Warning)DiagnosticInfo.of(WARNING, lintCategory, prefix, code, args);
         }
 
         /**
@@ -354,10 +351,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     public static JCDiagnostic fragment(String key, Object... args) {
         return new JCDiagnostic(getFragmentFormatter(),
                               DiagnosticInfo.of(FRAGMENT,
+                                      null,
                                       "compiler",
                                       key,
                                       args),
-                              null,
                               EnumSet.noneOf(DiagnosticFlag.class),
                               null,
                               null);
@@ -462,7 +459,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     private final DiagnosticPosition position;
     private final DiagnosticInfo diagnosticInfo;
     private final Set<DiagnosticFlag> flags;
-    private final LintCategory lintCategory;
 
     /** source line position (set lazily) */
     private SourcePosition sourcePosition;
@@ -535,11 +531,17 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          * Static factory method; build a custom diagnostic key using given kind, prefix, code and args.
          */
         public static DiagnosticInfo of(DiagnosticType type, String prefix, String code, Object... args) {
+            return of(type, null, prefix, code, args);
+        }
+
+        public static DiagnosticInfo of(DiagnosticType type, LintCategory lc, String prefix, String code, Object... args) {
             switch (type) {
                 case ERROR:
                     return new Error(prefix, code, args);
                 case WARNING:
-                    return new Warning(prefix, code, args);
+                    return lc == null ?
+                            new Warning(prefix, code, args) :
+                            new LintWarning(lc, prefix, code, args);
                 case NOTE:
                     return new Note(prefix, code, args);
                 case FRAGMENT:
@@ -581,9 +583,25 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Class representing warning diagnostic keys.
      */
-    public static final class Warning extends DiagnosticInfo {
+    public static sealed class Warning extends DiagnosticInfo {
         public Warning(String prefix, String key, Object... args) {
             super(DiagnosticType.WARNING, prefix, key, args);
+        }
+    }
+
+    /**
+     * Class representing lint warning diagnostic keys.
+     */
+    public static final class LintWarning extends Warning {
+        final LintCategory category;
+
+        public LintWarning(LintCategory category, String prefix, String key, Object... args) {
+            super(prefix, key, args);
+            this.category = category;
+        }
+
+        public LintCategory getLintCategory() {
+            return category;
         }
     }
 
@@ -605,35 +623,34 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
     }
 
+    /** A diagnostic argument that is a type, which will be printed with type annotations. */
+    public record AnnotatedType(Type type) {}
+
     /**
      * Create a diagnostic object.
      * @param formatter the formatter to use for the diagnostic
      * @param diagnosticInfo the diagnostic key
-     * @param lc     the lint category for the diagnostic
      * @param source the name of the source file, or null if none.
      * @param pos the character offset within the source file, if given.
      */
     protected JCDiagnostic(DiagnosticFormatter<JCDiagnostic> formatter,
                        DiagnosticInfo diagnosticInfo,
-                       LintCategory lc,
                        Set<DiagnosticFlag> flags,
                        DiagnosticSource source,
                        DiagnosticPosition pos) {
-        this(formatter, diagnosticInfo, lc, flags, source, pos, null);
+        this(formatter, diagnosticInfo, flags, source, pos, null);
     }
 
     /**
      * Create a diagnostic object.
      * @param formatter the formatter to use for the diagnostic
      * @param diagnosticInfo the diagnostic key
-     * @param lc     the lint category for the diagnostic
      * @param source the name of the source file, or null if none.
      * @param pos the character offset within the source file, if given.
      * @param rewriter the rewriter function used if this diagnostic needs to be rewritten
      */
     protected JCDiagnostic(DiagnosticFormatter<JCDiagnostic> formatter,
                            DiagnosticInfo diagnosticInfo,
-                           LintCategory lc,
                            Set<DiagnosticFlag> flags,
                            DiagnosticSource source,
                            DiagnosticPosition pos,
@@ -643,7 +660,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
         this.defaultFormatter = formatter;
         this.diagnosticInfo = diagnosticInfo;
-        this.lintCategory = lc;
         this.flags = flags;
         this.source = source;
         this.position = pos;
@@ -682,14 +698,15 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Check whether this diagnostic has an associated lint category.
      */
     public boolean hasLintCategory() {
-        return (lintCategory != null);
+        return getLintCategory() != null;
     }
 
     /**
      * Get the associated lint category, or null if none.
      */
     public LintCategory getLintCategory() {
-        return lintCategory;
+        return diagnosticInfo instanceof LintWarning lintWarning ?
+                lintWarning.category : null;
     }
 
     /**
@@ -865,7 +882,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         public MultilineDiagnostic(JCDiagnostic other, List<JCDiagnostic> subdiagnostics) {
             super(other.defaultFormatter,
                   other.diagnosticInfo,
-                  other.getLintCategory(),
                   other.flags,
                   other.getDiagnosticSource(),
                   other.position);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244
+ * @bug 7021614 8273244 6934301
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -40,7 +40,9 @@ class InheritDocTest {
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
     Text[TEXT, pos:0, abc_]
-    InheritDoc[INHERIT_DOC, pos:4]
+    InheritDoc[INHERIT_DOC, pos:4
+      supertype: null
+    ]
   body: empty
   block tags: empty
 ]
@@ -52,7 +54,9 @@ DocComment[DOC_COMMENT, pos:0
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
     Text[TEXT, pos:0, abc_]
-    InheritDoc[INHERIT_DOC, pos:4]
+    InheritDoc[INHERIT_DOC, pos:4
+      supertype: null
+    ]
   body: empty
   block tags: empty
 ]
@@ -64,21 +68,53 @@ DocComment[DOC_COMMENT, pos:0
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
     Text[TEXT, pos:0, abc_]
-    InheritDoc[INHERIT_DOC, pos:4]
+    InheritDoc[INHERIT_DOC, pos:4
+      supertype: null
+    ]
   body: empty
   block tags: empty
 ]
 */
 
-    /** abc {@inheritDoc junk} */
-    void error() { }
+    /** abc {@inheritDoc String} */
+    void simple() { }
 /*
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
     Text[TEXT, pos:0, abc_]
-    Erroneous[ERRONEOUS, pos:4, prefPos:17
+    InheritDoc[INHERIT_DOC, pos:4
+      supertype:
+        Reference[REFERENCE, pos:17, String]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /** abc {@inheritDoc java.util.List<E>} */
+    void fullyQualifiedTypeWithWildCardUpperBound() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    Text[TEXT, pos:0, abc_]
+    InheritDoc[INHERIT_DOC, pos:4
+      supertype:
+        Reference[REFERENCE, pos:17, java.util.List<E>]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /** abc {@inheritDoc Integer   Number} */
+    void unexpectedContentAfterReference() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:27
       code: compiler.err.dc.unexpected.content
-      body: {@inheritDoc_junk}
+      body: {@inheritDoc_Integer___Number}
     ]
   body: empty
   block tags: empty

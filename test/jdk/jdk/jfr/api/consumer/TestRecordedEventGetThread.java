@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.SimpleEvent;
 /**
  * @test
  * @summary Tests that the RecordedEvent.getThread() returns th expected info
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedEventGetThread
@@ -56,7 +56,7 @@ public class TestRecordedEventGetThread {
 
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
-            RecordedEvent event = events.get(0);
+            RecordedEvent event = events.getFirst();
             RecordedThread recordedThread = event.getThread();
             Asserts.assertNotNull(recordedThread);
 

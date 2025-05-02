@@ -44,6 +44,7 @@
  *       Manifest and Signature Specification</a> - The manifest format specification.
  * </ul>
  *
+ * @spec jar/jar.html JAR File Specification
  * @since 1.2
  */
 package java.util.jar;

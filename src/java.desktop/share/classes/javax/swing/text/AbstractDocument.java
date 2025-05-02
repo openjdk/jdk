@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,14 +147,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         if (defaultI18NProperty == null) {
             // determine default setting for i18n support
-            @SuppressWarnings("removal")
-            String o = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty(I18NProperty);
-                    }
-                }
-            );
+            String o = System.getProperty(I18NProperty);
             if (o != null) {
                 defaultI18NProperty = Boolean.valueOf(o);
             } else {
@@ -2192,7 +2185,7 @@ public abstract class AbstractDocument implements Document, Serializable {
         /**
          * Returns the number of children <code>TreeNode</code>'s
          * receiver contains.
-         * @return the number of children <code>TreeNodews</code>'s
+         * @return the number of children <code>TreeNode</code>'s
          * receiver contains
          */
         public int getChildCount() {

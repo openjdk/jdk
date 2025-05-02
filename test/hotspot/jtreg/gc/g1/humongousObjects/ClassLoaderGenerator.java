@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.nio.file.Paths;
  * Since the generation depends on current host architecture it cannot be done as part of pre-compilation step
  */
 public class ClassLoaderGenerator {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
             throw new Error("Test Bug: Expected region size wasn't provided as command line argument");
@@ -47,7 +47,7 @@ public class ClassLoaderGenerator {
 
     }
 
-    public static void generateClassLoader(long regionSize, Path wrkDir) throws IOException {
+    public static void generateClassLoader(long regionSize, Path wrkDir) throws Exception {
         // Generating simple classloader
         String finalSimpleClassLoaderPrototype = TestHumongousClassLoader.GENERIC_PROTOTYPE
                 .replace("${Methods}",

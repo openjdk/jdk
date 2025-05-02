@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.module.Resources;
+import jdk.internal.module.Checks;
 import jdk.tools.jlink.internal.Utils;
 
 import static java.util.stream.Collectors.joining;
@@ -689,7 +689,6 @@ public class JmodTask {
                                   (path, attrs) -> attrs.isRegularFile(),
                                   FileVisitOption.FOLLOW_LINKS)) {
                 return stream.map(dir::relativize)
-                        .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))
                         .filter(pkg -> pkg.length() > 0)
                         .collect(Collectors.toSet());
@@ -703,46 +702,58 @@ public class JmodTask {
          */
         Set<String> findPackages(JarFile jf) {
             return jf.stream()
-                     .filter(e -> !e.isDirectory() && isResource(e.getName()))
+                     .filter(e -> !e.isDirectory())
                      .map(e -> toPackageName(e))
                      .filter(pkg -> pkg.length() > 0)
                      .collect(Collectors.toSet());
         }
 
         /**
-         * Returns true if it's a .class or a resource with an effective
-         * package name.
+         * Maps the given relative file path to a package name.
+         * @throws UncheckedIOException for a class file in a top-level directory
          */
-        boolean isResource(String name) {
-            name = name.replace(File.separatorChar, '/');
-            return name.endsWith(".class") || Resources.canEncapsulate(name);
-        }
+        private String toPackageName(Path path) {
+            assert path.getRoot() == null;
 
-
-        String toPackageName(Path path) {
-            String name = path.toString();
-            int index = name.lastIndexOf(File.separatorChar);
-            if (index != -1)
-                return name.substring(0, index).replace(File.separatorChar, '.');
-
-            if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
-                IOException e = new IOException(name  + " in the unnamed package");
-                throw new UncheckedIOException(e);
+            Path parent = path.getParent();
+            if (parent != null) {
+                String sep = path.getFileSystem().getSeparator();
+                String pn = parent.toString().replace(sep, ".");
+                return Checks.isPackageName(pn) ? pn : "";
+            } else {
+                // file in top-level directory
+                ensureNotClassFile(path.toString());
+                return "";
             }
-            return "";
         }
 
-        String toPackageName(ZipEntry entry) {
+        /**
+         * Maps the name of a JAR file entry to a package name.
+         * @throws UncheckedIOException for a class file in a top-level directory
+         */
+        private String toPackageName(ZipEntry entry) {
             String name = entry.getName();
-            int index = name.lastIndexOf("/");
-            if (index != -1)
-                return name.substring(0, index).replace('/', '.');
+            assert !name.endsWith("/");
 
+            int index = name.lastIndexOf("/");
+            if (index != -1) {
+                String pn = name.substring(0, index).replace('/', '.');
+                return Checks.isPackageName(pn) ? pn : "";
+            } else {
+                // entry in top-level directory
+                ensureNotClassFile(name);
+                return "";
+            }
+        }
+
+        /**
+         * Throws IOException for a .class file that is not module-info.class.
+         */
+        private void ensureNotClassFile(String name) {
             if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
                 IOException e = new IOException(name  + " in the unnamed package");
                 throw new UncheckedIOException(e);
             }
-            return "";
         }
 
         void processClasses(JmodOutputStream out, List<Path> classpaths)
@@ -1471,7 +1482,7 @@ public class JmodTask {
                 throw new CommandException("err.missing.mode").showUsage(true);
             String verb = words.get(0);
             try {
-                options.mode = Enum.valueOf(Mode.class, verb.toUpperCase());
+                options.mode = Enum.valueOf(Mode.class, verb.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
                 throw new CommandException("err.invalid.mode", verb).showUsage(true);
             }

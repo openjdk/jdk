@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ public class AvailableProcessors {
             // Get the java command we want to execute
             // Enable logging for easier failure diagnosis
             ProcessBuilder master =
-                    ProcessTools.createJavaProcessBuilder("-Xlog:os=trace",
-                                                          "AvailableProcessors");
+                    ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os=trace",
+                                                                     "AvailableProcessors");
 
             int[] expected = new int[] { 1, available/2, available-1, available };
 

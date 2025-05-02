@@ -340,6 +340,24 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 assertEquals(promisedBody, promised.uri().toASCIIString());
             }
             assertEquals(3, pushPromises.size());
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            }
         }
     }
 
@@ -424,6 +442,24 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             }
             if (response != null) {
                 finisher.finish(where, req.uri(), response, thrower, promiseMap);
+            }
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
             }
         }
     }

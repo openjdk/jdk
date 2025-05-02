@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
 * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
@@ -25,7 +25,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -81,19 +80,19 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(16) juint _HIGHSIGMASK[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _HIGHSIGMASK[] = {
     0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _LOG2_E[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _LOG2_E[] = {
     0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _HIGHMASK_Y[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _HIGHMASK_Y[] = {
     0x00000000UL, 0xfffffff8UL, 0x00000000UL, 0xffffffffUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _T_exp[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _T_exp[] = {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0x3b700000UL, 0xfa5abcbfUL,
     0x3ff00b1aUL, 0xa7609f71UL, 0xbc84f6b2UL, 0xa9fb3335UL, 0x3ff0163dUL,
     0x9ab8cdb7UL, 0x3c9b6129UL, 0x143b0281UL, 0x3ff02168UL, 0x0fc54eb6UL,
@@ -301,25 +300,25 @@ ATTRIBUTE_ALIGNED(16) juint _T_exp[] = {
     0x6b2a23d9UL, 0x3fffe9d9UL, 0x7442fde3UL, 0x3c74a603UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _e_coeff[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _e_coeff[] = {
     0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL, 0x6fba4e77UL,
     0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL, 0xfefa39efUL, 0x3fe62e42UL,
     0x00000000UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _coeff_h[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _coeff_h[] = {
     0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _HIGHMASK_LOG_X[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _HIGHMASK_LOG_X[] = {
     0xf8000000UL, 0xffffffffUL, 0x00000000UL, 0xfffff800UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _HALFMASK[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _HALFMASK[] = {
     0xf8000000UL, 0xffffffffUL, 0xf8000000UL, 0xffffffffUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _coeff_pow[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _coeff_pow[] = {
     0x6dc96112UL, 0xbf836578UL, 0xee241472UL, 0xbf9b0301UL, 0x9f95985aUL,
     0xbfb528dbUL, 0xb3841d2aUL, 0xbfd619b6UL, 0x518775e3UL, 0x3f9004f2UL,
     0xac8349bbUL, 0x3fa76c9bUL, 0x486ececcUL, 0x3fc4635eUL, 0x161bb241UL,
@@ -327,7 +326,7 @@ ATTRIBUTE_ALIGNED(16) juint _coeff_pow[] = {
     0x486ececbUL, 0x3fc4635eUL, 0x412055ccUL, 0xbdd61bb2UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _L_tbl_pow[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _L_tbl_pow[] = {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0x00000000UL, 0x20000000UL,
     0x3feff00aUL, 0x96621f95UL, 0x3e5b1856UL, 0xe0000000UL, 0x3fefe019UL,
     0xe5916f9eUL, 0xbe325278UL, 0x00000000UL, 0x3fefd02fUL, 0x859a1062UL,
@@ -741,26 +740,27 @@ ATTRIBUTE_ALIGNED(16) juint _L_tbl_pow[] = {
     0x00000000UL, 0x80000000UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _log2_pow[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _log2_pow[] = {
     0xfefa39efUL, 0x3fe62e42UL, 0xfefa39efUL, 0xbfe62e42UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _DOUBLE2[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _DOUBLE2[] = {
     0x00000000UL, 0x40000000UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _DOUBLE0[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _DOUBLE0[] = {
     0x00000000UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _DOUBLE0DOT5[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _DOUBLE0DOT5[] = {
     0x00000000UL, 0x3fe00000UL
 };
 
 #define __ _masm->
 
 address StubGenerator::generate_libmPow() {
-  StubCodeMark mark(this, "StubRoutines", "libmPow");
+  StubGenStubId stub_id = StubGenStubId::dpow_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;

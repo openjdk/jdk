@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -97,37 +96,37 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(16) juint _MUL16[] =
+ATTRIBUTE_ALIGNED(16) static const juint _MUL16[] =
 {
     0x00000000UL, 0x40300000UL, 0x00000000UL, 0x3ff00000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _sign_mask_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _sign_mask_tan[] =
 {
     0x00000000UL, 0x80000000UL, 0x00000000UL, 0x80000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _PI32INV_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _PI32INV_tan[] =
 {
     0x6dc9c883UL, 0x3fe45f30UL, 0x6dc9c883UL, 0x40245f30UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _P_1_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _P_1_tan[] =
 {
     0x54444000UL, 0x3fb921fbUL, 0x54440000UL, 0x3fb921fbUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _P_2_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _P_2_tan[] =
 {
     0x67674000UL, 0xbd32e7b9UL, 0x4c4c0000UL, 0x3d468c23UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _P_3_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _P_3_tan[] =
 {
     0x3707344aUL, 0x3aa8a2e0UL, 0x03707345UL, 0x3ae98a2eUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Ctable_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Ctable_tan[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x882c10faUL,
     0x3f9664f4UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
@@ -413,42 +412,42 @@ ATTRIBUTE_ALIGNED(16) juint _Ctable_tan[] =
     0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _MASK_35_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _MASK_35_tan[] =
 {
     0xfffc0000UL, 0xffffffffUL, 0x00000000UL, 0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Q_11_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Q_11_tan[] =
 {
     0xb8fe4d77UL, 0x3f82609aUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Q_9_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Q_9_tan[] =
 {
     0xbf847a43UL, 0x3f9664a0UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Q_7_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Q_7_tan[] =
 {
     0x52c4c8abUL, 0x3faba1baUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Q_5_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Q_5_tan[] =
 {
     0x11092746UL, 0x3fc11111UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _Q_3_tan[] =
+ATTRIBUTE_ALIGNED(16) static const juint _Q_3_tan[] =
 {
     0x55555612UL, 0x3fd55555UL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _PI_4_tan[] =
+ATTRIBUTE_ALIGNED(8) static const juint _PI_4_tan[] =
 {
     0x00000000UL, 0x3fe921fbUL, 0x4611a626UL, 0x3e85110bUL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _QQ_2_tan[] =
+ATTRIBUTE_ALIGNED(8) static const juint _QQ_2_tan[] =
 {
     0x676733afUL, 0x3d32e7b9UL
 };
@@ -456,7 +455,8 @@ ATTRIBUTE_ALIGNED(8) juint _QQ_2_tan[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTan() {
-  StubCodeMark mark(this, "StubRoutines", "libmTan");
+  StubGenStubId stub_id = StubGenStubId::dtan_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;

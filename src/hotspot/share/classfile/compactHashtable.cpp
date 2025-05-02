@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -44,7 +44,7 @@
 //
 CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(num_entries >= 0, "sanity");
   _num_buckets = calculate_num_buckets(num_entries);
   assert(_num_buckets > 0, "no buckets");
@@ -70,19 +70,6 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   }
 
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
-}
-
-size_t CompactHashtableWriter::estimate_size(int num_entries) {
-  int num_buckets = calculate_num_buckets(num_entries);
-  size_t bucket_bytes = ArchiveBuilder::ro_array_bytesize<u4>(num_buckets + 1);
-
-  // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
-  int entries_space = 2 * num_entries;
-  size_t entry_bytes = ArchiveBuilder::ro_array_bytesize<u4>(entries_space);
-
-  return bucket_bytes
-       + entry_bytes
-       + SimpleCompactHashtable::calculate_header_size();
 }
 
 // Add a symbol entry to the temporary hash table
@@ -213,8 +200,8 @@ void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
-  soc->do_ptr((void**)&_buckets);
-  soc->do_ptr((void**)&_entries);
+  soc->do_ptr(&_buckets);
+  soc->do_ptr(&_entries);
   if (soc->reading()) {
     _base_address = (address)SharedBaseAddress;
   }
@@ -239,7 +226,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtNone, true, false);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }
@@ -365,8 +352,8 @@ int HashtableTextDump::scan_symbol_prefix() {
   return utf8_length;
 }
 
-jchar HashtableTextDump::unescape(const char* from, const char* end, int count) {
-  jchar value = 0;
+int HashtableTextDump::unescape(const char* from, const char* end, int count) {
+  int value = 0;
 
   corrupted_if(from + count > end, "Truncated");
 
@@ -409,7 +396,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
       switch (c) {
       case 'x':
         {
-          jchar value = unescape(from, end, 2);
+          int value = unescape(from, end, 2);
           from += 2;
           assert(value <= 0xff, "sanity");
           *to++ = (char)(value & 0xff);
@@ -430,10 +417,10 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
 }
 
 // NOTE: the content is NOT the same as
-// UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen).
+// UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, size_t buflen).
 // We want to escape \r\n\t so that output [1] is more readable; [2] can be more easily
 // parsed by scripts; [3] quickly processed by HashtableTextDump::get_utf8()
-void HashtableTextDump::put_utf8(outputStream* st, const char* utf8_string, int utf8_length) {
+void HashtableTextDump::put_utf8(outputStream* st, const char* utf8_string, size_t utf8_length) {
   const char *c = utf8_string;
   const char *end = c + utf8_length;
   for (; c < end; c++) {

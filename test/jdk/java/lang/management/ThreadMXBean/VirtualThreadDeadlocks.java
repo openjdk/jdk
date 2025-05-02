@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8284161 8287103
  * @summary Test ThredMXBean.findMonitorDeadlockedThreads with cycles of
  *   platform and virtual threads in deadlock
- * @enablePreview
- * @modules java.base/java.lang:+open java.management
+ * @modules java.management jdk.management
  * @library /test/lib
  * @run main/othervm VirtualThreadDeadlocks PP
  * @run main/othervm VirtualThreadDeadlocks PV
@@ -37,8 +36,7 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
- * @modules java.base/java.lang:+open java.management
+ * @modules java.management jdk.management
  * @library /test/lib
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PP
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PV
@@ -50,7 +48,7 @@ import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.Stream;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 
 public class VirtualThreadDeadlocks {
     private static final Object LOCK1 = new Object();

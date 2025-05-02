@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -289,8 +288,7 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if ((AccessController.doPrivileged(OSInfo.getOSTypeAction()) ==
-                OSInfo.OSType.MACOSX) && (owner != null) &&
+            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
                 (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
                 ((HeavyWeightPopup)popup).setCacheEnabled(false);
             }
@@ -539,8 +537,8 @@ public class PopupFactory {
         }
 
         /**
-         * As we recycle the <code>Window</code>, we don't want to dispose it,
-         * thus this method does nothing, instead use <code>_dipose</code>
+         * As we recycle the <code>Window</code>, we don't want to dispose of it,
+         * thus this method does nothing, instead use <code>_dispose</code>
          * which will handle the disposing.
          */
         void dispose() {
@@ -1030,4 +1028,3 @@ public class PopupFactory {
         }
     }
 }
-

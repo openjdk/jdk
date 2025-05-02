@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,36 +29,4 @@
 class name com/sun/net/httpserver/Filter
 method name beforeHandler descriptor (Ljava/lang/String;Ljava/util/function/Consumer;)Lcom/sun/net/httpserver/Filter; flags 9 signature (Ljava/lang/String;Ljava/util/function/Consumer<Lcom/sun/net/httpserver/HttpExchange;>;)Lcom/sun/net/httpserver/Filter;
 method name afterHandler descriptor (Ljava/lang/String;Ljava/util/function/Consumer;)Lcom/sun/net/httpserver/Filter; flags 9 signature (Ljava/lang/String;Ljava/util/function/Consumer<Lcom/sun/net/httpserver/HttpExchange;>;)Lcom/sun/net/httpserver/Filter;
-
-class name com/sun/net/httpserver/Headers
-header extends java/lang/Object implements java/util/Map flags 21 signature Ljava/lang/Object;Ljava/util/Map<Ljava/lang/String;Ljava/util/List<Ljava/lang/String;>;>;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-
-class name com/sun/net/httpserver/HttpContext
-header extends java/lang/Object flags 421
-
-class name com/sun/net/httpserver/HttpHandler
-header extends java/lang/Object flags 601
-
-class name com/sun/net/httpserver/HttpPrincipal
-header extends java/lang/Object implements java/security/Principal flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name com/sun/net/httpserver/HttpServer
-header extends java/lang/Object flags 421
-
-class name com/sun/net/httpserver/HttpsConfigurator
-header extends java/lang/Object flags 21
-
-class name com/sun/net/httpserver/HttpsExchange
-header extends com/sun/net/httpserver/HttpExchange flags 421
-
-class name com/sun/net/httpserver/HttpsParameters
-header extends java/lang/Object flags 421
-
-class name com/sun/net/httpserver/HttpsServer
-header extends com/sun/net/httpserver/HttpServer flags 421
-
-class name com/sun/net/httpserver/spi/HttpServerProvider
-header extends java/lang/Object flags 421
 

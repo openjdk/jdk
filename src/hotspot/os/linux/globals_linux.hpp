@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,17 @@
                          develop_pd,                                    \
                          product,                                       \
                          product_pd,                                    \
-                         notproduct,                                    \
                          range,                                         \
                          constraint)                                    \
                                                                         \
   product(bool, UseOprofile, false,                                     \
-        "enable support for Oprofile profiler")                         \
-                                                                        \
-  /*  NB: The default value of UseLinuxPosixThreadCPUClocks may be   */ \
-  /* overridden in Arguments::parse_each_vm_init_arg.                */ \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
-          "enable fast Linux Posix clocks where available")             \
-                                                                        \
-  product(bool, UseHugeTLBFS, false,                                    \
-          "Use MAP_HUGETLB for large pages")                            \
+        "(Deprecated) enable support for Oprofile profiler")            \
                                                                         \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
                                                                         \
   product(bool, LoadExecStackDllInVMThread, true,                       \
           "Load DLLs with executable-stack attribute in the VM Thread") \
-                                                                        \
-  product(bool, UseSHM, false,                                          \
-          "Use SYSV shared memory for large pages")                     \
                                                                         \
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
@@ -77,8 +65,33 @@
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
-          "Write map file for Linux perf tool at exit")
-
+          "Write map file for Linux perf tool at exit")                 \
+                                                                        \
+  product(intx, TimerSlack, -1, EXPERIMENTAL,                           \
+          "Overrides the timer slack value to the given number of "     \
+          "nanoseconds. Lower value provides more accurate "            \
+          "high-precision timers, at the expense of (possibly) worse "  \
+          "power efficiency. In current Linux, 0 means using the "      \
+          "system-wide default, which would disable the override, but " \
+          "VM would still print the current timer slack values. Use -1 "\
+          "to disable both the override and the printouts."             \
+          "See prctl(PR_SET_TIMERSLACK) for more info.")                \
+                                                                        \
+  product(bool, THPStackMitigation, true, DIAGNOSTIC,                   \
+          "If THPs are unconditionally enabled on the system (mode "    \
+          "\"always\"), the JVM will prevent THP from forming in "      \
+          "thread stacks. When disabled, the absence of this mitigation"\
+          "allows THPs to form in thread stacks.")                      \
+                                                                        \
+  develop(bool, DelayThreadStartALot, false,                            \
+          "Artificially delay thread starts randomly for testing.")     \
+                                                                        \
+  product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
+          "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
+                                                                        \
+  product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
+          "Print an annotated memory map at exit")                      \
+                                                                        \
 // end of RUNTIME_OS_FLAGS
 
 //

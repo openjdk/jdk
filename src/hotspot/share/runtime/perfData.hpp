@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
@@ -61,6 +62,9 @@ enum CounterNS {
   JAVA_THREADS,         // Threads System name spaces
   COM_THREADS,
   SUN_THREADS,
+  JAVA_THREADS_CPUTIME, // Thread CPU time name spaces
+  COM_THREADS_CPUTIME,
+  SUN_THREADS_CPUTIME,
   JAVA_PROPERTY,        // Java Property name spaces
   COM_PROPERTY,
   SUN_PROPERTY,
@@ -241,6 +245,18 @@ enum CounterNS {
  * UsePerfData, a product flag set to true by default. This flag may
  * be removed from the product in the future.
  *
+ * There are possible shutdown races between counter uses and counter
+ * destruction code. Normal shutdown happens with taking VM_Exit safepoint
+ * operation, so in the vast majority of uses this is not an issue. On the
+ * paths where a concurrent access can still happen when VM is at safepoint,
+ * use the following pattern to coordinate with shutdown:
+ *
+ * {
+ *   GlobalCounter::CriticalSection cs(Thread::current());
+ *   if (PerfDataManager::has_PerfData()) {
+ *     <update-counter>
+ *   }
+ * }
  */
 class PerfData : public CHeapObj<mtInternal> {
 
@@ -319,7 +335,8 @@ class PerfData : public CHeapObj<mtInternal> {
     // PerfData memory region. This redundancy is maintained for
     // security reasons as the PerfMemory region may be in shared
     // memory.
-    const char* name() { return _name; }
+    const char* name() const { return _name; }
+    bool name_equals(const char* name) const;
 
     // returns the variability classification associated with this item
     Variability variability() { return _v; }
@@ -396,7 +413,6 @@ class PerfLongConstant : public PerfLong {
 class PerfLongVariant : public PerfLong {
 
   protected:
-    jlong* _sampled;
     PerfLongSampleHelper* _sample_helper;
 
     PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
@@ -404,9 +420,6 @@ class PerfLongVariant : public PerfLong {
                    : PerfLong(ns, namep, u, v) {
       if (is_valid()) *(jlong*)_valuep = initial_value;
     }
-
-    PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
-                    jlong* sampled);
 
     PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
                     PerfLongSampleHelper* sample_helper);
@@ -439,9 +452,6 @@ class PerfLongCounter : public PerfLongVariant {
                    : PerfLongVariant(ns, namep, u, V_Monotonic,
                                      initial_value) { }
 
-    PerfLongCounter(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                  : PerfLongVariant(ns, namep, u, V_Monotonic, sampled) { }
-
     PerfLongCounter(CounterNS ns, const char* namep, Units u,
                     PerfLongSampleHelper* sample_helper)
                    : PerfLongVariant(ns, namep, u, V_Monotonic,
@@ -463,9 +473,6 @@ class PerfLongVariable : public PerfLongVariant {
                      jlong initial_value=0)
                     : PerfLongVariant(ns, namep, u, V_Variable,
                                       initial_value) { }
-
-    PerfLongVariable(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                    : PerfLongVariant(ns, namep, u, V_Variable, sampled) { }
 
     PerfLongVariable(CounterNS ns, const char* namep, Units u,
                      PerfLongSampleHelper* sample_helper)
@@ -586,7 +593,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     PerfDataArray* _set;
 
     // method to search for a instrumentation object by name
-    static bool by_name(void* name, PerfData* pd);
+    static bool by_name(const char* name, PerfData* pd);
 
   protected:
     // we expose the implementation here to facilitate the clone
@@ -794,7 +801,7 @@ class PerfDataManager : AllStatic {
     }
 
     static void destroy();
-    static bool has_PerfData() { return _has_PerfData; }
+    static bool has_PerfData() { return Atomic::load_acquire(&_has_PerfData); }
 };
 
 // Useful macros to create the performance counters
@@ -837,11 +844,20 @@ class PerfTraceTime : public StackObj {
 
   public:
     inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _t.start();
     }
 
-    ~PerfTraceTime();
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
+
+    ~PerfTraceTime() {
+      if (!UsePerfData || !_t.is_active()) { return; }
+      _t.stop();
+      _timerp->inc(_t.ticks());
+    }
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
@@ -870,7 +886,7 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
   public:
     inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _eventp->inc();
     }
 

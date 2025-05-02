@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/**
+/*
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
+ *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
+ *      8321408 8316138 8341057 8303770 8350498
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -36,16 +37,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.MessageDigest;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.HexFormat;
-import java.util.Map;
+import java.security.cert.*;
+import java.util.*;
 
 public class VerifyCACerts {
 
@@ -54,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 90;
+    private static final int COUNT = 109;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "A3:57:D9:69:62:ED:00:ED:72:83:1E:15:46:02:93:F3:12:0F:49:83:E3:E6:D0:9F:96:34:05:9C:43:EB:D6:05";
+            = "BD:6B:AB:BB:17:87:0D:D5:8D:53:D3:63:A5:DD:70:57:0F:4E:D3:57:4F:E5:FB:05:41:1C:A9:6E:B0:BF:79:38";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -76,10 +69,6 @@ public class VerifyCACerts {
                     "ED:F7:EB:BC:A2:7A:2A:38:4D:38:7B:7D:40:10:C6:66:E2:ED:B4:84:3E:4C:29:B4:AE:1D:5B:93:32:E6:B2:4D");
             put("camerfirmachambersca [jdk]",
                     "06:3E:4A:FA:C4:91:DF:D3:32:F3:08:9B:85:42:E9:46:17:D8:93:D7:FE:94:4E:10:A7:93:7E:E2:9D:96:93:C0");
-            put("camerfirmachambersignca [jdk]",
-                    "13:63:35:43:93:34:A7:69:80:16:A0:D3:24:DE:72:28:4E:07:9D:7B:52:20:BB:8F:BD:74:78:16:EE:BE:BA:CA");
-            put("camerfirmachamberscommerceca [jdk]",
-                    "0C:25:8A:12:A5:67:4A:EF:25:F2:8B:A7:DC:FA:EC:EE:A3:48:E5:41:E6:F5:CC:4E:E6:3B:71:B3:61:60:6A:C3");
             put("certumca [jdk]",
                     "D8:E0:FE:BC:1D:B2:E3:8D:00:94:0F:37:D2:7D:41:34:4D:99:3E:73:4B:99:D5:65:6D:97:78:D4:D8:14:36:24");
             put("certumtrustednetworkca [jdk]",
@@ -102,8 +91,6 @@ public class VerifyCACerts {
                     "68:7F:A4:51:38:22:78:FF:F0:C8:B1:1F:8D:43:D5:76:67:1C:6E:B2:BC:EA:B4:13:FB:83:D9:65:D0:6D:2F:F2");
             put("addtrustqualifiedca [jdk]",
                     "80:95:21:08:05:DB:4B:BC:35:5E:44:28:D8:FD:6E:C2:CD:E3:AB:5F:B9:7A:99:42:98:8E:B8:F4:DC:D0:60:16");
-            put("baltimorecybertrustca [jdk]",
-                    "16:AF:57:A9:F6:76:B0:AB:12:60:95:AA:5E:BA:DE:F2:2A:B3:11:19:D6:44:AC:95:CD:4B:93:DB:F3:F2:6A:EB");
             put("digicertglobalrootca [jdk]",
                     "43:48:A0:E9:44:4C:78:CB:26:5E:05:8D:5E:89:44:B4:D8:4F:96:62:BD:26:DB:25:7F:89:34:A4:43:C7:01:61");
             put("digicertglobalrootg2 [jdk]",
@@ -154,6 +141,8 @@ public class VerifyCACerts {
                     "5D:56:49:9B:E4:D2:E0:8B:CF:CA:D0:8A:3E:38:72:3D:50:50:3B:DE:70:69:48:E4:2F:55:60:30:19:E5:28:AE");
             put("letsencryptisrgx1 [jdk]",
                     "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6");
+            put("letsencryptisrgx2 [jdk]",
+                    "69:72:9B:8E:15:A8:6E:FC:17:7A:57:AF:B7:17:1D:FC:64:AD:D2:8C:2F:CA:8C:F1:50:7E:34:45:3C:CB:14:70");
             put("luxtrustglobalrootca [jdk]",
                     "A1:B2:DB:EB:64:E7:06:C6:16:9E:3C:41:18:B2:3B:AA:09:01:8A:84:27:66:6D:8B:F0:E2:88:91:EC:05:19:50");
             put("quovadisrootca [jdk]",
@@ -168,8 +157,14 @@ public class VerifyCACerts {
                     "18:F1:FC:7F:20:5D:F8:AD:DD:EB:7F:E0:07:DD:57:E3:AF:37:5A:9C:4D:8D:73:54:6B:F4:F1:FE:D1:E1:8D:35");
             put("quovadisrootca3g3 [jdk]",
                     "88:EF:81:DE:20:2E:B0:18:45:2E:43:F8:64:72:5C:EA:5F:BD:1F:C2:D9:D2:05:73:07:09:C5:D8:B8:69:0F:46");
-            put("secomscrootca1 [jdk]",
-                    "E7:5E:72:ED:9F:56:0E:EC:6E:B4:80:00:73:A4:3F:C3:AD:19:19:5A:39:22:82:01:78:95:97:4A:99:02:6B:6C");
+            put("digicertcseccrootg5 [jdk]",
+                    "26:C5:6A:D2:20:8D:1E:9B:15:2F:66:85:3B:F4:79:7C:BE:B7:55:2C:1F:3F:47:72:51:E8:CB:1A:E7:E7:97:BF");
+            put("digicertcsrsarootg5 [jdk]",
+                    "73:53:B6:D6:C2:D6:DA:42:47:77:3F:3F:07:D0:75:DE:CB:51:34:21:2B:EA:D0:92:8E:F1:F4:61:15:26:09:41");
+            put("digicerttlseccrootg5 [jdk]",
+                    "01:8E:13:F0:77:25:32:CF:80:9B:D1:B1:72:81:86:72:83:FC:48:C6:E1:3B:E9:C6:98:12:85:4A:49:0C:1B:05");
+            put("digicerttlsrsarootg5 [jdk]",
+                    "37:1A:00:DC:05:33:B3:72:1A:7E:EB:40:E8:41:9E:70:79:9D:2B:0A:0F:2C:1D:80:69:31:65:F7:CE:C4:AD:75");
             put("secomscrootca2 [jdk]",
                     "51:3B:2C:EC:B8:10:D4:CD:E5:DD:85:39:1A:DF:C6:C2:DD:60:D8:7B:B7:36:D2:B5:21:48:4A:A4:7A:0E:BE:F6");
             put("swisssigngoldg2ca [jdk]",
@@ -248,10 +243,45 @@ public class VerifyCACerts {
                     "44:B5:45:AA:8A:25:E6:5A:73:CA:15:DC:27:FC:36:D2:4C:1C:B9:95:3A:06:65:39:B1:15:82:DC:48:7B:48:33");
             put("certignaca [jdk]",
                     "E3:B6:A2:DB:2E:D7:CE:48:84:2F:7A:C5:32:41:C7:B7:1D:54:14:4B:FB:40:C1:1F:3F:1D:0B:42:F5:EE:A1:2D");
+            put("twcaglobalrootca [jdk]",
+                    "59:76:90:07:F7:68:5D:0F:CD:50:87:2F:9F:95:D5:75:5A:5B:2B:45:7D:81:F3:69:2B:61:0A:98:67:2F:0E:1B");
+            put("microsoftecc2017 [jdk]",
+                    "35:8D:F3:9D:76:4A:F9:E1:B7:66:E9:C9:72:DF:35:2E:E1:5C:FA:C2:27:AF:6A:D1:D7:0E:8E:4A:6E:DC:BA:02");
+            put("microsoftrsa2017 [jdk]",
+                    "C7:41:F7:0F:4B:2A:8D:88:BF:2E:71:C1:41:22:EF:53:EF:10:EB:A0:CF:A5:E6:4C:FA:20:F4:18:85:30:73:E0");
+            put("gtsrootcar1 [jdk]",
+                    "D9:47:43:2A:BD:E7:B7:FA:90:FC:2E:6B:59:10:1B:12:80:E0:E1:C7:E4:E4:0F:A3:C6:88:7F:FF:57:A7:F4:CF");
+            put("gtsrootcar2 [jdk]",
+                    "8D:25:CD:97:22:9D:BF:70:35:6B:DA:4E:B3:CC:73:40:31:E2:4C:F0:0F:AF:CF:D3:2D:C7:6E:B5:84:1C:7E:A8");
+            put("gtsrootecccar3 [jdk]",
+                    "34:D8:A7:3E:E2:08:D9:BC:DB:0D:95:65:20:93:4B:4E:40:E6:94:82:59:6E:8B:6F:73:C8:42:6B:01:0A:6F:48");
+            put("gtsrootecccar4 [jdk]",
+                    "34:9D:FA:40:58:C5:E2:63:12:3B:39:8A:E7:95:57:3C:4E:13:13:C8:3F:E6:8F:93:55:6C:D5:E8:03:1B:3C:7D");
+            put("certignarootca [jdk]",
+                    "D4:8D:3D:23:EE:DB:50:A4:59:E5:51:97:60:1C:27:77:4B:9D:7B:18:C9:4D:5A:05:95:11:A1:02:50:B9:31:68");
+            put("teliarootcav2 [jdk]",
+                    "24:2B:69:74:2F:CB:1E:5B:2A:BF:98:89:8B:94:57:21:87:54:4E:5B:4D:99:11:78:65:73:62:1F:6A:74:B8:2C");
+            put("emsignrootcag1 [jdk]",
+                    "40:F6:AF:03:46:A9:9A:A1:CD:1D:55:5A:4E:9C:CE:62:C7:F9:63:46:03:EE:40:66:15:83:3D:C8:C8:D0:03:67");
+            put("emsigneccrootcag3 [jdk]",
+                    "86:A1:EC:BA:08:9C:4A:8D:3B:BE:27:34:C6:12:BA:34:1D:81:3E:04:3C:F9:E8:A8:62:CD:5C:57:A3:6B:BE:6B");
+            put("emsignrootcag2 [jdk]",
+                    "1A:A0:C2:70:9E:83:1B:D6:E3:B5:12:9A:00:BA:41:F7:EE:EF:02:08:72:F1:E6:50:4B:F0:F6:C3:F2:4F:3A:F3");
+            put("certainlyrootr1 [jdk]",
+                    "77:B8:2C:D8:64:4C:43:05:F7:AC:C5:CB:15:6B:45:67:50:04:03:3D:51:C6:0C:62:02:A8:E0:C3:34:67:D3:A0");
+            put("certainlyroote1 [jdk]",
+                    "B4:58:5F:22:E4:AC:75:6A:4E:86:12:A1:36:1C:5D:9D:03:1A:93:FD:84:FE:BB:77:8F:A3:06:8B:0F:C4:2D:C2");
+            put("globalsignr46 [jdk]",
+                    "4F:A3:12:6D:8D:3A:11:D1:C4:85:5A:4F:80:7C:BA:D6:CF:91:9D:3A:5A:88:B0:3B:EA:2C:63:72:D9:3C:40:C9");
+            put("globalsigne46 [jdk]",
+                    "CB:B9:C4:4D:84:B8:04:3E:10:50:EA:31:A6:9F:51:49:55:D7:BF:D2:E2:C6:B4:93:01:01:9A:D6:1D:9F:50:58");
+            put("ssltlsrootecc2022 [jdk]",
+                    "C3:2F:FD:9F:46:F9:36:D1:6C:36:73:99:09:59:43:4B:9A:D6:0A:AF:BB:9E:7C:F3:36:54:F1:44:CC:1B:A1:43");
+            put("ssltlsrootrsa2022 [jdk]",
+                    "8F:AF:7D:2E:2C:B4:70:9B:B8:E0:B3:36:66:BF:75:A5:DD:45:B5:DE:48:0F:8E:A8:D4:BF:E6:BE:BC:17:F2:ED");
         }
     };
 
-    // Exception list to 90 days expiry policy
     // No error will be reported if certificate in this list expires
     @SuppressWarnings("serial")
     private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
@@ -280,14 +310,15 @@ public class VerifyCACerts {
 
     public static void main(String[] args) throws Exception {
         System.out.println("cacerts file: " + CACERTS);
-        md = MessageDigest.getInstance("SHA-256");
 
+        // verify integrity of cacerts
+        md = MessageDigest.getInstance("SHA-256");
         byte[] data = Files.readAllBytes(Path.of(CACERTS));
         String checksum = HEX.formatHex(md.digest(data));
         if (!checksum.equals(CHECKSUM)) {
             atLeastOneFailed = true;
-            System.err.println("ERROR: wrong checksum\n" + checksum);
-            System.err.println("Expected checksum\n" + CHECKSUM);
+            System.err.println("ERROR: wrong checksum " + checksum);
+            System.err.println("Expected checksum " + CHECKSUM);
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -298,6 +329,15 @@ public class VerifyCACerts {
             atLeastOneFailed = true;
             System.err.println("ERROR: " + ks.size() + " entries, should be "
                     + COUNT);
+        }
+
+        System.out.println("Trusted CA Certificate count: " + ks.size());
+
+        // also ensure FINGERPRINT_MAP lists correct count
+        if (FINGERPRINT_MAP.size() != COUNT) {
+            atLeastOneFailed = true;
+            System.err.println("ERROR: " + FINGERPRINT_MAP.size()
+                    + " FINGERPRINT_MAP entries, should be " + COUNT);
         }
 
         // check that all entries in the map are in the keystore
@@ -313,66 +353,66 @@ public class VerifyCACerts {
         Enumeration<String> aliases = ks.aliases();
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
-            System.out.println("\nVerifying " + alias);
+            System.out.println("Verifying " + alias);
+
+            // Is cert trusted?
             if (!ks.isCertificateEntry(alias)) {
                 atLeastOneFailed = true;
-                System.err.println("ERROR: " + alias
-                        + " is not a trusted cert entry");
+                System.err.println("ERROR: " + alias + " is not a trusted cert entry");
             }
+
+            // Does fingerprint match?
             X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
             if (!checkFingerprint(alias, cert)) {
                 atLeastOneFailed = true;
                 System.err.println("ERROR: " + alias + " SHA-256 fingerprint is incorrect");
             }
-            // Make sure cert can be self-verified
+
+            // Can cert be self-verified?
             try {
                 cert.verify(cert.getPublicKey());
             } catch (Exception e) {
                 atLeastOneFailed = true;
-                System.err.println("ERROR: cert cannot be verified:"
-                        + e.getMessage());
+                System.err.println("ERROR: cert cannot be verified:" + e.getMessage());
             }
 
-            // Make sure cert is not expired or not yet valid
+            // Is cert expired?
             try {
                 cert.checkValidity();
             } catch (CertificateExpiredException cee) {
                 if (!EXPIRY_EXC_ENTRIES.contains(alias)) {
                     atLeastOneFailed = true;
-                    System.err.println("ERROR: cert is expired");
+                    System.err.println("ERROR: cert is expired but not in EXPIRY_EXC_ENTRIES");
                 }
             } catch (CertificateNotYetValidException cne) {
                 atLeastOneFailed = true;
                 System.err.println("ERROR: cert is not yet valid");
             }
 
-            // If cert is within 90 days of expiring, mark as failure so
+            // If cert is within 90 days of expiring, mark as warning so
             // that cert can be scheduled to be removed/renewed.
             Date notAfter = cert.getNotAfter();
             if (notAfter.getTime() - System.currentTimeMillis() < NINETY_DAYS) {
                 if (!EXPIRY_EXC_ENTRIES.contains(alias)) {
-                    atLeastOneFailed = true;
-                    System.err.println("ERROR: cert \"" + alias + "\" expiry \""
-                            + notAfter.toString() + "\" will expire within 90 days");
+                    System.err.println("WARNING: cert \"" + alias + "\" expiry \""
+                            + notAfter + "\" will expire within 90 days");
                 }
             }
         }
 
         if (atLeastOneFailed) {
-            throw new Exception("At least one cacert test failed");
+            throw new RuntimeException("At least one cacert test failed");
         }
     }
 
     private static boolean checkFingerprint(String alias, Certificate cert)
-            throws Exception {
+            throws CertificateEncodingException {
         String fingerprint = FINGERPRINT_MAP.get(alias);
         if (fingerprint == null) {
             // no entry for alias
-            return true;
+            return false;
         }
-        System.out.println("Checking fingerprint of " + alias);
         byte[] digest = md.digest(cert.getEncoded());
         return fingerprint.equals(HEX.formatHex(digest));
     }
-
 }

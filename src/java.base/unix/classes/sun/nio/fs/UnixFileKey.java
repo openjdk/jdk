@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,9 @@ class UnixFileKey {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof UnixFileKey))
-            return false;
-        UnixFileKey other = (UnixFileKey)obj;
-        return (this.st_dev == other.st_dev) && (this.st_ino == other.st_ino);
+        return obj instanceof UnixFileKey other
+                && (this.st_dev == other.st_dev)
+                && (this.st_ino == other.st_ino);
     }
 
     @Override

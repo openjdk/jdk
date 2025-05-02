@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,10 @@
 // but before weak reference processing, the GC should flush or delete all
 // of its Requests objects.
 //
+// The deduplication thread is a daemon JavaThread.  No thread visitor is
+// needed, as it is handled via the normal JavaThread visiting mechanism.
+// Similarly, there is no need for a stop() function.
+//
 // For additional information on string deduplication, please see JEP 192,
 // https://openjdk.org/jeps/192
 
@@ -102,6 +106,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Klass;
+class StringDedupThread;
 class ThreadClosure;
 
 // The StringDedup class provides the API for the deduplication mechanism.
@@ -110,6 +115,8 @@ class ThreadClosure;
 // feature.  Other functions in the StringDedup class are called where
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
+  friend class StringDedupThread;
+
   class Config;
   class Processor;
   class Stat;
@@ -140,13 +147,9 @@ public:
   // Returns true if string deduplication is enabled.
   static bool is_enabled() { return _enabled; }
 
-  // Stop the deduplication processor thread.
+  // Create and start the deduplication processor thread.
   // precondition: is_enabled()
-  static void stop();
-
-  // Visit the deduplication processor thread.
-  // precondition: is_enabled()
-  static void threads_do(ThreadClosure* tc);
+  static void start();
 
   // Marks the String as not being subject to deduplication.  This can be
   // used to prevent deduplication of Strings whose value array must remain

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,20 @@
 /*
  * @test
  * @bug 6271411
- * @library /java/text/testlib
  * @summary Confirm that three JCK testcases for CollationElementIterator pass.
+ * @run junit Bug6271411
  */
 
 import java.text.*;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /*
  * Based on JCK-runtime-15/tests/api/java_text/CollationElementIterator/ColltnElmtIterTests.java.
  */
-public class Bug6271411 extends IntlTest {
-
-    public static void main(String argv[]) throws Exception {
-        Bug6271411 test = new Bug6271411();
-        test.run(argv);
-    }
+public class Bug6271411 {
 
     /*
      * Rule for RuleBasedCollator
@@ -58,6 +57,7 @@ public class Bug6271411 extends IntlTest {
      * (not IndexOutOfBoundsException) if the given offset is invalid.
      * Use CollationElementIterator.setText(String).
      */
+    @Test
     public void Test_CollationElementIterator0007() throws Exception {
         int[] offsets = {
             Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -10000, -2, -1,
@@ -90,7 +90,7 @@ public class Bug6271411 extends IntlTest {
         }
 
         if (err) {
-            errln("CollationElementIterator.setOffset() didn't throw an expected IllegalArguemntException.");
+            fail("CollationElementIterator.setOffset() didn't throw an expected IllegalArguemntException.");
         }
     }
 
@@ -99,6 +99,7 @@ public class Bug6271411 extends IntlTest {
      * IllegalArgumentException if the given offset is invalid.
      * Use CollationElementIterator.setText(CharacterIterator).
      */
+    @Test
     public void Test_CollationElementIterator0010() throws Exception {
         String prefix = "xyz abc";
         String suffix = "1234567890";
@@ -144,7 +145,7 @@ public class Bug6271411 extends IntlTest {
         }
 
         if (err) {
-            errln("CollationElementIterator.setOffset() didn't throw an expected IllegalArguemntException.");
+            fail("CollationElementIterator.setOffset() didn't throw an expected IllegalArguemntException.");
         }
     }
 
@@ -153,6 +154,7 @@ public class Bug6271411 extends IntlTest {
      * an offset as expected.
      * Use CollationElementIterator.setText(CharacterIterator).
      */
+    @Test
     public void Test_CollationElementIterator0011() throws Exception {
         String prefix = "xyz abc";
         String suffix = "1234567890";

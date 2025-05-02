@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,14 @@ public class TooSmallStackSize {
 
     static ProcessBuilder createProcessWithOptions(String stackOption, String stackSize) throws Exception {
         if (testShadowSize == null) {
-            return ProcessTools.createJavaProcessBuilder(
+            return ProcessTools.createLimitedTestJavaProcessBuilder(
                 stackOption + stackSize,
                 // Uncomment the following to get log output
                 // that shows actual thread creation sizes.
                 // "-Xlog:os+thread",
                 "-version");
         } else {
-            return ProcessTools.createJavaProcessBuilder(
+            return ProcessTools.createLimitedTestJavaProcessBuilder(
                 stackOption + stackSize,
                 // Uncomment the following to get log output
                 // that shows actual thread creation sizes.

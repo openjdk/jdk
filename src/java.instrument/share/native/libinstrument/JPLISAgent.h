@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ typedef struct _JPLISEnvironment  JPLISEnvironment;
 */
 #define JPLIS_INSTRUMENTIMPL_CLASSNAME                      "sun/instrument/InstrumentationImpl"
 #define JPLIS_INSTRUMENTIMPL_CONSTRUCTOR_METHODNAME         "<init>"
-#define JPLIS_INSTRUMENTIMPL_CONSTRUCTOR_METHODSIGNATURE    "(JZZ)V"
+#define JPLIS_INSTRUMENTIMPL_CONSTRUCTOR_METHODSIGNATURE    "(JZZZ)V"
 #define JPLIS_INSTRUMENTIMPL_PREMAININVOKER_METHODNAME      "loadClassAndCallPremain"
 #define JPLIS_INSTRUMENTIMPL_PREMAININVOKER_METHODSIGNATURE "(Ljava/lang/String;Ljava/lang/String;)V"
 #define JPLIS_INSTRUMENTIMPL_AGENTMAININVOKER_METHODNAME      "loadClassAndCallAgentmain"
@@ -108,6 +108,7 @@ struct _JPLISAgent {
     char const *            mAgentClassName;        /* agent class name */
     char const *            mOptionsString;         /* -javaagent options string */
     const char *            mJarfile;               /* agent jar file name */
+    jboolean                mPrintWarning;          /* print warning when started */
 };
 
 /*
@@ -151,7 +152,7 @@ getJPLISEnvironment(jvmtiEnv * jvmtienv);
  *  or NULL if an error has occurred.
  */
 extern JPLISInitializationError
-createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr);
+createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr, const char * jarfile, jboolean printWarning);
 
 /* Adds can_redefine_classes capability */
 extern void
@@ -271,6 +272,9 @@ appendToClassLoaderSearch(JNIEnv * jnienv, JPLISAgent * agent, jstring jarFile, 
 extern void
 setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefixArray,
                         jboolean isRetransformable);
+
+extern jstring
+jarFile(JNIEnv * jnienv, JPLISAgent * agent);
 
 #define jvmti(a) a->mNormalEnvironment.mJVMTIEnv
 

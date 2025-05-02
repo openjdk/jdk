@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -575,7 +575,7 @@ sun_jpeg_output_message (j_common_ptr cinfo)
         (*env)->CallVoidMethod(env, theObject,
             JPEGImageReader_warningWithMessageID,
             string);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit(cinfo);
         }
@@ -585,7 +585,7 @@ sun_jpeg_output_message (j_common_ptr cinfo)
         (*env)->CallVoidMethod(env, theObject,
             JPEGImageWriter_warningWithMessageID,
             string);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data,
             (const JOCTET **)(&dest->next_output_byte))) {
             cinfo->err->error_exit(cinfo);
@@ -625,7 +625,7 @@ static void imageio_set_stream(JNIEnv *env,
     if (setjmp(jerr->setjmp_buffer)) {
         /* If we get here, the JPEG code has signaled an error
            while aborting. */
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) (cinfo,
                                            buffer);
@@ -651,7 +651,7 @@ static void imageio_reset(JNIEnv *env,
     if (setjmp(jerr->setjmp_buffer)) {
         /* If we get here, the JPEG code has signaled an error
            while aborting. */
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) (cinfo, buffer);
             JNU_ThrowByName(env, "javax/imageio/IIOException", buffer);
@@ -666,8 +666,6 @@ static void imageio_reset(JNIEnv *env,
 static void imageio_dispose(j_common_ptr info) {
 
     if (info != NULL) {
-        free(info->err);
-        info->err = NULL;
         if (info->is_decompressor) {
             j_decompress_ptr dinfo = (j_decompress_ptr) info;
             free(dinfo->src);
@@ -678,6 +676,8 @@ static void imageio_dispose(j_common_ptr info) {
             cinfo->dest = NULL;
         }
         jpeg_destroy(info);
+        free(info->err);
+        info->err = NULL;
         free(info);
     }
 }
@@ -969,7 +969,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
     if ((ret > 0) && ((unsigned int)ret > sb->bufferLength)) {
          ret = (int)sb->bufferLength;
     }
-    if ((*env)->ExceptionOccurred(env)
+    if ((*env)->ExceptionCheck(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
     }
@@ -992,7 +992,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
         (*env)->CallVoidMethod(env, reader,
                                JPEGImageReader_warningOccurredID,
                                READ_NO_EOI);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
         }
@@ -1067,7 +1067,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
                                 sb->hstreamBuffer,
                                 offset, buflen);
     if ((ret > 0) && ((unsigned int)ret > buflen)) ret = (int)buflen;
-    if ((*env)->ExceptionOccurred(env)
+    if ((*env)->ExceptionCheck(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
         cinfo->err->error_exit((j_common_ptr) cinfo);
     }
@@ -1083,7 +1083,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
         (*env)->CallVoidMethod(env, reader,
                                JPEGImageReader_warningOccurredID,
                                READ_NO_EOI);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
         }
@@ -1132,6 +1132,10 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += sb->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     sb->remaining_skip = 0;
 
     /* First the easy case where we are skipping <= the current contents. */
@@ -1164,7 +1168,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
                                  input,
                                  JPEGImageReader_skipInputBytesID,
                                  (jlong) num_bytes);
-    if ((*env)->ExceptionOccurred(env)
+    if ((*env)->ExceptionCheck(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
     }
@@ -1183,7 +1187,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
                                JPEGImageReader_warningOccurredID,
                                READ_NO_EOI);
 
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);
         }
@@ -1217,7 +1221,7 @@ imageio_term_source(j_decompress_ptr cinfo)
                                 JPEGImageReader_pushBackID,
                                 src->bytes_in_buffer);
 
-         if ((*env)->ExceptionOccurred(env)
+         if ((*env)->ExceptionCheck(env)
              || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
              cinfo->err->error_exit((j_common_ptr) cinfo);
          }
@@ -1291,7 +1295,7 @@ marker_is_icc (jpeg_saved_marker_ptr marker)
  * with an appropriate message.
  */
 
-jbyteArray
+static jbyteArray
 read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
 {
     jpeg_saved_marker_ptr marker;
@@ -1656,7 +1660,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
         /* If we get here, the JPEG code has signaled an error
            while reading the header. */
         RELEASE_ARRAYS(env, data, src->next_input_byte);
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) ((struct jpeg_common_struct *) cinfo,
                                           buffer);
@@ -1815,7 +1819,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
                                cinfo->out_color_space,
                                cinfo->num_components,
                                profileData);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
         }
@@ -1984,7 +1988,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
         /* If we get here, the JPEG code has signaled an error
            while reading. */
         RELEASE_ARRAYS(env, data, src->next_input_byte);
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) ((struct jpeg_common_struct *) cinfo,
                                           buffer);
@@ -2070,7 +2074,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
                 (*env)->CallVoidMethod(env, this,
                                        JPEGImageReader_passStartedID,
                                        cinfo->input_scan_number-1);
-                if ((*env)->ExceptionOccurred(env)
+                if ((*env)->ExceptionCheck(env)
                     || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
                     cinfo->err->error_exit((j_common_ptr) cinfo);
                 }
@@ -2080,7 +2084,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
             (*env)->CallVoidMethod(env, this,
                                    JPEGImageReader_passStartedID,
                                    0);
-            if ((*env)->ExceptionOccurred(env)
+            if ((*env)->ExceptionCheck(env)
                 || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);
             }
@@ -2140,7 +2144,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
                                    targetLine++,
                                    progressive);
 
-            if ((*env)->ExceptionOccurred(env)
+            if ((*env)->ExceptionCheck(env)
                 || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);
             }
@@ -2174,7 +2178,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
             RELEASE_ARRAYS(env, data, src->next_input_byte);
             (*env)->CallVoidMethod(env, this,
                                    JPEGImageReader_passCompleteID);
-            if ((*env)->ExceptionOccurred(env)
+            if ((*env)->ExceptionCheck(env)
                 || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);
             }
@@ -2332,7 +2336,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_resetReader
           become more flexible.
         */
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
     } else {
@@ -2411,7 +2415,7 @@ imageio_empty_output_buffer (j_compress_ptr cinfo)
                            sb->hstreamBuffer,
                            0,
                            sb->bufferLength);
-    if ((*env)->ExceptionOccurred(env)
+    if ((*env)->ExceptionCheck(env)
         || !GET_ARRAYS(env, data,
                        (const JOCTET **)(&dest->next_output_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
@@ -2454,7 +2458,7 @@ imageio_term_destination (j_compress_ptr cinfo)
                                0,
                                datacount);
 
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data,
                            (const JOCTET **)(&dest->next_output_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
@@ -2665,7 +2669,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeTables
         /* If we get here, the JPEG code has signaled an error
            while writing. */
         RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) ((j_common_ptr) cinfo,
                                           buffer);
@@ -2888,7 +2892,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
         /* If we get here, the JPEG code has signaled an error
            while writing. */
         RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             char buffer[JMSG_LENGTH_MAX];
             (*cinfo->err->format_message) ((j_common_ptr) cinfo,
                                           buffer);
@@ -3035,7 +3039,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
         (*env)->CallVoidMethod(env,
                                this,
                                JPEGImageWriter_writeMetadataID);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data,
                            (const JOCTET **)(&dest->next_output_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);
@@ -3055,7 +3059,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
                                this,
                                JPEGImageWriter_grabPixelsID,
                                targetLine);
-        if ((*env)->ExceptionOccurred(env)
+        if ((*env)->ExceptionCheck(env)
             || !GET_ARRAYS(env, data,
                            (const JOCTET **)(&dest->next_output_byte))) {
                 cinfo->err->error_exit((j_common_ptr) cinfo);

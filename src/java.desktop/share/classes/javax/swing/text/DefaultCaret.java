@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     }
 
     /**
-     * Gets the text editor component that this caret is
+     * Gets the text editor component that this caret
      * is bound to.
      *
      * @return the component
@@ -467,12 +467,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                 // mouse 1 behavior
                 if(nclicks == 1) {
                     selectedWordEvent = null;
-                } else if(nclicks == 2
-                          && SwingUtilities2.canEventAccessSystemClipboard(e)) {
+                } else if (nclicks == 2) {
                     selectWord(e);
                     selectedWordEvent = null;
-                } else if(nclicks == 3
-                          && SwingUtilities2.canEventAccessSystemClipboard(e)) {
+                } else if (nclicks == 3) {
                     Action a = null;
                     ActionMap map = getComponent().getActionMap();
                     if (map != null) {
@@ -489,8 +487,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                 }
             } else if (SwingUtilities.isMiddleMouseButton(e)) {
                 // mouse 2 behavior
-                if (nclicks == 1 && component.isEditable() && component.isEnabled()
-                    && SwingUtilities2.canEventAccessSystemClipboard(e)) {
+                if (nclicks == 1 && component.isEditable() && component.isEnabled()) {
                     // paste system selection, if it exists
                     JTextComponent c = (JTextComponent) e.getSource();
                     if (c != null) {
@@ -547,8 +544,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
             } else {
                 shouldHandleRelease = false;
                 adjustCaretAndFocus(e);
-                if (nclicks == 2
-                    && SwingUtilities2.canEventAccessSystemClipboard(e)) {
+                if (nclicks == 2) {
                     selectWord(e);
                 }
             }
@@ -582,10 +578,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ((component != null) && component.isEnabled() &&
                                    component.isRequestFocusEnabled()) {
             if (inWindow) {
-                component.requestFocusInWindow();
+                component.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
             }
             else {
-                component.requestFocus();
+                component.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
     }
@@ -1287,12 +1283,12 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,
                                      boolean lastLTR) {
-        // There is an abiguous case here. That if your model looks like:
+        // There is an ambiguous case here. If your model looks like:
         // abAB with the cursor at abB]A (visual representation of
         // 3 forward) deleting could either become abB] or
-        // ab[B. I'ld actually prefer abB]. But, if I implement that
-        // a delete at abBA] would result in aBA] vs a[BA which I
-        // think is totally wrong. To get this right we need to know what
+        // ab[B. I'd actually prefer abB]. But, if I implement that,
+        // a delete at abBA] would result in aBA] vs a[BA which, I
+        // think, is totally wrong. To get this right we need to know what
         // was deleted. And we could get this from the bidi structure
         // in the change event. So:
         // PENDING: base this off what was deleted.
@@ -1394,9 +1390,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     }
 
     private void updateSystemSelection() {
-        if ( ! SwingUtilities2.canCurrentEventAccessSystemClipboard() ) {
-            return;
-        }
         if (this.dot != this.mark && component != null && component.hasFocus()) {
             Clipboard clip = getSystemSelection();
             if (clip != null) {
@@ -1438,8 +1431,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
             return component.getToolkit().getSystemSelection();
         } catch (HeadlessException he) {
             // do nothing... there is no system clipboard
-        } catch (SecurityException se) {
-            // do nothing... there is no allowed system clipboard
         }
         return null;
     }

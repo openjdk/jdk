@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,20 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       fi
     fi
     if test "x$CUPS_FOUND" = xno; then
-      # Are the cups headers installed in the default /usr/include location?
-      AC_CHECK_HEADERS([cups/cups.h cups/ppd.h], [
-          CUPS_FOUND=yes
-          CUPS_CFLAGS=
-          DEFAULT_CUPS=yes
-      ])
+      # Are the cups headers installed in the default AIX or /usr/include location?
+      if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+        AC_CHECK_HEADERS([/opt/freeware/include/cups/cups.h /opt/freeware/include/cups/ppd.h], [
+            CUPS_FOUND=yes
+            CUPS_CFLAGS="-I/opt/freeware/include"
+            DEFAULT_CUPS=yes
+        ])
+      else
+        AC_CHECK_HEADERS([cups/cups.h cups/ppd.h], [
+            CUPS_FOUND=yes
+            CUPS_CFLAGS=
+            DEFAULT_CUPS=yes
+        ])
+      fi
     fi
     if test "x$CUPS_FOUND" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([cups])

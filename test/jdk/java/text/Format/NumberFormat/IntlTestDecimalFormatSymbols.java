@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8282625
- * @library /java/text/testlib
  * @summary test International Decimal Format Symbols
+ * @run junit IntlTestDecimalFormatSymbols
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
@@ -42,13 +42,14 @@ attribution to Taligent may not be removed.
 import java.text.*;
 import java.util.*;
 
-public class IntlTestDecimalFormatSymbols extends IntlTest
-{
-    public static void main(String[] args) throws Exception {
-        new IntlTestDecimalFormatSymbols().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class IntlTestDecimalFormatSymbols
+{
     // Test the API of DecimalFormatSymbols; primarily a simple get/set set.
+    @Test
     public void TestSymbols()
     {
         DecimalFormatSymbols fr = new DecimalFormatSymbols(Locale.FRENCH);
@@ -56,79 +57,79 @@ public class IntlTestDecimalFormatSymbols extends IntlTest
         DecimalFormatSymbols en = new DecimalFormatSymbols(Locale.ENGLISH);
 
         if(en.equals(fr)) {
-            errln("ERROR: English DecimalFormatSymbols equal to French");
+            fail("ERROR: English DecimalFormatSymbols equal to French");
         }
 
         // just do some VERY basic tests to make sure that get/set work
 
         if (!fr.getLocale().equals(Locale.FRENCH)) {
-            errln("ERROR: French DecimalFormatSymbols not Locale.FRENCH");
+            fail("ERROR: French DecimalFormatSymbols not Locale.FRENCH");
         }
 
         if (!en.getLocale().equals(Locale.ENGLISH)) {
-            errln("ERROR: English DecimalFormatSymbols not Locale.ENGLISH");
+            fail("ERROR: English DecimalFormatSymbols not Locale.ENGLISH");
         }
 
         char zero = en.getZeroDigit();
         fr.setZeroDigit(zero);
         if(fr.getZeroDigit() != en.getZeroDigit()) {
-            errln("ERROR: get/set ZeroDigit failed");
+            fail("ERROR: get/set ZeroDigit failed");
         }
 
         char group = en.getGroupingSeparator();
         fr.setGroupingSeparator(group);
         if(fr.getGroupingSeparator() != en.getGroupingSeparator()) {
-            errln("ERROR: get/set GroupingSeparator failed");
+            fail("ERROR: get/set GroupingSeparator failed");
         }
 
         char decimal = en.getDecimalSeparator();
         fr.setDecimalSeparator(decimal);
         if(fr.getDecimalSeparator() != en.getDecimalSeparator()) {
-            errln("ERROR: get/set DecimalSeparator failed");
+            fail("ERROR: get/set DecimalSeparator failed");
         }
 
         char perMill = en.getPerMill();
         fr.setPerMill(perMill);
         if(fr.getPerMill() != en.getPerMill()) {
-            errln("ERROR: get/set PerMill failed");
+            fail("ERROR: get/set PerMill failed");
         }
 
         char percent = en.getPercent();
         fr.setPercent(percent);
         if(fr.getPercent() != en.getPercent()) {
-            errln("ERROR: get/set Percent failed");
+            fail("ERROR: get/set Percent failed");
         }
 
         char digit = en.getDigit();
         fr.setDigit(digit);
         if(fr.getPercent() != en.getPercent()) {
-            errln("ERROR: get/set Percent failed");
+            fail("ERROR: get/set Percent failed");
         }
 
         char patternSeparator = en.getPatternSeparator();
         fr.setPatternSeparator(patternSeparator);
         if(fr.getPatternSeparator() != en.getPatternSeparator()) {
-            errln("ERROR: get/set PatternSeparator failed");
+            fail("ERROR: get/set PatternSeparator failed");
         }
 
         String infinity = en.getInfinity();
         fr.setInfinity(infinity);
         String infinity2 = fr.getInfinity();
         if(! infinity.equals(infinity2)) {
-            errln("ERROR: get/set Infinity failed");
+            fail("ERROR: get/set Infinity failed");
         }
 
         String nan = en.getNaN();
         fr.setNaN(nan);
         String nan2 = fr.getNaN();
         if(! nan.equals(nan2)) {
-            errln("ERROR: get/set NaN failed");
+            fail("ERROR: get/set NaN failed");
         }
 
         char minusSign = en.getMinusSign();
         fr.setMinusSign(minusSign);
         if(fr.getMinusSign() != en.getMinusSign()) {
-            errln("ERROR: get/set MinusSign failed");
+            fail("ERROR: get/set MinusSign failed");
         }
 
 //        char exponential = en.getExponentialSymbol();
@@ -142,7 +143,7 @@ public class IntlTestDecimalFormatSymbols extends IntlTest
         en = (DecimalFormatSymbols) fr.clone();
 
         if(! en.equals(fr)) {
-            errln("ERROR: Clone failed");
+            fail("ERROR: Clone failed");
         }
     }
 }

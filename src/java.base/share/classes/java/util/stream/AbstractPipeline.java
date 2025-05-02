@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * The "upstream" pipeline, or null if this is the source stage.
      */
     @SuppressWarnings("rawtypes")
-    private final AbstractPipeline previousStage;
+    protected final AbstractPipeline previousStage;
 
     /**
      * The operation flags for the intermediate operation represented by this
@@ -133,12 +133,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * True if this pipeline has been linked or consumed
      */
     private boolean linkedOrConsumed;
-
-    /**
-     * True if there are any stateful ops in the pipeline; only valid for the
-     * source stage.
-     */
-    private boolean sourceAnyStateful;
 
     private Runnable sourceCloseAction;
 
@@ -194,9 +188,13 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * Constructor for appending an intermediate operation stage onto an
      * existing pipeline.
      *
+     * The previous stage must be unlinked and unconsumed.
+     *
      * @param previousStage the upstream pipeline stage
      * @param opFlags the operation flags for the new stage, described in
      * {@link StreamOpFlag}
+     * @throws IllegalStateException if previousStage is already linked or
+     * consumed
      */
     AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed)
@@ -208,11 +206,44 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
         this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousStage.combinedFlags);
         this.sourceStage = previousStage.sourceStage;
-        if (opIsStateful())
-            sourceStage.sourceAnyStateful = true;
         this.depth = previousStage.depth + 1;
     }
 
+    /**
+     * Constructor for replacing an intermediate operation stage onto an
+     * existing pipeline.
+     *
+     * @param previousPreviousStage the upstream pipeline stage of the upstream pipeline stage
+     * @param previousStage the upstream pipeline stage
+     * @param opFlags the operation flags for the new stage, described in
+     * {@link StreamOpFlag}
+     * @throws IllegalStateException if previousStage is already linked or
+     * consumed
+     */
+    protected AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousPreviousStage, AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
+        if (previousStage.linkedOrConsumed || !previousPreviousStage.linkedOrConsumed || previousPreviousStage.nextStage != previousStage || previousStage.previousStage != previousPreviousStage)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+
+        previousStage.linkedOrConsumed = true;
+
+        previousPreviousStage.nextStage = this;
+
+        this.previousStage = previousPreviousStage;
+        this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
+        this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousPreviousStage.combinedFlags);
+        this.sourceStage = previousPreviousStage.sourceStage;
+        this.depth = previousPreviousStage.depth + 1;
+    }
+
+    /**
+     * Checks that the current stage has not been already linked or consumed,
+     * and then sets this stage as being linked or consumed.
+     */
+    protected void linkOrConsume() {
+        if (linkedOrConsumed)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+        linkedOrConsumed = true;
+    }
 
     // Terminal evaluation methods
 
@@ -270,8 +301,9 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @throws IllegalStateException if this pipeline stage is not the source
      *         stage.
      */
-    @SuppressWarnings("unchecked")
+
     final Spliterator<E_OUT> sourceStageSpliterator() {
+        // Ensures that this method is only ever called on the sourceStage
         if (this != sourceStage)
             throw new IllegalStateException();
 
@@ -279,16 +311,16 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
-        if (sourceStage.sourceSpliterator != null) {
+        if (sourceSpliterator != null) {
             @SuppressWarnings("unchecked")
-            Spliterator<E_OUT> s = sourceStage.sourceSpliterator;
-            sourceStage.sourceSpliterator = null;
+            Spliterator<E_OUT> s = (Spliterator<E_OUT>)sourceSpliterator;
+            sourceSpliterator = null;
             return s;
         }
-        else if (sourceStage.sourceSupplier != null) {
+        else if (sourceSupplier != null) {
             @SuppressWarnings("unchecked")
-            Spliterator<E_OUT> s = (Spliterator<E_OUT>) sourceStage.sourceSupplier.get();
-            sourceStage.sourceSupplier = null;
+            Spliterator<E_OUT> s = (Spliterator<E_OUT>)sourceSupplier.get();
+            sourceSupplier = null;
             return s;
         }
         else {
@@ -317,8 +349,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         linkedOrConsumed = true;
         sourceSupplier = null;
         sourceSpliterator = null;
-        if (sourceStage.sourceCloseAction != null) {
-            Runnable closeAction = sourceStage.sourceCloseAction;
+        Runnable closeAction = sourceStage.sourceCloseAction;
+        if (closeAction != null) {
             sourceStage.sourceCloseAction = null;
             closeAction.run();
         }
@@ -387,6 +419,35 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     }
 
     /**
+     * Returns whether any of the stages of the current segment is stateful
+     * or not.
+     * @return {@code true} if any stage in this segment is stateful,
+     *         {@code false} if not.
+     */
+    protected final boolean hasAnyStateful() {
+         var result = false;
+         for (var u = sourceStage.nextStage;
+              u != null && !(result = u.opIsStateful()) && u != this;
+              u = u.nextStage) {
+         }
+         return result;
+     }
+
+    /**
+     * Returns whether any of the stages in the (entire) pipeline is short-circuiting
+     * or not.
+     * @return {@code true} if any stage in this pipeline is short-circuiting,
+     *         {@code false} if not.
+     */
+    protected final boolean isShortCircuitingPipeline() {
+        for (var u = sourceStage.nextStage; u != null; u = u.nextStage) {
+            if (StreamOpFlag.SHORT_CIRCUIT.isKnown(u.combinedFlags))
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Get the source spliterator for this pipeline stage.  For a sequential or
      * stateless parallel pipeline, this is the source spliterator.  For a
      * stateful parallel pipeline, this is a spliterator describing the results
@@ -394,7 +455,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * operation.
      */
     @SuppressWarnings("unchecked")
-    private Spliterator<?> sourceSpliterator(int terminalFlags) {
+    protected Spliterator<?> sourceSpliterator(int terminalFlags) {
         // Get the source spliterator of the pipeline
         Spliterator<?> spliterator = null;
         if (sourceStage.sourceSpliterator != null) {
@@ -409,7 +470,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException(MSG_CONSUMED);
         }
 
-        if (isParallel() && sourceStage.sourceAnyStateful) {
+        if (isParallel() && hasAnyStateful()) {
             // Adapt the source spliterator, evaluating each stateful op
             // in the pipeline up to and including this pipeline stage.
             // The depth and flags of each pipeline stage are adjusted accordingly.
@@ -517,7 +578,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     @Override
     @SuppressWarnings("unchecked")
     final <P_IN> boolean copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator) {
-        @SuppressWarnings({"rawtypes","unchecked"})
+        @SuppressWarnings("rawtypes")
         AbstractPipeline p = AbstractPipeline.this;
         while (p.depth > 0) {
             p = p.previousStage;
@@ -561,7 +622,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     final <P_IN> Node<E_OUT> evaluate(Spliterator<P_IN> spliterator,
                                       boolean flatten,
                                       IntFunction<E_OUT[]> generator) {
@@ -729,9 +789,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param spliterator the source {@code Spliterator}
      * @return a {@code Spliterator} describing the result of the evaluation
      */
-    @SuppressWarnings("unchecked")
     <P_IN> Spliterator<E_OUT> opEvaluateParallelLazy(PipelineHelper<E_OUT> helper,
                                                      Spliterator<P_IN> spliterator) {
-        return opEvaluateParallel(helper, spliterator, i -> (E_OUT[]) new Object[i]).spliterator();
+        return opEvaluateParallel(helper, spliterator, Nodes.castingArray()).spliterator();
     }
 }

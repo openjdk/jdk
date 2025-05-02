@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,8 @@ public class UnixUserPrincipals {
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (!(obj instanceof User))
+            if (!(obj instanceof User other))
                 return false;
-            User other = (User)obj;
             if ((this.id != other.id) ||
                 (this.isGroup != other.isGroup)) {
                 return false;
@@ -133,11 +132,6 @@ public class UnixUserPrincipals {
     private static int lookupName(String name, boolean isGroup)
         throws IOException
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("lookupUserInformation"));
-        }
         int id;
         try {
             id = (isGroup) ? getgrnam(name) : getpwnam(name);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,7 @@ private:
     EXCEPTION_HANDLER_ENTRY,
     DEOPT_HANDLER_ENTRY,
     FRAME_COMPLETE,
+    ENTRY_BARRIER_PATCH,
     INVOKEINTERFACE,
     INVOKEVIRTUAL,
     INVOKESTATIC,
@@ -175,6 +176,23 @@ private:
     VERIFY_OOP_BITS,
     VERIFY_OOP_MASK,
     VERIFY_OOP_COUNT_ADDRESS,
+
+#ifdef X86
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL,
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_CMP,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_OR,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV,
+#endif
+#ifdef AARCH64
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X,
+    Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_BEFORE_MOV,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_BEFORE_MOV,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV,
+#endif
+
     INVOKE_INVALID = -1
   };
 
@@ -184,9 +202,15 @@ private:
     REGISTER_PRIMITIVE,
     REGISTER_OOP,
     REGISTER_NARROW_OOP,
+    REGISTER_VECTOR,
     STACK_SLOT_PRIMITIVE,
     STACK_SLOT_OOP,
     STACK_SLOT_NARROW_OOP,
+    STACK_SLOT_VECTOR,
+    STACK_SLOT4_PRIMITIVE,
+    STACK_SLOT4_OOP,
+    STACK_SLOT4_NARROW_OOP,
+    STACK_SLOT4_VECTOR,
     VIRTUAL_OBJECT_ID,
     VIRTUAL_OBJECT_ID2,
     NULL_CONSTANT,
@@ -271,6 +295,7 @@ private:
   jint          _sites_count;
 
   CodeOffsets   _offsets;
+  int           _nmethod_entry_patch_offset;
 
   jint          _code_size;
   jint          _total_frame_size;
@@ -308,7 +333,7 @@ private:
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, JVMCI_TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS);
   void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS);
-  void pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS);
+  bool pd_relocate(address pc, jint mark);
 
 public:
 
@@ -328,6 +353,7 @@ public:
                                    JVMCIObject compiled_code,
                                    objArrayHandle object_pool,
                                    CodeBlob*& cb,
+                                   JVMCINMethodHandle& nmethod_handle,
                                    JVMCIObject installed_code,
                                    FailedSpeculation** failed_speculations,
                                    char* speculations,
@@ -395,6 +421,12 @@ protected:
   void read_virtual_objects(HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);
 
   int estimateStubSpace(int static_call_stubs);
+
+  JVMCI::CodeInstallResult install_runtime_stub(CodeBlob*& cb,
+                                                const char* name,
+                                                CodeBuffer* buffer,
+                                                int stack_slots,
+                                                JVMCI_TRAPS);
 };
 
 #endif // SHARE_JVMCI_JVMCICODEINSTALLER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,10 @@ class UnixUriUtils {
                     throw new IllegalArgumentException("Bad escape");
                 b = (byte)c;
             }
+            if (b == '/' && rlen > 0 && result[rlen-1] == '/') {
+                // skip redundant slashes
+                continue;
+            }
             result[rlen++] = b;
         }
         if (rlen != result.length)
@@ -117,12 +121,11 @@ class UnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                up.checkRead();
                 UnixFileAttributes attrs = UnixFileAttributes.getIfExists(up);
                 if (attrs != null
                         && ((attrs.mode() & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR))
                     sb.append('/');
-            } catch (UnixException | SecurityException ignore) { }
+            } catch (UnixException ignore) { }
         }
 
         try {

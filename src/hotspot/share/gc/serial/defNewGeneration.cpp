@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialStringDedup.inline.hpp"
@@ -40,16 +38,15 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -62,91 +59,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-class ScavengeHelper {
-  DefNewGeneration* _young_gen;
-  HeapWord*         _young_gen_end;
-public:
-  ScavengeHelper(DefNewGeneration* young_gen) :
-    _young_gen(young_gen),
-    _young_gen_end(young_gen->reserved().end()) {}
-
-  bool is_in_young_gen(void* p) const {
-    return p < _young_gen_end;
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    // Should we copy the obj?
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      if (is_in_young_gen(obj)) {
-        assert(!_young_gen->to()->is_in_reserved(obj), "Scanning field twice?");
-        oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                          : _young_gen->copy_to_survivor_space(obj);
-        RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
-
-        // callback
-        f(new_obj);
-      }
-    }
-  }
-};
-
-class InHeapScanClosure : public BasicOopIterateClosure {
-  ScavengeHelper _helper;
-protected:
-  bool is_in_young_gen(void* p) const {
-    return _helper.is_in_young_gen(p);
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    _helper.try_scavenge(p, f);
-  }
-
-  InHeapScanClosure(DefNewGeneration* young_gen) :
-    BasicOopIterateClosure(young_gen->ref_processor()),
-    _helper(young_gen) {}
-};
-
-class OffHeapScanClosure : public OopClosure {
-  ScavengeHelper _helper;
-protected:
-  bool is_in_young_gen(void* p) const {
-    return _helper.is_in_young_gen(p);
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    _helper.try_scavenge(p, f);
-  }
-
-  OffHeapScanClosure(DefNewGeneration* young_gen) :  _helper(young_gen) {}
-};
-
-class OldGenScanClosure : public InHeapScanClosure {
-  CardTableRS* _rs;
-
-  template <typename T>
-  void do_oop_work(T* p) {
-    assert(!is_in_young_gen(p), "precondition");
-
-    try_scavenge(p, [&] (oop new_obj) {
-      // If p points to a younger generation, mark the card.
-      if (is_in_young_gen(new_obj)) {
-        _rs->inline_write_ref_field_gc(p);
-      }
-    });
-  }
-public:
-  OldGenScanClosure(DefNewGeneration* g) : InHeapScanClosure(g),
-    _rs(SerialHeap::heap()->rem_set()) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 class PromoteFailureClosure : public InHeapScanClosure {
   template <typename T>
   void do_oop_work(T* p) {
@@ -157,20 +69,6 @@ class PromoteFailureClosure : public InHeapScanClosure {
   }
 public:
   PromoteFailureClosure(DefNewGeneration* g) : InHeapScanClosure(g) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
-class YoungGenScanClosure : public InHeapScanClosure {
-  template <typename T>
-  void do_oop_work(T* p) {
-    assert(SerialHeap::heap()->young_gen()->to()->is_in_reserved(p), "precondition");
-
-    try_scavenge(p, [] (auto) {});
-  }
-public:
-  YoungGenScanClosure(DefNewGeneration* g) : InHeapScanClosure(g) {}
 
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -317,10 +215,7 @@ public:
   {}
 
   void do_void() {
-    do {
-      _heap->oop_since_save_marks_iterate(_young_cl, _old_cl);
-    } while (!_heap->no_allocs_since_save_marks());
-    guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+    _heap->scan_evacuated_objs(_young_cl, _old_cl);
   }
 };
 
@@ -330,14 +225,13 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
-    _preserved_marks_set(false /* in_c_heap */),
+    _promotion_failed(false),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false),
     _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   gch->rem_set()->resize_covered_region(cmr);
 
@@ -356,7 +250,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
-      min_size, max_size, &_virtual_space);
+      min_size, max_size, _virtual_space.committed_size());
   _gc_counters = new CollectorCounters(policy, 0);
 
   _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
@@ -371,6 +265,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _old_gen = nullptr;
   _tenuring_threshold = MaxTenuringThreshold;
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
+
+  _ref_processor = nullptr;
 
   _gc_timer = new STWGCTimer();
 
@@ -392,8 +288,12 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   uintx survivor_size = compute_survivor_size(size, SpaceAlignment);
   uintx eden_size = size - (2*survivor_size);
   if (eden_size > max_eden_size()) {
-    eden_size = max_eden_size();
-    survivor_size = (size - eden_size)/2;
+    // Need to reduce eden_size to satisfy the max constraint. The delta needs
+    // to be 2*SpaceAlignment aligned so that both survivors are properly
+    // aligned.
+    uintx eden_delta = align_up(eden_size - max_eden_size(), 2*SpaceAlignment);
+    eden_size     -= eden_delta;
+    survivor_size += eden_delta/2;
   }
   assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
 
@@ -415,9 +315,9 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   char *to_end     = to_start   + survivor_size;
 
   assert(to_end == _virtual_space.high(), "just checking");
-  assert(Space::is_aligned(eden_start), "checking alignment");
-  assert(Space::is_aligned(from_start), "checking alignment");
-  assert(Space::is_aligned(to_start),   "checking alignment");
+  assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(from_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(to_start, SpaceAlignment),   "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
@@ -427,21 +327,6 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   // is being used and that affects the initialization of any
   // newly formed eden.
   bool live_in_eden = minimum_eden_size > 0;
-
-  // If not clearing the spaces, do some checking to verify that
-  // the space are already mangled.
-  if (!clear_space) {
-    // Must check mangling before the spaces are reshaped.  Otherwise,
-    // the bottom or end of one space may have moved into another
-    // a failure of the check may not correctly indicate which space
-    // is not properly mangled.
-    if (ZapUnusedHeapArea) {
-      HeapWord* limit = (HeapWord*) _virtual_space.high();
-      eden()->check_mangled_unused_area(limit);
-      from()->check_mangled_unused_area(limit);
-        to()->check_mangled_unused_area(limit);
-    }
-  }
 
   // Reset the spaces for their new regions.
   eden()->initialize(edenMR,
@@ -456,24 +341,12 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   }
   from()->initialize(fromMR, clear_space, mangle_space);
   to()->initialize(toMR, clear_space, mangle_space);
-
-  // Set next compaction spaces.
-  eden()->set_next_compaction_space(from());
-  // The to-space is normally empty before a compaction so need
-  // not be considered.  The exception is during promotion
-  // failure handling when to-space can contain live objects.
-  from()->set_next_compaction_space(nullptr);
 }
 
 void DefNewGeneration::swap_spaces() {
   ContiguousSpace* s = from();
   _from_space        = to();
   _to_space          = s;
-  eden()->set_next_compaction_space(from());
-  // The to-space is normally empty before a compaction so need
-  // not be considered.  The exception is during promotion
-  // failure handling when to-space can contain live objects.
-  from()->set_next_compaction_space(nullptr);
 
   if (UsePerfData) {
     CSpaceCounters* c = _from_counters;
@@ -492,18 +365,6 @@ bool DefNewGeneration::expand(size_t bytes) {
     HeapWord* new_high = (HeapWord*) _virtual_space.high();
     MemRegion mangle_region(prev_high, new_high);
     SpaceMangler::mangle_region(mangle_region);
-  }
-
-  // Do not attempt an expand-to-the reserve size.  The
-  // request should properly observe the maximum size of
-  // the generation so an expand-to-reserve should be
-  // unnecessary.  Also a second call to expand-to-reserve
-  // value potentially can cause an undue expansion.
-  // For example if the first expand fail for unknown reasons,
-  // but the second succeeds and expands the heap to its maximum
-  // value.
-  if (GCLocker::is_active()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 
   return success;
@@ -550,11 +411,11 @@ void DefNewGeneration::compute_new_size() {
     return;
   }
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
-  size_t min_new_size = initial_size();
+  size_t min_new_size = NewSize;
   size_t max_new_size = reserved().byte_size();
   assert(min_new_size <= new_size_before &&
          new_size_before <= max_new_size,
@@ -606,15 +467,21 @@ void DefNewGeneration::compute_new_size() {
     gch->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
-        "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
+        "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
         new_size_before/K, _virtual_space.committed_size()/K,
         eden()->capacity()/K, from()->capacity()/K);
     log_trace(gc, ergo, heap)(
-        "  [allowed " SIZE_FORMAT "K extra for %d threads]",
+        "  [allowed %zuK extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
 }
 
+void DefNewGeneration::ref_processor_init() {
+  assert(_ref_processor == nullptr, "a reference processor already exists");
+  assert(!_reserved.is_empty(), "empty generation?");
+  _span_based_discoverer.set_span(_reserved);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
+}
 
 size_t DefNewGeneration::capacity() const {
   return eden()->capacity()
@@ -638,6 +505,12 @@ size_t DefNewGeneration::max_capacity() const {
   return reserved_bytes - compute_survivor_size(reserved_bytes, SpaceAlignment);
 }
 
+bool DefNewGeneration::is_in(const void* p) const {
+  return eden()->is_in(p)
+      || from()->is_in(p)
+      || to()  ->is_in(p);
+}
+
 size_t DefNewGeneration::unsafe_max_alloc_nogc() const {
   return eden()->free();
 }
@@ -646,54 +519,43 @@ size_t DefNewGeneration::capacity_before_gc() const {
   return eden()->capacity();
 }
 
-size_t DefNewGeneration::contiguous_available() const {
-  return eden()->free();
-}
-
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);
 }
 
-
-void DefNewGeneration::space_iterate(SpaceClosure* blk,
-                                     bool usedOnly) {
-  blk->do_space(eden());
-  blk->do_space(from());
-  blk->do_space(to());
-}
-
-// The last collection bailed out, we are running out of heap space,
-// so we try to allocate the from-space, too.
-HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
-  bool should_try_alloc = should_allocate_from_space() || GCLocker::is_active_and_needs_gc();
-
-  // If the Heap_lock is not locked by this thread, this will be called
-  // again later with the Heap_lock held.
-  bool do_alloc = should_try_alloc && (Heap_lock->owned_by_self() || (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()));
-
-  HeapWord* result = nullptr;
-  if (do_alloc) {
-    result = from()->allocate(size);
+// If "p" is in the space, returns the address of the start of the
+// "block" that contains "p".  We say "block" instead of "object" since
+// some heaps may not pack objects densely; a chunk may either be an
+// object or a non-object.  If "p" is not in the space, return null.
+// Very general, slow implementation.
+static HeapWord* block_start_const(const ContiguousSpace* cs, const void* p) {
+  assert(MemRegion(cs->bottom(), cs->end()).contains(p),
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(cs->bottom()), p2i(cs->end()));
+  if (p >= cs->top()) {
+    return cs->top();
+  } else {
+    HeapWord* last = cs->bottom();
+    HeapWord* cur = last;
+    while (cur <= p) {
+      last = cur;
+      cur += cast_to_oop(cur)->size();
+    }
+    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
+    return last;
   }
-
-  log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
-                        size,
-                        GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
-                          "true" : "false",
-                        Heap_lock->is_locked() ? "locked" : "unlocked",
-                        from()->free(),
-                        should_try_alloc ? "" : "  should_allocate_from_space: NOT",
-                        do_alloc ? "  Heap_lock is not owned by self" : "",
-                        result == nullptr ? "null" : "object");
-
-  return result;
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
+HeapWord* DefNewGeneration::block_start(const void* p) const {
+  if (eden()->is_in_reserved(p)) {
+    return block_start_const(eden(), p);
+  }
+  if (from()->is_in_reserved(p)) {
+    return block_start_const(from(), p);
+  }
+  assert(to()->is_in_reserved(p), "inv");
+  return block_start_const(to(), p);
 }
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
@@ -704,36 +566,23 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
 
   if (UsePerfData) {
-    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->counters();
+    GCPolicyCounters* gc_counters = SerialHeap::heap()->counters();
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
 
-  age_table()->print_age_table(_tenuring_threshold);
+  age_table()->print_age_table();
 }
 
-void DefNewGeneration::collect(bool   full,
-                               bool   clear_all_soft_refs,
-                               size_t size,
-                               bool   is_tlab) {
-  assert(full || size > 0, "otherwise we don't want to collect");
-
+bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   SerialHeap* heap = SerialHeap::heap();
 
+  assert(to()->is_empty(), "Else not collection_attempt_is_safe");
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
+  _ref_processor->start_discovery(clear_all_soft_refs);
 
   _old_gen = heap->old_gen();
-
-  // If the next generation is too full to accommodate promotion
-  // from this generation, pass on collection; let the next generation
-  // do it.
-  if (!collection_attempt_is_safe()) {
-    log_trace(gc)(":: Collection attempt not safe ::");
-    heap->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
-    return;
-  }
-  assert(to()->is_empty(), "Else not collection_attempt_is_safe");
 
   init_assuming_no_promotion_failure();
 
@@ -746,11 +595,6 @@ void DefNewGeneration::collect(bool   full,
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
-  // The preserved marks should be empty at the start of the GC.
-  _preserved_marks_set.init(1);
-
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
 
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
@@ -759,17 +603,23 @@ void DefNewGeneration::collect(bool   full,
                                                   &young_gen_cl,
                                                   &old_gen_cl);
 
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
-
   {
     StrongRootsScope srs(0);
     RootScanClosure root_cl{this};
-    CLDScanClosure cld_scan_closure{this};
+    CLDScanClosure cld_cl{this};
 
-    heap->young_process_roots(&root_cl,
-                              &old_gen_cl,
-                              &cld_scan_closure);
+    MarkingNMethodClosure code_cl(&root_cl,
+                                  NMethodToOopClosure::FixRelocations,
+                                  false /* keepalive_nmethods */);
+
+    HeapWord* saved_top_in_old_gen = _old_gen->space()->top();
+    heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
+                        &root_cl,
+                        &cld_cl,
+                        &cld_cl,
+                        &code_cl);
+
+    _old_gen->scan_old_to_young_refs(saved_top_in_old_gen);
   }
 
   // "evacuate followers".
@@ -786,15 +636,11 @@ void DefNewGeneration::collect(bool   full,
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
     pt.print_all_references();
   }
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   {
     AdjustWeakRootClosure cl{this};
     WeakProcessor::weak_oops_do(&is_alive, &cl);
   }
-
-  // Verify that the usage of keep_alive didn't copy any objects.
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   _string_dedup_requests.flush();
 
@@ -802,63 +648,36 @@ void DefNewGeneration::collect(bool   full,
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
     from()->clear(SpaceDecorator::Mangle);
-    if (ZapUnusedHeapArea) {
-      // This is now done here because of the piece-meal mangling which
-      // can check for valid mangling at intermediate points in the
-      // collection(s).  When a young collection fails to collect
-      // sufficient space resizing of the young generation can occur
-      // an redistribute the spaces in the young generation.  Mangle
-      // here so that unzapped regions don't get distributed to
-      // other spaces.
-      to()->mangle_unused_area();
-    }
     swap_spaces();
 
     assert(to()->is_empty(), "to space should be empty now");
 
     adjust_desired_tenuring_threshold();
-
-    // A successful scavenge should restart the GC time limit count which is
-    // for full GC's.
-    AdaptiveSizePolicy* size_policy = heap->size_policy();
-    size_policy->reset_gc_overhead_limit_count();
-    assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
     log_info(gc, promotion)("Promotion failed");
-    // Add to-space to the list of space to compact
-    // when a promotion failure has occurred.  In that
-    // case there can be live objects in to-space
-    // as a result of a partial evacuation of eden
-    // and from-space.
-    swap_spaces();   // For uniformity wrt ParNewGeneration.
-    from()->set_next_compaction_space(to());
-    heap->set_incremental_collection_failed();
 
-    // Inform the next generation that a promotion failure occurred.
-    _old_gen->promotion_failure_occurred();
     _gc_tracer->report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(heap->reset_promotion_should_fail();)
   }
-  // We should have processed and cleared all the preserved marks.
-  _preserved_marks_set.reclaim();
 
   heap->trace_heap_after_gc(_gc_tracer);
 
   _gc_timer->register_gc_end();
 
   _gc_tracer->report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+
+  return !_promotion_failed;
 }
 
 void DefNewGeneration::init_assuming_no_promotion_failure() {
   _promotion_failed = false;
   _promotion_failed_info.reset();
-  from()->set_next_compaction_space(nullptr);
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
@@ -869,32 +688,29 @@ void DefNewGeneration::remove_forwarding_pointers() {
   // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
-      if (obj->is_forwarded()) {
-        obj->init_mark();
+      if (obj->is_self_forwarded()) {
+        obj->unset_self_forwarded();
+      } else if (obj->is_forwarded()) {
+        // To restore the klass-bits in the header.
+        // Needed for object iteration to work properly.
+        obj->set_mark(obj->forwardee()->prototype_mark());
       }
     }
   } cl;
   eden()->object_iterate(&cl);
   from()->object_iterate(&cl);
-
-  restore_preserved_marks();
-}
-
-void DefNewGeneration::restore_preserved_marks() {
-  _preserved_marks_set.restore(nullptr);
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = %zu) ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
   // forward to self
-  old->forward_to(old);
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 
@@ -920,22 +736,25 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == nullptr) {
-    obj = _old_gen->promote(old, s);
+    obj = _old_gen->allocate_for_promotion(old, s);
     if (obj == nullptr) {
       handle_promotion_failure(old);
       return old;
     }
+
     new_obj_is_tenured = true;
-  } else {
-    // Prefetch beyond obj
-    const intx interval = PrefetchCopyIntervalInBytes;
-    Prefetch::write(obj, interval);
+  }
 
-    // Copy obj
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+  // Prefetch beyond obj
+  const intx interval = PrefetchCopyIntervalInBytes;
+  Prefetch::write(obj, interval);
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+  // Copy obj
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
 
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (!new_obj_is_tenured) {
     // Increment age if obj still in new generation
     obj->incr_age();
     age_table()->add(obj, s);
@@ -960,40 +779,18 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
   }
 }
 
-void DefNewGeneration::save_marks() {
-  eden()->set_saved_mark();
-  to()->set_saved_mark();
-  from()->set_saved_mark();
-}
-
-
-bool DefNewGeneration::no_allocs_since_save_marks() {
-  assert(eden()->saved_mark_at_top(), "Violated spec - alloc in eden");
-  assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");
-  return to()->saved_mark_at_top();
-}
-
-void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                                         size_t max_alloc_words) {
-  if (requestor == this || _promotion_failed) {
+void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {
+  if (_promotion_failed) {
     return;
   }
-  assert(GenCollectedHeap::heap()->is_old_gen(requestor), "We should not call our own generation");
 
-  /* $$$ Assert this?  "trace" is a "MarkSweep" function so that's not appropriate.
-  if (to_space->top() > to_space->bottom()) {
-    trace("to_space not empty when contribute_scratch called");
-  }
-  */
+  const size_t MinFreeScratchWords = 100;
 
   ContiguousSpace* to_space = to();
-  assert(to_space->end() >= to_space->top(), "pointers out of order");
-  size_t free_words = pointer_delta(to_space->end(), to_space->top());
+  const size_t free_words = pointer_delta(to_space->end(), to_space->top());
   if (free_words >= MinFreeScratchWords) {
-    ScratchBlock* sb = (ScratchBlock*)to_space->top();
-    sb->num_words = free_words;
-    sb->next = list;
-    list = sb;
+    scratch = to_space->top();
+    num_words = free_words;
   }
 }
 
@@ -1002,81 +799,14 @@ void DefNewGeneration::reset_scratch() {
   // to_space if ZapUnusedHeapArea.  This is needed because
   // top is not maintained while using to-space as scratch.
   if (ZapUnusedHeapArea) {
-    to()->mangle_unused_area_complete();
+    to()->mangle_unused_area();
   }
-}
-
-bool DefNewGeneration::collection_attempt_is_safe() {
-  if (!to()->is_empty()) {
-    log_trace(gc)(":: to is not empty ::");
-    return false;
-  }
-  if (_old_gen == nullptr) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    _old_gen = gch->old_gen();
-  }
-  return _old_gen->promotion_attempt_is_safe(used());
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {
-  DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
-
   assert(!GCLocker::is_active(), "We should not be executing here");
-  // Check if the heap is approaching full after a collection has
-  // been done.  Generally the young generation is empty at
-  // a minimum at the end of a collection.  If it is not, then
-  // the heap is approaching full.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  if (full) {
-    DEBUG_ONLY(seen_incremental_collection_failed = false;)
-    if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), full, not safe, set_failed, set_alloc_from, clear_seen",
-                            GCCause::to_string(gch->gc_cause()));
-      gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
-      set_should_allocate_from_space(); // we seem to be running out of space
-    } else {
-      log_trace(gc)("DefNewEpilogue: cause(%s), full, safe, clear_failed, clear_alloc_from, clear_seen",
-                            GCCause::to_string(gch->gc_cause()));
-      gch->clear_incremental_collection_failed(); // We just did a full collection
-      clear_should_allocate_from_space(); // if set
-    }
-  } else {
-#ifdef ASSERT
-    // It is possible that incremental_collection_failed() == true
-    // here, because an attempted scavenge did not succeed. The policy
-    // is normally expected to cause a full collection which should
-    // clear that condition, so we should not be here twice in a row
-    // with incremental_collection_failed() == true without having done
-    // a full collection in between.
-    if (!seen_incremental_collection_failed &&
-        gch->incremental_collection_failed()) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), not full, not_seen_failed, failed, set_seen_failed",
-                            GCCause::to_string(gch->gc_cause()));
-      seen_incremental_collection_failed = true;
-    } else if (seen_incremental_collection_failed) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
-                            GCCause::to_string(gch->gc_cause()));
-      seen_incremental_collection_failed = false;
-    }
-#endif // ASSERT
-  }
-
-  if (ZapUnusedHeapArea) {
-    eden()->check_mangled_unused_area_complete();
-    from()->check_mangled_unused_area_complete();
-    to()->check_mangled_unused_area_complete();
-  }
-
   // update the generation and space performance counters
   update_counters();
-  gch->counters()->update_counters();
-}
-
-void DefNewGeneration::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  eden()->set_top_for_allocations();
-  to()->set_top_for_allocations();
-  from()->set_top_for_allocations();
 }
 
 void DefNewGeneration::update_counters() {
@@ -1084,7 +814,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space.committed_size());
   }
 }
 
@@ -1095,44 +825,28 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  Generation::print_on(st);
-  st->print("  eden");
-  eden()->print_on(st);
-  st->print("  from");
-  from()->print_on(st);
-  st->print("  to  ");
-  to()->print_on(st);
+  st->print("%-10s", name());
+
+  st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
+  _virtual_space.print_space_boundaries_on(st);
+
+  StreamAutoIndentor indentor(st, 1);
+  eden()->print_on(st, "eden ");
+  from()->print_on(st, "from ");
+  to()->print_on(st, "to   ");
 }
 
-
-const char* DefNewGeneration::name() const {
-  return "def new generation";
-}
-
-// Moved from inline file as they are not called inline
-ContiguousSpace* DefNewGeneration::first_compaction_space() const {
-  return eden();
-}
-
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
   // Note that since DefNewGeneration supports lock-free allocation, we
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
-  if (result == nullptr) {
-    // If the eden is full and the last collection bailed out, we are running
-    // out of heap space, and we try to allocate the from-space, too.
-    // allocate_from_space can't be inlined because that would introduce a
-    // circular dependency at compile time.
-    result = allocate_from_space(word_size);
-  }
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 

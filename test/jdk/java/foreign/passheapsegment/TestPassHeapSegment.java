@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,15 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestPassHeapSegment
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestPassHeapSegment
  */
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -53,9 +50,24 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         handle.invoke(segment); // should throw
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testNoHeapCaptureCallState() throws Throwable {
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
+                Linker.Option.captureCallState("errno"));
+        try (Arena arena = Arena.ofConfined()) {
+            assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
+            MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
+            MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
+            handle.invoke(captureHeap, segment); // should throw for captureHeap
+        }
+    }
+
     @Test(dataProvider = "specs")
     public void testNoHeapReturns(boolean spec) throws IOException, InterruptedException {
-        runInNewProcess(Runner.class, spec).assertStdErrContains("Heap segment not allowed");
+        runInNewProcess(Runner.class, spec)
+            .shouldNotHaveExitValue(0)
+            .stderrShouldContain("Heap segment not allowed");
     }
 
     public static class Runner {
@@ -83,4 +95,3 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         };
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8027789
  * @summary check that the direct superclass is used as the site when calling
  *          a superclass' method
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */
@@ -35,13 +34,11 @@ package test;
 
 import java.io.File;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.CPRefInfo;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Opcode;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 public class NonDirectSuper {
     public static void main(String... args) {
@@ -60,16 +57,15 @@ public class NonDirectSuper {
 
     void verifyInvokeSpecialRefToObject(File clazz) {
         try {
-            final ClassFile cf = ClassFile.read(clazz);
-            for (Method m : cf.methods) {
-                Code_attribute codeAttr = (Code_attribute)m.attributes.get(Attribute.Code);
-                for (Instruction instr : codeAttr.getInstructions()) {
-                    if (instr.getOpcode() == Opcode.INVOKESPECIAL ||
-                        instr.getOpcode() == Opcode.INVOKEVIRTUAL) {
-                        int pc_index = instr.getShort(1);
-                        CPRefInfo ref = (CPRefInfo)cf.constant_pool.get(pc_index);
-                        String className = ref.getClassName();
-                        String methodName = ref.getNameAndTypeInfo().getName();
+            final ClassModel cf = ClassFile.of().parse(clazz.toPath());
+            for (MethodModel m : cf.methods()) {
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
+                for (CodeElement ce : codeAttr.elementList()) {
+                    if (ce instanceof InvokeInstruction instr && (instr.opcode() == Opcode.INVOKESPECIAL ||
+                        instr.opcode() == Opcode.INVOKEVIRTUAL)) {
+                        MemberRefEntry ref = instr.method();
+                        String className = ref.owner().asInternalName();
+                        String methodName = ref.name().stringValue();
                         if (methodName.equals("toString")) {
                             if (!className.equals("java/lang/Object"))
                                 throw new IllegalStateException("Must directly refer to j.l.Object");
@@ -81,12 +77,10 @@ public class NonDirectSuper {
                             }
                         }
                     }
-                    if (instr.getOpcode() == Opcode.GETFIELD ||
-                        instr.getOpcode() == Opcode.PUTFIELD) {
-                        int pc_index = instr.getShort(1);
-                        CPRefInfo ref = (CPRefInfo)cf.constant_pool.get(pc_index);
-                        String className = ref.getClassName();
-                        String fieldName = ref.getNameAndTypeInfo().getName();
+                    if (ce instanceof FieldInstruction instr && (instr.opcode() == Opcode.GETFIELD ||
+                        instr.opcode() == Opcode.PUTFIELD)) {
+                        String className = instr.owner().asInternalName();
+                        String fieldName = instr.field().name().stringValue();
                         if (fieldName.startsWith("refTo")) {
                             String expectedClass = fieldName.substring("refTo".length());
                             if (!className.replace("/", "").equals(expectedClass)) {

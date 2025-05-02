@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,13 @@
  * @test
  * @bug 7003595
  * @summary IncompatibleClassChangeError with unreferenced local class with subclass
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  */
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.InnerClasses_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.api.JavacTool;
 
 import java.io.File;
@@ -159,17 +156,17 @@ public class T7003595 {
             String filename = cks[i].getClassfileName(cnames, cks, i);
             File compiledTest = new File(filename + ".class");
             try {
-                ClassFile cf = ClassFile.read(compiledTest);
+                ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
                 if (cf == null) {
                     throw new Error("Classfile not found: " + filename);
                 }
 
-                InnerClasses_attribute innerClasses = (InnerClasses_attribute)cf.getAttribute(Attribute.InnerClasses);
+                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.innerClasses()).orElse(null);
 
                 ArrayList<String> foundInnerSig = new ArrayList<>();
                 if (innerClasses != null) {
-                    for (InnerClasses_attribute.Info info : innerClasses.classes) {
-                        String foundSig = info.getInnerClassInfo(cf.constant_pool).getName();
+                    for (InnerClassInfo info : innerClasses.classes()) {
+                        String foundSig = info.innerClass().asInternalName();
                         foundInnerSig.add(foundSig);
                     }
                 }
@@ -187,7 +184,7 @@ public class T7003595 {
                 if (expectedInnerSig.size() != foundInnerSig.size()) {
                     throw new Error("InnerClasses attribute for " + cnames[i] + " has wrong size\n" +
                                     "expected " + expectedInnerSig.size() + "\n" +
-                                    "found " + innerClasses.number_of_classes + "\n" +
+                                    "found " + (innerClasses == null? 0: innerClasses.classes().size()) + "\n" +
                                     source);
                 }
 

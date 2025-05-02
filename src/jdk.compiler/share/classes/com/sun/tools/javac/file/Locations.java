@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import jdk.internal.jmod.JmodFile;
 
 import com.sun.tools.javac.code.Lint;
@@ -126,9 +128,9 @@ public class Locations {
     private FSInfo fsInfo;
 
     /**
-     * Whether to warn about non-existent path elements
+     * The root {@link Lint} instance.
      */
-    private boolean warn;
+    private Lint lint;
 
     private ModuleNameReader moduleNameReader;
 
@@ -170,9 +172,9 @@ public class Locations {
         }
     }
 
-    void update(Log log, boolean warn, FSInfo fsInfo) {
+    void update(Log log, Lint lint, FSInfo fsInfo) {
         this.log = log;
-        this.warn = warn;
+        this.lint = lint;
         this.fsInfo = fsInfo;
     }
 
@@ -223,9 +225,7 @@ public class Locations {
                 try {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
-                    if (warn) {
-                        log.warning(LintCategory.PATH, Warnings.InvalidPath(s));
-                    }
+                    lint.logIfEnabled(LintWarnings.InvalidPath(s));
                 }
             }
         }
@@ -313,14 +313,13 @@ public class Locations {
         }
 
         public SearchPath addDirectories(String dirs) {
-            return addDirectories(dirs, warn);
+            return addDirectories(dirs, true);
         }
 
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.DirPathElementNotFound(dir));
+                    lint.logIfEnabled(LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -340,7 +339,7 @@ public class Locations {
         }
 
         public SearchPath addFiles(String files) {
-            return addFiles(files, warn);
+            return addFiles(files, true);
         }
 
         public SearchPath addFiles(Iterable<? extends Path> files, boolean warn) {
@@ -353,7 +352,7 @@ public class Locations {
         }
 
         public SearchPath addFiles(Iterable<? extends Path> files) {
-            return addFiles(files, warn);
+            return addFiles(files, true);
         }
 
         public void addFile(Path file, boolean warn) {
@@ -365,8 +364,7 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.PathElementNotFound(file));
+                    lint.logIfEnabled(LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -388,14 +386,12 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.UnexpectedArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.InvalidArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -1489,8 +1485,8 @@ public class Locations {
                     }
                 }
 
-                if (warn && false) {  // temp disable, when enabled, massage examples.not-yet.txt suitably.
-                    log.warning(Warnings.LocnUnknownFileOnModulePath(p));
+                if (false) {  // temp disable, when enabled, massage examples.not-yet.txt suitably.
+                    log.warning(LintWarnings.LocnUnknownFileOnModulePath(p));
                 }
                 return null;
             }
@@ -1658,12 +1654,9 @@ public class Locations {
 
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
-                if (warn) {
-                    Warning key = Files.exists(prefix)
-                            ? Warnings.DirPathElementNotDirectory(prefix)
-                            : Warnings.DirPathElementNotFound(prefix);
-                    log.warning(Lint.LintCategory.PATH, key);
-                }
+                lint.logIfEnabled(Files.exists(prefix) ?
+                    LintWarnings.DirPathElementNotDirectory(prefix) :
+                    LintWarnings.DirPathElementNotFound(prefix));
                 return;
             }
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(prefix, path -> Files.isDirectory(path))) {
@@ -1906,9 +1899,12 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("lib").resolve("jrt-fs.jar")) &&
-                    !Files.exists(systemJavaHome.resolve("modules")))
-                throw new IllegalArgumentException(p.toString());
+            if (!isCurrentPlatform(p)) {
+                var noJavaRuntimeFS = Files.notExists(resolveInJavaHomeLib(p, "jrt-fs.jar"));
+                var noModulesFile = Files.notExists(resolveInJavaHomeLib(p, "modules"));
+                if (noJavaRuntimeFS || noModulesFile)
+                    throw new IllegalArgumentException(p.toString());
+            }
             systemJavaHome = p;
             modules = null;
         }
@@ -1919,6 +1915,10 @@ public class Locations {
             } catch (IOException ex) {
                 throw new IllegalArgumentException(p.toString(), ex);
             }
+        }
+
+        private static Path resolveInJavaHomeLib(Path javaHomePath, String name) {
+            return javaHomePath.resolve("lib").resolve(name);
         }
 
         @Override
@@ -1967,10 +1967,10 @@ public class Locations {
                                     Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL javaHomeURL = systemJavaHome.resolve("jrt-fs.jar").toUri().toURL();
+                            URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
                             ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
-                                    new URLClassLoader(new URL[] {javaHomeURL}, currentLoader);
+                                    new URLClassLoader(new URL[] {jfsJar}, currentLoader);
 
                             jrtfs = FileSystems.newFileSystem(jrtURI, Collections.emptyMap(), fsLoader);
 
@@ -1982,7 +1982,7 @@ public class Locations {
 
                     modules = jrtfs.getPath("/modules");
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
-                    modules = systemJavaHome.resolve("modules");
+                    modules = resolveInJavaHomeLib(systemJavaHome, "modules");
                     if (!Files.exists(modules))
                         throw new IOException("can't find system classes", e);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ static void startTestThread(JavaThread* thread, const char* name) {
   // or by an existing JavaTestThread, which is _thread_in_vm.
   if (THREAD->thread_state() == _thread_in_native) {
     ThreadInVMfromNative tivfn(THREAD);
-    thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
+    thread_oop = JavaThread::create_system_thread_object(name, CHECK);
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
   } else {
-    thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
+    thread_oop = JavaThread::create_system_thread_object(name, CHECK);
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
   }
 }

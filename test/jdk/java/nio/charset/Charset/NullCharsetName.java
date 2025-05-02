@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,21 @@
 /* @test
  * @bug 4448594
  * @summary Ensure passing null to Charset.forName throws the correct exception
+ * @run junit NullCharsetName
  */
 
-import java.io.*;
-import java.nio.*;
-import java.nio.charset.*;
-import java.util.*;
+import java.nio.charset.Charset;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class NullCharsetName {
 
-    public static void main(String[] args) throws Exception {
-        try {
-            Charset.forName(null);
-        } catch (Exception x) {
-            if (x instanceof IllegalArgumentException) {
-                System.err.println("Thrown as expected: " + x);
-                return;
-            }
-            throw new Exception("Incorrect exception: "
-                                + x.getClass().getName(),
-                                x);
-        }
-        throw new Exception("No exception thrown");
+    // Charset.forName should throw an exception when passed null
+    @Test
+    public void nullCharsetTest() {
+        assertThrows(IllegalArgumentException.class,
+                () -> Charset.forName(null));
     }
-
 }

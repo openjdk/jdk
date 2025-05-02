@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ import java.util.function.LongConsumer;
  */
 public interface Spliterator<T> {
     /**
-     * If a remaining element exists, performs the given action on it,
+     * If a remaining element exists: performs the given action on it,
      * returning {@code true}; else returns {@code false}.  If this
      * Spliterator is {@link #ORDERED} the action is performed on the
      * next element in encounter order.  Exceptions thrown by the
@@ -304,7 +304,7 @@ public interface Spliterator<T> {
      * Subsequent behavior of a spliterator is unspecified if the action throws
      * an exception.
      *
-     * @param action The action
+     * @param action The action whose operation is performed at-most once
      * @return {@code false} if no remaining elements existed
      * upon entry to this method, else {@code true}.
      * @throws NullPointerException if the specified action is null
@@ -628,7 +628,6 @@ public interface Spliterator<T> {
          * upon entry to this method, else {@code true}.
          * @throws NullPointerException if the specified action is null
          */
-        @SuppressWarnings("overloads")
         boolean tryAdvance(T_CONS action);
 
         /**
@@ -649,7 +648,6 @@ public interface Spliterator<T> {
          * @param action The action
          * @throws NullPointerException if the specified action is null
          */
-        @SuppressWarnings("overloads")
         default void forEachRemaining(T_CONS action) {
             do { } while (tryAdvance(action));
         }

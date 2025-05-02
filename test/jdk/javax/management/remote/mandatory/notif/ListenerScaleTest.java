@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public class ListenerScaleTest {
     private static final int WARMUP_WITH_ONE_MBEAN = 1000;
     private static final int NOTIFS_TO_TIME = 100;
     private static final int EXTRA_MBEANS = 20000;
+    private static final double RATIO_FAIL_VALUE = 2500.0;
 
     private static final ObjectName testObjectName;
     static {
@@ -187,8 +188,9 @@ public class ListenerScaleTest {
         long manyMBeansTime = timeNotif(mbs);
         System.out.println("Time with many MBeans: " + manyMBeansTime + "ns");
         double ratio = (double) manyMBeansTime / singleMBeanTime;
-        if (ratio > 500.0)
+        if (ratio > RATIO_FAIL_VALUE) {
             throw new Exception("Failed: ratio=" + ratio);
+        }
         System.out.println("Test passed: ratio=" + ratio);
     }
 }

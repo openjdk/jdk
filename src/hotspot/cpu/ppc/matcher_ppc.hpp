@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,12 @@
     return false;
   }
 
-  // PPC implementation uses VSX load/store instructions (if
-  // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
-  static const bool misaligned_vectors_ok() {
-    return false;
+  // The PPC implementation uses VSX lxvd2x/stxvd2x instructions (if
+  // SuperwordUseVSX). They do not have alignment requirements.
+  // Some VSX storage access instructions cannot encode arbitrary displacements
+  // (e.g. lxv). None of them is currently used.
+  static constexpr bool misaligned_vectors_ok() {
+    return true;
   }
 
   // Whether code generation need accurate ConvI2L types.
@@ -93,12 +95,12 @@
 
   static bool const_oop_prefer_decode() {
     // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-    return CompressedOops::base() == NULL;
+    return CompressedOops::base() == nullptr;
   }
 
   static bool const_klass_prefer_decode() {
     // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-    return CompressedKlassPointers::base() == NULL;
+    return CompressedKlassPointers::base() == nullptr;
   }
 
   // Is it better to copy float constants, or load them directly from memory?
@@ -112,9 +114,6 @@
   // piece-by-piece. Only happens when passing doubles into C code as the
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
-
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
 
   // Do floats take an entire double register or just half?
   //
@@ -130,6 +129,11 @@
 
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
+    return false;
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 
@@ -155,7 +159,7 @@
 
   // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
-  static const bool convL2FSupported(void) {
+  static bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return VM_Version::has_fcfids();
@@ -193,6 +197,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_PPC_MATCHER_PPC_HPP

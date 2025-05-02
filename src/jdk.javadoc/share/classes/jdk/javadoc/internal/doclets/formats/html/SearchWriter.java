@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
+
+import javax.lang.model.element.ModuleElement;
 
 /**
  * Generates the search landing page for the generated API documentation.
@@ -47,32 +49,13 @@ public class SearchWriter extends HtmlDocletWriter {
     /**
      * Constructor to construct SearchWriter object.
      * @param configuration the configuration
-     * @param filename file to be generated
      */
-    public SearchWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public SearchWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.SEARCH_PAGE);
     }
 
-    /**
-     * Constructs the SearchWriter object and then use it to generate the search
-     * file. The name of the generated file is "search.html". The search file
-     * will get generated if and only if "-noindex" is not used on the command line.
-     *
-     * @param configuration the configuration
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.SEARCH_PAGE;
-        SearchWriter searchWriter = new SearchWriter(configuration, filename);
-        searchWriter.generateSearchFile();
-    }
-
-    /**
-     * Generates the search file contents.
-     *
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    protected void generateSearchFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Search_title");
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder searchFileContent = new ContentBuilder();
@@ -89,9 +72,61 @@ public class SearchWriter extends HtmlDocletWriter {
      */
     protected void addSearchFileContents(Content contentTree) {
 
-        String copyText = resources.getText("doclet.Copy_url_to_clipboard");
-        String copiedText = resources.getText("doclet.Copied_url_to_clipboard");
+        var moduleSelector = createModuleSelector();
+        var resourceSection = createResourceSection();
+
+        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title,
+                        contents.getContent("doclet.search.main_heading")))
+                .add(HtmlTree.DIV(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlId.of("page-search-input"))
+                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
+                                .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
+                                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                                .put(HtmlAttr.SPELLCHECK, "false"))
+                        .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlId.of("page-search-reset"))
+                                .put(HtmlAttr.TABINDEX, "-1")
+                                .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset")))
+                        .add(moduleSelector)
+                        .add(HtmlTree.DETAILS(HtmlStyles.pageSearchDetails)
+                                .add(HtmlTree.SUMMARY(contents.getContent("doclet.search.show_more"))
+                                        .setId(HtmlId.of("page-search-expand")))))
+                .add(resourceSection)
+                .add(HtmlTree.P(contents.getContent("doclet.search.loading"))
+                        .setId(HtmlId.of("page-search-notify")))
+                .add(HtmlTree.DIV(HtmlTree.DIV(HtmlId.of("result-container"))
+                                .addUnchecked(Text.EMPTY))
+                        .setId(HtmlId.of("result-section"))
+                        .put(HtmlAttr.STYLE, "display: none;")
+                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
+                                                       .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+    }
+
+    private Content createModuleSelector() {
+
+        if (!configuration.showModules) {
+            return Text.EMPTY;
+        }
+
+        var select = HtmlTree.of(HtmlTag.SELECT)
+                .setId(HtmlId.of("search-modules"))
+                .add(HtmlTree.of(HtmlTag.OPTION)
+                        .put(HtmlAttr.VALUE, "")
+                        .add(contents.getContent("doclet.search.all_modules")));
+
+        for (ModuleElement module : configuration.modules) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
+                    .add(Text.of(module.getQualifiedName().toString())));
+        }
+        return new ContentBuilder(contents.getContent("doclet.search.in", select));
+    }
+
+    private Content createResourceSection() {
+
+        String copyText = resources.getText("doclet.Copy_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_to_clipboard");
+        String copyUrlText = resources.getText("doclet.Copy_url_to_clipboard");
         Content helpSection = Text.EMPTY;
+
         // Suppress link to help page if no help page is generated or a custom help page is used.
         HtmlOptions options = configuration.getOptions();
         if (!options.noHelp() && options.helpFile().isEmpty()) {
@@ -99,40 +134,25 @@ public class SearchWriter extends HtmlDocletWriter {
             helpSection = HtmlTree.P(contents.getContent("doclet.search.help_page_info", helpLink));
         }
 
-        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
-                        contents.getContent("doclet.search.main_heading")))
-                .add(HtmlTree.DIV(HtmlTree.INPUT("text", HtmlId.of("page-search-input"))
-                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder")))
-                        .add(HtmlTree.INPUT("reset", HtmlId.of("page-search-reset"))
-                                .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"))
-                                .put(HtmlAttr.STYLE, "margin: 6px;"))
-                        .add(HtmlTree.DETAILS(HtmlStyle.pageSearchDetails)
-                                .add(HtmlTree.SUMMARY(contents.getContent("doclet.search.show_more"))
-                                        .setId(HtmlId.of("page-search-expand")))))
-                .add(HtmlTree.DIV(HtmlStyle.pageSearchInfo, helpSection)
-                        .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info")))
-                        .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
-                        .add(HtmlTree.SPAN(Text.of("link"))
-                                .setId(HtmlId.of("page-search-link")))
-                        .add(new HtmlTree(TagName.BUTTON)
-                                .add(new HtmlTree(TagName.IMG)
-                                        .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                        .put(HtmlAttr.ALT, copyText))
-                                .add(HtmlTree.SPAN(Text.of(copyText))
-                                        .put(HtmlAttr.DATA_COPIED, copiedText))
-                                .addStyle(HtmlStyle.copy)
-                                .setId(HtmlId.of("page-search-copy")))
-                        .add(HtmlTree.P(HtmlTree.INPUT("checkbox", HtmlId.of("search-redirect")))
-                                .add(HtmlTree.LABEL("search-redirect",
-                                        contents.getContent("doclet.search.redirect")))))
-                .add(new HtmlTree(TagName.P)
-                        .setId(HtmlId.of("page-search-notify"))
-                        .add(contents.getContent("doclet.search.loading")))
-                .add(HtmlTree.DIV(new HtmlTree(TagName.DIV)
-                                .setId(HtmlId.of("result-container"))
-                                .addUnchecked(Text.EMPTY))
-                        .setId(HtmlId.of("result-section"))
-                        .put(HtmlAttr.STYLE, "display: none;")
-                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+        return HtmlTree.DIV(HtmlStyles.pageSearchInfo, helpSection)
+                .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info",
+                        HtmlTree.KBD(Entity.of("downarrow")), HtmlTree.KBD(Entity.of("uparrow")),
+                        new ContentBuilder(HtmlTree.KBD(Entity.of("leftarrow")), Text.of("/"),
+                                HtmlTree.KBD(Entity.of("rightarrow"))))))
+                .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
+                .add(HtmlTree.SPAN(Text.of("link"))
+                        .setId(HtmlId.of("page-search-link")))
+                .add(HtmlTree.BUTTON(HtmlId.of("page-search-copy"))
+                        .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                        .resolve(DocPaths.CLIPBOARD_SVG),
+                                copyUrlText))
+                        .add(HtmlTree.SPAN(Text.of(copyText))
+                                .put(HtmlAttr.DATA_COPIED, copiedText))
+                        .addStyle(HtmlStyles.copy)
+                        .put(HtmlAttr.ARIA_LABEL, copyUrlText))
+                .add(HtmlTree.P(HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("search-redirect")))
+                        .add(HtmlTree.LABEL("search-redirect",
+                                contents.getContent("doclet.search.redirect"))));
     }
+
 }

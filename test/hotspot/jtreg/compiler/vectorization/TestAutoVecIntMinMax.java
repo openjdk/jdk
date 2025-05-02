@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@ import jdk.test.lib.Utils;
  * @summary Auto-vectorization enhancement for integer Math.max/Math.min operations
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3))
- *           | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseRVV == true)
+ * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3)) |
+ *           os.arch == "aarch64" |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @run driver compiler.c2.irTests.TestAutoVecIntMinMax
  */
 
@@ -62,8 +63,8 @@ public class TestAutoVecIntMinMax {
 
     // Test for auto-vectorization of Math.min operation on an array of integers
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.MIN_V, " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
+    @IR(counts = {IRNode.MIN_VI, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntMin(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -73,8 +74,8 @@ public class TestAutoVecIntMinMax {
 
     // Test for auto-vectorization of StrictMath.min operation on an array of integers
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.MIN_V, " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
+    @IR(counts = {IRNode.MIN_VI, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntStrictMin(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -84,8 +85,8 @@ public class TestAutoVecIntMinMax {
 
     // Test for auto-vectorization of Math.max operation on an array of integers
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.MAX_V, " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
+    @IR(counts = {IRNode.MAX_VI, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntMax(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {
@@ -95,8 +96,8 @@ public class TestAutoVecIntMinMax {
 
     // Test for auto-vectorization of StrictMath.max operation on an array of integers
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
-    @IR(counts = {IRNode.MAX_V, " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
+    @IR(counts = {IRNode.MAX_VI, " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testIntStrictMax(int[] a, int[] b) {
         for(int i = 0; i < LENGTH; i++) {

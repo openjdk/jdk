@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import static org.openjdk.bench.java.lang.foreign.CallOverheadHelper.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class CallOverheadConstant {
 
     @Benchmark
@@ -55,6 +55,11 @@ public class CallOverheadConstant {
     }
 
     @Benchmark
+    public void panama_blank_critical() throws Throwable {
+        func_critical.invokeExact();
+    }
+
+    @Benchmark
     public int jni_identity() throws Throwable {
         return identity(10);
     }
@@ -62,6 +67,11 @@ public class CallOverheadConstant {
     @Benchmark
     public int panama_identity() throws Throwable {
         return (int) identity.invokeExact(10);
+    }
+
+    @Benchmark
+    public int panama_identity_critical() throws Throwable {
+        return (int) identity_critical.invokeExact(10);
     }
 
     @Benchmark

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@
 * @summary Basic tests for jdk.internal.vm.Continuation
 * @requires vm.continuations
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
-* @enablePreview
-* @run testng/othervm -Xint Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Basic
 *
-* @run testng/othervm -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,Basic.manyArgsDriver Basic
-* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,jdk/internal/vm/Continuation.enter Basic
-* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=inline,jdk/internal/vm/Continuation.run Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* -XX:CompileCommand=exclude,Basic.manyArgsDriver Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* -XX:CompileCommand=exclude,jdk/internal/vm/Continuation.enter Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* -XX:CompileCommand=inline,jdk/internal/vm/Continuation.run Basic
 */
 
 /**
@@ -45,22 +45,27 @@
 * @requires vm.continuations
 * @requires vm.debug
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
-* @enablePreview
-* @run testng/othervm -XX:+VerifyStack -Xint Basic
-* @run testng/othervm -XX:+VerifyStack -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-* @run testng/othervm -XX:+VerifyStack -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xint Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* Basic
+* @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* Basic
 */
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
+
+import jdk.test.lib.Platform;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -94,7 +99,7 @@ public class Basic {
             assertEquals(cont.isPreempted(), false);
 
             List<String> frames = cont.stackWalker().walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
-            assertEquals(frames, cont.isDone() ? List.of() : Arrays.asList("yield", "bar", "foo", "lambda$test1$0", "enter0", "enter"));
+            assertEquals(frames, cont.isDone() ? List.of() : Arrays.asList("yield0", "yield", "bar", "foo", "lambda$test1$0", "run", "enter0", "enter"));
         }
         assertEquals(res.get(), 247);
         assertEquals(cont.isPreempted(), false);
@@ -141,7 +146,7 @@ public class Basic {
 
         List<String> expected0 = new ArrayList<>();
         IntStream.range(0, DEPTH).forEach(i -> { expected0.add("deep"); });
-        List<String> baseFrames = List.of("bar", "foo", "lambda$test1$0", "enter0", "enter", "run", "test1");
+        List<String> baseFrames = List.of("bar", "foo", "lambda$test1$0", "run", "enter0", "enter", "run", "test1");
         expected0.addAll(baseFrames);
 
         assertEquals(frames.subList(0, DEPTH + baseFrames.size()), expected0);
@@ -152,7 +157,7 @@ public class Basic {
 
         List<String> expected1 = new ArrayList<>();
         IntStream.range(0, DEPTH).forEach(i -> { expected1.add("deep"); });
-        expected1.addAll(List.of("bar", "foo", "lambda$test1$0", "enter0", "enter"));
+        expected1.addAll(List.of("bar", "foo", "lambda$test1$0", "run", "enter0", "enter"));
         assertEquals(frames, expected1);
     }
 
@@ -278,6 +283,8 @@ public class Basic {
 
     @Test
     public void testPinnedMonitor() {
+        if (!legacyLockingMode()) return;
+
         // Test pinning due to held monitor
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
@@ -411,5 +418,10 @@ public class Basic {
 
     static {
         System.loadLibrary("BasicJNI");
+    }
+
+    static boolean legacyLockingMode() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }

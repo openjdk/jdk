@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,7 +42,7 @@ import jdk.xml.internal.SecuritySupport;
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  *
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2024
  */
 @Deprecated
 public abstract class SerializerFactory
@@ -74,7 +74,7 @@ public abstract class SerializerFactory
         factory =  new SerializerFactoryImpl( Method.TEXT );
         registerSerializerFactory( factory );
 
-        list = SecuritySupport.getSystemProperty( FactoriesProperty );
+        list = System.getProperty( FactoriesProperty );
         if ( list != null ) {
             token = new StringTokenizer( list, " ;,:" );
             while ( token.hasMoreTokens() ) {

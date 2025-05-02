@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.first.statement.must.be.call.to.another.constructor
+// key: compiler.err.non.canonical.constructor.invoke.another.constructor
 
 record R(int x) {
     public R(int x, int y) { this.x = x; }

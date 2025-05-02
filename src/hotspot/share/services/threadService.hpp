@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 #include "services/management.hpp"
 
 class DeadlockCycle;
-class ObjectMonitorsHashtable;
+class ObjectMonitorsView;
 class OopClosure;
 class StackFrameInfo;
 class ThreadConcurrentLocks;
@@ -60,6 +60,10 @@ private:
   static PerfVariable* _live_threads_count;
   static PerfVariable* _peak_threads_count;
   static PerfVariable* _daemon_threads_count;
+
+  // As could this...
+  // Number of heap bytes allocated by terminated threads.
+  static volatile jlong _exited_allocated_bytes;
 
   // These 2 counters are like the above thread counts, but are
   // atomically decremented in ThreadService::current_thread_exiting instead of
@@ -99,8 +103,16 @@ public:
 
   static jlong get_total_thread_count()       { return _total_threads_count->get_value(); }
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
-  static jlong get_live_thread_count()        { return _atomic_threads_count; }
-  static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
+  static int get_live_thread_count()          { return _atomic_threads_count; }
+  static int get_daemon_thread_count()        { return _atomic_daemon_threads_count; }
+
+  static jlong exited_allocated_bytes()       { return Atomic::load(&_exited_allocated_bytes); }
+  static void incr_exited_allocated_bytes(jlong size) {
+    // No need for an atomic add because called under the Threads_lock,
+    // but because _exited_allocated_bytes is read concurrently, need
+    // atomic store to avoid readers seeing a partial update.
+    Atomic::store(&_exited_allocated_bytes, _exited_allocated_bytes + size);
+  }
 
   // Support for thread dump
   static void   add_thread_dump(ThreadDumpResult* dump);
@@ -252,7 +264,7 @@ public:
   ThreadConcurrentLocks* get_concurrent_locks()     { return _concurrent_locks; }
 
   void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
-                                      ObjectMonitorsHashtable* table, bool full);
+                                      ObjectMonitorsView* monitors, bool full);
   void        set_concurrent_locks(ThreadConcurrentLocks* l) { _concurrent_locks = l; }
   void        metadata_do(void f(Metadata*));
 };
@@ -275,7 +287,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   int             get_stack_depth()     { return _depth; }
 
   void            add_stack_frame(javaVFrame* jvf);
-  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsHashtable* table, bool full);
+  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsView* monitors, bool full);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
   GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }
@@ -475,10 +487,19 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
   bool _active;
 
  public:
-  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed) :
+  // Sets the java.lang.Thread state of the given JavaThread to reflect it is doing a regular,
+  // or timed, Object.wait call.
+  //
+  // The interruptible parameter, if false, indicates an internal uninterruptible wait,
+  // in which case we do not update the java.lang.Thread state. We do that by passing
+  // the current state to the JavaThreadStatusChanger so no actual change is observable,
+  // and skip the statistics updates. This avoids having to duplicate code paths for
+  // the interruptible and non-interruptible cases in the caller.
+  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed, bool interruptible) :
     JavaThreadStatusChanger(java_thread,
-                            timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT) {
-    if (is_alive()) {
+                            interruptible ? (timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT)
+                                          : java_lang_Thread::get_thread_status(java_thread->threadObj())) {
+    if (is_alive() && interruptible) { // in non-interruptible case we set _active = false below
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
       _stat->monitor_wait();

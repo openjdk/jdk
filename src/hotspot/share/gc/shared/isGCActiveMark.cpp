@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "memory/universe.hpp"
 #include "utilities/debug.hpp"
 
 // This class provides a method for block structured setting of the
-// _is_gc_active state without requiring accessors in CollectedHeap
+// _is_stw_gc_active state without requiring accessors in CollectedHeap
 
-IsGCActiveMark::IsGCActiveMark() {
+IsSTWGCActiveMark::IsSTWGCActiveMark() {
   CollectedHeap* heap = Universe::heap();
-  assert(!heap->is_gc_active(), "Not reentrant");
-  heap->_is_gc_active = true;
+  assert(!heap->is_stw_gc_active(), "Not reentrant");
+  heap->_is_stw_gc_active = true;
 }
 
-IsGCActiveMark::~IsGCActiveMark() {
+IsSTWGCActiveMark::~IsSTWGCActiveMark() {
   CollectedHeap* heap = Universe::heap();
-  assert(heap->is_gc_active(), "Sanity");
-  heap->_is_gc_active = false;
+  assert(heap->is_stw_gc_active(), "Sanity");
+  heap->_is_stw_gc_active = false;
 }

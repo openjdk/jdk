@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,11 +64,13 @@ public class TestVMProcess {
     private OutputAnalyzer oa;
     private String irEncoding;
 
-    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup) {
+    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
+                         boolean allowNotCompilable, boolean testClassesOnBootClassPath) {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
-            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup);
+            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
+                               allowNotCompilable, testClassesOnBootClassPath);
             start();
         }
         processSocketOutput(socket);
@@ -91,11 +94,17 @@ public class TestVMProcess {
     }
 
     private void prepareTestVMFlags(List<String> additionalFlags, TestFrameworkSocket socket, Class<?> testClass,
-                                    Set<Class<?>> helperClasses, int defaultWarmup) {
+                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean allowNotCompilable,
+                                    boolean testClassesOnBootClassPath) {
         // Set java.library.path so JNI tests which rely on jtreg nativepath setting work
         cmds.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
         // Need White Box access in test VM.
-        cmds.add("-Xbootclasspath/a:.");
+        String bootClassPath = "-Xbootclasspath/a:.";
+        if (testClassesOnBootClassPath) {
+            // Add test classes themselves to boot classpath to make them privileged.
+            bootClassPath += File.pathSeparator + Utils.TEST_CLASS_PATH;
+        }
+        cmds.add(bootClassPath);
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
         // Ignore CompileCommand flags which have an impact on the profiling information.
@@ -119,6 +128,10 @@ public class TestVMProcess {
         if (WARMUP_ITERATIONS < 0 && defaultWarmup != -1) {
             // Only use the set warmup for the framework if not overridden by a valid -DWarmup property set by a test.
             cmds.add("-DWarmup=" + defaultWarmup);
+        }
+
+        if (allowNotCompilable) {
+            cmds.add("-DAllowNotCompilable=true");
         }
 
         cmds.add(TestVM.class.getName());
@@ -146,10 +159,10 @@ public class TestVMProcess {
     }
 
     private void start() {
-        ProcessBuilder process = ProcessTools.createJavaProcessBuilder(cmds);
+        ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         try {
             // Calls 'main' of TestVM to run all specified tests with commands 'cmds'.
-            // Use executeProcess instead of executeTestJvm as we have already added the JTreg VM and
+            // Use executeProcess instead of executeTestJava as we have already added the JTreg VM and
             // Java options in prepareTestVMFlags().
             oa = ProcessTools.executeProcess(process);
         } catch (Exception e) {

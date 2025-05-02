@@ -60,14 +60,13 @@ public class TestExplicitGC {
         };
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
                     TestExplicitGC.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : full) {
                 output.shouldNotContain(p);
             }
@@ -77,7 +76,7 @@ public class TestExplicitGC {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -85,7 +84,6 @@ public class TestExplicitGC {
                     "-XX:+DisableExplicitGC",
                     TestExplicitGC.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : full) {
                 output.shouldNotContain(p);
             }
@@ -95,7 +93,7 @@ public class TestExplicitGC {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -103,7 +101,6 @@ public class TestExplicitGC {
                     "-XX:+ExplicitGCInvokesConcurrent",
                     TestExplicitGC.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : full) {
                 output.shouldNotContain(p);
             }
@@ -113,7 +110,7 @@ public class TestExplicitGC {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -121,7 +118,6 @@ public class TestExplicitGC {
                     "-XX:-ExplicitGCInvokesConcurrent",
                     TestExplicitGC.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : full) {
                 output.shouldContain(p);
             }
@@ -129,24 +125,5 @@ public class TestExplicitGC {
                 output.shouldNotContain(p);
             }
         }
-
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-Xmx128m",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xlog:gc",
-                    "-XX:+ExplicitGCInvokesConcurrent",
-                    "-XX:ShenandoahGCMode=iu",
-                    TestExplicitGC.class.getName(),
-                    "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            for (String p : full) {
-                output.shouldNotContain(p);
-            }
-            for (String p : concNormal) {
-                output.shouldContain(p);
-            }
-         }
     }
 }

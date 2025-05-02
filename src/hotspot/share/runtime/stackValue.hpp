@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,20 +79,32 @@ class StackValue : public ResourceObj {
     _handle_value = value;
   }
 
-  intptr_t get_int() const {
+  intptr_t get_intptr() const {
     assert(type() == T_INT, "type check");
     return _integer_value;
   }
 
   // For special case in deopt.
-  intptr_t get_int(BasicType t) const {
+  intptr_t get_intptr(BasicType t) const {
     assert(t == T_OBJECT && type() == T_OBJECT, "type check");
     return _integer_value;
   }
 
-  void set_int(intptr_t value) {
+  void set_intptr(intptr_t value) {
     assert(type() == T_INT, "type check");
     _integer_value = value;
+  }
+
+  // The jint value is always at offset 0 of the stack slot. On big endian platforms
+  // this is the location of the high word therefore we cannot just cast to jint.
+  jint get_jint() const {
+    assert(type() == T_INT, "type check");
+    return *(jint*)&_integer_value;
+  }
+
+  void set_jint(jint value) {
+    assert(type() == T_INT, "type check");
+    *(jint*)&_integer_value = value;
   }
 
   BasicType type() const { return  _type; }
@@ -111,7 +123,7 @@ class StackValue : public ResourceObj {
   static StackValue* create_stack_value_from_oop_location(stackChunkOop chunk, void* addr);
   static StackValue* create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register);
 
-  static BasicLock*  resolve_monitor_lock(const frame* fr, Location location);
+  static BasicLock*  resolve_monitor_lock(const frame& fr, Location location);
 
   template<typename RegisterMapT>
   static StackValue* create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv);

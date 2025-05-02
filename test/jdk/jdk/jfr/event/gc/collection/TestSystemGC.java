@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -36,7 +34,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+ExplicitGCInvokesConcurrent jdk.jfr.event.gc.collection.TestSystemGC true
@@ -60,7 +58,7 @@ public class TestSystemGC {
 
             Asserts.assertEquals(3, events.size(), "Expected 3 SystemGC events");
 
-            RecordedEvent event1 = events.get(0);
+            RecordedEvent event1 = events.getFirst();
             Events.assertFrame(event1, System.class, "gc");
             Events.assertEventThread(event1, Thread.currentThread());
             Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);
@@ -68,12 +66,12 @@ public class TestSystemGC {
             RecordedEvent event2 = events.get(1);
             Events.assertFrame(event2, Runtime.class, "gc");
             Events.assertEventThread(event2, Thread.currentThread());
-            Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);
+            Events.assertField(event2, "invokedConcurrent").isEqual(concurrent);
 
             RecordedEvent event3 = events.get(2);
             // MemoryMXBean.class is an interface so can't assertFrame on it
             Events.assertEventThread(event3, Thread.currentThread());
-            Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);
+            Events.assertField(event3, "invokedConcurrent").isEqual(concurrent);
         }
      }
 }

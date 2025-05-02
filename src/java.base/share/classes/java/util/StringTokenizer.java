@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ import java.lang.*;
  * method can be used to break up a string into its basic tokens:
  * <blockquote><pre>
  *     String[] result = "this is a test".split("\\s");
- *     for (int x=0; x&lt;result.length; x++)
- *         System.out.println(result[x]);
+ *     for (String r : result)
+ *         System.out.println(r);
  * </pre></blockquote>
  * <p>
  * prints the following output:

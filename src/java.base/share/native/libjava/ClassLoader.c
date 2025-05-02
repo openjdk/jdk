@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         goto free_body;
     }
 
@@ -185,7 +185,6 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             return result;
         }
         fixClassname(utfName);
@@ -196,7 +195,6 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     if (source != NULL) {
         utfSource = getUTF(env, source, sourceBuf, sizeof(sourceBuf));
         if (utfSource == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             goto free_utfName;
         }
     } else {
@@ -261,7 +259,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env))
+    if ((*env)->ExceptionCheck(env))
         goto free_body;
 
     if (name != NULL) {
@@ -301,7 +299,6 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jclass dummy,
 
     clname = getUTF(env, classname, buf, sizeof(buf));
     if (clname == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
     fixClassname(clname);

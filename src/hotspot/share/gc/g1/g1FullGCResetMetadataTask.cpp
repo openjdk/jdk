@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCResetMetadataTask.hpp"
 #include "utilities/ticks.hpp"
@@ -31,16 +30,21 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _g1h(G1CollectedHeap::heap()),
   _collector(collector) { }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
 }
 
-bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {
+bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
+  if (!hr->is_humongous()) {
+    hr->uninstall_cset_group();
+  }
+
+
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");
-    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be");
+    assert(_collector->is_skip_compacting(region_idx), "must be");
     if (hr->needs_scrubbing_during_full_gc()) {
       scrub_skip_compacting_region(hr, hr->is_young());
     }
@@ -54,7 +58,7 @@ bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegio
   return false;
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(G1HeapRegion* hr, bool update_bot_for_live) {
   assert(hr->needs_scrubbing_during_full_gc(), "must be");
 
   HeapWord* limit = hr->top();
@@ -82,23 +86,18 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_re
   }
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(G1HeapRegion* hr) {
 #ifdef ASSERT
   uint region_index = hr->hrm_index();
   assert(_collector->is_skip_compacting(region_index), "Only call on is_skip_compacting regions");
 
   if (hr->is_humongous()) {
     oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
-    assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
-  } else if (hr->is_open_archive()) {
-    bool is_empty = (_collector->live_words(hr->hrm_index()) == 0);
-    assert(!is_empty, "should contain at least one live obj");
-  } else if (hr->is_closed_archive()) {
-    // should early-return above
-    ShouldNotReachHere();
+    assert(hr->humongous_start_region()->has_pinned_objects() ||
+           _collector->mark_bitmap()->is_marked(obj), "must be live");
   } else {
-    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
-           "should be quite full");
+    assert(hr->has_pinned_objects() || _collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
+           "should be quite full or pinned %u", region_index);
   }
 
   assert(_collector->compaction_top(hr) == nullptr,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -68,6 +67,10 @@ VM_GC_Operation::~VM_GC_Operation() {
   ch->soft_ref_policy()->set_all_soft_refs_clear(false);
 }
 
+const char* VM_GC_Operation::cause() const {
+  return GCCause::to_string(_gc_cause);
+}
+
 // The same dtrace probe can't be inserted in two different files, so we
 // have to call it here, so it's only in one file.  Can't create new probes
 // for the other file anymore.   The dtrace probes have to remain stable.
@@ -82,20 +85,17 @@ void VM_GC_Operation::notify_gc_end() {
 
 // Allocations may fail in several threads at about the same time,
 // resulting in multiple gc requests.  We only want to do one of them.
-// In case a GC locker is active and the need for a GC is already signaled,
-// we want to skip this GC attempt altogether, without doing a futile
-// safepoint operation.
 bool VM_GC_Operation::skip_operation() const {
   bool skip = (_gc_count_before != Universe::heap()->total_collections());
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
   }
-  if (!skip && GCLocker::is_active_and_needs_gc()) {
-    skip = Universe::heap()->is_maximal_no_gc();
-    assert(!(skip && (_gc_cause == GCCause::_gc_locker)),
-           "GCLocker cannot be active when initiating GC");
-  }
   return skip;
+}
+
+static bool should_use_gclocker() {
+  // Only Serial and Parallel use GCLocker to synchronize with threads in JNI critical-sections, in order to handle pinned objects.
+  return UseSerialGC || UseParallelGC;
 }
 
 bool VM_GC_Operation::doit_prologue() {
@@ -106,17 +106,24 @@ bool VM_GC_Operation::doit_prologue() {
   if (!is_init_completed()) {
     vm_exit_during_initialization(
       err_msg("GC triggered before VM initialization completed. Try increasing "
-              "NewSize, current value " SIZE_FORMAT "%s.",
+              "NewSize, current value %zu%s.",
               byte_size_in_proper_unit(NewSize),
               proper_unit_for_byte_size(NewSize)));
   }
 
+
+  if (should_use_gclocker()) {
+    GCLocker::block();
+  }
   VM_GC_Sync_Operation::doit_prologue();
 
   // Check invocations
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
+    if (should_use_gclocker()) {
+      GCLocker::unblock();
+    }
     _prologue_succeeded = false;
   } else {
     _prologue_succeeded = true;
@@ -126,13 +133,27 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  // Clean up old interpreter OopMap entries that were replaced
-  // during the GC thread root traversal.
-  OopMapCache::cleanup_old_entries();
+  // GC thread root traversal likely used OopMapCache a lot, which
+  // might have created lots of old entries. Trigger the cleanup now.
+  OopMapCache::try_trigger_cleanup();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
   VM_GC_Sync_Operation::doit_epilogue();
+  if (should_use_gclocker()) {
+    GCLocker::unblock();
+  }
+}
+
+bool VM_GC_HeapInspection::doit_prologue() {
+  if (_full_gc && (UseZGC || UseShenandoahGC)) {
+    // ZGC and Shenandoah cannot perform a synchronous GC cycle from within the VM thread.
+    // So VM_GC_HeapInspection::collect() is a noop. To respect the _full_gc
+    // flag a synchronous GC cycle is performed from the caller thread in the
+    // prologue.
+    Universe::heap()->collect(GCCause::_heap_inspection);
+  }
+  return VM_GC_Operation::doit_prologue();
 }
 
 bool VM_GC_HeapInspection::skip_operation() const {
@@ -167,29 +188,16 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  inspect.heap_inspection(_out, _parallel_thread_num);
-}
-
-
-void VM_GenCollectForAllocation::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
-
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  _result = gch->satisfy_failed_allocation(_word_size, _tlab);
-  assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
-
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
+  WorkerThreads* workers = Universe::heap()->safepoint_workers();
+  if (workers != nullptr) {
+    // The GC provided a WorkerThreads to be used during a safepoint.
+    // Can't run with more threads than provided by the WorkerThreads.
+    const uint capped_parallel_thread_num = MIN2(_parallel_thread_num, workers->max_workers());
+    WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
+    inspect.heap_inspection(_out, workers);
+  } else {
+    inspect.heap_inspection(_out, nullptr);
   }
-}
-
-void VM_GenCollectFull::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::FULL);
-
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_generation);
 }
 
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
@@ -213,11 +221,9 @@ void VM_CollectForMetadataAllocation::doit() {
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
-  if (!MetadataAllocationFailALot) {
-    _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != nullptr) {
-      return;
-    }
+  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+  if (_result != nullptr) {
+    return;
   }
 
 #if INCLUDE_G1GC
@@ -259,11 +265,7 @@ void VM_CollectForMetadataAllocation::doit() {
     return;
   }
 
-  log_debug(gc)("After Metaspace GC failed to allocate size " SIZE_FORMAT, _size);
-
-  if (GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
+  log_debug(gc)("After Metaspace GC failed to allocate size %zu", _size);
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)

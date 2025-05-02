@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -34,8 +33,10 @@
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
@@ -122,8 +123,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return nullptr; // Generate a vanilla entry
-
   address entry_point = nullptr;
   Register continuation = LR;
   bool use_runtime_call = false;
@@ -175,6 +174,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_tanh:
     // TODO: Implement intrinsic
     break;
   default:
@@ -366,23 +366,29 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register Rcache = R2_tmp;
   const Register Rindex = R3_tmp;
-  __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
 
-  __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+  } else {
+    // Pop N words from the stack
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
+  }
+
   __ check_stack_top();
-  __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
 
   __ convert_retval_to_tos(state);
 
- __ check_and_handle_popframe();
- __ check_and_handle_earlyret();
+  __ check_and_handle_popframe();
+  __ check_and_handle_earlyret();
 
   __ dispatch_next(state, step);
 
   return entry;
 }
-
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
@@ -450,6 +456,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   __ ldrb(R3_bytecode, Address(Rbcp));
   __ dispatch_only_normal(vtos);
   return entry;
+}
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
 }
 
 
@@ -524,7 +534,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const Register RmaxStack = R2;
 
   // monitor entry size
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved registers, thru expr stack bottom).
   // be sure to change this if you add/subtract anything to/from the overhead area
@@ -554,7 +564,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 
@@ -563,12 +573,12 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
 
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   assert ((entry_size % StackAlignmentInBytes) == 0, "should keep stack alignment");
 
   #ifdef ASSERT
     { Label L;
-      __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+      __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
       __ tbnz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
       __ stop("method doesn't need synchronization");
       __ bind(L);
@@ -577,7 +587,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   { Label done;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ tst(Rtemp, JVM_ACC_STATIC);
     __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0)), eq); // get receiver (assume this is frequent case)
     __ b(done, eq);
@@ -593,7 +603,7 @@ void TemplateInterpreterGenerator::lock_method() {
                                               // add space for a monitor entry
   __ str(Rstack_top, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
                                               // set new monitor block top
-  __ str(R0, Address(Rstack_top, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(R0, Address(Rstack_top, BasicObjectLock::obj_offset()));
                                               // store object
   __ mov(R1, Rstack_top);                     // monitor entry address
   __ lock_object(R1);
@@ -652,7 +662,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
-  __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset_in_bytes()));
+  __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset()));
   __ push(Rtemp);                                      // set constant pool cache
   __ sub(Rtemp, Rlocals, FP);
   __ logical_shift_right(Rtemp, Rtemp, Interpreter::logStackElementSize); // Rtemp = Rlocals - fp();
@@ -780,9 +790,12 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 // Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 //
 // Interpreter stub for calling a native method. (asm interpreter)
@@ -833,7 +846,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbnz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -875,7 +888,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -957,7 +970,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass JNIEnv and mirror for static methods
   {
     Label L;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ add(R0, Rthread, in_bytes(JavaThread::jni_environment_offset()));
     __ tbz(Rtemp, JVM_ACC_STATIC_BIT, L);
     __ load_mirror(Rtemp, Rmethod, Rtemp);
@@ -1002,8 +1015,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mov(Rtemp, _thread_in_native_trans);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
-    // Force this write out before the read below
-  __ membar(MacroAssembler::StoreLoad, Rtemp);
+  // Force this write out before the read below
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::StoreLoad, Rtemp);
+  }
 
   // Protect the return value in the interleaved code: save it to callee-save registers.
   __ mov(Rsaved_result_lo, R0);
@@ -1039,7 +1054,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Zero handles and last_java_sp
   __ reset_last_Java_frame(Rtemp);
   __ ldr(R3, Address(Rthread, JavaThread::active_handles_offset()));
-  __ str_32(__ zero_register(Rtemp), Address(R3, JNIHandleBlock::top_offset_in_bytes()));
+  __ str_32(__ zero_register(Rtemp), Address(R3, JNIHandleBlock::top_offset()));
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
@@ -1184,7 +1199,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -1229,7 +1244,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -1452,11 +1467,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(R0_tos);
-  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_offset()));
+  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, Rexception_pc, false, true, false);
   // restore exception
-  __ get_vm_result(Rexception_obj, Rtemp);
+  __ get_vm_result_oop(Rexception_obj, Rtemp);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects

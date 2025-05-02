@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient.Builder;
+import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
@@ -35,18 +35,11 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -66,18 +59,18 @@ import static org.testng.Assert.fail;
  * @test
  * @summary Basic tests for Flow adapter Publishers
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm FlowAdapterPublisherTest
  */
 
-public class FlowAdapterPublisherTest {
+public class FlowAdapterPublisherTest implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer httpTestServer;     // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpsTestServer;    // HTTPS/1.1
+    HttpTestServer http2TestServer;    // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;   // HTTP/2 ( h2  )
     String httpURI;
     String httpsURI;
     String http2URI;
@@ -96,6 +89,23 @@ public class FlowAdapterPublisherTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
+    private static Version version(String uri) {
+        if (uri.contains("/http1/")) return Version.HTTP_1_1;
+        if (uri.contains("/https1/")) return Version.HTTP_1_1;
+        if (uri.contains("/http2/")) return Version.HTTP_2;
+        if (uri.contains("/https2/")) return Version.HTTP_2;
+        return null;
+    }
+
+    private HttpClient newHttpClient(String uri) {
+        var builder = HttpClient.newBuilder();
+        return builder.sslContext(sslContext).proxy(Builder.NO_PROXY).build();
+    }
+
+    private HttpRequest.Builder newRequestBuilder(String uri) {
+        return HttpRequest.newBuilder(URI.create(uri));
+    }
+
     @Test
     public void testAPIExceptions() {
         assertThrows(NPE, () -> fromPublisher(null));
@@ -111,67 +121,75 @@ public class FlowAdapterPublisherTest {
     //  Flow.Publisher<ByteBuffer>
 
     @Test(dataProvider = "uris")
-    void testByteBufferPublisherUnknownLength(String url) {
+    void testByteBufferPublisherUnknownLength(String uri) {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new BBPublisher(body))).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new BBPublisher(body))).build();
 
-        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
-        String text = response.body();
-        System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, Arrays.stream(body).collect(joining()));
+            HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
+            String text = response.body();
+            System.out.println(text);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.version(), version(uri));
+            assertEquals(text, Arrays.stream(body).collect(joining()));
+        }
     }
 
     @Test(dataProvider = "uris")
-    void testByteBufferPublisherFixedLength(String url) {
+    void testByteBufferPublisherFixedLength(String uri) {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
         int cl = Arrays.stream(body).mapToInt(String::length).sum();
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new BBPublisher(body), cl)).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
-        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
-        String text = response.body();
-        System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, Arrays.stream(body).collect(joining()));
+            HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
+            String text = response.body();
+            System.out.println(text);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.version(), version(uri));
+            assertEquals(text, Arrays.stream(body).collect(joining()));
+        }
     }
 
     // Flow.Publisher<MappedByteBuffer>
 
     @Test(dataProvider = "uris")
-    void testMappedByteBufferPublisherUnknownLength(String url) {
+    void testMappedByteBufferPublisherUnknownLength(String uri) {
         String[] body = new String[] { "God invented ", "whiskey to ", "keep the ",
                 "Irish from ", "ruling the ", "world." };
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new MBBPublisher(body))).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new MBBPublisher(body))).build();
 
-        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
-        String text = response.body();
-        System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, Arrays.stream(body).collect(joining()));
+            HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
+            String text = response.body();
+            System.out.println(text);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.version(), version(uri));
+            assertEquals(text, Arrays.stream(body).collect(joining()));
+        }
     }
 
     @Test(dataProvider = "uris")
-    void testMappedByteBufferPublisherFixedLength(String url) {
+    void testMappedByteBufferPublisherFixedLength(String uri) {
         String[] body = new String[] { "God invented ", "whiskey to ", "keep the ",
                 "Irish from ", "ruling the ", "world." };
         int cl = Arrays.stream(body).mapToInt(String::length).sum();
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new MBBPublisher(body), cl)).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new MBBPublisher(body), cl)).build();
 
-        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
-        String text = response.body();
-        System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, Arrays.stream(body).collect(joining()));
+            HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
+            String text = response.body();
+            System.out.println(text);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.version(), version(uri));
+            assertEquals(text, Arrays.stream(body).collect(joining()));
+        }
     }
 
     // The following two tests depend on Exception detail messages, which is
@@ -179,42 +197,48 @@ public class FlowAdapterPublisherTest {
     // updated if the exception message is updated.
 
     @Test(dataProvider = "uris")
-    void testPublishTooFew(String url) throws InterruptedException {
+    void testPublishTooFew(String uri) throws InterruptedException {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
         int cl = Arrays.stream(body).mapToInt(String::length).sum() + 1; // length + 1
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new BBPublisher(body), cl)).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
-        try {
-            HttpResponse<String> response = client.send(request, ofString(UTF_8));
-            fail("Unexpected response: " + response);
-        } catch (IOException expected) {
-            assertMessage(expected, "Too few bytes returned");
+            try {
+                HttpResponse<String> response = client.send(request, ofString(UTF_8));
+                fail("Unexpected response: " + response);
+            } catch (IOException expected) {
+                assertMessage(expected, "Too few bytes returned");
+            }
         }
     }
 
     @Test(dataProvider = "uris")
-    void testPublishTooMany(String url) throws InterruptedException {
+    void testPublishTooMany(String uri) throws InterruptedException {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
         int cl = Arrays.stream(body).mapToInt(String::length).sum() - 1; // length - 1
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromPublisher(new BBPublisher(body), cl)).build();
+        try (HttpClient client = newHttpClient(uri)) {
+            HttpRequest request = newRequestBuilder(uri)
+                    .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
-        try {
-            HttpResponse<String> response = client.send(request, ofString(UTF_8));
-            fail("Unexpected response: " + response);
-        } catch (IOException expected) {
-            assertMessage(expected, "Too many bytes in request body");
+            try {
+                HttpResponse<String> response = client.send(request, ofString(UTF_8));
+                fail("Unexpected response: " + response);
+            } catch (IOException expected) {
+                assertMessage(expected, "Too many bytes in request body");
+            }
         }
     }
 
     private void assertMessage(Throwable t, String contains) {
-        if (!t.getMessage().contains(contains)) {
-            String error = "Exception message:[" + t.toString() + "] doesn't contain [" + contains + "]";
+        Throwable cause = t;
+        do {
+            if (cause.getMessage().contains(contains)) break;
+        } while ((cause = cause.getCause()) != null);
+        if (cause == null) {
+            String error = "Exception message:[" + t + "] doesn't contain [" + contains + "]";
             throw new AssertionError(error, t);
         }
     }
@@ -332,33 +356,26 @@ public class FlowAdapterPublisherTest {
         }
     }
 
-    static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
-    }
-
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(),0);
-        httpTestServer = HttpServer.create(sa, 0);
-        httpTestServer.createContext("/http1/echo", new Http1EchoHandler());
-        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/echo";
+        httpTestServer = HttpTestServer.create(Version.HTTP_1_1);
+        httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
+        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer.createContext("/https1/echo", new Http1EchoHandler());
-        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/echo";
+        httpsTestServer = HttpTestServer.create(Version.HTTP_1_1, sslContext);
+        httpsTestServer.addHandler(new HttpEchoHandler(), "/https1/echo");
+        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = new Http2TestServer("localhost", false, 0);
-        http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
+        http2TestServer = HttpTestServer.create(Version.HTTP_2);
+        http2TestServer.addHandler(new HttpEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = new Http2TestServer("localhost", true, sslContext);
-        https2TestServer.addHandler(new Http2EchoHandler(), "/https2/echo");
+        https2TestServer = HttpTestServer.create(Version.HTTP_2, sslContext);
+        https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
         httpTestServer.start();
@@ -369,27 +386,15 @@ public class FlowAdapterPublisherTest {
 
     @AfterTest
     public void teardown() throws Exception {
-        httpTestServer.stop(0);
-        httpsTestServer.stop(0);
+        httpTestServer.stop();
+        httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
     }
 
-    static class Http1EchoHandler implements HttpHandler {
+    static class HttpEchoHandler implements HttpTestHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
-                byte[] bytes = is.readAllBytes();
-                t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
-            }
-        }
-    }
-
-    static class Http2EchoHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
+        public void handle(HttpTestExchange t) throws IOException {
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 byte[] bytes = is.readAllBytes();

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,8 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -32,7 +30,7 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_SHUFFLE_MASK[] = {
     0x0F0F0F0F0F0F0F0FUL, 0x0F0F0F0F0F0F0F0FUL,
 };
 static address ghash_shuffle_mask_addr() {
@@ -40,7 +38,7 @@ static address ghash_shuffle_mask_addr() {
 }
 
 // byte swap x86 long
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_LONG_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_LONG_SWAP_MASK[] = {
     0x0F0E0D0C0B0A0908UL, 0x0706050403020100UL,
 };
 address StubGenerator::ghash_long_swap_mask_addr() {
@@ -48,7 +46,7 @@ address StubGenerator::ghash_long_swap_mask_addr() {
 }
 
 // byte swap x86 byte array
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_BYTE_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_BYTE_SWAP_MASK[] = {
   0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
 };
 address StubGenerator::ghash_byte_swap_mask_addr() {
@@ -56,8 +54,11 @@ address StubGenerator::ghash_byte_swap_mask_addr() {
 }
 
 // Polynomial x^128+x^127+x^126+x^121+1
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_POLYNOMIAL[] = {
-    0x0000000000000001UL, 0xC200000000000000UL,
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL[] = {
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL
 };
 address StubGenerator::ghash_polynomial_addr() {
   return (address)GHASH_POLYNOMIAL;
@@ -81,7 +82,8 @@ void StubGenerator::generate_ghash_stubs() {
 address StubGenerator::generate_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
   Label L_ghash_loop, L_exit;
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register state        = c_rarg0;
@@ -217,7 +219,8 @@ address StubGenerator::generate_ghash_processBlocks() {
 address StubGenerator::generate_avx_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
 
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   // arguments

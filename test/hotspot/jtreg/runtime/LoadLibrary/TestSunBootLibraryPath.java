@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,11 @@ public class TestSunBootLibraryPath {
             // Start a java process with this property set, and check that:
             // 1) The process failed and
             // 2) The error message was correct.
-            ProcessTools.executeTestJvm("-Dsun.boot.library.path=" + tooLongPath,
-                                        "TestSunBootLibraryPath",
-                                        "'Do-Nothing'")
-                                        .shouldNotHaveExitValue(0)
-                                        .stdoutShouldContain(expectedErrorMessage);
+            ProcessTools.executeTestJava("-Dsun.boot.library.path=" + tooLongPath,
+                                         "TestSunBootLibraryPath",
+                                         "'Do-Nothing'")
+                                         .shouldNotHaveExitValue(0)
+                                         .stdoutShouldContain(expectedErrorMessage);
         } else if (!args[0].equals("Do-Nothing")) {
             // Fail, to prevent accidental args from causing accidental test passing.
             throw new IllegalArgumentException("Test was launched with an invalid argument.");

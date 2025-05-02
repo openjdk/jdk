@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
-public class Collections {
+public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {
     }
@@ -369,9 +369,15 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @apiNote
+     * This method mutates the specified list in-place. To obtain a
+     * reverse-ordered view of a list without mutating it, use the
+     * {@link List#reversed List.reversed} method.
+     *
      * @param  list the list whose elements are to be reversed.
      * @throws UnsupportedOperationException if the specified list or
      *         its list-iterator does not support the {@code set} operation.
+     * @see    List#reversed List.reversed
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void reverse(List<?> list) {
@@ -810,15 +816,16 @@ public class Collections {
         if (distance == 0)
             return;
 
-        for (int cycleStart = 0, nMoved = 0; nMoved != size; cycleStart++) {
+        int bound = size - distance;
+        for (int cycleStart = 0, nMoved = 0; nMoved < size; cycleStart++) {
             T displaced = list.get(cycleStart);
             int i = cycleStart;
             do {
-                i += distance;
-                if (i >= size)
+                if (i >= bound)
                     i -= size;
+                i += distance;
                 displaced = list.set(i, displaced);
-                nMoved ++;
+                nMoved++;
             } while (i != cycleStart);
         }
     }
@@ -1047,6 +1054,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<? extends E> c;
 
@@ -1132,6 +1140,87 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified {@code SequencedCollection}. Query operations on the returned collection
+     * "read through" to the specified collection, and attempts to modify the returned
+     * collection, whether direct or via its iterator, result in an
+     * {@code UnsupportedOperationException}.<p>
+     *
+     * The returned collection does <i>not</i> pass the {@code hashCode} and
+     * {@code equals} operations through to the backing collection, but relies on
+     * {@code Object}'s {@code equals} and {@code hashCode} methods.  This
+     * is necessary to preserve the contracts of these operations in the case
+     * that the backing collection is a set or a list.<p>
+     *
+     * The returned collection will be serializable if the specified collection
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param  <T> the class of the objects in the collection
+     * @param  c the collection for which an unmodifiable view is to be
+     *         returned.
+     * @return an unmodifiable view of the specified collection.
+     * @since 21
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> SequencedCollection<T> unmodifiableSequencedCollection(SequencedCollection<? extends T> c) {
+        if (c.getClass() == UnmodifiableSequencedCollection.class) {
+            return (SequencedCollection<T>) c;
+        }
+        return new UnmodifiableSequencedCollection<>(c);
+    }
+
+    /**
+     * @serial include
+     */
+    static class UnmodifiableSequencedCollection<E> extends UnmodifiableCollection<E>
+            implements SequencedCollection<E>, Serializable {
+
+        @java.io.Serial
+        private static final long serialVersionUID = -6060065079711684830L;
+
+        UnmodifiableSequencedCollection(SequencedCollection<? extends E> c) {
+            super(c);
+        }
+
+        @SuppressWarnings("unchecked")
+        private SequencedCollection<E> sc() {
+            return (SequencedCollection<E>) c;
+        }
+
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed collection view, which usually isn't
+        // serializable.
+        public SequencedCollection<E> reversed() {
+            return new UnmodifiableSequencedCollection<>(sc().reversed());
+        }
+
+        public void addFirst(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public E getFirst() {
+            return sc().getFirst();
+        }
+
+        public E getLast() {
+            return sc().getLast();
+        }
+
+        public E removeFirst() {
+            throw new UnsupportedOperationException();
+        }
+
+        public E removeLast() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
      * specified set. Query operations on the returned set "read through" to the specified
      * set, and attempts to modify the returned set, whether direct or via its
      * iterator, result in an {@code UnsupportedOperationException}.<p>
@@ -1168,6 +1257,56 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified {@code SequencedSet}. Query operations on the returned set
+     * "read through" to the specified set, and attempts to modify the returned
+     * set, whether direct or via its iterator, result in an
+     * {@code UnsupportedOperationException}.<p>
+     *
+     * The returned set will be serializable if the specified set
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param  <T> the class of the objects in the set
+     * @param  s the set for which an unmodifiable view is to be returned.
+     * @return an unmodifiable view of the specified sequenced set.
+     * @since 21
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> SequencedSet<T> unmodifiableSequencedSet(SequencedSet<? extends T> s) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (s.getClass() == UnmodifiableSequencedSet.class) {
+            return (SequencedSet<T>) s;
+        }
+        return new UnmodifiableSequencedSet<>(s);
+    }
+
+    /**
+     * @serial include
+     */
+    static class UnmodifiableSequencedSet<E> extends UnmodifiableSequencedCollection<E>
+                                             implements SequencedSet<E>, Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = -2153469532349793522L;
+
+        UnmodifiableSequencedSet(SequencedSet<? extends E> s)    {super(s);}
+        public boolean equals(Object o)                          {return o == this || c.equals(o);}
+        public int hashCode()                                    {return c.hashCode();}
+
+        @SuppressWarnings("unchecked")
+        private SequencedSet<E> ss() {
+            return (SequencedSet<E>) c;
+        }
+
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed set view, which usually isn't
+        // serializable.
+        public SequencedSet<E> reversed() {
+            return new UnmodifiableSequencedSet<>(ss().reversed());
+        }
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
      * specified sorted set. Query operations on the returned sorted set "read
      * through" to the specified sorted set.  Attempts to modify the returned
      * sorted set, whether direct, via its iterator, or via its
@@ -1199,6 +1338,7 @@ public class Collections {
                              implements SortedSet<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -4929149591599911165L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -1281,7 +1421,7 @@ public class Collections {
                 new EmptyNavigableSet<>();
 
         /**
-         * The instance we are protecting.
+         * @serial The instance we are protecting.
          */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
@@ -1350,6 +1490,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -283967356065247728L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<? extends E> list;
 
@@ -1503,8 +1644,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -1034234728574286014L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
-        private final Map<? extends K, ? extends V> m;
+        final Map<? extends K, ? extends V> m;
 
         UnmodifiableMap(Map<? extends K, ? extends V> m) {
             if (m==null)
@@ -1830,6 +1972,72 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified {@code SequencedMap}. Query operations on the returned map
+     * "read through" to the specified map, and attempts to modify the returned
+     * map, whether direct or via its collection views, result in an
+     * {@code UnsupportedOperationException}.<p>
+     *
+     * The returned map will be serializable if the specified map
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @param  m the map for which an unmodifiable view is to be returned.
+     * @return an unmodifiable view of the specified map.
+     * @since 21
+     */
+    @SuppressWarnings("unchecked")
+    public static <K,V> SequencedMap<K,V> unmodifiableSequencedMap(SequencedMap<? extends K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (m.getClass() == UnmodifiableSequencedMap.class) {
+            return (SequencedMap<K,V>) m;
+        }
+        return new UnmodifiableSequencedMap<>(m);
+    }
+
+    /**
+     * @serial include
+     */
+    private static class UnmodifiableSequencedMap<K,V> extends UnmodifiableMap<K,V> implements SequencedMap<K,V>, Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = -8171676257373950636L;
+
+        UnmodifiableSequencedMap(Map<? extends K, ? extends V> m) {
+            super(m);
+        }
+
+        @SuppressWarnings("unchecked")
+        private SequencedMap<K, V> sm() {
+            return (SequencedMap<K, V>) m;
+        }
+
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed map view, which usually isn't
+        // serializable.
+        public SequencedMap<K, V> reversed() {
+            return new UnmodifiableSequencedMap<>(sm().reversed());
+        }
+
+        public Entry<K, V> pollFirstEntry() {
+            throw new UnsupportedOperationException();
+        }
+
+        public Entry<K, V> pollLastEntry() {
+            throw new UnsupportedOperationException();
+        }
+
+        public V putFirst(K k, V v) {
+            throw new UnsupportedOperationException();
+        }
+
+        public V putLast(K k, V v) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
      * specified sorted map. Query operations on the returned sorted map "read through"
      * to the specified sorted map.  Attempts to modify the returned
      * sorted map, whether direct, via its collection views, or via its
@@ -1864,6 +2072,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8806743815996713206L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, ? extends V> sm;
 
@@ -1945,7 +2154,7 @@ public class Collections {
             new EmptyNavigableMap<>();
 
         /**
-         * The instance we wrap and protect.
+         * @serial The instance we wrap and protect.
          */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, ? extends V> nm;
@@ -2079,8 +2288,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;  // Backing Collection
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Object mutex;     // Object on which to synchronize
 
@@ -2283,6 +2494,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 8695801310862127406L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -2379,6 +2591,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5505529816273629798L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
@@ -2490,6 +2703,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -7754090372962971524L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
@@ -2658,8 +2872,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1978198479659022715L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K,V> m;     // Backing Map
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Object      mutex;        // Object on which to synchronize
 
@@ -2857,6 +3073,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8798146769416483793L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K,V> sm;
 
@@ -2928,7 +3145,7 @@ public class Collections {
      *  Set s2 = m2.keySet();  // Needn't be in synchronized block
      *      ...
      *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
-     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      Iterator i = s2.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
      *  }
@@ -2961,6 +3178,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 699392247599746807L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K,V> nm;
 
@@ -3141,9 +3359,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1578914078182001775L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<E> type;
 
         @SuppressWarnings("unchecked")
@@ -3199,6 +3418,7 @@ public class Collections {
 
         public boolean add(E e)          { return c.add(typeCheck(e)); }
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private E[] zeroLengthElementArray; // Lazily initialized
 
@@ -3293,6 +3513,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 1433151992604707767L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Queue<E> queue;
 
@@ -3398,6 +3619,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599911165492914959L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
@@ -3463,6 +3685,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5429120189805438922L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
@@ -3547,6 +3770,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 65247728283967356L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
@@ -3697,11 +3921,12 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 5742860141034234728L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<K> keyType;
-        @SuppressWarnings("serial") // Conditionally serializable
+        /** @serial */
         final Class<V> valueType;
 
         private void typeCheck(Object key, Object value) {
@@ -3846,6 +4071,7 @@ public class Collections {
         public V merge(K key, V value,
                 BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             Objects.requireNonNull(remappingFunction);
+            typeCheck(key, value);
             return m.merge(key, value, (v1, v2) -> {
                 V newValue = remappingFunction.apply(v1, v2);
                 typeCheck(null, newValue);
@@ -4096,6 +4322,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599671320688067438L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, V> sm;
 
@@ -4172,6 +4399,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -4852462692372534096L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, V> nm;
 
@@ -4903,6 +5131,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3193687207550431679L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
@@ -4958,6 +5187,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3093736618740652951L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
@@ -5028,8 +5258,10 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -6979724477215052911L;
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K k;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V v;
 
@@ -5168,7 +5400,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 2739099268398711800L;
 
+        /** @serial */
         final int n;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final E element;
 
@@ -5326,6 +5560,14 @@ public class Collections {
      *
      * The returned comparator is serializable.
      *
+     * @apiNote
+     * This method returns a {@code Comparator} that is suitable for sorting
+     * elements in reverse order. To obtain a reverse-ordered <i>view</i> of a
+     * sequenced collection, use the {@link SequencedCollection#reversed
+     * SequencedCollection.reversed} method. Or, to obtain a reverse-ordered
+     * <i>view</i> of a sequenced map, use the {@link SequencedMap#reversed
+     * SequencedMap.reversed} method.
+     *
      * @param  <T> the class of the objects compared by the comparator
      * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
@@ -5371,6 +5613,14 @@ public class Collections {
      *
      * <p>The returned comparator is serializable (assuming the specified
      * comparator is also serializable or {@code null}).
+     *
+     * @apiNote
+     * This method returns a {@code Comparator} that is suitable for sorting
+     * elements in reverse order. To obtain a reverse-ordered <i>view</i> of a
+     * sequenced collection, use the {@link SequencedCollection#reversed
+     * SequencedCollection.reversed} method. Or, to obtain a reverse-ordered
+     * <i>view</i> of a sequenced map, use the {@link SequencedMap#reversed
+     * SequencedMap.reversed} method.
      *
      * @param <T> the class of the objects compared by the comparator
      * @param cmp a comparator who's ordering is to be reversed by the returned
@@ -5682,6 +5932,8 @@ public class Collections {
      * @since 1.6
      */
     public static <E> Set<E> newSetFromMap(Map<E, Boolean> map) {
+        if (! map.isEmpty()) // implicit null check
+            throw new IllegalArgumentException("Map is non-empty");
         return new SetFromMap<>(map);
     }
 
@@ -5691,13 +5943,12 @@ public class Collections {
     private static class SetFromMap<E> extends AbstractSet<E>
         implements Set<E>, Serializable
     {
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
-        private final Map<E, Boolean> m;  // The backing map
+        final Map<E, Boolean> m;          // The backing map
         private transient Set<E> s;       // Its keySet
 
         SetFromMap(Map<E, Boolean> map) {
-            if (!map.isEmpty())
-                throw new IllegalArgumentException("Map is non-empty");
             m = map;
             s = map.keySet();
         }
@@ -5746,6 +5997,91 @@ public class Collections {
             stream.defaultReadObject();
             s = m.keySet();
         }
+
+        @java.io.Serial
+        private void readObjectNoData() throws java.io.ObjectStreamException {
+            throw new java.io.InvalidObjectException("missing SetFromMap data");
+        }
+    }
+
+    /**
+     * Returns a sequenced set backed by the specified map.  The resulting set displays
+     * the same ordering, concurrency, and performance characteristics as the
+     * backing map. In essence, this factory method provides a {@link SequencedSet}
+     * implementation corresponding to any {@link SequencedMap} implementation.
+     *
+     * <p>Each method invocation on the set returned by this method results in
+     * exactly one method invocation on the backing map or its {@code keySet}
+     * view, with one exception.  The {@code addAll} method is implemented
+     * as a sequence of {@code put} invocations on the backing map.
+     *
+     * <p>The specified map must be empty at the time this method is invoked,
+     * and should not be accessed directly after this method returns.  These
+     * conditions are ensured if the map is created empty, passed directly
+     * to this method, and no reference to the map is retained.
+     *
+     * @apiNote
+     * The following example code creates a {@code SequencedSet} from a
+     * {@code LinkedHashMap}. This differs from a {@code LinkedHashSet}
+     * in that the map's {@code removeEldestEntry} is overridden to provide
+     * an eviction policy, which is not possible with a {@code LinkedHashSet}.
+     *
+     * {@snippet :
+     *     SequencedSet<String> set = Collections.newSequencedSetFromMap(
+     *         new LinkedHashMap<String, Boolean>() {
+     *             protected boolean removeEldestEntry(Map.Entry<String, Boolean> e) {
+     *                 return this.size() > 5;
+     *             }
+     *        });
+     * }
+     *
+     * @param <E> the class of the map keys and of the objects in the
+     *        returned set
+     * @param map the backing map
+     * @return the set backed by the map
+     * @throws IllegalArgumentException if {@code map} is not empty
+     * @since 21
+     */
+    public static <E> SequencedSet<E> newSequencedSetFromMap(SequencedMap<E, Boolean> map) {
+        if (! map.isEmpty()) // implicit null check
+            throw new IllegalArgumentException("Map is non-empty");
+        return new SequencedSetFromMap<>(map);
+    }
+
+    /**
+     * @serial include
+     */
+    private static class SequencedSetFromMap<E> extends SetFromMap<E> implements SequencedSet<E> {
+        private E nsee(Map.Entry<E, Boolean> e) {
+            if (e == null) {
+                throw new NoSuchElementException();
+            } else {
+                return e.getKey();
+            }
+        }
+
+        private SequencedMap<E, Boolean> map() {
+            return (SequencedMap<E, Boolean>) super.m;
+        }
+
+        SequencedSetFromMap(SequencedMap<E, Boolean> map) {
+            super(map);
+        }
+
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed map view, which usually isn't
+        // serializable.
+        public SequencedSet<E> reversed() { return new SequencedSetFromMap<>(map().reversed()); }
+
+        public void addFirst(E e) { map().putFirst(e, Boolean.TRUE); }
+        public void addLast(E e)  { map().putLast(e, Boolean.TRUE); }
+        public E getFirst()       { return nsee(map().firstEntry()); }
+        public E getLast()        { return nsee(map().lastEntry()); }
+        public E removeFirst()    { return nsee(map().pollFirstEntry()); }
+        public E removeLast()     { return nsee(map().pollLastEntry()); }
+
+        @java.io.Serial
+        private static final long serialVersionUID = -3943479744841433802L;
     }
 
     /**
@@ -5760,6 +6096,11 @@ public class Collections {
      * one exception.  The {@link Queue#addAll addAll} method is
      * implemented as a sequence of {@link Deque#addFirst addFirst}
      * invocations on the backing deque.
+     *
+     * @apiNote
+     * This method provides a view that inverts the sense of certain operations,
+     * but it doesn't reverse the encounter order. To obtain a reverse-ordered
+     * view, use the {@link Deque#reversed Deque.reversed} method.
      *
      * @param  <T> the class of the objects in the deque
      * @param deque the deque
@@ -5777,6 +6118,7 @@ public class Collections {
         implements Queue<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1802017725587941708L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Deque<E> q;
         AsLIFOQueue(Deque<E> q)                     { this.q = q; }

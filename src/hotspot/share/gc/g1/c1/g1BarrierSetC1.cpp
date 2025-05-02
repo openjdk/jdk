@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef ASSERT
@@ -106,7 +105,7 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
     assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
     assert(pre_val->is_register(), "must be");
     assert(pre_val->type() == T_OBJECT, "must be an object");
-    assert(info == NULL, "sanity");
+    assert(info == nullptr, "sanity");
 
     slow = new G1PreBarrierStub(pre_val);
   }
@@ -123,9 +122,9 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
     return;
   }
 
-  // If the "new_val" is a constant NULL, no barrier is necessary.
+  // If the "new_val" is a constant null, no barrier is necessary.
   if (new_val->is_constant() &&
-      new_val->as_constant_ptr()->as_jobject() == NULL) return;
+      new_val->as_constant_ptr()->as_jobject() == nullptr) return;
 
   if (!new_val->is_register()) {
     LIR_Opr new_val_reg = gen->new_register(T_OBJECT);
@@ -158,13 +157,13 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
     __ logical_xor(xor_res, new_val, xor_res);
     __ move(xor_res, xor_shift_res);
     __ unsigned_shift_right(xor_shift_res,
-                            LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
+                            LIR_OprFact::intConst(checked_cast<jint>(G1HeapRegion::LogOfHRGrainBytes)),
                             xor_shift_res,
                             LIR_Opr::illegalOpr());
   } else {
     __ logical_xor(addr, new_val, xor_res);
     __ unsigned_shift_right(xor_res,
-                            LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
+                            LIR_OprFact::intConst(checked_cast<jint>(G1HeapRegion::LogOfHRGrainBytes)),
                             xor_shift_res,
                             LIR_Opr::illegalOpr());
   }
@@ -204,7 +203,7 @@ class C1G1PreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_pre_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -212,15 +211,16 @@ class C1G1PostBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_post_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 
-void G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
+bool G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1G1PreBarrierCodeGenClosure pre_code_gen_cl;
   C1G1PostBarrierCodeGenClosure post_code_gen_cl;
-  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1, "g1_pre_barrier_slow",
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
-  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1, "g1_post_barrier_slow",
+  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_post_barrier_slow",
                                                                false, &post_code_gen_cl);
+  return _pre_barrier_c1_runtime_code_blob != nullptr && _post_barrier_c1_runtime_code_blob != nullptr;
 }

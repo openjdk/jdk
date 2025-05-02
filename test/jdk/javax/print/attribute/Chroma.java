@@ -21,7 +21,7 @@
  * questions.
  */
 /*
- * @test 1.3 01/05/11
+ * @test
  * @bug 4456750
  * @summary Test for supported chromaticity values with null DocFlavor.
  *          No exception should be thrown.

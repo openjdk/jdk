@@ -39,6 +39,11 @@ abstract class ClassCache<T> {
 
     private static class CacheRef<T> extends SoftReference<T> {
         private final Class<?> type;
+        // This field is deliberately accessed without sychronization. ClassValue
+        // provides synchronization when CacheRef is published. However, when
+        // a thread reads this field, while another thread is clearing the field, it
+        // would formally constitute a data race. But that data race is benign, and
+        // fixing it could introduce noticeable performance penalty, see JDK-8309688.
         private T strongReferent;
 
         CacheRef(T referent, ReferenceQueue<T> queue, Class<?> type) {

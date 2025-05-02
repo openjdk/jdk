@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,9 @@ function convert_path() {
     suffix="${BASH_REMATCH[6]}"
 
     # We only believe this is a path if the first part is an existing directory
-    if [[ -d "/$firstdir" ]];  then
+    # and the prefix is not a subdirectory in the current working directory. Remove
+    # any part leading up to a : or = in the prefix before checking.
+    if [[ -d "/$firstdir" && ! -d "${prefix##*:}" && ! -d "${prefix##*=}" ]];  then
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2

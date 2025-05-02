@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
 
 #include "cds/dumpTimeClassInfo.hpp"
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -44,7 +45,10 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
   auto wrapper = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
-    if (k->is_loader_alive()) {
+    if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
+      assert(k->is_shared_unregistered_class(), "must be");
+      function(k, info);
+    } else if (k->is_loader_alive()) {
       function(k, info);
       assert(k->is_loader_alive(), "must not change");
     } else {
@@ -68,4 +72,4 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) const {
 
 #endif // INCLUDE_CDS
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -60,6 +60,8 @@ import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -70,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
@@ -87,7 +90,9 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ModuleTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTaskPool;
-import java.util.Objects;
+import com.sun.tools.javac.api.JavacTaskPool.Worker;
+import com.sun.tools.javac.tree.JCTree.JCErroneous;
+import com.sun.tools.javac.tree.Pretty;
 
 public class JavacParserTest extends TestCase {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
@@ -1005,7 +1010,7 @@ public class JavacParserTest extends TestCase {
     @Test //JDK-8065753
     void testWrongFirstToken() throws IOException {
         String code = "<";
-        String expectedErrors = "Test.java:1:1: compiler.err.expected4: class, interface, enum, record\n" +
+        String expectedErrors = "Test.java:1:1: compiler.err.class.method.or.field.expected\n" +
                                 "1 error\n";
         StringWriter out = new StringWriter();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
@@ -2061,6 +2066,954 @@ public class JavacParserTest extends TestCase {
         });
     }
 
+    @Test //JDK-8304671
+    void testEnumConstantUnderscore() throws IOException {
+        record TestCase(String code, String release, String ast, String errors) {}
+        TestCase[] testCases = new TestCase[] {
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         Test.java:5:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
+                         """),
+        };
+        for (TestCase testCase : testCases) {
+            StringWriter out = new StringWriter();
+            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
+                    List.of("-XDrawDiagnostics", "--release", testCase.release),
+                    null, Arrays.asList(new MyFileObject(testCase.code)));
+            String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+            assertEquals("Unexpected AST, got:\n" + ast, testCase.ast, ast);
+            assertEquals("Unexpected errors, got:\n" + out.toString(),
+                         out.toString().replaceAll("\\R", "\n"),
+                         testCase.errors);
+        }
+    }
+
+    @Test
+    void testGuardRecovery() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          private int t(Integer i, boolean b) {
+                              switch (i) {
+                                  case 0 when b -> {}
+                                  case null when b -> {}
+                                  default when b -> {}
+                              }
+                              return switch (i) {
+                                  case 0 when b -> 0;
+                                  case null when b -> 0;
+                                  default when b -> 0;
+                              };
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitCase(CaseTree node, Void p) {
+                assertNotNull(node.getGuard());
+                assertEquals("guard kind", Kind.ERRONEOUS, node.getGuard().getKind());
+                assertEquals("guard content",
+                             List.of("b"),
+                             ((ErroneousTree) node.getGuard()).getErrorTrees()
+                                                              .stream()
+                                                              .map(t -> t.toString()).toList());
+                return super.visitCase(node, p);
+            }
+        }.scan(cut, null);
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" +  d.getCode());
+        }
+
+        assertEquals("testUsupportedTextBlock: " + codes,
+                List.of("5:20:compiler.err.guard.not.allowed",
+                        "6:23:compiler.err.guard.not.allowed",
+                        "7:21:compiler.err.guard.not.allowed",
+                        "10:20:compiler.err.guard.not.allowed",
+                        "11:23:compiler.err.guard.not.allowed",
+                        "12:21:compiler.err.guard.not.allowed"),
+                codes);
+    }
+
+    @Test //JDK-8310326
+    void testUnnamedClassPositions() throws IOException {
+        String code = """
+                      void main() {
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                assertEquals("Wrong start position", 0, sp.getStartPosition(cut, node));
+                assertEquals("Wrong end position", -1, sp.getEndPosition(cut, node));
+                assertEquals("Wrong modifiers start position", -1, sp.getStartPosition(cut, node.getModifiers()));
+                assertEquals("Wrong modifiers end position", -1, sp.getEndPosition(cut, node.getModifiers()));
+                return super.visitClass(node, p);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8312093
+    void testJavadoc() throws IOException {
+        String code = """
+                      public class Test {
+                          /***/
+                          void main() {
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethod(MethodTree node, Void p) {
+                if (!node.getName().contentEquals("main")) {
+                    return null;
+                }
+                String comment = trees.getDocComment(getCurrentPath());
+                assertEquals("Expecting empty comment", "", comment);
+                return null;
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8312204
+    void testDanglingElse() throws IOException {
+        String code = """
+                      void main() {
+                          else ;
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = cut.toString().replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     \n\
+                     final class Test {
+                         \n\
+                         void main() {
+                             (ERROR);
+                         }
+                     }""");
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testDanglingElse: " + codes,
+                     List.of("2:5:compiler.err.else.without.if"),
+                     codes);
+    }
+
+    @Test //JDK-8315452
+    void testPartialTopLevelModifiers() throws IOException {
+        String code = """
+                      package test;
+                      public
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package test;
+                     (ERROR: public )""");
+    }
+
+    @Test //JDK-8337976
+    void testStatementsInClass() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                          if (true);
+                          while (true);
+                          do {} while (true);
+                          for ( ; ; );
+                          switch (0) { default: }
+                          assert true;
+                          break;
+                          continue;
+                          return ;
+                          throw new RuntimeException();
+                          try {
+                          } catch (RuntimeException ex) {}
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package test;
+                     \n\
+                     public class Test {
+                         (ERROR: if (true) ;)
+                         (ERROR: while (true) ;)
+                         (ERROR: do {
+                     } while (true);)
+                         (ERROR: for (; ; ) ;)
+                         (ERROR: switch (0) {
+                     default:
+
+                     })
+                         (ERROR: assert true;)
+                         (ERROR: break;)
+                         (ERROR: continue;)
+                         (ERROR: return;)
+                         (ERROR: throw new RuntimeException();)
+                         (ERROR: try {
+                     } catch (RuntimeException ex) {
+                     })
+                     }""");
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testStatementsInClass: " + codes,
+                     List.of("3:5:compiler.err.statement.not.expected",
+                             "4:5:compiler.err.statement.not.expected",
+                             "5:5:compiler.err.statement.not.expected",
+                             "6:5:compiler.err.statement.not.expected",
+                             "7:5:compiler.err.statement.not.expected",
+                             "8:5:compiler.err.statement.not.expected",
+                             "9:5:compiler.err.statement.not.expected",
+                             "10:5:compiler.err.statement.not.expected",
+                             "11:5:compiler.err.statement.not.expected",
+                             "12:5:compiler.err.statement.not.expected",
+                             "13:5:compiler.err.statement.not.expected"),
+                     codes);
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion1() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                              return true;
+                          }
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test() {
+                             return true;
+                         }
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion2() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }                       """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion2: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test();
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion3() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion3: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test();
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion4() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion4: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test() {
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion5() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test(String,
+                      }
+                      class T {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:38:compiler.err.expected",
+                             "4:1:compiler.err.illegal.start.of.type"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test(String <error>, (ERROR: ) <error>);
+                     }
+                     class T {
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion6() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          private Object testMethod(final String arg1 final String arg2) {
+                              return null;
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:48:compiler.err.expected3",
+                             "3:66:compiler.err.expected"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         private Object testMethod(final String arg1);
+                         final String arg2;
+                         {
+                             return null;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion7() throws IOException {
+        //after 'default' attribute value, only semicolon (';') is expected,
+        //not left brace ('{'):
+        String code = """
+                      package tests;
+                      public @interface A {
+                          public String value() default ""
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion5: " + codes,
+                     List.of("3:37:compiler.err.expected"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public @interface A {
+                         \n\
+                         public String value() default "";
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion10() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                              String s = "";
+                              return s.isEmpty();
+                          }
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+
+                     public class TestB {
+                         \n\
+                         public static boolean test() {
+                             String s = "";
+                             return s.isEmpty();
+                         }
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion11() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                          String s = ""; //field declaration
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test();
+                         String s = "";
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion12() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                              final String s = "";
+                              return s.isEmpty();
+                          }
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test() {
+                             final String s = "";
+                             return s.isEmpty();
+                         }
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion13() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                          final String s = ""; //field declaration?
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test();
+                         final String s = "";
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8324859
+    void testImplicitlyDeclaredClassesConfusion14() throws IOException {
+        String code = """
+                      package tests;
+                      public class TestB {
+                          public static boolean test() // missing open brace
+                              String s = "";
+                              s.length();
+                              if (true); //force parse as block
+                          public static boolean test2() {
+                              return true;
+                          }
+                      }""";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testImplicitlyDeclaredClassesConfusion1: " + codes,
+                     List.of("3:33:compiler.err.expected2",
+                             "7:5:compiler.err.illegal.start.of.expr"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     public class TestB {
+                         \n\
+                         public static boolean test() {
+                             String s = "";
+                             s.length();
+                             if (true) ;
+                             (ERROR: );
+                         }
+                         \n\
+                         public static boolean test2() {
+                             return true;
+                         }
+                     }""");
+    }
+
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)
@@ -2090,6 +3043,38 @@ public class JavacParserTest extends TestCase {
                     passed + ", failed = " + failed + " ??????????");
         }
     }
+
+    private String toStringWithErrors(Tree tree) {
+        StringWriter s = new StringWriter();
+        try {
+            new PrettyWithErrors(s, false).printExpr((JCTree) tree);
+        } catch (IOException e) {
+            // should never happen, because StringWriter is defined
+            // never to throw any IOExceptions
+            throw new AssertionError(e);
+        }
+        return s.toString();
+    }
+
+    private static final class PrettyWithErrors extends Pretty {
+
+        public PrettyWithErrors(Writer out, boolean sourceOutput) {
+            super(out, sourceOutput);
+        }
+
+        @Override
+        public void visitErroneous(JCErroneous tree) {
+            try {
+                print("(ERROR: ");
+                print(tree.errs);
+                print(")");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+    }
+
 }
 
 abstract class TestCase {

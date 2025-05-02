@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class ExitOnThrow {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            ProcessTools.executeTestJvm("--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
-                                        "ExitOnThrow",
-                                        "-executeCleaner")
+            ProcessTools.executeTestJava("--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+                                         "ExitOnThrow",
+                                         "-executeCleaner")
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .shouldHaveExitValue(1)

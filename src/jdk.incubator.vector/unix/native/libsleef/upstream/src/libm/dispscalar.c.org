@@ -1,0 +1,24 @@
+//   Copyright Naoki Shibata and contributors 2010 - 2023.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+#include <stdint.h>
+#include <assert.h>
+#include <signal.h>
+#include <setjmp.h>
+
+#include "misc.h"
+
+#define SLEEF_IMPORT_IS_EXPORT
+#include "sleef.h"
+
+#include "dispatcher.h"
+
+NOEXPORT double sleef_cpuid_SCALFMA;
+static void tryFMA() { sleef_cpuid_SCALFMA = Sleef_sind1_u10purecfma(sleef_cpuid_SCALFMA); }
+
+#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryFMA)) p = funcExt1;
+#define SUBST_IF_EXT2(funcExt2)
+
+//

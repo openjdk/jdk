@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,73 +24,59 @@
 /*
  * @test
  * @bug 4401223
- * @summary Make sure that GregorianCalendar doesn't cause IllegalArgumentException at some special situations which are related to the Leap Year.
- * @library /java/text/testlib
+ * @summary Make sure that GregorianCalendar doesn't cause
+ *          IllegalArgumentException at some special situations which are
+ *          related to the Leap Year.
+ * @run junit bug4401223
  */
 
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import static java.util.GregorianCalendar.*;
+import static java.util.GregorianCalendar.DATE;
+import static java.util.GregorianCalendar.DAY_OF_YEAR;
+import static java.util.GregorianCalendar.DECEMBER;
+import static java.util.GregorianCalendar.FEBRUARY;
+import static java.util.GregorianCalendar.MONTH;
+import static java.util.GregorianCalendar.YEAR;
 
-public class bug4401223 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public void Test4401223a() {
-        int status = 0;
-        String s = null;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-        try {
-            @SuppressWarnings("deprecation")
-            Date date = new Date(2000 - 1900, FEBRUARY, 29);
-            GregorianCalendar gc = new GregorianCalendar();
+public class bug4401223 {
+
+    // Ensure IAE not thrown for date: 12-29-00
+    @SuppressWarnings("deprecation")
+    @Test
+    public void checkExceptionTest() {
+        Date date = new Date(2000 - 1900, FEBRUARY, 29);
+        GregorianCalendar gc = new GregorianCalendar();
+        assertDoesNotThrow(() -> {
             gc.setTime(date);
             gc.setLenient(false);
             gc.set(YEAR, 2001);
-            s = "02/29/00 & set(YEAR,2001) = " + gc.getTime().toString();
-        } catch (Exception ex) {
-            status++;
-            s = "Exception occurred for 2/29/00 & set(YEAR,2001): " + ex;
-        }
-        if (status > 0) {
-            errln(s);
-        } else {
-            logln(s);
-        }
+        }, "Exception occurred for 2/29/00 & set(YEAR,2001)");
     }
 
-    public void Test4401223b() {
-        int status = 0;
-        String s = null;
-
-        try {
-            @SuppressWarnings("deprecation")
-            Date date = new Date(2000 - 1900, DECEMBER, 31);
-            GregorianCalendar gc = new GregorianCalendar();
+    // Ensure IAE not thrown for date: 12-31-00. Validate expected values.
+    @SuppressWarnings("deprecation")
+    @Test
+    public void checkExceptionAndValuesTest() {
+        Date date = new Date(2000 - 1900, DECEMBER, 31);
+        GregorianCalendar gc = new GregorianCalendar();
+        assertDoesNotThrow(() -> {
             gc.setTime(date);
             gc.setLenient(false);
             gc.set(YEAR, 2001);
+        }, "Exception occurred for 12/31/00 & set(YEAR,2001)");
 
-            if (gc.get(YEAR) != 2001
-                    || gc.get(MONTH) != DECEMBER
-                    || gc.get(DATE) != 31
-                    || gc.get(DAY_OF_YEAR) != 365) {
-                status++;
-                s = "Wrong Date : 12/31/00 & set(YEAR,2001) ---> " + gc.getTime().toString();
-            } else {
-                s = "12/31/00 & set(YEAR,2001) = " + gc.getTime().toString();
-            }
-        } catch (Exception ex) {
-            status++;
-            s = "Exception occurred for 12/31/00 & set(YEAR,2001) : " + ex;
-        }
-        if (status > 0) {
-            errln(s);
-        } else {
-            logln(s);
-        }
-    }
+        String errMsg = "Wrong date,  got: " + gc.getTime();
 
-    public static void main(String[] args) throws Exception {
-        new bug4401223().run(args);
+        assertEquals(2001, gc.get(YEAR), errMsg);
+        assertEquals(DECEMBER, gc.get(MONTH), errMsg);
+        assertEquals(31, gc.get(DATE), errMsg);
+        assertEquals(365, gc.get(DAY_OF_YEAR), errMsg);
     }
 }

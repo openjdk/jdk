@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ bool JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_a
   // pre-allocate elements to be cached in the requested list
   for (size_t i = 0; i < cache_prealloc_count; ++i) {
     NodePtr const node = allocate(_min_element_size);
-    if (node == NULL) {
+    if (node == nullptr) {
       return false;
     }
     if (prealloc_to_free_list) {
@@ -203,7 +203,7 @@ inline bool JfrMemorySpace< Client, RetrievalPolicy, FreeListType, FullListType,
 // allocations are even multiples of the mspace min size
 static inline size_t align_allocation_size(size_t requested_size, size_t min_element_size) {
   if (requested_size > static_cast<size_t>(min_intx)) {
-    assert(false, "requested size: " SIZE_FORMAT " is too large", requested_size);
+    assert(false, "requested size: %zu is too large", requested_size);
     return 0;
   }
   u8 alloc_size_bytes = min_element_size;
@@ -218,25 +218,25 @@ template <typename Client, template <typename> class RetrievalPolicy, typename F
 inline typename FreeListType::NodePtr JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::allocate(size_t size) {
   const size_t aligned_size_bytes = align_allocation_size(size, _min_element_size);
   if (aligned_size_bytes == 0) {
-    return NULL;
+    return nullptr;
   }
   void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(Node));
-  if (allocation == NULL) {
-    return NULL;
+  if (allocation == nullptr) {
+    return nullptr;
   }
   NodePtr node = new (allocation) Node();
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   node->initialize(sizeof(Node), aligned_size_bytes);
   return node;
 }
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::deallocate(typename FreeListType::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(!in_free_list(node), "invariant");
   assert(!_live_list_epoch_0.in_list(node), "invariant");
   assert(!_live_list_epoch_1.in_list(node), "invariant");
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   JfrCHeapObj::free(node, node->total_size());
 }
 
@@ -247,14 +247,14 @@ inline typename FreeListType::NodePtr JfrMemorySpace<Client, RetrievalPolicy, Fr
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::release(typename FreeListType::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   if (node->transient()) {
     deallocate(node);
     return;
   }
   assert(node->empty(), "invariant");
   assert(!node->retired(), "invariant");
-  assert(node->identity() == NULL, "invariant");
+  assert(node->identity() == nullptr, "invariant");
   if (should_populate_free_list_cache()) {
     add_to_free_list(node);
   } else {
@@ -264,7 +264,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::add_to_free_list(typename FreeListType::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   _free_list.add(node);
   if (is_free_list_cache_limited()) {
     Atomic::inc(&_free_list_cache_count);
@@ -273,7 +273,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::add_to_live_list(typename FreeListType::NodePtr node, bool previous_epoch) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   live_list(previous_epoch).add(node);
 }
 
@@ -308,7 +308,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
 template <typename Mspace, typename Client>
 static inline Mspace* create_mspace(size_t min_element_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count, bool prealloc_to_free_list, Client* cb) {
   Mspace* const mspace = new Mspace(min_element_size, free_list_cache_count_limit, cb);
-  if (mspace != NULL) {
+  if (mspace != nullptr) {
     mspace->initialize(cache_prealloc_count, prealloc_to_free_list);
   }
   return mspace;
@@ -322,7 +322,7 @@ inline typename Mspace::NodePtr mspace_allocate(size_t size, Mspace* mspace) {
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_acquired(size_t size, Mspace* mspace, Thread* thread) {
   typename Mspace::NodePtr node = mspace_allocate(size, mspace);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   node->set_identity(thread);
   return node;
 }
@@ -330,7 +330,7 @@ inline typename Mspace::NodePtr mspace_allocate_acquired(size_t size, Mspace* ms
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_transient(size_t size, Mspace* mspace, Thread* thread) {
   typename Mspace::NodePtr node = mspace_allocate_acquired(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->acquired_by_self(), "invariant");
   node->set_transient();
   return node;
@@ -339,7 +339,7 @@ inline typename Mspace::NodePtr mspace_allocate_transient(size_t size, Mspace* m
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_transient_lease(size_t size, Mspace* mspace, Thread* thread) {
   typename Mspace::NodePtr node = mspace_allocate_transient(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->transient(), "invariant");
   node->set_lease();
   return node;
@@ -348,7 +348,7 @@ inline typename Mspace::NodePtr mspace_allocate_transient_lease(size_t size, Msp
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_transient_lease_to_free(size_t size, Mspace* mspace, Thread* thread) {
   typename Mspace::NodePtr node = mspace_allocate_transient_lease(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->lease(), "invariant");
   mspace->add_to_free_list(node);
   return node;
@@ -364,17 +364,17 @@ inline typename Mspace::NodePtr mspace_acquire_free_with_retry(size_t size, Mspa
   assert(size <= mspace->min_element_size(), "invariant");
   for (size_t i = 0; i < retry_count; ++i) {
     typename Mspace::NodePtr node = mspace_acquire_free(size, mspace, thread);
-    if (node != NULL) {
+    if (node != nullptr) {
       return node;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_to_live_list(size_t size, Mspace* mspace, Thread* thread) {
   typename Mspace::NodePtr node = mspace_allocate_acquired(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->acquired_by_self(), "invariant");
   mspace->add_to_live_list(node);
   return node;
@@ -383,7 +383,7 @@ inline typename Mspace::NodePtr mspace_allocate_to_live_list(size_t size, Mspace
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_transient_to_live_list(size_t size, Mspace* mspace, Thread* thread, bool previous_epoch = false) {
   typename Mspace::NodePtr node = mspace_allocate_transient(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->transient(), "invariant");
   mspace->add_to_live_list(node, previous_epoch);
   return node;
@@ -392,7 +392,7 @@ inline typename Mspace::NodePtr mspace_allocate_transient_to_live_list(size_t si
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_allocate_transient_lease_to_live_list(size_t size, Mspace* mspace, Thread* thread, bool previous_epoch = false) {
   typename Mspace::NodePtr node = mspace_allocate_transient_lease(size, mspace, thread);
-  if (node == NULL) return NULL;
+  if (node == nullptr) return nullptr;
   assert(node->lease(), "invariant");
   mspace->add_to_live_list(node, previous_epoch);
   return node;
@@ -402,8 +402,8 @@ template <typename Mspace>
 inline typename Mspace::NodePtr mspace_acquire_free_to_live_list(size_t size, Mspace* mspace, Thread* thread, bool previous_epoch = false) {
   assert(size <= mspace->min_element_size(), "invariant");
   typename Mspace::NodePtr node = mspace_acquire_free(size, mspace, thread);
-  if (node == NULL) {
-    return NULL;
+  if (node == nullptr) {
+    return nullptr;
   }
   assert(node->acquired_by_self(), "invariant");
   mspace->add_to_live_list(node, previous_epoch);
@@ -414,7 +414,7 @@ template <typename Mspace>
 inline typename Mspace::NodePtr mspace_acquire_to_live_list(size_t size, Mspace* mspace, Thread* thread, bool previous_epoch = false) {
   if (size <= mspace->min_element_size()) {
     typename Mspace::NodePtr node = mspace_acquire_free_to_live_list(size, mspace, thread, previous_epoch);
-    if (node != NULL) {
+    if (node != nullptr) {
       return node;
     }
   }
@@ -431,17 +431,17 @@ inline typename Mspace::NodePtr mspace_acquire_live_with_retry(size_t size, Mspa
   assert(size <= mspace->min_element_size(), "invariant");
   for (size_t i = 0; i < retry_count; ++i) {
     typename Mspace::NodePtr const node = mspace_acquire_live(size, mspace, thread, previous_epoch);
-    if (node != NULL) {
+    if (node != nullptr) {
       return node;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 template <typename Mspace>
 inline typename Mspace::NodePtr mspace_acquire_lease_with_retry(size_t size, Mspace* mspace, size_t retry_count, Thread* thread, bool previous_epoch = false) {
   typename Mspace::NodePtr node = mspace_acquire_live_with_retry(size, mspace, retry_count, thread, previous_epoch);
-  if (node != NULL) {
+  if (node != nullptr) {
     node->set_lease();
   }
   return node;
@@ -449,21 +449,21 @@ inline typename Mspace::NodePtr mspace_acquire_lease_with_retry(size_t size, Msp
 
 template <typename Mspace>
 inline void mspace_release(typename Mspace::NodePtr node, Mspace* mspace) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(node->unflushed_size() == 0, "invariant");
-  assert(mspace != NULL, "invariant");
+  assert(mspace != nullptr, "invariant");
   mspace->release(node);
 }
 
 template <typename Callback, typename Mspace>
 inline void process_live_list(Callback& callback, Mspace* mspace, bool previous_epoch = false) {
-  assert(mspace != NULL, "invariant");
+  assert(mspace != nullptr, "invariant");
   mspace->iterate_live_list(callback, previous_epoch);
 }
 
 template <typename Callback, typename Mspace>
 inline void process_free_list(Callback& callback, Mspace* mspace) {
-  assert(mspace != NULL, "invariant");
+  assert(mspace != nullptr, "invariant");
   assert(mspace->free_list_is_nonempty(), "invariant");
   mspace->iterate_free_list(callback);
 }
@@ -482,7 +482,7 @@ class ReleaseOp : public StackObj {
 
 template <typename Mspace>
 inline bool ReleaseOp<Mspace>::process(typename Mspace::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   // assumes some means of exclusive access to the node
   if (node->transient()) {
     // make sure the transient node is already detached
@@ -490,7 +490,7 @@ inline bool ReleaseOp<Mspace>::process(typename Mspace::NodePtr node) {
     return true;
   }
   node->reinitialize();
-  if (node->identity() != NULL) {
+  if (node->identity() != nullptr) {
     assert(node->empty(), "invariant");
     assert(!node->retired(), "invariant");
     node->release(); // publish
@@ -507,7 +507,7 @@ class ReleaseWithExcisionOp : public ReleaseOp<Mspace> {
   size_t _amount;
  public:
   ReleaseWithExcisionOp(Mspace* mspace, List& list) :
-    ReleaseOp<Mspace>(mspace), _list(list), _prev(NULL), _count(0), _amount(0) {}
+    ReleaseOp<Mspace>(mspace), _list(list), _prev(nullptr), _count(0), _amount(0) {}
   bool process(typename List::NodePtr node);
   size_t processed() const { return _count; }
   size_t amount() const { return _amount; }
@@ -515,7 +515,7 @@ class ReleaseWithExcisionOp : public ReleaseOp<Mspace> {
 
 template <typename Mspace, typename List>
 inline bool ReleaseWithExcisionOp<Mspace, List>::process(typename List::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   if (node->transient()) {
     _prev = _list.excise(_prev, node);
   } else {
@@ -536,7 +536,7 @@ class ScavengingReleaseOp : public StackObj {
  public:
   typedef typename List::Node Node;
   ScavengingReleaseOp(Mspace* mspace, List& list) :
-    _mspace(mspace), _list(list), _prev(NULL), _count(0), _amount(0) {}
+    _mspace(mspace), _list(list), _prev(nullptr), _count(0), _amount(0) {}
   bool process(typename List::NodePtr node);
   size_t processed() const { return _count; }
   size_t amount() const { return _amount; }
@@ -544,7 +544,7 @@ class ScavengingReleaseOp : public StackObj {
 
 template <typename Mspace, typename List>
 inline bool ScavengingReleaseOp<Mspace, List>::process(typename List::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(!node->transient(), "invariant");
   if (node->retired()) {
     return excise_with_release(node);
@@ -555,14 +555,14 @@ inline bool ScavengingReleaseOp<Mspace, List>::process(typename List::NodePtr no
 
 template <typename Mspace, typename List>
 inline bool ScavengingReleaseOp<Mspace, List>::excise_with_release(typename List::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(node->retired(), "invariant");
   _prev = _list.excise(_prev, node);
   if (node->transient()) {
     _mspace->deallocate(node);
     return true;
   }
-  assert(node->identity() != NULL, "invariant");
+  assert(node->identity() != nullptr, "invariant");
   assert(node->empty(), "invariant");
   assert(!node->lease(), "invariant");
   ++_count;
@@ -583,13 +583,13 @@ private:
 public:
   typedef typename Mspace::Node Node;
   ReleaseRetiredOp(Functor& functor, Mspace* mspace, FromList& list) :
-    _functor(functor), _mspace(mspace), _list(list), _prev(NULL) {}
+    _functor(functor), _mspace(mspace), _list(list), _prev(nullptr) {}
   bool process(Node* node);
 };
 
 template <typename Functor, typename Mspace, typename FromList>
 inline bool ReleaseRetiredOp<Functor, Mspace, FromList>::process(typename Mspace::Node* node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   const bool is_retired = node->retired();
   const bool result = _functor.process(node);
   if (is_retired) {
@@ -615,19 +615,19 @@ private:
  public:
   typedef typename Mspace::Node Node;
   ReinitializeAllReleaseRetiredOp(Mspace* mspace, FromList& list) :
-    _mspace(mspace), _list(list), _prev(NULL) {}
+    _mspace(mspace), _list(list), _prev(nullptr) {}
   bool process(Node* node);
 };
 
 template <typename Mspace, typename FromList>
 inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename Mspace::Node* node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   // assumes some means of exclusive access to node
   const bool retired = node->retired();
   node->reinitialize();
   assert(node->empty(), "invariant");
-  assert(!node->retired(), "invariant");
   if (retired) {
+    assert(!node->retired(), "invariant");
     _prev = _list.excise(_prev, node);
     node->release();
     mspace_release(node, _mspace);
@@ -640,8 +640,8 @@ inline bool ReinitializeAllReleaseRetiredOp<Mspace, FromList>::process(typename 
 #ifdef ASSERT
 template <typename Node>
 inline void assert_migration_state(const Node* old, const Node* new_node, size_t used, size_t requested) {
-  assert(old != NULL, "invariant");
-  assert(new_node != NULL, "invariant");
+  assert(old != nullptr, "invariant");
+  assert(new_node != nullptr, "invariant");
   assert(old->pos() >= old->start(), "invariant");
   assert(old->pos() + used <= old->end(), "invariant");
   assert(new_node->free_size() >= (used + requested), "invariant");

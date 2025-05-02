@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.net.httpserver.HttpConnection.State;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,12 +53,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -304,16 +302,8 @@ class ServerImpl {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
-    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InetSocketAddress>() {
-                    public InetSocketAddress run() {
-                        return
-                            (InetSocketAddress)schan.socket()
-                                .getLocalSocketAddress();
-                    }
-                });
+        return (InetSocketAddress) schan.socket().getLocalSocketAddress();
     }
 
     void addEvent (Event r) {
@@ -522,14 +512,15 @@ class ServerImpl {
 
                                     key.cancel();
                                     chan.configureBlocking (true);
+                                    // check if connection is being closed
                                     if (newlyAcceptedConnections.remove(conn)
                                             || idleConnections.remove(conn)) {
                                         // was either a newly accepted connection or an idle
                                         // connection. In either case, we mark that the request
                                         // has now started on this connection.
                                         requestStarted(conn);
+                                        handle (chan, conn);
                                     }
-                                    handle (chan, conn);
                                 } else {
                                     assert false : "Unexpected non-readable key:" + key;
                                 }
@@ -686,6 +677,7 @@ class ServerImpl {
                             ServerImpl.this, chan
                         );
                     }
+                    rawout = new BufferedOutputStream(rawout);
                     connection.raw = rawin;
                     connection.rawout = rawout;
                 }
@@ -713,7 +705,14 @@ class ServerImpl {
                     return;
                 }
                 String uriStr = requestLine.substring (start, space);
-                URI uri = new URI (uriStr);
+                URI uri;
+                try {
+                    uri = new URI (uriStr);
+                } catch (URISyntaxException e3) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "URISyntaxException thrown");
+                    return;
+                }
                 start = space+1;
                 String version = requestLine.substring (start);
                 Headers headers = req.headers();
@@ -749,7 +748,13 @@ class ServerImpl {
                 } else {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
-                        clen = Long.parseLong(headerValue);
+                        try {
+                            clen = Long.parseLong(headerValue);
+                        } catch (NumberFormatException e2) {
+                            reject(Code.HTTP_BAD_REQUEST,
+                                    requestLine, "NumberFormatException thrown");
+                            return;
+                        }
                         if (clen < 0) {
                             reject(Code.HTTP_BAD_REQUEST, requestLine,
                                     "Illegal Content-Length value");
@@ -834,20 +839,11 @@ class ServerImpl {
                     uc.doFilter (new HttpExchangeImpl (tx));
                 }
 
-            } catch (IOException e1) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (1)", e1);
-                closeConnection(connection);
-            } catch (NumberFormatException e2) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e2);
-                reject (Code.HTTP_BAD_REQUEST,
-                        requestLine, "NumberFormatException thrown");
-            } catch (URISyntaxException e3) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (3)", e3);
-                reject (Code.HTTP_BAD_REQUEST,
-                        requestLine, "URISyntaxException thrown");
-            } catch (Exception e4) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
-                closeConnection(connection);
+            } catch (Exception e) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange", e);
+                if (tx == null || !tx.writefinished) {
+                    closeConnection(connection);
+                }
             } catch (Throwable t) {
                 logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
                 throw t;
@@ -872,9 +868,8 @@ class ServerImpl {
             rejected = true;
             logReply (code, requestStr, message);
             sendReply (
-                code, false, "<h1>"+code+Code.msg(code)+"</h1>"+message
+                code, true, "<h1>"+code+Code.msg(code)+"</h1>"+message
             );
-            closeConnection(connection);
         }
 
         void sendReply (
@@ -1016,35 +1011,30 @@ class ServerImpl {
      */
     class IdleTimeoutTask extends TimerTask {
         public void run () {
-            ArrayList<HttpConnection> toClose = new ArrayList<>();
-            final long currentTime = System.currentTimeMillis();
-            synchronized (idleConnections) {
-                final Iterator<HttpConnection> it = idleConnections.iterator();
-                while (it.hasNext()) {
-                    final HttpConnection c = it.next();
-                    if (currentTime - c.idleStartTime >= IDLE_INTERVAL) {
-                        toClose.add(c);
-                        it.remove();
-                    }
-                }
-            }
+            closeConnections(idleConnections, IDLE_INTERVAL);
             // if any newly accepted connection has been idle (i.e. no byte has been sent on that
             // connection during the configured idle timeout period) then close it as well
-            synchronized (newlyAcceptedConnections) {
-                final Iterator<HttpConnection> it = newlyAcceptedConnections.iterator();
-                while (it.hasNext()) {
-                    final HttpConnection c = it.next();
-                    if (currentTime - c.idleStartTime >= NEWLY_ACCEPTED_CONN_IDLE_INTERVAL) {
-                        toClose.add(c);
-                        it.remove();
-                    }
+            closeConnections(newlyAcceptedConnections, NEWLY_ACCEPTED_CONN_IDLE_INTERVAL);
+        }
+
+        private void closeConnections(Set<HttpConnection> connections, long idleInterval) {
+            long currentTime = System.currentTimeMillis();
+            ArrayList<HttpConnection> toClose = new ArrayList<>();
+
+            connections.forEach(c -> {
+                if (currentTime - c.idleStartTime >= idleInterval) {
+                    toClose.add(c);
                 }
-            }
+            });
             for (HttpConnection c : toClose) {
-                allConnections.remove(c);
-                c.close();
-                if (logger.isLoggable(Level.TRACE)) {
-                    logger.log(Level.TRACE, "Closed idle connection " + c);
+                // check if connection still idle
+                if (currentTime - c.idleStartTime >= idleInterval &&
+                        connections.remove(c)) {
+                    allConnections.remove(c);
+                    c.close();
+                    if (logger.isLoggable(Level.TRACE)) {
+                        logger.log(Level.TRACE, "Closed idle connection " + c);
+                    }
                 }
             }
         }

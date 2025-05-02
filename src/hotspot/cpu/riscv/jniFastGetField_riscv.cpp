@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -65,7 +64,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_FLOAT:   name = "jni_fast_GetFloatField";   break;
     case T_DOUBLE:  name = "jni_fast_GetDoubleField";  break;
     default:        ShouldNotReachHere();
-      name = NULL;  // unreachable
+      name = nullptr;  // unreachable
   }
   ResourceMark rm;
   BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE);
@@ -73,18 +72,12 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   MacroAssembler* masm = new MacroAssembler(&cbuf);
   address fast_entry = __ pc();
 
-  Address target(SafepointSynchronize::safepoint_counter_addr());
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(rcounter_addr, target, offset);
-    __ addi(rcounter_addr, rcounter_addr, offset);
-  });
-
   Label slow;
-  Address safepoint_counter_addr(rcounter_addr, 0);
-  __ lwu(rcounter, safepoint_counter_addr);
+  ExternalAddress counter(SafepointSynchronize::safepoint_counter_addr());
+  __ la(rcounter_addr, counter);
+  __ lwu(rcounter, Address(rcounter_addr));
   // An even value means there are no ongoing safepoint operations
-  __ andi(t0, rcounter, 1);
+  __ test_bit(t0, rcounter, 0);
   __ bnez(t0, slow);
 
   if (JvmtiExport::can_post_field_access()) {
@@ -93,12 +86,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
     // Check to see if a field access watch has been set before we
     // take the fast path.
-    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(result, target, offset);
-      __ lwu(result, Address(result, offset));
-    });
+    __ lwu(result, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ bnez(result, slow);
 
     __ mv(robj, c_rarg1);
@@ -112,7 +100,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   // Both robj and t0 are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  assert_cond(bs != NULL);
+  assert_cond(bs != nullptr);
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, t0, slow);
 
   __ srli(roffset, c_rarg2, 2);                // offset
@@ -145,7 +133,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // (LoadStore for volatile field).
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
-  __ lw(t0, safepoint_counter_addr);
+  __ lw(t0, Address(rcounter_addr));
   __ bne(rcounter, t0, slow);
 
   switch (type) {
@@ -168,17 +156,12 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_FLOAT:   slow_case_addr = jni_GetFloatField_addr();   break;
     case T_DOUBLE:  slow_case_addr = jni_GetDoubleField_addr();  break;
     default:        ShouldNotReachHere();
-      slow_case_addr = NULL;  // unreachable
+      slow_case_addr = nullptr;  // unreachable
   }
 
   {
     __ enter();
-    ExternalAddress target(slow_case_addr);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ rt_call(slow_case_addr);
     __ leave();
     __ ret();
   }

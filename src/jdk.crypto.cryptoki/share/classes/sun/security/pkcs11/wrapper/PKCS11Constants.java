@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -310,12 +310,6 @@ public interface PKCS11Constants {
 
     // pseudo key type ANY (for template manager)
     public static final long  PCKK_ANY                 = 0x7FFFFF22L;
-
-    public static final long  PCKK_HMAC                = 0x7FFFFF23L;
-    public static final long  PCKK_SSLMAC              = 0x7FFFFF24L;
-    public static final long  PCKK_TLSPREMASTER        = 0x7FFFFF25L;
-    public static final long  PCKK_TLSRSAPREMASTER     = 0x7FFFFF26L;
-    public static final long  PCKK_TLSMASTER           = 0x7FFFFF27L;
 
     /* Uncomment when actually used
     public static final long  CK_CERTIFICATE_CATEGORY_UNSPECIFIED   = 0L;
@@ -999,6 +993,15 @@ public interface PKCS11Constants {
 
     // NSS private
     public static final long  CKM_NSS_TLS_PRF_GENERAL        = 0x80000373L;
+    // Additional PKCS #12 PBE key derivation algorithms defined in NSS v3.29
+    public static final long  CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN
+                                        /* (CKM_NSS + 29) */ = 0xCE53436DL;
+    public static final long  CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN
+                                        /* (CKM_NSS + 30) */ = 0xCE53436EL;
+    public static final long  CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN
+                                        /* (CKM_NSS + 31) */ = 0xCE53436FL;
+    public static final long  CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN
+                                        /* (CKM_NSS + 32) */ = 0xCE534370L;
 
     // internal ids for our pseudo mechanisms SecureRandom and KeyStore
     public static final long  PCKM_SECURERANDOM              = 0x7FFFFF20L;
@@ -1103,7 +1106,9 @@ public interface PKCS11Constants {
     public static final long  CKD_BLAKE2B_256_KDF      = 0x00000018L;
     public static final long  CKD_BLAKE2B_384_KDF      = 0x00000019L;
     public static final long  CKD_BLAKE2B_512_KDF      = 0x0000001aL;
+    */
 
+    // PBKDF2 support, used in P11Util
     public static final long  CKP_PKCS5_PBKD2_HMAC_SHA1        = 0x00000001L;
     public static final long  CKP_PKCS5_PBKD2_HMAC_GOSTR3411   = 0x00000002L;
     public static final long  CKP_PKCS5_PBKD2_HMAC_SHA224      = 0x00000003L;
@@ -1115,6 +1120,7 @@ public interface PKCS11Constants {
 
     public static final long  CKZ_SALT_SPECIFIED      = 0x00000001L;
 
+    /*
     public static final long  CK_OTP_VALUE            = 0x00000000L;
     public static final long  CK_OTP_PIN              = 0x00000001L;
     public static final long  CK_OTP_CHALLENGE        = 0x00000002L;
@@ -1144,18 +1150,18 @@ public interface PKCS11Constants {
                                                               = 0x00000001L;
     public static final long  CK_SP800_108_DKM_LENGTH_SUM_OF_SEGMENTS
                                                               = 0x00000002L;
+    */
 
     public static final long  CKF_HKDF_SALT_NULL   = 0x00000001L;
     public static final long  CKF_HKDF_SALT_DATA   = 0x00000002L;
     public static final long  CKF_HKDF_SALT_KEY    = 0x00000004L;
-    */
 
     // private NSS attribute (for DSA and DH private keys)
     public static final long  CKA_NETSCAPE_DB         = 0xD5A0DB00L;
 
-    // base number of NSS private attributes
-    public static final long  CKA_NETSCAPE_BASE /*0x80000000L + 0x4E534350L*/
-                                                      = 0xCE534350L;
+    // base number of NSS private attributes. CKA_NETSCAPE_BASE is now known as
+    // CKM_NSS = CKM_VENDOR_DEFINED | NSSCK_VENDOR_NSS = 0x80000000 | 0x4E534350
+    public static final long  CKA_NETSCAPE_BASE       = 0xCE534350L;
 
     // object type for NSS trust
     public static final long  CKO_NETSCAPE_TRUST      = 0xCE534353L;

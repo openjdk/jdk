@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/klass.inline.hpp"
@@ -121,17 +120,17 @@ int AbstractInterpreter::size_activation(int max_stack,
 //
 // Parameters:
 //
-// interpreter_frame != NULL:
+// interpreter_frame isn't null:
 //   set up the method, locals, and monitors.
-//   The frame interpreter_frame, if not NULL, is guaranteed to be the
+//   The frame interpreter_frame, if not null, is guaranteed to be the
 //   right size, as determined by a previous call to this method.
 //   It is also guaranteed to be walkable even though it is in a skeletal state
 //
-// is_top_frame == true:
+// is_top_frame is true:
 //   We're processing the *oldest* interpreter frame!
 //
 // pop_frame_extra_args:
-//   If this is != 0 we are returning to a deoptimized frame by popping
+//   If this isn't 0 we are returning to a deoptimized frame by popping
 //   off the callee frame. We want to re-execute the call that called the
 //   callee interpreted, but since the return to the interpreter would pop
 //   the arguments off advance the esp by dummy popframe_extra_args slots.
@@ -183,6 +182,13 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* sender_sp;
   if (caller->is_interpreted_frame()) {
     sender_sp = caller->interpreter_frame_top_frame_sp();
+#ifdef ASSERT
+    assert(locals_base <= caller->interpreter_frame_expression_stack(), "bad placement");
+    // Test caller-aligned placement vs callee-aligned
+    intptr_t* l2 = (caller->sp() + method->max_locals() - 1 +
+      frame::z_parent_ijava_frame_abi_size / Interpreter::stackElementSize);
+    assert(locals_base >= l2, "bad placement");
+#endif
   } else if (caller->is_compiled_frame()) {
     sender_sp = caller->fp() - caller->cb()->frame_size();
     // The bottom frame's sender_sp is its caller's unextended_sp.
@@ -191,7 +197,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     assert(is_bottom_frame && (sender_sp == caller->unextended_sp()),
            "must initialize sender_sp of bottom skeleton frame when pushing it");
   } else {
-    assert(caller->is_entry_frame(), "is there a new frame type??");
+    assert(caller->is_entry_frame() || caller->is_upcall_stub_frame(), "is there a new frame type??");
     sender_sp = caller->sp(); // Call_stub only uses it's fp.
   }
 
@@ -201,6 +207,8 @@ void AbstractInterpreter::layout_activation(Method* method,
   interpreter_frame->interpreter_frame_set_monitor_end((BasicObjectLock *)monitor);
   *interpreter_frame->interpreter_frame_cache_addr() = method->constants()->cache();
   interpreter_frame->interpreter_frame_set_tos_address(tos);
-  interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
+  if (!is_bottom_frame) {
+    interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
+  }
   interpreter_frame->interpreter_frame_set_top_frame_sp(top_frame_sp);
 }

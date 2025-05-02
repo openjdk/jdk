@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,16 +21,20 @@
 package com.sun.org.apache.xalan.internal.lib;
 
 
+import com.sun.org.apache.xpath.internal.objects.XBoolean;
+import com.sun.org.apache.xpath.internal.objects.XNumber;
+import com.sun.org.apache.xpath.internal.objects.XObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import com.sun.org.apache.xpath.internal.objects.XBoolean;
-import com.sun.org.apache.xpath.internal.objects.XNumber;
-import com.sun.org.apache.xpath.internal.objects.XObject;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * This class contains EXSLT dates and times extension functions.
@@ -44,7 +48,7 @@ import com.sun.org.apache.xpath.internal.objects.XObject;
  *
  * @see <a href="http://www.exslt.org/">EXSLT</a>
  * @xsl.usage general
- * @LastModified: Nov 2017
+ * @LastModified: Nov 2023
  */
 
 public class ExsltDatetime
@@ -75,29 +79,19 @@ public class ExsltDatetime
      */
     public static String dateTime()
     {
-      Calendar cal = Calendar.getInstance();
-      Date datetime = cal.getTime();
-      // Format for date and time.
-      SimpleDateFormat dateFormat = new SimpleDateFormat(dt);
-
-      StringBuffer buff = new StringBuffer(dateFormat.format(datetime));
-      // Must also include offset from UTF.
-      // Get the offset (in milliseconds).
-      int offset = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
-      // If there is no offset, we have "Coordinated
-      // Universal Time."
-      if (offset == 0)
-        buff.append("Z");
-      else
-      {
-        // Convert milliseconds to hours and minutes
-        int hrs = offset/(60*60*1000);
-        // In a few cases, the time zone may be +/-hh:30.
-        int min = offset%(60*60*1000);
-        char posneg = hrs < 0? '-': '+';
-        buff.append(posneg).append(formatDigits(hrs)).append(':').append(formatDigits(min));
+      String resultStr = "";
+      try {
+         GregorianCalendar cal = new GregorianCalendar();
+         cal.setTime(new Date());
+         XMLGregorianCalendar xCal = DatatypeFactory.newInstance().newXMLGregorianCalendar(cal);
+         xCal.setMillisecond(DatatypeConstants.FIELD_UNDEFINED);
+         resultStr = xCal.toXMLFormat();
       }
-      return buff.toString();
+      catch (DatatypeConfigurationException ex) {
+
+      }
+
+      return resultStr;
     }
 
     /**
@@ -135,6 +129,7 @@ public class ExsltDatetime
     public static String date(String datetimeIn)
       throws ParseException
     {
+      if ("".equals(datetimeIn)) return EMPTY_STR;
       String[] edz = getEraDatetimeZone(datetimeIn);
       String leader = edz[0];
       String datetime = edz[1];
@@ -251,7 +246,7 @@ public class ExsltDatetime
 
       String[] formats = {dt, d, gym, gy};
       double yr = getNumber(datetime, formats, Calendar.YEAR);
-      if (ad || yr == Double.NaN)
+      if (ad || Double.isNaN(yr))
         return yr;
       else
         return -yr;
@@ -604,7 +599,7 @@ public class ExsltDatetime
 
       String[] formats = {dt, d, gym, gy};
       double dbl = getNumber(datetime, formats, Calendar.YEAR);
-      if (dbl == Double.NaN)
+      if (Double.isNaN(dbl))
         return new XNumber(Double.NaN);
       int yr = (int)dbl;
       return new XBoolean(yr % 400 == 0 || (yr % 100 != 0 && yr % 4 == 0));

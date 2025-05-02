@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@ import java.nio.ByteBuffer;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.MacSpi;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
@@ -39,6 +42,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
+import sun.security.util.PBEUtil;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
@@ -65,6 +69,9 @@ final class P11Mac extends MacSpi {
     // algorithm name
     private final String algorithm;
 
+    // PBEKeyInfo if algorithm is PBE-related, otherwise null
+    private final P11SecretKeyFactory.PBEKeyInfo svcPbeKi;
+
     // mechanism object
     private final CK_MECHANISM ckMechanism;
 
@@ -83,30 +90,24 @@ final class P11Mac extends MacSpi {
     // one byte buffer for the update(byte) method, initialized on demand
     private byte[] oneByte;
 
-    P11Mac(Token token, String algorithm, long mechanism)
-            throws PKCS11Exception {
+    P11Mac(Token token, String algorithm, long mechanism) {
         super();
         this.token = token;
         this.algorithm = algorithm;
-        Long params = null;
-        macLength = switch ((int) mechanism) {
-            case (int) CKM_MD5_HMAC -> 16;
-            case (int) CKM_SHA_1_HMAC -> 20;
-            case (int) CKM_SHA224_HMAC, (int) CKM_SHA512_224_HMAC, (int) CKM_SHA3_224_HMAC -> 28;
-            case (int) CKM_SHA256_HMAC, (int) CKM_SHA512_256_HMAC, (int) CKM_SHA3_256_HMAC -> 32;
-            case (int) CKM_SHA384_HMAC, (int) CKM_SHA3_384_HMAC -> 48;
-            case (int) CKM_SHA512_HMAC, (int) CKM_SHA3_512_HMAC -> 64;
-            case (int) CKM_SSL3_MD5_MAC -> {
-                params = Long.valueOf(16);
-                yield 16;
+        this.svcPbeKi = P11SecretKeyFactory.getPBEKeyInfo(algorithm);
+        if (svcPbeKi != null) {
+            macLength = svcPbeKi.keyLen / 8;
+        } else {
+            P11SecretKeyFactory.HMACKeyInfo svcKi =
+                    P11SecretKeyFactory.getHMACKeyInfo(algorithm);
+            if (svcKi == null) {
+                throw new ProviderException("Unknown mechanism: " + mechanism);
             }
-            case (int) CKM_SSL3_SHA1_MAC -> {
-                params = Long.valueOf(20);
-                yield 20;
-            }
-            default -> throw new ProviderException("Unknown mechanism: " + mechanism);
-        };
-        ckMechanism = new CK_MECHANISM(mechanism, params);
+            macLength = svcKi.keyLen / 8;
+        }
+        ckMechanism = new CK_MECHANISM(mechanism, mechanism == CKM_SSL3_MD5_MAC
+                || mechanism == CKM_SSL3_SHA1_MAC ? Long.valueOf(macLength) :
+                null);
     }
 
     // reset the states to the pre-initialized values
@@ -192,12 +193,40 @@ final class P11Mac extends MacSpi {
     // see JCE spec
     protected void engineInit(Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException
-                ("Parameters not supported");
-        }
         reset(true);
-        p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        p11Key = null;
+        if (svcPbeKi != null) {
+            // Do key derivation using P11SecretKeyFactory, then store the
+            // derived key to p11Key
+            PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
+            try {
+                P11Key.P11PBKDFKey derivedKey =
+                        P11SecretKeyFactory.derivePBEKey(token,
+                        pbeKeySpec, svcPbeKi);
+                // This Mac service uses the token where the derived key
+                // lives so there won't be any need to re-derive and use
+                // the password. The p11Key cannot be accessed out of this
+                // class.
+                derivedKey.clearPassword();
+                p11Key = derivedKey;
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            } finally {
+                pbeKeySpec.clearPassword();
+            }
+            if (params instanceof PBEParameterSpec pbeParams) {
+                // For PBE services, reassign params to the underlying
+                // service params. Notice that Mac services expect this
+                // value to be null.
+                params = pbeParams.getParameterSpec();
+            }
+        } else { // for the non-PBE case
+            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        }
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException(
+                    "Parameters not supported");
+        }
         try {
             initialize();
         } catch (PKCS11Exception e) {

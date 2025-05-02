@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -46,44 +44,44 @@ static uintptr_t string_hash(const char* str) {
   return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(str), static_cast<int>(strlen(str)));
 }
 
-static JfrSymbolTable::StringEntry* bootstrap = NULL;
+static JfrSymbolTable::StringEntry* bootstrap = nullptr;
 
-static JfrSymbolTable* _instance = NULL;
+static JfrSymbolTable* _instance = nullptr;
 
 static JfrSymbolTable& instance() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   return *_instance;
 }
 
 JfrSymbolTable* JfrSymbolTable::create() {
-  assert(_instance == NULL, "invariant");
-  assert_lock_strong(ClassLoaderDataGraph_lock);
+  assert(_instance == nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   _instance = new JfrSymbolTable();
   return _instance;
 }
 
 void JfrSymbolTable::destroy() {
-  assert_lock_strong(ClassLoaderDataGraph_lock);
-  if (_instance != NULL) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  if (_instance != nullptr) {
     delete _instance;
-    _instance = NULL;
+    _instance = nullptr;
   }
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
 }
 
 JfrSymbolTable::JfrSymbolTable() :
   _symbols(new Symbols(this)),
   _strings(new Strings(this)),
-  _symbol_list(NULL),
-  _string_list(NULL),
-  _symbol_query(NULL),
-  _string_query(NULL),
+  _symbol_list(nullptr),
+  _string_list(nullptr),
+  _symbol_query(nullptr),
+  _string_query(nullptr),
   _id_counter(1),
   _class_unload(false) {
-  assert(_symbols != NULL, "invariant");
-  assert(_strings != NULL, "invariant");
+  assert(_symbols != nullptr, "invariant");
+  assert(_strings != nullptr, "invariant");
   bootstrap = new StringEntry(0, (const char*)&BOOTSTRAP_LOADER_NAME);
-  assert(bootstrap != NULL, "invariant");
+  assert(bootstrap != nullptr, "invariant");
   bootstrap->set_id(create_symbol_id(1));
   _string_list = bootstrap;
 }
@@ -96,25 +94,25 @@ JfrSymbolTable::~JfrSymbolTable() {
 }
 
 void JfrSymbolTable::clear() {
-  assert(_symbols != NULL, "invariant");
+  assert(_symbols != nullptr, "invariant");
   if (_symbols->has_entries()) {
     _symbols->clear_entries();
   }
   assert(!_symbols->has_entries(), "invariant");
 
-  assert(_strings != NULL, "invariant");
+  assert(_strings != nullptr, "invariant");
   if (_strings->has_entries()) {
     _strings->clear_entries();
   }
   assert(!_strings->has_entries(), "invariant");
 
-  _symbol_list = NULL;
+  _symbol_list = nullptr;
   _id_counter = 1;
 
-  _symbol_query = NULL;
-  _string_query = NULL;
+  _symbol_query = nullptr;
+  _string_query = nullptr;
 
-  assert(bootstrap != NULL, "invariant");
+  assert(bootstrap != nullptr, "invariant");
   bootstrap->reset();
   _string_list = bootstrap;
 }
@@ -131,7 +129,7 @@ void JfrSymbolTable::increment_checkpoint_id() {
 
 template <typename T>
 inline void JfrSymbolTable::assign_id(T* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(entry->id() == 0, "invariant");
   entry->set_id(create_symbol_id(++_id_counter));
 }
@@ -144,22 +142,22 @@ void JfrSymbolTable::on_link(const SymbolEntry* entry) {
 }
 
 bool JfrSymbolTable::on_equals(uintptr_t hash, const SymbolEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(entry->hash() == hash, "invariant");
-  assert(_symbol_query != NULL, "invariant");
+  assert(_symbol_query != nullptr, "invariant");
   return _symbol_query == entry->literal();
 }
 
 void JfrSymbolTable::on_unlink(const SymbolEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   const_cast<Symbol*>(entry->literal())->decrement_refcount();
 }
 
 static const char* resource_to_c_heap_string(const char* resource_str) {
-  assert(resource_str != NULL, "invariant");
+  assert(resource_str != nullptr, "invariant");
   const size_t length = strlen(resource_str);
   char* const c_string = JfrCHeapObj::new_array<char>(length + 1);
-  assert(c_string != NULL, "invariant");
+  assert(c_string != nullptr, "invariant");
   strncpy(c_string, resource_str, length + 1);
   return c_string;
 }
@@ -172,26 +170,26 @@ void JfrSymbolTable::on_link(const StringEntry* entry) {
 }
 
 static bool string_compare(const char* query, const char* candidate) {
-  assert(query != NULL, "invariant");
-  assert(candidate != NULL, "invariant");
+  assert(query != nullptr, "invariant");
+  assert(candidate != nullptr, "invariant");
   const size_t length = strlen(query);
   return strncmp(query, candidate, length) == 0;
 }
 
 bool JfrSymbolTable::on_equals(uintptr_t hash, const StringEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(entry->hash() == hash, "invariant");
-  assert(_string_query != NULL, "invariant");
+  assert(_string_query != nullptr, "invariant");
   return string_compare(_string_query, entry->literal());
 }
 
 void JfrSymbolTable::on_unlink(const StringEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal() + 1));
 }
 
 traceid JfrSymbolTable::bootstrap_name(bool leakp) {
-  assert(bootstrap != NULL, "invariant");
+  assert(bootstrap != nullptr, "invariant");
   if (leakp) {
     bootstrap->set_leakp();
   }
@@ -199,13 +197,13 @@ traceid JfrSymbolTable::bootstrap_name(bool leakp) {
 }
 
 traceid JfrSymbolTable::mark(const Symbol* sym, bool leakp /* false */) {
-  assert(sym != NULL, "invariant");
-  return mark((uintptr_t)sym->identity_hash(), sym, leakp);
+  assert(sym != nullptr, "invariant");
+  return mark(sym->identity_hash(), sym, leakp);
 }
 
 traceid JfrSymbolTable::mark(uintptr_t hash, const Symbol* sym, bool leakp) {
-  assert(sym != NULL, "invariant");
-  assert(_symbols != NULL, "invariant");
+  assert(sym != nullptr, "invariant");
+  assert(_symbols != nullptr, "invariant");
   _symbol_query = sym;
   const SymbolEntry& entry = _symbols->lookup_put(hash, sym);
   if (_class_unload) {
@@ -222,8 +220,8 @@ traceid JfrSymbolTable::mark(const char* str, bool leakp /* false*/) {
 }
 
 traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
-  assert(str != NULL, "invariant");
-  assert(_strings != NULL, "invariant");
+  assert(str != nullptr, "invariant");
+  assert(_strings != nullptr, "invariant");
   _string_query = str;
   const StringEntry& entry = _strings->lookup_put(hash, str);
   if (_class_unload) {
@@ -236,62 +234,28 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
 }
 
 /*
-* hidden classes symbol is the external name +
-* the address of its InstanceKlass slash appended:
-*   java.lang.invoke.LambdaForm$BMH/22626602
-*
-* caller needs ResourceMark
-*/
-
-uintptr_t JfrSymbolTable::hidden_klass_name_hash(const InstanceKlass* ik) {
-  assert(ik != NULL, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  const oop mirror = ik->java_mirror_no_keepalive();
-  assert(mirror != NULL, "invariant");
-  return (uintptr_t)mirror->identity_hash();
-}
-
-static const char* create_hidden_klass_symbol(const InstanceKlass* ik, uintptr_t hash) {
-  assert(ik != NULL, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  assert(hash != 0, "invariant");
-  char* hidden_symbol = NULL;
-  const oop mirror = ik->java_mirror_no_keepalive();
-  assert(mirror != NULL, "invariant");
-  char hash_buf[40];
-  os::snprintf_checked(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, hash);
-  const size_t hash_len = strlen(hash_buf);
-  const size_t result_len = ik->name()->utf8_length();
-  hidden_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-  ik->name()->as_klass_external_name(hidden_symbol, (int)result_len + 1);
-  assert(strlen(hidden_symbol) == result_len, "invariant");
-  strcpy(hidden_symbol + result_len, hash_buf);
-  assert(strlen(hidden_symbol) == result_len + hash_len, "invariant");
-  return hidden_symbol;
-}
-
-bool JfrSymbolTable::is_hidden_klass(const Klass* k) {
-  assert(k != NULL, "invariant");
-  return k->is_instance_klass() && ((const InstanceKlass*)k)->is_hidden();
-}
-
-traceid JfrSymbolTable::mark_hidden_klass_name(const InstanceKlass* ik, bool leakp) {
-  assert(ik != NULL, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  const uintptr_t hash = hidden_klass_name_hash(ik);
-  const char* const hidden_symbol = create_hidden_klass_symbol(ik, hash);
-  return mark(hash, hidden_symbol, leakp);
+ * The hidden class symbol is the external name with the
+ * address of its Klass slash appended.
+ *
+ * "java.lang.invoke.LambdaForm$DMH/0x0000000037144c00"
+ *
+ * Caller needs ResourceMark.
+ */
+traceid JfrSymbolTable::mark_hidden_klass_name(const Klass* k, bool leakp) {
+  assert(k != nullptr, "invariant");
+  assert(k->is_hidden(), "invariant");
+  const uintptr_t hash = k->name()->identity_hash();
+  return mark(hash, k->external_name(), leakp);
 }
 
 traceid JfrSymbolTable::mark(const Klass* k, bool leakp) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   traceid symbol_id = 0;
-  if (is_hidden_klass(k)) {
-    assert(k->is_instance_klass(), "invariant");
-    symbol_id = mark_hidden_klass_name((const InstanceKlass*)k, leakp);
+  if (k->is_hidden()) {
+    symbol_id = mark_hidden_klass_name(k, leakp);
   } else {
     Symbol* const sym = k->name();
-    if (sym != NULL) {
+    if (sym != nullptr) {
       symbol_id = mark(sym, leakp);
     }
   }
@@ -301,8 +265,8 @@ traceid JfrSymbolTable::mark(const Klass* k, bool leakp) {
 
 template <typename T>
 traceid JfrSymbolTable::add_impl(const T* sym) {
-  assert(sym != NULL, "invariant");
-  assert(_instance != NULL, "invariant");
+  assert(sym != nullptr, "invariant");
+  assert(_instance != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   return instance().mark(sym);
 }

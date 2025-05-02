@@ -48,9 +48,10 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
     // Exercise caution using reset() and fired() - they may require MEMBARs
     void reset() { _Event = 0 ; }
     int  fired() { return _Event; }
-    void park () ;
-    void unpark () ;
-    int  park (jlong millis) ;
+    void park();
+    void unpark();
+    int  park(jlong millis);
+    int  park_nanos(jlong nanos);
 };
 
 class PlatformParker {

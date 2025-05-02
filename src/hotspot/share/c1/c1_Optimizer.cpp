@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
-#include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "compiler/compileLog.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "compiler/compileLog.hpp"
 
 typedef GrowableArray<ValueSet*> ValueSetList;
 
@@ -56,13 +53,13 @@ class CE_Eliminator: public BlockClosure {
     }
 
     CompileLog* log = _hir->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->set_context("optimize name='cee'");
   }
 
   ~CE_Eliminator() {
     CompileLog* log = _hir->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->clear_context(); // skip marker if nothing was printed
   }
 
@@ -96,7 +93,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   // 1) find conditional expression
   // check if block ends with an If
   If* if_ = block->end()->as_If();
-  if (if_ == NULL) return;
+  if (if_ == nullptr) return;
 
   // check if If works on int or object types
   // (we cannot handle If's working on long, float or doubles yet,
@@ -111,22 +108,22 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   Instruction* f_cur = f_block->next();
 
   // one Constant may be present between BlockBegin and BlockEnd
-  Value t_const = NULL;
-  Value f_const = NULL;
-  if (t_cur->as_Constant() != NULL && !t_cur->can_trap()) {
+  Value t_const = nullptr;
+  Value f_const = nullptr;
+  if (t_cur->as_Constant() != nullptr && !t_cur->can_trap()) {
     t_const = t_cur;
     t_cur = t_cur->next();
   }
-  if (f_cur->as_Constant() != NULL && !f_cur->can_trap()) {
+  if (f_cur->as_Constant() != nullptr && !f_cur->can_trap()) {
     f_const = f_cur;
     f_cur = f_cur->next();
   }
 
   // check if both branches end with a goto
   Goto* t_goto = t_cur->as_Goto();
-  if (t_goto == NULL) return;
+  if (t_goto == nullptr) return;
   Goto* f_goto = f_cur->as_Goto();
-  if (f_goto == NULL) return;
+  if (f_goto == nullptr) return;
 
   // check if both gotos merge into the same block
   BlockBegin* sux = t_goto->default_sux();
@@ -139,12 +136,12 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   if (if_state->scope()->level() > sux_state->scope()->level()) {
     while (sux_state->scope() != if_state->scope()) {
       if_state = if_state->caller_state();
-      assert(if_state != NULL, "states do not match up");
+      assert(if_state != nullptr, "states do not match up");
     }
   } else if (if_state->scope()->level() < sux_state->scope()->level()) {
     while (sux_state->scope() != if_state->scope()) {
       sux_state = sux_state->caller_state();
-      assert(sux_state != NULL, "states do not match up");
+      assert(sux_state != nullptr, "states do not match up");
     }
   }
 
@@ -153,7 +150,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   // check if phi function is present at end of successor stack and that
   // only this phi was pushed on the stack
   Value sux_phi = sux_state->stack_at(if_state->stack_size());
-  if (sux_phi == NULL || sux_phi->as_Phi() == NULL || sux_phi->as_Phi()->block() != sux) return;
+  if (sux_phi == nullptr || sux_phi->as_Phi() == nullptr || sux_phi->as_Phi()->block() != sux) return;
   if (sux_phi->type()->size() != sux_state->stack_size() - if_state->stack_size()) return;
 
   // get the values that were pushed in the true- and false-branch
@@ -219,7 +216,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   }
 
   Value result = make_ifop(if_->x(), if_->cond(), if_->y(), t_value, f_value);
-  assert(result != NULL, "make_ifop must return a non-null instruction");
+  assert(result != nullptr, "make_ifop must return a non-null instruction");
   if (!result->is_linked() && result->can_be_linked()) {
     NOT_PRODUCT(result->set_printable_bci(if_->printable_bci()));
     cur_end = cur_end->set_next(result);
@@ -289,13 +286,13 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
   y = y->subst();
 
   Constant* y_const = y->as_Constant();
-  if (y_const != NULL) {
+  if (y_const != nullptr) {
     IfOp* x_ifop = x->as_IfOp();
-    if (x_ifop != NULL) {                 // x is an ifop, y is a constant
+    if (x_ifop != nullptr) {                 // x is an ifop, y is a constant
       Constant* x_tval_const = x_ifop->tval()->subst()->as_Constant();
       Constant* x_fval_const = x_ifop->fval()->subst()->as_Constant();
 
-      if (x_tval_const != NULL && x_fval_const != NULL) {
+      if (x_tval_const != nullptr && x_fval_const != nullptr) {
         Instruction::Condition x_ifop_cond = x_ifop->cond();
 
         Constant::CompareResult t_compare_res = x_tval_const->compare(cond, y_const);
@@ -316,7 +313,7 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
       }
     } else {
       Constant* x_const = x->as_Constant();
-      if (x_const != NULL) {         // x and y are constants
+      if (x_const != nullptr) { // x and y are constants
         Constant::CompareResult x_compare_res = x_const->compare(cond, y_const);
         // not_comparable here is a valid return in case we're comparing unloaded oop constants
         if (x_compare_res != Constant::not_comparable) {
@@ -335,7 +332,7 @@ void Optimizer::eliminate_conditional_expressions() {
 }
 
 // This removes others' relation to block, but doesn't empty block's lists
-void disconnect_from_graph(BlockBegin* block) {
+static void disconnect_from_graph(BlockBegin* block) {
   for (int p = 0; p < block->number_of_preds(); p++) {
     BlockBegin* pred = block->pred_at(p);
     int idx;
@@ -360,19 +357,19 @@ class BlockMerger: public BlockClosure {
   {
     _hir->iterate_preorder(this);
     CompileLog* log = _hir->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->set_context("optimize name='eliminate_blocks'");
   }
 
   ~BlockMerger() {
     CompileLog* log = _hir->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->clear_context(); // skip marker if nothing was printed
   }
 
   bool try_merge(BlockBegin* block) {
     BlockEnd* end = block->end();
-    if (end->as_Goto() == NULL) return false;
+    if (end->as_Goto() == nullptr) return false;
 
     assert(end->number_of_sux() == 1, "end must have exactly one successor");
     // Note: It would be sufficient to check for the number of successors (= 1)
@@ -404,7 +401,7 @@ class BlockMerger: public BlockClosure {
     }
     for_each_local_value(sux_state, index, sux_value) {
       Phi* sux_phi = sux_value->as_Phi();
-      if (sux_phi != NULL && sux_phi->is_illegal()) continue;
+      if (sux_phi != nullptr && sux_phi->is_illegal()) continue;
         assert(sux_value == end_state->local_at(index), "locals not equal");
       }
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
@@ -419,7 +416,7 @@ class BlockMerger: public BlockClosure {
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
     Instruction* next = sux->next();
-    assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
+    assert(prev->as_BlockEnd() == nullptr, "must not be a BlockEnd");
     prev->set_next(next);
     prev->fixup_block_pointers();
 
@@ -472,14 +469,14 @@ class BlockMerger: public BlockClosure {
         if (tval && fval) {
           // Find the instruction before if_, starting with ifop.
           // When if_ and ifop are not in the same block, prev
-          // becomes NULL In such (rare) cases it is not
+          // becomes null In such (rare) cases it is not
           // profitable to perform the optimization.
           Value prev = ifop;
-          while (prev != NULL && prev->next() != if_) {
+          while (prev != nullptr && prev->next() != if_) {
             prev = prev->next();
           }
 
-          if (prev != NULL) {
+          if (prev != nullptr) {
             Instruction::Condition cond = if_->cond();
             BlockBegin* tsux = if_->tsux();
             BlockBegin* fsux = if_->fsux();
@@ -580,7 +577,6 @@ public:
   void do_Base           (Base*            x);
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
-  void do_RoundFP        (RoundFP*         x);
   void do_UnsafeGet      (UnsafeGet*       x);
   void do_UnsafePut      (UnsafePut*       x);
   void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
@@ -607,19 +603,19 @@ class NullCheckEliminator: public ValueVisitor {
   BlockList*        _work_list;                   // Basic blocks to visit
 
   bool visitable(Value x) {
-    assert(_visitable_instructions != NULL, "check");
+    assert(_visitable_instructions != nullptr, "check");
     return _visitable_instructions->contains(x);
   }
   void mark_visited(Value x) {
-    assert(_visitable_instructions != NULL, "check");
+    assert(_visitable_instructions != nullptr, "check");
     _visitable_instructions->remove(x);
   }
   void mark_visitable(Value x) {
-    assert(_visitable_instructions != NULL, "check");
+    assert(_visitable_instructions != nullptr, "check");
     _visitable_instructions->put(x);
   }
   void clear_visitable_state() {
-    assert(_visitable_instructions != NULL, "check");
+    assert(_visitable_instructions != nullptr, "check");
     _visitable_instructions->clear();
   }
 
@@ -628,9 +624,9 @@ class NullCheckEliminator: public ValueVisitor {
   NullCheckVisitor  _visitor;
   NullCheck*        _last_explicit_null_check;
 
-  bool set_contains(Value x)                      { assert(_set != NULL, "check"); return _set->contains(x); }
-  void set_put     (Value x)                      { assert(_set != NULL, "check"); _set->put(x); }
-  void set_remove  (Value x)                      { assert(_set != NULL, "check"); _set->remove(x); }
+  bool set_contains(Value x)                      { assert(_set != nullptr, "check"); return _set->contains(x); }
+  void set_put     (Value x)                      { assert(_set != nullptr, "check"); _set->put(x); }
+  void set_remove  (Value x)                      { assert(_set != nullptr, "check"); _set->remove(x); }
 
   BlockList* work_list()                          { return _work_list; }
 
@@ -651,18 +647,18 @@ class NullCheckEliminator: public ValueVisitor {
     : _opt(opt)
     , _work_list(new BlockList())
     , _set(new ValueSet())
-    , _block_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
-    , _last_explicit_null_check(NULL) {
+    , _block_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), nullptr)
+    , _last_explicit_null_check(nullptr) {
     _visitable_instructions = new ValueSet();
     _visitor.set_eliminator(this);
     CompileLog* log = _opt->ir()->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->set_context("optimize name='null_check_elimination'");
   }
 
   ~NullCheckEliminator() {
     CompileLog* log = _opt->ir()->compilation()->log();
-    if (log != NULL)
+    if (log != nullptr)
       log->clear_context(); // skip marker if nothing was printed
   }
 
@@ -685,13 +681,13 @@ class NullCheckEliminator: public ValueVisitor {
   NullCheck*  last_explicit_null_check()                     { return _last_explicit_null_check; }
   Value       last_explicit_null_check_obj()                 { return (_last_explicit_null_check
                                                                          ? _last_explicit_null_check->obj()
-                                                                         : NULL); }
+                                                                         : nullptr); }
   NullCheck*  consume_last_explicit_null_check() {
     _last_explicit_null_check->unpin(Instruction::PinExplicitNullCheck);
     _last_explicit_null_check->set_can_trap(false);
     return _last_explicit_null_check;
   }
-  void        clear_last_explicit_null_check()               { _last_explicit_null_check = NULL; }
+  void        clear_last_explicit_null_check()               { _last_explicit_null_check = nullptr; }
 
   // Handlers for relevant instructions
   // (separated out from NullCheckVisitor for clarity)
@@ -714,6 +710,8 @@ class NullCheckEliminator: public ValueVisitor {
   void handle_Phi             (Phi* x);
   void handle_ProfileCall     (ProfileCall* x);
   void handle_ProfileReturnType (ProfileReturnType* x);
+  void handle_Constant        (Constant* x);
+  void handle_IfOp            (IfOp* x);
 };
 
 
@@ -728,7 +726,7 @@ class NullCheckEliminator: public ValueVisitor {
 // that in for safety, otherwise should think more about it.
 void NullCheckVisitor::do_Phi            (Phi*             x) { nce()->handle_Phi(x);      }
 void NullCheckVisitor::do_Local          (Local*           x) {}
-void NullCheckVisitor::do_Constant       (Constant*        x) { /* FIXME: handle object constants */ }
+void NullCheckVisitor::do_Constant       (Constant*        x) { nce()->handle_Constant(x); }
 void NullCheckVisitor::do_LoadField      (LoadField*       x) { nce()->handle_AccessField(x); }
 void NullCheckVisitor::do_StoreField     (StoreField*      x) { nce()->handle_AccessField(x); }
 void NullCheckVisitor::do_ArrayLength    (ArrayLength*     x) { nce()->handle_ArrayLength(x); }
@@ -739,7 +737,7 @@ void NullCheckVisitor::do_ArithmeticOp   (ArithmeticOp*    x) { if (x->can_trap(
 void NullCheckVisitor::do_ShiftOp        (ShiftOp*         x) {}
 void NullCheckVisitor::do_LogicOp        (LogicOp*         x) {}
 void NullCheckVisitor::do_CompareOp      (CompareOp*       x) {}
-void NullCheckVisitor::do_IfOp           (IfOp*            x) {}
+void NullCheckVisitor::do_IfOp           (IfOp*            x) { nce()->handle_IfOp(x); }
 void NullCheckVisitor::do_Convert        (Convert*         x) {}
 void NullCheckVisitor::do_NullCheck      (NullCheck*       x) { nce()->handle_NullCheck(x); }
 void NullCheckVisitor::do_TypeCast       (TypeCast*        x) {}
@@ -763,7 +761,6 @@ void NullCheckVisitor::do_Throw          (Throw*           x) { nce()->clear_las
 void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
-void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
 void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
 void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
 void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
@@ -779,7 +776,7 @@ void NullCheckVisitor::do_Assert         (Assert*          x) {}
 #endif
 
 void NullCheckEliminator::visit(Value* p) {
-  assert(*p != NULL, "should not find NULL instructions");
+  assert(*p != nullptr, "should not find null instructions");
   if (visitable(*p)) {
     mark_visited(*p);
     (*p)->visit(&_visitor);
@@ -788,7 +785,7 @@ void NullCheckEliminator::visit(Value* p) {
 
 bool NullCheckEliminator::merge_state_for(BlockBegin* block, ValueSet* incoming_state) {
   ValueSet* state = state_for(block);
-  if (state == NULL) {
+  if (state == nullptr) {
     state = incoming_state->copy();
     set_state_for(block, state);
     return true;
@@ -812,7 +809,7 @@ void NullCheckEliminator::iterate_all() {
 void NullCheckEliminator::iterate_one(BlockBegin* block) {
   clear_visitable_state();
   // clear out an old explicit null checks
-  set_last_explicit_null_check(NULL);
+  set_last_explicit_null_check(nullptr);
 
   if (PrintNullCheckElimination) {
     tty->print_cr(" ...iterating block %d in null check elimination for %s::%s%s",
@@ -823,7 +820,7 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
   }
 
   // Create new state if none present (only happens at root)
-  if (state_for(block) == NULL) {
+  if (state_for(block) == nullptr) {
     ValueSet* tmp_state = new ValueSet();
     set_state_for(block, tmp_state);
     // Initial state is that local 0 (receiver) is non-null for
@@ -833,10 +830,10 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
     ciMethod*   method = scope->method();
     if (!method->is_static()) {
       Local* local0 = stack->local_at(0)->as_Local();
-      assert(local0 != NULL, "must be");
+      assert(local0 != nullptr, "must be");
       assert(local0->type() == objectType, "invalid type of receiver");
 
-      if (local0 != NULL) {
+      if (local0 != nullptr) {
         // Local 0 is used in this scope
         tmp_state->put(local0);
         if (PrintNullCheckElimination) {
@@ -858,7 +855,7 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
                    );
 
   BlockEnd* e = block->end();
-  assert(e != NULL, "incomplete graph");
+  assert(e != nullptr, "incomplete graph");
   int i;
 
   // Propagate the state before this block into the exception
@@ -876,13 +873,15 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
   }
 
   // Iterate through block, updating state.
-  for (Instruction* instr = block; instr != NULL; instr = instr->next()) {
+  for (Instruction* instr = block; instr != nullptr; instr = instr->next()) {
     // Mark instructions in this block as visitable as they are seen
     // in the instruction list.  This keeps the iteration from
     // visiting instructions which are references in other blocks or
     // visiting instructions more than once.
     mark_visitable(instr);
-    if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != NULL)) {
+    if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != nullptr)
+        || (instr->as_Constant() != nullptr && instr->as_Constant()->type()->is_object())
+        || (instr->as_IfOp() != nullptr)) {
       mark_visited(instr);
       instr->input_values_do(this);
       instr->visit(&_visitor);
@@ -908,7 +907,7 @@ void NullCheckEliminator::iterate(BlockBegin* block) {
 
 void NullCheckEliminator::handle_AccessField(AccessField* x) {
   if (x->is_static()) {
-    if (x->as_LoadField() != NULL) {
+    if (x->as_LoadField() != nullptr) {
       // If the field is a non-null static final object field (as is
       // often the case for sun.misc.Unsafe), put this LoadField into
       // the non-null map
@@ -944,7 +943,7 @@ void NullCheckEliminator::handle_AccessField(AccessField* x) {
                       x->explicit_null_check()->id(), x->id(), obj->id());
       }
     } else {
-      x->set_explicit_null_check(NULL);
+      x->set_explicit_null_check(nullptr);
       x->set_needs_null_check(false);
       if (PrintNullCheckElimination) {
         tty->print_cr("Eliminated AccessField %d's null check for value %d", x->id(), obj->id());
@@ -957,7 +956,7 @@ void NullCheckEliminator::handle_AccessField(AccessField* x) {
     }
     // Ensure previous passes do not cause wrong state
     x->set_needs_null_check(true);
-    x->set_explicit_null_check(NULL);
+    x->set_explicit_null_check(nullptr);
   }
   clear_last_explicit_null_check();
 }
@@ -975,7 +974,7 @@ void NullCheckEliminator::handle_ArrayLength(ArrayLength* x) {
                       x->explicit_null_check()->id(), x->id(), array->id());
       }
     } else {
-      x->set_explicit_null_check(NULL);
+      x->set_explicit_null_check(nullptr);
       x->set_needs_null_check(false);
       if (PrintNullCheckElimination) {
         tty->print_cr("Eliminated ArrayLength %d's null check for value %d", x->id(), array->id());
@@ -988,7 +987,7 @@ void NullCheckEliminator::handle_ArrayLength(ArrayLength* x) {
     }
     // Ensure previous passes do not cause wrong state
     x->set_needs_null_check(true);
-    x->set_explicit_null_check(NULL);
+    x->set_explicit_null_check(nullptr);
   }
   clear_last_explicit_null_check();
 }
@@ -1006,7 +1005,7 @@ void NullCheckEliminator::handle_LoadIndexed(LoadIndexed* x) {
                       x->explicit_null_check()->id(), x->id(), array->id());
       }
     } else {
-      x->set_explicit_null_check(NULL);
+      x->set_explicit_null_check(nullptr);
       x->set_needs_null_check(false);
       if (PrintNullCheckElimination) {
         tty->print_cr("Eliminated LoadIndexed %d's null check for value %d", x->id(), array->id());
@@ -1019,7 +1018,7 @@ void NullCheckEliminator::handle_LoadIndexed(LoadIndexed* x) {
     }
     // Ensure previous passes do not cause wrong state
     x->set_needs_null_check(true);
-    x->set_explicit_null_check(NULL);
+    x->set_explicit_null_check(nullptr);
   }
   clear_last_explicit_null_check();
 }
@@ -1196,6 +1195,28 @@ void NullCheckEliminator::handle_ProfileCall(ProfileCall* x) {
 
 void NullCheckEliminator::handle_ProfileReturnType(ProfileReturnType* x) {
   x->set_needs_null_check(!set_contains(x->ret()));
+}
+
+void NullCheckEliminator::handle_Constant(Constant *x) {
+  ObjectType* ot = x->type()->as_ObjectType();
+  if (ot != nullptr && ot->is_loaded()) {
+    ObjectConstant* oc = ot->as_ObjectConstant();
+    if (oc == nullptr || !oc->value()->is_null_object()) {
+      set_put(x);
+      if (PrintNullCheckElimination) {
+        tty->print_cr("Constant %d is non-null", x->id());
+      }
+    }
+  }
+}
+
+void NullCheckEliminator::handle_IfOp(IfOp *x) {
+  if (x->type()->is_object() && set_contains(x->tval()) && set_contains(x->fval())) {
+    set_put(x);
+    if (PrintNullCheckElimination) {
+      tty->print_cr("IfOp %d is non-null", x->id());
+    }
+  }
 }
 
 void Optimizer::eliminate_null_checks() {

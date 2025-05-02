@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.rsa;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -43,7 +45,7 @@ import sun.security.rsa.RSAUtil.KeyType;
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in CRT form.
  * For non-CRT private keys, see RSAPrivateKeyImpl. We need separate classes
  * to ensure correct behavior in instanceof checks, etc.
- *
+ * <p>
  * Note: RSA keys must be at least 512 bits long
  *
  * @see RSAPrivateKeyImpl
@@ -299,14 +301,6 @@ public final class RSAPrivateCrtKeyImpl
         return keyParams;
     }
 
-    // return a string representation of this key for debugging
-    @Override
-    public String toString() {
-        return "SunRsaSign " + type.keyAlgo + " private CRT key, "
-               + n.bitLength() + " bits" + "\n  params: " + keyParams
-               + "\n  modulus: " + n + "\n  private exponent: " + d;
-    }
-
     // utility method for parsing DER encoding of RSA private keys in PKCS#1
     // format as defined in RFC 8017 Appendix A.1.2, i.e. SEQ of version, n,
     // e, d, p, q, pe, qe, and coeff, and return the parsed components.
@@ -355,5 +349,21 @@ public final class RSAPrivateCrtKeyImpl
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA private key", e);
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "RSAPrivateCrtKeyImpl keys are not directly deserializable");
     }
 }

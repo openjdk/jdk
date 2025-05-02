@@ -38,6 +38,12 @@ public class Comparison<T extends Comparable<T>> {
     private final BiPredicate<T, T> comparisonPredicate;
     private final String comparator;
 
+    public enum Bound {
+        LOWER,
+        UPPER,
+        EQUAL,
+    }
+
     public Comparison(T givenValue, String comparator, BiPredicate<T, T> comparisonPredicate) {
         this.givenValue = givenValue;
         this.comparator = comparator;

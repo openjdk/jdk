@@ -82,6 +82,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(Node rootNode, OutputStream writer)
         throws CanonicalizationException {
         engineCanonicalizeSubTree(rootNode, "", null, writer);
@@ -95,6 +96,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(
         Node rootNode, String inclusiveNamespaces, OutputStream writer
     ) throws CanonicalizationException {
@@ -110,6 +112,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(
         Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer
     ) throws CanonicalizationException {
@@ -155,6 +158,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeXPathNodeSet(
         Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer
     ) throws CanonicalizationException {
@@ -336,6 +340,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
         }
     }
 
+    @Override
     protected void circumventBugIfNeeded(XMLSignatureInput input)
         throws XMLParserException, IOException {
         if (!input.isNeedsToBeExpanded() || inclusiveNSSet.isEmpty()) {

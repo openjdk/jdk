@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ public class CheckCompileCommandOption {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {
@@ -266,18 +266,18 @@ public class CheckCompileCommandOption {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
-        out.shouldHaveExitValue(0);
+        out.shouldHaveExitValue(1);
     }
 
     private static void verifyInvalidOption(String[] arguments, String[] expected_outputs) throws Exception {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {
@@ -285,7 +285,7 @@ public class CheckCompileCommandOption {
         }
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
-        out.shouldHaveExitValue(0);
+        out.shouldHaveExitValue(1);
 
     }
 

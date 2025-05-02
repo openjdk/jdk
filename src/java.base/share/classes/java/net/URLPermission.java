@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -141,13 +142,16 @@ import java.util.Locale;
  * method names to upper-case and header names to the form defines in RFC2616 (lower case
  * with initial letter of each word capitalized). Either list can contain a wild-card '*'
  * character which signifies all request methods or headers respectively.
- * <p>
- * Note. Depending on the context of use, some request methods and headers may be permitted
- * at all times, and others may not be permitted at any time. For example, the
- * HTTP protocol handler might disallow certain headers such as Content-Length
- * from being set by application code, regardless of whether the security policy
- * in force, permits it.
  *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
+ *
+ *
+ * @spec https://www.rfc-editor.org/info/rfc2296
+ *      RFC 2296: HTTP Remote Variant Selection Algorithm -- RVSA/1.0
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
 public final class URLPermission extends Permission {
@@ -164,7 +168,7 @@ public final class URLPermission extends Permission {
 
     // serialized field
     /**
-     * The actions string
+     * @serial The actions string
      */
     private String actions;
 
@@ -372,6 +376,7 @@ public final class URLPermission extends Permission {
      * Returns true if, this.getActions().equals(p.getActions())
      * and p's url equals this's url.  Returns false otherwise.
      */
+    @Override
     public boolean equals(Object p) {
         if (!(p instanceof URLPermission that)) {
             return false;
@@ -385,22 +390,19 @@ public final class URLPermission extends Permission {
         if (!this.authority.equals(that.authority)) {
             return false;
         }
-        if (this.path != null) {
-            return this.path.equals(that.path);
-        } else {
-            return that.path == null;
-        }
+        return Objects.equals(this.path, that.path);
     }
 
     /**
      * Returns a hashcode calculated from the hashcode of the
      * actions String and the url string.
      */
+    @Override
     public int hashCode() {
         return getActions().hashCode()
             + scheme.hashCode()
             + authority.hashCode()
-            + (path == null ? 0 : path.hashCode());
+            + Objects.hashCode(path);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package java.util;
 
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.HexDigits;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -68,6 +71,8 @@ import jdk.internal.access.SharedSecrets;
  * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
  * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
+ * @spec https://www.rfc-editor.org/info/rfc4122
+ *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
@@ -78,17 +83,13 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     @java.io.Serial
     private static final long serialVersionUID = -4856846361193249489L;
 
-    /*
-     * The most significant 64 bits of this UUID.
-     *
-     * @serial
+    /**
+     * @serial The most significant 64 bits of this UUID.
      */
     private final long mostSigBits;
 
-    /*
-     * The least significant 64 bits of this UUID.
-     *
-     * @serial
+    /**
+     * @serial The least significant 64 bits of this UUID.
      */
     private final long leastSigBits;
 
@@ -345,6 +346,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * </ul>
      *
      * @return  The variant number of this {@code UUID}
+     *
+     * @spec https://www.rfc-editor.org/info/rfc4122
+     *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
      */
     public int variant() {
         // This field is composed of a varying number of bits.
@@ -458,7 +462,29 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public String toString() {
-        return jla.fastUUID(leastSigBits, mostSigBits);
+        int i0 = (int) (mostSigBits >> 32);
+        int i1 = (int) mostSigBits;
+        int i2 = (int) (leastSigBits >> 32);
+        int i3 = (int) leastSigBits;
+
+        byte[] buf = new byte[36];
+        HexDigits.put4(buf, 0, i0 >> 16);
+        HexDigits.put4(buf, 4, i0);
+        buf[8] = '-';
+        HexDigits.put4(buf, 9, i1 >> 16);
+        buf[13] = '-';
+        HexDigits.put4(buf, 14, i1);
+        buf[18] = '-';
+        HexDigits.put4(buf, 19, i2 >> 16);
+        buf[23] = '-';
+        HexDigits.put4(buf, 24, i2);
+        HexDigits.put4(buf, 28, i3 >> 16);
+        HexDigits.put4(buf, 32, i3);
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     /**

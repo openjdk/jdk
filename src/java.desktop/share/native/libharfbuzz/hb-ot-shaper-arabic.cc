@@ -161,22 +161,23 @@ static const struct arabic_state_table_entry {
 };
 
 
-static void
+static bool
 arabic_fallback_shape (const hb_ot_shape_plan_t *plan,
                        hb_font_t *font,
                        hb_buffer_t *buffer);
 
-static void
+static bool
 record_stch (const hb_ot_shape_plan_t *plan,
              hb_font_t *font,
              hb_buffer_t *buffer);
 
-static void
+static bool
 deallocate_buffer_var (const hb_ot_shape_plan_t *plan,
                        hb_font_t *font,
                        hb_buffer_t *buffer)
 {
   HB_BUFFER_DEALLOCATE_VAR (buffer, arabic_shaping_action);
+  return false;
 }
 
 static void
@@ -201,24 +202,21 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
    * work.  However, testing shows that rlig and calt are applied
    * together for Mongolian in Uniscribe.  As such, we only add a
    * pause for Arabic, not other scripts.
-   *
-   * A pause after calt is required to make KFGQPC Uthmanic Script HAFS
-   * work correctly.  See https://github.com/harfbuzz/harfbuzz/issues/505
    */
 
 
   map->enable_feature (HB_TAG('s','t','c','h'));
   map->add_gsub_pause (record_stch);
 
-  map->enable_feature (HB_TAG('c','c','m','p'));
-  map->enable_feature (HB_TAG('l','o','c','l'));
+  map->enable_feature (HB_TAG('c','c','m','p'), F_MANUAL_ZWJ);
+  map->enable_feature (HB_TAG('l','o','c','l'), F_MANUAL_ZWJ);
 
   map->add_gsub_pause (nullptr);
 
   for (unsigned int i = 0; i < ARABIC_NUM_FEATURES; i++)
   {
     bool has_fallback = plan->props.script == HB_SCRIPT_ARABIC && !FEATURE_IS_SYRIAC (arabic_features[i]);
-    map->add_feature (arabic_features[i], has_fallback ? F_HAS_FALLBACK : F_NONE);
+    map->add_feature (arabic_features[i], F_MANUAL_ZWJ | (has_fallback ? F_HAS_FALLBACK : F_NONE));
     map->add_gsub_pause (nullptr);
   }
    map->add_gsub_pause (deallocate_buffer_var);
@@ -232,10 +230,13 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
   if (plan->props.script == HB_SCRIPT_ARABIC)
     map->add_gsub_pause (arabic_fallback_shape);
 
-  /* No pause after rclt.  See 98460779bae19e4d64d29461ff154b3527bf8420. */
-  map->enable_feature (HB_TAG('r','c','l','t'), F_MANUAL_ZWJ);
-  map->enable_feature (HB_TAG('c','a','l','t'), F_MANUAL_ZWJ);
-  map->add_gsub_pause (nullptr);
+   map->enable_feature (HB_TAG('c','a','l','t'), F_MANUAL_ZWJ);
+   /* https://github.com/harfbuzz/harfbuzz/issues/1573 */
+   if (!map->has_feature (HB_TAG('r','c','l','t')))
+     map->add_gsub_pause (nullptr);
+
+   map->enable_feature (HB_TAG('l','i','g','a'), F_MANUAL_ZWJ);
+   map->enable_feature (HB_TAG('c','l','i','g'), F_MANUAL_ZWJ);
 
   /* The spec includes 'cswh'.  Earlier versions of Windows
    * used to enable this by default, but testing suggests
@@ -245,8 +246,8 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
    * Note that IranNastaliq uses this feature extensively
    * to fixup broken glyph sequences.  Oh well...
    * Test case: U+0643,U+0640,U+0631. */
-  //map->enable_feature (HB_TAG('c','s','w','h'));
-  map->enable_feature (HB_TAG('m','s','e','t'));
+  //map->enable_feature (HB_TAG('c','s','w','h'), F_MANUAL_ZWJ);
+  map->enable_feature (HB_TAG('m','s','e','t'), F_MANUAL_ZWJ);
 }
 
 #include "hb-ot-shaper-arabic-fallback.hh"
@@ -328,7 +329,7 @@ arabic_joining (hb_buffer_t *buffer)
     if (entry->prev_action != NONE && prev != UINT_MAX)
     {
       info[prev].arabic_shaping_action() = entry->prev_action;
-      buffer->unsafe_to_break (prev, i + 1);
+      buffer->safe_to_insert_tatweel (prev, i + 1);
     }
     else
     {
@@ -362,7 +363,7 @@ arabic_joining (hb_buffer_t *buffer)
     if (entry->prev_action != NONE && prev != UINT_MAX)
     {
       info[prev].arabic_shaping_action() = entry->prev_action;
-      buffer->unsafe_to_break (prev, buffer->len);
+      buffer->safe_to_insert_tatweel (prev, buffer->len);
     }
     else if (2 <= state && state <= 5) /* States that have a possible prev_action. */
     {
@@ -409,19 +410,19 @@ setup_masks_arabic (const hb_ot_shape_plan_t *plan,
   setup_masks_arabic_plan (arabic_plan, buffer, plan->props.script);
 }
 
-static void
+static bool
 arabic_fallback_shape (const hb_ot_shape_plan_t *plan,
                        hb_font_t *font,
                        hb_buffer_t *buffer)
 {
 #ifdef HB_NO_OT_SHAPER_ARABIC_FALLBACK
-  return;
+  return false;
 #endif
 
   const arabic_shape_plan_t *arabic_plan = (const arabic_shape_plan_t *) plan->data;
 
   if (!arabic_plan->do_fallback)
-    return;
+    return false;
 
 retry:
   arabic_fallback_plan_t *fallback_plan = arabic_plan->fallback_plan;
@@ -437,6 +438,7 @@ retry:
   }
 
   arabic_fallback_plan_shape (fallback_plan, font, buffer);
+  return true;
 }
 
 /*
@@ -447,14 +449,14 @@ retry:
  * marks can use it as well.
  */
 
-static void
+static bool
 record_stch (const hb_ot_shape_plan_t *plan,
              hb_font_t *font HB_UNUSED,
              hb_buffer_t *buffer)
 {
   const arabic_shape_plan_t *arabic_plan = (const arabic_shape_plan_t *) plan->data;
   if (!arabic_plan->has_stch)
-    return;
+    return false;
 
   /* 'stch' feature was just applied.  Look for anything that multiplied,
    * and record it for stch treatment later.  Note that rtlm, frac, etc
@@ -470,6 +472,7 @@ record_stch (const hb_ot_shape_plan_t *plan,
       info[i].arabic_shaping_action() = comp % 2 ? STCH_REPEATING : STCH_FIXED;
       buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_ARABIC_HAS_STCH;
     }
+  return false;
 }
 
 static void
@@ -480,8 +483,10 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
   if (likely (!(buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_ARABIC_HAS_STCH)))
     return;
 
-  /* The Arabic shaper currently always processes in RTL mode, so we should
-   * stretch / position the stretched pieces to the left / preceding glyphs. */
+  bool rtl = buffer->props.direction == HB_DIRECTION_RTL;
+
+  if (!rtl)
+    buffer->reverse ();
 
   /* We do a two pass implementation:
    * First pass calculates the exact number of extra glyphs we need,
@@ -550,11 +555,11 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
       }
       i++; // Don't touch i again.
 
-      DEBUG_MSG (ARABIC, nullptr, "%s stretch at (%d,%d,%d)",
+      DEBUG_MSG (ARABIC, nullptr, "%s stretch at (%u,%u,%u)",
                  step == MEASURE ? "measuring" : "cutting", context, start, end);
-      DEBUG_MSG (ARABIC, nullptr, "rest of word:    count=%d width %d", start - context, w_total);
-      DEBUG_MSG (ARABIC, nullptr, "fixed tiles:     count=%d width=%d", n_fixed, w_fixed);
-      DEBUG_MSG (ARABIC, nullptr, "repeating tiles: count=%d width=%d", n_repeating, w_repeating);
+      DEBUG_MSG (ARABIC, nullptr, "rest of word:    count=%u width %" PRId32, start - context, w_total);
+      DEBUG_MSG (ARABIC, nullptr, "fixed tiles:     count=%d width=%" PRId32, n_fixed, w_fixed);
+      DEBUG_MSG (ARABIC, nullptr, "repeating tiles: count=%d width=%" PRId32, n_repeating, w_repeating);
 
       /* Number of additional times to repeat each repeating tile. */
       int n_copies = 0;
@@ -571,7 +576,10 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
         ++n_copies;
         hb_position_t excess = (n_copies + 1) * sign * w_repeating - sign * w_remaining;
         if (excess > 0)
+        {
           extra_repeat_overlap = excess / (n_copies * n_repeating);
+          w_remaining = 0;
+        }
       }
 
       if (step == MEASURE)
@@ -582,7 +590,7 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
       else
       {
         buffer->unsafe_to_break (context, end);
-        hb_position_t x_offset = 0;
+        hb_position_t x_offset = w_remaining / 2;
         for (unsigned int k = end; k > start; k--)
         {
           hb_position_t width = font->get_glyph_h_advance (info[k - 1].codepoint);
@@ -591,18 +599,29 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
           if (info[k - 1].arabic_shaping_action() == STCH_REPEATING)
             repeat += n_copies;
 
-          DEBUG_MSG (ARABIC, nullptr, "appending %d copies of glyph %d; j=%d",
+          DEBUG_MSG (ARABIC, nullptr, "appending %u copies of glyph %" PRIu32 "; j=%u",
                      repeat, info[k - 1].codepoint, j);
+          pos[k - 1].x_advance = 0;
           for (unsigned int n = 0; n < repeat; n++)
           {
-            x_offset -= width;
-            if (n > 0)
-              x_offset += extra_repeat_overlap;
+            if (rtl)
+            {
+              x_offset -= width;
+              if (n > 0)
+                x_offset += extra_repeat_overlap;
+            }
             pos[k - 1].x_offset = x_offset;
             /* Append copy. */
             --j;
             info[j] = info[k - 1];
             pos[j] = pos[k - 1];
+
+            if (!rtl)
+            {
+              x_offset += width;
+              if (n > 0)
+                x_offset -= extra_repeat_overlap;
+            }
           }
         }
       }
@@ -619,6 +638,9 @@ apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
       buffer->len = new_len;
     }
   }
+
+  if (!rtl)
+    buffer->reverse ();
 }
 
 
@@ -669,15 +691,15 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan HB_UNUSED,
 {
   hb_glyph_info_t *info = buffer->info;
 
-  DEBUG_MSG (ARABIC, buffer, "Reordering marks from %d to %d", start, end);
+  DEBUG_MSG (ARABIC, buffer, "Reordering marks from %u to %u", start, end);
 
   unsigned int i = start;
   for (unsigned int cc = 220; cc <= 230; cc += 10)
   {
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's starting at %d", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %u's starting at %u", cc, i);
     while (i < end && info_cc(info[i]) < cc)
       i++;
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's stopped at %d", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %u's stopped at %u", cc, i);
 
     if (i == end)
       break;
@@ -692,10 +714,10 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan HB_UNUSED,
     if (i == j)
       continue;
 
-    DEBUG_MSG (ARABIC, buffer, "Found %d's from %d to %d", cc, i, j);
+    DEBUG_MSG (ARABIC, buffer, "Found %u's from %u to %u", cc, i, j);
 
     /* Shift it! */
-    DEBUG_MSG (ARABIC, buffer, "Shifting %d's: %d %d", cc, i, j);
+    DEBUG_MSG (ARABIC, buffer, "Shifting %u's: %u %u", cc, i, j);
     hb_glyph_info_t temp[HB_OT_SHAPE_MAX_COMBINING_MARKS];
     assert (j - i <= ARRAY_LENGTH (temp));
     buffer->merge_clusters (start, j);
@@ -735,12 +757,12 @@ const hb_ot_shaper_t _hb_ot_shaper_arabic =
   data_destroy_arabic,
   nullptr, /* preprocess_text */
   postprocess_glyphs_arabic,
-  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   nullptr, /* decompose */
   nullptr, /* compose */
   setup_masks_arabic,
-  HB_TAG_NONE, /* gpos_tag */
   reorder_marks_arabic,
+  HB_TAG_NONE, /* gpos_tag */
+  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, /* fallback_position */
 };

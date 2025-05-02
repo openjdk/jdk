@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,8 @@ method name toString descriptor ()Ljava/lang/String; flags 1
 method name of descriptor ([Ljava/lang/String;)Lcom/sun/net/httpserver/Headers; flags 89
 method name of descriptor (Ljava/util/Map;)Lcom/sun/net/httpserver/Headers; flags 9 signature (Ljava/util/Map<Ljava/lang/String;Ljava/util/List<Ljava/lang/String;>;>;)Lcom/sun/net/httpserver/Headers;
 
-class name com/sun/net/httpserver/HttpContext
-header extends java/lang/Object flags 421
-
 class name com/sun/net/httpserver/HttpExchange
 header extends java/lang/Object implements java/lang/AutoCloseable,com/sun/net/httpserver/Request flags 421
-
-class name com/sun/net/httpserver/HttpHandler
-header extends java/lang/Object flags 601
 
 class name com/sun/net/httpserver/HttpHandlers
 header extends java/lang/Object flags 31
@@ -57,23 +51,10 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 method name handleOrElse descriptor (Ljava/util/function/Predicate;Lcom/sun/net/httpserver/HttpHandler;Lcom/sun/net/httpserver/HttpHandler;)Lcom/sun/net/httpserver/HttpHandler; flags 9 signature (Ljava/util/function/Predicate<Lcom/sun/net/httpserver/Request;>;Lcom/sun/net/httpserver/HttpHandler;Lcom/sun/net/httpserver/HttpHandler;)Lcom/sun/net/httpserver/HttpHandler;
 method name of descriptor (ILcom/sun/net/httpserver/Headers;Ljava/lang/String;)Lcom/sun/net/httpserver/HttpHandler; flags 9
 
-class name com/sun/net/httpserver/HttpPrincipal
-header extends java/lang/Object implements java/security/Principal flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name com/sun/net/httpserver/HttpServer
 header extends java/lang/Object flags 421
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name create descriptor (Ljava/net/InetSocketAddress;ILjava/lang/String;Lcom/sun/net/httpserver/HttpHandler;[Lcom/sun/net/httpserver/Filter;)Lcom/sun/net/httpserver/HttpServer; thrownTypes java/io/IOException flags 89
-
-class name com/sun/net/httpserver/HttpsConfigurator
-header extends java/lang/Object flags 21
-
-class name com/sun/net/httpserver/HttpsExchange
-header extends com/sun/net/httpserver/HttpExchange flags 421
-
-class name com/sun/net/httpserver/HttpsParameters
-header extends java/lang/Object flags 421
 
 class name com/sun/net/httpserver/HttpsServer
 header extends com/sun/net/httpserver/HttpServer flags 421

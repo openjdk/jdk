@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,17 +130,26 @@ public interface OperatingSystemMXBean extends
     public long getTotalMemorySize();
 
     /**
-     * Returns the "recent cpu usage" for the whole system. This value is a
+     * Returns the "recent CPU usage" for the whole system. This value is a
      * double in the [0.0,1.0] interval. A value of 0.0 means that all CPUs
      * were idle during the recent period of time observed, while a value
      * of 1.0 means that all CPUs were actively running 100% of the time
-     * during the recent period being observed. All values betweens 0.0 and
-     * 1.0 are possible depending of the activities going on in the system.
-     * If the system recent cpu usage is not available, the method returns a
+     * during the recent period being observed.
+     *
+     * The recent period of observation is implementation-specific, and
+     * typically relates to the duration since the last call made to this
+     * method, or {@link #getCpuLoad()}. For the very first invocation, the
+     * recent period of observation is undefined.
+     *
+     * All values between 0.0 and 1.0 are possible dependent on the activities
+     * going on. If the recent CPU usage is not available, the method returns a
      * negative value.
      *
      * @deprecated Use {@link #getCpuLoad()} instead of
      * this historically named method.
+     *
+     * @apiNote Callers should be aware of the possibility of other callers
+     * affecting the observation period and the result.
      *
      * @implSpec This implementation must return the same value
      * as {@link #getCpuLoad()}.
@@ -153,14 +162,23 @@ public interface OperatingSystemMXBean extends
     public default double getSystemCpuLoad() { return getCpuLoad(); }
 
     /**
-     * Returns the "recent cpu usage" for the operating environment. This value
+     * Returns the "recent CPU usage" for the operating environment. This value
      * is a double in the [0.0,1.0] interval. A value of 0.0 means that all CPUs
      * were idle during the recent period of time observed, while a value
      * of 1.0 means that all CPUs were actively running 100% of the time
-     * during the recent period being observed. All values betweens 0.0 and
-     * 1.0 are possible depending of the activities going on.
-     * If the recent cpu usage is not available, the method returns a
+     * during the recent period being observed.
+     *
+     * The recent period of observation is implementation-specific, and
+     * typically relates to the duration since the last call made to this
+     * method, or {@link #getSystemCpuLoad()}. For the very first invocation,
+     * the recent period of observation is undefined.
+     *
+     * All values between 0.0 and 1.0 are possible dependent on the activities
+     * going on. If the recent CPU usage is not available, the method returns a
      * negative value.
+     *
+     * @apiNote Callers should be aware of the possibility of other callers
+     * affecting the observation period and the result.
      *
      * @return the "recent cpu usage" for the whole operating environment;
      * a negative value if not available.
@@ -169,16 +187,26 @@ public interface OperatingSystemMXBean extends
     public double getCpuLoad();
 
     /**
-     * Returns the "recent cpu usage" for the Java Virtual Machine process.
+     * Returns the "recent CPU usage" for the Java Virtual Machine process.
      * This value is a double in the [0.0,1.0] interval. A value of 0.0 means
      * that none of the CPUs were running threads from the JVM process during
      * the recent period of time observed, while a value of 1.0 means that all
      * CPUs were actively running threads from the JVM 100% of the time
      * during the recent period being observed. Threads from the JVM include
-     * the application threads as well as the JVM internal threads. All values
-     * betweens 0.0 and 1.0 are possible depending of the activities going on
-     * in the JVM process and the whole system. If the Java Virtual Machine
-     * recent CPU usage is not available, the method returns a negative value.
+     * the application threads as well as the JVM internal threads.
+     *
+     * The recent period of observation is implementation-specific, and
+     * typically relates to the duration since the last call made to this
+     * method. For the very first invocation, the recent period of observation
+     * is undefined.
+     *
+     * All values between 0.0 and 1.0 are possible dependent on the activities
+     * going on in the JVM process and the whole system. If the Java Virtual
+     * Machine recent CPU usage is not available, the method returns a negative
+     * value.
+     *
+     * @apiNote Callers should be aware of the possibility of other callers
+     * affecting the observation period and the result.
      *
      * @return the "recent cpu usage" for the Java Virtual Machine process;
      * a negative value if not available.

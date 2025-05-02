@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package sun.security.util;
 
+import java.io.IOException;
 import java.math.BigInteger;
-import java.security.AlgorithmParameters;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -128,17 +126,19 @@ public final class KeyUtil {
      */
     public static final int getKeySize(AlgorithmParameters parameters) {
 
-        String algorithm = parameters.getAlgorithm();
-        switch (algorithm) {
+        switch (parameters.getAlgorithm()) {
             case "EC":
-                try {
-                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                // ECKeySizeParameterSpec is SunEC internal only
+                if (parameters.getProvider().getName().equals("SunEC")) {
+                    try {
+                        ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
-                    if (ps != null) {
-                        return ps.getKeySize();
+                        if (ps != null) {
+                            return ps.getKeySize();
+                        }
+                    } catch (InvalidParameterSpecException ipse) {
+                        // ignore
                     }
-                } catch (InvalidParameterSpecException ipse) {
-                    // ignore
                 }
 
                 try {
@@ -153,7 +153,7 @@ public final class KeyUtil {
 
                 // Note: the ECGenParameterSpec case should be covered by the
                 // ECParameterSpec case above.
-                // See ECUtil.getECParameterSpec(Provider, String).
+                // See ECUtil.getECParameterSpec(String).
 
                 break;
             case "DiffieHellman":
@@ -175,24 +175,19 @@ public final class KeyUtil {
     }
 
     /**
-     * Returns the algorithm name of the given key object. If an EC key is
-     * specified, returns the algorithm name and its named curve.
-     *
-     * @param key the key object, cannot be null
-     * @return the algorithm name of the given key object, or return in the
-     *       form of "EC (named curve)" if the given key object is an EC key
+     * If the key is a sub-algorithm of a larger group of algorithms, this
+     * method will return that sub-algorithm.  For example, key.getAlgorithm()
+     * returns "EdDSA", but the underlying key may be "Ed448".  For
+     * DisabledAlgorithmConstraints (DAC), this distinction is important.
+     * "EdDSA" means all curves for DAC, but when using it with
+     * KeyPairGenerator, "EdDSA" means "Ed25519".
      */
-    public static final String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve nc) {
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
+    public static String getAlgorithm(Key key) {
+        if (key instanceof AsymmetricKey ak &&
+            ak.getParams() instanceof NamedParameterSpec nps) {
+            return nps.getName();
         }
-        return result;
+        return key.getAlgorithm();
     }
 
     /**
@@ -291,13 +286,14 @@ public final class KeyUtil {
      *         contains the lower of that suggested by the client in the client
      *         hello and the highest supported by the server.
      * @param  encoded the encoded key in its "RAW" encoding format
-     * @param  isFailOver whether the previous decryption of the
-     *         encrypted PreMasterSecret message run into problem
+     * @param  failure true if encoded is incorrect according to previous checks
      * @return the polished PreMasterSecret key in its "RAW" encoding format
      */
     public static byte[] checkTlsPreMasterSecretKey(
             int clientVersion, int serverVersion, SecureRandom random,
-            byte[] encoded, boolean isFailOver) {
+            byte[] encoded, boolean failure) {
+
+        byte[] tmp;
 
         if (random == null) {
             random = JCAUtil.getSecureRandom();
@@ -305,30 +301,50 @@ public final class KeyUtil {
         byte[] replacer = new byte[48];
         random.nextBytes(replacer);
 
-        if (!isFailOver && (encoded != null)) {
-            // check the length
-            if (encoded.length != 48) {
-                // private, don't need to clone the byte array.
-                return replacer;
-            }
-
-            int encodedVersion =
-                    ((encoded[0] & 0xFF) << 8) | (encoded[1] & 0xFF);
-            if (clientVersion != encodedVersion) {
-                if (clientVersion > 0x0301 ||               // 0x0301: TLSv1
-                       serverVersion != encodedVersion) {
-                    encoded = replacer;
-                }   // Otherwise, For compatibility, we maintain the behavior
-                    // that the version in pre_master_secret can be the
-                    // negotiated version for TLS v1.0 and SSL v3.0.
-            }
-
-            // private, don't need to clone the byte array.
-            return encoded;
+        if (failure) {
+            tmp = replacer;
+        } else {
+            tmp = encoded;
         }
 
-        // private, don't need to clone the byte array.
-        return replacer;
+        if (tmp == null) {
+            encoded = replacer;
+        } else {
+            encoded = tmp;
+        }
+        // check the length
+        if (encoded.length != 48) {
+            // private, don't need to clone the byte array.
+            tmp = replacer;
+        } else {
+            tmp = encoded;
+        }
+
+        // At this point tmp.length is 48
+        int encodedVersion =
+                ((tmp[0] & 0xFF) << 8) | (tmp[1] & 0xFF);
+
+        // The following code is a time-constant version of
+        // if ((clientVersion != encodedVersion) ||
+        //    ((clientVersion > 0x301) && (serverVersion != encodedVersion))) {
+        //        return replacer;
+        // } else { return tmp; }
+        int check1 = (clientVersion - encodedVersion) |
+                (encodedVersion - clientVersion);
+        int check2 = 0x0301 - clientVersion;
+        int check3 = (serverVersion - encodedVersion) |
+                (encodedVersion - serverVersion);
+
+        check1 = (check1 & (check2 | check3)) >> 24;
+
+        // Now check1 is either 0 or -1
+        check2 = ~check1;
+
+        for (int i = 0; i < 48; i++) {
+            tmp[i] = (byte) ((tmp[i] & check2) | (replacer[i] & check1));
+        }
+
+        return tmp;
     }
 
     /**
@@ -403,5 +419,43 @@ public final class KeyUtil {
         return t;
     }
 
+    /**
+     * Finds the hash algorithm from an HSS/LMS public key.
+     *
+     * @param publicKey the HSS/LMS public key
+     * @return the hash algorithm
+     * @throws NoSuchAlgorithmException if key is from an unknown configuration
+     */
+    public static String hashAlgFromHSS(PublicKey publicKey)
+            throws NoSuchAlgorithmException {
+        try {
+            DerValue val = new DerValue(publicKey.getEncoded());
+            val.data.getDerValue();
+            byte[] rawKey = val.data.getBitString();
+            // According to https://www.rfc-editor.org/rfc/rfc8554.html:
+            // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
+            // is the LMS public key for the top-level tree.
+            // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
+            // Section 8: type is the numeric identifier for an LMS specification.
+            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
+            if (rawKey.length < 8) {
+                throw new NoSuchAlgorithmException("Cannot decode public key");
+            }
+            int num = ((rawKey[4] & 0xff) << 24) + ((rawKey[5] & 0xff) << 16)
+                    + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
+            return switch (num) {
+                // RFC 8554 only supports SHA_256 hash algorithm
+                case 5, 6, 7, 8, 9 -> "SHA-256";
+                default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
+            };
+        } catch (IOException e) {
+            throw new NoSuchAlgorithmException("Cannot decode public key", e);
+        }
+    }
+
+    public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
+        return alg.equalsIgnoreCase("TlsPremasterSecret")
+                || alg.equalsIgnoreCase("Generic");
+    }
 }
 

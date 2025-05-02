@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_linux.hpp"
 #include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -48,7 +47,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -165,7 +163,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__)
   intptr_t **ebp;
   __asm__ __volatile__ ("mov %%" SPELL_REG_FP ", %0":"=r"(ebp):);
@@ -225,7 +223,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-    if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
+    if (sig == SIGSEGV && info->si_addr == nullptr && info->si_code == SI_KERNEL) {
       // An irrecoverable SI_KERNEL SIGSEGV has occurred.
       // It's likely caused by dereferencing an address larger than TASK_SIZE.
       return false;
@@ -249,6 +247,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
+#if !defined(PRODUCT) && defined(_LP64)
+    if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+      // Verify that OS save/restore APX registers.
+      stub = VM_Version::cpuinfo_cont_addr_apx();
+      VM_Version::clear_apx_test_state();
+    }
+#endif
+
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
@@ -260,20 +266,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc);
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = Assembler::locate_next_instruction(pc);
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      }
-      else
-
+      } else
 #ifdef AMD64
-      if (sig == SIGFPE  &&
+      if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
         stub =
           SharedRuntime::
@@ -318,8 +322,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                (sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access())) {
         address next_pc = Assembler::locate_next_instruction(pc);
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -463,7 +467,7 @@ juint os::cpu_microcode_revision() {
   fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     char data[2048] = {0}; // lines should fit in 2K buf
-    size_t len = sizeof(data);
+    int len = (int)sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != nullptr) {
@@ -539,6 +543,21 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  // Sanity check: fpregs should point into the context.
+  if ((address)uc->uc_mcontext.fpregs < (address)uc ||
+      pointer_delta(uc->uc_mcontext.fpregs, uc, 1) >= sizeof(ucontext_t)) {
+    st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
+                 p2i(uc->uc_mcontext.fpregs), p2i(uc));
+  } else {
+    for (int i = 0; i < 16; ++i) {
+      const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
+      st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
+    }
+    st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
+  }
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
@@ -558,66 +577,51 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, sizeof(char));
-  st->cr();
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->uc_mcontext.gregs[REG_##id]);
+    switch (n) {
 #ifdef AMD64
-  st->print("RAX="); print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
-  st->print("RBX="); print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
-  st->print("RCX="); print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
-  st->print("RDX="); print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
-  st->print("RSP="); print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
-  st->print("RBP="); print_location(st, uc->uc_mcontext.gregs[REG_RBP]);
-  st->print("RSI="); print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
-  st->print("RDI="); print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
-  st->print("R8 ="); print_location(st, uc->uc_mcontext.gregs[REG_R8]);
-  st->print("R9 ="); print_location(st, uc->uc_mcontext.gregs[REG_R9]);
-  st->print("R10="); print_location(st, uc->uc_mcontext.gregs[REG_R10]);
-  st->print("R11="); print_location(st, uc->uc_mcontext.gregs[REG_R11]);
-  st->print("R12="); print_location(st, uc->uc_mcontext.gregs[REG_R12]);
-  st->print("R13="); print_location(st, uc->uc_mcontext.gregs[REG_R13]);
-  st->print("R14="); print_location(st, uc->uc_mcontext.gregs[REG_R14]);
-  st->print("R15="); print_location(st, uc->uc_mcontext.gregs[REG_R15]);
+    CASE_PRINT_REG( 0, "RAX=", RAX); break;
+    CASE_PRINT_REG( 1, "RBX=", RBX); break;
+    CASE_PRINT_REG( 2, "RCX=", RCX); break;
+    CASE_PRINT_REG( 3, "RDX=", RDX); break;
+    CASE_PRINT_REG( 4, "RSP=", RSP); break;
+    CASE_PRINT_REG( 5, "RBP=", RBP); break;
+    CASE_PRINT_REG( 6, "RSI=", RSI); break;
+    CASE_PRINT_REG( 7, "RDI=", RDI); break;
+    CASE_PRINT_REG( 8, "R8 =", R8); break;
+    CASE_PRINT_REG( 9, "R9 =", R9); break;
+    CASE_PRINT_REG(10, "R10=", R10); break;
+    CASE_PRINT_REG(11, "R11=", R11); break;
+    CASE_PRINT_REG(12, "R12=", R12); break;
+    CASE_PRINT_REG(13, "R13=", R13); break;
+    CASE_PRINT_REG(14, "R14=", R14); break;
+    CASE_PRINT_REG(15, "R15=", R15); break;
 #else
-  st->print("EAX="); print_location(st, uc->uc_mcontext.gregs[REG_EAX]);
-  st->print("EBX="); print_location(st, uc->uc_mcontext.gregs[REG_EBX]);
-  st->print("ECX="); print_location(st, uc->uc_mcontext.gregs[REG_ECX]);
-  st->print("EDX="); print_location(st, uc->uc_mcontext.gregs[REG_EDX]);
-  st->print("ESP="); print_location(st, uc->uc_mcontext.gregs[REG_ESP]);
-  st->print("EBP="); print_location(st, uc->uc_mcontext.gregs[REG_EBP]);
-  st->print("ESI="); print_location(st, uc->uc_mcontext.gregs[REG_ESI]);
-  st->print("EDI="); print_location(st, uc->uc_mcontext.gregs[REG_EDI]);
+    CASE_PRINT_REG(0, "EAX=", EAX); break;
+    CASE_PRINT_REG(1, "EBX=", EBX); break;
+    CASE_PRINT_REG(2, "ECX=", ECX); break;
+    CASE_PRINT_REG(3, "EDX=", EDX); break;
+    CASE_PRINT_REG(4, "ESP=", ESP); break;
+    CASE_PRINT_REG(5, "EBP=", EBP); break;
+    CASE_PRINT_REG(6, "ESI=", ESI); break;
+    CASE_PRINT_REG(7, "EDI=", EDI); break;
 #endif // AMD64
-
-  st->cr();
+    }
+# undef CASE_PRINT_REG
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

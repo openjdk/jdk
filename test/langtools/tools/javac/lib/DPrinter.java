@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,6 +601,7 @@ public class DPrinter {
     protected Object getField(Object o, Class<?> clazz, String name) {
         try {
             Field f = clazz.getDeclaredField(name);
+            @SuppressWarnings("deprecation")
             boolean prev = f.isAccessible();
             f.setAccessible(true);
             try {
@@ -618,6 +619,7 @@ public class DPrinter {
     protected Object callMethod(Object o, Class<?> clazz, String name) {
         try {
             Method m = clazz.getDeclaredMethod(name);
+            @SuppressWarnings("deprecation")
             boolean prev = m.isAccessible();
             m.setAccessible(true);
             try {
@@ -720,7 +722,7 @@ public class DPrinter {
 
         @Override
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            printTree("var", tree.varOrRecordPattern);
+            printTree("var", tree.var);
             printTree("expr", tree.expr);
             printTree("body", tree.body);
         }
@@ -1103,6 +1105,11 @@ public class DPrinter {
             printDocTree("serviceType", node.getServiceType());
             printList("description", node.getDescription());
             return visitBlockTag(node, null);
+        }
+
+        public Void visitRawText(RawTextTree node, Void p) {
+            printLimitedEscapedString("content", node.getContent());
+            return visitTree(node, null);
         }
 
         public Void visitReference(ReferenceTree node, Void p) {

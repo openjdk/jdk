@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @author John O'Conner
  * @library /java/text/testlib
  * @summary Regression tests for Collation and associated classes
+ * @run junit Test4401726
  */
 
 
@@ -34,12 +35,13 @@ import java.text.*;
 import java.util.Locale;
 import java.util.Vector;
 
-public class Test4401726 extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new Test4401726().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
 
+public class Test4401726 {
+
+    @Test
    public void TestSetOffSet() {
 
        int[] expected = {0, -1, 65536};
@@ -60,7 +62,7 @@ public class Test4401726 extends CollatorTest {
             actual[2] = iterator.next();
 
             if (compareArray(expected, actual) == false) {
-                errln("Failed.");
+                fail("Failed.");
             }
 
             str = "a";
@@ -72,11 +74,11 @@ public class Test4401726 extends CollatorTest {
             actual[2] = iterator.next();
 
             if (compareArray(expected, actual) == false) {
-                errln("Failed.");
+                fail("Failed.");
             }
 
         } catch (ParseException e) {
-            errln("Unexpected ParseException: " + e);
+            fail("Unexpected ParseException: " + e);
         }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,14 @@ import java.util.stream.Collectors;
 public class CtwRunner {
     private static final Predicate<String> IS_CLASS_LINE = Pattern.compile(
             "^\\[\\d+\\]\\s*\\S+\\s*$").asPredicate();
+
+    /**
+     * Value of {@code -Dsun.hotspot.tools.ctwrunner.ctw_extra_args}. Extra
+     * comma-separated arguments to pass to CTW subprocesses.
+     */
+    private static final String CTW_EXTRA_ARGS
+            = System.getProperty("sun.hotspot.tools.ctwrunner.ctw_extra_args", "");
+
 
     private static final String USAGE = "Usage: CtwRunner <artifact to compile> [start[%] stop[%]]";
 
@@ -162,8 +172,14 @@ public class CtwRunner {
 
         long classStart = start(totalClassCount);
         long classStop = stop(totalClassCount);
-
         long classCount = classStop - classStart;
+
+        boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
+        if (allowZeroClassCount && totalClassCount == 0L) {
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
+            return;
+        }
+
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
 
@@ -174,7 +190,7 @@ public class CtwRunner {
         while (!done) {
             String[] cmd = cmd(classStart, classStop);
             try {
-                ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+                ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
                 String commandLine = pb.command()
                         .stream()
                         .collect(Collectors.joining(" "));
@@ -257,44 +273,73 @@ public class CtwRunner {
     private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
         Path file = Paths.get(phase + ".cmd");
-        var rng = Utils.getRandomInstance();
+        Random rng = Utils.getRandomInstance();
+
+        ArrayList<String> Args = new ArrayList<String>(Arrays.asList(
+                "-Xbatch",
+                "-XX:-ShowMessageBoxOnError",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                // redirect VM output to cerr so it won't collide w/ ctw output
+                "-XX:+DisplayVMOutputToStderr",
+                // define phase start
+                "-DCompileTheWorldStartAt=" + classStart,
+                "-DCompileTheWorldStopAt=" + classStop,
+                // CTW library uses WhiteBox API
+                "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
+                // export jdk.internal packages used by CTW library
+                "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
+                // enable diagnostic logging
+                "-XX:+LogCompilation",
+                // use phase specific log, hs_err and ciReplay files
+                String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
+                String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
+                String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
+                // MethodHandle MUST NOT be compiled
+                "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                // CTW does not have good execution profile info, which would uncommon-trap
+                // a lot of branches/calls that are presumed to be never executed.
+                // Expand the optimization scope by disallowing most traps.
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:PerMethodSpecTrapLimit=0",
+                // Do not pay extra stack trace generation cost for normally thrown exceptions
+                "-XX:-StackTraceInThrowable",
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra zapping cost for explicit GC invocations
+                "-XX:-ZapUnusedHeapArea",
+                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
+                "-XX:+StressLCM",
+                "-XX:+StressGCM",
+                "-XX:+StressIGVN",
+                "-XX:+StressCCP",
+                "-XX:+StressMacroExpansion",
+                "-XX:+StressIncrementalInlining",
+                // StressSeed is uint
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
+                // Do not fail on huge methods where StressGCM makes register
+                // allocation allocate lots of memory
+                "-XX:CompileCommand=memlimit,*.*,0"));
+
+        // Use this stress mode 10% of the time as it could make some long-running compilations likely to abort.
+        if (rng.nextInt(10) == 0) {
+            Args.add("-XX:+StressBailout");
+            Args.add("-XX:StressBailoutMean=100000");
+            Args.add("-XX:+CaptureBailoutInformation");
+        }
+
+        for (String arg : CTW_EXTRA_ARGS.split(",")) {
+            Args.add(arg);
+        }
+
+        // CTW entry point
+        Args.add(CompileTheWorld.class.getName());
+        Args.add(target);
+
         try {
-            Files.write(file, List.of(
-                    "-Xbatch",
-                    "-XX:-UseCounterDecay",
-                    "-XX:-ShowMessageBoxOnError",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    // redirect VM output to cerr so it won't collide w/ ctw output
-                    "-XX:+DisplayVMOutputToStderr",
-                    // define phase start
-                    "-DCompileTheWorldStartAt=" + classStart,
-                    "-DCompileTheWorldStopAt=" + classStop,
-                    // CTW library uses WhiteBox API
-                    "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
-                    // export jdk.internal packages used by CTW library
-                    "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
-                    // enable diagnostic logging
-                    "-XX:+LogCompilation",
-                    // use phase specific log, hs_err and ciReplay files
-                    String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
-                    String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
-                    String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
-                    // MethodHandle MUST NOT be compiled
-                    "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                    // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+StressLCM",
-                    "-XX:+StressGCM",
-                    "-XX:+StressIGVN",
-                    "-XX:+StressCCP",
-                    // StressSeed is uint
-                    "-XX:StressSeed=" + Math.abs(rng.nextInt()),
-                    // CTW entry point
-                    CompileTheWorld.class.getName(),
-                    target));
+            Files.write(file, Args);
         } catch (IOException e) {
             throw new Error("can't create " + file, e);
         }

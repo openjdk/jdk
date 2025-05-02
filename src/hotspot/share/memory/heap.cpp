@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/heap.hpp"
+#include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of Heap
@@ -199,6 +199,7 @@ void CodeHeap::on_code_mapping(char* base, size_t size) {
 
 bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_size) {
   assert(rs.size() >= committed_size, "reserved < committed");
+  assert(is_aligned(committed_size, rs.page_size()), "must be page aligned");
   assert(segment_size >= sizeof(FreeBlock), "segment size is too small");
   assert(is_power_of_2(segment_size), "segment_size must be a power of 2");
   assert_locked_or_safepoint(CodeCache_lock);
@@ -207,14 +208,8 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _log2_segment_size = exact_log2(segment_size);
 
   // Reserve and initialize space for _memory.
-  const size_t page_size = rs.page_size();
-  const size_t granularity = os::vm_allocation_granularity();
-  const size_t c_size = align_up(committed_size, page_size);
-  assert(c_size <= rs.size(), "alignment made committed size to large");
-
-  os::trace_page_sizes(_name, c_size, rs.size(), page_size,
-                       rs.base(), rs.size());
-  if (!_memory.initialize(rs, c_size)) {
+  os::trace_page_sizes(_name, committed_size, rs.size(), rs.base(), rs.size(), rs.page_size());
+  if (!_memory.initialize(rs, committed_size)) {
     return false;
   }
 
@@ -222,17 +217,15 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
-  const size_t reserved_segments_alignment = MAX2(os::vm_page_size(), granularity);
+  const size_t reserved_segments_alignment = MAX2(os::vm_page_size(), os::vm_allocation_granularity());
   const size_t reserved_segments_size = align_up(_number_of_reserved_segments, reserved_segments_alignment);
   const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 
   // reserve space for _segmap
-  ReservedSpace seg_rs(reserved_segments_size);
+  ReservedSpace seg_rs = MemoryReserver::reserve(reserved_segments_size, mtCode);
   if (!_segmap.initialize(seg_rs, committed_segments_size)) {
     return false;
   }
-
-  MemTracker::record_virtual_memory_type((address)_segmap.low_boundary(), mtCode);
 
   assert(_segmap.committed_size() >= (size_t) _number_of_committed_segments, "could not commit  enough space for segment map");
   assert(_segmap.reserved_size()  >= (size_t) _number_of_reserved_segments , "could not reserve enough space for segment map");
@@ -486,18 +479,6 @@ void* CodeHeap::find_start(void* p) const {
 CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != nullptr && result->blob_contains((address)start)) ? result : nullptr;
-}
-
-size_t CodeHeap::alignment_unit() const {
-  // this will be a power of two
-  return _segment_size;
-}
-
-
-size_t CodeHeap::alignment_offset() const {
-  // The lowest address in any allocated block will be
-  // equal to alignment_offset (mod alignment_unit).
-  return sizeof(HeapBlock) & (_segment_size - 1);
 }
 
 // Returns the current block if available and used.

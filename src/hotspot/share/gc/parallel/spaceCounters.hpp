@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class SpaceCounters: public CHeapObj<mtGC> {
  private:
   PerfVariable*      _capacity;
   PerfVariable*      _used;
+  volatile size_t    _last_used_in_bytes;
 
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
@@ -46,6 +47,8 @@ class SpaceCounters: public CHeapObj<mtGC> {
 
   MutableSpace*     _object_space;
   char*             _name_space;
+
+  class UsedHelper;
 
  public:
 
@@ -68,14 +71,14 @@ class SpaceCounters: public CHeapObj<mtGC> {
   const char* name_space() const        { return _name_space; }
 };
 
-class MutableSpaceUsedHelper: public PerfLongSampleHelper {
-  private:
-    MutableSpace* _m;
+class SpaceCounters::UsedHelper: public PerfLongSampleHelper {
+ private:
+  SpaceCounters* _counters;
 
-  public:
-    MutableSpaceUsedHelper(MutableSpace* m) : _m(m) { }
+ public:
+  UsedHelper(SpaceCounters* counters) : _counters(counters) { }
 
-    jlong take_sample() override;
+  jlong take_sample() override;
 };
 
 #endif // SHARE_GC_PARALLEL_SPACECOUNTERS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,21 @@
 void os_initNative(JNIEnv *env, jclass clazz) {}
 
 /*
- * Returns the children of the requested pid and optionally each parent.
- *
- * Use sysctl to accumulate any process whose parent pid is zero or matches.
- * The resulting pids are stored into the array of longs.
+ * Return pids of active processes, and optionally parent pids and
+ * start times for each process.
+ * For a specific non-zero pid jpid, only the direct children are returned.
+ * If the pid jpid is zero, all active processes are returned.
+ * Uses sysctl to accumulates any process following the rules above.
+ * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
- * If the parentArray is non-null, store the parent pid.
- * If the array is too short, excess pids are not stored and
+ * If the parentArray is non-null, store also the parent pid.
+ * In this case the parentArray must have the same length as the result pid array.
+ * Of course in the case of a given non-zero pid all entries in the parentArray
+ * will contain this pid, so this array does only make sense in the case of a given
+ * zero pid.
+ * If the jstimesArray is non-null, store also the start time of the pid.
+ * In this case the jstimesArray must have the same length as the result pid array.
+ * If the array(s) (is|are) too short, excess pids are not stored and
  * the desired length is returned.
  */
 jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
@@ -89,25 +97,35 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         }
     }
 
-    // Get buffer size needed to read all processes
-    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
-    if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-            "java/lang/RuntimeException", "sysctl failed");
-        return -1;
-    }
+    int errsysctl;
+    int maxRetries = 100;
+    void *buffer = NULL;
+    do {
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
+        if (buffer != NULL) free(buffer);
+        // Get buffer size needed to read all processes
+        if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
+            JNU_ThrowByNameWithMessageAndLastError(env,
+                "java/lang/RuntimeException", "sysctl failed");
+            return -1;
+        }
 
-    // Allocate buffer big enough for all processes
-    void *buffer = malloc(bufSize);
-    if (buffer == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "malloc failed");
-        return -1;
-    }
+        // Allocate buffer big enough for all processes; add a little
+        // bit of space to be able to hold a few more proc infos
+        // for processes started right after the first sysctl call
+        buffer = malloc(bufSize + 4 * sizeof(struct kinfo_proc));
+        if (buffer == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "malloc failed");
+            return -1;
+        }
 
-    // Read process info for all processes
-    if (sysctl(mib, 4, buffer, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-            "java/lang/RuntimeException", "sysctl failed");
+        // Read process info for all processes
+        errsysctl = sysctl(mib, 4, buffer, &bufSize, NULL, 0);
+    } while (errsysctl < 0 && errno == ENOMEM && maxRetries-- > 0);
+
+    if (errsysctl < 0) {
+        JNU_ThrowByNameWithMessageAndLastError(env,
+            "java/lang/RuntimeException", "sysctl failed to get info about all processes");
         free(buffer);
         return -1;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,28 +180,15 @@ public class RSAUtil {
     }
 
     /**
-     * Decode the signature data. Verify that the object identifier matches
-     * and return the message digest.
+     * Encode the digest without the NULL params, return the to-be-signed data.
+     * This is only used by SunRsaSign.
      */
-    public static byte[] decodeSignature(ObjectIdentifier oid, byte[] sig)
-            throws IOException {
-        // Enforce strict DER checking for signatures
-        DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
-        DerValue[] values = in.getSequence(2);
-        if ((values.length != 2) || (in.available() != 0)) {
-            throw new IOException("SEQUENCE length error");
-        }
-        AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (!algId.getOID().equals(oid)) {
-            throw new IOException("ObjectIdentifier mismatch: "
-                + algId.getOID());
-        }
-        if (algId.getEncodedParams() != null) {
-            throw new IOException("Unexpected AlgorithmId parameters");
-        }
-        if (values[1].isConstructed()) {
-            throw new IOException("Unexpected constructed digest value");
-        }
-        return values[1].getOctetString();
+    static byte[] encodeSignatureWithoutNULL(ObjectIdentifier oid, byte[] digest) {
+        DerOutputStream out = new DerOutputStream();
+        out.write(DerValue.tag_Sequence, new DerOutputStream().putOID(oid));
+        out.putOctetString(digest);
+        DerValue result =
+                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        return result.toByteArray();
     }
 }

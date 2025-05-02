@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ import java.util.stream.IntStream;
 
 /**
  * @test
+ * @bug 8309727
  * @modules jdk.incubator.vector
+ * @run main VectorRuns
  */
 
 public class VectorRuns {
@@ -68,7 +70,7 @@ public class VectorRuns {
         if (r >= a.length)
             return a.length;
 
-        int length = a.length & (species.length() - 1);
+        int length = species.loopBound(a.length);
         if (length == a.length) length -= species.length();
         while (r < length) {
             IntVector vl = IntVector.fromArray(species, a, r - 1);

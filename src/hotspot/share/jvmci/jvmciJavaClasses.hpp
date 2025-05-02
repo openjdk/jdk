@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@
                          static_boolean_field, \
                          jvmci_method, \
                          jvmci_constructor) \
-  start_class(Services, jdk_vm_ci_services_Services)                                                          \
-    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, Services, initializeSavedProperties, byte_array_void_signature, (JVMCIObject serializedProperties)) \
-  end_class                                                                                                   \
   start_class(Architecture, jdk_vm_ci_code_Architecture)                                                      \
     object_field(Architecture, wordKind, "Ljdk/vm/ci/meta/PlatformKind;")                                     \
   end_class                                                                                                   \
@@ -74,10 +71,21 @@
     object_field(HotSpotResolvedJavaFieldImpl, type, "Ljdk/vm/ci/meta/JavaType;")                             \
     object_field(HotSpotResolvedJavaFieldImpl, holder, "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")   \
     int_field(HotSpotResolvedJavaFieldImpl, offset)                                                           \
-    int_field(HotSpotResolvedJavaFieldImpl, modifiers)                                                        \
+  end_class                                                                                                   \
+  start_class(FieldInfo, jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo)                           \
+    int_field(FieldInfo, nameIndex)                                                                           \
+    int_field(FieldInfo, signatureIndex)                                                                      \
+    int_field(FieldInfo, offset)                                                                              \
+    int_field(FieldInfo, classfileFlags)                                                                      \
+    int_field(FieldInfo, internalFlags)                                                                       \
+    int_field(FieldInfo, initializerIndex)                                                                    \
+    jvmci_constructor(FieldInfo, "(IIIIII)V")                                                                 \
   end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
+  end_class                                                                                                   \
+  start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
+    long_field(HotSpotMethodData, methodDataPointer)                                                          \
   end_class                                                                                                   \
   start_class(InstalledCode, jdk_vm_ci_code_InstalledCode)                                                    \
     long_field(InstalledCode, address)                                                                        \
@@ -123,7 +131,10 @@
     object_field(VMIntrinsicMethod, name, "Ljava/lang/String;")                                               \
     object_field(VMIntrinsicMethod, descriptor, "Ljava/lang/String;")                                         \
     int_field(VMIntrinsicMethod, id)                                                                          \
-    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")        \
+    boolean_field(VMIntrinsicMethod, isAvailable)                                                             \
+    boolean_field(VMIntrinsicMethod, c1Supported)                                                             \
+    boolean_field(VMIntrinsicMethod, c2Supported)                                                             \
+    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZZZ)V")     \
   end_class                                                                                                   \
   start_class(HotSpotCompilationRequestResult, jdk_vm_ci_hotspot_HotSpotCompilationRequestResult)             \
     object_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                       \
@@ -149,7 +160,7 @@
   start_class(JavaConstant, jdk_vm_ci_meta_JavaConstant)                                                      \
     static_object_field(JavaConstant, ILLEGAL, "Ljdk/vm/ci/meta/PrimitiveConstant;")                          \
     static_object_field(JavaConstant, NULL_POINTER, "Ljdk/vm/ci/meta/JavaConstant;")                          \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forPrimitive, forPrimitive_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forPrimitive, forPrimitive_signature) \
   end_class                                                                                                   \
   start_class(ResolvedJavaMethod, jdk_vm_ci_meta_ResolvedJavaMethod)                                          \
   end_class                                                                                                   \
@@ -189,34 +200,37 @@
   end_class                                                                                                   \
   start_class(HotSpotJVMCIRuntime, jdk_vm_ci_hotspot_HotSpotJVMCIRuntime)                                     \
     objectarray_field(HotSpotJVMCIRuntime, excludeFromJVMCICompilation, "[Ljava/lang/Module;")                \
-    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, compileMethod, compileMethod_signature, (JVMCIObject runtime, JVMCIObject method, int entry_bci, jlong env, int id)) \
-    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isGCSupported, int_bool_signature, (JVMCIObject runtime, int gcIdentifier)) \
-    jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, bootstrapFinished, void_method_signature, (JVMCIObject runtime, JVMCI_TRAPS)) \
-    jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, shutdown, void_method_signature, (JVMCIObject runtime)) \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, runtime, runtime_signature, (JVMCI_TRAPS)) \
-    jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, HotSpotJVMCIRuntime, getCompiler, getCompiler_signature, (JVMCIObject runtime, JVMCI_TRAPS)) \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, callToString, callToString_signature, (JVMCIObject object, JVMCI_TRAPS)) \
-    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, HotSpotJVMCIRuntime, postTranslation, object_void_signature, (JVMCIObject object, JVMCI_TRAPS)) \
+    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, compileMethod, compileMethod_signature) \
+    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isGCSupported, int_bool_signature) \
+    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isIntrinsicSupported, int_bool_signature) \
+    jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, bootstrapFinished, void_method_signature) \
+    jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, shutdown, void_method_signature) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, runtime, runtime_signature) \
+    jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, HotSpotJVMCIRuntime, getCompiler, getCompiler_signature) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, exceptionToString, exceptionToString_signature) \
+    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, HotSpotJVMCIRuntime, postTranslation, object_void_signature) \
   end_class                                                                                                   \
   start_class(JVMCIError, jdk_vm_ci_common_JVMCIError)                                                        \
     jvmci_constructor(JVMCIError, "(Ljava/lang/String;)V")                                                    \
   end_class                                                                                                   \
   start_class(InspectedFrameVisitor, jdk_vm_ci_code_stack_InspectedFrameVisitor)                              \
   end_class                                                                                                   \
+  start_class(Services, jdk_vm_ci_services_Services)                                                                 \
+  end_class                                                                                                   \
   start_class(JVMCI, jdk_vm_ci_runtime_JVMCI)                                                                 \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JVMCI, getRuntime, getRuntime_signature, (JVMCI_TRAPS)) \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JVMCI, initializeRuntime, initializeRuntime_signature, (JVMCI_TRAPS)) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JVMCI, getRuntime, getRuntime_signature) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JVMCI, initializeRuntime, initializeRuntime_signature) \
   end_class                                                                                                   \
   start_class(Object, java_lang_Object)                                                                       \
   end_class                                                                                                   \
   start_class(String, java_lang_String)                                                                       \
   end_class                                                                                                   \
   start_class(Class, java_lang_Class)                                                                         \
-    jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, Class, getName, void_string_signature, (JVMCI_TRAPS)) \
+    jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, Class, getName, void_string_signature) \
   end_class                                                                                                   \
   start_class(VMSupport, jdk_internal_vm_VMSupport)                                                           \
-    jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature, (JVMCIObject throwable, jlong buffer, int buffer_size)) \
-    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, decodeAndThrowThrowable_signature, (jlong buffer)) \
+    jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature) \
+    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, decodeAndThrowThrowable_signature) \
   end_class                                                                                                   \
   start_class(ArrayIndexOutOfBoundsException, java_lang_ArrayIndexOutOfBoundsException)                       \
     jvmci_constructor(ArrayIndexOutOfBoundsException, "(Ljava/lang/String;)V")                                \
@@ -233,8 +247,11 @@
   start_class(InternalError, java_lang_InternalError)                                                         \
     jvmci_constructor(InternalError, "(Ljava/lang/String;)V")                                                 \
   end_class                                                                                                   \
-  start_class(ClassNotFoundException, java_lang_ClassNotFoundException)                                       \
-    jvmci_constructor(ClassNotFoundException, "(Ljava/lang/String;)V")                                        \
+  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                   \
+    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                              \
+  end_class                                                                                                   \
+  start_class(NoClassDefFoundError, java_lang_NoClassDefFoundError)                                           \
+    jvmci_constructor(NoClassDefFoundError, "(Ljava/lang/String;)V")                                          \
   end_class                                                                                                   \
   start_class(InvalidInstalledCodeException, jdk_vm_ci_code_InvalidInstalledCodeException)                    \
     jvmci_constructor(InvalidInstalledCodeException, "(Ljava/lang/String;)V")                                 \
@@ -328,7 +345,7 @@ class JVMCIEnv;
     static hstype name(JVMCIEnv* env);                                                            \
     static void set_  ## name(JVMCIEnv* env, hstype hstype);
 
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, simpleClassName, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, simpleClassName, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
 /**
@@ -421,7 +438,7 @@ public:                                                                         
 #define STATIC_OOPISH_FIELD(simpleClassName, name, type, hstype) \
   STATIC_FIELD(simpleClassName, name, type)
 
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args) \
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)       \
   public:                                                                                                           \
     static jmethodID methodName##_method() { return _##methodName##_method; }                                       \
   private:                                                                                                          \

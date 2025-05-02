@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,14 +62,17 @@ class JfrCheckpointManager : public JfrCHeapObj {
   JfrCheckpointMspace* _global_mspace;
   JfrThreadLocalCheckpointMspace* _thread_local_mspace;
   JfrThreadLocalCheckpointMspace* _virtual_thread_local_mspace;
-  JfrChunkWriter& _chunkwriter;
+  JfrChunkWriter* _chunkwriter;
 
-  JfrCheckpointManager(JfrChunkWriter& cw);
+  JfrCheckpointManager();
   ~JfrCheckpointManager();
   static JfrCheckpointManager& instance();
-  static JfrCheckpointManager* create(JfrChunkWriter& cw);
-  bool initialize();
+  static JfrCheckpointManager* create();
+  bool initialize_early();
+  bool initialize(JfrChunkWriter* cw);
   static void destroy();
+
+  JfrChunkWriter& chunkwriter();
 
   static BufferPtr get_virtual_thread_local(Thread* thread);
   static void set_virtual_thread_local(Thread* thread, BufferPtr buffer);
@@ -103,8 +106,9 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void register_full(BufferPtr buffer, Thread* thread);
 
  public:
-  static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = NULL);
-  static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = NULL);
+  static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = nullptr);
+  static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = nullptr);
+  static void write_simplified_vthread_checkpoint(traceid vtid);
   size_t flush_type_set();
 
   friend class Jfr;

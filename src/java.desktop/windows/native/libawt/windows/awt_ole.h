@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,16 +179,5 @@ struct CLogEntryPoint0 {
 #define _VV(vrt) _variant_t(vrt, false)
 #define _VE      _variant_t()
 #define _VB(b)   _variant_t(bool(b))
-
-struct OLEHolder
-{
-    OLEHolder()
-    : m_hr(::OleInitialize(NULL))
-    {}
-
-    ~OLEHolder(){}
-    operator bool() const { return S_OK==SUCCEEDED(m_hr); }
-    HRESULT m_hr;
-};
 
 #endif//AWT_OLE_H

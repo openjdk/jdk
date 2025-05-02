@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,6 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
      */
     @SuppressWarnings("deprecation")
     void scroll(int x, int y, int flag, int type) {
-        checkSecurity();
         ScrollPane sp = (ScrollPane)target;
         Component c = getScrollChild();
         if (c == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,13 @@ public class resume001a {
 
             String instruction;
 
-            log1("waiting for an instruction from the debugger ...");
+            log1("waiting for an instruction from the debugger: iteration " + i);
+            if (i == 1) {
+                // Let the debugger know we finished the first iteration and are now
+                // waiting for next command. This is needed so we don't suspend the
+                // main thread while it is doing a log(), which can hold a needed lock.
+                pipe.println("waiting");
+            }
             instruction = pipe.readln();
             if (instruction.equals("quit")) {
                 log1("'quit' recieved");

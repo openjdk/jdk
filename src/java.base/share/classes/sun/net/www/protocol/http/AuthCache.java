@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ public interface AuthCache {
     /**
      * Put an entry in the cache. pkey is a string specified as follows:
      *
-     * A:[B:]C:D:E[:F][;key=value]   Between 4 and 6 fields separated by ":",
-     *          and an optional semicolon-separated key=value list postfix,
+     * A:[B:]C:D:E[:F]  Between 4 and 6 fields separated by ":",
      *          where the fields have the following meaning:
      * A is "s" or "p" for server or proxy authentication respectively
      * B is optional and is the {@link AuthScheme}, e.g. BASIC, DIGEST, NTLM, etc
@@ -47,11 +46,6 @@ public interface AuthCache {
      * D is the hostname
      * E is the port number
      * F is optional and if present is the realm
-     *
-     * The semi-colon separated key=value list postfix can be used to
-     * provide additional contextual information, thus allowing
-     * to separate AuthCacheValue instances obtained from different
-     * contexts.
      *
      * Generally, two entries are created for each AuthCacheValue,
      * one including the realm and one without the realm.

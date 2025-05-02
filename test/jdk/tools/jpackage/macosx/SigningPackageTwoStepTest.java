@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
@@ -51,19 +51,16 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --app-image
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @library base
  * @key jpackagePlatformPackage
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageTwoStepTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @requires (jpackage.test.MacSignTests == "run")
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageTwoStepTest {
 
@@ -73,14 +70,14 @@ public class SigningPackageTwoStepTest {
         }
 
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle);
-        SigningBase.verifySpctl(outputBundle, "install");
+        SigningBase.verifyPkgutil(outputBundle, true, SigningBase.DEFAULT_INDEX);
+        SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
     }
 
     private static void verifyDMG(JPackageCommand cmd) {
         // DMG always unsigned, so we will check it
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyCodesign(outputBundle, false);
+        SigningBase.verifyDMG(outputBundle);
     }
 
     private static void verifyAppImageInDMG(JPackageCommand cmd) {
@@ -91,31 +88,39 @@ public class SigningPackageTwoStepTest {
                 boolean isSigned = cmd.hasArgument("--mac-sign");
                 Path launcherPath = ApplicationLayout.platformAppImage()
                     .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
-                SigningBase.verifyCodesign(launcherPath, isSigned);
-                SigningBase.verifyCodesign(dmgImage, isSigned);
+                SigningBase.verifyCodesign(launcherPath, isSigned, SigningBase.DEFAULT_INDEX);
+                SigningBase.verifyCodesign(dmgImage, isSigned, SigningBase.DEFAULT_INDEX);
                 if (isSigned) {
-                    SigningBase.verifySpctl(dmgImage, "exec");
+                    SigningBase.verifySpctl(dmgImage, "exec", SigningBase.DEFAULT_INDEX);
                 }
             }
         });
     }
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public static void test(boolean signAppImage) throws Exception {
-        SigningCheck.checkCertificates();
-
+    // (Signed, "signing-key or sign-identity"})
+    // Signed and signing-key
+    @Parameter({"true", "true"})
+    // Signed and signing-identity
+    @Parameter({"true", "false"})
+    // Unsigned
+    @Parameter({"false", "true"})
+    public static void test(boolean signAppImage, boolean signingKey) throws Exception {
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
         JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
                 .setArgumentValue("--dest", appimageOutput);
         if (signAppImage) {
             appImageCmd.addArguments("--mac-sign")
-                    .addArguments("--mac-signing-key-user-name",
-                            SigningBase.DEV_NAME)
-                    .addArguments("--mac-signing-keychain",
-                            SigningBase.KEYCHAIN);
+                       .addArguments("--mac-signing-keychain",
+                                     SigningBase.getKeyChain());
+            if (signingKey) {
+                appImageCmd.addArguments("--mac-signing-key-user-name",
+                                SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+            } else {
+                appImageCmd.addArguments("--mac-app-image-sign-identity",
+                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+            }
         }
 
         new PackageTest()
@@ -126,15 +131,31 @@ public class SigningPackageTwoStepTest {
                     cmd.removeArgumentWithValue("--input");
                     if (signAppImage) {
                         cmd.addArguments("--mac-sign",
-                                "--mac-signing-key-user-name",
-                                SigningBase.DEV_NAME,
                                 "--mac-signing-keychain",
-                                SigningBase.KEYCHAIN);
+                                SigningBase.getKeyChain());
+                        if (signingKey) {
+                            cmd.addArguments("--mac-signing-key-user-name",
+                                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+                        } else {
+                            cmd.addArguments("--mac-installer-sign-identity",
+                                    SigningBase.getInstallerCert(SigningBase.DEFAULT_INDEX));
+                        }
                     }
                 })
                 .forTypes(PackageType.MAC_PKG)
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyPKG)
                 .forTypes(PackageType.MAC_DMG)
+                .addInitializer(cmd -> {
+                    if (signAppImage && !signingKey) {
+                        // jpackage throws expected error with
+                        // --mac-installer-sign-identity and DMG type
+                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
+                        // It will do nothing, but it signals test that app
+                        // image itself is signed for verification.
+                        cmd.addArguments("--mac-app-image-sign-identity",
+                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+                    }
+                })
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyDMG)
                 .addBundleVerifier(SigningPackageTwoStepTest::verifyAppImageInDMG)
                 .run();

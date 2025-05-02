@@ -27,7 +27,7 @@
  *          headers directly when connecting with a server, and
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
  *          net properties.
- * @bug 8087112
+ * @bug 8087112 8262294
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer DigestEchoClient
  *        ReferenceTracker ProxyAuthDisabledSchemes

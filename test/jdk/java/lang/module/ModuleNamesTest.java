@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
+ * @library /test/lib
+ * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleNamesTest
  * @summary Basic test of reading a module-info.class with module names that
  *          are legal in class files but not legal in the Java Language
@@ -42,7 +44,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.module.ModuleInfoWriter;
+
+import jdk.test.lib.util.ModuleInfoWriter;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

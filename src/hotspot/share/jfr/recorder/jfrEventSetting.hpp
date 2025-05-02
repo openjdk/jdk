@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,9 @@ class JfrEventSetting : AllStatic {
   static bool has_stacktrace(JfrEventId event_id);
   static bool set_threshold(jlong event_id, jlong threshold_ticks);
   static jlong threshold(JfrEventId event_id);
-  static bool set_cutoff(jlong event_id, jlong cutoff_ticks);
+  static void set_miscellaneous(jlong event_id, jlong cutoff_ticks);
   static jlong cutoff(JfrEventId event_id);
+  static jlong level(JfrEventId event_id);
   static bool is_large(JfrEventId event_id);
   static void set_large(JfrEventId event_id);
   static void unhide_internal_types();

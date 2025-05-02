@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,23 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shared/stringdedup/stringDedupStat.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 
+class JavaThread;
 class OopStorage;
-class SuspendibleThreadSetJoiner;
 
-// Thread class for string deduplication.  There is only one instance of
-// this class.  This thread processes deduplication requests.  It also
-// manages the deduplication table, performing resize and cleanup operations
-// as needed.  This includes managing the OopStorage objects used to hold
-// requests.
+// This class performs string deduplication.  There is only one instance of
+// this class.  It processes deduplication requests.  It also manages the
+// deduplication table, performing resize and cleanup operations as needed.
+// This includes managing the OopStorage objects used to hold requests.
 //
-// This thread uses the SuspendibleThreadSet mechanism to take part in the
-// safepoint protocol.  It checks for safepoints between processing requests
-// in order to minimize safepoint latency.  The Table provides incremental
-// operations for resizing and for removing dead entries, so this thread can
-// perform safepoint checks between steps in those operations.
-class StringDedup::Processor : public ConcurrentGCThread {
+// Processing periodically checks for and yields at safepoints.  Processing of
+// requests is performed in incremental chunks.  The Table provides
+// incremental operations for resizing and for removing dead entries, so
+// safepoint checks can be performed between steps in those operations.
+class StringDedup::Processor : public CHeapObj<mtGC> {
   Processor();
   ~Processor() = default;
 
@@ -54,27 +51,32 @@ class StringDedup::Processor : public ConcurrentGCThread {
   static StorageUse* volatile _storage_for_requests;
   static StorageUse* _storage_for_processing;
 
-  // Returns !should_terminate();
-  bool wait_for_requests() const;
+  JavaThread* _thread;
 
-  // Yield if requested.  Returns !should_terminate() after possible yield.
-  bool yield_or_continue(SuspendibleThreadSetJoiner* joiner, Stat::Phase phase) const;
+  // Wait until there are requests to be processed.  The storage for requests
+  // and storage for processing are swapped; the former requests storage
+  // becomes the current processing storage, and vice versa.
+  // precondition: the processing storage is empty.
+  void wait_for_requests() const;
+
+  // Yield if requested.
+  void yield() const;
 
   class ProcessRequest;
-  void process_requests(SuspendibleThreadSetJoiner* joiner) const;
-  void cleanup_table(SuspendibleThreadSetJoiner* joiner, bool grow_only, bool force) const;
+  void process_requests() const;
+  void cleanup_table(bool grow_only, bool force) const;
 
   void log_statistics();
-
-protected:
-  virtual void run_service();
-  virtual void stop_service();
 
 public:
   static void initialize();
 
   static void initialize_storage();
   static StorageUse* storage_for_requests();
+
+  // Use thread as the deduplication thread.
+  // precondition: thread == Thread::current()
+  void run(JavaThread* thread);
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP

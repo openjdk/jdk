@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorFPtoIntCastOperations {
     @Param({"512", "1024"})
     static int SIZE;
@@ -52,17 +52,17 @@ public class VectorFPtoIntCastOperations {
        -0.0
     };
 
-    static float [] float_arr;
+    private float [] float_arr;
 
-    static double [] double_arr;
+    private double [] double_arr;
 
-    static long [] long_res;
+    private long [] long_res;
 
-    static int [] int_res;
+    private int [] int_res;
 
-    static short [] short_res;
+    private short [] short_res;
 
-    static byte [] byte_res;
+    private byte [] byte_res;
 
     @Setup(Level.Trial)
     public void BmSetup() {

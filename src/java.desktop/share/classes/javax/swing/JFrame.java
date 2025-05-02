@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,10 +362,6 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #addWindowListener
      * @see #getDefaultCloseOperation
      * @see WindowConstants
-     * @throws  SecurityException
-     *        if <code>EXIT_ON_CLOSE</code> has been specified and the
-     *        <code>SecurityManager</code> will
-     *        not allow the caller to invoke <code>System.exit</code>
      * @see        java.lang.Runtime#exit(int)
      */
     @BeanProperty(preferred = true, enumerationValues = {
@@ -384,13 +380,6 @@ public class JFrame  extends Frame implements WindowConstants,
                     + " DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
         }
 
-        if (operation == EXIT_ON_CLOSE) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkExit(0);
-            }
-        }
         if (this.defaultCloseOperation != operation) {
             int oldValue = this.defaultCloseOperation;
             this.defaultCloseOperation = operation;

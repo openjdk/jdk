@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.JCPrimitiveType;
 import com.sun.tools.javac.code.Type.JCVoidType;
 import com.sun.tools.javac.code.Type.MethodType;
-import com.sun.tools.javac.code.Type.UnknownType;
 import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.jvm.Target;
@@ -163,6 +162,7 @@ public class Symtab {
      */
     public final Type objectType;
     public final Type objectMethodsType;
+    public final Type exactConversionsSupportType;
     public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
@@ -174,6 +174,7 @@ public class Symtab {
     public final Type serializedLambdaType;
     public final Type varHandleType;
     public final Type methodHandleType;
+    public final Type methodHandlesType;
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
     public final Type nativeHeaderType;
@@ -190,7 +191,6 @@ public class Symtab {
     public final Type incompatibleClassChangeErrorType;
     public final Type cloneNotSupportedExceptionType;
     public final Type matchExceptionType;
-    public final Type nullPointerExceptionType;
     public final Type annotationType;
     public final TypeSymbol enumSym;
     public final Type listType;
@@ -220,11 +220,16 @@ public class Symtab {
     public final Type functionalInterfaceType;
     public final Type previewFeatureType;
     public final Type previewFeatureInternalType;
+    public final Type restrictedType;
+    public final Type restrictedInternalType;
     public final Type typeDescriptorType;
     public final Type recordType;
     public final Type switchBootstrapsType;
+    public final Type constantBootstrapsType;
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
+    public final Type classDescType;
+    public final Type enumDescType;
 
     // For serialization lint checking
     public final Type objectStreamFieldType;
@@ -232,7 +237,10 @@ public class Symtab {
     public final Type objectOutputStreamType;
     public final Type ioExceptionType;
     public final Type objectStreamExceptionType;
+    // For externalization lint checking
     public final Type externalizableType;
+    public final Type objectInputType;
+    public final Type objectOutputType;
 
     /** The symbol representing the length field of an array.
      */
@@ -392,13 +400,11 @@ public class Symtab {
     /** Constructor; enters all predefined identifiers and operators
      *  into symbol table.
      */
+    @SuppressWarnings("this-escape")
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 
         names = Names.instance(context);
-
-        // Create the unknown type
-        unknownType = new UnknownType();
 
         messages = JavacMessages.instance(context);
 
@@ -409,6 +415,23 @@ public class Symtab {
                                             missingInfoHandler,
                                             target.runtimeUseNestAccess());
 
+        noModule = new ModuleSymbol(names.empty, null) {
+            @Override public boolean isNoModule() {
+                return true;
+            }
+        };
+        addRootPackageFor(noModule);
+
+        Source source = Source.instance(context);
+        if (Feature.MODULES.allowedInSource(source)) {
+            java_base = enterModule(names.java_base);
+            //avoid completing java.base during the Symtab initialization
+            java_base.completer = Completer.NULL_COMPLETER;
+            java_base.visiblePackages = Collections.emptyMap();
+        } else {
+            java_base = noModule;
+        }
+
         // create the basic builtin symbols
         unnamedModule = new ModuleSymbol(names.empty, null) {
                 {
@@ -416,7 +439,6 @@ public class Symtab {
                     exports = List.nil();
                     provides = List.nil();
                     uses = List.nil();
-                    ModuleSymbol java_base = enterModule(names.java_base);
                     com.sun.tools.javac.code.Directive.RequiresDirective d =
                             new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
                                     EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
@@ -436,7 +458,6 @@ public class Symtab {
                     exports = List.nil();
                     provides = List.nil();
                     uses = List.nil();
-                    ModuleSymbol java_base = enterModule(names.java_base);
                     com.sun.tools.javac.code.Directive.RequiresDirective d =
                             new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
                                     EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
@@ -444,13 +465,6 @@ public class Symtab {
                 }
             };
         addRootPackageFor(errModule);
-
-        noModule = new ModuleSymbol(names.empty, null) {
-            @Override public boolean isNoModule() {
-                return true;
-            }
-        };
-        addRootPackageFor(noModule);
 
         noSymbol = new TypeSymbol(NIL, 0, names.empty, Type.noType, rootPackage) {
             @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -464,8 +478,8 @@ public class Symtab {
         errType = new ErrorType(errSymbol, Type.noType);
 
         unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
-        unknownSymbol.members_field = new Scope.ErrorScope(unknownSymbol);
-        unknownSymbol.type = unknownType;
+        // Create the unknown type
+        unknownType = new ErrorType(unknownSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
@@ -515,22 +529,13 @@ public class Symtab {
         // Enter symbol for the errSymbol
         scope.enter(errSymbol);
 
-        Source source = Source.instance(context);
-        if (Feature.MODULES.allowedInSource(source)) {
-            java_base = enterModule(names.java_base);
-            //avoid completing java.base during the Symtab initialization
-            java_base.completer = Completer.NULL_COMPLETER;
-            java_base.visiblePackages = Collections.emptyMap();
-        } else {
-            java_base = noModule;
-        }
-
         // Get the initial completer for ModuleSymbols from Modules
         moduleCompleter = Modules.instance(context).getCompleter();
 
         // Enter predefined classes. All are assumed to be in the java.base module.
         objectType = enterClass("java.lang.Object");
         objectMethodsType = enterClass("java.lang.runtime.ObjectMethods");
+        exactConversionsSupportType = enterClass("java.lang.runtime.ExactConversionsSupport");
         objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");
@@ -542,6 +547,7 @@ public class Symtab {
         serializedLambdaType = enterClass("java.lang.invoke.SerializedLambda");
         varHandleType = enterClass("java.lang.invoke.VarHandle");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
+        methodHandlesType = enterClass("java.lang.invoke.MethodHandles");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
         errorType = enterClass("java.lang.Error");
@@ -556,7 +562,6 @@ public class Symtab {
         incompatibleClassChangeErrorType = enterClass("java.lang.IncompatibleClassChangeError");
         cloneNotSupportedExceptionType = enterClass("java.lang.CloneNotSupportedException");
         matchExceptionType = enterClass("java.lang.MatchException");
-        nullPointerExceptionType = enterClass("java.lang.NullPointerException");
         annotationType = enterClass("java.lang.annotation.Annotation");
         classLoaderType = enterClass("java.lang.ClassLoader");
         enumSym = enterClass(java_base, names.java_lang_Enum);
@@ -597,11 +602,16 @@ public class Symtab {
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
         previewFeatureType = enterClass("jdk.internal.javac.PreviewFeature");
         previewFeatureInternalType = enterSyntheticAnnotation("jdk.internal.PreviewFeature+Annotation");
+        restrictedType = enterClass("jdk.internal.javac.Restricted");
+        restrictedInternalType = enterSyntheticAnnotation("jdk.internal.javac.Restricted+Annotation");
         typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
         recordType = enterClass("java.lang.Record");
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
+        constantBootstrapsType = enterClass("java.lang.invoke.ConstantBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
+        classDescType = enterClass("java.lang.constant.ClassDesc");
+        enumDescType = enterClass("java.lang.Enum$EnumDesc");
         // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");
@@ -609,7 +619,8 @@ public class Symtab {
         ioExceptionType = enterClass("java.io.IOException");
         objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
         externalizableType = enterClass("java.io.Externalizable");
-
+        objectInputType  = enterClass("java.io.ObjectInput");
+        objectOutputType = enterClass("java.io.ObjectOutput");
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);

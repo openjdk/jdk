@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package sun.net.ftp;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ServiceConfigurationError;
 //import java.util.ServiceLoader;
 
@@ -50,16 +48,8 @@ public abstract class FtpClientProvider {
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws SecurityException if a security manager is installed and it denies
-     *         {@link RuntimePermission}{@code ("ftpClientProvider")}
      */
     protected FtpClientProvider() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("ftpClientProvider"));
-        }
     }
 
     private static boolean loadProviderFromProperty() {
@@ -74,8 +64,7 @@ public abstract class FtpClientProvider {
             return true;
         } catch (ClassNotFoundException |
                  IllegalAccessException |
-                 InstantiationException |
-                 SecurityException x) {
+                 InstantiationException x) {
             throw new ServiceConfigurationError(x.toString());
         }
     }
@@ -135,26 +124,19 @@ public abstract class FtpClientProvider {
      *
      * @return  The system-wide default FtpClientProvider
      */
-    @SuppressWarnings("removal")
     public static FtpClientProvider provider() {
         synchronized (lock) {
             if (provider != null) {
                 return provider;
             }
-            return (FtpClientProvider) AccessController.doPrivileged(
-                    new PrivilegedAction<Object>() {
-
-                        public Object run() {
-                            if (loadProviderFromProperty()) {
-                                return provider;
-                            }
-                            if (loadProviderAsService()) {
-                                return provider;
-                            }
-                            provider = new sun.net.ftp.impl.DefaultFtpClientProvider();
-                            return provider;
-                        }
-                    });
+            if (loadProviderFromProperty()) {
+                return provider;
+            }
+            if (loadProviderAsService()) {
+                return provider;
+            }
+            provider = new sun.net.ftp.impl.DefaultFtpClientProvider();
+            return provider;
         }
     }
 }

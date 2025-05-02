@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,12 @@
 
 #include "utilities/bitMap.hpp"
 
+class ZMovableBitMap : public CHeapBitMap {
+public:
+  ZMovableBitMap();
+  ZMovableBitMap(ZMovableBitMap&& bitmap);
+};
+
 class ZBitMap : public CHeapBitMap {
 private:
   static bm_word_t bit_mask_pair(idx_t bit);
@@ -35,8 +41,26 @@ private:
 
 public:
   ZBitMap(idx_t size_in_bits);
+  ZBitMap(const ZBitMap& other);
 
   bool par_set_bit_pair(idx_t bit, bool finalizable, bool& inc_live);
+
+  class ReverseIterator;
+};
+
+class ZBitMap::ReverseIterator {
+  BitMap* const _bitmap;
+  BitMap::idx_t _beg;
+  BitMap::idx_t _end;
+
+public:
+  ReverseIterator(BitMap* bitmap);
+  ReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end);
+
+  void reset(BitMap::idx_t beg, BitMap::idx_t end);
+  void reset(BitMap::idx_t end);
+
+  bool next(BitMap::idx_t* index);
 };
 
 #endif // SHARE_GC_Z_ZBITMAP_HPP

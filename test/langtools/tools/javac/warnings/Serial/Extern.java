@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8202056
  * @compile/ref=Extern.out -XDrawDiagnostics -Xlint:serial Extern.java
+ * @compile/ref=empty.out  -XDrawDiagnostics               Extern.java
  */
 
 import java.io.*;

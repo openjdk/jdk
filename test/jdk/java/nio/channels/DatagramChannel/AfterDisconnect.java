@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
@@ -46,6 +47,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -54,6 +56,38 @@ import jdk.test.lib.net.IPSupport;
 
 public class AfterDisconnect {
 
+    interface RetryableTest<T extends Exception> {
+        public void runTest() throws T;
+    }
+
+    // retry the given lambda (RetryableTest) if an exception
+    // that satisfies the predicate (retryOn) is caught.
+    <T extends Exception> void testWithRetry(RetryableTest<T> test,
+                                             Predicate<Throwable> retryOn,
+                                             int max) throws T {
+        for (int i=0; i < max; i++) {
+            try {
+                test.runTest();
+                break;
+            } catch (Throwable t) {
+                if (i < max -1 && retryOn.test(t)) {
+                    System.out.println("Got " + t + "; will retry");
+                } else throw t;
+            }
+        }
+    }
+
+    /**
+     * When calling {@link DatagramChannel#disconnect()} a {@link BindException}
+     * may occur. In which case we want to retry the test.
+     */
+    class BindExceptionOnDisconnect extends BindException {
+        BindExceptionOnDisconnect(BindException x) {
+            super(x.getMessage());
+            initCause(x);
+        }
+    }
+
     @Test
     public void execute() throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
@@ -61,33 +95,40 @@ public class AfterDisconnect {
         InetAddress lb = InetAddress.getLoopbackAddress();
 
         // test with default protocol family
-        try (DatagramChannel dc = DatagramChannel.open()) {
-            System.out.println("Test with default");
-            dc.bind(new InetSocketAddress(lb, 0));
-            test(dc);
-            test(dc);
-        }
-
-        // test with IPv6 socket
-        if (IPSupport.hasIPv6()) {
-            System.out.println("Test with IPv6 socket");
-            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+        System.out.println("Test with default");
+        testWithRetry(() -> {
+            try (DatagramChannel dc = DatagramChannel.open()) {
                 dc.bind(new InetSocketAddress(lb, 0));
                 test(dc);
                 test(dc);
             }
+        }, BindExceptionOnDisconnect.class::isInstance, 5);
+
+        // test with IPv6 socket
+        if (IPSupport.hasIPv6()) {
+            System.out.println("Test with IPv6 socket");
+            testWithRetry(() -> {
+                try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+                    dc.bind(new InetSocketAddress(lb, 0));
+                    test(dc);
+                    test(dc);
+                }
+            }, BindExceptionOnDisconnect.class::isInstance, 5);
         }
 
         // test with IPv4 socket
         if (IPSupport.hasIPv4() && !preferIPv6) {
             System.out.println("Test with IPv4 socket");
-            try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
-                dc.bind(new InetSocketAddress(lb, 0));
-                test(dc);
-                test(dc);
-            }
+            testWithRetry(() -> {
+                try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
+                    dc.bind(new InetSocketAddress(lb, 0));
+                    test(dc);
+                    test(dc);
+                }
+            }, BindExceptionOnDisconnect.class::isInstance, 5);
         }
     }
+
 
     void test(DatagramChannel dc) throws IOException {
         testLocalAddress(dc);
@@ -111,7 +152,11 @@ public class AfterDisconnect {
             assertEquals(dc.getLocalAddress(), local);
             assertEquals(dc.getRemoteAddress(), remote);
 
-            dc.disconnect();
+            try {
+                dc.disconnect();
+            } catch (BindException x) {
+                throw new BindExceptionOnDisconnect(x);
+            }
             assertFalse(dc.isConnected());
             assertEquals(dc.getLocalAddress(), local);
             assertTrue(dc.getRemoteAddress() == null);
@@ -134,7 +179,11 @@ public class AfterDisconnect {
         Map<SocketOption<?>, Object> map = options(dc);
 
         dc.connect(dc.getLocalAddress());
-        dc.disconnect();
+        try {
+            dc.disconnect();
+        } catch (BindException x) {
+            throw new BindExceptionOnDisconnect(x);
+        }
 
         // check socket options have not changed
         assertEquals(map, options(dc));
@@ -168,7 +217,11 @@ public class AfterDisconnect {
             sel.selectNow();
 
             dc.connect(dc.getLocalAddress());
-            dc.disconnect();
+            try {
+                dc.disconnect();
+            } catch (BindException x) {
+                throw new BindExceptionOnDisconnect(x);
+            }
 
             // selection key should still be valid
             assertTrue(key.isValid());
@@ -210,7 +263,11 @@ public class AfterDisconnect {
             MembershipKey key = dc.join(group, ni);
 
             dc.connect(dc.getLocalAddress());
-            dc.disconnect();
+            try {
+                dc.disconnect();
+            } catch (BindException x) {
+                throw new BindExceptionOnDisconnect(x);
+            }
 
             // membership key should still be valid
             assertTrue(key.isValid());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ public class TestNewRatioFlag {
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-Xmx" + HEAP_SIZE,
                 "-Xms" + HEAP_SIZE,
                 "-XX:NewRatio=" + ratio,
@@ -82,8 +81,7 @@ public class TestNewRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
         System.out.println(analyzer.getOutput());
     }

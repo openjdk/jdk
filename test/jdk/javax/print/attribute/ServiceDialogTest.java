@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 4910388 4871089 4998624
+ * @key printer
  * @summary Confirm that
  *      1. After choosing Reverse Landscape in the system default print
  *       Print Service (2nd in the list), it

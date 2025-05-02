@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void check_and_handle_popframe(Register scratch_reg);
   virtual void check_and_handle_earlyret(Register scratch_reg);
 
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
+  void restore_after_resume(Register fp);
+  // R22 and R31 are preserved when a vthread gets preempted in the interpreter.
+  // The interpreter already assumes that these registers are nonvolatile across native calls.
+  bool nonvolatile_accross_vthread_preemtion(Register r) const {
+    return r->is_nonvolatile() && ((r == R22) || (r == R31));
+  }
+
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);
 
@@ -79,12 +87,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp1, Register tmp2,
-                                        Label *L_handle_null = NULL);
+                                        Label *L_handle_null = nullptr);
 
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
-
-  void load_resolved_method_at_index(int byte_no, Register cache, Register method);
 
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
 
@@ -126,7 +132,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size);
 
-  void get_cache_and_index_at_bcp(Register cache, int bcp_offset, size_t index_size = sizeof(u2));
+  void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
   void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
@@ -182,7 +190,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Special call VM versions that check for exceptions and forward exception
   // via short cut (not via expensive forward exception stub).
   void check_and_forward_exception(Register Rscratch1, Register Rscratch2);
-  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true);
+  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true, Label* last_java_pc = nullptr);
   void call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, Register arg_3, bool check_exceptions = true);
@@ -241,13 +249,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_final_call(Register scratch1, Register scratch2);
   void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2,  bool receiver_can_be_null);
   void profile_typecheck(Register Rklass, Register Rscratch1, Register Rscratch2);
-  void profile_typecheck_failed(Register Rscratch1, Register Rscratch2);
   void profile_ret(TosState state, Register return_bci, Register scratch1, Register scratch2);
   void profile_switch_default(Register scratch1, Register scratch2);
   void profile_switch_case(Register index, Register scratch1,Register scratch2, Register scratch3);
   void profile_null_seen(Register Rscratch1, Register Rscratch2);
-  void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2, bool is_virtual_call);
-  void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done, bool is_virtual_call);
+  void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2);
+  void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done);
 
   // Argument and return type profiling.
   void profile_obj_type(Register obj, Register mdo_addr_base, RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2);
@@ -258,7 +265,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

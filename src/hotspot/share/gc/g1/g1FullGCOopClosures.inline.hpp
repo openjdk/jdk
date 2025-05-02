@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 
 #include "gc/g1/g1Allocator.inline.hpp"
-#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -65,8 +66,8 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  if (obj->is_forwarded()) {
-    oop forwardee = obj->forwardee();
+  if (FullGCForwarding::is_forwarded(obj)) {
+    oop forwardee = FullGCForwarding::forwardee(obj);
     // Forwarded, just update.
     assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
@@ -78,7 +79,7 @@ inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
-  return _bitmap->is_marked(p) || _collector->is_skip_marking(p);
+  return _bitmap->is_marked(p);
 }
 
 template<typename T>

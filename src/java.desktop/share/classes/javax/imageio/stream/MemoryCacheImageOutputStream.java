@@ -184,6 +184,11 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
         stream = null;
     }
 
+    /**
+     * {@inheritDoc ImageOutputStream}
+     * @param pos {@inheritDoc ImageOutputStream}
+     * @throws IOException {@inheritDoc ImageOutputStream}
+     */
     public void flushBefore(long pos) throws IOException {
         long oFlushedPos = flushedPos;
         super.flushBefore(pos); // this will call checkClosed() for us

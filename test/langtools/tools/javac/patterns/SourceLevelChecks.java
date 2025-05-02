@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ import toolbox.ToolBox;
 
 public class SourceLevelChecks extends TestRunner {
 
-    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
-
     ToolBox tb;
 
     public static void main(String... args) throws Exception {
@@ -76,7 +74,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:18: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -92,7 +90,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:4:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:4:26: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -109,7 +107,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:18: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -121,16 +119,219 @@ public class SourceLevelChecks extends TestRunner {
                public class Test {
                    private void test(Integer i) {
                        switch (i) {
-                           case default:
+                           case null, default:
                        }
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:24: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
+    @Test
+    public void testNestedPrimitive1(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(R r) {
+                       if (r instanceof R(byte b)) {
+                       }
+                   }
+                   record R(int i) {}
+               }
+               """,
+               21,
+               "Test.java:4:28: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testNestedPrimitive2(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(R r) {
+                       switch (r) {
+                           case R(byte b) -> {}
+                           default -> {}
+                       }
+                   }
+                   record R(int i) {}
+               }
+               """,
+               21,
+               "Test.java:5:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testNestedPrimitive3(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(R r) {
+                       if (r instanceof R(long l)) {
+                       }
+                   }
+                   record R(int i) {}
+               }
+               """,
+               21,
+               "Test.java:4:28: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testNestedPrimitive4(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(R r) {
+                       switch (r) {
+                           case R(long l) -> {}
+                           default -> {}
+                       }
+                   }
+                   record R(int i) {}
+               }
+               """,
+               21,
+               "Test.java:5:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testPrimitive2Reference1(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(int i) {
+                       if (i instanceof Integer j) {}
+                   }
+               }
+               """,
+               21,
+               "Test.java:4:13: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testPrimitive2Reference2(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(int i) {
+                       switch (i) {
+                           case Integer j -> {}
+                       }
+                   }
+               }
+               """,
+               21,
+               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testReference2Primitive1(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(Integer i) {
+                       if (i instanceof int j) {}
+                   }
+               }
+               """,
+               21,
+               "Test.java:4:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testReference2Primitive2(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(Integer i) {
+                       switch (i) {
+                           case int j -> {}
+                       }
+                   }
+               }
+               """,
+               21,
+               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testPrimitivePatternObject1(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(Object o) {
+                       if (o instanceof int j) {}
+                   }
+               }
+               """,
+               21,
+               "Test.java:4:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testPrimitivePatternObject2(Path base) throws Exception {
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private void test(Object o) {
+                       switch (o) {
+                           case int j -> {}
+                       }
+                   }
+                   record R(int i) {}
+               }
+               """,
+               21,
+               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+               "1 error");
+    }
+
+    @Test
+    public void testOtherPrimitives(Path base) throws Exception {
+        for (String type : new String[] {"boolean", "long", "float", "double"}) {
+            doTest(base,
+                   """
+                   package test;
+                   public class Test {
+                       private void test($type v) {
+                           switch (v) {
+                               default -> {}
+                           }
+                       }
+                   }
+                   """.replace("$type", type),
+                   21,
+                   "Test.java:4:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)",
+                   "1 error");
+        }
+    }
+
     private void doTest(Path base, String testCode, String... expectedErrors) throws IOException {
+        doTest(base, testCode, 17, expectedErrors);
+    }
+
+    private void doTest(Path base, String testCode, int sourceLevel, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -140,8 +341,7 @@ public class SourceLevelChecks extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("-source", "11",
-                             "-Xlint:-options",
+                    .options("--release", "" + sourceLevel,
                              "-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))

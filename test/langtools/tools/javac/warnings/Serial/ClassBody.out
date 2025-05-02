@@ -1,0 +1,18 @@
+EnumExternClassBody.java:25:25: compiler.warn.ineffectual.extern.method.enum: readExternal
+EnumExternClassBody.java:30:25: compiler.warn.ineffectual.extern.method.enum: writeExternal
+EnumExternClassBody.java:35:38: compiler.warn.ineffectual.serial.field.enum: serialVersionUID
+EnumExternClassBody.java:36:53: compiler.warn.ineffectual.serial.field.enum: serialPersistentFields
+EnumExternClassBody.java:38:25: compiler.warn.ineffectual.serial.method.enum: writeObject
+EnumExternClassBody.java:42:27: compiler.warn.ineffectual.serial.method.enum: writeReplace
+EnumExternClassBody.java:46:25: compiler.warn.ineffectual.serial.method.enum: readObject
+EnumExternClassBody.java:51:25: compiler.warn.ineffectual.serial.method.enum: readObjectNoData
+EnumExternClassBody.java:55:27: compiler.warn.ineffectual.serial.method.enum: readResolve
+EnumExternClassBody.java:66:21: compiler.warn.ineffectual.extern.method.enum: readExternal
+EnumExternClassBody.java:71:21: compiler.warn.ineffectual.extern.method.enum: writeExternal
+EnumExternClassBody.java:83:25: compiler.warn.ineffectual.extern.method.enum: readExternal
+EnumExternClassBody.java:88:25: compiler.warn.ineffectual.extern.method.enum: writeExternal
+EnumExternClassBody.java:101:25: compiler.warn.ineffectual.extern.method.enum: readExternal
+EnumExternClassBody.java:106:25: compiler.warn.ineffectual.extern.method.enum: writeExternal
+EnumExternClassBody.java:112:30: compiler.warn.ineffectual.extern.method.enum: readExternal
+EnumExternClassBody.java:113:30: compiler.warn.ineffectual.extern.method.enum: writeExternal
+17 warnings

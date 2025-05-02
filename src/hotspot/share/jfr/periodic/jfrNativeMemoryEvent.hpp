@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 #define SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 
-#include "memory/allocation.hpp"
-#include "services/nmtUsage.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
@@ -35,7 +35,7 @@
 // so no more synchronization is needed.
 class JfrNativeMemoryEvent : public AllStatic {
 private:
-  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
+  static void send_type_event(const Ticks& starttime, MemTag mem_tag, size_t reserved, size_t committed);
  public:
   static void send_total_event(const Ticks& timestamp);
   static void send_type_events(const Ticks& timestamp);

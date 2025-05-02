@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
-  template <bool keep_alive>
-  friend class ClassLoaderDataGraphIteratorBase;
   friend class VMStructs;
  private:
-  // All CLDs (except the null CLD) can be reached by walking _head->_next->...
+  class ClassLoaderDataGraphIterator;
+
+  // All CLDs (except unlinked CLDs) can be reached by walking _head->_next->...
   static ClassLoaderData* volatile _head;
-  static ClassLoaderData* _unloading;
 
   // Set if there's anything to purge in the deallocate lists or previous versions
   // during a safepoint after class unloading in a full GC.
@@ -67,14 +66,17 @@ class ClassLoaderDataGraph : public AllStatic {
   static void clear_claimed_marks();
   static void clear_claimed_marks(int claim);
   static void verify_claimed_marks_cleared(int claim);
-  // Iteration through CLDG inside a safepoint; GC support
+  // Iteration through CLDG; GC support
   static void cld_do(CLDClosure* cl);
-  static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
   // Iteration through CLDG not by GC.
+  // All the do suffixed functions do not keep the CLD alive. Any CLD OopHandles
+  // (modules, mirrors, resolved refs) resolved must be treated as no keepalive.
+  // And requires that its CLD's holder is kept alive if they escape the
+  // caller's safepoint or ClassLoaderDataGraph_lock critical section.
+  // The do_keepalive suffixed functions will keep all CLDs alive.
   static void loaded_cld_do(CLDClosure* cl);
-  static void loaded_cld_do_no_keepalive(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes
@@ -83,9 +85,10 @@ class ClassLoaderDataGraph : public AllStatic {
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
+  static void modules_do_keepalive(void f(ModuleEntry*));
   static void modules_do(void f(ModuleEntry*));
   static void packages_do(void f(PackageEntry*));
-  static void loaded_classes_do(KlassClosure* klass_closure);
+  static void loaded_classes_do_keepalive(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();
 
@@ -96,11 +99,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void safepoint_and_clean_metaspaces();
   // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
-
-  // VM_CounterDecay iteration support
-  static InstanceKlass* try_get_next_class();
-  static void adjust_saved_class(ClassLoaderData* cld);
-  static void adjust_saved_class(Klass* klass);
 
   static void verify_dictionary();
   static void print_dictionary(outputStream* st);

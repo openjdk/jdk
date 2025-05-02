@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,11 @@ public class UnicodeReader {
     private final int length;
 
     /**
+     * Virtual position offset in the original buffer.
+     */
+    private final int offset;
+
+    /**
      * Character buffer index of character currently being observed.
      */
     private int position;
@@ -103,17 +108,51 @@ public class UnicodeReader {
      * @param length  length of meaningful content in buffer.
      */
     protected UnicodeReader(ScannerFactory sf, char[] array, int length) {
+        this(sf.log, array, length);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param log     Log for error reporting.
+     * @param array   array containing contents of source.
+     * @param length  length of meaningful content in buffer.
+     */
+    protected UnicodeReader(Log log, char[] array, int length) {
+        this(log, array, 0, 0, length);
+    }
+
+    /**
+      * Constructor.
+      *
+      * @param log     Log for error reporting.
+      * @param array   array containing contents of source.
+      * @param pos     start of meaningful content in buffer.
+      * @param endPos  end of meaningful content in buffer.
+      */
+    @SuppressWarnings("this-escape")
+    protected UnicodeReader(Log log, char[] array, int offset, int pos, int endPos) {
         this.buffer = array;
-        this.length = length;
-        this.position = 0;
+        this.length = endPos;
+        this.offset = offset;
+        this.position = pos;
         this.width = 0;
         this.character = '\0';
         this.codepoint = 0;
         this.wasBackslash = false;
         this.wasUnicodeEscape = false;
-        this.log = sf.log;
+        this.log = log;
 
         nextCodePoint();
+    }
+
+    /**
+     * Returns the character buffer.
+     *
+     * @return character buffer.
+     */
+    protected char[] buffer() {
+        return buffer;
     }
 
     /**
@@ -290,22 +329,22 @@ public class UnicodeReader {
     }
 
     /**
-     * Return the current position in the character buffer.
+     * Return the virtual position in the character buffer.
      *
-     * @return  current position in the character buffer.
+     * @return  virtual position in the character buffer.
      */
     protected int position() {
-        return position;
+        return offset + position;
     }
 
 
     /**
-     * Reset the reader to the specified position.
+     * Reset the reader to the specified virtual position.
      * Warning: Do not use when previous character was an ASCII or unicode backslash.
      * @param pos
      */
     protected void reset(int pos) {
-        position = pos;
+        position = pos - offset;
         width = 0;
         wasBackslash = false;
         wasUnicodeEscape = false;
@@ -379,6 +418,9 @@ public class UnicodeReader {
     protected boolean isOneOf(char ch1, char ch2, char ch3) {
         return is(ch1) || is(ch2) || is(ch3);
     }
+    protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4) {
+        return is(ch1) || is(ch2) || is(ch3) || is(ch4);
+    }
     protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4, char ch5, char ch6) {
         return is(ch1) || is(ch2) || is(ch3) || is(ch4) || is(ch5) || is(ch6);
     }
@@ -425,25 +467,68 @@ public class UnicodeReader {
         return false;
     }
 
+    /**
+     * Match one of the arguments and advance if a match. Returns true if a match.
+     */
     protected boolean acceptOneOf(char ch1, char ch2, char ch3) {
         if (isOneOf(ch1, ch2, ch3)) {
             next();
 
             return true;
         }
-
         return false;
+    }
+
+    /**
+     * Return a reader which is bracketed by the currect position
+     * and the next line terminator.
+     *
+     * @return a new reader
+     */
+    protected UnicodeReader lineReader() {
+        int pos = position;
+        skipToEOLN();
+        int endPos = position;
+        accept('\r');
+        accept('\n');
+        return new UnicodeReader(log, buffer, offset, pos, endPos);
+    }
+
+    /**
+     * Return a reader which is bracketed by the {@code pos}
+     * and {@code endPos}.
+     *
+     * @param pos     initial position
+     * @param endPos  end position
+     *
+     * @return a new reader
+     */
+    protected UnicodeReader lineReader(int pos, int endPos) {
+        return new UnicodeReader(log, buffer, offset, pos - offset, endPos - offset);
     }
 
     /**
      * Skip over all occurrences of character.
      *
      * @param ch character to accept.
+     *
+     * @return number of characters skipped
      */
-    protected void skip(char ch) {
+    protected int skip(char ch) {
+        int count = 0;
         while (accept(ch)) {
-            // next
+            count++;
         }
+        return count;
+    }
+
+    /**
+     * Is ASCII white space character.
+     *
+     * @return true if is ASCII white space character
+     */
+    protected boolean isWhitespace() {
+        return isOneOf(' ', '\t', '\f');
     }
 
     /**
@@ -456,17 +541,25 @@ public class UnicodeReader {
     }
 
     /**
+     * Is ASCII line terminator.
+     *
+     * @return true if is ASCII line terminator.
+     */
+    protected boolean isEOLN() {
+        return isOneOf('\r', '\n');
+    }
+
+    /**
      * Skip to end of line.
      */
     protected void skipToEOLN() {
         while (isAvailable()) {
-            if (isOneOf('\r', '\n')) {
+            if (isEOLN()) {
                 break;
             }
 
             next();
         }
-
     }
 
     /**
@@ -485,7 +578,7 @@ public class UnicodeReader {
         }
 
         // Be prepared to retreat if not a match.
-        int savedPosition = position;
+        int savedPosition = position();
 
         nextCodePoint();
 
@@ -565,17 +658,47 @@ public class UnicodeReader {
     }
 
     /**
+     * Returns a string subset of the input buffer.
+     * The returned string begins at the {@code beginIndex} and
+     * extends to the character at index {@code endIndex - 1}.
+     * Thus the length of the substring is {@code endIndex-beginIndex}.
+     * This behavior is like
+     * {@code String.substring(beginIndex, endIndex)}.
+     * Unicode escape sequences are not translated.
+     *
+     * @param  beginIndex the beginning index, inclusive.
+     * @param  endIndex the ending index, exclusive.
+     *
+     * @throws ArrayIndexOutOfBoundsException if either offset is outside of the
+     *         array bounds
+     */
+    public String getRawString(int beginIndex, int endIndex) {
+        return new String(buffer, beginIndex, endIndex - beginIndex);
+    }
+
+    /**
+     * Returns a string subset of the input buffer.
+     * The returned string begins at the {@code position} and
+     * extends to the character at index {@code length - 1}.
+     * Thus the length of the substring is {@code length-position}.
+     * This behavior is like
+     * {@code String.substring(position, length)}.
+     * Unicode escape sequences are not translated.
+     *
+     * @throws ArrayIndexOutOfBoundsException if either offset is outside of the
+     *         array bounds
+     */
+    public String getRawString() {
+        return getRawString(position, length);
+    }
+
+    /**
      * This is a specialized version of UnicodeReader that keeps track of the
      * column position within a given character stream. Used for Javadoc
      * processing to build a table for mapping positions in the comment string
      * to positions in the source file.
      */
     static class PositionTrackingReader extends UnicodeReader {
-        /**
-         * Offset from the beginning of the original reader buffer.
-         */
-        private final int offset;
-
         /**
          * Current column in the comment.
          */
@@ -584,13 +707,12 @@ public class UnicodeReader {
         /**
          * Constructor.
          *
-         * @param sf      Scan factory.
-         * @param array   Array containing contents of source.
-         * @param offset  Position offset in original source buffer.
+         * @param reader  existing reader
+         * @param pos     start of meaningful content in buffer.
+         * @param endPos  end of meaningful content in buffer.
          */
-        protected PositionTrackingReader(ScannerFactory sf, char[] array, int offset) {
-            super(sf, array, array.length);
-            this.offset = offset;
+        protected PositionTrackingReader(UnicodeReader reader, int pos, int endPos) {
+            super(reader.log, reader.getRawCharacters(pos, endPos), reader.offset + pos, 0, endPos - pos);
             this.column = 0;
         }
 
@@ -621,15 +743,6 @@ public class UnicodeReader {
          */
         protected int column() {
             return column;
-        }
-
-        /**
-         * Returns position relative to the original source buffer.
-         *
-         * @return
-         */
-        protected int offsetPosition() {
-            return position() + offset;
         }
     }
 

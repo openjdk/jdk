@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,6 @@ public class TestLayer {
     private static final Set<String> modules = Set.of("m1", "m2");
 
     public static void main(String[] args) throws Exception {
-        // disable security manager until Class.forName is called.
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            System.setSecurityManager(null);
-        }
-
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
 
         Configuration parent = ModuleLayer.boot().configuration();
@@ -53,10 +47,6 @@ public class TestLayer {
 
         Module m1 = layer.findModule("m1").get();
         Module m2 = layer.findModule("m2").get();
-
-        if (sm != null) {
-            System.setSecurityManager(sm);
-        }
 
         // find exported and non-exported class from a named module
         findClass(m1, "p1.A");

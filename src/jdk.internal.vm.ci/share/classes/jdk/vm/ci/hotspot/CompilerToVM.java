@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,19 @@
 
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
+import static jdk.vm.ci.common.InitTimer.timer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -48,6 +48,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
  * pointer as an argument (e.g., {@link #getSymbol(long)}) is undefined if the argument does not
  * denote a valid native object.
+ *
+ * Note also that some calls pass a raw VM value to avoid a JNI upcall. For example,
+ * {@link #getBytecode(HotSpotResolvedJavaMethodImpl, long)} needs the raw {@code Method*} value
+ * (stored in {@link HotSpotResolvedJavaMethodImpl#methodHandle}) in the C++ implementation. The
+ * {@link HotSpotResolvedJavaMethodImpl} wrapper is still passed as well as it may be the last
+ * reference keeping the raw value alive.
  */
 final class CompilerToVM {
     /**
@@ -233,21 +239,61 @@ final class CompilerToVM {
      * Converts a name to a type.
      *
      * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
-     * @param accessingClass the context of resolution. A value of {@code null} implies that the
-     *            class should be resolved with the {@linkplain ClassLoader#getSystemClassLoader()
-     *            system class loader}.
+     * @param accessingClass the class loader of this class is used for resolution. Must not be null.
      * @param resolve force resolution to a {@link ResolvedJavaType}. If true, this method will
      *            either return a {@link ResolvedJavaType} or throw an exception
-     * @return the type for {@code name} or 0 if resolution failed and {@code resolve == false}
-     * @throws ClassNotFoundException if {@code resolve == true} and the resolution failed
+     * @return the type for {@code name} or {@code null} if resolution failed and {@code resolve == false}
+     * @throws NoClassDefFoundError if {@code resolve == true} and the resolution failed
      */
-    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws ClassNotFoundException {
-        return lookupType(name, accessingClass, accessingClass != null ? accessingClass.getKlassPointer() : 0L, resolve);
+    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws NoClassDefFoundError {
+        return lookupType(name, accessingClass, accessingClass.getKlassPointer(), -1, resolve);
     }
 
-    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long klassPointer, boolean resolve) throws ClassNotFoundException;
+    /**
+     * Converts a name to a type.
+     *
+     * @param classLoader the class loader to use for resolution. Must not be {@code null},
+     *           {@link ClassLoader#getPlatformClassLoader} or {@link ClassLoader#getSystemClassLoader}
+     * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
+     * @return the type for {@code name}
+     * @throws NoClassDefFoundError if resolution failed
+     */
+    HotSpotResolvedJavaType lookupType(ClassLoader classLoader, String name) throws NoClassDefFoundError {
+        int accessingClassLoader;
+        if (classLoader == null) {
+            accessingClassLoader = 0;
+        } else if (classLoader == ClassLoader.getPlatformClassLoader()) {
+            accessingClassLoader = 1;
+        } else if (classLoader == ClassLoader.getSystemClassLoader()) {
+            accessingClassLoader = 2;
+        } else {
+            throw new IllegalArgumentException("Unsupported class loader for lookup: " + classLoader);
+        }
+        return lookupType(name, null, 0L, accessingClassLoader, true);
+    }
 
+    /**
+     * @param accessingClassLoader ignored if {@code accessingKlassPointer != 0L}. Otherwise, the supported values are:
+     *            0 - boot class loader
+     *            1 - {@linkplain ClassLoader#getPlatformClassLoader() platform class loader}
+     *            2 - {@linkplain ClassLoader#getSystemClassLoader() system class loader}
+     */
+    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long accessingKlassPointer, int accessingClassLoader, boolean resolve) throws NoClassDefFoundError;
+
+    /**
+     * Converts {@code javaClass} to a HotSpotResolvedJavaType.
+     *
+     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code true}.
+     */
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
+
+    native HotSpotResolvedJavaType lookupJClass(long jclass);
+
+    /**
+     * Gets the {@code jobject} value wrapped by {@code peerObject}.
+     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code false}.
+     */
+    native long getJObjectValue(HotSpotObjectConstantImpl peerObject);
 
     /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an interned String object.
@@ -262,71 +308,88 @@ final class CompilerToVM {
     private native JavaConstant getUncachedStringInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
-     * Resolves the entry at index {@code cpi} in {@code constantPool} to an object, looking in the
+     * Gets the entry at index {@code cpi} in {@code constantPool}, looking in the
      * constant pool cache first.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote one of the following
      * entry types: {@code JVM_CONSTANT_Dynamic}, {@code JVM_CONSTANT_String},
      * {@code JVM_CONSTANT_MethodHandle}, {@code JVM_CONSTANT_MethodHandleInError},
      * {@code JVM_CONSTANT_MethodType} and {@code JVM_CONSTANT_MethodTypeInError}.
+     *
+     * @param resolve specifies if a resolved entry is expected. If {@code false},
+     *                {@code null} is returned for an unresolved entry.
      */
-    JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi) {
-        return resolvePossiblyCachedConstantInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    JavaConstant lookupConstantInPool(HotSpotConstantPool constantPool, int cpi, boolean resolve) {
+        return lookupConstantInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, resolve);
     }
 
-    private native JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native JavaConstant lookupConstantInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, boolean resolve);
 
     /**
-     * Gets the {@code JVM_CONSTANT_NameAndType} index from the entry at index {@code cpi} in
-     * {@code constantPool}.
+     * Gets the {@code JVM_CONSTANT_NameAndType} index referenced by the {@code rawIndex}.
+     * The meaning of {@code rawIndex} is dependent on the given {@opcode}.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote an entry containing a
-     * {@code JVM_CONSTANT_NameAndType} index.
+     * The behavior of this method is undefined if the class holding the {@code constantPool}
+     * has not yet been rewritten, or {@code rawIndex} is not a valid index for
+     * this class for the given {@code opcode}
      */
-    int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupNameAndTypeRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, int rawIndex, int opcode) {
+        return lookupNameAndTypeRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, opcode);
     }
 
-    private native int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex, int opcode);
 
     /**
-     * Gets the name of the {@code JVM_CONSTANT_NameAndType} entry referenced by another entry
-     * denoted by {@code which} in {@code constantPool}.
+     * Gets the name of the {@code JVM_CONSTANT_NameAndType} entry in {@code constantPool}
+     * referenced by the {@code which}.
      *
-     * The behavior of this method is undefined if {@code which} does not denote a entry that
-     * references a {@code JVM_CONSTANT_NameAndType} entry.
+     * The behavior of this method is undefined if the class holding the {@code constantPool}
+     * has not yet been rewritten, or {@code which} is not a valid index for
+     * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    String lookupNameInPool(HotSpotConstantPool constantPool, int which) {
-        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), which);
+    String lookupNameInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
+    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
-     * Gets the signature of the {@code JVM_CONSTANT_NameAndType} entry referenced by another entry
-     * denoted by {@code which} in {@code constantPool}.
+     * Gets the signature of the {@code JVM_CONSTANT_NameAndType} entry in {@code constantPool}
+     * referenced by the {@code which}.
      *
-     * The behavior of this method is undefined if {@code which} does not denote a entry that
-     * references a {@code JVM_CONSTANT_NameAndType} entry.
+     * The behavior of this method is undefined if the class holding the {@code constantPool}
+     * has not yet been rewritten, or {@code which} is not a valid index for
+     * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    String lookupSignatureInPool(HotSpotConstantPool constantPool, int which) {
-        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), which);
+    String lookupSignatureInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
+    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
-     * Gets the {@code JVM_CONSTANT_Class} index from the entry at index {@code cpi} in
-     * {@code constantPool}.
+     * Gets the {@code JVM_CONSTANT_Class} index from the entry in {@code constantPool}
+     * referenced by the {@code which}. The meaning of {@code which} is dependent
+     * on the given {@opcode}.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote an entry containing a
-     * {@code JVM_CONSTANT_Class} index.
+     * The behavior of this method is undefined if the class holding the {@code constantPool}
+     * has not yet been rewritten, or {@code which} is not a valid index for
+     * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Looks up a class denoted by the {@code JVM_CONSTANT_Class} entry at index {@code cpi} in
@@ -371,17 +434,43 @@ final class CompilerToVM {
                     long callerMethodPointer);
 
     /**
-     * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
-     * index {@code cpi} in {@code constantPool} is loaded and initialized.
+     * Converts the indy index operand of an invokedynamic instruction
+     * to an index directly into {@code constantPool}.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_InvokeDynamic} entry.
+     * @param resolve if {@true}, then resolve the entry (which may call a bootstrap method)
+     * @return {@code JVM_CONSTANT_InvokeDynamic} constant pool entry index for the invokedynamic
      */
-    void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
-        resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, int encoded_indy_index, boolean resolve) {
+        return decodeIndyIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), encoded_indy_index, resolve);
     }
 
-    private native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int encoded_indy_index, boolean resolve);
+
+    /**
+     * Converts the {@code rawIndex} operand of a rewritten getfield/putfield/getstatic/putstatic instruction
+     * to an index directly into {@code constantPool}.
+     *
+     * @throws IllegalArgumentException if {@code rawIndex} is out of range.
+     * @return {@code JVM_CONSTANT_FieldRef} constant pool entry index for the instruction
+     */
+    int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
+        return decodeFieldIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
+    }
+
+    private native int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
+
+    /**
+     * Converts the {@code rawIndex} operand of a rewritten invokestatic/invokespecial/invokeinterface/invokevirtual instruction
+     * to an index directly into {@code constantPool}.
+     *
+     * @throws IllegalArgumentException if {@code rawIndex} is out of range.
+     * @return {@code JVM_CONSTANT_MethodRef} or {@code JVM_CONSTANT_InterfaceMethodRef} constant pool entry index for the instruction
+     */
+    int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
+      return decodeMethodIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
+  }
+
+  private native int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -412,6 +501,28 @@ final class CompilerToVM {
     private native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
+     * Gets the constant pool index of a static argument of a {@code CONSTANT_Dynamic_info} or
+     * @{code CONSTANT_InvokeDynamic_info} entry. Used when the list of static arguments in the
+     * {@link BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
+     * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved and that
+     * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
+     * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
+     *
+     * The behavior of this method is undefined if {@code cpi} does not denote an entry representing
+     * a {@code CONSTANT_Dynamic_info} or a @{code CONSTANT_InvokeDynamic_info}, or if the index
+     * is out of bounds.
+     *
+     * @param cpi the index of a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry
+     * @param index the index of the static argument in the list of static arguments
+     * @return the constant pool index associated with the static argument
+     */
+    int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, int cpi, int index) {
+        return bootstrapArgumentIndexAt(constantPool, constantPool.getConstantPoolPointer(), cpi, index);
+    }
+
+    private native int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int index);
+
+    /**
      * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
      * this method ensures that the type referenced by the entry is loaded and initialized. It
      * {@code cpi} does not denote a signature polymorphic method, this method does nothing.
@@ -424,15 +535,15 @@ final class CompilerToVM {
 
     /**
      * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
-     * {@link #resolveInvokeDynamicInPool} and {@link #resolveInvokeHandleInPool}), return the
+     * {@link #decodeIndyIndexToCPIndex} and {@link #resolveInvokeHandleInPool}), return the
      * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
      * {@code invokevirtual}), or {@code -1} otherwise.
      */
-    int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi) {
-        return isResolvedInvokeHandleInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi, int opcode) {
+        return isResolvedInvokeHandleInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
     }
 
-    private native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int opcode);
 
     /**
      * Gets the list of type names (in the format of {@link JavaType#getName()}) denoting the
@@ -455,54 +566,45 @@ final class CompilerToVM {
     private native HotSpotResolvedObjectTypeImpl resolveTypeInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi) throws LinkageError;
 
     /**
-     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index
-     * {@code cpi} in {@code constantPool}. For some opcodes, checks are performed that require the
+     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry denoted by
+     * {@code rawIndex}. For some opcodes, checks are performed that require the
      * {@code method} that contains {@code opcode} to be specified. The values returned in
      * {@code info} are:
      *
      * <pre>
-     *     [ flags,  // fieldDescriptor::access_flags()
-     *       offset, // fieldDescriptor::offset()
-     *       index   // fieldDescriptor::index()
+     *     [ aflags,  // fieldDescriptor::access_flags()
+     *       offset,  // fieldDescriptor::offset()
+     *       index,   // fieldDescriptor::index()
+     *       fflags   // fieldDescriptor::field_flags()
      *     ]
      * </pre>
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_Field} entry.
+     * The behavior of this method is undefined if {@code rawIndex} is invalid.
      *
      * @param info an array in which the details of the field are returned
-     * @return the type defining the field if resolution is successful, null otherwise
+     * @return the type defining the field if resolution is successful, null if the type cannot be resolved
+     * @throws LinkageError if there were other problems resolving the field
      */
-    HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info) {
+    HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int rawIndex, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info) {
         long methodPointer = method != null ? method.getMethodPointer() : 0L;
-        return resolveFieldInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, method, methodPointer, opcode, info);
+        return resolveFieldInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, method, methodPointer, opcode, info);
     }
 
     private native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, long constantPoolPointer,
-                    int cpi, HotSpotResolvedJavaMethodImpl method, long methodPointer, byte opcode, int[] info);
+                    int rawIndex, HotSpotResolvedJavaMethodImpl method, long methodPointer, byte opcode, int[] info);
 
     /**
-     * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index
-     * directly into {@code constantPool}.
+     * Gets the appendix object (if any) associated with the entry identified by {@code which}.
      *
-     * The behavior of this method is undefined if {@code cpci} is an invalid constant pool cache
-     * index.
+     * @param which if negative, is treated as an encoded indy index for INVOKEDYNAMIC;
+     *              Otherwise, it's treated as a constant pool cache index
+     *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
-    int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, int cpci) {
-        return constantPoolRemapInstructionOperandFromCache(constantPool, constantPool.getConstantPoolPointer(), cpci);
+    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, long constantPoolPointer, int cpci);
-
-    /**
-     * Gets the appendix object (if any) associated with the entry at index {@code cpi} in
-     * {@code constantPool}.
-     */
-    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
-    }
-
-    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Installs the result of a compilation into the code cache.
@@ -874,23 +976,33 @@ final class CompilerToVM {
 
     /**
      * Read a {@code Klass*} value from the memory location described by {@code base} plus
-     * {@code displacement} and return the {@link HotSpotResolvedObjectTypeImpl} wrapping it. This
-     * method does no checking that the memory location actually contains a valid pointer and may
-     * crash the VM if an invalid location is provided. If the {@code base} is null then
-     * {@code displacement} is used by itself. If {@code base} is a
-     * {@link HotSpotResolvedJavaMethodImpl}, {@link HotSpotConstantPool} or
-     * {@link HotSpotResolvedObjectTypeImpl} then the metaspace pointer is fetched from that object
-     * and added to {@code displacement}. Any other non-null object type causes an
-     * {@link IllegalArgumentException} to be thrown.
+     * {@code displacement} and return the {@link HotSpotResolvedObjectTypeImpl} wrapping it. This method
+     * only performs the read if the memory location is known to contain a valid Klass*.  If
+     * {@code base} is a {@link HotSpotConstantPool}, {@link HotSpotMethodData}, {@link HotSpotObjectConstantImpl},
+     * or {@link HotSpotResolvedObjectTypeImpl} then the field
+     * corresopnding to {@code displacement} is fetched using the appropriate HotSpot accessor. Any
+     * other object type or an unexpected displacement causes an {@link IllegalArgumentException} to
+     * be thrown.  The set of fields which can be read in this fashion corresponds to the {@link VMField}
+     * with type {@code Klass*} that are described in the {@link HotSpotVMConfigStore#getFields()}.
+     * Additionally several injected fields in {@link Class} are also handled.
      *
-     * @param base an object to read from or null
+     * @param base an object to read from
      * @param displacement
      * @param compressed true if the location contains a compressed Klass*
      * @return null or the resolved method for this location
+     * @throws NullPointerException if {@code base == null}
      */
     private native HotSpotResolvedObjectTypeImpl getResolvedJavaType0(Object base, long displacement, boolean compressed);
 
-    HotSpotResolvedObjectTypeImpl getResolvedJavaType(MetaspaceObject base, long displacement, boolean compressed) {
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotConstantPool base, long displacement) {
+        return getResolvedJavaType0(base, displacement, false);
+    }
+
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotMethodData base, long displacement) {
+        return getResolvedJavaType0(base, displacement, false);
+    }
+
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotResolvedObjectTypeImpl base, long displacement, boolean compressed) {
         return getResolvedJavaType0(base, displacement, compressed);
     }
 
@@ -921,6 +1033,9 @@ final class CompilerToVM {
      * @throws IllegalArgumentException if an out of range position is given
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
+
+
+    native int methodDataExceptionSeen(long metaspaceMethodData, int bci);
 
     /**
      * Return the amount of native stack required for the interpreter frames represented by
@@ -1040,6 +1155,12 @@ final class CompilerToVM {
     }
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
+        return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
+    }
+
+    native HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
      * Reads the current value of a static field of {@code declaringKlass}. Extra sanity checking is
@@ -1185,6 +1306,11 @@ final class CompilerToVM {
     native boolean isTrustedForIntrinsics(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
+     * Clears the oop handle in {@code handle}.
+     */
+    native void clearOopHandle(long handle);
+
+    /**
      * Releases all oop handles whose referent is null.
      */
     native void releaseClearedOopHandles();
@@ -1294,4 +1420,112 @@ final class CompilerToVM {
 
     native void notifyCompilerInliningEvent(int compileId, HotSpotResolvedJavaMethodImpl caller, long callerPointer,
                     HotSpotResolvedJavaMethodImpl callee, long calleePointer, boolean succeeded, String message, int bci);
+
+    /**
+     * Gets the serialized annotation info for {@code type} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for {@code method} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for the field denoted by {@code holder} and
+     * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+                    Object filterTypes, int filterLength, long filterKlassPointers);
+
+    /**
+     * Helper for passing {@Klass*} values to native code.
+     */
+    static final class KlassPointers implements AutoCloseable {
+        final ResolvedJavaType[] types;
+        long pointersArray;
+        final Unsafe unsafe = UnsafeAccess.UNSAFE;
+
+        KlassPointers(ResolvedJavaType[] types) {
+            this.types = types;
+        }
+
+        /**
+         * Gets the buffer in which to pass the {@Klass*} values to JNI.
+         *
+         * @return a {@Klass*} value if {@code types.length == 1} otherwise the address of a native
+         *         buffer holding an array of {@Klass*} values
+         */
+        long buffer() {
+            int length = types.length;
+            if (length == 1) {
+                return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
+            } else {
+                pointersArray = unsafe.allocateMemory(length * Long.BYTES);
+                long pos = pointersArray;
+                for (int i = 0; i < types.length; i++) {
+                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
+                    unsafe.putLong(pos, hsType.getKlassPointer());
+                    pos += Long.BYTES;
+                }
+            }
+            return pointersArray;
+        }
+
+        @Override
+        public void close() {
+            if (types.length != 1 && pointersArray != 0) {
+                unsafe.freeMemory(pointersArray);
+                pointersArray = 0;
+            }
+        }
+    }
+
+    /**
+     * @see HotSpotResolvedJavaMethod#getOopMapAt
+     */
+    void getOopMapAt(HotSpotResolvedJavaMethodImpl method, int bci, long[] oopMap) {
+        getOopMapAt(method, method.getMethodPointer(), bci, oopMap);
+    }
+
+    native void getOopMapAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
+
+    /**
+     * If the current thread is a CompilerThread associated with a JVMCI compiler where
+     * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
+     *
+     * @returns false if no change was made, otherwise true
+     */
+    native boolean updateCompilerThreadCanCallJava(boolean newState);
+
+    /**
+     * Returns the current {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    native int getCompilationActivityMode();
 }

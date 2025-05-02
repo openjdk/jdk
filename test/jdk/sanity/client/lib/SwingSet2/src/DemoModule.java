@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.net.URL;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JApplet;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
@@ -42,10 +41,8 @@ import javax.swing.border.SoftBevelBorder;
 
 /**
  * A generic SwingSet2 demo module
- *
- * @author Jeff Dinkins
  */
-public class DemoModule extends JApplet {
+public class DemoModule extends JPanel {
 
     // The preferred size of the demo
     private int PREFERRED_WIDTH = 680;
@@ -214,10 +211,6 @@ public class DemoModule extends JApplet {
         demo.mainImpl();
     }
 
-    public void init() {
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(getDemoPanel(), BorderLayout.CENTER);
-    }
-
     void updateDragEnabled(boolean dragEnabled) {}
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(args);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
 
@@ -84,8 +83,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(args);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
     return (new Long(getFlagValue("HeapBaseMinAddress", stdout)).longValue());

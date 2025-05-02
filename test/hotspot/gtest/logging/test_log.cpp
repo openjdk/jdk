@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -61,7 +60,7 @@ TEST_VM_F(LogTest, large_message) {
   AsyncLogWriter::flush();
   ResourceMark rm;
   FILE* fp = os::fopen(TestLogFileName, "r");
-  ASSERT_NE((void*)NULL, fp);
+  ASSERT_NE(nullptr, fp);
   char* output = read_line(fp);
   fclose(fp);
 
@@ -91,7 +90,7 @@ TEST_VM_F(LogTest, disabled_logtarget) {
   // Try to log, but expect this to be filtered out.
   log.print(LOG_TEST_STRING_LITERAL);
 
-  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  // Log a dummy line so that fgets doesn't return nullptr because the file is empty.
   log_info(gc)("Dummy line");
 
   EXPECT_FALSE(file_contains_substring(TestLogFileName, LOG_TEST_STRING_LITERAL));
@@ -122,7 +121,7 @@ TEST_VM_F(LogTest, disabled_loghandle) {
   // Try to log through a LogHandle.
   log_handle.debug("%d workers", 3);
 
-  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  // Log a dummy line so that fgets doesn't return nullptr because the file is empty.
   log_info(gc)("Dummy line");
 
   EXPECT_FALSE(file_contains_substring(TestLogFileName, "3 workers"));
@@ -153,7 +152,7 @@ TEST_VM_F(LogTest, disabled_logtargethandle) {
   // Try to log through a LogHandle.
   log_handle.print("%d workers", 3);
 
-  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  // Log a dummy line so that fgets doesn't return nullptr because the file is empty.
   log_info(gc)("Dummy line");
 
   EXPECT_FALSE(file_contains_substring(TestLogFileName, "3 workers"));

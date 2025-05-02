@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                         "Destination ColorSpace is undefined");
                 }
                 ICC_Profile destProfile = profileList[nProfiles - 1];
-                cs = new ICC_ColorSpace(destProfile);
+                cs = createCompatibleColorSpace(destProfile);
             } else {
                 /* non-ICC case */
                 int nSpaces = CSList.length;
@@ -568,6 +568,25 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
         }
         return createCompatibleDestImage(src, destCM, cs);
+    }
+
+    private static ColorSpace createCompatibleColorSpace(ICC_Profile profile) {
+        if (profile == ICC_Profile.getInstance(ColorSpace.CS_sRGB)) {
+            return ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        }
+        if (profile == ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB)) {
+            return ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB);
+        }
+        if (profile == ICC_Profile.getInstance(ColorSpace.CS_CIEXYZ)) {
+            return ColorSpace.getInstance(ColorSpace.CS_CIEXYZ);
+        }
+        if (profile == ICC_Profile.getInstance(ColorSpace.CS_PYCC)) {
+            return ColorSpace.getInstance(ColorSpace.CS_PYCC);
+        }
+        if (profile == ICC_Profile.getInstance(ColorSpace.CS_GRAY)) {
+            return ColorSpace.getInstance(ColorSpace.CS_GRAY);
+        }
+        return new ICC_ColorSpace(profile);
     }
 
     private BufferedImage createCompatibleDestImage(BufferedImage src,
@@ -671,7 +690,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
          * shall be set to zero. Thus, we are ignoring two most significant
          * bytes here.
          *
-         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
+         *  See https://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
          */
         return ((header[index+2] & 0xff) <<  8) |
                 (header[index+3] & 0xff);
@@ -749,7 +768,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] srcMinVal = new float[iccSrcNumComp];
             float[] srcInvDiffMinMax = new float[iccSrcNumComp];
-            for (int i = 0; i < srcNumComp; i++) {
+            for (int i = 0; i < iccSrcNumComp; i++) {
                 srcMinVal[i] = cs.getMinValue(i);
                 srcInvDiffMinMax[i] = maxNum / (cs.getMaxValue(i) - srcMinVal[i]);
             }
@@ -763,7 +782,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] dstMinVal = new float[iccDstNumComp];
             float[] dstDiffMinMax = new float[iccDstNumComp];
-            for (int i = 0; i < dstNumComp; i++) {
+            for (int i = 0; i < iccDstNumComp; i++) {
                 dstMinVal[i] = cs.getMinValue(i);
                 dstDiffMinMax[i] = (cs.getMaxValue(i) - dstMinVal[i]) / maxNum;
             }
@@ -816,7 +835,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                                       dstDiffMinMax[i] + dstMinVal[i];
                     }
                     if (nonICCDst) {
-                        color = srcColorSpace.fromCIEXYZ(dstColor);
+                        color = dstColorSpace.fromCIEXYZ(dstColor);
                         for (int i = 0; i < dstNumComp; i++) {
                             dstColor[i] = color[i];
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,6 +427,9 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
 JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getCalendarInt
   (JNIEnv *env, jclass cls, jstring jlangtag, jint type) {
     jint ret = 0;
+    // Majority of MacOSX fixed locales return Gregorian cal identifier
+    // Using CFCalendarCopyCurrent() provides a cal that is based off OS settings
+    // which is more accurate than one created with a Gregorian identifier
     CFCalendarRef cfcal = CFCalendarCopyCurrent();
 
     if (cfcal != NULL) {

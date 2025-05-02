@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,13 @@ class ObjectSample : public JfrCHeapObj {
   JfrBlobHandle _type_set;
   WeakHandle    _object;
   Ticks _allocation_time;
-  traceid _stack_trace_id;
   traceid _thread_id;
-  int _index;
+  traceid _stack_trace_id;
+  traceid _stack_trace_hash;
   size_t _span;
   size_t _allocated;
   size_t _heap_used_at_last_gc;
-  unsigned int _stack_trace_hash;
+  int _index;
   bool _virtual_thread;
 
   void release_references() {
@@ -69,19 +69,19 @@ class ObjectSample : public JfrCHeapObj {
   void reset();
 
  public:
-  ObjectSample() : _next(NULL),
-                   _previous(NULL),
+  ObjectSample() : _next(nullptr),
+                   _previous(nullptr),
                    _stacktrace(),
                    _thread(),
                    _type_set(),
                    _allocation_time(),
-                   _stack_trace_id(0),
                    _thread_id(0),
-                   _index(0),
+                   _stack_trace_id(0),
+                   _stack_trace_hash(0),
                    _span(0),
                    _allocated(0),
                    _heap_used_at_last_gc(0),
-                   _stack_trace_hash(0),
+                   _index(0),
                    _virtual_thread(false) {}
 
   ObjectSample* next() const {
@@ -102,7 +102,7 @@ class ObjectSample : public JfrCHeapObj {
 
   bool is_dead() const;
 
-  const oop object() const;
+  oop object() const;
   void set_object(oop object);
 
   const oop* object_addr() const;
@@ -141,7 +141,7 @@ class ObjectSample : public JfrCHeapObj {
     return _allocation_time;
   }
 
-  const void set_allocation_time(const JfrTicks& time) {
+  void set_allocation_time(const JfrTicks& time) {
     _allocation_time = Ticks(time.value());
   }
 
@@ -170,11 +170,11 @@ class ObjectSample : public JfrCHeapObj {
     _stack_trace_id = id;
   }
 
-  unsigned int stack_trace_hash() const {
+  traceid stack_trace_hash() const {
     return _stack_trace_hash;
   }
 
-  void set_stack_trace_hash(unsigned int hash) {
+  void set_stack_trace_hash(traceid hash) {
     _stack_trace_hash = hash;
   }
 
@@ -233,7 +233,7 @@ class ObjectSample : public JfrCHeapObj {
     return _type_set.valid();
   }
 
-  void set_type_set(const JfrBlobHandle& ref) {
+  void install_type_set(const JfrBlobHandle& ref) {
     if (_type_set != ref) {
       if (_type_set.valid()) {
         _type_set->set_next(ref);

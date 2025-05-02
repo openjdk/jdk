@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.underscore.as.identifier
+// options: --release 21
 
 class UnderscoreAsIdentifierError {
     String _ = null;

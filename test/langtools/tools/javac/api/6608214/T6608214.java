@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,12 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import static javax.tools.JavaFileObject.Kind;
 
 public class T6608214 {
     public static void main(String[] args) throws IOException {
-        JavaFileObject sfo = new SimpleJavaFileObject(URI.create(""),Kind.SOURCE) {
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return "class Test<S> { <T extends S & Runnable> void test(){}}";
-            }
-        };
+        JavaFileObject sfo =
+            SimpleJavaFileObject.forSource(URI.create(""),
+                                           "class Test<S> { <T extends S & Runnable> void test(){}}");
         List<? extends JavaFileObject> files = Arrays.asList(sfo);
         List<String> opts = Arrays.asList("-Xjcov");
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();

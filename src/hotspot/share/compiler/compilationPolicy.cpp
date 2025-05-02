@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -212,7 +211,7 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 CompLevel CompilationPolicy::comp_level(Method* method) {
-  CompiledMethod *nm = method->code();
+  nmethod *nm = method->code();
   if (nm != nullptr && nm->is_in_use()) {
     return (CompLevel)nm->comp_level();
   }
@@ -229,7 +228,7 @@ class LoopPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {
@@ -267,7 +266,7 @@ class CallPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {
@@ -306,7 +305,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   int comp_count = compiler_count(level);
   if (comp_count > 0) {
     double queue_size = CompileBroker::queue_size(level);
-    double k = queue_size / (feedback_k * comp_count) + 1;
+    double k = (double)queue_size / ((double)feedback_k * (double)comp_count) + 1;
 
     // Increase C1 compile threshold when the code cache is filled more
     // than specified by IncreaseFirstTierCompileThresholdAt percentage.
@@ -634,6 +633,11 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
       task = next_task;
       continue;
     }
+    if (task->is_blocking() && task->compile_reason() == CompileTask::Reason_Whitebox) {
+      // CTW tasks, submitted as blocking Whitebox requests, do not participate in rate
+      // selection and/or any level adjustments. Just return them in order.
+      return task;
+    }
     Method* method = task->method();
     methodHandle mh(Thread::current(), method);
     if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, mh) && !is_old(mh)) {
@@ -708,7 +712,7 @@ void CompilationPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle& inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS) {
+                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
   if (PrintTieredEvents) {
     print_event(bci == InvocationEntryBci ? CALL : LOOP, method(), inlinee(), bci, comp_level);
   }
@@ -792,7 +796,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
         if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant();
+          osr_nm->make_not_entrant("OSR invalidation for compiling with C1");
         }
         compile(mh, bci, CompLevel_simple, THREAD);
       }
@@ -1026,7 +1030,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
   if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
-    if (is_trivial(method)) {
+    if (is_trivial(method) || method->is_native()) {
       next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
     } else {
       switch(cur_level) {
@@ -1137,7 +1141,7 @@ CompLevel CompilationPolicy::loop_event(const methodHandle& method, CompLevel cu
 
 // Handle the invocation event.
 void CompilationPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                                      CompLevel level, CompiledMethod* nm, TRAPS) {
+                                                      CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
     create_mdo(mh, THREAD);
   }
@@ -1152,7 +1156,7 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                     int bci, CompLevel level, CompiledMethod* nm, TRAPS) {
+                                                     int bci, CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
     create_mdo(mh, THREAD);
   }
@@ -1197,7 +1201,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
               int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
               print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
             }
-            nm->make_not_entrant();
+            nm->make_not_entrant("OSR invalidation, back branch");
           }
         }
         // Fix up next_level if necessary to avoid deopts

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     protected SimpleElementVisitor6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
     }
+
     /**
      * The default action for visit methods.
      *
@@ -125,42 +126,45 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
+    @Override
     public R visitPackage(PackageElement e, P p) {
         return defaultAction(e, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
+    @Override
     public R visitType(TypeElement e, P p) {
         return defaultAction(e, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}, unless the
      * element is a {@code RESOURCE_VARIABLE} in which case {@code
      * visitUnknown} is called.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
+    @Override
     public R visitVariable(VariableElement e, P p) {
         if (e.getKind() != ElementKind.RESOURCE_VARIABLE)
             return defaultAction(e, p);
@@ -169,27 +173,29 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
+    @Override
     public R visitExecutable(ExecutableElement e, P p) {
         return defaultAction(e, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
+    @Override
     public R visitTypeParameter(TypeParameterElement e, P p) {
         return defaultAction(e, p);
     }

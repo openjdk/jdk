@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,18 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 #define WAIT_START 100
 #define WAIT_TIME (2*60*1000)
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static jrawMonitorID access_lock;
 static jrawMonitorID wait_lock;
-static jthread tested_thread_thr1 = NULL;
+static jthread tested_thread_thr1 = nullptr;
 
 static jint state[] = {
     JVMTI_THREAD_STATE_RUNNABLE,
@@ -45,9 +45,9 @@ static jint state[] = {
 
 void JNICALL
 VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
-  jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
   check_jvmti_status(jni, err, "Error in SetEventNotificationMode");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
   check_jvmti_status(jni, err, "Error in SetEventNotificationMode");
 }
 
@@ -58,7 +58,7 @@ ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread) {
   jvmtiThreadInfo thread_info = get_thread_info(jvmti, jni, thread);
   LOG(">>> ThreadStart: \"%s\"\n", thread_info.name);
 
-  if (thread_info.name != NULL && strcmp(thread_info.name, "tested_thread_thr1") == 0) {
+  if (thread_info.name != nullptr && strcmp(thread_info.name, "tested_thread_thr1") == 0) {
     tested_thread_thr1 = jni->NewGlobalRef(thread);
     LOG(">>> ThreadStart: \"%s\", 0x%p\n", thread_info.name, tested_thread_thr1);
   }
@@ -72,7 +72,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   LOG("Agent_OnLoad started\n");
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -101,7 +101,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(SetEventNotificationMode) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
@@ -117,7 +117,7 @@ Java_thrstat01_checkStatus0(JNIEnv *jni, jclass cls, jint stat_ind) {
 
   LOG("native method checkStatus started\n");
 
-  if (tested_thread_thr1 == NULL) {
+  if (tested_thread_thr1 == nullptr) {
     LOG("Missing thread \"tested_thread_thr1\" start event\n");
     return JNI_FALSE;
   }

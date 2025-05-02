@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,13 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.function.DoublePredicate;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -90,11 +93,26 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * Constructor for appending an intermediate operation onto an existing
      * pipeline.
      *
-     * @param upstream the upstream element source.
+     * @param upstream the upstream element source
+     * @param opFlags The operation flags for this operation, described in
+     *        {@link StreamOpFlag}
      */
     ReferencePipeline(AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
         super(upstream, opFlags);
     }
+
+     /**
+      * Constructor for appending an intermediate operation onto an existing
+      * pipeline.
+      *
+      * @param upupstream the upstream of the upstream element source
+      * @param upstream the upstream element source
+      * @param opFlags The operation flags for this operation, described in
+      *        {@link StreamOpFlag}
+      */
+     protected ReferencePipeline(AbstractPipeline<?, P_IN, ?> upupstream, AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
+         super(upupstream, upstream, opFlags);
+     }
 
     // Shape-specific methods
 
@@ -152,7 +170,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     public Stream<P_OUT> unordered() {
         if (!isOrdered())
             return this;
-        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE, StreamOpFlag.NOT_ORDERED) {
+        return new StatelessOp<>(this, StreamShape.REFERENCE, StreamOpFlag.NOT_ORDERED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return sink;
@@ -163,11 +181,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
-                                     StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void begin(long size) {
                         downstream.begin(-1);
@@ -184,14 +202,13 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
-                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                return new Sink.ChainedReference<P_OUT, R>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void accept(P_OUT u) {
                         downstream.accept(mapper.apply(u));
@@ -204,11 +221,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final IntStream mapToInt(ToIntFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
-        return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                              StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new IntPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedReference<P_OUT, Integer>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void accept(P_OUT u) {
                         downstream.accept(mapper.applyAsInt(u));
@@ -221,11 +238,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final LongStream mapToLong(ToLongFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
-        return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new LongPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedReference<P_OUT, Long>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void accept(P_OUT u) {
                         downstream.accept(mapper.applyAsLong(u));
@@ -238,11 +255,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final DoubleStream mapToDouble(ToDoubleFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
-        return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                        StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new DoublePipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedReference<P_OUT, Double>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void accept(P_OUT u) {
                         downstream.accept(mapper.applyAsDouble(u));
@@ -255,44 +272,45 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final <R> Stream<R> flatMap(Function<? super P_OUT, ? extends Stream<? extends R>> mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
-                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                return new Sink.ChainedReference<>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                boolean shorts = isShortCircuitingPipeline();
+                final class FlatMap implements Sink<P_OUT>, Predicate<R> {
+                    boolean cancel;
+
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(P_OUT u) {
-                        try (Stream<? extends R> result = mapper.apply(u)) {
+                    public void accept(P_OUT e) {
+                        try (Stream<? extends R> result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstream);
-                                }
-                                else {
-                                    var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstream));
-                                }
+                                if (shorts)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(sink);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        // If this method is called then an operation within the stream
-                        // pipeline is short-circuiting (see AbstractPipeline.copyInto).
-                        // Note that we cannot differentiate between an upstream or
-                        // downstream operation
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(R output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
@@ -300,43 +318,50 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final IntStream flatMapToInt(Function<? super P_OUT, ? extends IntStream> mapper) {
         Objects.requireNonNull(mapper);
-        return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                              StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new IntPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedReference<P_OUT, Integer>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                IntConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof IntConsumer ic)
+                            ? ic
+                            : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, IntPredicate {
+                    boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    IntConsumer downstreamAsInt = downstream::accept;
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(P_OUT u) {
-                        try (IntStream result = mapper.apply(u)) {
+                    public void accept(P_OUT e) {
+                        try (IntStream result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsInt);
-                                }
-                                else {
-                                    var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsInt));
-                                }
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(int output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
@@ -344,43 +369,50 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final DoubleStream flatMapToDouble(Function<? super P_OUT, ? extends DoubleStream> mapper) {
         Objects.requireNonNull(mapper);
-        return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new DoublePipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedReference<P_OUT, Double>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                DoubleConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof DoubleConsumer dc)
+                            ? dc
+                            : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, DoublePredicate {
+                    boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    DoubleConsumer downstreamAsDouble = downstream::accept;
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(P_OUT u) {
-                        try (DoubleStream result = mapper.apply(u)) {
+                    public void accept(P_OUT e) {
+                        try (DoubleStream result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsDouble);
-                                }
-                                else {
-                                    var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsDouble));
-                                }
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(double output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
@@ -389,43 +421,50 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     public final LongStream flatMapToLong(Function<? super P_OUT, ? extends LongStream> mapper) {
         Objects.requireNonNull(mapper);
         // We can do better than this, by polling cancellationRequested when stream is infinite
-        return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
-                                                   StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new LongPipeline.StatelessOp<>(this, StreamShape.REFERENCE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedReference<P_OUT, Long>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                LongConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof LongConsumer lc)
+                            ? lc
+                            : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, LongPredicate {
+                    boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    LongConsumer downstreamAsLong = downstream::accept;
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(P_OUT u) {
-                        try (LongStream result = mapper.apply(u)) {
+                    public void accept(P_OUT e) {
+                        try (LongStream result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsLong);
-                                }
-                                else {
-                                    var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsLong));
-                                }
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(long output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
@@ -469,7 +508,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (IntConsumer)downstream);
                     }
@@ -493,7 +531,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (LongConsumer) downstream);
                     }
@@ -518,7 +555,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (DoubleConsumer) downstream);
                     }
@@ -530,11 +566,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final Stream<P_OUT> peek(Consumer<? super P_OUT> action) {
         Objects.requireNonNull(action);
-        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
-                                     0) {
+        return new StatelessOp<>(this, StreamShape.REFERENCE,
+                0) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     @Override
                     public void accept(P_OUT u) {
                         action.accept(u);
@@ -668,8 +704,13 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    public final <R> Stream<R> gather(Gatherer<? super P_OUT, ?, R> gatherer) {
+        return GathererOp.of(this, gatherer);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
-    public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
+    public <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
@@ -687,7 +728,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> supplier,
+    public <R> R collect(Supplier<R> supplier,
                                BiConsumer<R, ? super P_OUT> accumulator,
                                BiConsumer<R, R> combiner) {
         return evaluate(ReduceOps.makeRef(supplier, accumulator, combiner));

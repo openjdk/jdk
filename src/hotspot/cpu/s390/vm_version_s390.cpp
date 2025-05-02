@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
@@ -57,7 +56,7 @@ unsigned int  VM_Version::_Icache_lineSize                             = DEFAULT
 
 // The following list contains the (approximate) announcement/availability
 // dates of the many System z generations in existence as of now.
-// Information compiled from https://www.ibm.com/support/techdocs/atsmastr.nsf/WebIndex/TD105503
+// Information compiled from https://www.ibm.com/support/pages/ibm-mainframe-life-cycle-history
 //   z900: 2000-10
 //   z990: 2003-06
 //   z9:   2005-09
@@ -68,12 +67,13 @@ unsigned int  VM_Version::_Icache_lineSize                             = DEFAULT
 //   z13:  2015-03
 //   z14:  2017-09
 //   z15:  2019-09
+//   z16:  2022-05
 
-static const char* z_gen[]      = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9"  };
-static const char* z_machine[]  = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561" };
-static const char* z_name[]     = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15" };
-static const char* z_WDFM[]     = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "tbd" };
-static const char* z_EOS[]      = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "tbd",        "tbd",        "tbd",        "tbd" };
+static const char* z_gen[]      = {"  ", "G1",         "G2",         "G3",         "G4",         "G5",         "G6",         "G7",         "G8",         "G9",         "G10" };
+static const char* z_machine[]  = {"  ", "2064",       "2084",       "2094",       "2097",       "2817",       "2827",       "2964",       "3906",       "8561",       "3931" };
+static const char* z_name[]     = {"  ", "z900",       "z990",       "z9 EC",      "z10 EC",     "z196 EC",    "ec12",       "z13",        "z14",        "z15",        "z16" };
+static const char* z_WDFM[]     = {"  ", "2006-06-30", "2008-06-30", "2010-06-30", "2012-06-30", "2014-06-30", "2016-12-31", "2019-06-30", "2021-06-30", "2024-12-31", "tbd" };
+static const char* z_EOS[]      = {"  ", "2014-12-31", "2014-12-31", "2017-10-31", "2019-12-31", "2021-12-31", "2023-12-31", "2024-12-31", "tbd",        "tbd",        "tbd" };
 static const char* z_features[] = {"  ",
                                    "system-z, g1-z900, ldisp",
                                    "system-z, g2-z990, ldisp_fast",
@@ -83,12 +83,14 @@ static const char* z_features[] = {"  ",
                                    "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm",
                                    "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr",
                                    "system-z, g8-z14, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1",
-                                   "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2"
+                                   "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2",
+                                   "system-z, g10-z16, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2,"
+                                       "bear_enh, sort_enh, nnpa_assist, storage_key_removal, vpack_decimal_enh"
                                   };
 
 void VM_Version::initialize() {
   determine_features();      // Get processor capabilities.
-  set_features_string();     // Set a descriptive feature indication.
+  set_cpu_info_string();     // Set a descriptive feature indication.
 
   if (Verbose || PrintAssembly || PrintStubCode) {
     print_features_internal("CPU Version as detected internally:", PrintAssembly || PrintStubCode);
@@ -97,7 +99,23 @@ void VM_Version::initialize() {
   intx cache_line_size = Dcache_lineSize(0);
 
 #ifdef COMPILER2
-  MaxVectorSize = 8;
+  int model_ix = get_model_index();
+
+  if ( model_ix >= 7 ) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+      FLAG_SET_ERGO(SuperwordUseVX, true);
+    }
+    if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
+      FLAG_SET_ERGO(UseSFPV, true);
+    } else if (model_ix == 7 && UseSFPV) {
+      warning("UseSFPV specified, but needs at least Z14.");
+      FLAG_SET_DEFAULT(UseSFPV, false);
+    }
+  } else if (SuperwordUseVX) {
+    warning("SuperwordUseVX specified, but needs at least Z13.");
+    FLAG_SET_DEFAULT(SuperwordUseVX, false);
+  }
+  MaxVectorSize = SuperwordUseVX ? 16 : 8;
 #endif
 
   if (has_PrefetchRaw()) {
@@ -272,6 +290,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+  if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires z196 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
@@ -282,15 +307,16 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
+
+  // The OptoScheduling information is not maintained in s390.ad.
+  if (OptoScheduling) {
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 #endif
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }
-
-  // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
 
   _supports_atomic_getadd4 = VM_Version::has_LoadAndALUAtomicV1();
   _supports_atomic_getadd8 = VM_Version::has_LoadAndALUAtomicV1();
@@ -313,6 +339,11 @@ int VM_Version::get_model_index() {
   //      is the index of the oldest detected model.
   int ambiguity = 0;
   int model_ix  = 0;
+  if (is_z16()) {
+    model_ix = 10;
+    ambiguity++;
+  }
+
   if (is_z15()) {
     model_ix = 9;
     ambiguity++;
@@ -357,9 +388,9 @@ int VM_Version::get_model_index() {
 }
 
 
-void VM_Version::set_features_string() {
-  // A note on the _features_string format:
-  //   There are jtreg tests checking the _features_string for various properties.
+void VM_Version::set_cpu_info_string() {
+  // A note on the _cpu_info_string format:
+  //   There are jtreg tests checking the _cpu_info_string for various properties.
   //   For some strange reason, these tests require the string to contain
   //   only _lowercase_ characters. Keep that in mind when being surprised
   //   about the unusual notation of features - and when adding new ones.
@@ -381,29 +412,29 @@ void VM_Version::set_features_string() {
     _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
 
   if (has_Crypto_AES()) {
-    assert(strlen(_features_string) + 3*8 < sizeof(buf), "increase buffer size");
+    assert(strlen(_cpu_info_string) + 3*8 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s",
-                 _features_string,
+                 _cpu_info_string,
                  has_Crypto_AES128() ? ", aes128" : "",
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
-    os::free((void *)_features_string);
-    _features_string = os::strdup(buf);
+    os::free((void *)_cpu_info_string);
+    _cpu_info_string = os::strdup(buf);
   }
 
   if (has_Crypto_SHA()) {
-    assert(strlen(_features_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
+    assert(strlen(_cpu_info_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s",
-                 _features_string,
+                 _cpu_info_string,
                  has_Crypto_SHA1()   ? ", sha1"   : "",
                  has_Crypto_SHA256() ? ", sha256" : "",
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
-    os::free((void *)_features_string);
-    _features_string = os::strdup(buf);
+    os::free((void *)_cpu_info_string);
+    _cpu_info_string = os::strdup(buf);
   }
 }
 
@@ -433,7 +464,7 @@ bool VM_Version::test_feature_bit(unsigned long* featureBuffer, int featureNum, 
 }
 
 void VM_Version::print_features_internal(const char* text, bool print_anyway) {
-  tty->print_cr("%s %s", text, features_string());
+  tty->print_cr("%s %s", text, cpu_info_string());
   tty->cr();
 
   if (Verbose || print_anyway) {
@@ -707,7 +738,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     }
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth " INTX_FORMAT, ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 }
@@ -717,7 +748,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   // - LPAR
   // - whole "Box" (CPUs )
   // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
-  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* kw[] = { "LPAR", "CPUs", "VM", nullptr };
   const char* info_file = "/proc/sysinfo";
 
   if (!print_matching_lines_from_file(info_file, st, kw)) {
@@ -842,7 +873,7 @@ void VM_Version::set_features_from(const char* march) {
   bool err = false;
   bool prt = false;
 
-  if ((march != NULL) && (march[0] != '\0')) {
+  if ((march != nullptr) && (march[0] != '\0')) {
     const int buf_len = 16;
     const int hdr_len =  5;
     char buf[buf_len];
@@ -875,7 +906,7 @@ void VM_Version::set_features_from(const char* march) {
       err = true;
     }
     if (!err) {
-      set_features_string();
+      set_cpu_info_string();
       if (prt || PrintAssembly) {
         print_features_internal("CPU Version as set by cmdline option:", prt);
       }
@@ -909,10 +940,10 @@ void VM_Version::set_features_from(const char* march) {
 //                <  0: failure: required number of feature bit string words (buffer too small).
 //                == 0: failure: operation aborted.
 //
-static long (*getFeatures)(unsigned long*, int, int) = NULL;
+static long (*getFeatures)(unsigned long*, int, int) = nullptr;
 
 void VM_Version::set_getFeatures(address entryPoint) {
-  if (getFeatures == NULL) {
+  if (getFeatures == nullptr) {
     getFeatures = (long(*)(unsigned long*, int, int))entryPoint;
   }
 }
@@ -1511,6 +1542,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "s390 %s", VM_Version::get_model_string());
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", cpu_info_string());
   _initialized = true;
 }

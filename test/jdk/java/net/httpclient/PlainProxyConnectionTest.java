@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -43,6 +45,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import static java.net.Proxy.NO_PROXY;
 
@@ -51,16 +56,30 @@ import static java.net.Proxy.NO_PROXY;
  * @bug 8230526
  * @summary Verifies that PlainProxyConnections are cached and reused properly. We do this by
  *          verifying that the remote address of the HTTP exchange (on the fake proxy server)
- *          is always the same InetSocketAddress.
- * @modules jdk.httpserver
- * @run main/othervm PlainProxyConnectionTest
- * @author danielfuchs
+ *          is always the same InetSocketAddress. Logging verbosity is increased to aid in
+ *          diagnosis of intermittent failures.
+ * @library /test/lib
+ *          /test/jdk/java/net/httpclient/lib
+ * @run main/othervm -Djdk.tracePinnedThreads=full
+ *      -Djdk.httpclient.HttpClient.log=headers,requests,trace
+ *      -Djdk.internal.httpclient.debug=true
+ *      PlainProxyConnectionTest
  */
 public class PlainProxyConnectionTest {
 
+    // Increase logging verbosity to troubleshoot intermittent failures
+    static {
+        HttpServerAdapters.enableServerLogging();
+    }
+
     static final String RESPONSE = "<html><body><p>Hello World!</body></html>";
-    static final String PATH = "/foo/";
+
+    // Adding some salt to the path to avoid other parallel running tests mistakenly connect to our test server
+    private static final String PATH = String.format(
+            "/%s-%d", PlainProxyConnectionTest.class.getSimpleName(), PlainProxyConnectionTest.class.hashCode());
+
     static final ConcurrentLinkedQueue<InetSocketAddress> connections = new ConcurrentLinkedQueue<>();
+    private static final AtomicInteger IDS = new AtomicInteger();
 
     // For convenience the server is used both as a plain server and as a plain proxy.
     // When used as a proxy, it serves the request itself instead of forwarding it
@@ -196,6 +215,18 @@ public class PlainProxyConnectionTest {
 
         performSanityTest(server, uri, proxiedURI);
 
+        int id = IDS.getAndIncrement();
+        ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                .name("HttpClient-" + id + "-Worker", 0).factory());
+        CountingProxySelector ps = CountingProxySelector.of(
+                InetSocketAddress.createUnresolved(
+                        server.getAddress().getAddress().getHostAddress(),
+                        server.getAddress().getPort()));
+        HttpClient client = HttpClient.newBuilder()
+                .version(version)
+                .executor(virtualExecutor)
+                .proxy(ps)
+                .build();
         try {
             connections.clear();
             System.out.println("\nReal test begins here.");
@@ -206,14 +237,6 @@ public class PlainProxyConnectionTest {
             // to the fake `proxiedURI` at
             // http://some.host.that.does.not.exist:4242/foo/x
             //
-            CountingProxySelector ps = CountingProxySelector.of(
-                    InetSocketAddress.createUnresolved(
-                            server.getAddress().getAddress().getHostAddress(),
-                            server.getAddress().getPort()));
-            HttpClient client = HttpClient.newBuilder()
-                    .version(version)
-                    .proxy(ps)
-                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(proxiedURI)
                     .GET()
@@ -268,6 +291,8 @@ public class PlainProxyConnectionTest {
             }
         } finally {
             connections.clear();
+            client.close();
+            virtualExecutor.close();
         }
     }
 }

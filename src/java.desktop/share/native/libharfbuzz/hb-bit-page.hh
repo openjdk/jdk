@@ -30,33 +30,118 @@
 
 #include "hb.hh"
 
-struct hb_bit_page_t
+
+/* Compiler-assisted vectorization. */
+
+/* Type behaving similar to vectorized vars defined using __attribute__((vector_size(...))),
+ * basically a fixed-size bitset. We can't use the compiler type because hb_vector_t cannot
+ * guarantee alignment requirements. */
+template <typename elt_t, unsigned int byte_size>
+struct hb_vector_size_t
 {
-  void init0 () { v.clear (); }
-  void init1 () { v.clear (0xFF); }
+  elt_t& operator [] (unsigned int i) { return v[i]; }
+  const elt_t& operator [] (unsigned int i) const { return v[i]; }
 
-  constexpr unsigned len () const
-  { return ARRAY_LENGTH_CONST (v); }
-
-  bool is_empty () const
+  void init0 ()
   {
-    for (unsigned i = 0; i < len (); i++)
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      v[i] = 0;
+  }
+  void init1 ()
+  {
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      v[i] = (elt_t) -1;
+  }
+
+  template <typename Op>
+  hb_vector_size_t process (const Op& op) const
+  {
+    hb_vector_size_t r;
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      r.v[i] = op (v[i]);
+    return r;
+  }
+  template <typename Op>
+  hb_vector_size_t process (const Op& op, const hb_vector_size_t &o) const
+  {
+    hb_vector_size_t r;
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      r.v[i] = op (v[i], o.v[i]);
+    return r;
+  }
+  hb_vector_size_t operator | (const hb_vector_size_t &o) const
+  { return process (hb_bitwise_or, o); }
+  hb_vector_size_t operator & (const hb_vector_size_t &o) const
+  { return process (hb_bitwise_and, o); }
+  hb_vector_size_t operator ^ (const hb_vector_size_t &o) const
+  { return process (hb_bitwise_xor, o); }
+  hb_vector_size_t operator ~ () const
+  { return process (hb_bitwise_neg); }
+
+  operator bool () const
+  {
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
       if (v[i])
+        return true;
+    return false;
+  }
+  operator unsigned int () const
+  {
+    unsigned int r = 0;
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      r += hb_popcount (v[i]);
+    return r;
+  }
+  bool operator == (const hb_vector_size_t &o) const
+  {
+    for (unsigned int i = 0; i < ARRAY_LENGTH (v); i++)
+      if (v[i] != o.v[i])
         return false;
     return true;
   }
+
+  hb_array_t<const elt_t> iter () const
+  { return hb_array (v); }
+
+  private:
+  static_assert (0 == byte_size % sizeof (elt_t), "");
+  elt_t v[byte_size / sizeof (elt_t)];
+};
+
+
+struct hb_bit_page_t
+{
+  hb_bit_page_t () { init0 (); }
+
+  void init0 () { v.init0 (); population = 0; }
+  void init1 () { v.init1 (); population = PAGE_BITS; }
+
+  void dirty () { population = UINT_MAX; }
+
+  static inline constexpr unsigned len ()
+  { return ARRAY_LENGTH_CONST (v); }
+
+  operator bool () const { return !is_empty (); }
+  bool is_empty () const
+  {
+    if (has_population ()) return !population;
+    bool empty = !v;
+    if (empty) population = 0;
+    return empty;
+  }
   uint32_t hash () const
   {
-    uint32_t h = 0;
-    for (unsigned i = 0; i < len (); i++)
-      h = h * 31 + hb_hash (v[i]);
-    return h;
+    return hb_bytes_t ((const char *) &v, sizeof (v)).hash ();
   }
 
-  void add (hb_codepoint_t g) { elt (g) |= mask (g); }
-  void del (hb_codepoint_t g) { elt (g) &= ~mask (g); }
-  void set (hb_codepoint_t g, bool v) { if (v) add (g); else del (g); }
+  void add (hb_codepoint_t g) { elt (g) |= mask (g); dirty (); }
+  void del (hb_codepoint_t g) { elt (g) &= ~mask (g); dirty (); }
+  void set (hb_codepoint_t g, bool value) { if (value) add (g); else del (g); }
   bool get (hb_codepoint_t g) const { return elt (g) & mask (g); }
+  bool may_have (hb_codepoint_t g) const { return get (g); }
+
+  bool operator [] (hb_codepoint_t g) const { return get (g); }
+  bool operator () (hb_codepoint_t g) const { return get (g); }
 
   void add_range (hb_codepoint_t a, hb_codepoint_t b)
   {
@@ -66,29 +151,31 @@ struct hb_bit_page_t
       *la |= (mask (b) << 1) - mask(a);
     else
     {
-      *la |= ~(mask (a) - 1);
+      *la |= ~(mask (a) - 1llu);
       la++;
 
-      memset (la, 0xff, (char *) lb - (char *) la);
+      hb_memset (la, 0xff, (char *) lb - (char *) la);
 
-      *lb |= ((mask (b) << 1) - 1);
+      *lb |= ((mask (b) << 1) - 1llu);
     }
+    dirty ();
   }
   void del_range (hb_codepoint_t a, hb_codepoint_t b)
   {
     elt_t *la = &elt (a);
     elt_t *lb = &elt (b);
     if (la == lb)
-      *la &= ~((mask (b) << 1) - mask(a));
+      *la &= ~((mask (b) << 1llu) - mask(a));
     else
     {
       *la &= mask (a) - 1;
       la++;
 
-      memset (la, 0, (char *) lb - (char *) la);
+      hb_memset (la, 0, (char *) lb - (char *) la);
 
-      *lb &= ~((mask (b) << 1) - 1);
+      *lb &= ~((mask (b) << 1) - 1llu);
     }
+    dirty ();
   }
   void set_range (hb_codepoint_t a, hb_codepoint_t b, bool v)
   { if (v) add_range (a, b); else del_range (a, b); }
@@ -101,13 +188,13 @@ struct hb_bit_page_t
                       hb_codepoint_t *p,
                       unsigned int    size) const
   {
-    unsigned int start_v = start_value >> ELT_BITS_LOG_2;
+    unsigned int start_v = start_value / ELT_BITS;
     unsigned int start_bit = start_value & ELT_MASK;
     unsigned int count = 0;
     for (unsigned i = start_v; i < len () && count < size; i++)
     {
       elt_t bits = v[i];
-      uint32_t v_base = base | (i << ELT_BITS_LOG_2);
+      uint32_t v_base = base | (i * ELT_BITS);
       for (unsigned int j = start_bit; j < ELT_BITS && count < size; j++)
       {
         if ((elt_t(1) << j) & bits) {
@@ -132,13 +219,13 @@ struct hb_bit_page_t
                                unsigned int    size,
                                hb_codepoint_t *next_value) const
   {
-    unsigned int start_v = start_value >> ELT_BITS_LOG_2;
+    unsigned int start_v = start_value / ELT_BITS;
     unsigned int start_bit = start_value & ELT_MASK;
     unsigned int count = 0;
     for (unsigned i = start_v; i < len () && count < size; i++)
     {
       elt_t bits = v[i];
-      uint32_t v_offset = i << ELT_BITS_LOG_2;
+      uint32_t v_offset = i * ELT_BITS;
       for (unsigned int j = start_bit; j < ELT_BITS && count < size; j++)
       {
         if ((elt_t(1) << j) & bits)
@@ -159,24 +246,36 @@ struct hb_bit_page_t
     return count;
   }
 
-  bool is_equal (const hb_bit_page_t &other) const
+  bool operator == (const hb_bit_page_t &other) const { return is_equal (other); }
+  bool is_equal (const hb_bit_page_t &other) const { return v == other.v; }
+  bool intersects (const hb_bit_page_t &other) const
   {
-    return 0 == hb_memcmp (&v, &other.v, sizeof (v));
+    for (unsigned i = 0; i < len (); i++)
+      if (v[i] & other.v[i])
+        return true;
+    return false;
   }
+  bool may_intersect (const hb_bit_page_t &other) const
+  { return intersects (other); }
+
+  bool operator <= (const hb_bit_page_t &larger_page) const { return is_subset (larger_page); }
   bool is_subset (const hb_bit_page_t &larger_page) const
   {
+    if (has_population () && larger_page.has_population () &&
+        population > larger_page.population)
+      return false;
+
     for (unsigned i = 0; i < len (); i++)
       if (~larger_page.v[i] & v[i])
         return false;
     return true;
   }
 
-  unsigned int get_population () const
+  bool has_population () const { return population != UINT_MAX; }
+  unsigned get_population () const
   {
-    unsigned int pop = 0;
-    for (unsigned int i = 0; i < len (); i++)
-      pop += hb_popcount (v[i]);
-    return pop;
+    if (has_population ()) return population;
+    return population = v;
   }
 
   bool next (hb_codepoint_t *codepoint) const
@@ -250,10 +349,10 @@ struct hb_bit_page_t
   static constexpr hb_codepoint_t INVALID = HB_SET_VALUE_INVALID;
 
   typedef unsigned long long elt_t;
-  static constexpr unsigned PAGE_BITS = 512;
-  static_assert ((PAGE_BITS & ((PAGE_BITS) - 1)) == 0, "");
-  static constexpr unsigned PAGE_BITS_LOG_2 = 9;
+  static constexpr unsigned PAGE_BITS_LOG_2 = 9; // 512 bits
+  static constexpr unsigned PAGE_BITS = 1 << PAGE_BITS_LOG_2;
   static_assert (1 << PAGE_BITS_LOG_2 == PAGE_BITS, "");
+  static_assert ((PAGE_BITS & ((PAGE_BITS) - 1)) == 0, "");
   static constexpr unsigned PAGE_BITMASK = PAGE_BITS - 1;
 
   static unsigned int elt_get_min (const elt_t &elt) { return hb_ctz (elt); }
@@ -262,8 +361,6 @@ struct hb_bit_page_t
   typedef hb_vector_size_t<elt_t, PAGE_BITS / 8> vector_t;
 
   static constexpr unsigned ELT_BITS = sizeof (elt_t) * 8;
-  static constexpr unsigned ELT_BITS_LOG_2 = 6;
-  static_assert (1 << ELT_BITS_LOG_2 == ELT_BITS, "");
   static constexpr unsigned ELT_MASK = ELT_BITS - 1;
 
   static constexpr unsigned BITS = sizeof (vector_t) * 8;
@@ -274,9 +371,9 @@ struct hb_bit_page_t
   const elt_t& elt (hb_codepoint_t g) const { return v[(g & MASK) / ELT_BITS]; }
   static constexpr elt_t mask (hb_codepoint_t g) { return elt_t (1) << (g & ELT_MASK); }
 
+  mutable unsigned population;
   vector_t v;
 };
-static_assert (hb_bit_page_t::PAGE_BITS == sizeof (hb_bit_page_t) * 8, "");
 
 
 #endif /* HB_BIT_PAGE_HH */

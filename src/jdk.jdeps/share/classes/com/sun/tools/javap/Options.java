@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.sun.tools.classfile.AccessFlags;
+import static java.lang.classfile.ClassFile.*;
 
 /*
  *  Provides access to javap's options, set via the command line
@@ -54,16 +54,16 @@ public class Options {
     /**
      * Checks access of class, field or method.
      */
-    public boolean checkAccess(AccessFlags flags){
+    public boolean checkAccess(int flags){
 
-        boolean isPublic = flags.is(AccessFlags.ACC_PUBLIC);
-        boolean isProtected = flags.is(AccessFlags.ACC_PROTECTED);
-        boolean isPrivate = flags.is(AccessFlags.ACC_PRIVATE);
+        boolean isPublic = (flags & ACC_PUBLIC) != 0;
+        boolean isProtected = (flags & ACC_PROTECTED) != 0;
+        boolean isPrivate = (flags & ACC_PRIVATE) != 0;
         boolean isPackage = !(isPublic || isProtected || isPrivate);
 
-        if ((showAccess == AccessFlags.ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
+        if ((showAccess == ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
             return false;
-        else if ((showAccess == AccessFlags.ACC_PROTECTED) && (isPrivate || isPackage))
+        else if ((showAccess == ACC_PROTECTED) && (isPrivate || isPackage))
             return false;
         else if ((showAccess == 0) && (isPrivate))
             return false;
@@ -86,6 +86,7 @@ public class Options {
     public boolean showConstants;
     public boolean sysInfo;
     public boolean showInnerClasses;
+    public boolean verify;
     public int indentWidth = 2;   // #spaces per indentWidth level; must be > 0
     public int tabColumn = 40;    // column number for comments; must be > 0
     public String moduleName;

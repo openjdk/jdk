@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
          *
          * @param name the name of {@code Attribute}
          */
+        @SuppressWarnings("this-escape")
         protected Attribute(String name) {
             this.name = name;
             if (this.getClass() == Attribute.class) {

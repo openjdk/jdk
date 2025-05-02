@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.jvm:+open
  *          jdk.compiler/com.sun.tools.javac.util:+open
- *          jdk.jdeps/com.sun.tools.classfile:+open
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.Task
  * @run main CanHandleClassFilesTest
  */
@@ -76,8 +75,7 @@ public class CanHandleClassFilesTest {
         try (ToolBox.MemoryFileManager mfm = new ToolBox.MemoryFileManager()) {
             ToolBox tb = new ToolBox();
             new JavacTask(tb)
-              .options("--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
-                       "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+              .options("--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                        "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
                        "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
                        "--add-modules", "jdk.jdeps")
@@ -102,17 +100,18 @@ public class CanHandleClassFilesTest {
             Module targetModule = cl.getUnnamedModule();
             Stream.of("jdk.compiler/com.sun.tools.javac.api",
                       "jdk.compiler/com.sun.tools.javac.jvm",
-                      "jdk.compiler/com.sun.tools.javac.util",
-                      "jdk.jdeps/com.sun.tools.classfile")
+                      "jdk.compiler/com.sun.tools.javac.util")
                     .forEach(p -> open(p, targetModule));
 
             var createSymbolsClass = Class.forName("build.tools.symbolgenerator.CreateSymbols", false, cl);
             var main = createSymbolsClass.getMethod("main", String[].class);
             var symbols = targetDir.resolve("symbols");
-            var systemModules = targetDir.resolve("system-modules");
+            var modules = targetDir.resolve("modules");
+            var modulesList = targetDir.resolve("modules-list");
 
             try (Writer w = Files.newBufferedWriter(symbols)) {}
-            try (Writer w = Files.newBufferedWriter(systemModules)) {}
+            Files.createDirectories(modules);
+            try (Writer w = Files.newBufferedWriter(modulesList)) {}
 
             main.invoke(null,
                         (Object) new String[] {"build-description-incremental",
@@ -126,7 +125,9 @@ public class CanHandleClassFilesTest {
                                                targetDir.resolve("ct.sym").toAbsolutePath().toString(),
                                                Long.toString(System.currentTimeMillis() / 1000),
                                                "" + SourceVersion.latest().ordinal(),
-                                               systemModules.toAbsolutePath().toString()});
+                                               "",
+                                               modules.toAbsolutePath().toString(),
+                                               modulesList.toAbsolutePath().toString()});
         }
     }
 

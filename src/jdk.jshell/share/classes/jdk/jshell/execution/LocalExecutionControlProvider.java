@@ -25,6 +25,7 @@
 
 package jdk.jshell.execution;
 
+import java.util.List;
 import java.util.Map;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
@@ -78,7 +79,37 @@ public class LocalExecutionControlProvider implements ExecutionControlProvider{
      */
     @Override
     public ExecutionControl generate(ExecutionEnv env, Map<String, String> parameters) {
-        return new LocalExecutionControl();
+
+        // Create ExecutionControl
+        ExecutionControl executionControl = createExecutionControl(env, parameters);
+
+        // Apply any configured class path
+        List<String> remoteOptions = env.extraRemoteVMOptions();
+        int classPathIndex = remoteOptions.indexOf("--class-path") + 1;
+        if (classPathIndex > 0 && classPathIndex < remoteOptions.size()) {
+            try {
+                executionControl.addToClasspath(remoteOptions.get(classPathIndex));
+            } catch (ExecutionControl.ExecutionControlException e) {
+                throw new RuntimeException("error configuring class path", e);
+            }
+        }
+
+        // Done
+        return executionControl;
     }
 
+    /**
+     * Create a new {@link ExecutionControl} instance.
+     *
+     * <p>
+     * This method is invoked by {@link #generate generate()}.
+     *
+     * @param env the {@code ExecutionEnv} for which the {@link ExecutionControl} should be created
+     * @param parameters the parameters that were passed to {@link #generate generate()}
+     * @return the newly created {@code ExecutionControl}
+     * @since 22
+     */
+    public ExecutionControl createExecutionControl(ExecutionEnv env, Map<String, String> parameters) {
+        return new LocalExecutionControl(new DefaultLoaderDelegate());
+    }
 }

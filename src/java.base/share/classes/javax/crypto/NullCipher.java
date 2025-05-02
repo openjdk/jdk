@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ package javax.crypto;
  * "identity cipher" -- one that does not transform the plain text.  As
  * a consequence, the ciphertext is identical to the plaintext.  All
  * initialization methods do nothing, while the blocksize is set to 1
- * byte.
+ * byte.  Unlike other ciphers, the {@code NullCipher} has no state, and
+ * will never throw an {@code IllegalStateException} when {@code Cipher}
+ * methods are called.
  *
  * @author  Li Gong
  * @since 1.4

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import jdk.internal.misc.InternalLock;
 import sun.nio.cs.StreamEncoder;
 
 /**
@@ -46,10 +45,9 @@ import sun.nio.cs.StreamEncoder;
  * <p> For top efficiency, consider wrapping an OutputStreamWriter within a
  * BufferedWriter so as to avoid frequent converter invocations.  For example:
  *
- * <pre>
- * Writer out
- *   = new BufferedWriter(new OutputStreamWriter(anOutputStream));
- * </pre>
+ * {@snippet lang=java :
+ *     Writer out = new BufferedWriter(new OutputStreamWriter(anOutputStream));
+ * }
  *
  * <p> A <i>surrogate pair</i> is a character represented by a sequence of two
  * {@code char} values: A <i>high</i> surrogate in the range '&#92;uD800' to
@@ -77,20 +75,6 @@ public class OutputStreamWriter extends Writer {
     private final StreamEncoder se;
 
     /**
-     * Return the lock object for the given writer's stream encoder.
-     * If the writer type is trusted then an internal lock can be used. If the
-     * writer type is not trusted then the writer object is the lock.
-     */
-    private static Object lockFor(OutputStreamWriter writer) {
-        Class<?> clazz = writer.getClass();
-        if (clazz == OutputStreamWriter.class || clazz == FileWriter.class) {
-            return InternalLock.newLockOr(writer);
-        } else {
-            return writer;
-        }
-    }
-
-    /**
      * Creates an OutputStreamWriter that uses the named charset.
      *
      * @param  out
@@ -102,13 +86,14 @@ public class OutputStreamWriter extends Writer {
      * @throws     UnsupportedEncodingException
      *             If the named encoding is not supported
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, String charsetName)
         throws UnsupportedEncodingException
     {
         super(out);
         if (charsetName == null)
             throw new NullPointerException("charsetName");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), charsetName);
+        se = StreamEncoder.forOutputStreamWriter(out, this, charsetName);
     }
 
     /**
@@ -119,9 +104,10 @@ public class OutputStreamWriter extends Writer {
      * @param  out  An OutputStream
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out) {
         super(out);
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this),
+        se = StreamEncoder.forOutputStreamWriter(out, this,
                 out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset());
     }
 
@@ -136,11 +122,12 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, Charset cs) {
         super(out);
         if (cs == null)
             throw new NullPointerException("charset");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), cs);
+        se = StreamEncoder.forOutputStreamWriter(out, this, cs);
     }
 
     /**
@@ -154,11 +141,12 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, CharsetEncoder enc) {
         super(out);
         if (enc == null)
             throw new NullPointerException("charset encoder");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), enc);
+        se = StreamEncoder.forOutputStreamWriter(out, this, enc);
     }
 
     /**
@@ -177,8 +165,6 @@ public class OutputStreamWriter extends Writer {
      *         {@code null} if the stream has been closed
      *
      * @see Charset
-     *
-     * @revised 1.4
      */
     public String getEncoding() {
         return se.getEncoding();

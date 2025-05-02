@@ -73,15 +73,14 @@ struct MathConstants
   {
     TRACE_SERIALIZE (this);
     auto *out = c->start_embed (this);
-    if (unlikely (!out)) return_trace (nullptr);
 
     HBINT16 *p = c->allocate_size<HBINT16> (HBINT16::static_size * 2);
     if (unlikely (!p)) return_trace (nullptr);
-    memcpy (p, percentScaleDown, HBINT16::static_size * 2);
+    hb_memcpy (p, percentScaleDown, HBINT16::static_size * 2);
 
     HBUINT16 *m = c->allocate_size<HBUINT16> (HBUINT16::static_size * 2);
     if (unlikely (!m)) return_trace (nullptr);
-    memcpy (m, minHeight, HBUINT16::static_size * 2);
+    hb_memcpy (m, minHeight, HBUINT16::static_size * 2);
 
     unsigned count = ARRAY_LENGTH (mathValueRecords);
     for (unsigned i = 0; i < count; i++)
@@ -201,7 +200,7 @@ struct MathItalicsCorrectionInfo
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -254,7 +253,7 @@ struct MathTopAccentAttachment
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -310,7 +309,6 @@ struct MathKern
   {
     TRACE_SERIALIZE (this);
     auto *out = c->start_embed (this);
-    if (unlikely (!out)) return_trace (nullptr);
 
     if (unlikely (!c->embed (heightCount))) return_trace (nullptr);
 
@@ -335,6 +333,7 @@ struct MathKern
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
+                  hb_barrier () &&
                   c->check_array (mathValueRecordsZ.arrayZ, 2 * heightCount + 1) &&
                   sanitize_math_value_records (c));
   }
@@ -345,27 +344,20 @@ struct MathKern
     const MathValueRecord* kernValue = mathValueRecordsZ.arrayZ + heightCount;
     int sign = font->y_scale < 0 ? -1 : +1;
 
-    /* The description of the MathKern table is a ambiguous, but interpreting
-     * "between the two heights found at those indexes" for 0 < i < len as
-     *
-     *   correctionHeight[i-1] < correction_height <= correctionHeight[i]
-     *
-     * makes the result consistent with the limit cases and we can just use the
-     * binary search algorithm of std::upper_bound:
+    /* According to OpenType spec (v1.9), except for the boundary cases, the index
+     * chosen for kern value should be i such that
+     *    correctionHeight[i-1] <= correction_height < correctionHeight[i]
+     * We can use the binary search algorithm of std::upper_bound(). Or, we can
+     * use the internal hb_bsearch_impl.
      */
-    unsigned int i = 0;
-    unsigned int count = heightCount;
-    while (count > 0)
-    {
-      unsigned int half = count / 2;
-      hb_position_t height = correctionHeight[i + half].get_y_value (font, this);
-      if (sign * height < sign * correction_height)
-      {
-        i += half + 1;
-        count -= half + 1;
-      } else
-        count = half;
-    }
+    unsigned int pos;
+    auto cmp = +[](const void* key, const void* p,
+                   int sign, hb_font_t* font, const MathKern* mathKern) -> int {
+      return sign * *(hb_position_t*)key - sign * ((MathValueRecord*)p)->get_y_value(font, mathKern);
+    };
+    unsigned int i = hb_bsearch_impl(&pos, correction_height, correctionHeight,
+                                     heightCount, MathValueRecord::static_size,
+                                     cmp, sign, font, this) ? pos + 1 : pos;
     return kernValue[i].get_x_value (font, this);
   }
 
@@ -486,7 +478,7 @@ struct MathKernInfo
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -567,11 +559,12 @@ struct MathGlyphInfo
     out->mathItalicsCorrectionInfo.serialize_subset (c, mathItalicsCorrectionInfo, this);
     out->mathTopAccentAttachment.serialize_subset (c, mathTopAccentAttachment, this);
 
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto it =
     + hb_iter (this+extendedShapeCoverage)
+    | hb_take (c->plan->source->get_num_glyphs ())
     | hb_filter (glyphset)
     | hb_map_retains_sorting (glyph_map)
     ;
@@ -757,8 +750,6 @@ struct MathGlyphAssembly
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    auto *out = c->serializer->start_embed (*this);
-    if (unlikely (!out)) return_trace (false);
 
     if (!c->serializer->copy (italicsCorrection, this)) return_trace (false);
     if (!c->serializer->copy<HBUINT16> (partRecords.len)) return_trace (false);
@@ -786,7 +777,7 @@ struct MathGlyphAssembly
     if (parts_count)
     {
       int64_t mult = font->dir_mult (direction);
-      for (auto _ : hb_zip (partRecords.sub_array (start_offset, parts_count),
+      for (auto _ : hb_zip (partRecords.as_array ().sub_array (start_offset, parts_count),
                             hb_array (parts, *parts_count)))
         _.first.extract (_.second, mult, font);
     }
@@ -855,7 +846,7 @@ struct MathGlyphConstruction
     if (variants_count)
     {
       int64_t mult = font->dir_mult (direction);
-      for (auto _ : hb_zip (mathGlyphVariantRecord.sub_array (start_offset, variants_count),
+      for (auto _ : hb_zip (mathGlyphVariantRecord.as_array ().sub_array (start_offset, variants_count),
                             hb_array (variants, *variants_count)))
         _.second = {_.first.variantGlyph, font->em_mult (_.first.advanceMeasurement, mult)};
     }
@@ -938,7 +929,7 @@ struct MathVariants
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -987,6 +978,7 @@ struct MathVariants
     return_trace (c->check_struct (this) &&
                   vertGlyphCoverage.sanitize (c, this) &&
                   horizGlyphCoverage.sanitize (c, this) &&
+                  hb_barrier () &&
                   c->check_array (glyphConstruction.arrayZ, vertGlyphCount + horizGlyphCount) &&
                   sanitize_offsets (c));
   }
@@ -1106,6 +1098,7 @@ struct MATH
     TRACE_SANITIZE (this);
     return_trace (version.sanitize (c) &&
                   likely (version.major == 1) &&
+                  hb_barrier () &&
                   mathConstants.sanitize (c, this) &&
                   mathGlyphInfo.sanitize (c, this) &&
                   mathVariants.sanitize (c, this));

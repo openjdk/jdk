@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main WrongLNTForLambdaTest
  */
@@ -37,12 +36,10 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.Assert;
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -137,15 +134,15 @@ public class WrongLNTForLambdaTest {
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "lambda$bar$0", simpleLambdaExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaWithVarsExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$0", lambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo$1FooBar.class").toUri()), "run", insideLambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaVoid2VoidExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaVoid2VoidExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$3", lambdaBridgeExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaBridgeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "assignLambda", assignmentExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
@@ -159,22 +156,21 @@ public class WrongLNTForLambdaTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind, int[][] expectedLNT) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
-        for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(methodToFind)) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                Code_attribute code = (Code_attribute) method.attributes.get("Code");
-                LineNumberTable_attribute lnt =
-                        (LineNumberTable_attribute) code.attributes.get("LineNumberTable");
-                Assert.check(lnt.line_number_table_length == expectedLNT.length,
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
+                Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;
-                for (LineNumberTable_attribute.Entry entry: lnt.line_number_table) {
-                    Assert.check(entry.line_number == expectedLNT[i][0] &&
-                            entry.start_pc == expectedLNT[i][1],
+                for (LineNumberInfo entry: lnt.lineNumbers()) {
+                    Assert.check(entry.lineNumber() == expectedLNT[i][0] &&
+                            entry.startPc() == expectedLNT[i][1],
                             "LNT entry at pos " + i + " differ from expected." +
-                            "Found " + entry.line_number + ":" + entry.start_pc +
+                            "Found " + entry.lineNumber() + ":" + entry.startPc() +
                             ". Expected " + expectedLNT[i][0] + ":" + expectedLNT[i][1]);
                     i++;
                 }

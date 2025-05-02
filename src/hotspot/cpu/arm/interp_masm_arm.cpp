@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -37,6 +36,9 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -208,58 +210,11 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
     ldrb(tmp_reg, Address(Rbcp, bcp_offset));
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    mvn_32(index, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     ldrb(index, Address(Rbcp, bcp_offset));
   } else {
     ShouldNotReachHere();
   }
-}
-
-// Sets cache, index.
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size) {
-  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  assert_different_registers(cache, index);
-
-  get_index_at_bcp(index, bcp_offset, cache, index_size);
-
-  // load constant pool cache pointer
-  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
-
-  // convert from field index to ConstantPoolCacheEntry index
-  assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
-  logical_shift_left(index, index, 2);
-}
-
-// Sets cache, index, bytecode.
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size) {
-  get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
-  // caution index and bytecode can be the same
-  add(bytecode, cache, AsmOperand(index, lsl, LogBytesPerWord));
-  ldrb(bytecode, Address(bytecode, (1 + byte_no) + in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset())));
-  TemplateTable::volatile_barrier(MacroAssembler::LoadLoad, noreg, true);
-}
-
-// Sets cache. Blows reg_tmp.
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register reg_tmp, int bcp_offset, size_t index_size) {
-  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  assert_different_registers(cache, reg_tmp);
-
-  get_index_at_bcp(reg_tmp, bcp_offset, cache, index_size);
-
-  // load constant pool cache pointer
-  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
-
-  // skip past the header
-  add(cache, cache, in_bytes(ConstantPoolCache::base_offset()));
-  // convert from field index to ConstantPoolCacheEntry index
-  // and from word offset to byte offset
-  assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
-  add(cache, cache, AsmOperand(reg_tmp, lsl, 2 + LogBytesPerWord));
 }
 
 // Load object from cpool->resolved_references(index)
@@ -270,8 +225,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   Register cache = result;
   // load pointer for resolved_references[] objArray
-  ldr(cache, Address(result, ConstantPool::cache_offset_in_bytes()));
-  ldr(cache, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
+  ldr(cache, Address(result, ConstantPool::cache_offset()));
+  ldr(cache, Address(result, ConstantPoolCache::resolved_references_offset()));
   resolve_oop_handle(cache);
   // Add in the index
   // convert from field index to resolved_references() index and from
@@ -285,9 +240,78 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                            Register Rcpool, Register Rindex, Register Rklass) {
   add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
   ldrh(Rtemp, Address(Rtemp, sizeof(ConstantPool))); // Rtemp = resolved_klass_index
-  ldr(Rklass, Address(Rcpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // Rklass = cpool->_resolved_klasses
+  ldr(Rklass, Address(Rcpool,  ConstantPool::resolved_klasses_offset())); // Rklass = cpool->_resolved_klasses
   add(Rklass, Rklass, AsmOperand(Rtemp, lsl, LogBytesPerWord));
   ldr(Rklass, Address(Rklass, Array<Klass*>::base_offset_in_bytes()));
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  assert_different_registers(cache, index, Rtemp);
+
+  get_index_at_bcp(index, 1, Rtemp, sizeof(u4));
+
+  // load constant pool cache pointer
+  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Get address of invokedynamic array
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // On ARM32 sizeof(ResolvedIndyEntry) is 12, use mul instead of lsl
+  mov(Rtemp, sizeof(ResolvedIndyEntry));
+  mul(index, index, Rtemp);
+
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  assert_different_registers(cache, index);
+
+  get_index_at_bcp(index, bcp_offset, cache /*as tmp*/, sizeof(u2));
+
+  // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+  // sizeof(ResolvedFieldEntry) is 16 on Arm, so using shift
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    // load constant pool cache pointer
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+    // Get address of field entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
+
+    add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+    add(cache, cache, AsmOperand(index, lsl, log2i_exact(sizeof(ResolvedFieldEntry))));
+  }
+  else {
+    mov(cache, sizeof(ResolvedFieldEntry));
+    mul(index, index, cache);
+    // load constant pool cache pointer
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+
+    // Get address of field entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
+    add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+    add(cache, cache, index);
+  }
+}
+
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  assert_different_registers(cache, index);
+
+  // Get index out of bytecode pointer
+  get_index_at_bcp(index, bcp_offset, cache /* as tmp */, sizeof(u2));
+
+  // sizeof(ResolvedMethodEntry) is not a power of 2 on Arm, so can't use shift
+  mov(cache, sizeof(ResolvedMethodEntry));
+  mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+
+  // load constant pool cache pointer
+  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+  // Get address of method entries array
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
+  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is
@@ -711,7 +735,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   ldrb(Rflag, do_not_unlock_if_synchronized);
 
   // get method access flags
-  ldr_u32(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
+  ldrh(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
 
   strb(zero_register(Rtemp), do_not_unlock_if_synchronized); // reset the flag
 
@@ -734,7 +758,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   // address of first monitor
   sub(Rmonitor, FP, - frame::interpreter_frame_monitor_block_bottom_offset * wordSize + (int)sizeof(BasicObjectLock));
 
-  ldr(Robj, Address(Rmonitor, BasicObjectLock::obj_offset_in_bytes()));
+  ldr(Robj, Address(Rmonitor, BasicObjectLock::obj_offset()));
   cbnz(Robj, unlock);
 
   pop(state);
@@ -793,7 +817,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   {
     Label loop;
 
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     const Register Rbottom = R3;
     const Register Rcur_obj = Rtemp;
 
@@ -805,7 +829,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
                                  // points to word before bottom of monitor block
 
     cmp(Rcur, Rbottom);          // check if there are no monitors
-    ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                  // prefetch monitor's object
     b(no_unlock, eq);
 
@@ -815,7 +839,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
 
     add(Rcur, Rcur, entry_size);      // otherwise advance to next entry
     cmp(Rcur, Rbottom);               // check if bottom reached
-    ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                       // prefetch monitor's object
     b(loop, ne);                      // if not at bottom then check this entry
   }
@@ -864,7 +888,7 @@ void InterpreterMacroAssembler::set_do_not_unlock_if_synchronized(bool flag, Reg
 void InterpreterMacroAssembler::lock_object(Register Rlock) {
   assert(Rlock == R1, "the second argument");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
   } else {
     Label done;
@@ -873,8 +897,8 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     const Register Rmark = R3;
     assert_different_registers(Robj, Rmark, Rlock, R0, Rtemp);
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
     const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
     Label already_locked, slow_case;
@@ -884,83 +908,86 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(R0, Robj);
-      ldr_u32(R0, Address(R0, Klass::access_flags_offset()));
-      tst(R0, JVM_ACC_IS_VALUE_BASED_CLASS);
+      ldrb(R0, Address(R0, Klass::misc_flags_offset()));
+      tst(R0, KlassFlags::_misc_is_value_based_class);
       b(slow_case, ne);
     }
 
-    // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-    // That would be acceptable as ether CAS or slow case path is taken in that case.
-    // Exception to that is if the object is locked by the calling thread, then the recursive test will pass (guaranteed as
-    // loads are satisfied from a store queue if performed on the same processor).
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      lightweight_lock(Robj, R0 /* t1 */, Rmark /* t2 */, Rtemp /* t3 */, 0 /* savemask */, slow_case);
+      b(done);
+    } else if (LockingMode == LM_LEGACY) {
+      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
+      // That would be acceptable as ether CAS or slow case path is taken in that case.
+      // Exception to that is if the object is locked by the calling thread, then the recursive test will pass (guaranteed as
+      // loads are satisfied from a store queue if performed on the same processor).
 
-    assert(oopDesc::mark_offset_in_bytes() == 0, "must be");
-    ldr(Rmark, Address(Robj, oopDesc::mark_offset_in_bytes()));
+      assert(oopDesc::mark_offset_in_bytes() == 0, "must be");
+      ldr(Rmark, Address(Robj, oopDesc::mark_offset_in_bytes()));
 
-    // Test if object is already locked
-    tst(Rmark, markWord::unlocked_value);
-    b(already_locked, eq);
+      // Test if object is already locked
+      tst(Rmark, markWord::unlocked_value);
+      b(already_locked, eq);
 
-    // Save old object->mark() into BasicLock's displaced header
-    str(Rmark, Address(Rlock, mark_offset));
+      // Save old object->mark() into BasicLock's displaced header
+      str(Rmark, Address(Rlock, mark_offset));
 
-    cas_for_lock_acquire(Rmark, Rlock, Robj, Rtemp, slow_case);
+      cas_for_lock_acquire(Rmark, Rlock, Robj, Rtemp, slow_case);
 
-    b(done);
+      b(done);
 
-    // If we got here that means the object is locked by ether calling thread or another thread.
-    bind(already_locked);
-    // Handling of locked objects: recursive locks and slow case.
+      // If we got here that means the object is locked by ether calling thread or another thread.
+      bind(already_locked);
+      // Handling of locked objects: recursive locks and slow case.
 
-    // Fast check for recursive lock.
-    //
-    // Can apply the optimization only if this is a stack lock
-    // allocated in this thread. For efficiency, we can focus on
-    // recently allocated stack locks (instead of reading the stack
-    // base and checking whether 'mark' points inside the current
-    // thread stack):
-    //  1) (mark & 3) == 0
-    //  2) SP <= mark < SP + os::pagesize()
-    //
-    // Warning: SP + os::pagesize can overflow the stack base. We must
-    // neither apply the optimization for an inflated lock allocated
-    // just above the thread stack (this is why condition 1 matters)
-    // nor apply the optimization if the stack lock is inside the stack
-    // of another thread. The latter is avoided even in case of overflow
-    // because we have guard pages at the end of all stacks. Hence, if
-    // we go over the stack base and hit the stack of another thread,
-    // this should not be in a writeable area that could contain a
-    // stack lock allocated by that thread. As a consequence, a stack
-    // lock less than page size away from SP is guaranteed to be
-    // owned by the current thread.
-    //
-    // Note: assuming SP is aligned, we can check the low bits of
-    // (mark-SP) instead of the low bits of mark. In that case,
-    // assuming page size is a power of 2, we can merge the two
-    // conditions into a single test:
-    // => ((mark - SP) & (3 - os::pagesize())) == 0
+      // Fast check for recursive lock.
+      //
+      // Can apply the optimization only if this is a stack lock
+      // allocated in this thread. For efficiency, we can focus on
+      // recently allocated stack locks (instead of reading the stack
+      // base and checking whether 'mark' points inside the current
+      // thread stack):
+      //  1) (mark & 3) == 0
+      //  2) SP <= mark < SP + os::pagesize()
+      //
+      // Warning: SP + os::pagesize can overflow the stack base. We must
+      // neither apply the optimization for an inflated lock allocated
+      // just above the thread stack (this is why condition 1 matters)
+      // nor apply the optimization if the stack lock is inside the stack
+      // of another thread. The latter is avoided even in case of overflow
+      // because we have guard pages at the end of all stacks. Hence, if
+      // we go over the stack base and hit the stack of another thread,
+      // this should not be in a writeable area that could contain a
+      // stack lock allocated by that thread. As a consequence, a stack
+      // lock less than page size away from SP is guaranteed to be
+      // owned by the current thread.
+      //
+      // Note: assuming SP is aligned, we can check the low bits of
+      // (mark-SP) instead of the low bits of mark. In that case,
+      // assuming page size is a power of 2, we can merge the two
+      // conditions into a single test:
+      // => ((mark - SP) & (3 - os::pagesize())) == 0
 
-    // (3 - os::pagesize()) cannot be encoded as an ARM immediate operand.
-    // Check independently the low bits and the distance to SP.
-    // -1- test low 2 bits
-    movs(R0, AsmOperand(Rmark, lsl, 30));
-    // -2- test (mark - SP) if the low two bits are 0
-    sub(R0, Rmark, SP, eq);
-    movs(R0, AsmOperand(R0, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK: store 0 into lock record
-    str(R0, Address(Rlock, mark_offset), eq);
+      // (3 - os::pagesize()) cannot be encoded as an ARM immediate operand.
+      // Check independently the low bits and the distance to SP.
+      // -1- test low 2 bits
+      movs(R0, AsmOperand(Rmark, lsl, 30));
+      // -2- test (mark - SP) if the low two bits are 0
+      sub(R0, Rmark, SP, eq);
+      movs(R0, AsmOperand(R0, lsr, exact_log2(os::vm_page_size())), eq);
+      // If still 'eq' then recursive locking OK: store 0 into lock record
+      str(R0, Address(Rlock, mark_offset), eq);
 
-    b(done, eq);
+      b(done, eq);
+    }
 
     bind(slow_case);
 
     // Call the runtime routine for slow case
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
-
     bind(done);
   }
 }
-
 
 // Unlocks an object. Used in monitorexit bytecode and remove_activation.
 //
@@ -970,7 +997,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 void InterpreterMacroAssembler::unlock_object(Register Rlock) {
   assert(Rlock == R0, "the first argument");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), Rlock);
   } else {
     Label done, slow_case;
@@ -979,8 +1006,8 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     const Register Rmark = R3;
     assert_different_registers(Robj, Rmark, Rlock, Rtemp);
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
     const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
     const Register Rzero = zero_register(Rtemp);
@@ -991,18 +1018,36 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     // Free entry
     str(Rzero, Address(Rlock, obj_offset));
 
-    // Load the old header from BasicLock structure
-    ldr(Rmark, Address(Rlock, mark_offset));
+    if (LockingMode == LM_LIGHTWEIGHT) {
 
-    // Test for recursion (zero mark in BasicLock)
-    cbz(Rmark, done);
+      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
+      // must handle it.
+      ldr(Rtemp, Address(Rthread, JavaThread::lock_stack_top_offset()));
+      sub(Rtemp, Rtemp, oopSize);
+      ldr(Rtemp, Address(Rthread, Rtemp));
+      cmpoop(Rtemp, Robj);
+      b(slow_case, ne);
 
-    bool allow_fallthrough_on_failure = true;
+      lightweight_unlock(Robj /* obj */, Rlock /* t1 */, Rmark /* t2 */, Rtemp /* t3 */,
+                         1 /* savemask (save t1) */, slow_case);
 
-    cas_for_lock_release(Rlock, Rmark, Robj, Rtemp, slow_case, allow_fallthrough_on_failure);
+      b(done);
 
-    b(done, eq);
+    } else if (LockingMode == LM_LEGACY) {
 
+      // Load the old header from BasicLock structure
+      ldr(Rmark, Address(Rlock, mark_offset));
+
+      // Test for recursion (zero mark in BasicLock)
+      cbz(Rmark, done);
+
+      bool allow_fallthrough_on_failure = true;
+
+      cas_for_lock_release(Rlock, Rmark, Robj, Rtemp, slow_case, allow_fallthrough_on_failure);
+
+      b(done, eq);
+
+    }
     bind(slow_case);
 
     // Call the runtime routine for slow case.
@@ -1012,7 +1057,6 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     bind(done);
   }
 }
-
 
 // Test ImethodDataPtr.  If it is null, continue at the specified label
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp, Label& zero_continue) {

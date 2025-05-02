@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -34,6 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/atomic.hpp"
@@ -43,6 +43,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 // ==================================================================
@@ -58,9 +59,14 @@ bool DataLayout::needs_array_len(u1 tag) {
 // Perform generic initialization of the data.  More specific
 // initialization occurs in overrides of ProfileData::post_initialize.
 void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
-  _header._bits = (intptr_t)0;
-  _header._struct._tag = tag;
-  _header._struct._bci = bci;
+  DataLayout temp;
+  temp._header._bits = (intptr_t)0;
+  temp._header._struct._tag = tag;
+  temp._header._struct._bci = bci;
+  // Write the header using a single intptr_t write.  This ensures that if the layout is
+  // reinitialized readers will never see the transient state where the header is 0.
+  _header = temp._header;
+
   for (int i = 0; i < cell_count; i++) {
     set_cell_at(i, (intptr_t)0);
   }
@@ -418,11 +424,7 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr)  entries++;
   }
-#if INCLUDE_JVMCI
-  st->print_cr("count(%u) nonprofiled_count(%u) entries(%u)", count(), nonprofiled_count(), entries);
-#else
   st->print_cr("count(%u) entries(%u)", count(), entries);
-#endif
   int total = count();
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr) {
@@ -480,7 +482,7 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   // Now check to see if any of the cache slots are open.
   for (uint row = 0; row < row_limit(); row++) {
     if (bci(row) == no_bci) {
-      set_bci_displacement(row, mdp - dp());
+      set_bci_displacement(row, checked_cast<int>(mdp - dp()));
       set_bci_count(row, DataLayout::counter_increment);
       // Barrier to ensure displacement is written before the bci; allows
       // the interpreter to read displacement without fear of race condition.
@@ -666,9 +668,6 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
-    return no_profile_data;
-  }
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
@@ -837,27 +836,37 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
 bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
   assert(failed_speculations_address != nullptr, "must be");
   size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
-  FailedSpeculation* fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
-  if (fs == nullptr) {
-    // no memory -> ignore failed speculation
-    return false;
-  }
 
-  guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
   guarantee_failed_speculations_alive(nm, failed_speculations_address);
 
   FailedSpeculation** cursor = failed_speculations_address;
+  FailedSpeculation* fs = nullptr;
   do {
     if (*cursor == nullptr) {
+      if (fs == nullptr) {
+        // lazily allocate FailedSpeculation
+        fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
+        if (fs == nullptr) {
+          // no memory -> ignore failed speculation
+          return false;
+        }
+        guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
+      }
       FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
       if (old_fs == nullptr) {
         // Successfully appended fs to end of the list
         return true;
       }
-      cursor = old_fs->next_adr();
-    } else {
-      cursor = (*cursor)->next_adr();
     }
+    guarantee(*cursor != nullptr, "cursor must point to non-null FailedSpeculation");
+    // check if the current entry matches this thread's failed speculation
+    if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
+      if (fs != nullptr) {
+        delete fs;
+      }
+      return false;
+    }
+    cursor = (*cursor)->next_adr();
   } while (true);
 }
 
@@ -958,6 +967,12 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   if (args_cell > 0) {
     object_size += DataLayout::compute_size_in_bytes(args_cell);
   }
+
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+  }
+
   return object_size;
 }
 
@@ -973,11 +988,8 @@ int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
-    return 0;
-  }
   int cell_count = -1;
-  int tag = DataLayout::no_tag;
+  u1 tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
   Bytecodes::Code c = stream->code();
   switch (c) {
@@ -1088,7 +1100,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
   if (cell_count >= 0) {
     assert(tag != DataLayout::no_tag, "bad tag");
     assert(bytecode_has_profile(c), "agree w/ BHP");
-    data_layout->initialize(tag, stream->bci(), cell_count);
+    data_layout->initialize(tag, checked_cast<u2>(stream->bci()), cell_count);
     return DataLayout::compute_size_in_bytes(cell_count);
   } else {
     assert(!bytecode_has_profile(c), "agree w/ !BHP");
@@ -1211,11 +1223,33 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     // Holds Compile_lock
-    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
+    _extra_data_lock(Mutex::nosafepoint, "MDOExtraData_lock"),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
 }
+
+// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this way will ensure it's
+// not being accessed while the contents are being rewritten.
+class VM_ReinitializeMDO: public VM_Operation {
+ private:
+  MethodData* _mdo;
+ public:
+  VM_ReinitializeMDO(MethodData* mdo): _mdo(mdo) {}
+  VMOp_Type type() const                         { return VMOp_ReinitializeMDO; }
+  void doit() {
+    // The extra data is being zero'd, we'd like to acquire the extra_data_lock but it can't be held
+    // over a safepoint.  This means that we don't actually need to acquire the lock.
+    _mdo->initialize();
+  }
+  bool allow_nested_vm_operations() const        { return true; }
+};
+
+void MethodData::reinitialize() {
+  VM_ReinitializeMDO op(this);
+  VMThread::execute(&op);
+}
+
 
 void MethodData::initialize() {
   Thread* thread = Thread::current();
@@ -1223,7 +1257,6 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
-  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1268,13 +1301,26 @@ void MethodData::initialize() {
   // for method entry so they don't fit with the framework for the
   // profiling of bytecodes). We store the offset within the MDO of
   // this area (or -1 if no parameter is profiled)
+  int parm_data_size = 0;
   if (parms_cell > 0) {
-    object_size += DataLayout::compute_size_in_bytes(parms_cell);
+    parm_data_size = DataLayout::compute_size_in_bytes(parms_cell);
+    object_size += parm_data_size;
     _parameters_type_data_di = data_size + extra_size + arg_data_size;
     DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
     dp->initialize(DataLayout::parameters_type_data_tag, 0, parms_cell);
   } else {
     _parameters_type_data_di = no_parameters;
+  }
+
+  _exception_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+    ExceptionTableElement* exception_handlers = method()->exception_table_start();
+    for (int i = 0; i < num_exception_handlers; i++) {
+      DataLayout *dp = exception_handler_data_at(i);
+      dp->initialize(DataLayout::bit_data_tag, exception_handlers[i].handler_pc, single_exception_handler_data_cell_count());
+    }
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1299,9 +1345,9 @@ void MethodData::init() {
   // Set per-method invoke- and backedge mask.
   double scale = 1.0;
   methodHandle mh(Thread::current(), _method);
-  CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
-  _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
-  _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  CompilerOracle::has_option_value(mh, CompileCommandEnum::CompileThresholdScaling, scale);
+  _invoke_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
   _tenure_traps = 0;
   _num_loops = 0;
@@ -1313,28 +1359,8 @@ void MethodData::init() {
   _failed_speculations = nullptr;
 #endif
 
-#if INCLUDE_RTM_OPT
-  _rtm_state = NoRTM; // No RTM lock eliding by default
-  if (UseRTMLocking &&
-      !CompilerOracle::has_option(mh, CompileCommand::NoRTMLockEliding)) {
-    if (CompilerOracle::has_option(mh, CompileCommand::UseRTMLockEliding) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      _rtm_state = UseRTM;
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      _rtm_state = ProfileRTM;
-    }
-  }
-#endif
-
   // Initialize escape flags.
   clear_escape_info();
-}
-
-// Get a measure of how much mileage the method has on it.
-int MethodData::mileage_of(Method* method) {
-  return MAX2(method->invocation_count(), method->backedge_count());
 }
 
 bool MethodData::is_mature() const {
@@ -1359,6 +1385,8 @@ address MethodData::bci_to_dp(int bci) {
 
 // Translate a bci to its corresponding data, or null.
 ProfileData* MethodData::bci_to_data(int bci) {
+  check_extra_data_locked();
+
   DataLayout* data = data_layout_before(bci);
   for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() == bci) {
@@ -1369,6 +1397,28 @@ ProfileData* MethodData::bci_to_data(int bci) {
     }
   }
   return bci_to_extra_data(bci, nullptr, false);
+}
+
+DataLayout* MethodData::exception_handler_bci_to_data_helper(int bci) {
+  assert(ProfileExceptionHandlers, "not profiling");
+  for (int i = 0; i < num_exception_handler_data(); i++) {
+    DataLayout* exception_handler_data = exception_handler_data_at(i);
+    if (exception_handler_data->bci() == bci) {
+      return exception_handler_data;
+    }
+  }
+  return nullptr;
+}
+
+BitData* MethodData::exception_handler_bci_to_data_or_null(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  return data != nullptr ? new BitData(data) : nullptr;
+}
+
+BitData MethodData::exception_handler_bci_to_data(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  assert(data != nullptr, "invalid bci");
+  return BitData(data);
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {
@@ -1387,7 +1437,9 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
 
-ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
+ProfileData* MethodData::bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp) {
+  check_extra_data_locked();
+
   DataLayout* end = args_data_limit();
 
   for (;; dp = next_extra(dp)) {
@@ -1408,14 +1460,9 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
     case DataLayout::speculative_trap_data_tag:
       if (m != nullptr) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
-        // data->method() may be null in case of a concurrent
-        // allocation. Maybe it's for the same method. Try to use that
-        // entry in that case.
         if (dp->bci() == bci) {
-          if (data->method() == nullptr) {
-            assert(concurrent, "impossible because no concurrent allocation");
-            return nullptr;
-          } else if (data->method() == m) {
+          assert(data->method() != nullptr, "method must be set");
+          if (data->method() == m) {
             return data;
           }
         }
@@ -1431,6 +1478,8 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
 
 // Translate a bci to its corresponding extra data, or null.
 ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_missing) {
+  check_extra_data_locked();
+
   // This code assumes an entry for a SpeculativeTrapData is 2 cells
   assert(2*DataLayout::compute_size_in_bytes(BitData::static_cell_count()) ==
          DataLayout::compute_size_in_bytes(SpeculativeTrapData::static_cell_count()),
@@ -1444,23 +1493,14 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
-  // Allocation in the extra data space has to be atomic because not
-  // all entries have the same size and non atomic concurrent
-  // allocation would result in a corrupted extra data space.
-  ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
-  if (result != nullptr) {
+  // Find if already exists
+  ProfileData* result = bci_to_extra_data_find(bci, m, dp);
+  if (result != nullptr || dp >= end) {
     return result;
   }
 
-  if (create_if_missing && dp < end) {
-    MutexLocker ml(&_extra_data_lock);
-    // Check again now that we have the lock. Another thread may
-    // have added extra data entries.
-    ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
-    if (result != nullptr || dp >= end) {
-      return result;
-    }
-
+  if (create_if_missing) {
+    // Not found -> Allocate
     assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != nullptr), "should be free");
     assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
     u1 tag = m == nullptr ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
@@ -1469,7 +1509,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
       return nullptr;
     }
     DataLayout temp;
-    temp.initialize(tag, bci, 0);
+    temp.initialize(tag, checked_cast<u2>(bci), 0);
 
     dp->set_header(temp.header());
     assert(dp->tag() == tag, "sane");
@@ -1512,6 +1552,8 @@ void MethodData::print_value_on(outputStream* st) const {
 }
 
 void MethodData::print_data_on(outputStream* st) const {
+  ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self(),
+                            Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   ProfileData* data = first_data();
   if (_parameters_type_data_di != no_parameters) {
@@ -1522,6 +1564,7 @@ void MethodData::print_data_on(outputStream* st) const {
     st->fill_to(6);
     data->print_data_on(st, this);
   }
+
   st->print_cr("--- Extra data:");
   DataLayout* dp    = extra_data_base();
   DataLayout* end   = args_data_limit();
@@ -1687,6 +1730,8 @@ void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) {
+  check_extra_data_locked();
+
   if (shift == 0) {
     return;
   }
@@ -1728,6 +1773,8 @@ public:
 // Remove SpeculativeTrapData entries that reference an unloaded or
 // redefined method
 void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
@@ -1772,6 +1819,8 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
 // Verify there's no unloaded or redefined method referenced by a
 // SpeculativeTrapData entry
 void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
@@ -1809,6 +1858,10 @@ void MethodData::clean_method_data(bool always_clean) {
   }
 
   CleanExtraDataKlassClosure cl(always_clean);
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1818,6 +1871,10 @@ void MethodData::clean_method_data(bool always_clean) {
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   CleanExtraDataMethodClosure cl;
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1831,3 +1888,16 @@ void MethodData::release_C_heap_structures() {
   FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
 #endif
 }
+
+#ifdef ASSERT
+void MethodData::check_extra_data_locked() const {
+    // Cast const away, just to be able to verify the lock
+    // Usually we only want non-const accesses on the lock,
+    // so this here is an exception.
+    MethodData* self = (MethodData*)this;
+    assert(self->extra_data_lock()->owned_by_self(), "must have lock");
+    assert(!Thread::current()->is_Java_thread() ||
+           JavaThread::current()->is_in_no_safepoint_scope(),
+           "JavaThread must have NoSafepointVerifier inside lock scope");
+}
+#endif

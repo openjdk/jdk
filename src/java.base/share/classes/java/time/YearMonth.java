@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,11 +147,11 @@ public final class YearMonth
         .toFormatter();
 
     /**
-     * The year.
+     * @serial The year.
      */
     private final int year;
     /**
-     * The month-of-year, not null.
+     * @serial The month-of-year, not null.
      */
     private final int month;
 
@@ -1122,7 +1122,10 @@ public final class YearMonth
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other year-month to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this is before {@code other},
+     *          zero if they are equal, greater than zero if this is after {@code other}
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(YearMonth other) {

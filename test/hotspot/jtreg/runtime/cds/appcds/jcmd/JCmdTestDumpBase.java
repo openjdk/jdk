@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,8 @@ public abstract class JCmdTestDumpBase {
     private static final String TEST_CLASSES[] =
                              {"JCmdTestLingeredApp",
                               "jdk/test/lib/apps/LingeredApp",
-                              "jdk/test/lib/apps/LingeredApp$1"};
+                              "jdk/test/lib/apps/LingeredApp$1",
+                              "jdk/test/lib/apps/LingeredApp$SteadyStateLock"};
     private static final String BOOT_CLASSES[] = {"Hello"};
 
     protected static String testJar = null;
@@ -188,6 +189,10 @@ public abstract class JCmdTestDumpBase {
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
         OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
+
+        if (archiveFileName.contains("%p")) {
+            archiveFileName = archiveFileName.replace("%p", "%d").formatted(pid);
+        }
 
         if (expectOK) {
             output.shouldHaveExitValue(0);

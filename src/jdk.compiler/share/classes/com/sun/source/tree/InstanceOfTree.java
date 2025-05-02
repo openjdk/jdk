@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A tree node for an {@code instanceof} expression.
  *
@@ -35,29 +33,13 @@ import jdk.internal.javac.PreviewFeature;
  *   <em>expression</em> instanceof <em>type</em>
  * </pre>
  *
- * @jls 15.20.2 Type Comparison Operator instanceof
+ * @jls 15.20.2 The instanceof Operator
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
  * @since 1.6
  */
 public interface InstanceOfTree extends ExpressionTree {
-
-    /**
-     * Two possible variants of instanceof expressions:
-     * <ul>
-     * <li> testing types, and
-     * <li> performing pattern matching
-     * </ul>
-     * @since 20
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
-    public enum TestKind {
-        /** instanceof only testing a type */
-        TYPE,
-        /** instanceof doing a pattern matching */
-        PATTERN
-    }
 
     /**
      * Returns the expression to be tested.
@@ -93,12 +75,4 @@ public interface InstanceOfTree extends ExpressionTree {
      */
     PatternTree getPattern();
 
-    /**
-     * Returns the kind of this instanceof expression.
-     *
-     * @return the kind of this instanceof expression
-     * @since 20
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
-    TestKind getTestKind();
 }

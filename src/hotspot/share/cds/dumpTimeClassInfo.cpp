@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/runTimeClassInfo.hpp"
@@ -30,51 +29,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
-
-// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
-// See comments there about the need for making a deep copy.
-DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
-  assert(DynamicDumpSharedSpaces, "must be");
-
-  _klass = src._klass;
-  _nest_host = src._nest_host;
-  _failed_verification = src._failed_verification;
-  _is_archived_lambda_proxy = src._is_archived_lambda_proxy;
-  _has_checked_exclusion = src._has_checked_exclusion;
-  _id = src._id;
-  _clsfile_size = src._clsfile_size;
-  _clsfile_crc32 = src._clsfile_crc32;
-  _excluded = src._excluded;
-  _is_early_klass = src._is_early_klass;
-  _verifier_constraints = nullptr;
-  _verifier_constraint_flags = nullptr;
-  _loader_constraints = nullptr;
-
-  assert(src._enum_klass_static_fields == nullptr, "This should not happen with dynamic dump.");
-  _enum_klass_static_fields = nullptr;
-
-  {
-    int n = src.num_verifier_constraints();
-    if (n > 0) {
-      _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(n, mtClass);
-      _verifier_constraint_flags = new (mtClass) GrowableArray<char>(n, mtClass);
-      for (int i = 0; i < n; i++) {
-        _verifier_constraints->append(src._verifier_constraints->at(i));
-        _verifier_constraint_flags->append(src._verifier_constraint_flags->at(i));
-      }
-    }
-  }
-
-  {
-    int n = src.num_loader_constraints();
-    if (n > 0) {
-      _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(n, mtClass);
-      for (int i = 0; i < n; i++) {
-        _loader_constraints->append(src._loader_constraints->at(i));
-      }
-    }
-  }
-}
 
 DumpTimeClassInfo::~DumpTimeClassInfo() {
   if (_verifier_constraints != nullptr) {
@@ -112,9 +66,9 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
 
   GrowableArray<char>* vcflags_array = _verifier_constraint_flags;
   char c = 0;
-  c |= from_field_is_protected ? SystemDictionaryShared::FROM_FIELD_IS_PROTECTED : 0;
-  c |= from_is_array           ? SystemDictionaryShared::FROM_IS_ARRAY           : 0;
-  c |= from_is_object          ? SystemDictionaryShared::FROM_IS_OBJECT          : 0;
+  c |= from_field_is_protected ? RunTimeClassInfo::FROM_FIELD_IS_PROTECTED : 0;
+  c |= from_is_array           ? RunTimeClassInfo::FROM_IS_ARRAY           : 0;
+  c |= from_is_object          ? RunTimeClassInfo::FROM_IS_OBJECT          : 0;
   vcflags_array->append(c);
 
   if (log_is_enabled(Trace, cds, verification)) {
@@ -188,7 +142,7 @@ bool DumpTimeClassInfo::is_builtin() {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
-  assert(!k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
   bool created;
   DumpTimeClassInfo* p = put_if_absent(k, &created);
   assert(created, "must not exist in table");
@@ -197,7 +151,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  assert(!k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");

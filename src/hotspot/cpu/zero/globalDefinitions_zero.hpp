@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,18 +30,23 @@
 #define SUPPORTS_NATIVE_CX8
 #endif
 
-#define SUPPORT_MONITOR_COUNT
+// The expected size in bytes of a cache line.
+#define DEFAULT_CACHE_LINE_SIZE 64
 
-#ifndef FFI_GO_CLOSURES
-#define FFI_GO_CLOSURES 0
-#endif
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = false;
-
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
+#if defined(AIX)
+const size_t pd_segfault_address = -1;
+#elif defined(S390)
+const size_t pd_segfault_address = 4096;
+#else
+const size_t pd_segfault_address = 1024;
+#endif
 
 #endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP

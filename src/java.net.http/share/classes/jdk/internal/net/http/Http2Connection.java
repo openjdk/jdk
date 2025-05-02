@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,38 +31,44 @@ import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.http.HttpConnectTimeoutException;
+import java.net.ProtocolException;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
+
 import jdk.internal.net.http.HttpConnection.HttpPublisher;
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
-import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.common.HeaderDecoder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.common.ValidatingHeadersConsumer;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -79,11 +85,18 @@ import jdk.internal.net.http.frame.PushPromiseFrame;
 import jdk.internal.net.http.frame.ResetFrame;
 import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
-import jdk.internal.net.http.hpack.Encoder;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
+import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.internal.net.http.frame.SettingsFrame.*;
+import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
+import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_WINDOW_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_CONCURRENT_STREAMS;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_FRAME_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_HEADER_LIST_SIZE;
 
 /**
  * An Http2Connection. Encapsulates the socket(channel) and any SSLEngine used
@@ -116,16 +129,17 @@ import static jdk.internal.net.http.frame.SettingsFrame.*;
  */
 class Http2Connection  {
 
-    final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
+    final Logger debug = Utils.getDebugLogger(this::dbgString);
     static final Logger DEBUG_LOGGER =
-            Utils.getDebugLogger("Http2Connection"::toString, Utils.DEBUG);
+            Utils.getDebugLogger("Http2Connection"::toString);
     private final Logger debugHpack =
-            Utils.getHpackLogger(this::dbgString, Utils.DEBUG_HPACK);
+            Utils.getHpackLogger(this::dbgString);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
     private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     private static final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
-    private IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;  // may be null
+    // may be null; must be accessed/updated with the stateLock held
+    private IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -141,7 +155,7 @@ class Http2Connection  {
      *    expire when all its still open streams (which could be many) eventually
      *    complete.
      */
-    private boolean finalStream;
+    private volatile boolean finalStream;
 
     /*
      * ByteBuffer pooling strategy for HTTP/2 protocol.
@@ -190,30 +204,64 @@ class Http2Connection  {
     // and has not sent the final stream flag
     final class IdleConnectionTimeoutEvent extends TimeoutEvent {
 
-        private boolean fired;
+        // expected to be accessed/updated with "stateLock" being held
+        private boolean cancelled;
 
         IdleConnectionTimeoutEvent(Duration duration) {
             super(duration);
-            fired = false;
         }
 
+        /**
+         * {@link #shutdown(Throwable) Shuts down} the connection, unless this event is
+         * {@link #cancelled}
+         */
         @Override
         public void handle() {
-            fired = true;
-            if (debug.on()) {
-                debug.log("HTTP connection idle for too long");
+            // first check if the connection is still idle.
+            // must be done with the "stateLock" held, to allow for synchronizing actions like
+            // closing the connection and checking out from connection pool (which too is expected
+            // to use this same lock)
+            stateLock.lock();
+            try {
+                if (cancelled) {
+                    if (debug.on()) {
+                        debug.log("Not initiating idle connection shutdown");
+                    }
+                    return;
+                }
+                if (!markIdleShutdownInitiated()) {
+                    if (debug.on()) {
+                        debug.log("Unexpected state %s, skipping idle connection shutdown",
+                                describeClosedState(closedState));
+                    }
+                    return;
+                }
+            } finally {
+                stateLock.unlock();
             }
-            HttpConnectTimeoutException hte = new HttpConnectTimeoutException("HTTP connection idle, no active streams. Shutting down.");
+            if (debug.on()) {
+                debug.log("Initiating shutdown of HTTP connection which is idle for too long");
+            }
+            HttpConnectTimeoutException hte = new HttpConnectTimeoutException(
+                    "HTTP connection idle, no active streams. Shutting down.");
             shutdown(hte);
+        }
+
+        /**
+         * Cancels this event. Should be called with stateLock held
+         */
+        void cancel() {
+            assert stateLock.isHeldByCurrentThread() : "Current thread doesn't hold " + stateLock;
+            // mark as cancelled to prevent potentially already triggered event from actually
+            // doing the shutdown
+            this.cancelled = true;
+            // cancel the timer to prevent the event from being triggered (if it hasn't already)
+            client().cancelTimer(this);
         }
 
         @Override
         public String toString() {
             return "IdleConnectionTimeoutEvent, " + super.toString();
-        }
-
-        public boolean isFired() {
-            return fired;
         }
     }
 
@@ -231,7 +279,8 @@ class Http2Connection  {
             if (!prefaceSent) {
                 if (debug.on())
                     debug.log("Preface not sent: buffering %d", buf.remaining());
-                synchronized (this) {
+                stateLock.lock();
+                try {
                     if (!prefaceSent) {
                         if (pending == null) pending = new ArrayList<>();
                         pending.add(buf);
@@ -241,6 +290,8 @@ class Http2Connection  {
                             );
                         return false;
                     }
+                } finally {
+                    stateLock.unlock();
                 }
             }
 
@@ -250,7 +301,7 @@ class Http2Connection  {
             // concurrently while we're here.
             // This ensures that later incoming buffers will not
             // be processed before we have flushed the pending queue.
-            // No additional synchronization is therefore necessary here.
+            // No additional locking is therefore necessary here.
             List<ByteBuffer> pending = this.pending;
             this.pending = null;
             if (pending != null) {
@@ -272,21 +323,68 @@ class Http2Connection  {
         // Mark that the connection preface is sent
         void markPrefaceSent() {
             assert !prefaceSent;
-            synchronized (this) {
+            stateLock.lock();
+            try {
                 prefaceSent = true;
+            } finally {
+                stateLock.unlock();
             }
         }
     }
 
+    private final class PushPromiseDecoder extends HeaderDecoder implements DecodingCallback {
+
+        final int parentStreamId;
+        final int pushPromiseStreamId;
+        final Stream<?> parent;
+        final AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+        PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+            this.parentStreamId = parentStreamId;
+            this.pushPromiseStreamId = pushPromiseStreamId;
+            this.parent = parent;
+        }
+
+        @Override
+        protected void addHeader(String name, String value) {
+            if (errorRef.get() == null) {
+                super.addHeader(name, value);
+            }
+        }
+
+        @Override
+        public void onMaxHeaderListSizeReached(long size, int maxHeaderListSize) throws ProtocolException {
+            try {
+                DecodingCallback.super.onMaxHeaderListSizeReached(size, maxHeaderListSize);
+            } catch (ProtocolException pe) {
+                if (parent != null) {
+                    if (errorRef.compareAndSet(null, pe)) {
+                        // cancel the parent stream
+                        resetStream(pushPromiseStreamId, ResetFrame.REFUSED_STREAM);
+                        parent.onProtocolError(pe);
+                    }
+                } else {
+                    // interrupt decoding and closes the connection
+                    throw pe;
+                }
+            }
+        }
+    }
+
+
     private static final int HALF_CLOSED_LOCAL  = 1;
     private static final int HALF_CLOSED_REMOTE = 2;
     private static final int SHUTDOWN_REQUESTED = 4;
-    volatile int closedState;
+    // state when idle connection management initiates a shutdown of the connection, after
+    // which the connection will go into SHUTDOWN_REQUESTED state
+    private static final int IDLE_SHUTDOWN_INITIATED = 8;
+    private final ReentrantLock stateLock = new ReentrantLock();
+    private volatile int closedState;
 
     //-------------------------------------
     final HttpConnection connection;
     private final Http2ClientImpl client2;
-    private final ConcurrentMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
     private int nextstreamid;
     private int nextPushStream = 2;
     // actual stream ids are not allocated until the Headers frame is ready
@@ -301,11 +399,12 @@ class Http2Connection  {
     private final Decoder hpackIn;
     final SettingsFrame clientSettings;
     private volatile SettingsFrame serverSettings;
-    private record PushContinuationState(HeaderDecoder pushContDecoder, PushPromiseFrame pushContFrame) {}
+    private record PushContinuationState(PushPromiseDecoder pushContDecoder, PushPromiseFrame pushContFrame) {}
     private volatile PushContinuationState pushContinuationState;
     private final String key; // for HttpClientImpl.connections map
     private final FramesDecoder framesDecoder;
     private final FramesEncoder framesEncoder = new FramesEncoder();
+    private final AtomicLong lastProcessedStreamInGoAway = new AtomicLong(-1);
 
     /**
      * Send Window controller for both connection and stream windows.
@@ -315,11 +414,24 @@ class Http2Connection  {
     private final FramesController framesController = new FramesController();
     private final Http2TubeSubscriber subscriber;
     final ConnectionWindowUpdateSender windowUpdater;
-    private volatile Throwable cause;
+    private final AtomicReference<Throwable> cause = new AtomicReference<>();
     private volatile Supplier<ByteBuffer> initial;
+    private volatile Stream<?> initialStream;
+
+    private ValidatingHeadersConsumer orphanedConsumer;
+    private final AtomicInteger orphanedHeaders = new AtomicInteger();
 
     static final int DEFAULT_FRAME_SIZE = 16 * 1024;
+    static final int MAX_LITERAL_WITH_INDEXING =
+            Utils.getIntegerNetProperty("jdk.httpclient.maxLiteralWithIndexing",512);
 
+    // The maximum number of HEADER frames, CONTINUATION frames, or PUSH_PROMISE frames
+    // referring to an already closed or non-existent stream that a client will accept to
+    // process. Receiving frames referring to non-existent or closed streams doesn't necessarily
+    // constitute an HTTP/2 protocol error, but receiving too many may indicate a problem
+    // with the connection. If this limit is reached, a {@link java.net.ProtocolException
+    // ProtocolException} will be raised and the connection will be closed.
+    static final int MAX_ORPHANED_HEADERS = 1024;
 
     // TODO: need list of control frames from other threads
     // that need to be sent
@@ -327,19 +439,21 @@ class Http2Connection  {
     private Http2Connection(HttpConnection connection,
                             Http2ClientImpl client2,
                             int nextstreamid,
-                            String key) {
+                            String key,
+                            boolean defaultServerPush) {
         this.connection = connection;
         this.client2 = client2;
         this.subscriber = new Http2TubeSubscriber(client2.client());
         this.nextstreamid = nextstreamid;
         this.key = key;
-        this.clientSettings = this.client2.getClientSettings();
+        this.clientSettings = this.client2.getClientSettings(defaultServerPush);
         this.framesDecoder = new FramesDecoder(this::processFrame,
                 clientSettings.getParameter(SettingsFrame.MAX_FRAME_SIZE));
         // serverSettings will be updated by server
         this.serverSettings = SettingsFrame.defaultRFCSettings();
         this.hpackOut = new Encoder(serverSettings.getParameter(HEADER_TABLE_SIZE));
-        this.hpackIn = new Decoder(clientSettings.getParameter(HEADER_TABLE_SIZE));
+        this.hpackIn = new Decoder(clientSettings.getParameter(HEADER_TABLE_SIZE),
+                clientSettings.getParameter(MAX_HEADER_LIST_SIZE), MAX_LITERAL_WITH_INDEXING);
         if (debugHpack.on()) {
             debugHpack.log("For the record:" + super.toString());
             debugHpack.log("Decoder created: %s", hpackIn);
@@ -358,18 +472,21 @@ class Http2Connection  {
     private Http2Connection(HttpConnection connection,
                     Http2ClientImpl client2,
                     Exchange<?> exchange,
-                    Supplier<ByteBuffer> initial)
+                    Supplier<ByteBuffer> initial,
+                    boolean defaultServerPush)
         throws IOException, InterruptedException
     {
         this(connection,
                 client2,
                 3, // stream 1 is registered during the upgrade
-                keyFor(connection));
-        reserveStream(true);
+                keyFor(connection),
+                defaultServerPush);
+        reserveStream(true, clientSettings.getFlag(ENABLE_PUSH));
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
         Stream<?> initialStream = createStream(exchange);
         boolean opened = initialStream.registerStream(1, true);
+        this.initialStream = initialStream;
         if (debug.on() && !opened) {
             debug.log("Initial stream was cancelled - but connection is maintained: " +
                     "reset frame will need to be sent later");
@@ -397,7 +514,8 @@ class Http2Connection  {
                                                           Exchange<?> exchange,
                                                           Supplier<ByteBuffer> initial)
     {
-        return MinimalFuture.supply(() -> new Http2Connection(connection, client2, exchange, initial));
+        return MinimalFuture.supply(() -> new Http2Connection(connection, client2, exchange, initial,
+                exchange.pushEnabled()));
     }
 
     // Requires TLS handshake. So, is really async
@@ -421,7 +539,8 @@ class Http2Connection  {
                   .thenCompose(notused-> {
                       CompletableFuture<Http2Connection> cf = new MinimalFuture<>();
                       try {
-                          Http2Connection hc = new Http2Connection(request, h2client, connection);
+                          Http2Connection hc = new Http2Connection(request, h2client,
+                                  connection, exchange.pushEnabled());
                           cf.complete(hc);
                       } catch (IOException e) {
                           cf.completeExceptionally(e);
@@ -436,13 +555,15 @@ class Http2Connection  {
      */
     private Http2Connection(HttpRequestImpl request,
                             Http2ClientImpl h2client,
-                            HttpConnection connection)
+                            HttpConnection connection,
+                            boolean defaultServerPush)
         throws IOException
     {
         this(connection,
              h2client,
              1,
-             keyFor(request.uri(), request.proxy()));
+             keyFor(request),
+             defaultServerPush);
 
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
@@ -465,17 +586,32 @@ class Http2Connection  {
     // if false returned then a new Http2Connection is required
     // if true, the stream may be assigned to this connection
     // for server push, if false returned, then the stream should be cancelled
-    synchronized boolean reserveStream(boolean clientInitiated) throws IOException {
-        if (finalStream) {
+    boolean reserveStream(boolean clientInitiated, boolean pushEnabled) throws IOException {
+        stateLock.lock();
+        try {
+            return reserveStream0(clientInitiated, pushEnabled);
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    private boolean reserveStream0(boolean clientInitiated, boolean pushEnabled) throws IOException {
+        if (finalStream()) {
             return false;
         }
-        if (clientInitiated && (lastReservedClientStreamid + 2) >= MAX_CLIENT_STREAM_ID) {
+        // If requesting to reserve a stream for an exchange for which push is enabled,
+        // we will reserve the stream in this connection only if this connection is also
+        // push enabled, unless pushes are globally disabled.
+        boolean pushCompatible = !clientInitiated || !pushEnabled
+                || this.serverPushEnabled()
+                || client2.serverPushDisabled();
+        if (clientInitiated && (lastReservedClientStreamid >= MAX_CLIENT_STREAM_ID -2  || !pushCompatible)) {
             setFinalStream();
-            client2.deleteConnection(this);
+            client2.removeFromPool(this);
             return false;
-        } else if (!clientInitiated && (lastReservedServerStreamid + 2) >= MAX_SERVER_STREAM_ID) {
+        } else if (!clientInitiated && (lastReservedServerStreamid >= MAX_SERVER_STREAM_ID - 2)) {
             setFinalStream();
-            client2.deleteConnection(this);
+            client2.removeFromPool(this);
             return false;
         }
         if (clientInitiated)
@@ -498,6 +634,15 @@ class Http2Connection  {
         return true;
     }
 
+    boolean shouldClose() {
+        stateLock.lock();
+        try {
+            return finalStream() && streams.isEmpty();
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
     /**
      * Throws an IOException if h2 was not negotiated
      */
@@ -514,7 +659,7 @@ class Http2Connection  {
             }
             DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
-            if (alpn == null || !alpn.equals("h2")) {
+            if (alpn == null || !alpn.equals(Alpns.H2)) {
                 String msg;
                 if (alpn == null) {
                     Log.logSSL("ALPN not supported");
@@ -524,7 +669,7 @@ class Http2Connection  {
                         case "":
                             Log.logSSL(msg = "No ALPN negotiated");
                             break;
-                        case "http/1.1":
+                        case Alpns.HTTP_1_1:
                             Log.logSSL( msg = "HTTP/1.1 ALPN returned");
                             break;
                         default:
@@ -546,13 +691,13 @@ class Http2Connection  {
                     if (t != null && t instanceof SSLException) {
                         // something went wrong during the initial handshake
                         // close the connection
-                        aconn.close();
+                        aconn.close(t);
                     }
                 })
                 .thenCompose(checkAlpnCF);
     }
 
-    synchronized boolean finalStream() {
+    boolean finalStream() {
         return finalStream;
     }
 
@@ -560,7 +705,7 @@ class Http2Connection  {
      * Mark this connection so no more streams created on it and it will close when
      * all are complete.
      */
-    synchronized void setFinalStream() {
+    void setFinalStream() {
         finalStream = true;
     }
 
@@ -574,14 +719,12 @@ class Http2Connection  {
         return keyString(isSecure, proxyAddr, addr.getHostString(), addr.getPort());
     }
 
-    static String keyFor(URI uri, InetSocketAddress proxy) {
-        boolean isSecure = uri.getScheme().equalsIgnoreCase("https");
-
-        String host = uri.getHost();
-        int port = uri.getPort();
-        return keyString(isSecure, proxy, host, port);
+    static String keyFor(final HttpRequestImpl request) {
+        final InetSocketAddress targetAddr = request.getAddress();
+        final InetSocketAddress proxy = request.proxy();
+        final boolean secure = request.secure();
+        return keyString(secure, proxy, targetAddr.getHostString(), targetAddr.getPort());
     }
-
 
     // Compute the key for an HttpConnection in the Http2ClientImpl pool:
     // The key string follows one of the three forms below:
@@ -627,6 +770,10 @@ class Http2Connection  {
         return this.key;
     }
 
+    public boolean serverPushEnabled() {
+        return clientSettings.getParameter(SettingsFrame.ENABLE_PUSH) == 1;
+    }
+
     boolean offerConnection() {
         return client2.offerConnection(this);
     }
@@ -664,7 +811,9 @@ class Http2Connection  {
 
     void close() {
         if (markHalfClosedLocal()) {
-            if (connection.channel().isOpen()) {
+            // we send a GOAWAY frame only if the remote side hasn't already indicated
+            // the intention to close the connection by previously sending a GOAWAY of its own
+            if (connection.channel().isOpen() && !isMarked(closedState, HALF_CLOSED_REMOTE)) {
                 Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
                 GoAwayFrame f = new GoAwayFrame(0,
                         ErrorFrame.NO_ERROR,
@@ -729,13 +878,20 @@ class Http2Connection  {
     }
 
     Throwable getRecordedCause() {
-        return cause;
+        return cause.get();
     }
 
     void shutdown(Throwable t) {
         int state = closedState;
         if (debug.on()) debug.log(() -> "Shutting down h2c (state="+describeClosedState(state)+"): " + t);
-        if (!markShutdownRequested()) return;
+        stateLock.lock();
+        try {
+            if (!markShutdownRequested()) return;
+            cause.compareAndSet(null, t);
+        } finally {
+            stateLock.unlock();
+        }
+
         if (Log.errors()) {
             if (t!= null && (!(t instanceof EOFException) || isActive())) {
                 Log.logError(t);
@@ -745,9 +901,8 @@ class Http2Connection  {
                 Log.logError("Shutting down connection");
             }
         }
-        Throwable initialCause = this.cause;
-        if (initialCause == null && t != null) this.cause = t;
-        client2.deleteConnection(this);
+        client2.removeFromPool(this);
+        subscriber.stop(cause.get());
         for (Stream<?> s : streams.values()) {
             try {
                 s.connectionClosing(t);
@@ -755,7 +910,7 @@ class Http2Connection  {
                 Log.logError("Failed to close stream {0}: {1}", s.streamid, e);
             }
         }
-        connection.close();
+        connection.close(cause.get());
     }
 
     /**
@@ -801,17 +956,40 @@ class Http2Connection  {
                 return;
             }
 
+            if (frame instanceof PushPromiseFrame && !serverPushEnabled()) {
+                String protocolError = "received a PUSH_PROMISE when SETTINGS_ENABLE_PUSH is 0";
+                protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
+                return;
+            }
+
             Stream<?> stream = getStream(streamid);
-            if (stream == null && pushContinuationState == null) {
+            var nextstreamid = this.nextstreamid;
+            if (stream == null && (streamid & 0x01) == 0x01 && streamid >= nextstreamid) {
+                String protocolError = String.format(
+                        "received a frame for a non existing streamid(%s) >= nextstreamid(%s)",
+                        streamid, nextstreamid);
+                protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
+                return;
+            }
+            PushContinuationState pcs = pushContinuationState;
+            if (stream == null && pcs == null) {
                 // Should never receive a frame with unknown stream id
 
-                if (frame instanceof HeaderFrame) {
+                if (frame instanceof HeaderFrame hf) {
+                    String protocolError = checkMaxOrphanedHeadersExceeded(hf);
+                    if (protocolError != null) {
+                        protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
+                        return;
+                    }
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
-                    DecodingCallback decoder = new ValidatingHeadersConsumer();
+                    if (orphanedConsumer == null || frame.getClass() != ContinuationFrame.class) {
+                        orphanedConsumer = new ValidatingHeadersConsumer();
+                    }
+                    DecodingCallback decoder = orphanedConsumer::onDecoded;
                     try {
-                        decodeHeaders((HeaderFrame) frame, decoder);
-                    } catch (UncheckedIOException e) {
+                        decodeHeaders(hf, decoder);
+                    } catch (IOException | UncheckedIOException e) {
                         protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
@@ -839,29 +1017,40 @@ class Http2Connection  {
 
             // While push frame is not null, the only acceptable frame on this
             // stream is a Continuation frame
-            if (pushContinuationState != null) {
+            if (pcs != null) {
                 if (frame instanceof ContinuationFrame cf) {
+                    if (stream == null) {
+                        String protocolError = checkMaxOrphanedHeadersExceeded(cf);
+                        if (protocolError != null) {
+                            protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
+                            return;
+                        }
+                    }
                     try {
-                        if (streamid == pushContinuationState.pushContFrame.streamid())
-                            handlePushContinuation(stream, cf);
-                        else
-                            protocolError(ErrorFrame.PROTOCOL_ERROR, "Received a Continuation Frame with an " +
-                                    "unexpected stream id");
-                    } catch (UncheckedIOException e) {
+                        if (streamid == pcs.pushContFrame.streamid())
+                            handlePushContinuation(pcs, stream, cf);
+                        else {
+                            String protocolError = "Received a CONTINUATION with " +
+                                    "unexpected stream id: " + streamid + " != "
+                                    + pcs.pushContFrame.streamid();
+                            protocolError(ErrorFrame.PROTOCOL_ERROR, protocolError);
+                        }
+                    } catch (IOException | UncheckedIOException e) {
                         debug.log("Error handling Push Promise with Continuation: " + e.getMessage(), e);
                         protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
                 } else {
                     pushContinuationState = null;
-                    protocolError(ErrorFrame.PROTOCOL_ERROR, "Expected a Continuation frame but received " + frame);
+                    String protocolError = "Expected a CONTINUATION frame but received " + frame;
+                    protocolError(ErrorFrame.PROTOCOL_ERROR, protocolError);
                     return;
                 }
             } else {
                 if (frame instanceof PushPromiseFrame pp) {
                     try {
                         handlePushPromise(stream, pp);
-                    } catch (UncheckedIOException e) {
+                    } catch (IOException | UncheckedIOException e) {
                         protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
@@ -869,7 +1058,7 @@ class Http2Connection  {
                     // decode headers
                     try {
                         decodeHeaders(hf, stream.rspHeadersConsumer());
-                    } catch (UncheckedIOException e) {
+                    } catch (IOException | UncheckedIOException e) {
                         debug.log("Error decoding headers: " + e.getMessage(), e);
                         protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
@@ -882,6 +1071,44 @@ class Http2Connection  {
         }
     }
 
+    private String checkMaxOrphanedHeadersExceeded(HeaderFrame hf) {
+        if (MAX_ORPHANED_HEADERS > 0 ) {
+            int orphaned = orphanedHeaders.incrementAndGet();
+            if (orphaned < 0 || orphaned > MAX_ORPHANED_HEADERS) {
+               return "Too many orphaned header frames received on connection";
+            }
+        }
+        return null;
+    }
+
+    // This method is called when a DataFrame that was added
+    // to a Stream::inputQ is later dropped from the queue
+    // without being consumed.
+    //
+    // Before adding a frame to the queue, the Stream calls
+    // connection.windowUpdater.canBufferUnprocessedBytes(), which
+    // increases the count of unprocessed bytes in the connection.
+    // After consuming the frame, it calls connection.windowUpdater::processed,
+    // which decrements the count of unprocessed bytes, and possibly
+    // sends a window update to the peer.
+    //
+    // This method is called when connection.windowUpdater::processed
+    // will not be called, which can happen when consuming the frame
+    // fails, or when an empty DataFrame terminates the stream,
+    // or when the stream is cancelled while data is still
+    // sitting in its inputQ. In the later case, it is called for
+    // each frame that is dropped from the queue.
+    final void releaseUnconsumed(DataFrame df) {
+        windowUpdater.released(df.payloadLength());
+        dropDataFrame(df);
+    }
+
+    // This method can be called directly when a DataFrame is dropped
+    // before/without having been added to any Stream::inputQ.
+    // In that case, the number of unprocessed bytes hasn't been incremented
+    // by the stream, and does not need to be decremented.
+    // Otherwise, if the frame is dropped after having been added to the
+    // inputQ, releaseUnconsumed above should be called.
     final void dropDataFrame(DataFrame df) {
         if (isMarked(closedState, SHUTDOWN_REQUESTED)) return;
         if (debug.on()) {
@@ -906,38 +1133,65 @@ class Http2Connection  {
     private <T> void handlePushPromise(Stream<T> parent, PushPromiseFrame pp)
         throws IOException
     {
+        int promisedStreamid = pp.getPromisedStream();
+        if ((promisedStreamid & 0x01) != 0x00) {
+            throw new ProtocolException("Received PUSH_PROMISE for stream " + promisedStreamid);
+        }
+        int streamId = pp.streamid();
+        if ((streamId & 0x01) != 0x01) {
+            throw new ProtocolException("Received PUSH_PROMISE on stream " + streamId);
+        }
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
         assert pushContinuationState == null;
-        HeaderDecoder decoder = new HeaderDecoder();
+        PushPromiseDecoder decoder = new PushPromiseDecoder(streamId, promisedStreamid, parent);
         decodeHeaders(pp, decoder);
-        int promisedStreamid = pp.getPromisedStream();
         if (pp.endHeaders()) {
-            completePushPromise(promisedStreamid, parent, decoder.headers());
+            if (decoder.errorRef.get() == null) {
+                completePushPromise(promisedStreamid, parent, decoder.headers());
+            }
         } else {
             pushContinuationState = new PushContinuationState(decoder, pp);
         }
     }
 
-    private <T> void handlePushContinuation(Stream<T> parent, ContinuationFrame cf)
+    private <T> void handlePushContinuation(PushContinuationState pcs, Stream<T> parent, ContinuationFrame cf)
             throws IOException {
-        var pcs = pushContinuationState;
+        assert pcs.pushContFrame.streamid() == cf.streamid() : String.format(
+                    "Received CONTINUATION on a different stream %s != %s",
+                    cf.streamid(), pcs.pushContFrame.streamid());
         decodeHeaders(cf, pcs.pushContDecoder);
         // if all continuations are sent, set pushWithContinuation to null
         if (cf.endHeaders()) {
-            completePushPromise(pcs.pushContFrame.getPromisedStream(), parent,
-                    pcs.pushContDecoder.headers());
+            if (pcs.pushContDecoder.errorRef.get() == null) {
+                completePushPromise(pcs.pushContFrame.getPromisedStream(), parent,
+                        pcs.pushContDecoder.headers());
+            }
             pushContinuationState = null;
         }
     }
 
     private <T> void completePushPromise(int promisedStreamid, Stream<T> parent, HttpHeaders headers)
             throws IOException {
+        if (parent == null) {
+            resetStream(promisedStreamid, ResetFrame.REFUSED_STREAM);
+            return;
+        }
         HttpRequestImpl parentReq = parent.request;
+        if (promisedStreamid < nextPushStream) {
+            // From RFC 9113 section 5.1.1:
+            // The identifier of a newly established stream MUST be numerically
+            // greater than all streams that the initiating endpoint has
+            // opened or reserved.
+            protocolError(ResetFrame.PROTOCOL_ERROR, String.format(
+                    "Unexpected stream identifier: %s < %s", promisedStreamid, nextPushStream));
+            return;
+        }
         if (promisedStreamid != nextPushStream) {
+            // we don't support skipping stream ids;
             resetStream(promisedStreamid, ResetFrame.PROTOCOL_ERROR);
             return;
-        } else if (!reserveStream(false)) {
+        } else if (!reserveStream(false, true)) {
             resetStream(promisedStreamid, ResetFrame.REFUSED_STREAM);
             return;
         } else {
@@ -966,8 +1220,7 @@ class Http2Connection  {
     }
 
     boolean isOpen() {
-        return !isMarked(closedState, SHUTDOWN_REQUESTED)
-                && connection.channel().isOpen();
+        return !isMarkedForShutdown() && connection.channel().isOpen();
     }
 
     void resetStream(int streamid, int code) {
@@ -997,7 +1250,16 @@ class Http2Connection  {
     }
 
     // reduce count of streams by 1 if stream still exists
-    synchronized void decrementStreamsCount(int streamid) {
+    void decrementStreamsCount(int streamid) {
+        stateLock.lock();
+        try {
+            decrementStreamsCount0(streamid);
+        } finally {
+            stateLock.unlock();
+        }
+
+    }
+    private void decrementStreamsCount0(int streamid) {
         Stream<?> s = streams.get(streamid);
         if (s == null || !s.deRegister())
             return;
@@ -1029,7 +1291,8 @@ class Http2Connection  {
         if (debug.on()) debug.log("Closed stream %d", streamid);
 
         Stream<?> s;
-        synchronized (this) {
+        stateLock.lock();
+        try {
             s = streams.remove(streamid);
             if (s != null) {
                 // decrement the reference count on the HttpClientImpl
@@ -1038,6 +1301,8 @@ class Http2Connection  {
                 // longer referenced.
                 client().streamUnreference();
             }
+        } finally {
+            stateLock.unlock();
         }
         // ## Remove s != null. It is a hack for delayed cancellation,reset
         if (s != null && !(s instanceof Stream.PushedStream)) {
@@ -1050,15 +1315,19 @@ class Http2Connection  {
             close();
         } else {
             // Start timer if property present and not already created
-            synchronized (this) {
-                // idleConnectionTimerEvent is always accessed within a synchronized block
+            stateLock.lock();
+            try {
+                // idleConnectionTimeoutEvent is always accessed within a lock protected block
                 if (streams.isEmpty() && idleConnectionTimeoutEvent == null) {
                     idleConnectionTimeoutEvent = client().idleConnectionTimeout()
-                            .map(IdleConnectionTimeoutEvent::new).orElse(null);
+                            .map(IdleConnectionTimeoutEvent::new)
+                            .orElse(null);
                     if (idleConnectionTimeoutEvent != null) {
                         client().registerTimer(idleConnectionTimeoutEvent);
                     }
                 }
+            } finally {
+                stateLock.unlock();
             }
         }
     }
@@ -1091,11 +1360,17 @@ class Http2Connection  {
     private void protocolError(int errorCode, String msg)
         throws IOException
     {
+        String protocolError = "protocol error" + (msg == null?"":(": " + msg));
+        ProtocolException protocolException =
+                new ProtocolException(protocolError);
         if (markHalfClosedLocal()) {
+            framesDecoder.close(protocolError);
+            subscriber.stop(protocolException);
+            if (debug.on()) debug.log("Sending GOAWAY due to " + protocolException);
             GoAwayFrame frame = new GoAwayFrame(0, errorCode);
             sendFrame(frame);
         }
-        shutdown(new IOException("protocol error" + (msg == null?"":(": " + msg))));
+        shutdown(protocolException);
     }
 
     private void handleSettings(SettingsFrame frame)
@@ -1124,13 +1399,46 @@ class Http2Connection  {
         sendUnorderedFrame(frame);
     }
 
-    private void handleGoAway(GoAwayFrame frame)
-        throws IOException
-    {
-        if (markHalfClosedLRemote()) {
-            shutdown(new IOException(
-                    connection.channel().getLocalAddress()
-                            + ": GOAWAY received"));
+    private void handleGoAway(final GoAwayFrame frame) {
+        final long lastProcessedStream = frame.getLastStream();
+        assert lastProcessedStream >= 0 : "unexpected last stream id: "
+                + lastProcessedStream + " in GOAWAY frame";
+
+        markHalfClosedRemote();
+        setFinalStream(); // don't allow any new streams on this connection
+        if (debug.on()) {
+            debug.log("processing incoming GOAWAY with last processed stream id:%s in frame %s",
+                    lastProcessedStream, frame);
+        }
+        // see if this connection has previously received a GOAWAY from the peer and if yes
+        // then check if this new last processed stream id is lesser than the previous
+        // known last processed stream id. Only update the last processed stream id if the new
+        // one is lesser than the previous one.
+        long prevLastProcessed = lastProcessedStreamInGoAway.get();
+        while (prevLastProcessed == -1 || lastProcessedStream < prevLastProcessed) {
+            if (lastProcessedStreamInGoAway.compareAndSet(prevLastProcessed,
+                    lastProcessedStream)) {
+                break;
+            }
+            prevLastProcessed = lastProcessedStreamInGoAway.get();
+        }
+        handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+    }
+
+    private void handlePeerUnprocessedStreams(final long lastProcessedStream) {
+        final AtomicInteger numClosed = new AtomicInteger(); // atomic merely to allow usage within lambda
+        streams.forEach((id, exchange) -> {
+            if (id > lastProcessedStream) {
+                // any streams with an stream id higher than the last processed stream
+                // can be retried (on a new connection). we close the exchange as unprocessed
+                // to facilitate the retrying.
+                client2.client().theExecutor().ensureExecutedAsync(exchange::closeAsUnprocessed);
+                numClosed.incrementAndGet();
+            }
+        });
+        if (debug.on()) {
+            debug.log(numClosed.get() + " stream(s), with id greater than " + lastProcessedStream
+                    + ", will be closed as unprocessed");
         }
     }
 
@@ -1186,11 +1494,12 @@ class Http2Connection  {
         // Note that the default initial window size, not to be confused
         // with the initial window size, is defined by RFC 7540 as
         // 64K -1.
-        final int len = windowUpdater.initialWindowSize - DEFAULT_INITIAL_WINDOW_SIZE;
-        if (len != 0) {
+        final int len = windowUpdater.initialWindowSize - INITIAL_CONNECTION_WINDOW_SIZE;
+        assert len >= 0;
+        if (len > 0) {
             if (Log.channel()) {
                 Log.logChannel("Sending initial connection window update frame: {0} ({1} - {2})",
-                        len, windowUpdater.initialWindowSize, DEFAULT_INITIAL_WINDOW_SIZE);
+                        len, windowUpdater.initialWindowSize, INITIAL_CONNECTION_WINDOW_SIZE);
             }
             windowUpdater.sendWindowUpdate(len);
         }
@@ -1202,6 +1511,21 @@ class Http2Connection  {
             debug.log("Triggering processing of buffered data"
                       + " after sending connection preface");
         subscriber.onNext(List.of(EMPTY_TRIGGER));
+    }
+
+    /**
+     * Called to get the initial stream after a connection upgrade.
+     * If the stream was cancelled, it might no longer be in the
+     * stream map. Therefore - we use the initialStream field
+     * instead, and reset it to null after returning it.
+     * @param <T> the response type
+     * @return the initial stream created during the upgrade.
+     */
+    @SuppressWarnings("unchecked")
+    <T> Stream<T> getInitialStream() {
+         var s = (Stream<T>) initialStream;
+         initialStream = null;
+         return s;
     }
 
     /**
@@ -1222,30 +1546,63 @@ class Http2Connection  {
 
     <T> Stream.PushedStream<T> createPushStream(Stream<T> parent, Exchange<T> pushEx) {
         PushGroup<T> pg = parent.exchange.getPushGroup();
-        return new Stream.PushedStream<>(pg, this, pushEx);
+        return new Stream.PushedStream<>(parent, pg, this, pushEx);
+    }
+
+    /**
+     * Attempts to notify the idle connection management that this connection should
+     * be considered "in use". This way the idle connection management doesn't close
+     * this connection during the time the connection is handed out from the pool and any
+     * new stream created on that connection.
+     * @return true if the connection has been successfully reserved and is {@link #isOpen()}. false
+     *          otherwise; in which case the connection must not be handed out from the pool.
+     */
+    boolean tryReserveForPoolCheckout() {
+        // must be done with "stateLock" held to co-ordinate idle connection management
+        stateLock.lock();
+        try {
+            cancelIdleShutdownEvent();
+            // consider the reservation successful only if the connection's state hasn't moved
+            // to "being closed"
+            return isOpen();
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * Cancels any event that might have been scheduled to shutdown this connection. Must be called
+     * with the stateLock held.
+     */
+    private void cancelIdleShutdownEvent() {
+        assert stateLock.isHeldByCurrentThread() : "Current thread doesn't hold " + stateLock;
+        if (idleConnectionTimeoutEvent == null) {
+            return;
+        }
+        idleConnectionTimeoutEvent.cancel();
+        idleConnectionTimeoutEvent = null;
     }
 
     <T> void putStream(Stream<T> stream, int streamid) {
         // increment the reference count on the HttpClientImpl
         // to prevent the SelectorManager thread from exiting until
         // the stream is closed.
-        synchronized (this) {
-            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
+        stateLock.lock();
+        try {
+            if (!isMarkedForShutdown()) {
                 if (debug.on()) {
                     debug.log("Opened stream %d", streamid);
                 }
                 client().streamReference();
                 streams.put(streamid, stream);
-                // idleConnectionTimerEvent is always accessed within a synchronized block
-                if (idleConnectionTimeoutEvent != null) {
-                    client().cancelTimer(idleConnectionTimeoutEvent);
-                    idleConnectionTimeoutEvent = null;
-                }
+                cancelIdleShutdownEvent();
                 return;
             }
+        } finally {
+            stateLock.unlock();
         }
         if (debug.on()) debug.log("connection closed: closing stream %d", stream);
-        stream.cancel();
+        stream.cancel(new IOException("Stream " + streamid + " cancelled", cause.get()));
     }
 
     /**
@@ -1299,16 +1656,18 @@ class Http2Connection  {
     private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
         ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
-        for(HttpHeaders header : headers) {
+        for (HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
                 String lKey = e.getKey().toLowerCase(Locale.US);
                 List<String> values = e.getValue();
                 for (String value : values) {
                     hpackOut.header(lKey, value);
                     while (!hpackOut.encode(buffer)) {
-                        buffer.flip();
-                        buffers.add(buffer);
-                        buffer =  getHeaderBuffer(bufferSize);
+                        if (!buffer.hasRemaining()) {
+                            buffer.flip();
+                            buffers.add(buffer);
+                            buffer = getHeaderBuffer(bufferSize);
+                        }
                     }
                 }
             }
@@ -1344,6 +1703,19 @@ class Http2Connection  {
         Stream<?> stream = oh.getAttachment();
         assert stream.streamid == 0;
         int streamid = nextstreamid;
+        Throwable cause = null;
+        synchronized (this) {
+            if (isMarked(closedState, SHUTDOWN_REQUESTED)) {
+                cause = this.cause.get();
+                if (cause == null) {
+                    cause = new IOException("Connection closed");
+                }
+            }
+        }
+        if (cause != null) {
+            stream.cancelImpl(cause);
+            return null;
+        }
         if (stream.registerStream(streamid, false)) {
             // set outgoing window here. This allows thread sending
             // body to proceed.
@@ -1359,29 +1731,39 @@ class Http2Connection  {
         }
     }
 
-    private final Object sendlock = new Object();
+    private final Lock sendlock = new ReentrantLock();
 
     void sendFrame(Http2Frame frame) {
         try {
+            if (debug.on()) debug.log("sending frame: " + frame);
             HttpPublisher publisher = publisher();
-            synchronized (sendlock) {
+            sendlock.lock();
+            try {
                 if (frame instanceof OutgoingHeaders) {
                     @SuppressWarnings("unchecked")
                     OutgoingHeaders<Stream<?>> oh = (OutgoingHeaders<Stream<?>>) frame;
                     Stream<?> stream = registerNewStream(oh);
                     // provide protection from inserting unordered frames between Headers and Continuation
                     if (stream != null) {
+                        // we are creating a new stream: reset orphaned header count
+                        orphanedHeaders.set(0);
                         publisher.enqueue(encodeHeaders(oh, stream));
                     }
                 } else {
                     publisher.enqueue(encodeFrame(frame));
                 }
+            } finally {
+                sendlock.unlock();
             }
             publisher.signalEnqueued();
         } catch (IOException e) {
             if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
-                Log.logError(e);
-                shutdown(e);
+                if (!client2.stopping()) {
+                    Log.logError(e);
+                    shutdown(e);
+                } else if (debug.on()) {
+                    debug.log("Failed to send %s while stopping: %s", frame, e);
+                }
             }
         }
     }
@@ -1398,14 +1780,18 @@ class Http2Connection  {
             publisher.signalEnqueued();
         } catch (IOException e) {
             if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
-                Log.logError(e);
-                shutdown(e);
+                if (!client2.stopping()) {
+                    Log.logError(e);
+                    shutdown(e);
+                } else if (debug.on()) {
+                    debug.log("Failed to send %s while stopping: %s", frame, e);
+                }
             }
         }
     }
 
     /*
-     * Direct call of the method bypasses synchronization on "sendlock" and
+     * Direct call of the method bypasses locking on "sendlock" and
      * allowed only of control frames: WindowUpdateFrame, PingFrame and etc.
      * prohibited for such frames as DataFrame, HeadersFrame, ContinuationFrame.
      */
@@ -1429,7 +1815,7 @@ class Http2Connection  {
         private volatile Flow.Subscription subscription;
         private volatile boolean completed;
         private volatile boolean dropped;
-        private volatile Throwable error;
+        private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
         private final ConcurrentLinkedQueue<ByteBuffer> queue
                 = new ConcurrentLinkedQueue<>();
         private final SequentialScheduler scheduler =
@@ -1450,10 +1836,9 @@ class Http2Connection  {
                     asyncReceive(buffer);
                 }
             } catch (Throwable t) {
-                Throwable x = error;
-                if (x == null) error = t;
+                errorRef.compareAndSet(null, t);
             } finally {
-                Throwable x = error;
+                Throwable x = errorRef.get();
                 if (x != null) {
                     if (debug.on()) debug.log("Stopping scheduler", x);
                     scheduler.stop();
@@ -1488,6 +1873,7 @@ class Http2Connection  {
 
         @Override
         public void onNext(List<ByteBuffer> item) {
+            if (completed) return;
             if (debug.on()) debug.log(() -> "onNext: got " + Utils.remaining(item)
                     + " bytes in " + item.size() + " buffers");
             queue.addAll(item);
@@ -1496,19 +1882,21 @@ class Http2Connection  {
 
         @Override
         public void onError(Throwable throwable) {
+            if (completed) return;
             if (debug.on()) debug.log(() -> "onError: " + throwable);
-            error = throwable;
+            errorRef.compareAndSet(null, throwable);
             completed = true;
             runOrSchedule();
         }
 
         @Override
         public void onComplete() {
+            if (completed) return;
             String msg = isActive()
                     ? "EOF reached while reading"
                     : "Idle connection closed by HTTP/2 peer";
             if (debug.on()) debug.log(msg);
-            error = new EOFException(msg);
+            errorRef.compareAndSet(null, new EOFException(msg));
             completed = true;
             runOrSchedule();
         }
@@ -1520,10 +1908,27 @@ class Http2Connection  {
             // then we might not need the 'dropped' boolean?
             dropped = true;
         }
+
+        void stop(Throwable error) {
+            if (errorRef.compareAndSet(null, error)) {
+                completed = true;
+                scheduler.stop();
+                queue.clear();
+                if (subscription != null) {
+                    subscription.cancel();
+                }
+                queue.clear();
+            }
+        }
     }
 
-    synchronized boolean isActive() {
-        return numReservedClientStreams > 0 || numReservedServerStreams > 0;
+    boolean isActive() {
+        stateLock.lock();
+        try {
+            return numReservedClientStreams > 0 || numReservedServerStreams > 0;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     @Override
@@ -1534,76 +1939,6 @@ class Http2Connection  {
     final String dbgString() {
         return "Http2Connection("
                     + connection.getConnectionFlow() + ")";
-    }
-
-    static class HeaderDecoder extends ValidatingHeadersConsumer {
-
-        HttpHeadersBuilder headersBuilder;
-
-        HeaderDecoder() {
-            this.headersBuilder = new HttpHeadersBuilder();
-        }
-
-        @Override
-        public void onDecoded(CharSequence name, CharSequence value) {
-            String n = name.toString();
-            String v = value.toString();
-            super.onDecoded(n, v);
-            headersBuilder.addHeader(n, v);
-        }
-
-        HttpHeaders headers() {
-            return headersBuilder.build();
-        }
-    }
-
-    /*
-     * Checks RFC 7540 rules (relaxed) compliance regarding pseudo-headers.
-     */
-    static class ValidatingHeadersConsumer implements DecodingCallback {
-
-        private static final Set<String> PSEUDO_HEADERS =
-                Set.of(":authority", ":method", ":path", ":scheme", ":status");
-
-        /** Used to check that if there are pseudo-headers, they go first */
-        private boolean pseudoHeadersEnded;
-
-        /**
-         * Called when END_HEADERS was received. This consumer may be invoked
-         * again after reset() is called, but for a whole new set of headers.
-         */
-        void reset() {
-            pseudoHeadersEnded = false;
-        }
-
-        @Override
-        public void onDecoded(CharSequence name, CharSequence value)
-                throws UncheckedIOException
-        {
-            String n = name.toString();
-            if (n.startsWith(":")) {
-                if (pseudoHeadersEnded) {
-                    throw newException("Unexpected pseudo-header '%s'", n);
-                } else if (!PSEUDO_HEADERS.contains(n)) {
-                    throw newException("Unknown pseudo-header '%s'", n);
-                }
-            } else {
-                pseudoHeadersEnded = true;
-                if (!Utils.isValidName(n)) {
-                    throw newException("Bad header name '%s'", n);
-                }
-            }
-            String v = value.toString();
-            if (!Utils.isValidValue(v)) {
-                throw newException("Bad header value '%s'", v);
-            }
-        }
-
-        private UncheckedIOException newException(String message, String header)
-        {
-            return new UncheckedIOException(
-                    new IOException(String.format(message, header)));
-        }
     }
 
     static final class ConnectionWindowUpdateSender extends WindowUpdateSender {
@@ -1618,6 +1953,20 @@ class Http2Connection  {
         @Override
         int getStreamId() {
             return 0;
+        }
+
+        @Override
+        protected boolean windowSizeExceeded(long received) {
+            if (connection.isOpen()) {
+                try {
+                    connection.protocolError(ErrorFrame.FLOW_CONTROL_ERROR,
+                            "connection window exceeded (%s > %s)"
+                                    .formatted(received, windowSize));
+                } catch (IOException io) {
+                    connection.shutdown(io);
+                }
+            }
+            return true;
         }
     }
 
@@ -1642,6 +1991,12 @@ class Http2Connection  {
         return (state & mask) == mask;
     }
 
+    private boolean isMarkedForShutdown() {
+        final int closedSt = closedState;
+        return isMarked(closedSt, IDLE_SHUTDOWN_INITIATED)
+                || isMarked(closedSt, SHUTDOWN_REQUESTED);
+    }
+
     private boolean markShutdownRequested() {
         return markClosedState(SHUTDOWN_REQUESTED);
     }
@@ -1650,8 +2005,12 @@ class Http2Connection  {
         return markClosedState(HALF_CLOSED_LOCAL);
     }
 
-    private boolean markHalfClosedLRemote() {
+    private boolean markHalfClosedRemote() {
         return markClosedState(HALF_CLOSED_REMOTE);
+    }
+
+    private boolean markIdleShutdownInitiated() {
+        return markClosedState(IDLE_SHUTDOWN_INITIATED);
     }
 
     private boolean markClosedState(int flag) {
@@ -1667,8 +2026,11 @@ class Http2Connection  {
     String describeClosedState(int state) {
         if (state == 0) return "active";
         String desc = null;
+        if (isMarked(state, IDLE_SHUTDOWN_INITIATED)) {
+            desc = "idle-shutdown-initiated";
+        }
         if (isMarked(state, SHUTDOWN_REQUESTED)) {
-            desc = "shutdown";
+            desc = desc == null ? "shutdown" : desc + "+shutdown";
         }
         if (isMarked(state, HALF_CLOSED_LOCAL | HALF_CLOSED_REMOTE)) {
             if (desc == null) return "closed";

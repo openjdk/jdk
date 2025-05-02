@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,7 +376,6 @@ class VirtualMachineImpl extends MirrorImpl
         }
         Iterator<?> it = classToBytes.entrySet().iterator();
         for (int i = 0; it.hasNext(); i++) {
-            @SuppressWarnings("rawtypes")
             Map.Entry<?, ?> entry = (Map.Entry)it.next();
             ReferenceTypeImpl refType = (ReferenceTypeImpl)entry.getKey();
             validateMirror(refType);
@@ -1368,10 +1367,17 @@ class VirtualMachineImpl extends MirrorImpl
         //if ((traceFlags & TRACE_OBJREFS) != 0) {
         //    printTrace("Checking for softly reachable objects");
         //}
+        boolean found = false;
         while ((ref = referenceQueue.poll()) != null) {
             SoftObjectReference softRef = (SoftObjectReference)ref;
             removeObjectMirror(softRef);
             batchForDispose(softRef);
+            found = true;
+        }
+
+        if (found) {
+            // If we batched any ObjectReferences for disposing, we can dispose them now.
+            processBatchedDisposes();
         }
     }
 

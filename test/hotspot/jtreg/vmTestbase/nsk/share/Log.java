@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,15 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Vector;
 
-import nsk.share.test.LazyFormatString;
 
 /**
- * This class helps to print test-execution trace messages
- * and filter them when execution mode is not verbose.
- * <p>
- * Verbose mode if defined by providing <i>-verbose</i> command line
- * option, handled by <code>ArgumentParser</code>. Use <code>verbose()</code>
- * method to determine which mode is used.
+ * This class helps to print test-execution trace messages.
  * <p>
  * <code>Log</code> provides with two main methods to print messages:
  * <ul>
@@ -56,39 +49,20 @@ import nsk.share.test.LazyFormatString;
  * Error messages appeares in log stream in all modes. Additional log massages,
  * printed with <code>display()</code> method will be filtered out, if log mode
  * is not verbose. In verbose log made messages of both types are printed.
- * Additionally, in verbose mode a summary of all occured errors will be printed
- * at the program exit, by automatically invoking method
- * <code>printErrorsSummary()</code>.
  * <p>
  * To provide printing messages from different sources into one log
  * with distinct prefixes use internal <code>Log.Logger</code> class.
  *
- * @see #verbose()
  * @see #complain(String)
  * @see #display(String)
  * @see ArgumentParser
  * @see Log.Logger
  */
-public class Log extends FinalizableObject {
+public class Log {
     /**
      * Report step-by-step activity to this stream.
-     *
-     * @deprecated  Tests should not use this field directly.
      */
-    @Deprecated
-    protected PrintStream out = null;
-
-    /**
-     * Is log-mode verbose?
-     * Default value is <code>false</code>.
-     */
-    private boolean verbose = false;
-
-    /**
-     * Should log messages prefixed with timestamps?
-     * Default value is <code>false</code>.
-     */
-    private boolean timestamp = false;
+    private PrintStream out = null;
 
     /**
      * Names for trace levels
@@ -114,7 +88,7 @@ public class Log extends FinalizableObject {
 
         public static int nameToLevel(String value) throws IllegalArgumentException {
             Integer level = NAME_TO_LEVEL_MAP.get(value.toLowerCase());
-            if ( level == null )
+           if ( level == null )
                 throw new IllegalArgumentException("Wrong trace level: " + value);
 
             return level;
@@ -134,16 +108,6 @@ public class Log extends FinalizableObject {
      * Default value is <code>0</code> a.k.a. <code>TraceLevel.INFO</code>;
      */
     private int traceLevel = TraceLevel.DEFAULT;
-
-    /**
-     * Is printing errors summary enabled? Default value is <code>true</code>;
-     */
-    private boolean errorsSummaryEnabled = true;
-
-    /**
-     * Is printing saved verbose messages on error enabled? Default value is <code>true</code>;
-     */
-    private boolean verboseOnErrorEnabled = true;
 
     /**
      * This <code>errosBuffer</code> will keep all messages printed via
@@ -188,13 +152,10 @@ public class Log extends FinalizableObject {
      */
     @Deprecated
     protected Log() {
-        // install finalizer to print errors summary at exit
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
-
         // Don't log exceptions from this method. It would just add unnecessary logs.
         loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
     }
+
 
     /**
      * Incarnate new Log for the given <code>stream</code> and
@@ -207,71 +168,14 @@ public class Log extends FinalizableObject {
 
     /**
      * Incarnate new Log for the given <code>stream</code>; and
-     * either for verbose or for non-verbose mode accordingly to
-     * the given <code>verbose</code> key.
-     */
-    public Log(PrintStream stream, boolean verbose) {
-        this(stream);
-        this.verbose = verbose;
-    }
-
-    /**
-     * Incarnate new Log for the given <code>stream</code>; and
-     * either for verbose or for non-verbose mode accordingly to
      * the given <code>argsHandler</code>.
      */
     public Log(PrintStream stream, ArgumentParser argsParser) {
-        this(stream, argsParser.verbose());
+        this(stream);
         traceLevel = argsParser.getTraceLevel();
-        timestamp = argsParser.isTimestamp();
     }
 
     /////////////////////////////////////////////////////////////////
-
-    /**
-     * Return <i>true</i> if log mode is verbose.
-     */
-    public boolean verbose() {
-        return verbose;
-    }
-
-    /**
-     * Return <i>true</i> if printing errors summary at exit is enabled.
-     */
-    public boolean isErrorsSummaryEnabled() {
-        return errorsSummaryEnabled;
-    }
-
-    /**
-     * Enable or disable printing errors summary at exit.
-     */
-    public void enableErrorsSummary(boolean enable) {
-        errorsSummaryEnabled = enable;
-    }
-
-    /**
-     * Return <i>true</i> if printing saved verbose messages on error is enabled.
-     */
-    public boolean isVerboseOnErrorEnabled() {
-        return errorsSummaryEnabled;
-    }
-
-    /**
-     * Enable or disable printing saved verbose messages on error.
-     */
-    public void enableVerboseOnError(boolean enable) {
-        verboseOnErrorEnabled = enable;
-    }
-
-    /**
-     * Enable or disable verbose mode for printing messages.
-     */
-    public void enableVerbose(boolean enable) {
-        if (!verbose) {
-            flushLogBuffer();
-        }
-        verbose = enable;
-    }
 
     public int getTraceLevel() {
         return traceLevel;
@@ -316,9 +220,6 @@ public class Log extends FinalizableObject {
     @Deprecated
     public synchronized void println(String message) {
         doPrint(message);
-        if (!verbose() && isVerboseOnErrorEnabled()) {
-            keepLog(composeLine(message));
-        }
     }
 
     /**
@@ -332,9 +233,6 @@ public class Log extends FinalizableObject {
      */
     @Deprecated
     public synchronized void comment(String message) {
-        if (!verbose()) {
-            doPrint(message);
-        }
     }
 
     /**
@@ -364,19 +262,10 @@ public class Log extends FinalizableObject {
     }
 
     /**
-     * Print <code>message</code> to the assigned output stream,
-     * if log mode is verbose. The <code>message</code> will be lost,
-     * if execution mode is non-verbose, and there is no error messages
-     * printed.
+     * Print <code>message</code> to the assigned output stream.
      */
     public synchronized void display(Object message) {
-        if (verbose()) {
-            doPrint(message.toString());
-        } else if (isVerboseOnErrorEnabled()) {
-            keepLog(composeLine(message.toString()));
-        } else {
-            // ignore
-        }
+        doPrint(message.toString());
     }
 
     /**
@@ -385,20 +274,8 @@ public class Log extends FinalizableObject {
      * into <code>errorsBuffer</code>.
      */
     public synchronized void complain(Object message) {
-        if (!verbose() && isVerboseOnErrorEnabled()) {
-            PrintStream stream = findOutStream();
-            stream.println("#>  ");
-            stream.println("#>  WARNING: switching log to verbose mode,");
-            stream.println("#>      because error is complained");
-            stream.println("#>  ");
-            stream.flush();
-            enableVerbose(true);
-        }
         String msgStr = message.toString();
         printError(msgStr);
-        if (isErrorsSummaryEnabled()) {
-            keepError(msgStr);
-        }
 
         logExceptionForFailureAnalysis(msgStr);
     }
@@ -461,18 +338,16 @@ public class Log extends FinalizableObject {
     /////////////////////////////////////////////////////////////////
 
     /**
-     * Redirect log to the given <code>stream</code>, and switch
-     * log mode to verbose.
-     * Prints errors summary to current stream, cancel current stream
-     * and switches to new stream. Turns on verbose mode for new stream.
+     * Redirect log to the given <code>stream</code>.
      *
      * @deprecated  This method is obsolete.
      */
     @Deprecated
     protected synchronized void logTo(PrintStream stream) {
-        finalize(); // flush older log stream
+        if (out != null) {
+            out.flush();
+        }
         out = stream;
-        verbose = true;
     }
 
     /////////////////////////////////////////////////////////////////
@@ -482,20 +357,6 @@ public class Log extends FinalizableObject {
      */
     public synchronized void clearLogBuffer() {
         logBuffer.clear();
-    }
-
-    /**
-     * Print all messages from log buffer which were hidden because
-     * of non-verbose mode,
-     */
-    private synchronized void flushLogBuffer() {
-        if (!logBuffer.isEmpty()) {
-            PrintStream stream = findOutStream();
-            for (int i = 0; i < logBuffer.size(); i++) {
-                stream.println(logBuffer.elementAt(i));
-            }
-            stream.flush();
-        }
     }
 
     /**
@@ -522,18 +383,15 @@ public class Log extends FinalizableObject {
      * Compose line to print possible prefixing it with timestamp.
      */
     private String composeLine(String message) {
-        if (timestamp) {
-            long time = System.currentTimeMillis();
-            long ms = time % 1000;
-            time /= 1000;
-            long secs = time % 60;
-            time /= 60;
-            long mins = time % 60;
-            time /= 60;
-            long hours = time % 24;
-            return "[" + hours + ":" + mins + ":" + secs + "." + ms + "] " + message;
-        }
-        return message;
+        long time = System.currentTimeMillis();
+        long ms = time % 1000;
+        time /= 1000;
+        long secs = time % 60;
+        time /= 60;
+        long mins = time % 60;
+        time /= 60;
+        long hours = time % 24;
+        return "[" + hours + ":" + mins + ":" + secs + "." + ms + "] " + message;
     }
 
     /**
@@ -565,61 +423,6 @@ public class Log extends FinalizableObject {
                 throw new TestBug("Exception in Log.printError(): " + e);
             };
         }
-    }
-
-    /**
-     * Keep the given log <code>message</code> into <code>logBuffer</code>.
-     */
-    private synchronized void keepLog(String message) {
-        logBuffer.addElement(message);
-    }
-
-    /**
-     * Keep the given error <code>message</code> into <code>errorsBuffer</code>.
-     */
-    private synchronized void keepError(String message) {
-        errorsBuffer.addElement(message);
-    }
-
-    /**
-     * Print errors messages summary from errors buffer if any;
-     * print a warning message first.
-     */
-    private synchronized void printErrorsSummary() {
-        if (errorsBuffer.size() <= 0)
-            return;
-
-        PrintStream stream = findOutStream();
-        stream.println();
-        stream.println();
-        stream.println("#>  ");
-        stream.println("#>  SUMMARY: Following errors occured");
-        stream.println("#>      during test execution:");
-        stream.println("#>  ");
-        stream.flush();
-
-        for (Enumeration e = errorsBuffer.elements(); e.hasMoreElements(); ) {
-            printError((String) e.nextElement());
-        }
-    }
-
-    /**
-     * Print errors summary if mode is verbose, flush and cancel output stream.
-     */
-    protected void finalize() {
-        if (verbose() && isErrorsSummaryEnabled()) {
-            printErrorsSummary();
-        }
-        if (out != null)
-            out.flush();
-        out = null;
-    }
-
-    /**
-     * Perform finalization at the exit.
-     */
-    public void finalizeAtExit() {
-        finalize();
     }
 
     /**

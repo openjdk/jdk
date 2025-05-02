@@ -21,35 +21,43 @@
  * questions.
  */
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
+import java.net.URI;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import java.net.http.HttpClient;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLContext;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 
-public abstract class AbstractNoBody {
+import static java.lang.System.err;
+import static java.lang.System.out;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static org.testng.Assert.assertEquals;
+
+public abstract class AbstractNoBody implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpsTestServer;       // HTTPS/1.1
+    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String httpURI_fixed;
     String httpURI_chunk;
     String httpsURI_fixed;
@@ -62,8 +70,17 @@ public abstract class AbstractNoBody {
     static final String SIMPLE_STRING = "Hello world. Goodbye world";
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
-    static final Executor executor = Executors.newFixedThreadPool(ITERATION_COUNT * 2);
+    static final ExecutorService executor = Executors.newFixedThreadPool(ITERATION_COUNT * 2);
     static final ExecutorService serverExecutor = Executors.newFixedThreadPool(ITERATION_COUNT * 4);
+    static final AtomicLong clientCount = new AtomicLong();
+    static final long start = System.nanoTime();
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
 
     @DataProvider(name = "variants")
     public Object[][] variants() {
@@ -88,55 +105,86 @@ public abstract class AbstractNoBody {
         };
     }
 
-    HttpClient newHttpClient() {
+    private volatile HttpClient sharedClient;
+
+    static Version version(String uri) {
+        if (uri.contains("/http1/") || uri.contains("/https1/"))
+            return HTTP_1_1;
+        if (uri.contains("/http2/") || uri.contains("/https2/"))
+            return HTTP_2;
+        return null;
+    }
+
+    HttpRequest.Builder newRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        return builder;
+    }
+
+    private HttpClient makeNewClient() {
+        clientCount.incrementAndGet();
         return HttpClient.newBuilder()
                 .executor(executor)
+                .proxy(NO_PROXY)
                 .sslContext(sslContext)
                 .build();
     }
 
-    static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
+    HttpClient newHttpClient(boolean share) {
+        if (!share) return makeNewClient();
+        HttpClient shared = sharedClient;
+        if (shared != null) return shared;
+        synchronized (this) {
+            shared = sharedClient;
+            if (shared == null) {
+                shared = sharedClient = makeNewClient();
+            }
+            return shared;
+        }
+    }
+
+    record CloseableClient(HttpClient client, boolean shared)
+            implements Closeable {
+        public void close() {
+            if (shared) return;
+            client.close();
+        }
     }
 
     @BeforeTest
     public void setup() throws Exception {
         printStamp(START, "setup");
+        HttpServerAdapters.enableServerLogging();
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
         // HTTP/1.1
-        HttpHandler h1_fixedLengthNoBodyHandler = new HTTP1_FixedLengthNoBodyHandler();
-        HttpHandler h1_chunkNoBodyHandler = new HTTP1_ChunkedNoBodyHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServer.create(sa, 0);
-        httpTestServer.setExecutor(serverExecutor);
-        httpTestServer.createContext("/http1/noBodyFixed", h1_fixedLengthNoBodyHandler);
-        httpTestServer.createContext("/http1/noBodyChunk", h1_chunkNoBodyHandler);
-        httpURI_fixed = "http://" + serverAuthority(httpTestServer) + "/http1/noBodyFixed";
-        httpURI_chunk = "http://" + serverAuthority(httpTestServer) + "/http1/noBodyChunk";
+        HttpTestHandler h1_fixedLengthNoBodyHandler = new FixedLengthNoBodyHandler();
+        HttpTestHandler h1_chunkNoBodyHandler = new ChunkedNoBodyHandler();
 
-        httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setExecutor(serverExecutor);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer.createContext("/https1/noBodyFixed", h1_fixedLengthNoBodyHandler);
-        httpsTestServer.createContext("/https1/noBodyChunk", h1_chunkNoBodyHandler);
-        httpsURI_fixed = "https://" + serverAuthority(httpsTestServer) + "/https1/noBodyFixed";
-        httpsURI_chunk = "https://" + serverAuthority(httpsTestServer) + "/https1/noBodyChunk";
+        httpTestServer = HttpTestServer.create(HTTP_1_1, null, serverExecutor);
+        httpTestServer.addHandler(h1_fixedLengthNoBodyHandler,"/http1/noBodyFixed");
+        httpTestServer.addHandler(h1_chunkNoBodyHandler, "/http1/noBodyChunk");
+        httpURI_fixed = "http://" + httpTestServer.serverAuthority() + "/http1/noBodyFixed";
+        httpURI_chunk = "http://" + httpTestServer.serverAuthority() + "/http1/noBodyChunk";
+
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext, serverExecutor);
+        httpsTestServer.addHandler(h1_fixedLengthNoBodyHandler,"/https1/noBodyFixed");
+        httpsTestServer.addHandler(h1_chunkNoBodyHandler, "/https1/noBodyChunk");
+        httpsURI_fixed = "https://" + httpsTestServer.serverAuthority() + "/https1/noBodyFixed";
+        httpsURI_chunk = "https://" + httpsTestServer.serverAuthority() + "/https1/noBodyChunk";
 
         // HTTP/2
-        Http2Handler h2_fixedLengthNoBodyHandler = new HTTP2_FixedLengthNoBodyHandler();
-        Http2Handler h2_chunkedNoBodyHandler = new HTTP2_ChunkedNoBodyHandler();
+        HttpTestHandler h2_fixedLengthNoBodyHandler = new FixedLengthNoBodyHandler();
+        HttpTestHandler h2_chunkedNoBodyHandler = new ChunkedNoBodyHandler();
 
-        http2TestServer = new Http2TestServer("localhost", false, 0, serverExecutor, null);
+        http2TestServer = HttpTestServer.create(HTTP_2, null, serverExecutor);
         http2TestServer.addHandler(h2_fixedLengthNoBodyHandler, "/http2/noBodyFixed");
         http2TestServer.addHandler(h2_chunkedNoBodyHandler, "/http2/noBodyChunk");
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/noBodyFixed";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/noBodyChunk";
 
-        https2TestServer = new Http2TestServer("localhost", true, 0, serverExecutor, sslContext);
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext, serverExecutor);
         https2TestServer.addHandler(h2_fixedLengthNoBodyHandler, "/https2/noBodyFixed");
         https2TestServer.addHandler(h2_chunkedNoBodyHandler, "/https2/noBodyChunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/noBodyFixed";
@@ -146,77 +194,102 @@ public abstract class AbstractNoBody {
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+
+        var shared = newHttpClient(true);
+
+        out.println("HTTP/1.1 server       (http) listening at: " + httpTestServer.serverAuthority());
+        out.println("HTTP/1.1 server       (TLS)  listening at: " + httpsTestServer.serverAuthority());
+        out.println("HTTP/2   server       (h2c)  listening at: " + http2TestServer.serverAuthority());
+        out.println("HTTP/2   server       (h2)   listening at: " + https2TestServer.serverAuthority());
+
+        out.println("Shared client is: " + shared);
+
         printStamp(END,"setup");
     }
 
     @AfterTest
     public void teardown() throws Exception {
         printStamp(START, "teardown");
-        httpTestServer.stop(0);
-        httpsTestServer.stop(0);
+        sharedClient.close();
+        httpTestServer.stop();
+        httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        executor.close();
+        serverExecutor.close();
         printStamp(END, "teardown");
     }
 
-    static final long start = System.nanoTime();
     static final String START = "start";
     static final String END   = "end  ";
-    static long elapsed() { return (System.nanoTime() - start)/1000_000;}
     void printStamp(String what, String fmt, Object... args) {
-        long elapsed = elapsed();
-        long sec = elapsed/1000;
-        long ms  = elapsed % 1000;
-        String time = sec > 0 ? sec + "sec " : "";
-        time = time + ms + "ms";
         System.out.printf("%s: %s \t [%s]\t %s%n",
-                getClass().getSimpleName(), what, time, String.format(fmt,args));
+                getClass().getSimpleName(), what, now(), String.format(fmt,args));
     }
 
 
-    static class HTTP1_FixedLengthNoBodyHandler implements HttpHandler {
+    static class FixedLengthNoBodyHandler implements HttpTestHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
+        public void handle(HttpTestExchange t) throws IOException {
             //out.println("NoBodyHandler received request to " + t.getRequestURI());
+            boolean echo = "echo".equals(t.getRequestURI().getRawQuery());
+            byte[] reqbytes;
             try (InputStream is = t.getRequestBody()) {
-                is.readAllBytes();
+                reqbytes = is.readAllBytes();
             }
-            t.sendResponseHeaders(200, -1); // no body
+            if (echo) {
+                t.sendResponseHeaders(200, reqbytes.length);
+                if (reqbytes.length > 0) {
+                    try (var os = t.getResponseBody()) {
+                        os.write(reqbytes);
+                    }
+                }
+            } else {
+                t.sendResponseHeaders(200, 0); // no body
+            }
         }
     }
 
-    static class HTTP1_ChunkedNoBodyHandler implements HttpHandler {
+    static class ChunkedNoBodyHandler implements HttpTestHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
+        public void handle(HttpTestExchange t) throws IOException {
             //out.println("NoBodyHandler received request to " + t.getRequestURI());
+            boolean echo = "echo".equals(t.getRequestURI().getRawQuery());
+            byte[] reqbytes;
             try (InputStream is = t.getRequestBody()) {
-                is.readAllBytes();
+                reqbytes = is.readAllBytes();
             }
-            t.sendResponseHeaders(200, 0); // chunked
-            t.getResponseBody().close();  // write nothing
+            if (echo) {
+                t.sendResponseHeaders(200, -1);
+                try (var os = t.getResponseBody()) {
+                    os.write(reqbytes);
+                }
+            } else {
+                t.sendResponseHeaders(200, -1); // chunked
+                t.getResponseBody().close();  // write nothing
+            }
         }
     }
 
-    static class HTTP2_FixedLengthNoBodyHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
-            //out.println("NoBodyHandler received request to " + t.getRequestURI());
-            try (InputStream is = t.getRequestBody()) {
-                is.readAllBytes();
-            }
-            t.sendResponseHeaders(200, 0);
-        }
+    /*
+     * Converts a ByteBuffer containing bytes encoded using
+     * the given charset into a string.
+     * This method does not throw but will replace
+     * unrecognized sequences with the replacement character.
+     */
+    public static String asString(ByteBuffer buffer, Charset charset) {
+        var decoded = charset.decode(buffer);
+        char[] chars = new char[decoded.length()];
+        decoded.get(chars);
+        return new String(chars);
     }
 
-    static class HTTP2_ChunkedNoBodyHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
-            //out.println("NoBodyHandler received request to " + t.getRequestURI());
-            try (InputStream is = t.getRequestBody()) {
-                is.readAllBytes();
-            }
-            t.sendResponseHeaders(200, -1);
-            t.getResponseBody().close();  // write nothing
-        }
+    /*
+     * Converts a ByteBuffer containing UTF-8 bytes into a
+     * string. This method does not throw but will replace
+     * unrecognized sequences with the replacement character.
+     */
+    public static String asString(ByteBuffer buffer) {
+        return asString(buffer, StandardCharsets.UTF_8);
     }
 }

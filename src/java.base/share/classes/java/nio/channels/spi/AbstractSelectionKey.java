@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+import jdk.internal.invoke.MhUtil;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.SelectorImpl;
 
@@ -46,15 +47,8 @@ import sun.nio.ch.SelectorImpl;
 public abstract class AbstractSelectionKey
     extends SelectionKey
 {
-    private static final VarHandle INVALID;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            INVALID = l.findVarHandle(AbstractSelectionKey.class, "invalid", boolean.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final VarHandle INVALID = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "invalid", boolean.class);
 
     /**
      * Initializes a new instance of this class.

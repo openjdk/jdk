@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8005085 8005681 8008769 8010015
  * @summary Check (repeating)type annotations on lambda usage.
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main CombinationsTargetTest3
  */
 
-import com.sun.tools.classfile.*;
-import java.io.File;
+import java.io.*;
+import java.lang.classfile.*;
 import java.util.Vector;
 
 public class CombinationsTargetTest3 extends ClassfileTestHelper {
@@ -201,19 +200,19 @@ public class CombinationsTargetTest3 extends ClassfileTestHelper {
                 classFile=new File(classdir.concat(source.altClassName));
                 source.innerClassname=null;
             }
-            ClassFile cf = ClassFile.read(classFile);
+            ClassModel cf = ClassFile.of().parse(classFile.toPath());
 
-            println("Testing classfile: " + cf.getName());
+            println("Testing classfile: " + cf.thisClass().asInternalName());
             //Test class,fields and method counts.
             test(cf);
 
-            for (Field f : cf.fields) {
-                test(cf, f);
-                test(cf, f, true);
+            for (FieldModel f : cf.fields()) {
+                test(f);
+                test(f, true);
             }
-            for (Method m: cf.methods) {
-                test(cf, m);
-                test(cf, m, true);
+            for (MethodModel m: cf.methods()) {
+                test(m);
+                test(m, true);
             }
 
             countAnnotations(); // sets errors=0 before counting.

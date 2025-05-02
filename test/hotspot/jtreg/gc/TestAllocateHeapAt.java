@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestAllocateHeapAt {
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createTestJvm(
+    OutputAnalyzer output = ProcessTools.executeTestJava(
         "-XX:AllocateHeapAt=" + System.getProperty("test.dir", "."),
         "-Xlog:gc+heap=info",
         "-Xmx32m",
         "-Xms32m",
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());
 

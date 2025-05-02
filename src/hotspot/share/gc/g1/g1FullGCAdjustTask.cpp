@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
@@ -32,7 +31,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -51,7 +50,7 @@ public:
   }
 };
 
-class G1AdjustRegionClosure : public HeapRegionClosure {
+class G1AdjustRegionClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
   G1CMBitMap* _bitmap;
   uint _worker_id;
@@ -61,17 +60,15 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     _bitmap(collector->mark_bitmap()),
     _worker_id(worker_id) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     G1AdjustClosure cl(_collector);
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
       // work distribution.
       oop obj = cast_to_oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
-    } else if (!r->is_closed_archive() && !r->is_free()) {
-      // Closed archive regions never change references and only contain
-      // references into other closed regions and are always live. Free
-      // regions do not contain objects to iterate. So skip both.
+    } else if (!r->is_free()) {
+      // Free regions do not contain objects to iterate. So skip them.
       G1AdjustLiveClosure adjust(&cl);
       r->apply_to_marked_objects(_bitmap, &adjust);
     }
@@ -93,8 +90,8 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   ResourceMark rm;
 
   // Adjust preserved marks first since they are not balanced.
-  G1FullGCMarker* marker = collector()->marker(worker_id);
-  marker->preserved_stack()->adjust_during_full_gc();
+  G1FullGCCompactionPoint* cp = collector()->compaction_point(worker_id);
+  cp->preserved_stack()->adjust_during_full_gc();
 
   {
     // Adjust the weak roots.
@@ -103,7 +100,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   }
 
   CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
-  CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
+  NMethodToOopClosure adjust_code(&_adjust, NMethodToOopClosure::FixRelocations);
   _root_processor.process_all_roots(&_adjust, &adjust_cld, &adjust_code);
 
   // Now adjust pointers region by region

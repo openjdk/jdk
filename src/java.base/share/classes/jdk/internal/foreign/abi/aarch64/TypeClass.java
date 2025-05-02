@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.aarch64;
 
 import java.lang.foreign.GroupLayout;
@@ -30,8 +31,8 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public enum TypeClass {
     STRUCT_REGISTER,
@@ -58,7 +59,7 @@ public enum TypeClass {
     }
 
     static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
+        return type.byteSize() <= MAX_AGGREGATE_REGS_SIZE * 8;
     }
 
     static List<MemoryLayout> scalarLayouts(GroupLayout gl) {
@@ -106,8 +107,8 @@ public enum TypeClass {
                 return false;
 
             TypeClass argClass = classifyValueType((ValueLayout) elem);
-            if (elem.bitSize() != baseType.bitSize() ||
-                    elem.bitAlignment() != baseType.bitAlignment() ||
+            if (elem.byteSize() != baseType.byteSize() ||
+                    elem.byteAlignment() != baseType.byteAlignment() ||
                     baseArgClass != argClass) {
                 return false;
             }

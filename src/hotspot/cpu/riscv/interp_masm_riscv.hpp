@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -59,6 +59,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1);
+  void restore_after_resume(bool is_native);
+
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);
@@ -75,7 +80,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ld(xlocals, Address(fp, frame::interpreter_frame_locals_offset * wordSize));
-    shadd(xlocals, xlocals, fp,  t0,  LogBytesPerWord);
+    shadd(xlocals, xlocals, fp, t0, LogBytesPerWord);
   }
 
   void restore_constant_pool_cache() {
@@ -85,6 +90,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    shadd(t0, t0, fp, t0, LogBytesPerWord);
 #ifdef ASSERT
     bnez(t0, L);
     stop("SP is null");
@@ -97,6 +103,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    shadd(t0, t0, fp, t0, LogBytesPerWord);
     beq(sp, t0, L);
     stop(msg);
     bind(L);
@@ -125,19 +132,16 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    ld(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    ld(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    ld(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    ld(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_index_at_bcp(Register index, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // Load cpool->resolved_references(index).
@@ -145,8 +149,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load cpool->resolved_klass_at(index).
   void load_resolved_klass_at_offset(Register cpool, Register index, Register klass, Register temp);
-
-  void load_resolved_method_at_index(int byte_no, Register method, Register cache);
 
   void pop_ptr(Register r = x10);
   void pop_i(Register r = x10);
@@ -163,8 +165,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(TosState state); // transition state -> vtos
 
   void empty_expression_stack() {
-    ld(esp, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    shadd(esp, t0, fp, t0, LogBytesPerWord);
+    // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 
@@ -172,7 +175,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
 
-  // Load float value from 'address'. The value is loaded onto the FPU register v0.
+  // Load float value from 'address'. The value is loaded onto the fp register f10.
   void load_float(Address src);
   void load_double(Address src);
 
@@ -246,14 +249,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2, bool is_virtual_call);
+                               Register reg2);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2,
-                                      Label& done, bool is_virtual_call);
+                                      Register reg2, Label& done);
   void record_item_in_profile_helper(Register item, Register mdp,
                                      Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
-                                     int non_profiled_offset);
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -283,10 +284,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2, Register tmp3);
 
-  // Debugging
-  // only if +VerifyFPU  && (state == ftos || state == dtos)
-  void verify_FPU(int stack_depth, TosState state = ftos);
-
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
   // support for jvmti/dtrace
@@ -299,8 +296,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
     MacroAssembler::_call_Unimplemented(call_site);
   }
 
+  void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
+
 #ifdef ASSERT
-  void verify_access_flags(Register access_flags, uint32_t flag_bits,
+  void verify_access_flags(Register access_flags, uint32_t flag,
                            const char* msg, bool stop_by_hit = true);
   void verify_frame_setup();
 #endif

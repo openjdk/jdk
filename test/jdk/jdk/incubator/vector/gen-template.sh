@@ -1,13 +1,11 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -44,6 +42,8 @@ ternary_double_broadcast_masked="Ternary-Double-Broadcast-Masked-op"
 ternary_scalar="Ternary-Scalar-op"
 binary="Binary-op"
 binary_masked="Binary-Masked-op"
+saturating_binary="SaturatingBinary-op"
+saturating_binary_masked="SaturatingBinary-Masked-op"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -223,7 +223,6 @@ function gen_op_tmpl {
   replace_variables $unit_filename $unit_output "$kernel" "$test" "$op" "$init" "$guard" "$masked" "$op_name" "$kernel_smoke"
 
   local gen_perf_tests=$generate_perf_tests
-  gen_perf_tests=true
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
      [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]]; then
     gen_perf_tests=false
@@ -311,6 +310,12 @@ function gen_binary_op {
 #  gen_op_tmpl $binary_scalar "$@"
   gen_op_tmpl $binary "$@"
   gen_op_tmpl $binary_masked "$@"
+}
+
+function gen_saturating_binary_op {
+  echo "Generating binary op $1 ($2)..."
+  gen_op_tmpl $saturating_binary "$@"
+  gen_op_tmpl $saturating_binary_masked "$@"
 }
 
 function gen_binary_op_no_masked {
@@ -462,6 +467,12 @@ gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
+gen_binary_op "UMIN" "VectorMath.minUnsigned(a, b)" "BITWISE"
+gen_binary_op "UMAX" "VectorMath.maxUnsigned(a, b)" "BITWISE"
+gen_saturating_binary_op "SADD" "VectorMath.addSaturating(a, b)" "BITWISE"
+gen_saturating_binary_op "SSUB" "VectorMath.subSaturating(a, b)" "BITWISE"
+gen_saturating_binary_op "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
+gen_saturating_binary_op "SUSUB" "VectorMath.subSaturatingUnsigned(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
 
@@ -473,6 +484,8 @@ gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
 gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
 gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "\$Wideboxtype\$.\$MaxValue\$"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "\$Wideboxtype\$.\$MinValue\$"
 gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.
@@ -497,10 +510,10 @@ gen_compare_op "NE" "neq"
 gen_compare_op "LE" "le"
 gen_compare_op "GE" "ge"
 
-gen_compare_op "UNSIGNED_LT" "ult" "BITWISE"
-gen_compare_op "UNSIGNED_GT" "ugt" "BITWISE"
-gen_compare_op "UNSIGNED_LE" "ule" "BITWISE"
-gen_compare_op "UNSIGNED_GE" "uge" "BITWISE"
+gen_compare_op "ULT" "ult" "BITWISE"
+gen_compare_op "UGT" "ugt" "BITWISE"
+gen_compare_op "ULE" "ule" "BITWISE"
+gen_compare_op "UGE" "uge" "BITWISE"
 
 
 gen_compare_bcst_op "LT" "<"

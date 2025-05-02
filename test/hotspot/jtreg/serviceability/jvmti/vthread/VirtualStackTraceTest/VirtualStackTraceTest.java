@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=default
  * @summary Verifies JVMTI GetStackTrace does not truncate virtual thread stack trace with agent attach
  * @requires vm.jvmti
- * @enablePreview
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualStackTraceTest
  */
 
@@ -33,7 +32,6 @@
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @requires vm.jvmti
- * @enablePreview
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualStackTraceTest
  */
 

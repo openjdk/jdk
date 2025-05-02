@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,6 @@ on:
   workflow_call:
     inputs:
       gcc-major-version:
-        required: true
-        type: string
-      apt-gcc-version:
-        required: true
-        type: string
-      apt-gcc-cross-version:
         required: true
         type: string
       extra-conf-options:
@@ -67,32 +61,36 @@ jobs:
             debian-arch: arm64
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: arm
             gnu-arch: arm
             debian-arch: armhf
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
             gnu-abi: eabihf
           - target-cpu: s390x
             gnu-arch: s390x
             debian-arch: s390x
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: ppc64le
             gnu-arch: powerpc64le
             debian-arch: ppc64el
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: riscv64
             gnu-arch: riscv64
             debian-arch: riscv64
-            debian-repository: https://deb.debian.org/debian-ports
-            debian-keyring: /usr/share/keyrings/debian-ports-archive-keyring.gpg
+            debian-repository: https://httpredir.debian.org/debian/
             debian-version: sid
+            tolerate-sysroot-errors: true
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -100,12 +98,9 @@ jobs:
         with:
           platform: linux-x64
 
-        # Use linux-x64 JDK bundle as build JDK
-      - name: 'Get build JDK'
-        id: buildjdk
-        uses: ./.github/actions/get-bundles
-        with:
-          platform: linux-x64
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
 
         # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install toolchain and dependencies'
@@ -114,17 +109,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
           sudo apt-get install \
-              gcc-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
-              debian-ports-archive-keyring
+              gcc-${{ inputs.gcc-major-version }} \
+              g++-${{ inputs.gcc-major-version }} \
+              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
+              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Check cache for sysroot'
         id: get-cached-sysroot
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: sysroot
           key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}
@@ -134,16 +128,19 @@ jobs:
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Create sysroot'
+        id: create-sysroot
         run: >
           sudo debootstrap
+          --no-merged-usr
           --arch=${{ matrix.debian-arch }}
           --verbose
-          --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
+          --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype-dev,libpng-dev
           --resolve-deps
-          $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
+          --variant=minbase
           ${{ matrix.debian-version }}
           sysroot
           ${{ matrix.debian-repository }}
+        continue-on-error: ${{ matrix.tolerate-sysroot-errors }}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Prepare sysroot'
@@ -153,8 +150,17 @@ jobs:
           sudo chown ${USER} -R sysroot
           rm -rf sysroot/{dev,proc,run,sys,var}
           rm -rf sysroot/usr/{sbin,bin,share}
-          rm -rf sysroot/usr/lib/{apt,udev,systemd}
-        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+          rm -rf sysroot/usr/lib/{apt,gcc,udev,systemd}
+          rm -rf sysroot/usr/libexec/gcc
+          # /{bin,sbin,lib}/ are not symbolic links to /usr/{bin,sbin,lib}/ when debootstrap with --no-merged-usr
+          rm -rf sysroot/{sbin,bin}
+          rm -rf sysroot/lib/{udev,systemd}
+        if: steps.create-sysroot.outcome == 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Remove broken sysroot'
+        run: |
+          sudo rm -rf sysroot/
+        if: steps.create-sysroot.outcome != 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Configure'
         run: >
@@ -162,12 +168,12 @@ jobs:
           --with-conf-name=linux-${{ matrix.target-cpu }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --enable-debug
           --disable-precompiled-headers
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
-          --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           --with-jmod-compress=zip-1
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
@@ -175,6 +181,7 @@ jobs:
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
 
       - name: 'Build'
         id: build
@@ -182,3 +189,4 @@ jobs:
         with:
           make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'

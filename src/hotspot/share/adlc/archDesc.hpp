@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public:
   const char *_lchild;
   const char *_rchild;
 
-  MatchList(MatchList *nxt, Predicate *prd): _next(nxt), _pred(prd), _cost(NULL){
-    _resultStr = _lchild = _rchild = _opcode = NULL; }
+  MatchList(MatchList *nxt, Predicate *prd): _next(nxt), _pred(prd), _cost(nullptr){
+    _resultStr = _lchild = _rchild = _opcode = nullptr; }
 
   MatchList(MatchList *nxt, Predicate *prd, const char *cost,
             const char *opcode, const char *resultStr, const char *lchild,
@@ -82,9 +82,9 @@ public:
       _resultStr(resultStr), _lchild(lchild), _rchild(rchild) { }
 
   MatchList  *get_next(void)  { return _next; }
-  char       *get_pred(void)  { return (_pred?_pred->_pred:NULL); }
+  char       *get_pred(void)  { return (_pred?_pred->_pred:nullptr); }
   Predicate  *get_pred_obj(void)  { return _pred; }
-  const char *get_cost(void) { return _cost == NULL ? "0" :_cost; }
+  const char *get_cost(void) { return _cost == nullptr ? "0" :_cost; }
   bool        search(const char *opc, const char *res, const char *lch,
                     const char *rch, Predicate *pr);
 
@@ -226,6 +226,7 @@ public:
   inline void getForm(EncodeForm **ptr)     { *ptr = _encode; }
 
   bool verify();
+  bool check_usage();
   void dump();
 
   // Helper utility that gets MatchList components from inside MatchRule
@@ -352,7 +353,7 @@ public:
   void          identify_unique_operands();
   void          set_cisc_spill_operand(OperandForm *opForm) { _cisc_spill_operand = opForm; }
   OperandForm  *cisc_spill_operand() { return _cisc_spill_operand; }
-  bool          can_cisc_spill() { return _cisc_spill_operand != NULL; }
+  bool          can_cisc_spill() { return _cisc_spill_operand != nullptr; }
 
 
 protected:

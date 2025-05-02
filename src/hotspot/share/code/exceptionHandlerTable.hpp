@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class ExceptionHandlerTable {
   ExceptionHandlerTable(int initial_size = 8);
 
   // (run-time) construction from nmethod
-  ExceptionHandlerTable(const CompiledMethod* nm);
+  ExceptionHandlerTable(const nmethod* nm);
 
   // (compile-time) add entries
   void add_subtable(
@@ -116,7 +116,7 @@ class ExceptionHandlerTable {
 
   // nmethod support
   int  size_in_bytes() const { return align_up(_length * (int)sizeof(HandlerTableEntry), oopSize); }
-  void copy_to(CompiledMethod* nm);
+  void copy_to(nmethod* nm);
   void copy_bytes_to(address addr);
 
   // lookup
@@ -148,9 +148,9 @@ class ImplicitExceptionTable {
   ReallocMark          _nesting;  // assertion check for reallocations
 
 public:
-  ImplicitExceptionTable( ) :  _size(0), _len(0), _data(0) { }
+  ImplicitExceptionTable( ) :  _size(0), _len(0), _data(nullptr) { }
   // (run-time) construction from nmethod
-  ImplicitExceptionTable( const CompiledMethod *nm );
+  ImplicitExceptionTable(const nmethod *nm);
 
   void set_size( uint size );
   void append( uint exec_off, uint cont_off );
@@ -172,7 +172,7 @@ public:
   uint get_exec_offset(uint i) { assert(i < _len, "oob"); return *adr(i); }
   uint get_cont_offset(uint i) { assert(i < _len, "oob"); return *(adr(i) + 1); }
 
-  int size_in_bytes() const { return len() == 0 ? 0 : ((2 * len() + 1) * sizeof(implicit_null_entry)); }
+  int size_in_bytes() const { return len() == 0 ? 0 : ((2 * len() + 1) * (int)sizeof(implicit_null_entry)); }
 
   void copy_to(nmethod* nm);
   void copy_bytes_to(address addr, int size);

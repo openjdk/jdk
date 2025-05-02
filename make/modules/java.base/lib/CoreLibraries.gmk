@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,67 +23,29 @@
 # questions.
 #
 
-##########################################################################################
-# libfdlibm is statically linked with libjava below and not delivered into the
-# product on its own.
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
-BUILD_LIBFDLIBM_OPTIMIZATION := NONE
+################################################################################
 
-# If FDLIBM_CFLAGS is non-empty we know that we can optimize
-# fdlibm when adding those extra C flags. Currently GCC,
-# and clang only.
-ifneq ($(FDLIBM_CFLAGS), )
-  BUILD_LIBFDLIBM_OPTIMIZATION := LOW
-endif
-
-LIBFDLIBM_SRC := $(TOPDIR)/src/java.base/share/native/libfdlibm
-LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC) $(FDLIBM_CFLAGS)
-
-$(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
-    NAME := fdlibm, \
-    TYPE := STATIC_LIBRARY, \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-    SRC := $(LIBFDLIBM_SRC), \
-    OPTIMIZATION := $(BUILD_LIBFDLIBM_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
-    CFLAGS_windows_debug := -DLOGGING, \
-    CFLAGS_aix := -qfloat=nomaf, \
-    DISABLED_WARNINGS_gcc := sign-compare, \
-    DISABLED_WARNINGS_gcc_k_rem_pio2.c := maybe-uninitialized, \
-    DISABLED_WARNINGS_clang := sign-compare, \
-    DISABLED_WARNINGS_microsoft := 4146, \
-    DISABLED_WARNINGS_microsoft_e_exp.c := 4244, \
-    DISABLED_WARNINGS_microsoft_s_ceil.c := 4018, \
-    DISABLED_WARNINGS_microsoft_s_expm1.c := 4244, \
-    DISABLED_WARNINGS_microsoft_s_floor.c := 4018, \
-    ARFLAGS := $(ARFLAGS), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
-))
-
-##########################################################################################
-
-LIBVERIFY_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux), true)
-  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    LIBVERIFY_OPTIMIZATION := LOW
-  endif
-endif
+################################################################################
+## Build libverify
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
-    OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm, \
-    LIBS_windows := jvm.lib, \
+    OPTIMIZATION := HIGH, \
+    DISABLED_WARNINGS_gcc_check_code.c := unused-variable, \
+    DISABLED_WARNINGS_clang_check_code.c := unused-variable, \
+    EXTRA_HEADER_DIRS := libjava, \
+    JDK_LIBS := libjvm, \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
 
-##########################################################################################
-
-LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
+################################################################################
+## Build libjava
+################################################################################
 
 ifeq ($(call isTargetOs, macosx), true)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
@@ -93,35 +55,27 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     NAME := java, \
     OPTIMIZATION := HIGH, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(LIBJAVA_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
-    EXTRA_HEADER_DIRS := libfdlibm, \
-    WARNINGS_AS_ERRORS_xlc := false, \
+    ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
+    java_props_md.c_CFLAGS := \
+        -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
-    LDFLAGS_windows := -delayload:shell32.dll, \
-    LIBS := $(BUILD_LIBFDLIBM_TARGET), \
-    LIBS_unix := -ljvm, \
+    DISABLED_WARNINGS_clang_TimeZone_md.c := unused-variable, \
+    JDK_LIBS := libjvm, \
     LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL) $(LIBM),\
-    LIBS_macosx := -framework CoreFoundation \
+    LIBS_aix := $(LIBDL) $(LIBM), \
+    LIBS_macosx := \
+        -framework CoreFoundation \
         -framework Foundation \
         -framework SystemConfiguration, \
-    LIBS_windows := jvm.lib \
-        shell32.lib delayimp.lib \
-        advapi32.lib version.lib, \
+    LIBS_windows := advapi32.lib ole32.lib shell32.lib version.lib, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
 
-$(BUILD_LIBJAVA): $(BUILD_LIBVERIFY)
-
-$(BUILD_LIBJAVA): $(BUILD_LIBFDLIBM)
-
-##########################################################################################
+################################################################################
+## Build libzip
+################################################################################
 
 BUILD_LIBZIP_EXCLUDES :=
 ifeq ($(USE_EXTERNAL_LIBZ), true)
@@ -136,42 +90,44 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     NAME := zip, \
     OPTIMIZATION := LOW, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(LIBZ_CFLAGS), \
+    CFLAGS := $(LIBZ_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
-    LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
+    DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
+    JDK_LIBS := libjava libjvm, \
+    LIBS_unix := $(LIBZ_LIBS), \
 ))
-
-$(BUILD_LIBZIP): $(BUILD_LIBJAVA)
 
 TARGETS += $(BUILD_LIBZIP)
 
-##########################################################################################
+################################################################################
+## Build libjimage
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     NAME := jimage, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LINK_TYPE := C++, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+    EXTRA_HEADER_DIRS := libjava, \
     CFLAGS_unix := -UDEBUG, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm -ldl $(LIBCXX), \
-    LIBS_windows := jvm.lib, \
+    DISABLED_WARNINGS_gcc_imageDecompressor.cpp := unused-variable, \
+    DISABLED_WARNINGS_gcc_imageFile.cpp := unused-const-variable \
+        unused-variable, \
+    DISABLED_WARNINGS_clang_imageDecompressor.cpp := unused-variable, \
+    DISABLED_WARNINGS_clang_imageFile.cpp := unused-private-field \
+        unused-variable, \
+    LDFLAGS := $(LDFLAGS_CXX_JDK), \
+    JDK_LIBS := libjvm, \
+    LIBS_unix := $(LIBDL), \
 ))
-
-$(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
 
 TARGETS += $(BUILD_LIBJIMAGE)
 
-##########################################################################################
+################################################################################
+## Build libjli
+################################################################################
 
 ifeq ($(call isTargetOs, macosx), true)
   LIBJLI_EXCLUDE_FILES += java_md.c
@@ -190,57 +146,62 @@ ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
-LIBJLI_CFLAGS += $(LIBZ_CFLAGS)
-
 ifneq ($(USE_EXTERNAL_LIBZ), true)
+  # Extra files from the zlib.
+  LIBJLI_EXTRA_FILE_LIST := inflate.c inftrees.c inffast.c zadler32.c \
+      zcrc32.c zutil.c
+
   LIBJLI_EXTRA_FILES += \
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
-          inflate.c \
-          inftrees.c \
-          inffast.c \
-          zadler32.c \
-          zcrc32.c \
-          zutil.c \
-      )
+          $(LIBJLI_EXTRA_FILE_LIST))
+
+  # Do not include these libz objects in the static libjli library.
+  # When statically linking the java launcher with all JDK and VM
+  # static libraries, we use the --whole-archive linker option.
+  # The duplicate objects in different static libraries cause linking
+  # errors due to duplicate symbols.
+  LIBJLI_STATIC_EXCLUDE_OBJS := \
+      $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
+endif
+
+ifeq ($(call isTargetOs, aix), true)
+  # AIX requires a static libjli because the compiler doesn't support '-rpath'
+  BUILD_LIBJLI_TYPE := STATIC_LIBRARY
+
+  # This is the object file to provide the dladdr API, which is not
+  # part of AIX. It occurs several times in the jdk code base.
+  # Do not include it. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBJLI_STATIC_EXCLUDE_OBJS += java_md_aix.o
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     NAME := jli, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    TYPE := $(BUILD_LIBJLI_TYPE), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
+    EXTRA_HEADER_DIRS := libjvm, \
     OPTIMIZATION := HIGH, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
-    DISABLED_WARNINGS_gcc := unused-function, \
-    DISABLED_WARNINGS_clang := format-nonliteral deprecated-non-prototype, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    CFLAGS := $(LIBJLI_CFLAGS) $(LIBZ_CFLAGS), \
+    DISABLED_WARNINGS_gcc := unused-function unused-variable, \
+    DISABLED_WARNINGS_clang := deprecated-non-prototype format-nonliteral \
+        unused-function, \
+    DISABLED_WARNINGS_clang_java_md_macosx.m := unused-variable, \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL) -lpthread, \
-    LIBS_aix := $(LIBDL),\
-    LIBS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
+    LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
+    LIBS_macosx := \
+        -framework ApplicationServices \
+        -framework Cocoa \
+        -framework Security, \
     LIBS_windows := advapi32.lib comctl32.lib user32.lib, \
+    STATIC_LIB_EXCLUDE_OBJS := $(LIBJLI_STATIC_EXCLUDE_OBJS), \
 ))
 
 TARGETS += $(BUILD_LIBJLI)
 
-LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libjli)
+################################################################################
 
-ifeq ($(call isTargetOs, aix), true)
-  # AIX also requires a static libjli because the compiler doesn't support '-rpath'
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
-      NAME := jli_static, \
-      TYPE := STATIC_LIBRARY, \
-      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-      SRC := $(LIBJLI_SRC_DIRS), \
-      EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
-      EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-      OPTIMIZATION := HIGH, \
-      CFLAGS := $(STATIC_LIBRARY_FLAGS) $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS) \
-          $(addprefix -I, $(LIBJLI_SRC_DIRS)), \
-      ARFLAGS := $(ARFLAGS), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
-
-  TARGETS += $(BUILD_LIBJLI_STATIC)
-
-endif
+endif # include guard
+include MakeIncludeEnd.gmk

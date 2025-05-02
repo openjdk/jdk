@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestDisableDefaultGC {
     public static void main(String[] args) throws Exception {
         // Start VM, disabling all possible default GCs
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:-UseSerialGC",
-                                                                 "-XX:-UseParallelGC",
-                                                                 "-XX:-UseG1GC",
-                                                                 "-XX:-UseZGC",
-                                                                 "-XX:+UnlockExperimentalVMOptions",
-                                                                 "-XX:-UseShenandoahGC",
-                                                                 "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = GCArguments.executeTestJava("-XX:-UseSerialGC",
+                                                            "-XX:-UseParallelGC",
+                                                            "-XX:-UseG1GC",
+                                                            "-XX:-UseZGC",
+                                                            "-XX:+UnlockExperimentalVMOptions",
+                                                            "-XX:-UseShenandoahGC",
+                                                            "-version");
         output.shouldMatch("Garbage collector not selected");
         output.shouldHaveExitValue(1);
     }

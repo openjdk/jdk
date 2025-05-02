@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "logging/log.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
   set_time(max_jlong);
@@ -48,7 +48,7 @@ G1ServiceThread::G1ServiceThread() :
 
 void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
   guarantee(!task->is_registered(), "Task already registered");
-  guarantee(task->next() == NULL, "Task already in queue");
+  guarantee(task->next() == nullptr, "Task already in queue");
 
   // Make sure the service thread is still up and running, there is a race
   // during shutdown where the service thread has been stopped, but other
@@ -70,7 +70,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms, bool notify) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
-  guarantee(task->next() == NULL, "Task already in queue");
+  guarantee(task->next() == nullptr, "Task already in queue");
 
   // Schedule task by setting the task time and adding it to queue.
   jlong delay = TimeHelper::millis_to_counter(delay_ms);
@@ -114,7 +114,7 @@ G1ServiceTask* G1ServiceThread::wait_for_task() {
       }
     }
   }
-  return nullptr;               // Return nullptr when terminating.
+  return nullptr;               // Return null when terminating.
 }
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
@@ -129,6 +129,8 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
                              TimeHelper::counter_to_millis(start - task->time()));
 
   task->execute();
+
+  update_thread_cpu_time();
 
   log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
                       task->name(),
@@ -151,18 +153,25 @@ void G1ServiceThread::stop_service() {
   ml.notify();
 }
 
+void G1ServiceThread::update_thread_cpu_time() {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_service);
+    tttc.do_thread(this);
+  }
+}
+
 G1ServiceTask::G1ServiceTask(const char* name) :
   _time(),
   _name(name),
-  _next(NULL),
-  _service_thread(NULL) { }
+  _next(nullptr),
+  _service_thread(nullptr) { }
 
 void G1ServiceTask::set_service_thread(G1ServiceThread* thread) {
   _service_thread = thread;
 }
 
 bool G1ServiceTask::is_registered() {
-  return _service_thread != NULL;
+  return _service_thread != nullptr;
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
@@ -177,7 +186,7 @@ const char* G1ServiceTask::name() {
 }
 
 void G1ServiceTask::set_time(jlong time) {
-  assert(_next == NULL, "Not allowed to update time while in queue");
+  assert(_next == nullptr, "Not allowed to update time while in queue");
   _time = time;
 }
 
@@ -200,7 +209,7 @@ void G1ServiceTaskQueue::remove_front() {
 
   G1ServiceTask* task = _sentinel.next();
   _sentinel.set_next(task->next());
-  task->set_next(NULL);
+  task->set_next(nullptr);
 }
 
 G1ServiceTask* G1ServiceTaskQueue::front() {
@@ -213,8 +222,8 @@ bool G1ServiceTaskQueue::is_empty() {
 }
 
 void G1ServiceTaskQueue::add_ordered(G1ServiceTask* task) {
-  assert(task != NULL, "not a valid task");
-  assert(task->next() == NULL, "invariant");
+  assert(task != nullptr, "not a valid task");
+  assert(task->next() == nullptr, "invariant");
   assert(task->time() != max_jlong, "invalid time for task");
 
   G1ServiceTask* current = &_sentinel;

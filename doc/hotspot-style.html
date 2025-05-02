@@ -207,23 +207,38 @@ the simple "getter".</p></li>
 <ul>
 <li><p>All source files must have a globally unique basename. The build
 system depends on this uniqueness.</p></li>
+<li><p>Keep the include lines within a section alphabetically sorted by
+their lowercase value. If an include must be out of order for
+correctness, suffix with it a comment such as
+<code>// do not reorder</code>. Source code processing tools can also
+use this hint.</p></li>
+<li><p>Put conditional inclusions (<code>#if ...</code>) at the end of
+the section of HotSpot include lines. This also applies to
+macro-expanded includes of platform dependent files.</p></li>
+<li><p>Put system includes in a section after the HotSpot include lines
+with a blank line separating the two sections.</p></li>
 <li><p>Do not put non-trivial function implementations in .hpp files. If
 the implementation depends on other .hpp files, put it in a .cpp or a
 .inline.hpp file.</p></li>
 <li><p>.inline.hpp files should only be included in .cpp or .inline.hpp
 files.</p></li>
 <li><p>All .inline.hpp files should include their corresponding .hpp
-file as the first include line. Declarations needed by other files
-should be put in the .hpp file, and not in the .inline.hpp file. This
-rule exists to resolve problems with circular dependencies between
-.inline.hpp files.</p></li>
-<li><p>All .cpp files include precompiled.hpp as the first include
-line.</p></li>
-<li><p>precompiled.hpp is just a build time optimization, so don't rely
-on it to resolve include problems.</p></li>
-<li><p>Keep the include lines alphabetically sorted.</p></li>
-<li><p>Put conditional inclusions (<code>#if ...</code>) at the end of
-the include list.</p></li>
+file as the first include line with a blank line separating it from the
+rest of the include lines. Declarations needed by other files should be
+put in the .hpp file, and not in the .inline.hpp file. This rule exists
+to resolve problems with circular dependencies between .inline.hpp
+files.</p></li>
+<li><p>Do not include a .hpp file if the corresponding .inline.hpp file
+is included.</p></li>
+<li><p>Use include guards for .hpp and .inline.hpp files. The name of
+the defined guard should be derived from the full search path of the
+file relative to the hotspot source directory. The guard should be all
+upper case with all paths separators and periods replaced by
+underscores.</p></li>
+<li><p>Some build configurations use precompiled headers to speed up the
+build times. The precompiled headers are included in the precompiled.hpp
+file. Note that precompiled.hpp is just a build time optimization, so
+don't rely on it to resolve include problems.</p></li>
 </ul>
 <h3 id="jtreg-tests">JTReg Tests</h3>
 <ul>
@@ -598,9 +613,16 @@ conventions might appear jarring and reduce readability.</p></li>
 <code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
 <li><code>#include &lt;limits&gt;</code> to use
 <code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code>.</li>
+<li><code>#include &lt;type_traits&gt;</code> with some restrictions,
+listed below.</li>
 <li><code>#include &lt;cstddef&gt;</code> to use
 <code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
+</ul>
+<p>Certain restrictions apply to the declarations provided by
+<code>&lt;type_traits&gt;</code>.</p>
+<ul>
+<li>The <code>alignof</code> operator should be used rather than
+<code>std::alignment_of&lt;&gt;</code>.</li>
 </ul>
 <p>TODO: Rather than directly #including (permitted) Standard Library
 headers, use a convention of #including wrapper headers (in some
@@ -741,12 +763,15 @@ cases where dynamic initialization or destruction are essential. See <a
 href="https://bugs.openjdk.org/browse/JDK-8282469">JDK-8282469</a> for
 further discussion.</p>
 <h3 id="nullptr">nullptr</h3>
-<p>Prefer <code>nullptr</code> (<a
+<p>Use <code>nullptr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">n2431</a>)
-to <code>NULL</code>. Don't use (constexpr or literal) 0 for
-pointers.</p>
-<p>For historical reasons there are widespread uses of both
-<code>NULL</code> and of integer 0 as a pointer value.</p>
+rather than <code>NULL</code>. See the paper for reasons to avoid
+<code>NULL</code>.</p>
+<p>Don't use (constant expression or literal) 0 for pointers. Note that
+C++14 removed non-literal 0 constants from <em>null pointer
+constants</em>, though some compilers continue to treat them as such.
+For historical reasons there may be lingering uses of 0 as a
+pointer.</p>
 <h3 id="atomic">&lt;atomic&gt;</h3>
 <p>Do not use facilities provided by the <code>&lt;atomic&gt;</code>
 header (<a
@@ -1086,6 +1111,8 @@ function name and the parameter list.</li>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
+<li><p><code>alignof</code> (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a

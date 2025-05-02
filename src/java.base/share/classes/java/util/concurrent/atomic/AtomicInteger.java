@@ -63,6 +63,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long VALUE
         = U.objectFieldOffset(AtomicInteger.class, "value");
 
+    /** @serial */
     private volatile int value;
 
     /**
@@ -340,8 +341,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the String representation of the current value.
-     * @return the String representation of the current value
+     * {@return the String representation of the current value}
      */
     public String toString() {
         return Integer.toString(get());
@@ -465,7 +465,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
@@ -481,7 +481,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
@@ -497,7 +497,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */

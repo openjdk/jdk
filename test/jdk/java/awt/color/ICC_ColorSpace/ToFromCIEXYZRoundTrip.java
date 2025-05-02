@@ -28,6 +28,7 @@ import java.util.Arrays;
 /**
  * @test
  * @bug 8288633
+ * @run main/othervm/timeout=1000 ToFromCIEXYZRoundTrip
  * @summary Verifies precision of ICC_ColorSpace.toCIEXYZ/fromCIEXYZ
  */
 public final class ToFromCIEXYZRoundTrip {

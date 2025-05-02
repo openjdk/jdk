@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,8 +94,7 @@ public class ShMemLongName {
     // creates target process builder for the specified shmem transport name
     private static ProcessBuilder getTarget(String shmemName) throws IOException {
         log("starting target with shmem name: '" + shmemName + "'...");
-        return ProcessTools.createJavaProcessBuilder(
-                "-Xdebug",
+        return ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xrunjdwp:transport=" + transport + ",server=y,suspend=n,address=" + shmemName,
                 "ShMemLongName$Target");
     }

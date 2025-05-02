@@ -35,19 +35,19 @@
  */
 
 /*
- * @test
- * @summary JSR-166 tck tests, in a number of variations.
- *          The first is the conformance testing variant,
- *          while others also test implementation details.
+ * @test id=default
+ * @summary Conformance testing variant of JSR-166 tck tests.
  * @build *
- * @modules java.management
+ * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000 JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
- * @run junit/othervm/timeout=1000
- *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
- *      --add-opens java.base/java.lang=ALL-UNNAMED
- *      -Djsr166.testImplementationDetails=true
- *      JSR166TestCase
+ */
+
+/*
+ * @test id=forkjoinpool-common-parallelism
+ * @summary Test implementation details variant of JSR-166
+ *          tck tests with ForkJoinPool common parallelism.
+ * @build *
+ * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
@@ -61,7 +61,16 @@
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
  *      JSR166TestCase
- * @run junit/othervm/timeout=1000/policy=tck.policy
+ */
+
+/*
+ * @test id=others
+ * @summary Remaining test implementation details variant of
+ *          JSR-166 tck tests apart from ForkJoinPool common
+ *          parallelism.
+ * @build *
+ * @modules java.management java.base/jdk.internal.util
+ * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
@@ -83,13 +92,6 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
-import java.security.SecurityPermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -106,6 +108,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
@@ -223,9 +226,6 @@ import junit.framework.TestSuite;
  * </ul>
  */
 public class JSR166TestCase extends TestCase {
-    // No longer run with custom securityManagers
-    private static final boolean useSecurityManager =
-    Boolean.getBoolean("jsr166.useSecurityManager");
 
     protected static final boolean expensiveTests =
         Boolean.getBoolean("jsr166.expensiveTests");
@@ -438,14 +438,6 @@ public class JSR166TestCase extends TestCase {
      */
     @SuppressWarnings("removal")
     static void main(Test suite, String[] args) {
-        if (useSecurityManager) {
-            System.err.println("Setting a permissive security manager");
-            Policy.setPolicy(permissivePolicy());
-            try {
-                System.setSecurityManager(new SecurityManager());
-            } catch(Throwable ok) {  // failure OK during deprecation
-            }
-        }
         for (int i = 0; i < suiteRuns; i++) {
             TestResult result = newPithyTestRunner().doRun(suite);
             if (!result.wasSuccessful())
@@ -484,22 +476,8 @@ public class JSR166TestCase extends TestCase {
     public static final double JAVA_CLASS_VERSION;
     public static final String JAVA_SPECIFICATION_VERSION;
     static {
-        try {
-            @SuppressWarnings("removal") double jcv =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Double>() {
-                public Double run() {
-                    return Double.valueOf(System.getProperty("java.class.version"));}});
-            JAVA_CLASS_VERSION = jcv;
-            @SuppressWarnings("removal") String jsv =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("java.specification.version");}});
-            JAVA_SPECIFICATION_VERSION = jsv;
-        } catch (Throwable t) {
-            throw new Error(t);
-        }
+        JAVA_CLASS_VERSION = Double.valueOf(System.getProperty("java.class.version"));
+        JAVA_SPECIFICATION_VERSION = System.getProperty("java.specification.version");
     }
 
     public static boolean atLeastJava6()  { return JAVA_CLASS_VERSION >= 50.0; }
@@ -579,7 +557,6 @@ public class JSR166TestCase extends TestCase {
             ScheduledExecutorSubclassTest.suite(),
             SemaphoreTest.suite(),
             SynchronousQueueTest.suite(),
-            SystemTest.suite(),
             ThreadLocalTest.suite(),
             ThreadPoolExecutorTest.suite(),
             ThreadPoolExecutorSubclassTest.suite(),
@@ -644,6 +621,8 @@ public class JSR166TestCase extends TestCase {
         if (atLeastJava20()) {
             String[] java20TestClassNames = {
                 "ForkJoinPool20Test",
+                "SynchronousQueue20Test",
+                "ReentrantReadWriteLock20Test"
             };
             addNamedTestClasses(suite, java20TestClassNames);
         }
@@ -1192,22 +1171,11 @@ public class JSR166TestCase extends TestCase {
      */
     @SuppressWarnings("removal")
     static void dumpTestThreads() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                System.setSecurityManager(null);
-            } catch (SecurityException giveUp) {
-                return;
-            }
-        }
-
         System.err.println("------ stacktrace dump start ------");
         for (ThreadInfo info : THREAD_MXBEAN.dumpAllThreads(true, true))
             if (threadOfInterest(info))
                 System.err.print(info);
         System.err.println("------ stacktrace dump end ------");
-
-        if (sm != null) System.setSecurityManager(sm);
     }
 
     /**
@@ -1418,120 +1386,6 @@ public class JSR166TestCase extends TestCase {
     }
 
     /**
-     * Runs Runnable r with a security policy that permits precisely
-     * the specified permissions.  If there is no current security
-     * manager, the runnable is run twice, both with and without a
-     * security manager.  We require that any security manager permit
-     * getPolicy/setPolicy.
-     */
-    @SuppressWarnings("removal")
-    public void runWithPermissions(Runnable r, Permission... permissions) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            r.run();
-        }
-        runWithSecurityManagerWithPermissions(r, permissions);
-    }
-
-    /**
-     * Runs Runnable r with a security policy that permits precisely
-     * the specified permissions.  If there is no current security
-     * manager, a temporary one is set for the duration of the
-     * Runnable.  We require that any security manager permit
-     * getPolicy/setPolicy.
-     */
-    @SuppressWarnings("removal")
-    public void runWithSecurityManagerWithPermissions(Runnable r,
-                                                      Permission... permissions) {
-        if (!useSecurityManager) return;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Policy savedPolicy = Policy.getPolicy();
-            try {
-                Policy.setPolicy(permissivePolicy());
-                System.setSecurityManager(new SecurityManager());
-                runWithSecurityManagerWithPermissions(r, permissions);
-            } catch (UnsupportedOperationException ok) {
-            } finally {
-                try {
-                    System.setSecurityManager(null);
-                    Policy.setPolicy(savedPolicy);
-                } catch (Exception ok) {
-                }
-            }
-        } else {
-            Policy savedPolicy = Policy.getPolicy();
-            AdjustablePolicy policy = new AdjustablePolicy(permissions);
-            Policy.setPolicy(policy);
-
-            try {
-                r.run();
-            } finally {
-                policy.addPermission(new SecurityPermission("setPolicy"));
-                Policy.setPolicy(savedPolicy);
-            }
-        }
-    }
-
-    /**
-     * Runs a runnable without any permissions.
-     */
-    public void runWithoutPermissions(Runnable r) {
-        runWithPermissions(r);
-    }
-
-    /**
-     * A security policy where new permissions can be dynamically added
-     * or all cleared.
-     */
-    @SuppressWarnings("removal")
-    public static class AdjustablePolicy extends java.security.Policy {
-        Permissions perms = new Permissions();
-        AdjustablePolicy(Permission... permissions) {
-            for (Permission permission : permissions)
-                perms.add(permission);
-        }
-        void addPermission(Permission perm) { perms.add(perm); }
-        void clearPermissions() { perms = new Permissions(); }
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p);
-        }
-        public void refresh() {}
-        public String toString() {
-            List<Permission> ps = new ArrayList<>();
-            for (Enumeration<Permission> e = perms.elements(); e.hasMoreElements();)
-                ps.add(e.nextElement());
-            return "AdjustablePolicy with permissions " + ps;
-        }
-    }
-
-    /**
-     * Returns a policy containing all the permissions we ever need.
-     */
-    @SuppressWarnings("removal")
-    public static Policy permissivePolicy() {
-        return new AdjustablePolicy
-            // Permissions j.u.c. needs directly
-            (new RuntimePermission("modifyThread"),
-             new RuntimePermission("getClassLoader"),
-             new RuntimePermission("setContextClassLoader"),
-             // Permissions needed to change permissions!
-             new SecurityPermission("getPolicy"),
-             new SecurityPermission("setPolicy"),
-             new RuntimePermission("setSecurityManager"),
-             // Permissions needed by the junit test harness
-             new RuntimePermission("accessDeclaredMembers"),
-             new PropertyPermission("*", "read"),
-             new java.io.FilePermission("<<ALL FILES>>", "read"));
-    }
-
-    /**
      * Sleeps until the given time has elapsed.
      * Throws AssertionError if interrupted.
      */
@@ -1646,11 +1500,20 @@ public class JSR166TestCase extends TestCase {
         checkTimedGet(f, expectedValue, LONG_DELAY_MS);
     }
 
+    // Avoids unwanted interrupts when run inder jtreg
+    static ThreadGroup topThreadGroup() {
+        for (ThreadGroup g = Thread.currentThread().getThreadGroup(), p; ; g = p)
+            if ((p = g.getParent()) == null)
+                return g;
+    }
+    static final ThreadGroup jsr166TestThreadGroup =
+        new ThreadGroup(topThreadGroup(), "jsr1666TestThreadGroup");
+
     /**
      * Returns a new started daemon Thread running the given runnable.
      */
     Thread newStartedThread(Runnable runnable) {
-        Thread t = new Thread(runnable);
+        Thread t = new Thread(jsr166TestThreadGroup, runnable);
         t.setDaemon(true);
         t.start();
         return t;
@@ -1670,10 +1533,12 @@ public class JSR166TestCase extends TestCase {
      * the thread (in the hope that it may terminate later) and fails.
      */
     void awaitTermination(Thread thread, long timeoutMillis) {
-        try {
-            thread.join(timeoutMillis);
-        } catch (InterruptedException fail) {
-            threadUnexpectedException(fail);
+        for (;;) { // ignore stray interrupts by test harness
+            try {
+                thread.join(timeoutMillis);
+                break;
+            } catch (InterruptedException ignore) {
+            }
         }
         if (thread.getState() != Thread.State.TERMINATED) {
             String detail = String.format(
@@ -1917,6 +1782,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final void compute() {
             try {
                 realCompute();
+            } catch (CancellationException ex) {
+                throw ex; // expected by some tests
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }
@@ -1932,6 +1799,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final T compute() {
             try {
                 return realCompute();
+            } catch (CancellationException ex) {
+                throw ex;
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }

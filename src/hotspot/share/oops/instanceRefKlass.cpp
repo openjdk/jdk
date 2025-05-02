@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+
+InstanceRefKlass::InstanceRefKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
+}
 
 static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
   if (       name == vmSymbols::java_lang_ref_SoftReference()) {
@@ -67,10 +71,10 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Check that we have the right class
-  debug_only(static bool first_time = true);
+  DEBUG_ONLY(static bool first_time = true);
   assert(k == vmClasses::Reference_klass() && first_time,
          "Invalid update of maps");
-  debug_only(first_time = false);
+  DEBUG_ONLY(first_time = false);
   assert(ik->nonstatic_oop_map_count() == 1, "just checking");
 
   OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
@@ -94,7 +98,7 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   const unsigned int new_count = 2; // queue and next
 
   // Verify existing map is as expected, and update if needed.
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     assert(map->offset() == new_offset, "just checking");
     assert(map->count() == new_count, "just checking");
   } else {

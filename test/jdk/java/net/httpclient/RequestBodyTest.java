@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8087112
- * @modules java.net.http
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build LightWeightHttpServer
- * @build jdk.test.lib.Platform
- * @build jdk.test.lib.util.FileUtils
- * @run testng/othervm RequestBodyTest
- * @run testng/othervm/java.security.policy=RequestBodyTest.policy RequestBodyTest
- */
-
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -52,9 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -74,6 +53,22 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
+/*
+ * @test
+ * @bug 8087112
+ * @modules java.net.http/jdk.internal.net.http.common
+ *          java.logging
+ *          jdk.httpserver
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @compile ../../../com/sun/net/httpserver/LogFilter.java
+ * @compile ../../../com/sun/net/httpserver/EchoHandler.java
+ * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @build LightWeightHttpServer
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
+ * @run testng/othervm RequestBodyTest
+ */
 public class RequestBodyTest {
 
     static final String fileroot = System.getProperty("test.src", ".") + "/docs";
@@ -332,11 +327,9 @@ public class RequestBodyTest {
             @Override
             public FileInputStream get() {
                 try {
-                    PrivilegedExceptionAction<FileInputStream> pa =
-                            () -> new FileInputStream(file.toFile());
-                    return AccessController.doPrivileged(pa);
-                } catch (PrivilegedActionException x) {
-                    throw new UncheckedIOException((IOException)x.getCause());
+                    return new FileInputStream(file.toFile());
+                } catch (IOException x) {
+                    throw new UncheckedIOException(x);
                 }
             }
         };

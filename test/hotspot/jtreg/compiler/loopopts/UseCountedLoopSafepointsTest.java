@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,10 @@ public class UseCountedLoopSafepointsTest {
     private static void check(boolean enabled) {
         OutputAnalyzer oa;
         try {
-            oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
-                                             "-XX:" + (enabled ? "+" : "-") + "UseCountedLoopSafepoints",
-                                             "-XX:+WhiteBoxAPI",
+            oa = ProcessTools.executeTestJava(
+                    "-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
+                    "-XX:" + (enabled ? "+" : "-") + "UseCountedLoopSafepoints",
+                    "-XX:+WhiteBoxAPI",
                     "-XX:-Inline", "-Xbatch", "-XX:+PrintIdeal", "-XX:LoopUnrollLimit=0",
                     "-XX:CompileOnly=" + UseCountedLoopSafepoints.class.getName() + "::testMethod",
                     UseCountedLoopSafepoints.class.getName());

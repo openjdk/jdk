@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,12 @@ public:
 // Class used to group scoped objects used in the Full GC together.
 class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
-  bool                    _explicit_gc;
   bool                    _do_maximal_compaction;
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
   G1FullGCTracer*         _tracer;
-  IsGCActiveMark          _active;
+  IsSTWGCActiveMark       _active;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
   G1FullGCMonitoringScope _monitoring_scope;
@@ -62,12 +61,10 @@ class G1FullGCScope : public StackObj {
 
 public:
   G1FullGCScope(G1MonitoringSupport* monitoring_support,
-                bool explicit_gc,
                 bool clear_soft,
                 bool do_maximal_compaction,
                 G1FullGCTracer* tracer);
 
-  bool is_explicit_gc();
   bool should_clear_soft_refs();
   bool do_maximal_compaction() { return _do_maximal_compaction; }
 

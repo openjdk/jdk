@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,32 @@ class compiledVFrame;
 
 template<class E> class GrowableArray;
 
+class DeoptimizationScope {
+ private:
+  // What gen we have done the deopt handshake for.
+  static uint64_t _committed_deopt_gen;
+  // What gen to mark a method with, hence larger than _committed_deopt_gen.
+  static uint64_t _active_deopt_gen;
+  // Indicate an in-progress deopt handshake.
+  static bool     _committing_in_progress;
+
+  // The required gen we need to execute/wait for
+  uint64_t _required_gen;
+  DEBUG_ONLY(bool _deopted;)
+
+ public:
+  DeoptimizationScope();
+  ~DeoptimizationScope();
+  // Mark a method, if already marked as dependent.
+  void mark(nmethod* nm, bool inc_recompile_counts = true);
+  // Record this as a dependent method.
+  void dependent(nmethod* nm);
+
+  // Execute the deoptimization.
+  // Make the nmethods not entrant, stackwalks and patch return pcs and sets post call nops.
+  void deoptimize_marked();
+};
+
 class Deoptimization : AllStatic {
   friend class VMStructs;
   friend class EscapeBarrier;
@@ -72,6 +98,7 @@ class Deoptimization : AllStatic {
 #endif
 
     Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
+    Reason_auto_vectorization_check, // compiler generated (speculative) auto vectorization checks failed
 
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
@@ -87,7 +114,6 @@ class Deoptimization : AllStatic {
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_speculate_null_assert, // saw unexpected null from type speculation
-    Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
     Reason_receiver_constraint,   // receiver subtype check failed
@@ -149,18 +175,17 @@ class Deoptimization : AllStatic {
 #endif
 
   // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
-  // activations using those nmethods.  If an nmethod is passed as an argument then it is
-  // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to
+  // activations using those nmethods. Scan of the code cache is done to
   // find all marked nmethods and they are made not_entrant.
-  static void deoptimize_all_marked(nmethod* nmethod_only = nullptr);
+  static void deoptimize_all_marked();
 
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
-  static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
+  static address deoptimize_for_missing_exception_handler(nmethod* nm);
+  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 
   private:
@@ -239,16 +264,16 @@ class Deoptimization : AllStatic {
     int caller_actual_parameters() const { return _caller_actual_parameters; }
 
     // Accessors used by the code generator for the unpack stub.
-    static int size_of_deoptimized_frame_offset_in_bytes() { return offset_of(UnrollBlock, _size_of_deoptimized_frame); }
-    static int caller_adjustment_offset_in_bytes()         { return offset_of(UnrollBlock, _caller_adjustment);         }
-    static int number_of_frames_offset_in_bytes()          { return offset_of(UnrollBlock, _number_of_frames);          }
-    static int frame_sizes_offset_in_bytes()               { return offset_of(UnrollBlock, _frame_sizes);               }
-    static int total_frame_sizes_offset_in_bytes()         { return offset_of(UnrollBlock, _total_frame_sizes);         }
-    static int frame_pcs_offset_in_bytes()                 { return offset_of(UnrollBlock, _frame_pcs);                 }
-    static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
-    static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
-    static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
-    static int sender_sp_temp_offset_in_bytes()            { return offset_of(UnrollBlock, _sender_sp_temp);            }
+    static ByteSize size_of_deoptimized_frame_offset() { return byte_offset_of(UnrollBlock, _size_of_deoptimized_frame); }
+    static ByteSize caller_adjustment_offset()         { return byte_offset_of(UnrollBlock, _caller_adjustment);         }
+    static ByteSize number_of_frames_offset()          { return byte_offset_of(UnrollBlock, _number_of_frames);          }
+    static ByteSize frame_sizes_offset()               { return byte_offset_of(UnrollBlock, _frame_sizes);               }
+    static ByteSize total_frame_sizes_offset()         { return byte_offset_of(UnrollBlock, _total_frame_sizes);         }
+    static ByteSize frame_pcs_offset()                 { return byte_offset_of(UnrollBlock, _frame_pcs);                 }
+    static ByteSize counter_temp_offset()              { return byte_offset_of(UnrollBlock, _counter_temp);              }
+    static ByteSize initial_info_offset()              { return byte_offset_of(UnrollBlock, _initial_info);              }
+    static ByteSize unpack_kind_offset()               { return byte_offset_of(UnrollBlock, _unpack_kind);               }
+    static ByteSize sender_sp_temp_offset()            { return byte_offset_of(UnrollBlock, _sender_sp_temp);            }
 
     BasicType return_type() const { return _return_type; }
     void print();

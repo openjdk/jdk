@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,12 @@ import com.sun.tools.javac.api.JavacScope;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens.Token;
@@ -1032,14 +1034,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case DECLARED: {
                 TypeElement element = (TypeElement) at.getTypes().asElement(site);
                 List<Element> result = new ArrayList<>();
-                at.getElements().getAllMembers(element).forEach(m -> result.add(
-                    element.equals(m.getEnclosingElement())
-                        ? m
-                        : (m instanceof Symbol.MethodSymbol ms)
-                            ? ms.clone((Symbol)element)
-                            : (m instanceof Symbol.VarSymbol vs)
-                                ? vs.clone((Symbol)element)
-                                : m));
+                result.addAll(membersOf(at, element));
                 if (shouldGenerateDotClassItem) {
                     result.add(createDotClassSymbol(at, site));
                 }
@@ -1076,7 +1071,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
             case ARRAY: {
                 List<Element> result = new ArrayList<>();
-                result.add(createArrayLengthSymbol(at, site));
+                TypeElement jlObject = at.getElements().getTypeElement("java.lang.Object");
+                if (jlObject != null) {
+                    result.addAll(membersOf(at, jlObject));
+                }
+                result.addAll(createArraySymbols(at, site));
                 if (shouldGenerateDotClassItem)
                     result.add(createDotClassSymbol(at, site));
                 return result;
@@ -1084,6 +1083,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             default:
                 return Collections.emptyList();
         }
+    }
+
+    private List<? extends Element> membersOf(AnalyzeTask at, TypeElement element) {
+        return at.getElements().getAllMembers(element).stream().map(m ->
+            element.equals(m.getEnclosingElement())
+                ? m
+                : (m instanceof Symbol.MethodSymbol ms)
+                    ? ms.clone((Symbol)element)
+                    : (m instanceof Symbol.VarSymbol vs)
+                        ? vs.clone((Symbol)element)
+                        : m).toList();
     }
 
     private List<? extends Element> membersOf(AnalyzeTask at, List<? extends Element> elements) {
@@ -1153,11 +1163,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return existing;
     }
 
-    private Element createArrayLengthSymbol(AnalyzeTask at, TypeMirror site) {
-        Name length = Names.instance(at.getContext()).length;
-        Type intType = Symtab.instance(at.getContext()).intType;
+    private List<Element> createArraySymbols(AnalyzeTask at, TypeMirror site) {
+        Symtab syms = Symtab.instance(at.getContext());
+        Names names = Names.instance(at.getContext());
+        Name length = names.length;
+        Name clone = names.clone;
+        Type lengthType = syms.intType;
+        Type cloneType = new MethodType(com.sun.tools.javac.util.List.<Type>nil(),
+                                        (Type) site,
+                                        com.sun.tools.javac.util.List.<Type>nil(),
+                                        syms.methodClass);
 
-        return new VarSymbol(Flags.PUBLIC | Flags.FINAL, length, intType, ((Type) site).tsym);
+        return List.of(
+                new VarSymbol(Flags.PUBLIC | Flags.FINAL, length, lengthType, ((Type) site).tsym),
+                new MethodSymbol(Flags.PUBLIC | Flags.FINAL, clone, cloneType, ((Type) site).tsym)
+        );
     }
 
     private Element createDotClassSymbol(AnalyzeTask at, TypeMirror site) {
@@ -1188,10 +1208,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
         };
         @SuppressWarnings("unchecked")
-        List<Element> result = Util.stream(scopeIterable)
+        Set<Element> result = Util.stream(scopeIterable)
                              .flatMap(this::localElements)
                              .flatMap(el -> Util.stream((Iterable<Element>)elementConvertor.apply(el)))
-                             .collect(toCollection(ArrayList :: new));
+                             .collect(toCollection(LinkedHashSet :: new));
         result.addAll(listPackages(at, ""));
         return result;
     }

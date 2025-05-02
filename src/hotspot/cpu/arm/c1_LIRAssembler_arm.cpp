@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -152,8 +151,14 @@ void LIR_Assembler::osr_entry() {
   int monitor_offset = (method()->max_locals() + 2 * (number_of_locks - 1)) * BytesPerWord;
   for (int i = 0; i < number_of_locks; i++) {
     int slot_offset = monitor_offset - (i * 2 * BytesPerWord);
-    __ ldr(R1, Address(OSR_buf, slot_offset + 0*BytesPerWord));
-    __ ldr(R2, Address(OSR_buf, slot_offset + 1*BytesPerWord));
+    if (slot_offset >= 4096 - BytesPerWord) {
+      __ add_slow(R2, OSR_buf, slot_offset);
+      __ ldr(R1, Address(R2, 0*BytesPerWord));
+      __ ldr(R2, Address(R2, 1*BytesPerWord));
+    } else {
+      __ ldr(R1, Address(OSR_buf, slot_offset + 0*BytesPerWord));
+      __ ldr(R2, Address(OSR_buf, slot_offset + 1*BytesPerWord));
+    }
     __ str(R1, frame_map()->address_for_monitor_lock(i));
     __ str(R2, frame_map()->address_for_monitor_object(i));
   }
@@ -161,10 +166,7 @@ void LIR_Assembler::osr_entry() {
 
 
 int LIR_Assembler::check_icache() {
-  Register receiver = LIR_Assembler::receiverOpr()->as_register();
-  int offset = __ offset();
-  __ inline_cache_check(receiver, Ricklass);
-  return offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
@@ -210,7 +212,7 @@ int LIR_Assembler::emit_exception_handler() {
   // check that there is really an exception
   __ verify_not_null_oop(Rexception_obj);
 
-  __ call(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id), relocInfo::runtime_call_type);
   __ should_not_reach_here();
 
   assert(code_offset() - offset <= exception_handler_size(), "overflow");
@@ -250,7 +252,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes()); // restores FP and LR
-  __ jump(Runtime1::entry_for(Runtime1::unwind_exception_id), relocInfo::runtime_call_type, Rtemp);
+  __ jump(Runtime1::entry_for(C1StubId::unwind_exception_id), relocInfo::runtime_call_type, Rtemp);
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -452,7 +454,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
 
@@ -491,7 +493,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
-                            bool pop_fpu_stack, bool wide) {
+                            bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   Register base_reg = to_addr->base()->as_pointer_register();
   const bool needs_patching = (patch_code != lir_patch_none);
@@ -945,6 +947,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     Register tmp = op->tmp1()->as_register();
     __ ldrb(tmp, Address(op->klass()->as_register(), InstanceKlass::init_state_offset()));
+    __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ cmp(tmp, InstanceKlass::fully_initialized);
     __ b(*op->stub()->entry(), ne);
@@ -971,7 +974,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       op->tmp1()->as_register(),
                       op->tmp2()->as_register(),
                       op->tmp3()->as_register(),
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       type2aelembytes(op->type()),
                       op->klass()->as_register(),
                       *op->stub()->entry());
@@ -1133,7 +1136,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ b(*failure_target, ne);
       // slow case
       assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-      __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+      __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
       __ cbz(R0, *failure_target);
       if (op->should_profile()) {
         Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtemp;
@@ -1207,7 +1210,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           __ cmp(Rtemp, k_RInfo, ne);
           __ b(*success_target, eq);
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-          __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+          __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
           __ cbz(R0, *failure_target);
         }
       } else {
@@ -1224,7 +1227,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ b(*failure_target, ne);
         // slow case
         assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-        __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+        __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
         __ cbz(R0, *failure_target);
       }
 
@@ -1300,7 +1303,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           }
           __ b(*success_target, eq);
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-          __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+          __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
           if (!op->should_profile()) {
             move_regs(R0, res);
           } else {
@@ -1331,7 +1334,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ b(*failure_target, ne);
         // slow case
         assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-        __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
+        __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
         if (!op->should_profile()) {
           move_regs(R0, res);
         }
@@ -1385,7 +1388,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ mov(dest, 1, eq);
     __ mov(dest, 0, ne);
   } else if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register cmp_value_hi = op->cmp_value()->as_register_hi();
     Register new_value_lo = op->new_value()->as_register_lo();
@@ -1510,7 +1512,7 @@ static int reg_size(LIR_Opr op) {
 }
 #endif
 
-void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info, bool pop_fpu_stack) {
+void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info) {
   assert(info == nullptr, "unused on this code path");
   assert(dest->is_register(), "wrong items state");
 
@@ -1951,7 +1953,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ relocate(static_stub_Relocation::spec(call_pc));
   // If not a single instruction, NativeMovConstReg::next_instruction_address()
   // must jump over the whole following ldr_literal.
-  // (See CompiledStaticCall::set_to_interpreted())
+  // (See CompiledDirectCall::set_to_interpreted())
 #ifdef ASSERT
   address ldr_site = __ pc();
 #endif
@@ -1979,9 +1981,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   assert(exceptionPC->as_register()  == Rexception_pc, "must match");
   info->add_register_oop(exceptionOop);
 
-  Runtime1::StubID handle_id = compilation()->has_fpu_code() ?
-                               Runtime1::handle_exception_id :
-                               Runtime1::handle_exception_nofpu_id;
+  C1StubId handle_id = compilation()->has_fpu_code() ?
+                               C1StubId::handle_exception_id :
+                               C1StubId::handle_exception_nofpu_id;
   Label return_address;
   __ adr(Rexception_pc, return_address);
   __ call(Runtime1::entry_for(handle_id), relocInfo::runtime_call_type);
@@ -2258,7 +2260,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ mov(altFP_7_11, R1);
       __ mov(R0, tmp);
       __ mov(R1, tmp2);
-      __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type); // does not blow any registers except R0, LR and Rtemp
+      __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type); // does not blow any registers except R0, LR and Rtemp
       __ cmp_32(R0, 0);
       __ mov(R0, R6);
       __ mov(R1, altFP_7_11);
@@ -2431,7 +2433,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_pointer_register();
   Register lock = op->lock_opr()->as_pointer_register();
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);
@@ -2641,8 +2643,8 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  assert(src->is_double_cpu() && dest->is_address() ||
-         src->is_address() && dest->is_double_cpu(),
+  assert((src->is_double_cpu() && dest->is_address()) ||
+         (src->is_address() && dest->is_double_cpu()),
          "Simple move_op is called for all other cases");
 
   int null_check_offset;

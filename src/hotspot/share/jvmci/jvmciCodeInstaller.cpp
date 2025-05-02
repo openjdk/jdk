@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,21 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -341,6 +342,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
   JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  guarantee(CompressedKlassPointers::is_encodable(klass), "klass cannot be compressed: %s", klass->external_name());
   return CompressedKlassPointers::encode(klass);
 }
 #endif
@@ -379,13 +381,14 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
   if (obj == nullptr) {
     JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
   } else {
-    oopDesc::verify(obj);
+    guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
   }
   return Handle(stream->thread(), obj);
 }
 
 ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1 tag, BasicType type, ScopeValue* &second, JVMCI_TRAPS) {
   second = nullptr;
+  bool stack_slot_is_s2 = true;
   switch (tag) {
     case ILLEGAL: {
       if (type != T_ILLEGAL) {
@@ -395,7 +398,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
     }
     case REGISTER_PRIMITIVE:
     case REGISTER_NARROW_OOP:
-    case REGISTER_OOP: {
+    case REGISTER_OOP:
+    case REGISTER_VECTOR: {
       u2 number = stream->read_u2("register");
       VMReg hotspotRegister = get_hotspot_reg(number, JVMCI_CHECK_NULL);
       if (is_general_purpose_reg(hotspotRegister)) {
@@ -421,6 +425,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
           locationType = Location::normal;
         } else if (type == T_DOUBLE) {
           locationType = Location::dbl;
+        } else if (type == T_OBJECT && tag == REGISTER_VECTOR) {
+          locationType = Location::vector;
         } else {
           JVMCI_ERROR_NULL("unexpected type %s in floating point register%s", basictype_to_str(type), stream->context());
         }
@@ -431,16 +437,23 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
         return value;
       }
     }
+    case STACK_SLOT4_PRIMITIVE:
+    case STACK_SLOT4_NARROW_OOP:
+    case STACK_SLOT4_OOP:
+    case STACK_SLOT4_VECTOR:
+      stack_slot_is_s2 = false;
+      // fall through
     case STACK_SLOT_PRIMITIVE:
     case STACK_SLOT_NARROW_OOP:
-    case STACK_SLOT_OOP: {
-      jint offset = (jshort) stream->read_s2("offset");
+    case STACK_SLOT_OOP:
+    case STACK_SLOT_VECTOR: {
+      jint offset = stack_slot_is_s2 ? (jshort) stream->read_s2("offset") : stream->read_s4("offset4");
       if (stream->read_bool("addRawFrameSize")) {
         offset += _total_frame_size;
       }
       Location::Type locationType;
       if (type == T_OBJECT) {
-        locationType = tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
+        locationType = tag == STACK_SLOT_VECTOR ? Location::vector : tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
       } else if (type == T_LONG) {
         locationType = Location::lng;
       } else if (type == T_DOUBLE) {
@@ -479,8 +492,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
 void CodeInstaller::record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS) {
   oop javaMirror = JNIHandles::resolve(sv->klass()->as_ConstantOopWriteValue()->value());
   Klass* klass = java_lang_Class::as_Klass(javaMirror);
-  bool isLongArray = klass == Universe::longArrayKlassObj();
-  bool isByteArray = klass == Universe::byteArrayKlassObj();
+  bool isLongArray = klass == Universe::longArrayKlass();
+  bool isByteArray = klass == Universe::byteArrayKlass();
 
   u2 length = stream->read_u2("values:length");
   for (jint i = 0; i < length; i++) {
@@ -645,12 +658,60 @@ void CodeInstaller::initialize_dependencies(HotSpotCompiledCodeStream* stream, u
   }
 }
 
+JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
+                                                             const char* name,
+                                                             CodeBuffer* buffer,
+                                                             int stack_slots,
+                                                             JVMCI_TRAPS) {
+  if (name == nullptr) {
+    JVMCI_ERROR_OK("stub should have a name");
+  }
+
+  name = os::strdup(name);
+  GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
+#ifdef ASSERT
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
+  if (val != nullptr && strstr(name , val) != nullptr) {
+    stubs_to_free = new GrowableArray<RuntimeStub*>();
+    JVMCI_event_1("forcing allocation of %s in code cache to fail", name);
+  }
+#endif
+
+  do {
+    RuntimeStub* stub = RuntimeStub::new_runtime_stub(name,
+                                       buffer,
+                                       _offsets.value(CodeOffsets::Frame_Complete),
+                                       stack_slots,
+                                       _debug_recorder->_oopmaps,
+                                       /* caller_must_gc_arguments */ false,
+                                       /* alloc_fail_is_fatal */ false);
+    cb = stub;
+    if (stub == nullptr) {
+      // Allocation failed
+#ifdef ASSERT
+      if (stubs_to_free != nullptr) {
+        JVMCI_event_1("allocation of %s in code cache failed, freeing %d stubs", name, stubs_to_free->length());
+        for (GrowableArrayIterator<RuntimeStub*> iter = stubs_to_free->begin(); iter != stubs_to_free->end(); ++iter) {
+          RuntimeStub::free(*iter);
+        }
+      }
+#endif
+      return JVMCI::cache_full;
+    }
+    if (stubs_to_free == nullptr) {
+      return JVMCI::ok;
+    }
+    stubs_to_free->append(stub);
+  } while (true);
+}
+
 JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     jlong compiled_code_buffer,
     bool with_type_info,
     JVMCIObject compiled_code,
     objArrayHandle object_pool,
     CodeBlob*& cb,
+    JVMCINMethodHandle& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -668,6 +729,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   jint entry_bci = -1;
   JVMCICompileState* compile_state = nullptr;
   bool has_unsafe_access = false;
+  bool has_scoped_access = false;
   jint id = -1;
 
   if (is_nmethod) {
@@ -675,6 +737,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     entry_bci = is_nmethod ? stream->read_s4("entryBCI") : -1;
     compile_state = (JVMCICompileState*) stream->read_u8("compileState");
     has_unsafe_access = stream->read_bool("hasUnsafeAccess");
+    has_scoped_access = stream->read_bool("hasScopedAccess");
     id = stream->read_s4("id");
   }
   stream->set_code_desc(name, method);
@@ -702,17 +765,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   int stack_slots = _total_frame_size / HeapWordSize; // conversion to words
 
   if (!is_nmethod) {
-    if (name == nullptr) {
-      JVMCI_ERROR_OK("stub should have a name");
-    }
-    name = os::strdup(name); // Note: this leaks. See JDK-8289632
-    cb = RuntimeStub::new_runtime_stub(name,
-                                       &buffer,
-                                       _offsets.value(CodeOffsets::Frame_Complete),
-                                       stack_slots,
-                                       _debug_recorder->_oopmaps,
-                                       false);
-    result = JVMCI::ok;
+    return install_runtime_stub(cb, name, &buffer, stack_slots, JVMCI_CHECK_OK);
   } else {
     if (compile_state != nullptr) {
       jvmci_env()->set_compile_state(compile_state);
@@ -725,6 +778,11 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
     if (!jvmci_env()->isa_HotSpotNmethod(installed_code)) {
       JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode object must be a HotSpotNmethod when installing a HotSpotCompiledNmethod", JVMCI::ok);
+    }
+
+    // Enforce that compiled methods have an nmethod barrier.
+    if (_nmethod_entry_patch_offset == -1) {
+      JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is missing", JVMCI::ok);
     }
 
     JVMCIObject mirror = installed_code;
@@ -746,19 +804,43 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         id,
                                         _has_monitors,
                                         has_unsafe_access,
+                                        has_scoped_access,
                                         _has_wide_vector,
                                         compiled_code,
                                         mirror,
                                         failed_speculations,
                                         speculations,
-                                        speculations_len);
+                                        speculations_len,
+                                        _nmethod_entry_patch_offset);
     if (result == JVMCI::ok) {
+      guarantee(nm != nullptr, "successful compile must produce an nmethod");
+      nmethod_handle.set_nmethod(nm);
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
         DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
         nm->maybe_print_nmethod(directive);
         DirectivesStack::release(directive);
+
+        // Since this compilation didn't pass through the broker it wasn't logged yet.
+        if (PrintCompilation) {
+          ttyLocker ttyl;
+          if (name != nullptr) {
+            stringStream st;
+            st.print_cr("(hosted JVMCI compilation: %s)", name);
+            CompileTask::print(tty, nm, st.as_string());
+          } else {
+            CompileTask::print(tty, nm, "(hosted JVMCI compilation)");
+          }
+        }
+      }
+
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+
+      // an empty error buffer for use by the verify_barrier code
+      err_msg msg("");
+      if (!bs_nm->verify_barrier(nm, msg)) {
+        JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
       }
     }
   }
@@ -785,7 +867,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   if (!is_set(code_flags, HCC_HAS_DEOPT_RESCUE_SLOT)) {
     _orig_pc_offset = -1;
   } else {
-    _orig_pc_offset = stream->read_s2("offset");
+    _orig_pc_offset = stream->read_s4("offset");
     if (stream->read_bool("addRawFrameSize")) {
       _orig_pc_offset += _total_frame_size;
     }
@@ -804,7 +886,9 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   }
   _constants_size = data_section_size;
   _next_call_type = INVOKE_INVALID;
+  _has_monitors = false;
   _has_wide_vector = false;
+  _nmethod_entry_patch_offset = -1;
 }
 
 u1 CodeInstaller::as_read_oop_tag(HotSpotCompiledCodeStream* stream, u1 patch_object_tag, JVMCI_TRAPS) {
@@ -831,8 +915,8 @@ int CodeInstaller::estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_
   // Estimate the number of static call stubs that might be emitted.
   u2 static_call_stubs = stream->read_u2("numStaticCallStubs");
   u2 trampoline_stubs = stream->read_u2("numTrampolineStubs");
-  int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
-  size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
+  int size = static_call_stubs * CompiledDirectCall::to_interp_stub_size();
+  size += trampoline_stubs * CompiledDirectCall::to_trampoline_stub_size();
   return size;
 }
 
@@ -1178,7 +1262,10 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
-      CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
+      MacroAssembler masm(&buffer);
+      if (CompiledDirectCall::emit_to_interp_stub(&masm, _instructions->start() + pc_offset) == nullptr) {
+        JVMCI_ERROR("could not emit to_interp stub - code cache is full");
+      }
     }
   }
 
@@ -1232,6 +1319,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
   u1 id = stream->read_u1("mark:id");
   address pc = _instructions->start() + pc_offset;
 
+  if (pd_relocate(pc, id)) {
+    return;
+  }
+
   switch (id) {
     case UNVERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Entry, pc_offset);
@@ -1254,6 +1345,9 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case FRAME_COMPLETE:
       _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
       break;
+    case ENTRY_BARRIER_PATCH:
+      _nmethod_entry_patch_offset = pc_offset;
+      break;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE:
     case INLINE_INVOKE:
@@ -1261,12 +1355,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case INVOKESPECIAL:
       _next_call_type = (MarkId) id;
       _invoke_mark_pc = pc;
-      break;
-    case POLL_NEAR:
-    case POLL_FAR:
-    case POLL_RETURN_NEAR:
-    case POLL_RETURN_FAR:
-      pd_relocate_poll(pc, id, JVMCI_CHECK);
       break;
     case CARD_TABLE_SHIFT:
     case CARD_TABLE_ADDRESS:
@@ -1282,6 +1370,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
       break;
+
     default:
       JVMCI_ERROR("invalid mark id: %d%s", id, stream->context());
       break;

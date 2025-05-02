@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @summary Redundant entry in bytecode exception table
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
@@ -38,11 +37,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
 
 import javax.tools.JavaFileObject;
 
@@ -149,15 +146,15 @@ public class T7093325 extends ComboInstance<T7093325> {
         }
 
         try (InputStream is = result.get().iterator().next().openInputStream()) {
-            ClassFile cf = ClassFile.read(is);
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             if (cf == null) {
-                fail("Classfile not found: " + result.compilationInfo());
+                fail("ClassFile not found: " + result.compilationInfo());
                 return;
             }
 
-            Method test_method = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals("test")) {
+            MethodModel test_method = null;
+            for (MethodModel m : cf.methods()) {
+                if (m.methodName().equalsString("test")) {
                     test_method = m;
                     break;
                 }
@@ -168,13 +165,7 @@ public class T7093325 extends ComboInstance<T7093325> {
                 return;
             }
 
-            Code_attribute code = null;
-            for (Attribute a : test_method.attributes) {
-                if (a.getName(cf.constant_pool).equals(Attribute.Code)) {
-                    code = (Code_attribute)a;
-                    break;
-                }
-            }
+            CodeAttribute code = test_method.findAttribute(Attributes.code()).orElse(null);
 
             if (code == null) {
                 fail("Code attribute not found in method test()");
@@ -182,9 +173,9 @@ public class T7093325 extends ComboInstance<T7093325> {
             }
 
             int actualGapsCount = 0;
-            for (int i = 0; i < code.exception_table_length ; i++) {
-                int catchType = code.exception_table[i].catch_type;
-                if (catchType == 0) { //any
+            for (int i = 0; i < code.exceptionHandlers().size() ; i++) {
+                ClassEntry catchType = code.exceptionHandlers().get(i).catchType().orElse(null);
+                if (catchType == null) { //any
                     actualGapsCount++;
                 }
             }
@@ -194,9 +185,8 @@ public class T7093325 extends ComboInstance<T7093325> {
                             "expected gaps: " + gapsCount + "\n" +
                             "found gaps: " + actualGapsCount + "\n" +
                         result.compilationInfo());
-                return;
             }
-        } catch (IOException | ConstantPoolException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             fail("error reading classfile: " + e);
         }

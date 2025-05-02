@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,13 @@ import java.util.MissingResourceException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageLocation;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.tools.jlink.internal.ImageResourcesTree;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
@@ -178,7 +179,7 @@ class JImageTask {
             String[] remaining = args;
             try {
                 command = args[0];
-                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ENGLISH));
+                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ROOT));
                 remaining = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length)
                                             : new String[0];
             } catch (IllegalArgumentException ex) {
@@ -210,7 +211,7 @@ class JImageTask {
                 } else {
                     try {
                         log.println(TASK_HELPER.getMessage("main.usage." +
-                                options.task.toString().toLowerCase()));
+                                options.task.toString().toLowerCase(Locale.ROOT)));
                     } catch (MissingResourceException ex) {
                         throw TASK_HELPER.newBadArgs("err.not.a.task", command);
                     }
@@ -366,9 +367,13 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                ClassReader cr = new ClassReader(bytes);
-                ClassNode cn = new ClassNode();
-                cr.accept(cn, 0);
+                ClassFile.of().parse(bytes).forEach(cle -> {
+                    if (cle instanceof MethodModel mm) mm.forEach(me -> {
+                        if (me instanceof CodeModel com) com.forEach(coe -> {
+                            //do nothing here, just visit each model element
+                        });
+                    });
+                });
             } catch (Exception ex) {
                 log.println("Error(s) in Class: " + name);
             }

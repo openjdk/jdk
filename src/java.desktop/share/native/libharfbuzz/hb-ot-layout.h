@@ -255,6 +255,15 @@ hb_ot_layout_script_select_language (hb_face_t      *face,
                                      unsigned int   *language_index /* OUT */);
 
 HB_EXTERN hb_bool_t
+hb_ot_layout_script_select_language2 (hb_face_t      *face,
+                                     hb_tag_t        table_tag,
+                                     unsigned int    script_index,
+                                     unsigned int    language_count,
+                                     const hb_tag_t *language_tags,
+                                     unsigned int   *language_index /* OUT */,
+                                     hb_tag_t       *chosen_language /* OUT */);
+
+HB_EXTERN hb_bool_t
 hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
                                                   hb_tag_t      table_tag,
                                                   unsigned int  script_index,
@@ -314,6 +323,13 @@ hb_ot_layout_collect_features (hb_face_t      *face,
                                const hb_tag_t *languages,
                                const hb_tag_t *features,
                                hb_set_t       *feature_indexes /* OUT */);
+
+HB_EXTERN void
+hb_ot_layout_collect_features_map (hb_face_t      *face,
+                                   hb_tag_t        table_tag,
+                                   unsigned        script_index,
+                                   unsigned        language_index,
+                                   hb_map_t       *feature_map /* OUT */);
 
 HB_EXTERN void
 hb_ot_layout_collect_lookups (hb_face_t      *face,
@@ -403,6 +419,16 @@ hb_ot_layout_get_size_params (hb_face_t       *face,
                               unsigned int    *range_start,       /* OUT.  May be NULL */
                               unsigned int    *range_end          /* OUT.  May be NULL */);
 
+HB_EXTERN hb_position_t
+hb_ot_layout_lookup_get_optical_bound (hb_font_t      *font,
+                                       unsigned        lookup_index,
+                                       hb_direction_t  direction,
+                                       hb_codepoint_t  glyph);
+
+
+/*
+ * GSUB/GPOS
+ */
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_feature_get_name_ids (hb_face_t       *face,
@@ -423,9 +449,24 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
                                      unsigned int   *char_count    /* IN/OUT.  May be NULL */,
                                      hb_codepoint_t *characters    /* OUT.     May be NULL */);
 
+
 /*
  * BASE
  */
+
+HB_EXTERN hb_bool_t
+hb_ot_layout_get_font_extents (hb_font_t         *font,
+                               hb_direction_t     direction,
+                               hb_tag_t           script_tag,
+                               hb_tag_t           language_tag,
+                               hb_font_extents_t *extents);
+
+HB_EXTERN hb_bool_t
+hb_ot_layout_get_font_extents2 (hb_font_t         *font,
+                                hb_direction_t     direction,
+                                hb_script_t        script,
+                                hb_language_t      language,
+                                hb_font_extents_t *extents);
 
 /**
  * hb_ot_layout_baseline_tag_t:
@@ -479,6 +520,14 @@ hb_ot_layout_get_baseline (hb_font_t                   *font,
                            hb_tag_t                     language_tag,
                            hb_position_t               *coord        /* OUT.  May be NULL. */);
 
+HB_EXTERN hb_bool_t
+hb_ot_layout_get_baseline2 (hb_font_t                   *font,
+                            hb_ot_layout_baseline_tag_t  baseline_tag,
+                            hb_direction_t               direction,
+                            hb_script_t                  script,
+                            hb_language_t                language,
+                            hb_position_t               *coord        /* OUT.  May be NULL. */);
+
 HB_EXTERN void
 hb_ot_layout_get_baseline_with_fallback (hb_font_t                   *font,
                                          hb_ot_layout_baseline_tag_t  baseline_tag,
@@ -486,6 +535,14 @@ hb_ot_layout_get_baseline_with_fallback (hb_font_t                   *font,
                                          hb_tag_t                     script_tag,
                                          hb_tag_t                     language_tag,
                                          hb_position_t               *coord        /* OUT */);
+
+HB_EXTERN void
+hb_ot_layout_get_baseline_with_fallback2 (hb_font_t                   *font,
+                                          hb_ot_layout_baseline_tag_t  baseline_tag,
+                                          hb_direction_t               direction,
+                                          hb_script_t                  script,
+                                          hb_language_t                language,
+                                          hb_position_t               *coord        /* OUT */);
 
 HB_END_DECLS
 

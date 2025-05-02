@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @enablePreview
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
 #if[MaxBit]
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
@@ -37,7 +39,7 @@
 #warn This file is preprocessed before being compiled
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.$Type$Vector;
 import jdk.incubator.vector.VectorMask;
@@ -67,7 +69,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withBitAlignment(8);
+    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
@@ -269,7 +271,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static $abstractvectortype$ fromArray($type$[] a, int i) {
-        return $abstractvectortype$.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return ($abstractvectortype$) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -289,7 +292,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static $abstractvectortype$ fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return $abstractvectortype$.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return ($abstractvectortype$) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline
@@ -499,8 +503,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, $Boxtype$.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), $Boxtype$.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -528,8 +532,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, $Boxtype$.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), $Boxtype$.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -592,8 +596,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, $Boxtype$.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), $Boxtype$.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -623,8 +627,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, $Boxtype$.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), $Boxtype$.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 

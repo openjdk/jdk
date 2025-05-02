@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,9 +119,7 @@ public class JvmtiAddPath {
             "-Xlog:class+load", "JvmtiApp", "noadd", MAIN_CLASS); // appcds should be enabled
 
         System.out.println("Test case 2: add to boot classpath only - should find Hello.class in boot loader");
-        String[] toCheck = TestCommon.isDynamicArchive() ? check_appcds_enabled :
-                           check_appcds_disabled;
-        run(toCheck, appJar,
+        run(check_appcds_disabled, appJar,
             "-Xlog:class+load=trace",
             modulePath,
             "JvmtiApp", "bootonly", addbootJar, MAIN_CLASS); // appcds should be disabled

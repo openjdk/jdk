@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -41,8 +41,8 @@ extern "C" {
 #define TIMEOUT_DELTA  1000
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* number of tested threads and events */
@@ -74,6 +74,7 @@ static volatile int eventsEnd   = 0;
 /* testcase(s) */
 static int prepare();
 static int checkThreads(const char* kind);
+static int waitSuspended(const char* kind);
 static int resumeThreads(const char* kind);
 static int clean();
 
@@ -100,7 +101,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         {
             eventsStart = 0;
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL))) {
+                    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -121,16 +122,21 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
             }
 
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, NULL))) {
+                    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, nullptr))) {
                 nsk_jvmti_setFailStatus();
             }
 
-            /* check if all threads suspended on THREAD_START events */
+            /* check if all THREAD_START events are generated */
             if (eventsStart != THREADS_COUNT) {
                 NSK_COMPLAIN2("Unexpected number of THREAD_START events:\n"
                              "#   received: %d\n"
                              "#   expected: %d\n",
                              eventsStart, THREADS_COUNT);
+            }
+
+            /* wait until all threads are suspended */
+            if (!NSK_VERIFY(waitSuspended("starting"))) {
+                return;
             }
 
             NSK_DISPLAY0("Testcase #1: check threads on THREAD_START\n");
@@ -150,7 +156,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         {
             eventsEnd = 0;
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL))) {
+                    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, nullptr))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -171,16 +177,21 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
             }
 
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, NULL))) {
+                    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, nullptr))) {
                 nsk_jvmti_setFailStatus();
             }
 
-            /* check ia all threads suspended on THREAD_END event */
+            /* check if all THREAD_END event are generated */
             if (eventsEnd != THREADS_COUNT) {
                 NSK_COMPLAIN2("Unexpected number of THREAD_END events:\n"
                              "#   received: %d\n"
                              "#   expected: %d\n",
                              eventsEnd, THREADS_COUNT);
+            }
+
+            /* wait until all threads are suspended */
+            if (!NSK_VERIFY(waitSuspended("finishing"))) {
+                return;
             }
 
             NSK_DISPLAY0("Testcase #2: check threads on THREAD_END\n");
@@ -210,6 +221,31 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
 /* ============================================================================= */
 
+static int waitSuspended(const char* kind) {
+    NSK_DISPLAY1("Wait for %s threads to be suspended\n", kind);
+    for (int i = 0; i < THREADS_COUNT; i++) {
+        for (int j = 0; j * TIMEOUT_DELTA < timeout; j++) {
+            jint state = 0;
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threadsList[i], &state))) {
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            if ((state & JVMTI_THREAD_STATE_ALIVE) == 0) {
+                NSK_COMPLAIN3("%s thread %s is not alive: %x\n", kind, threadsName[i], (int)state);
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            if ((state & JVMTI_THREAD_STATE_SUSPENDED) != 0) {
+                NSK_DISPLAY2("  OK: %s thread %s is suspended\n", kind, threadsName[i]);
+                break;
+            }
+            NSK_DISPLAY2("  %s thread %s is not suspended, waiting\n", kind, threadsName[i]);
+            nsk_jvmti_sleep(TIMEOUT_DELTA);
+        }
+    }
+    return NSK_TRUE;  // continue execution
+}
+
 /**
  * Resume all threads in given state.
  */
@@ -231,24 +267,24 @@ static int resumeThreads(const char* kind) {
  *    - make global refs
  */
 static int prepare() {
-    jclass debugeeClass = NULL;
-    jfieldID threadsFieldID = NULL;
-    jobjectArray threadsArray = NULL;
+    jclass debugeeClass = nullptr;
+    jfieldID threadsFieldID = nullptr;
+    jobjectArray threadsArray = nullptr;
     jsize threadsArrayLength = 0;
     jsize i;
 
     /* find debugee class */
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     /* find static field with threads array */
     if (!NSK_JNI_VERIFY(jni, (threadsFieldID =
-            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != nullptr))
         return NSK_FALSE;
 
     /* get threads array from static field */
     if (!NSK_JNI_VERIFY(jni, (threadsArray = (jobjectArray)
-            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != nullptr))
         return NSK_FALSE;
 
     /* check array length */
@@ -259,14 +295,14 @@ static int prepare() {
     /* get each thread from array */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                jni->GetObjectArrayElement(threadsArray, i)) != NULL))
+                jni->GetObjectArrayElement(threadsArray, i)) != nullptr))
             return NSK_FALSE;
     }
 
     /* make global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                jni->NewGlobalRef(threadsList[i])) != NULL))
+                jni->NewGlobalRef(threadsList[i])) != nullptr))
             return NSK_FALSE;
     }
 
@@ -362,8 +398,8 @@ JNIEXPORT void JNICALL
 callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     int i;
 
-    /* check if thread is not NULL */
-    if (!NSK_VERIFY(thread != NULL)) {
+    /* check if thread is not nullptr */
+    if (!NSK_VERIFY(thread != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -397,8 +433,8 @@ JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     int i;
 
-    /* check if thread is not NULL */
-    if (!NSK_VERIFY(thread != NULL)) {
+    /* check if thread is not nullptr */
+    if (!NSK_VERIFY(thread != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -487,7 +523,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capabilities for suspending thread */
@@ -510,7 +546,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  */
 
 import java.io.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.util.*;
 import java.util.regex.Pattern;
 import javax.tools.*;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.Dependencies.*;
-import com.sun.tools.classfile.Dependency.Location;
+import com.sun.tools.jdeps.Dependencies;
+import com.sun.tools.jdeps.Dependencies.*;
+import com.sun.tools.jdeps.Dependency;
+import com.sun.tools.jdeps.Dependency.Location;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 
@@ -140,7 +143,7 @@ public class GetDeps {
         }
 
         @Override
-        public ClassFile getClassFile(String className) throws ClassFileNotFoundException {
+        public ClassModel getClassFile(String className) throws ClassFileNotFoundException {
             try {
                 JavaFileObject fo = fm.getJavaFileForInput(
                         StandardLocation.CLASS_PATH, className, JavaFileObject.Kind.CLASS);
@@ -151,11 +154,11 @@ public class GetDeps {
                     throw new ClassFileNotFoundException(className);
                 InputStream in = fo.openInputStream();
                 try {
-                    return ClassFile.read(in);
+                    return ClassFile.of().parse(in.readAllBytes());
                 } finally {
                     in.close();
                 }
-            } catch (ConstantPoolException e) {
+            } catch (IllegalArgumentException e) {
                 throw new ClassFileNotFoundException(className, e);
             } catch (IOException e) {
                 throw new ClassFileNotFoundException(className, e);

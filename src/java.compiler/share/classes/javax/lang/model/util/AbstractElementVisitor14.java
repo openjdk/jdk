@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.RecordComponentElement;
 import static javax.lang.model.SourceVersion.*;
 
@@ -41,15 +42,15 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="AbstractElementVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see AbstractElementVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see AbstractElementVisitor6
  * @see AbstractElementVisitor7
  * @see AbstractElementVisitor8
  * @see AbstractElementVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_21)
+@SupportedSourceVersion(RELEASE_25)
 public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses to call.
@@ -59,14 +60,14 @@ public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisi
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code RecordComponentElement} in a manner defined by a
      * subclass.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
      */
     @Override
     public abstract R visitRecordComponent(RecordComponentElement e, P p);

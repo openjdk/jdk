@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ public class SynthTableUI extends BasicTableUI
     private TableCellRenderer booleanRenderer;
     private TableCellRenderer objectRenderer;
 
+    private boolean showHorizLines;
+    private boolean showVertLines;
 //
 //  The installation/uninstall procedures and support
 //
@@ -178,10 +180,10 @@ public class SynthTableUI extends BasicTableUI
             if (rowHeight != null) {
                 LookAndFeel.installProperty(table, "rowHeight", rowHeight);
             }
+            showHorizLines = table.getShowHorizontalLines();
+            showVertLines = table.getShowVerticalLines();
             boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
-            if (!showGrid) {
-                table.setShowGrid(false);
-            }
+            table.setShowGrid(showGrid);
             Dimension d = table.getIntercellSpacing();
 //            if (d == null || d instanceof UIResource) {
             if (d != null) {
@@ -227,6 +229,8 @@ public class SynthTableUI extends BasicTableUI
             table.setTransferHandler(null);
         }
         SynthContext context = getContext(table, ENABLED);
+        table.setShowHorizontalLines(showHorizLines);
+        table.setShowVerticalLines(showVertLines);
         style.uninstallDefaults(context);
         style = null;
     }
@@ -322,10 +326,7 @@ public class SynthTableUI extends BasicTableUI
         // into the table's bounds
         bounds.x = bounds.y = 0;
 
-        if (table.getRowCount() <= 0 || table.getColumnCount() <= 0 ||
-                // this check prevents us from painting the entire table
-                // when the clip doesn't intersect our bounds at all
-                !bounds.intersects(clip)) {
+        if (table.getRowCount() <= 0 || table.getColumnCount() <= 0) {
 
             paintDropLines(context, g);
             return;

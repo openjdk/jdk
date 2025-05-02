@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,20 @@
 package jdk.test.whitebox;
 
 import java.lang.management.MemoryUsage;
+import java.lang.ref.Reference;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.security.BasicPermission;
 import java.util.Objects;
 
 import jdk.test.whitebox.parser.DiagnosticCommand;
 
 public class WhiteBox {
-  @SuppressWarnings("serial")
-  public static class WhiteBoxPermission extends BasicPermission {
-    public WhiteBoxPermission(String s) {
-      super(s);
-    }
-  }
 
   private WhiteBox() {}
   private static final WhiteBox instance = new WhiteBox();
@@ -55,11 +52,6 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
-    @SuppressWarnings("removal")
-    SecurityManager sm = System.getSecurityManager();
-    if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
-    }
     return instance;
   }
 
@@ -99,8 +91,15 @@ public class WhiteBox {
   }
 
   // Runtime
-  // Make sure class name is in the correct format
+
+  // Returns the potentially abridged form of `str` as it would be
+  // printed by the VM.
+  public native String printString(String str, int maxLength);
+
+  public native void lockAndStuckInSafepoint();
+
   public int countAliveClasses(String name) {
+    // Make sure class name is in the correct format
     return countAliveClasses0(name.replace('.', '/'));
   }
   private native int countAliveClasses0(String name);
@@ -119,6 +118,12 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native long getInUseMonitorCount();
+
+  public native int getLockStackCapacity();
+
+  public native boolean supportsRecursiveLightweightLocking();
+
   public native void forceSafepoint();
 
   public native void forceClassLoaderStatsSafepoint();
@@ -129,15 +134,10 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
-  private native int getConstantPoolCacheIndexTag0();
-  public         int getConstantPoolCacheIndexTag() {
-    return getConstantPoolCacheIndexTag0();
-  }
-
-  private native int getConstantPoolCacheLength0(Class<?> aClass);
-  public         int getConstantPoolCacheLength(Class<?> aClass) {
+  private native Object[] getResolvedReferences0(Class<?> aClass);
+  public         Object[] getResolvedReferences(Class<?> aClass) {
     Objects.requireNonNull(aClass);
-    return getConstantPoolCacheLength0(aClass);
+    return getResolvedReferences0(aClass);
   }
 
   private native int remapInstructionOperandFromCPCache0(Class<?> aClass, int index);
@@ -149,6 +149,55 @@ public class WhiteBox {
   private native int encodeConstantPoolIndyIndex0(int index);
   public         int encodeConstantPoolIndyIndex(int index) {
     return encodeConstantPoolIndyIndex0(index);
+  }
+
+  private native int getFieldEntriesLength0(Class<?> aClass);
+  public         int getFieldEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getFieldEntriesLength0(aClass);
+  }
+
+  private native int getFieldCPIndex0(Class<?> aClass, int index);
+  public         int getFieldCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getFieldCPIndex0(aClass, index);
+  }
+
+  private native int getMethodEntriesLength0(Class<?> aClass);
+  public         int getMethodEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getMethodEntriesLength0(aClass);
+  }
+
+  private native int getMethodCPIndex0(Class<?> aClass, int index);
+  public         int getMethodCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getMethodCPIndex0(aClass, index);
+  }
+
+  private native int getIndyInfoLength0(Class<?> aClass);
+  public         int getIndyInfoLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getIndyInfoLength0(aClass);
+  }
+
+  private native int getIndyCPIndex0(Class<?> aClass, int index);
+  public         int getIndyCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getIndyCPIndex0(aClass, index);
+  }
+
+  private native String printClasses0(String classNamePattern, int flags);
+  public         String printClasses(String classNamePattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    return printClasses0(classNamePattern, flags);
+  }
+
+  private native String printMethods0(String classNamePattern, String methodPattern, int flags);
+  public         String printMethods(String classNamePattern, String methodPattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    Objects.requireNonNull(methodPattern);
+    return printMethods0(classNamePattern, methodPattern, flags);
   }
 
   // JVMTI
@@ -278,6 +327,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
@@ -475,19 +527,25 @@ public class WhiteBox {
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceSharedRegionAlignment();
 
+  public native void cleanMetaspaces();
+
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
   public native void destroyMetaspaceTestContext(long context);
   public native void purgeMetaspaceTestContext(long context);
   public native void printMetaspaceTestContext(long context);
-  public native long getTotalCommittedWordsInMetaspaceTestContext(long context);
-  public native long getTotalUsedWordsInMetaspaceTestContext(long context);
+  public native long getTotalCommittedBytesInMetaspaceTestContext(long context);
+  public native long getTotalUsedBytesInMetaspaceTestContext(long context);
   public native long createArenaInTestContext(long context, boolean is_micro);
   public native void destroyMetaspaceTestArena(long arena);
-  public native long allocateFromMetaspaceTestArena(long arena, long word_size);
-  public native void deallocateToMetaspaceTestArena(long arena, long p, long word_size);
+  public native long allocateFromMetaspaceTestArena(long arena, long size);
+  public native void deallocateToMetaspaceTestArena(long arena, long p, long size);
 
   public native long maxMetaspaceAllocationSize();
+
+  // Word size measured in bytes
+  public native long wordSize();
+  public native long rootChunkWordSize();
 
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.
@@ -501,6 +559,53 @@ public class WhiteBox {
 
   // Force Full GC
   public native void fullGC();
+
+  // Infrastructure for waitForReferenceProcessing()
+  private static volatile Method waitForReferenceProcessingMethod = null;
+
+  private static Method getWaitForReferenceProcessingMethod() {
+    Method wfrp = waitForReferenceProcessingMethod;
+    if (wfrp == null) {
+      try {
+        wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+        wfrp.setAccessible(true);
+        assert wfrp.getReturnType().equals(boolean.class);
+        Class<?>[] ev = wfrp.getExceptionTypes();
+        assert ev.length == 1;
+        assert ev[0] == InterruptedException.class;
+        waitForReferenceProcessingMethod = wfrp;
+      } catch (InaccessibleObjectException e) {
+        throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open to test?", e);
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return wfrp;
+  }
+
+  /**
+   * Wait for reference processing, via Reference.waitForReferenceProcessing().
+   * Callers of this method will need the
+   * @modules java.base/java.lang.ref:open
+   * jtreg tag.
+   *
+   * This method should usually be called after a call to WhiteBox.fullGC().
+   */
+  public boolean waitForReferenceProcessing() throws InterruptedException {
+    try {
+      Method wfrp = getWaitForReferenceProcessingMethod();
+      return (Boolean) wfrp.invoke(null);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Shouldn't happen, we call setAccessible()", e);
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof InterruptedException) {
+        throw (InterruptedException) cause;
+      } else {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 
   // Returns true if the current GC supports concurrent collection control.
   public native boolean supportsConcurrentGCBreakpoints();
@@ -588,6 +693,8 @@ public class WhiteBox {
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
   public native void readFromNoaccessArea();
+
+  public native void decodeNKlassAndAccessKlass(int nKlass);
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
 
@@ -596,6 +703,7 @@ public class WhiteBox {
 
   // VM flags
   public native boolean isConstantVMFlag(String name);
+  public native boolean isDefaultVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntVMFlag(String name, long value);
@@ -676,7 +784,6 @@ public class WhiteBox {
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
-  public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsMapped();
   public native boolean isSharedInternedString(String s);
@@ -684,7 +791,6 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
-  public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
@@ -704,21 +810,20 @@ public class WhiteBox {
 
   // Container testing
   public native boolean isContainerized();
-  public native int validateCgroup(String procCgroups,
+  public native int validateCgroup(boolean cgroupsV2Enabled,
+                                   String controllersFile,
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
   public native long hostPhysicalMemory();
   public native long hostPhysicalSwap();
+  public native int hostCPUs();
 
   // Decoder
   public native void disableElfSectionCache();
 
   // Resolved Method Table
   public native long resolvedMethodItemsCount();
-
-  // Protection Domain Table
-  public native int protectionDomainRemovedCount();
 
   public native int getKlassMetadataSize(Class<?> c);
 
@@ -735,7 +840,14 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void lockCritical();
+  public native void pinObject(Object o);
 
-  public native void unlockCritical();
+  public native void unpinObject(Object o);
+
+  public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
+  public native long rss();
+
+  public native boolean isStatic();
 }

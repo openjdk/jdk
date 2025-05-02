@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,14 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.opt.NativeMemoryTracking == null
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management
- * @run main/othervm -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
- * @run main/othervm -XX:NativeMemoryTracking=off -Xms16m -Xmx128m -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
+ * @run main/othervm -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -XX:-UseLargePages -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
+ * @run main/othervm -XX:NativeMemoryTracking=off -Xms16m -Xmx128m -XX:-UseLargePages -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
  */
 public class TestNativeMemoryUsageEvents {
     private final static String UsageTotalEvent = EventNames.NativeMemoryUsageTotal;
@@ -150,8 +150,8 @@ public class TestNativeMemoryUsageEvents {
                 .toList();
 
         // Verify that the heap has grown between the first and last sample.
-        long firstSample = javaHeapCommitted.get(0);
-        long lastSample = javaHeapCommitted.get(javaHeapCommitted.size() - 1);
+        long firstSample = javaHeapCommitted.getFirst();
+        long lastSample = javaHeapCommitted.getLast();
         assertGreaterThan(lastSample, firstSample, "heap should have grown and NMT should show that");
     }
 

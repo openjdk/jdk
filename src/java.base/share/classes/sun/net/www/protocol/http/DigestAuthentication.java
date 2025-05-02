@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,13 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.text.Normalizer;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -65,10 +61,7 @@ import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
  * @author Bill Foote
  */
 
-class DigestAuthentication extends AuthenticationInfo {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 100L;
+final class DigestAuthentication extends AuthenticationInfo {
 
     private String authMethod;
 
@@ -110,26 +103,15 @@ class DigestAuthentication extends AuthenticationInfo {
         HttpURLConnection.getHttpLogger();
 
     static {
-        @SuppressWarnings("removal")
-        Boolean b = AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>) () -> NetProperties.getBoolean(compatPropName)
-        );
+        Boolean b = NetProperties.getBoolean(compatPropName);
         delimCompatFlag = (b == null) ? false : b.booleanValue();
 
-        @SuppressWarnings("removal")
-        String secprops = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> Security.getProperty(secPropName)
-        );
-
+        String secprops = Security.getProperty(secPropName);
         Set<String> algs = new HashSet<>();
-
         // add the default insecure algorithms to set
         processPropValue(secprops, algs, (set, elem) -> set.add(elem));
 
-        @SuppressWarnings("removal")
-        String netprops = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> NetProperties.get(enabledAlgPropName)
-        );
+        String netprops = NetProperties.get(enabledAlgPropName);
         // remove any algorithms from disabled set that were opted-in by user
         processPropValue(netprops, algs, (set, elem) -> set.remove(elem));
         disabledDigests = Set.copyOf(algs);
@@ -171,11 +153,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
         private static final int cnoncelen = 40; /* number of characters in cnonce */
 
-        private static Random   random;
-
-        static {
-            random = new Random();
-        }
+        private static final Random random = new Random();
 
         Parameters () {
             serverQop = false;
@@ -296,12 +274,11 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     public DigestAuthentication(boolean isProxy, URL url, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, String authenticatorKey) {
+                                Parameters params){
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               url,
-              realm,
-              Objects.requireNonNull(authenticatorKey));
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -309,13 +286,12 @@ class DigestAuthentication extends AuthenticationInfo {
 
     public DigestAuthentication(boolean isProxy, String host, int port, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, String authenticatorKey) {
+                                Parameters params) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               host,
               port,
-              realm,
-              Objects.requireNonNull(authenticatorKey));
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -436,7 +412,7 @@ class DigestAuthentication extends AuthenticationInfo {
             // It really does need to start with an upper case letter
             // here.
             authMethod = Character.toUpperCase(authMethod.charAt(0))
-                        + authMethod.substring(1).toLowerCase();
+                        + authMethod.substring(1).toLowerCase(Locale.ROOT);
         }
 
         if (!setAlgorithmNames(p, params))
@@ -515,7 +491,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String ncstring=null;
 
         if (nccount != -1) {
-            ncstring = Integer.toHexString (nccount).toLowerCase();
+            ncstring = Integer.toHexString(nccount);
             int len = ncstring.length();
             if (len < 8)
                 ncstring = zeroPad [len] + ncstring;

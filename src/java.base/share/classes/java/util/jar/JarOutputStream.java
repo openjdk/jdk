@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import java.io.*;
  * for writing an optional {@code Manifest} entry. The
  * {@code Manifest} can be used to specify meta-information about
  * the JAR file and its entries.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * @author  David Connelly
  * @see     Manifest
  * @see     java.util.zip.ZipOutputStream
@@ -53,6 +55,7 @@ public class JarOutputStream extends ZipOutputStream {
      * @param man the optional {@code Manifest}
      * @throws    IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public JarOutputStream(OutputStream out, Manifest man) throws IOException {
         super(out);
         if (man == null) {

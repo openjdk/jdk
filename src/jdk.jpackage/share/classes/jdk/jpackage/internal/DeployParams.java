@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.PackagerException;
 
 /**
  * DeployParams
@@ -49,14 +50,8 @@ public class DeployParams {
 
     String targetFormat = null; // means default type for this platform
 
-    Path outdir = null;
-
     // raw arguments to the bundler
     Map<String, ? super Object> bundlerArguments = new LinkedHashMap<>();
-
-    public void setOutput(Path output) {
-        outdir = output;
-    }
 
     static class Template {
         Path in;
@@ -172,8 +167,7 @@ public class DeployParams {
                 }
             } else {
                 if (!hasInput && !hasAppImage) {
-                    throw new PackagerException(
-                           "ERR_MissingArgument", "--input");
+                    throw new PackagerException("error.no-input-parameter");
                 }
             }
         } else {

@@ -58,8 +58,10 @@ public class VarSnippet extends DeclarationSnippet {
      */
     final Set<String> anonymousClasses;
 
+    final String fieldName;
+
      VarSnippet(VarKey key, String userSource, Wrap guts,
-            String name, SubKind subkind, String typeName, String fullTypeName,
+            String name, String fieldName, SubKind subkind, String typeName, String fullTypeName,
             Set<String> anonymousClasses, Collection<String> declareReferences,
             DiagList syntheticDiags) {
         super(key, userSource, guts, name, subkind, null, declareReferences,
@@ -67,6 +69,11 @@ public class VarSnippet extends DeclarationSnippet {
         this.typeName = typeName;
         this.fullTypeName = fullTypeName;
         this.anonymousClasses = anonymousClasses;
+        this.fieldName = fieldName;
+    }
+
+    String fieldName() {
+        return fieldName;
     }
 
     /**

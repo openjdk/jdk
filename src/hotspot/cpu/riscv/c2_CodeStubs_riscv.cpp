@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/c2_CodeStubs.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  return 13 * 4;
+  return 5 * NativeInstruction::instruction_size;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
   RuntimeAddress callback_addr(stub);
@@ -44,28 +44,28 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
   __ relocate(safepoint_pc.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, safepoint_pc.target(), offset);
-    __ addi(t0, t0, offset);
+    // emits auipc + addi for address inside code cache
+    __ la(t0, safepoint_pc.target());
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
+  // emits auipc + jr for address inside code cache
   __ far_jump(callback_addr);
 }
 
 int C2EntryBarrierStub::max_size() const {
   // 4 bytes for alignment
-  return 8 * 4 + 4;
+  return 4 * NativeInstruction::instruction_size + 4 + 4;
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
+  // emits auipc + jalr for address inside code cache
+  __ far_call(StubRoutines::method_entry_barrier());
 
-  int32_t offset = 0;
-  __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  __ jalr(ra, t0, offset);
+  // emits auipc + jr assuming continuation is not near
   __ j(continuation());
 
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on RISC-V
+  // make guard value 4-byte aligned so that it can be accessed atomically
   __ align(4);
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());

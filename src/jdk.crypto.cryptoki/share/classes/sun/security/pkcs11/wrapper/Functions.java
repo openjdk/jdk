@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -104,6 +104,20 @@ public class Functions {
     private static final Map<String,Integer> mgfIds =
         new HashMap<String,Integer>();
 
+    // Pseudo-random functions (CKP_*)
+    private static final Map<Integer,String> prfNames =
+            new HashMap<Integer,String>();
+
+    private static final Map<String,Integer> prfIds =
+            new HashMap<String,Integer>();
+
+    // Salt/Encoding parameter sources (CKZ_*)
+    private static final Map<Integer,String> paramSourcesNames =
+            new HashMap<Integer,String>();
+
+    private static final Map<String,Integer> paramSourcesIds =
+            new HashMap<String,Integer>();
+
     /**
      * For converting numbers to their hex presentation.
      */
@@ -206,6 +220,16 @@ public class Functions {
         BigInteger helpBigInteger = new BigInteger(1, value);
 
         return helpBigInteger.toString(2);
+    }
+
+    /**
+     * get a byte array length as int
+     *
+     * @param value the byte array to get its length
+     * @return the byte array length as int or 0 if null
+     */
+    public static int getLength(byte[] value) {
+        return value == null ? 0 : value.length;
     }
 
     private static class Flags {
@@ -416,6 +440,26 @@ public class Functions {
         return mechanismInfoFlags.toString(flags);
     }
 
+    private static final Flags hkdfSaltTypes = new Flags(new long[] {
+            CKF_HKDF_SALT_NULL,
+            CKF_HKDF_SALT_DATA,
+            CKF_HKDF_SALT_KEY
+    }, new String[] {
+            "CKF_HKDF_SALT_NULL",
+            "CKF_HKDF_SALT_DATA",
+            "CKF_HKDF_SALT_KEY"
+    });
+
+    /**
+     * converts a long value to a HKDF salt type string
+     *
+     * @param ulSaltType the HKDF salt type to be converted
+     * @return the HKDF salt type string representation
+     */
+    public static String saltTypeToString(long ulSaltType) {
+        return hkdfSaltTypes.toString(ulSaltType);
+    }
+
     private static String getName(Map<Integer,String> nameMap, long id) {
         String name = null;
         if ((id >>> 32) == 0) {
@@ -481,6 +525,22 @@ public class Functions {
 
     public static long getMGFId(String name) {
         return getId(mgfIds, name);
+    }
+
+    public static String getPrfName(long id) {
+        return getName(prfNames, id);
+    }
+
+    public static long getPrfId(String name) {
+        return getId(prfIds, name);
+    }
+
+    public static String getParamSourcesName(long id) {
+        return getName(paramSourcesNames, id);
+    }
+
+    public static long getParamSourcesId(String name) {
+        return getId(paramSourcesIds, name);
     }
 
     /**
@@ -636,6 +696,14 @@ public class Functions {
 
     private static void addMGF(long id, String name) {
         addMapping(mgfNames, mgfIds, id, name);
+    }
+
+    private static void addPrf(long id, String name) {
+        addMapping(prfNames, prfIds, id, name);
+    }
+
+    private static void addParamSources(long id, String name) {
+        addMapping(paramSourcesNames, paramSourcesIds, id, name);
     }
 
     // The ordering here follows the PKCS11Constants class
@@ -1098,6 +1166,14 @@ public class Functions {
         addMech(CKM_VENDOR_DEFINED,             "CKM_VENDOR_DEFINED");
 
         addMech(CKM_NSS_TLS_PRF_GENERAL,        "CKM_NSS_TLS_PRF_GENERAL");
+        addMech(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN,
+                                    "CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN");
+        addMech(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN,
+                                    "CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN");
+        addMech(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN,
+                                    "CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN");
+        addMech(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN,
+                                    "CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN");
 
         addMech(PCKM_SECURERANDOM,              "SecureRandom");
         addMech(PCKM_KEYSTORE,                  "KeyStore");
@@ -1352,6 +1428,20 @@ public class Functions {
         addMGF(CKG_MGF1_SHA3_256,               "CKG_MGF1_SHA3_256");
         addMGF(CKG_MGF1_SHA3_384,               "CKG_MGF1_SHA3_384");
         addMGF(CKG_MGF1_SHA3_512,               "CKG_MGF1_SHA3_512");
+
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA1,    "CKP_PKCS5_PBKD2_HMAC_SHA1");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_GOSTR3411,
+                                             "CKP_PKCS5_PBKD2_HMAC_GOSTR3411");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA224,  "CKP_PKCS5_PBKD2_HMAC_SHA224");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA256,  "CKP_PKCS5_PBKD2_HMAC_SHA256");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA384,  "CKP_PKCS5_PBKD2_HMAC_SHA384");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA512,  "CKP_PKCS5_PBKD2_HMAC_SHA512");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA512_224,
+                                             "CKP_PKCS5_PBKD2_HMAC_SHA512_224");
+        addPrf(CKP_PKCS5_PBKD2_HMAC_SHA512_256,
+                                             "CKP_PKCS5_PBKD2_HMAC_SHA512_256");
+
+        addParamSources(CKZ_SALT_SPECIFIED,  "CKZ_SALT_SPECIFIED");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "oops/oop.hpp"
 #include "utilities/debug.hpp"
@@ -50,7 +49,7 @@ SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const 
 // requires marking.
 //
 // The entry must point into the G1 heap.  In particular, it must not
-// be a NULL pointer.  NULL pointers are pre-filtered and never
+// be a null pointer.  null pointers are pre-filtered and never
 // inserted into a SATB buffer.
 //
 // An entry that is below the TAMS pointer for the containing heap
@@ -81,12 +80,12 @@ SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const 
 // in an unfiltered buffer refer to valid objects.
 
 static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
-  // Includes rejection of NULL pointers.
+  // Includes rejection of null pointers.
   assert(g1h->is_in_reserved(entry),
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
-  HeapRegion* region = g1h->heap_region_containing(entry);
-  if (entry >= region->top_at_mark_start()) {
+  G1ConcurrentMark* cm = g1h->concurrent_mark();
+  if (cm->obj_allocated_since_mark_start(cast_to_oop(entry))) {
     return false;
   }
 

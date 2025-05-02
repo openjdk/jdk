@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package jdk.javadoc.internal.doclint;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +43,6 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -61,39 +58,13 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
-import com.sun.tools.javac.util.StringUtils;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Utility container for current execution environment,
  * providing the current declaration and its doc comment.
  */
 public class Env {
-    /**
-     * Access kinds for declarations.
-     */
-    public enum AccessKind {
-        PRIVATE,
-        PACKAGE,
-        PROTECTED,
-        PUBLIC;
-
-        static boolean accepts(String opt) {
-            for (AccessKind g: values())
-                if (opt.equals(StringUtils.toLowerCase(g.name()))) return true;
-            return false;
-        }
-
-        static AccessKind of(Set<Modifier> mods) {
-            if (mods.contains(Modifier.PUBLIC))
-                return AccessKind.PUBLIC;
-            else if (mods.contains(Modifier.PROTECTED))
-                return AccessKind.PROTECTED;
-            else if (mods.contains(Modifier.PRIVATE))
-                return AccessKind.PRIVATE;
-            else
-                return AccessKind.PACKAGE;
-        }
-    }
 
     /** Message handler. */
     final Messages messages;
@@ -136,12 +107,12 @@ public class Env {
     /** The comment current being analyzed. */
     DocCommentTree currDocComment;
     /**
-     * The access kind of the declaration containing the comment currently being analyzed.
-     * This is the minimum (most restrictive) access kind of the declaration itself
+     * The access level of the declaration containing the comment currently being analyzed.
+     * This is the most limiting access level of the declaration itself
      * and that of its containers. For example, a public method in a private class is
      * noted as private.
      */
-    AccessKind currAccess;
+    AccessLevel currAccess;
     /** The set of methods, if any, that the current declaration overrides. */
     Set<? extends ExecutableElement> currOverriddenMethods;
 
@@ -160,6 +131,7 @@ public class Env {
         this.trees = trees;
         this.elements = elements;
         this.types = types;
+
     }
 
     void initTypes() {
@@ -219,18 +191,18 @@ public class Env {
         currElement = trees.getElement(currPath);
         currOverriddenMethods = ((JavacTypes) types).getOverriddenMethods(currElement);
 
-        AccessKind ak = AccessKind.PUBLIC;
+        // It's convenient to use AccessLevel to model effects that nesting has
+        // on access. While very similar, those are not the same concept.
+        var mostLimitingSoFar = AccessLevel.PUBLIC;
         for (TreePath p = path; p != null; p = p.getParentPath()) {
             Element e = trees.getElement(p);
             if (e != null && e.getKind() != ElementKind.PACKAGE && e.getKind() != ElementKind.MODULE) {
-                ak = min(ak, AccessKind.of(e.getModifiers()));
+                var level = AccessLevel.of(e.getModifiers());
+                mostLimitingSoFar = mostLimitingSoFar.compareTo(level) <= 0
+                        ? mostLimitingSoFar : level;
             }
         }
-        currAccess = ak;
-    }
-
-    AccessKind getAccessKind() {
-        return currAccess;
+        currAccess = mostLimitingSoFar;
     }
 
     long getPos(TreePath p) {
@@ -358,12 +330,5 @@ public class Env {
             }
         }
         return List.of();
-    }
-
-
-    private <T extends Comparable<T>> T min(T item1, T item2) {
-        return (item1 == null) ? item2
-                : (item2 == null) ? item1
-                : item1.compareTo(item2) <= 0 ? item1 : item2;
     }
 }

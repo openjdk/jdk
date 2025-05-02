@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,18 @@
 
 package jdk.jfr.internal;
 
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import jdk.jfr.RecordingState;
 
 /**
  * Class responsible for dumping recordings on exit
  *
  */
-final class ShutdownHook implements Runnable {
+final class ShutdownHook extends Thread {
     private final PlatformRecorder recorder;
     Object tlabDummyObject;
 
     ShutdownHook(PlatformRecorder recorder) {
+        super("JFR Shutdown Hook");
         this.recorder = recorder;
     }
 
@@ -62,9 +57,9 @@ final class ShutdownHook implements Runnable {
 
     private void dump(PlatformRecording recording) {
         try {
-            WriteableUserPath dest = recording.getDestination();
+            WriteablePath dest = recording.getDestination();
             if (dest == null) {
-                dest = makeDumpOnExitPath(recording);
+                dest = recording.makeDumpPath();
                 recording.setDestination(dest);
             }
             if (dest != null) {
@@ -72,38 +67,15 @@ final class ShutdownHook implements Runnable {
             }
         } catch (Exception e) {
             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
-                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit.");
+                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit. " + e.getMessage());
             }
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private WriteableUserPath makeDumpOnExitPath(PlatformRecording recording) {
-        try {
-            String name = Utils.makeFilename(recording.getRecording());
-            AccessControlContext acc = recording.getNoDestinationDumpOnExitAccessControlContext();
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<WriteableUserPath>() {
-                @Override
-                public WriteableUserPath run() throws Exception {
-                    return new WriteableUserPath(recording.getDumpOnExitDirectory().toPath().resolve(name));
-                }
-            }, acc);
-        } catch (PrivilegedActionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof SecurityException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Not allowed to create dump path for recording " + recording.getId() + " on exit.");
-            }
-            if (t instanceof IOException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Could not dump " + recording.getId() + " on exit.");
-            }
-            return null;
         }
     }
 
     static final class ExceptionHandler implements Thread.UncaughtExceptionHandler {
         @Override
         public void uncaughtException(Thread t, Throwable e) {
-            JVM.getJVM().uncaughtException(t, e);
+            JVM.uncaughtException(t, e);
         }
     }
 }

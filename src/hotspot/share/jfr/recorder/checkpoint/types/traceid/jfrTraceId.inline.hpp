@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,16 @@ inline traceid JfrTraceId::load(const Method* method) {
   return JfrTraceIdLoadBarrier::load(method);
 }
 
+inline traceid JfrTraceId::load_no_enqueue(const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(method);
+}
+
 inline traceid JfrTraceId::load(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load(klass, method);
+}
+
+inline traceid JfrTraceId::load_no_enqueue(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(klass, method);
 }
 
 inline traceid JfrTraceId::load(const ModuleEntry* module) {
@@ -60,13 +68,21 @@ inline traceid JfrTraceId::load(const ClassLoaderData* cld) {
   return JfrTraceIdLoadBarrier::load(cld);
 }
 
+inline traceid JfrTraceId::load_leakp(const Klass* klass) {
+  return JfrTraceIdLoadBarrier::load_leakp(klass);
+}
+
 inline traceid JfrTraceId::load_leakp(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load_leakp(klass, method);
 }
 
+inline traceid JfrTraceId::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(klass, method);
+}
+
 template <typename T>
 inline traceid raw_load(const T* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return TRACE_ID(t);
 }
 
@@ -91,29 +107,29 @@ inline traceid JfrTraceId::load_raw(const ClassLoaderData* cld) {
 }
 
 inline bool JfrTraceId::in_visible_set(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
   return (IS_JDK_JFR_EVENT_SUBKLASS(klass) && !klass->is_abstract()) || IS_EVENT_HOST_KLASS(klass);
 }
 
 inline bool JfrTraceId::is_jdk_jfr_event(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   return IS_JDK_JFR_EVENT_KLASS(k);
 }
 
 inline void JfrTraceId::tag_as_jdk_jfr_event(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   SET_JDK_JFR_EVENT_KLASS(klass);
   assert(IS_JDK_JFR_EVENT_KLASS(klass), "invariant");
 }
 
 inline bool JfrTraceId::is_jdk_jfr_event_sub(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   return IS_JDK_JFR_EVENT_SUBKLASS(k);
 }
 
 inline void JfrTraceId::tag_as_jdk_jfr_event_sub(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   if (IS_NOT_AN_EVENT_SUB_KLASS(k)) {
     SET_JDK_JFR_EVENT_SUBKLASS(k);
   }
@@ -121,21 +137,21 @@ inline void JfrTraceId::tag_as_jdk_jfr_event_sub(const Klass* k) {
 }
 
 inline bool JfrTraceId::in_jdk_jfr_event_hierarchy(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   if (is_jdk_jfr_event(klass)) {
     return true;
   }
   const Klass* const super = klass->super();
-  return super != NULL ? IS_EVENT_KLASS(super) : false;
+  return super != nullptr ? IS_EVENT_KLASS(super) : false;
 }
 
 inline bool JfrTraceId::is_event_host(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   return IS_EVENT_HOST_KLASS(k);
 }
 
 inline void JfrTraceId::tag_as_event_host(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   SET_EVENT_HOST_KLASS(k);
   assert(IS_EVENT_HOST_KLASS(k), "invariant");
 }

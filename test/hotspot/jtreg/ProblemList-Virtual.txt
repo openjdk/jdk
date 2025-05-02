@@ -1,0 +1,103 @@
+#
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+####
+# Bugs
+
+serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
+serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
+serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
+
+####
+## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
+
+vmTestbase/nsk/jvmti/CompiledMethodUnload/compmethunload001/TestDescription.java 8300711 generic-all
+
+####
+## Tests for functionality which currently is not supported for virtual threads
+
+vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java 8348844 generic-all
+vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime001/TestDescription.java 8348844 generic-all
+
+####
+## Test fails because it expects to find vthreads in GetAllThreads
+vmTestbase/nsk/jvmti/scenarios/allocation/AP11/ap11t001/TestDescription.java 8300712 generic-all
+
+##########
+## NSK JDB Tests failing with wrapper
+
+####
+## The tests expect an NPE to be uncaught, but nsk.share.MainWrapper
+## introduces exception handlers.
+
+vmTestbase/nsk/jdb/uncaught_exception/uncaught_exception002/uncaught_exception002.java 8278470 generic-all
+vmTestbase/nsk/jdb/where/where005/where005.java 8278470 generic-all
+
+###
+# Test expects that the "up" command should print "End of stack" because there are
+# normally no frames above the test's main method. However, nsk.share.MainWrapper
+# introduces more frames above the test's main method, so the test fails.
+
+vmTestbase/nsk/jdb/list/list003/list003.java        8300707 generic-all
+vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
+
+####
+## NSK JDI tests failing with wrapper
+
+####
+## The test expects an NPE to be uncaught, but nsk.share.MainWrapper
+## introduces exception handlers.
+
+vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java 8278470 generic-all
+
+###
+# This test times out on Windows and Linux. This is due to the test forcing OOME in
+# the debuggee, which can lead to I/O poller threads exiting. Because
+# of this no vthreads can complete their reads, and the test times out as a result.
+
+vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8347137 generic-all
+
+###
+# Fails because resume of a virtual thread is not enough to allow the virtual thread
+# to make progress when all other threads are currently suspended.
+vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
+
+###
+# Fails on Windows because of additional memory allocation.
+
+gc/g1/TestMixedGCLiveThreshold.java#25percent 8334759 windows-x64
+
+##########
+## Tests incompatible with  with virtual test thread factory.
+## There is no goal to run all test with virtual test thread factory.
+## So any test migth be added as incompatible, the bug is not required.
+
+gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
+gc/g1/TestSkipRebuildRemsetPhase.java 0000000 generic-all
+runtime/classFileParserBug/TestEmptyBootstrapMethodsAttr.java 8346442 generic-all
+runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
+runtime/logging/LoaderConstraintsTest.java 8346442 generic-all
+runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
+runtime/Thread/StopAtExit.java 0000000 generic-all
+runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all

@@ -23,7 +23,7 @@
  */
 
 /* @test
- * @summary Test that disabling wrong barriers fails early
+ * @summary Test that SATB barrier may be enabled for all modes
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestWrongBarrierEnable
@@ -37,25 +37,23 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
-        String[] concurrent = {
-                "ShenandoahIUBarrier",
-        };
-        String[] iu = {
-                "ShenandoahSATBBarrier",
-        };
+        String[] concurrent = { "ShenandoahSATBBarrier" };
+        String[] generational = { "ShenandoahCardBarrier" };
+        String[] all = { "ShenandoahSATBBarrier", "ShenandoahCardBarrier" };
 
-        shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
-        shouldFailAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
-        shouldFailAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
-        shouldFailAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
-        shouldFailAll("-XX:ShenandoahGCMode=iu",               iu);
+        shouldPassAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
+        shouldPassAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
+        shouldPassAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
+        shouldPassAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
-        shouldPassAll("-XX:ShenandoahGCMode=passive",          iu);
+        shouldPassAll("-XX:ShenandoahGCMode=generational",     all);
+        shouldFailAll("-XX:ShenandoahGCMode=satb",             generational);
+        shouldFailAll("-XX:ShenandoahGCMode=passive",          generational);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -64,7 +62,6 @@ public class TestWrongBarrierEnable {
                     "-XX:+" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotHaveExitValue(0);
             output.shouldContain("GC mode needs ");
             output.shouldContain("to work correctly");
@@ -73,7 +70,7 @@ public class TestWrongBarrierEnable {
 
     private static void shouldPassAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -82,9 +79,7 @@ public class TestWrongBarrierEnable {
                     "-XX:+" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
     }
-
 }

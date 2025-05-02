@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,9 @@ class Dependencies: public ResourceObj {
   // type now includes N, that is, all super types of N.
   //
   enum DepType {
+    // _type is initially set to -1, to prevent "already at end" assert
+    undefined_dependency = -1,
+
     end_marker = 0,
 
     // An 'evol' dependency simply notes that the contents of the
@@ -465,6 +468,8 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
+  static bool _verify_in_progress;  // turn off logging dependencies
+
   DepType validate_dependencies(CompileTask* task, char** failure_detail = nullptr);
 
   void log_all_dependencies();
@@ -640,7 +645,7 @@ class Dependencies: public ResourceObj {
     void log_dependency(Klass* witness = nullptr);
 
     // Print the current dependency to tty.
-    void print_dependency(Klass* witness = nullptr, bool verbose = false, outputStream* st = tty);
+    void print_dependency(outputStream* st, Klass* witness = nullptr, bool verbose = false);
   };
   friend class Dependencies::DepStream;
 
@@ -664,7 +669,7 @@ class DependencySignature : public ResourceObj {
   }
 
   static bool     equals(DependencySignature const& s1, DependencySignature const& s2);
-  static unsigned hash  (DependencySignature const& s1) { return s1.arg(0) >> 2; }
+  static unsigned hash  (DependencySignature const& s1) { return (unsigned)(s1.arg(0) >> 2); }
 
   int args_count()             const { return _args_count; }
   uintptr_t arg(int idx)       const { return _argument_hash[idx]; }
@@ -681,8 +686,6 @@ class DepChange : public StackObj {
   virtual bool is_new_klass_change()  const { return false; }
   virtual bool is_klass_init_change() const { return false; }
   virtual bool is_call_site_change()  const { return false; }
-
-  virtual void mark_for_deoptimization(nmethod* nm) = 0;
 
   // Subclass casting with assertions.
   KlassDepChange*    as_klass_change() {
@@ -703,6 +706,7 @@ class DepChange : public StackObj {
   }
 
   void print();
+  void print_on(outputStream* st);
 
  public:
   enum ChangeType {
@@ -716,7 +720,7 @@ class DepChange : public StackObj {
 
   // Usage:
   // for (DepChange::ContextStream str(changes); str.next(); ) {
-  //   Klass* k = str.klass();
+  //   InstanceKlass* k = str.klass();
   //   switch (str.change_type()) {
   //     ...
   //   }
@@ -727,8 +731,8 @@ class DepChange : public StackObj {
     friend class DepChange;
 
     // iteration variables:
-    ChangeType  _change_type;
-    Klass*      _klass;
+    ChangeType     _change_type;
+    InstanceKlass* _klass;
     Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
@@ -749,7 +753,7 @@ class DepChange : public StackObj {
     bool next();
 
     ChangeType change_type()     { return _change_type; }
-    Klass*     klass()           { return _klass; }
+    InstanceKlass* klass()       { return _klass; }
   };
   friend class DepChange::ContextStream;
 };
@@ -779,10 +783,6 @@ class KlassDepChange : public DepChange {
  public:
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
-
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
-  }
 
   InstanceKlass* type() { return _type; }
 
@@ -821,10 +821,6 @@ class CallSiteDepChange : public DepChange {
 
   // What kind of DepChange is this?
   virtual bool is_call_site_change() const { return true; }
-
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/false);
-  }
 
   oop call_site()     const { return _call_site();     }
   oop method_handle() const { return _method_handle(); }

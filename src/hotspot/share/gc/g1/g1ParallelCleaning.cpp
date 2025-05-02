@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/g1/g1ParallelCleaning.hpp"
 #include "runtime/atomic.hpp"
@@ -32,15 +31,15 @@
 
 #if INCLUDE_JVMCI
 JVMCICleaningTask::JVMCICleaningTask() :
-  _cleaning_claimed(0) {
+  _cleaning_claimed(false) {
 }
 
 bool JVMCICleaningTask::claim_cleaning_task() {
-  if (_cleaning_claimed) {
+  if (Atomic::load(&_cleaning_claimed)) {
     return false;
   }
 
-  return Atomic::cmpxchg(&_cleaning_claimed, 0, 1) == 0;
+  return !Atomic::cmpxchg(&_cleaning_claimed, false, true);
 }
 
 void JVMCICleaningTask::work(bool unloading_occurred) {

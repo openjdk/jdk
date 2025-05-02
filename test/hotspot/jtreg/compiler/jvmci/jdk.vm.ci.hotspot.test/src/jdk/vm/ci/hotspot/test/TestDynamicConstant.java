@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
  * @test
  * @requires vm.jvmci
  * @summary Test CONSTANT_Dynamic resolution by HotSpotConstantPool.
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
+ * @library /testlibrary/asm
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  * @run testng/othervm
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestDynamicConstant
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3
  *      jdk.vm.ci.hotspot.test.TestDynamicConstant
  */
 
@@ -38,26 +41,30 @@ package jdk.vm.ci.hotspot.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantBootstraps;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Set;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ConstantDynamic;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ConstantDynamic;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.hotspot.HotSpotConstantPool;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ConstantPool.BootstrapMethodInvocation;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -82,6 +89,12 @@ public class TestDynamicConstant implements Opcodes {
          * methods.
          */
         CALL_DIRECT_BSM,
+
+        /**
+         * Condy whose bootstrap method is one of the {@code TestDynamicConstant.get<type>BSM(<type> constant, int i)}
+         * methods with one condy arg and one int arg.
+         */
+        CALL_DIRECT_WITH_ARGS_BSM,
 
         /**
          * Condy whose bootstrap method is {@link ConstantBootstraps#invoke} that invokes one of the
@@ -161,6 +174,24 @@ public class TestDynamicConstant implements Opcodes {
                 run.visitInsn(type.getOpcode(IRETURN));
                 run.visitMaxs(0, 0);
                 run.visitEnd();
+             } else if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+                // Example: int TestDynamicConstant.getIntBSM(MethodHandles.Lookup l, String name,
+                // Class<?> type, int constant, int i)
+                String sig1 = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)" + desc;
+                String sig2 = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;" + desc + "I)" + desc;
+
+                Handle handle1 = new Handle(H_INVOKESTATIC, testClassInternalName, getter + "BSM", sig1, false);
+                Handle handle2 = new Handle(H_INVOKESTATIC, testClassInternalName, getter + "BSM", sig2, false);
+
+                ConstantDynamic condy1 = new ConstantDynamic("const1", desc, handle1);
+                ConstantDynamic condy2 = new ConstantDynamic("const2", desc, handle2, condy1, Integer.MAX_VALUE);
+
+                condy = condy2;
+                MethodVisitor run = cw.visitMethod(PUBLIC_STATIC, "run", "()" + desc, null, null);
+                run.visitLdcInsn(condy);
+                run.visitInsn(type.getOpcode(IRETURN));
+                run.visitMaxs(0, 0);
+                run.visitEnd();
             } else if (condyType == CondyType.CALL_INDIRECT_BSM) {
                 // Example: int TestDynamicConstant.getInt()
                 Handle handle = new Handle(H_INVOKESTATIC, testClassInternalName, getter, "()" + desc, false);
@@ -194,12 +225,20 @@ public class TestDynamicConstant implements Opcodes {
             String sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;";
             Handle handle = new Handle(H_INVOKESTATIC, Type.getInternalName(StringConcatFactory.class), "makeConcatWithConstants", sig, false);
             String recipe = "var arg=\u0001, const arg=\u0002";
-            Object[] bsmArgs = {recipe};
+            Object[] bsmArgs = {recipe, condy};
             concat.visitLdcInsn(condy);
             concat.visitInvokeDynamicInsn("do_concat", "(" + desc + ")Ljava/lang/String;", handle, bsmArgs);
             concat.visitInsn(ARETURN);
             concat.visitMaxs(0, 0);
             concat.visitEnd();
+
+            MethodVisitor shouldNotBeCalled = cw.visitMethod(PUBLIC_STATIC, "shouldNotBeCalled", "()V", null, null);
+            sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;";
+            handle = new Handle(H_INVOKESTATIC, testClassInternalName, "shouldNotBeCalledBSM", sig, false);
+            shouldNotBeCalled.visitInvokeDynamicInsn("do_shouldNotBeCalled", "()V", handle);
+            shouldNotBeCalled.visitInsn(RETURN);
+            shouldNotBeCalled.visitMaxs(0, 0);
+            shouldNotBeCalled.visitEnd();
 
             cw.visitEnd();
             return cw.toByteArray();
@@ -235,6 +274,37 @@ public class TestDynamicConstant implements Opcodes {
         }
     }
 
+    /**
+     * Asserts that {@link ConstantPool#lookupConstant(int, boolean)} with {@code resolve == false}
+     * returns null for all resolvable constant entries.
+     */
+    private static void assertNoEagerConstantResolution(Class<?> testClass, ConstantPool cp, Method getTagAt) throws Exception {
+        for (int cpi = 1; cpi < cp.length(); cpi++) {
+            String tag = String.valueOf(getTagAt.invoke(cp, cpi));
+            switch (tag) {
+                case "MethodHandle":
+                case "MethodType":
+                case "Dynamic": {
+                    Object con = cp.lookupConstant(cpi, false);
+                    Assert.assertNull(con, "Unexpected eager resolution in " + testClass + " at cpi " + cpi + " (tag: " + tag + ")");
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Ensures {@link ConstantPool#lookupBootstrapMethodInvocation} does not invoke the associated bootstrap method.
+     */
+    private static void assertLookupBMIDoesNotInvokeBM(MetaAccessProvider metaAccess, Class<?> testClass) throws Exception {
+        ResolvedJavaMethod shouldNotBeCalled = metaAccess.lookupJavaMethod(testClass.getDeclaredMethod("shouldNotBeCalled"));
+        ConstantPool cp = shouldNotBeCalled.getConstantPool();
+        int rawIndex = getFirstInvokedynamicOperand(shouldNotBeCalled);
+        BootstrapMethodInvocation bmi = cp.lookupBootstrapMethodInvocation(rawIndex, INVOKEDYNAMIC);
+        Assert.assertEquals(bmi.getName(), "do_shouldNotBeCalled");
+        Assert.assertEquals(bmi.getMethod().getName(), "shouldNotBeCalledBSM");
+    }
+
     @SuppressWarnings("try")
     @Test
     public void test() throws Throwable {
@@ -249,6 +319,7 @@ public class TestDynamicConstant implements Opcodes {
                         long.class,
                         double.class,
                         String.class,
+                        Object.class,
                         List.class
         };
 
@@ -262,6 +333,16 @@ public class TestDynamicConstant implements Opcodes {
                 Method m = testClass.getDeclaredMethod("run");
                 ResolvedJavaMethod run = metaAccess.lookupJavaMethod(m);
                 ConstantPool cp = run.getConstantPool();
+
+                assertNoEagerConstantResolution(testClass, cp, getTagAt);
+                assertLookupBMIDoesNotInvokeBM(metaAccess, testClass);
+
+                if (type != Object.class) {
+                    testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+                } else {
+                    // StringConcatFactoryStringConcatFactory cannot accept null constants
+                }
+
                 Object lastConstant = null;
                 for (int cpi = 1; cpi < cp.length(); cpi++) {
                     String tag = String.valueOf(getTagAt.invoke(cp, cpi));
@@ -275,14 +356,14 @@ public class TestDynamicConstant implements Opcodes {
                 // with condy resolved via ConstantPool
                 Object expect = m.invoke(null);
                 Object actual;
-                if (lastConstant instanceof PrimitiveConstant) {
+                if (lastConstant == PrimitiveConstant.NULL_POINTER) {
+                    actual = null;
+                } else if (lastConstant instanceof PrimitiveConstant) {
                     actual = ((PrimitiveConstant) lastConstant).asBoxedPrimitive();
                 } else {
                     actual = ((HotSpotObjectConstant) lastConstant).asObject(type);
                 }
                 Assert.assertEquals(actual, expect, m + ":");
-
-                testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
             }
         }
     }
@@ -294,7 +375,12 @@ public class TestDynamicConstant implements Opcodes {
         Method m = testClass.getDeclaredMethod("concat");
         ResolvedJavaMethod concat = metaAccess.lookupJavaMethod(m);
         ConstantPool cp = concat.getConstantPool();
-        Object lastConstant = null;
+
+        Set<String> expectedBSMs = Set.of(
+            "jdk.vm.ci.hotspot.test.TestDynamicConstant.shouldNotBeCalledBSM",
+            "java.lang.invoke.StringConcatFactory.makeConcatWithConstants"
+        );
+
         for (int cpi = 1; cpi < cp.length(); cpi++) {
             String tag = String.valueOf(getTagAt.invoke(cp, cpi));
             BootstrapMethodInvocation bsmi = cp.lookupBootstrapMethodInvocation(cpi, -1);
@@ -303,19 +389,82 @@ public class TestDynamicConstant implements Opcodes {
                 String bsm = bsmi.getMethod().format("%H.%n");
                 if (tag.equals("InvokeDynamic")) {
                     Assert.assertTrue(bsmi.isInvokeDynamic());
-                    Assert.assertEquals(bsm, "java.lang.invoke.StringConcatFactory.makeConcatWithConstants");
+                    Assert.assertTrue(expectedBSMs.contains(bsm), expectedBSMs.toString());
                 } else {
                     Assert.assertFalse(bsmi.isInvokeDynamic());
-                    if (condyType == CondyType.CALL_DIRECT_BSM) {
-                        Assert.assertTrue(bsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
-                    } else {
-                        Assert.assertEquals(bsm, "java.lang.invoke.ConstantBootstraps.invoke");
+                    checkBsmName(condyType, bsm);
+                    List<JavaConstant> staticArguments = bsmi.getStaticArguments();
+                    for (int i = 0; i < staticArguments.size(); ++i) {
+                        JavaConstant constant = staticArguments.get(i);
+                        if (constant instanceof PrimitiveConstant) {
+                            String innerTag = String.valueOf(getTagAt.invoke(cp, constant.asInt()));
+                            if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+                                Assert.assertEquals(i, 0);
+                                Assert.assertEquals(innerTag, "Dynamic");
+                            }
+                            if (innerTag.equals("Dynamic")) {
+                                BootstrapMethodInvocation innerBsmi = cp.lookupBootstrapMethodInvocation(constant.asInt(), -1);
+                                String innerBsm = innerBsmi.getMethod().format("%H.%n");
+                                checkBsmName(condyType, innerBsm);
+                            } else {
+                                Assert.assertEquals(innerTag, "MethodHandle");
+                            }
+                        } else {
+                            if (condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+                                Assert.assertEquals(i, 1);
+                            }
+                            Assert.assertTrue(staticArguments.get(i) instanceof HotSpotObjectConstant);
+                        }
                     }
                 }
             } else {
                 Assert.assertNull(bsmi, String.valueOf(bsmi));
             }
         }
+
+        testLoadReferencedType(concat, cp);
+    }
+
+    private static void checkBsmName(CondyType condyType, String bsm) {
+        if (condyType == CondyType.CALL_DIRECT_BSM || condyType == CondyType.CALL_DIRECT_WITH_ARGS_BSM) {
+            Assert.assertTrue(bsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
+        } else {
+            Assert.assertEquals(bsm, "java.lang.invoke.ConstantBootstraps.invoke");
+        }
+    }
+
+    private static int beS4(byte[] data, int bci) {
+        return (data[bci] << 24) | ((data[bci + 1] & 0xff) << 16) | ((data[bci + 2] & 0xff) << 8) | (data[bci + 3] & 0xff);
+    }
+
+    private static int beU1(byte[] data, int bci) {
+        return data[bci] & 0xff;
+    }
+    private static final int LDC2_W = 20;
+
+    /**
+     * Gets the operand of the first invokedynamic in {@code method}. This
+     * assumes that the bytecode of {@code method} is an INVOKEDYNAMIC instruction,
+     * possibly preceded by an LDC instruction.
+     */
+    private static int getFirstInvokedynamicOperand(ResolvedJavaMethod method) {
+        byte[] code = method.getCode();
+        int opcode = beU1(code, 0);
+        if (opcode == INVOKEDYNAMIC) {
+            return beS4(code, 1);
+        }
+        Assert.assertTrue(opcode == LDC || opcode == LDC2_W, String.valueOf(opcode));
+        int bci = opcode == LDC ? 2 : 3;
+        Assert.assertEquals(beU1(code, bci), INVOKEDYNAMIC);
+        return beS4(code, bci + 1);
+    }
+
+    /**
+     * Ensures that loadReferencedType for an invokedynamic call site does not throw an exception.
+     */
+    private static void testLoadReferencedType(ResolvedJavaMethod method, ConstantPool cp) {
+        int rawIndex = getFirstInvokedynamicOperand(method);
+        cp.loadReferencedType(rawIndex, INVOKEDYNAMIC, false);
     }
 
     // @formatter:off
@@ -328,7 +477,20 @@ public class TestDynamicConstant implements Opcodes {
     @SuppressWarnings("unused") public static long    getLongBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return Long.MAX_VALUE; }
     @SuppressWarnings("unused") public static double  getDoubleBSM (MethodHandles.Lookup l, String name, Class<?> type) { return Double.MAX_VALUE; }
     @SuppressWarnings("unused") public static String  getStringBSM (MethodHandles.Lookup l, String name, Class<?> type) { return "a string"; }
+    @SuppressWarnings("unused") public static Object  getObjectBSM (MethodHandles.Lookup l, String name, Class<?> type) { return null; }
     @SuppressWarnings("unused") public static List<?> getListBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return List.of("element"); }
+
+    @SuppressWarnings("unused") public static boolean getBooleanBSM(MethodHandles.Lookup l, String name, Class<?> type, boolean constant, int i) { return true; }
+    @SuppressWarnings("unused") public static char    getCharBSM   (MethodHandles.Lookup l, String name, Class<?> type, char constant, int i) { return '*'; }
+    @SuppressWarnings("unused") public static short   getShortBSM  (MethodHandles.Lookup l, String name, Class<?> type, short constant, int i) { return Short.MAX_VALUE; }
+    @SuppressWarnings("unused") public static byte    getByteBSM   (MethodHandles.Lookup l, String name, Class<?> type, byte constant, int i) { return Byte.MAX_VALUE; }
+    @SuppressWarnings("unused") public static int     getIntBSM    (MethodHandles.Lookup l, String name, Class<?> type, int constant, int i) { return Integer.MAX_VALUE; }
+    @SuppressWarnings("unused") public static float   getFloatBSM  (MethodHandles.Lookup l, String name, Class<?> type, float constant, int i) { return Float.MAX_VALUE; }
+    @SuppressWarnings("unused") public static long    getLongBSM   (MethodHandles.Lookup l, String name, Class<?> type, long constant, int i) { return Long.MAX_VALUE; }
+    @SuppressWarnings("unused") public static double  getDoubleBSM (MethodHandles.Lookup l, String name, Class<?> type, double constant, int i) { return Double.MAX_VALUE; }
+    @SuppressWarnings("unused") public static String  getStringBSM (MethodHandles.Lookup l, String name, Class<?> type, String constant, int i) { return "a string"; }
+    @SuppressWarnings("unused") public static Object  getObjectBSM (MethodHandles.Lookup l, String name, Class<?> type, Object constant, int i) { return null; }
+    @SuppressWarnings("unused") public static List<?> getListBSM   (MethodHandles.Lookup l, String name, Class<?> type, List<?> constant, int i) { return List.of("element"); }
 
 
     public static boolean getBoolean() { return true; }
@@ -340,6 +502,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   () { return Long.MAX_VALUE; }
     public static double  getDouble () { return Double.MAX_VALUE; }
     public static String  getString () { return "a string"; }
+    public static Object  getObject () { return null; }
     public static List<?> getList   () { return List.of("element"); }
 
     public static boolean getBoolean(boolean v1, boolean v2) { return v1 || v2; }
@@ -351,6 +514,12 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   (long v1, long v2)       { return v1 ^ v2; }
     public static double  getDouble (double v1, double v2)   { return v1 * v2; }
     public static String  getString (String v1, String v2)   { return v1 + v2; }
+    public static Object  getObject (Object v1, Object v2)   { return null; }
     public static List<?> getList   (List<?> v1, List<?> v2) { return List.of(v1, v2); }
     // @formatter:on
+
+    // A bootstrap method that should never be called
+    public static CallSite shouldNotBeCalledBSM(MethodHandles.Lookup caller, String name, MethodType type) throws Exception {
+        throw new RuntimeException("should not be called");
+    }
 }

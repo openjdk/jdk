@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8163798 8189611 8211728
  * @summary basic tests for multi-release jar versioned streams
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
  * @run testng TestVersionedStream
@@ -49,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
@@ -249,7 +249,7 @@ public class TestVersionedStream {
     }
 
     private void jar(String args) {
-        new sun.tools.jar.Main(System.out, System.err, "jar")
-                .run(args.split(" +"));
+        ToolProvider jar = ToolProvider.findFirst("jar").orElseThrow();
+        jar.run(System.out, System.err, args.split(" +"));
     }
 }

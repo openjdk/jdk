@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 // AbstractDisassembler is the base class for
 // platform-specific Disassembler classes.
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "oops/oop.inline.hpp"
@@ -75,8 +74,8 @@ int AbstractDisassembler::print_location(address here, address begin, address en
     if ((uintptr_t)end   < (uintptr_t)here) st->print(">>  end(" PTR_FORMAT ") < here(" PTR_FORMAT ")<<", p2i(end),   p2i(here));
     assert((uintptr_t)begin <= (uintptr_t)end, "inverted address range");
 #endif
-    const int blob_len = end - begin;
-    const int offset   = here - begin;
+    const int blob_len = pointer_delta_as_int(end, begin);
+    const int offset   = pointer_delta_as_int(here, begin);
     const int width    = (blob_len < (1<< 8)) ? 2 : (blob_len < (1<<16)) ? 4 : (blob_len < (1<<24)) ? 6 : 8;
     if (print_header) {
       st->print(" %*s", width+5, "offset");

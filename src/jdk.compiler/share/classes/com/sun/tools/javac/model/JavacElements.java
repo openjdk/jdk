@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
@@ -61,6 +62,7 @@ import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.PrintingProcessor;
+import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -71,9 +73,9 @@ import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.comp.Resolve.RecoveryLoadClass;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -93,6 +95,7 @@ public class JavacElements implements Elements {
     private final Names names;
     private final Types types;
     private final Enter enter;
+    private final Attr attr;
     private final Resolve resolve;
     private final JavacTaskImpl javacTaskImpl;
     private final Log log;
@@ -105,6 +108,7 @@ public class JavacElements implements Elements {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacElements(Context context) {
         context.put(JavacElements.class, this);
         javaCompiler = JavaCompiler.instance(context);
@@ -113,6 +117,7 @@ public class JavacElements implements Elements {
         names = Names.instance(context);
         types = Types.instance(context);
         enter = Enter.instance(context);
+        attr = Attr.instance(context);
         resolve = Resolve.instance(context);
         JavacTask t = context.get(JavacTask.class);
         javacTaskImpl = t instanceof JavacTaskImpl taskImpl ? taskImpl : null;
@@ -429,6 +434,15 @@ public class JavacElements implements Elements {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public String getDocComment(Element e) {
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentText(tree)));
+    }
+
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    public DocCommentKind getDocCommentKind(Element e) {
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentKind(tree)));
+    }
+
+    private <R> R getDocCommentItem(Element e, BiFunction<DocCommentTable, JCTree, R> f) {
         // Our doc comment is contained in a map in our toplevel,
         // indexed by our tree.  Find our enter environment, which gives
         // us our toplevel.  It also gives us a tree that contains our
@@ -440,7 +454,7 @@ public class JavacElements implements Elements {
         JCCompilationUnit toplevel = treeTop.snd;
         if (toplevel.docComments == null)
             return null;
-        return toplevel.docComments.getCommentText(tree);
+        return f.apply(toplevel.docComments, tree);
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -537,9 +551,6 @@ public class JavacElements implements Elements {
         return valmap;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @DefinedBy(Api.LANGUAGE_MODEL)
     public FilteredMemberList getAllMembers(TypeElement element) {
         Symbol sym = cast(Symbol.class, element);
@@ -725,6 +736,37 @@ public class JavacElements implements Elements {
     public boolean isAutomaticModule(ModuleElement module) {
         ModuleSymbol msym = (ModuleSymbol) module;
         return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public TypeElement getEnumConstantBody(VariableElement enumConstant) {
+        if (enumConstant.getKind() == ElementKind.ENUM_CONSTANT) {
+            JCTree enumBodyTree = getTreeAlt(enumConstant);
+            JCTree enclosingEnumTree = getTreeAlt(enumConstant.getEnclosingElement());
+
+            if (enumBodyTree instanceof JCVariableDecl decl
+                && enclosingEnumTree instanceof JCClassDecl clazz
+                && decl.init instanceof JCNewClass nc
+                && nc.def != null) {
+                if ((clazz.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
+                    attr.attribClass(clazz.pos(), clazz.sym);
+                }
+                return nc.def.sym; // ClassSymbol for enum constant body
+            } else {
+                return null;
+            }
+        } else {
+            throw new IllegalArgumentException("Argument not an enum constant");
+        }
+    }
+
+    private JCTree getTreeAlt(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        Env<AttrContext> enterEnv = getEnterEnv(sym);
+        if (enterEnv == null)
+            return null;
+        JCTree tree = TreeInfo.declarationFor(sym, enterEnv.tree);
+        return tree;
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

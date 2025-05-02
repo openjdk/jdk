@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 //
-define_pd_global(bool, DontYieldALot,            false);
 define_pd_global(intx, CompilerThreadStackSize,  512);
 // System default ThreadStackSize appears to be 512 which is too big.
 define_pd_global(intx, ThreadStackSize,          320);

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+ elementFormDefault="qualified"
+>
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema Modular Framework support module for XHTML
+      $Id: xhtml-framework-1.xsd,v 1.5 2005/09/26 23:37:47 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      XHTML Modular Framework
+      This required module instantiates the necessary modules
+      needed to support the XHTML modularization framework.
+
+      The Schema modules instantiated are:
+        +  notations
+        +  datatypes
+        +  common attributes
+        +  character entities
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/xhtml-modularization/abstract_modules.html#s_commonatts"/>
+    </xs:annotation>
+    <!-- xs:include schemaLocation="xhtml-notations-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+         Notations module
+         Declares XHTML notations for Attribute data types
+      </xs:documentation>
+        </xs:annotation>
+    </xs:include -->
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" schemaLocation="xhtml-datatypes-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        This module defines XHTML Attribute DataTypes
+      </xs:documentation>
+            <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstraction.html#s_common_attrtypes"/>
+        </xs:annotation>
+    </xs:import>
+    <xs:include schemaLocation="xhtml-attribs-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        This module defines Common attributes for XHTML
+      </xs:documentation>
+            <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_commonatts"/>
+        </xs:annotation>
+    </xs:include>
+    <!-- xs:include schemaLocation="xhtml-charent-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Character entities module
+        Note: Entities are not supported in XML Schema
+        The Schema Module uses DTDs to define Entities
+
+        This module defines
+          + XHTML Latin 1 Character Entities
+          + XHTML Special Characters
+          + XHTML Mathematical, Greek, and Symbolic Characters
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include -->
+</xs:schema>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.dcmd.MainClassJcmdExecutor;
 import jdk.test.lib.dcmd.FileJcmdExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
-import nsk.share.jdi.ArgumentHandler;
 
 import org.testng.annotations.Test;
 
@@ -35,13 +34,14 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8221730
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
- * @library /test/lib
- *          /vmTestbase
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @library /test/lib
+ *          /vmTestbase
+ * @requires vm.flagless
  * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
 public class VMVersionTest {

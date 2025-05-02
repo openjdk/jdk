@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * This enum represents all available compile phases on which an IR matching can be done. There is a 1:1 mapping
  * between IGV phases as specified in phasetype.hpp.  Compile phases which are normally not emitted by C2 like FAILURE
- * or DEBUG are not listed. This enum should be kept in sync with phasetye.hpp.
+ * or DEBUG are not listed. This enum should be kept in sync with phasetype.hpp.
  *
  * <p>
  * There are two additional compile phases PRINT_IDEAL and PRINT_OPTO_ASSEMBLY. PRINT_IDEAL is the output that is printed
@@ -43,7 +43,10 @@ public enum CompilePhase {
     AFTER_STRINGOPTS("After StringOpts"),
     BEFORE_REMOVEUSELESS("Before RemoveUseless"),
     AFTER_PARSING("After Parsing"),
+    BEFORE_ITER_GVN("Before Iter GVN"),
     ITER_GVN1("Iter GVN 1"),
+    AFTER_ITER_GVN_STEP("After Iter GVN Step"),
+    AFTER_ITER_GVN("After Iter GVN"),
     INCREMENTAL_INLINE_STEP("Incremental Inline Step"),
     INCREMENTAL_INLINE_CLEANUP("Incremental Inline Cleanup"),
     INCREMENTAL_INLINE("Incremental Inline"),
@@ -55,8 +58,30 @@ public enum CompilePhase {
     ELIMINATE_VBOX_ALLOC("Eliminate VectorBoxAllocate"),
     ITER_GVN_BEFORE_EA("Iter GVN before EA"),
     ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
+    BEFORE_LOOP_OPTS("Before Loop Optimizations"),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
+    BEFORE_LOOP_UNROLLING("Before Loop Unrolling"),
+    AFTER_LOOP_UNROLLING("After Loop Unrolling"),
+    BEFORE_SPLIT_IF("Before Split-If"),
+    AFTER_SPLIT_IF("After Split-If"),
+    BEFORE_LOOP_PREDICATION_IC("Before Loop Predication IC"),
+    AFTER_LOOP_PREDICATION_IC("After Loop Predication IC"),
+    BEFORE_LOOP_PREDICATION_RC("Before Loop Predication RC"),
+    AFTER_LOOP_PREDICATION_RC("After Loop Predication RC"),
+    BEFORE_PARTIAL_PEELING("Before Partial Peeling"),
+    AFTER_PARTIAL_PEELING("After Partial Peeling"),
+    BEFORE_LOOP_PEELING("Before Loop Peeling"),
+    AFTER_LOOP_PEELING("After Loop Peeling"),
+    BEFORE_LOOP_UNSWITCHING("Before Loop Unswitching"),
+    AFTER_LOOP_UNSWITCHING("After Loop Unswitching"),
+    BEFORE_RANGE_CHECK_ELIMINATION("Before Range Check Elimination"),
+    AFTER_RANGE_CHECK_ELIMINATION("After Range Check Elimination"),
+    BEFORE_PRE_MAIN_POST("Before Pre/Main/Post Loops"),
+    AFTER_PRE_MAIN_POST("After Pre/Main/Post Loops"),
+    SUPERWORD1_BEFORE_SCHEDULE("Superword 1, Before Schedule"),
+    SUPERWORD2_BEFORE_OUTPUT("Superword 2, Before Output"),
+    SUPERWORD3_AFTER_OUTPUT("Superword 3, After Output"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
     BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),
@@ -67,17 +92,35 @@ public enum CompilePhase {
     PHASEIDEALLOOP1("PhaseIdealLoop 1"),
     PHASEIDEALLOOP2("PhaseIdealLoop 2"),
     PHASEIDEALLOOP3("PhaseIdealLoop 3"),
+    BEFORE_CCP1("Before PhaseCCP 1"),
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
-    MACRO_EXPANSION("Macro expand"),
+    AFTER_LOOP_OPTS("After Loop Optimizations"),
+    AFTER_MERGE_STORES("After Merge Stores"),
+    BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
+    AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
+    AFTER_MACRO_EXPANSION("After Macro Expansion"),
     BARRIER_EXPANSION("Barrier expand"),
     OPTIMIZE_FINISHED("Optimize finished"),
     PRINT_IDEAL("PrintIdeal"),
     BEFORE_MATCHING("Before matching"),
     MATCHING("After matching", RegexType.MACH),
-    MACH_ANALYSIS("After mach analysis", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
+    INITIAL_LIVENESS("Initial liveness", RegexType.MACH),
+    AGGRESSIVE_COALESCING("Aggressive coalescing", RegexType.MACH),
+    INITIAL_SPILLING("Initial spilling", RegexType.MACH),
+    CONSERVATIVE_COALESCING("Conservative coalescing", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    ITERATIVE_SPILLING("Iterative spilling", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    AFTER_ITERATIVE_SPILLING("After iterative spilling", RegexType.MACH),
+    POST_ALLOCATION_COPY_REMOVAL("Post-allocation copy removal", RegexType.MACH),
+    MERGE_MULTI_DEFS("Merge multiple definitions", RegexType.MACH),
+    FIX_UP_SPILLS("Fix up spills", RegexType.MACH),
+    REGISTER_ALLOCATION("Register Allocation", RegexType.MACH),
+    BLOCK_ORDERING("Block Ordering", RegexType.MACH),
+    PEEPHOLE("Peephole", RegexType.MACH),
+    POSTALLOC_EXPAND("Post-Allocation Expand", RegexType.MACH),
+    MACH_ANALYSIS("After mach analysis", RegexType.MACH),
     FINAL_CODE("Final Code", RegexType.MACH),
     END("End"),
 

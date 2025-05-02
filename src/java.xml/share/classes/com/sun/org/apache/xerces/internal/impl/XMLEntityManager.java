@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,9 +28,6 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
 import com.sun.org.apache.xerces.internal.util.URI;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -58,9 +55,15 @@ import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
+import jdk.xml.internal.JdkCatalog;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLLimitAnalyzer;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.InputSource;
 
 
@@ -91,7 +94,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Aug 2021
+ * @LastModified: Apr 2025
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -263,9 +266,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     /** Debug switching readers for encodings. */
     private static final boolean DEBUG_ENCODINGS = false;
 
-    // should be diplayed trace resolving messages
-    private static final boolean DEBUG_RESOLVER = false ;
-
     //
     // Data
     //
@@ -353,6 +353,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
     /** Security Manager */
     protected XMLSecurityManager fSecurityManager = null;
+    XMLSecurityPropertyManager fSecurityPropertyMgr;
 
     protected XMLLimitAnalyzer fLimitAnalyzer = null;
 
@@ -416,8 +417,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
     /** indicate whether Catalog should be used for resolving external resources */
     private boolean fUseCatalog = true;
+    // user-specified Catalog Resolver
     CatalogFeatures fCatalogFeatures;
     CatalogResolver fCatalogResolver;
+    // the default JDK Catalog Resolver
+    CatalogResolver fDefCR;
 
     private String fCatalogFile;
     private String fDefer;
@@ -432,11 +436,16 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * If this constructor is used to create the object, reset() should be invoked on this object
      */
     public XMLEntityManager() {
+        this(null, new XMLSecurityManager(true));
+    }
+
+    public XMLEntityManager(XMLSecurityPropertyManager securityPropertyMgr, XMLSecurityManager securityManager) {
         //for entity managers not created by parsers
-        fSecurityManager = new XMLSecurityManager(true);
+        fSecurityManager = securityManager;
+        fSecurityPropertyMgr = securityPropertyMgr;
         fEntityStorage = new XMLEntityStorage(this) ;
         setScannerVersion(Constants.XML_VERSION_1_0);
-    } // <init>()
+    }
 
     /** Default constructor. */
     public XMLEntityManager(PropertyManager propertyManager) {
@@ -651,7 +660,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 URL location = new URL(expandedSystemId);
                 URLConnection connect = location.openConnection();
                 if (!(connect instanceof HttpURLConnection)) {
-                    stream = connect.getInputStream();
+                    if (expandedSystemId.startsWith("jrt:/java.xml")) {
+                        stream = SecuritySupport.getInputStream(connect);
+                    } else {
+                        stream = connect.getInputStream();
+                    }
                 }
                 else {
                     boolean followRedirects = true;
@@ -1010,73 +1023,141 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             ri = fResourceIdentifier;
         }
         ri.setValues(publicId, literalSystemId, baseSystemId, expandedSystemId);
-        if(DEBUG_RESOLVER){
-            System.out.println("BEFORE Calling resolveEntity") ;
-        }
 
         fISCreatedByResolver = false;
-        //either of Stax or Xerces would be null
-        if(fStaxEntityResolver != null){
+        // Step 1: custom resolver, either StAX or Entity
+        if (fStaxEntityResolver != null) {
             staxInputSource = fStaxEntityResolver.resolveEntity(ri);
-            if(staxInputSource != null) {
-                fISCreatedByResolver = true;
-            }
-        }
-
-        if(fEntityResolver != null){
+        } else if (fEntityResolver != null) {
             xmlInputSource = fEntityResolver.resolveEntity(ri);
-            if(xmlInputSource != null) {
+            if (xmlInputSource != null) {
+                //wrap it in StaxXMLInputSource
                 fISCreatedByResolver = true;
+                staxInputSource = new StaxXMLInputSource(xmlInputSource, fISCreatedByResolver);
             }
         }
 
-        if(xmlInputSource != null){
-            //wrap this XMLInputSource to StaxInputSource
-            staxInputSource = new StaxXMLInputSource(xmlInputSource, fISCreatedByResolver);
-        }
-
-        if (staxInputSource == null && fUseCatalog) {
-            if (fCatalogFeatures == null) {
+        // Step 2: custom catalog if specified
+        if (staxInputSource == null
+                && (publicId != null || literalSystemId != null)
+                && (fUseCatalog && fCatalogFile != null)) {
+            if (fCatalogResolver == null) {
                 fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
             }
-            fCatalogFile = fCatalogFeatures.get(Feature.FILES);
-            if (fCatalogFile != null) {
-                try {
-                    if (fCatalogResolver == null) {
-                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                    }
-                    InputSource is = fCatalogResolver.resolveEntity(publicId, literalSystemId);
-                    if (is != null && !is.isEmpty()) {
-                        staxInputSource = new StaxXMLInputSource(new XMLInputSource(is, true), true);
-                    }
-                } catch (CatalogException e) {
-                    fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
-                    new Object[]{SecuritySupport.sanitizePath(fCatalogFile)},
-                    XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
-                }
-            }
+
+            staxInputSource = resolveWithCatalogStAX(fCatalogResolver, fCatalogFile, publicId, literalSystemId);
         }
 
-        // do default resolution
-        //this works for both stax & Xerces, if staxInputSource is null,
-        //it means parser need to revert to default resolution
-        if (staxInputSource == null) {
-            // REVISIT: when systemId is null, I think we should return null.
-            //          is this the right solution? -SG
-            //if (systemId != null)
+        // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
+        if (staxInputSource == null
+                && (publicId != null || literalSystemId != null)
+                && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
+            initJdkCatalogResolver();
+
+            staxInputSource = resolveWithCatalogStAX(fDefCR, JdkCatalog.JDKCATALOG, publicId, literalSystemId);
+        }
+
+        // Step 4: default resolution if not resolved by a resolver and the RESOLVE
+        // feature is set to 'continue'
+        // Note if both publicId and systemId are null, the resolution process continues as usual
+        if (staxInputSource != null) {
+            fISCreatedByResolver = true;
+        } else if ((publicId == null && literalSystemId == null)
+                || (JdkXmlUtils.isResolveContinue(fCatalogFeatures)
+                && fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE))) {
             staxInputSource = new StaxXMLInputSource(
                     new XMLInputSource(publicId, literalSystemId, baseSystemId, true), false);
-        }else if(staxInputSource.hasXMLStreamOrXMLEventReader()){
-            //Waiting for the clarification from EG. - nb
-        }
-
-        if (DEBUG_RESOLVER) {
-            System.err.println("XMLEntityManager.resolveEntity(" + publicId + ")");
-            System.err.println(" = " + xmlInputSource);
         }
 
         return staxInputSource;
 
+    }
+
+    private void initJdkCatalogResolver() {
+        if (fDefCR == null) {
+            fDefCR = fSecurityManager.getJDKCatalogResolver();
+        }
+    }
+
+    /**
+     * Resolves the external resource using the Catalog specified and returns
+     * a StaxXMLInputSource.
+     */
+    private StaxXMLInputSource resolveWithCatalogStAX(CatalogResolver cr, String cFile,
+            String publicId, String systemId) {
+        InputSource is = resolveWithCatalog(cr, cFile, publicId, systemId);
+        // note that empty source isn't considered resolved
+        if (is != null) {
+            return new StaxXMLInputSource(new XMLInputSource(is, true), true);
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the external resource using the Catalog specified and returns
+     * a InputSource.
+     */
+    private InputSource resolveWithCatalog(CatalogResolver cr, String cFile,
+            String publicId, String systemId) {
+        if (cr != null) {
+            try {
+                return cr.resolveEntity(publicId, systemId);
+            } catch (CatalogException e) {
+                fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
+                        new Object[]{SecuritySupport.sanitizePath(cFile)},
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the external resource using the Catalog specified and returns
+     * a XMLInputSource. Since the Resolve method can be called from various processors,
+     * this method attempts to resolve the resource as an EntityResolver first
+     * and then URIResolver if no match is found.
+     */
+    private XMLInputSource resolveEntityOrURI(String catalogName, CatalogResolver cr,
+            String publicId, String systemId, String base) {
+        XMLInputSource xis = resolveEntity(catalogName, cr, publicId, systemId, base);
+
+        if (xis != null) {
+            return xis;
+        } else if (systemId != null) {
+            Source source = null;
+            try {
+                source = cr.resolve(systemId, base);
+            } catch (CatalogException e) {
+                throw new XNIException(e);
+            }
+            if (source != null && !source.isEmpty()) {
+                return new XMLInputSource(publicId, source.getSystemId(), base, true);
+            }
+        }
+        return null;
+    }
+
+    private XMLInputSource resolveEntity(String catalogName, CatalogResolver cr,
+            String publicId, String systemId, String base) {
+        InputSource is = null;
+        try {
+            if (publicId != null || systemId != null) {
+                is = cr.resolveEntity(publicId, systemId);
+            }
+        } catch (CatalogException e) {
+            //Note: XSDHandler does not set ErrorReporter on EntityManager
+            if (fErrorReporter != null) {
+                fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
+                    new Object[]{SecuritySupport.sanitizePath(catalogName)},
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
+            }
+        }
+
+        if (is != null && !is.isEmpty()) {
+            return new XMLInputSource(is, true);
+        }
+        return null;
     }
 
     /**
@@ -1126,72 +1207,47 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if (needExpand)
             expandedSystemId = expandSystemId(literalSystemId, baseSystemId,false);
 
-        // give the entity resolver a chance
+        // Step 1: custom Entity resolver
         XMLInputSource xmlInputSource = null;
-
+        boolean resolveByResolver = false;
         if (fEntityResolver != null) {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
+            resolveByResolver = xmlInputSource != null;
         }
 
-        if (xmlInputSource == null && fUseCatalog) {
-            if (fCatalogFeatures == null) {
+        // Step 2: custom catalog if specified
+        if (xmlInputSource == null
+                && (publicId != null || literalSystemId != null || resourceIdentifier.getNamespace() !=null)
+                && (fUseCatalog && fCatalogFile != null)) {
+            if (fCatalogResolver == null) {
                 fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
             }
-            fCatalogFile = fCatalogFeatures.get(Feature.FILES);
-            if (fCatalogFile != null) {
-                /*
-                 since the method can be called from various processors, both
-                 EntityResolver and URIResolver are used to attempt to find
-                 a match
-                */
-                InputSource is = null;
-                try {
-                    if (fCatalogResolver == null) {
-                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                    }
-                    String pid = (publicId != null? publicId : resourceIdentifier.getNamespace());
-                    if (pid != null || literalSystemId != null) {
-                        is = fCatalogResolver.resolveEntity(pid, literalSystemId);
-                    }
-                } catch (CatalogException e) {}
-
-                if (is != null && !is.isEmpty()) {
-                    xmlInputSource = new XMLInputSource(is, true);
-                } else if (literalSystemId != null) {
-                    if (fCatalogResolver == null) {
-                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                    }
-
-                    Source source = null;
-                    try {
-                        source = fCatalogResolver.resolve(literalSystemId, baseSystemId);
-                    } catch (CatalogException e) {
-                        throw new XNIException(e);
-                    }
-                    if (source != null && !source.isEmpty()) {
-                        xmlInputSource = new XMLInputSource(publicId, source.getSystemId(), baseSystemId, true);
-                    }
-                }
-            }
+            String pid = (publicId != null? publicId : resourceIdentifier.getNamespace());
+            xmlInputSource = resolveEntityOrURI(fCatalogFile, fCatalogResolver, pid, literalSystemId, baseSystemId);
         }
 
-        // do default resolution
-        // REVISIT: what's the correct behavior if the user provided an entity
-        // resolver (fEntityResolver != null), but resolveEntity doesn't return
-        // an input source (xmlInputSource == null)?
-        // do we do default resolution, or do we just return null? -SG
+        // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
+        if ((xmlInputSource == null || (!resolveByResolver && xmlInputSource.getSystemId() != null
+                && xmlInputSource.getSystemId().equals(literalSystemId)))
+                && (publicId != null || literalSystemId != null)
+                && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
+            initJdkCatalogResolver();
+            // unlike a custom catalog, the JDK Catalog only contains entity references
+            xmlInputSource = resolveEntity("JDKCatalog", fDefCR, publicId, literalSystemId, baseSystemId);
+        }
+
+        // Step 4: default resolution if not resolved by a resolver and the RESOLVE
+        // feature is set to 'continue'
         if (xmlInputSource == null) {
-            // REVISIT: when systemId is null, I think we should return null.
-            //          is this the right solution? -SG
-            //if (systemId != null)
-            xmlInputSource = new XMLInputSource(publicId, literalSystemId, baseSystemId, false);
-        }
-
-        if (DEBUG_RESOLVER) {
-            System.err.println("XMLEntityManager.resolveEntity(" + publicId + ")");
-            System.err.println(" = " + xmlInputSource);
+            // Note if both publicId and systemId are null, the resolution process continues as usual
+            if ((publicId == null && literalSystemId == null) ||
+                    (JdkXmlUtils.isResolveContinue(fCatalogFeatures) &&
+                    fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE))) {
+                xmlInputSource = new XMLInputSource(publicId, literalSystemId, baseSystemId, false);
+            }
         }
 
         return xmlInputSource;
@@ -1408,8 +1464,9 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if( fSecurityManager != null && fSecurityManager.isOverLimit(entityExpansionIndex, fLimitAnalyzer)){
             fSecurityManager.debugPrint(fLimitAnalyzer);
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"EntityExpansionLimit",
-                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex)},
-                                             XMLErrorReporter.SEVERITY_FATAL_ERROR );
+                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex),
+                    Limit.ENTITY_EXPANSION_LIMIT.systemProperty()},
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR );
             // is there anything better to do than reset the counter?
             // at least one can envision debugging applications where this might
             // be useful...
@@ -1544,7 +1601,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             fStaxEntityResolver = null;
         }
 
-        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD));
         fReplaceEntityReferences = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES));
         fSupportExternalEntities = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
 
@@ -1563,6 +1619,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(SECURITY_MANAGER);
+        checkSupportDTD();
 
         fLimitAnalyzer = new XMLLimitAnalyzer();
         //reset fEntityStorage
@@ -1633,7 +1690,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         entityExpansionIndex = fSecurityManager.getIndex(JdkConstants.SP_ENTITY_EXPANSION_LIMIT);
 
         //StAX Property
-        fSupportDTD = true;
+        checkSupportDTD();
         fReplaceEntityReferences = true;
         fSupportExternalEntities = true;
 
@@ -1658,6 +1715,20 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fEntityStorage.reset(componentManager);
 
     } // reset(XMLComponentManager)
+
+    /**
+     * Checks the supportDTD setting. Use the StAX supportDTD property if it is
+     * set, otherwise the jdk.xml.dtd.support. Refer to the module-summary for
+     * more details.
+     */
+    private void checkSupportDTD() {
+        // SupportDTD set the DTD property, so no longer read from propertyManager
+        fSupportDTD = !fSecurityManager.is(Limit.DTD, JdkConstants.IGNORE);
+        if (fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == JdkProperty.State.APIPROPERTY
+                || fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == JdkProperty.State.LEGACY_APIPROPERTY) {
+            fSupportDTD = fSecurityManager.is(Limit.STAX_SUPPORT_DTD);
+        }
+    }
 
     // reset general state.  Should not be called other than by
     // a class acting as a component manager but not
@@ -1942,12 +2013,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     // which encoding to use. Leave them for now.
     private static synchronized URI getUserDir() throws URI.MalformedURIException {
         // get the user.dir property
-        String userDir = "";
-        try {
-            userDir = SecuritySupport.getSystemProperty("user.dir");
-        }
-        catch (SecurityException se) {
-        }
+        String userDir = System.getProperty("user.dir");
 
         // return empty string if property value is empty string.
         if (userDir.length() == 0)

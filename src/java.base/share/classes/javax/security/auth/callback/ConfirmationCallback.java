@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 
 package javax.security.auth.callback;
+
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 
 /**
  * <p> Underlying security services instantiate and pass a
@@ -147,7 +151,7 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      * @serial
      * @since 1.4
      */
-    private final String[] options;
+    private String[] options;
     /**
      * @serial
      * @since 1.4
@@ -186,25 +190,10 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      */
     public ConfirmationCallback(int messageType,
                 int optionType, int defaultOption) {
-
-        if (messageType < INFORMATION || messageType > ERROR ||
-            optionType < YES_NO_OPTION || optionType > OK_CANCEL_OPTION)
-            throw new IllegalArgumentException();
-
-        switch (optionType) {
-        case YES_NO_OPTION:
-            if (defaultOption != YES && defaultOption != NO)
-                throw new IllegalArgumentException();
-            break;
-        case YES_NO_CANCEL_OPTION:
-            if (defaultOption != YES && defaultOption != NO &&
-                defaultOption != CANCEL)
-                throw new IllegalArgumentException();
-            break;
-        case OK_CANCEL_OPTION:
-            if (defaultOption != OK && defaultOption != CANCEL)
-                throw new IllegalArgumentException();
-            break;
+        String errMsg = doSanityCheck(messageType, optionType, false, null,
+                defaultOption, null, false);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
 
         this.prompt = null;
@@ -247,21 +236,20 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public ConfirmationCallback(int messageType,
                 String[] options, int defaultOption) {
 
-        if (messageType < INFORMATION || messageType > ERROR ||
-            options == null || options.length == 0 ||
-            defaultOption < 0 || defaultOption >= options.length)
-            throw new IllegalArgumentException();
-
-        for (int i = 0; i < options.length; i++) {
-            if (options[i] == null || options[i].isEmpty())
-                throw new IllegalArgumentException();
+        if (options != null) {
+            options = options.clone();
+        }
+        String errMsg = doSanityCheck(messageType, UNSPECIFIED_OPTION, true,
+                options, defaultOption, null, false);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
 
         this.prompt = null;
         this.messageType = messageType;
         this.optionType = UNSPECIFIED_OPTION;
-        this.options = options.clone();
         this.defaultOption = defaultOption;
+        this.options = options;
     }
 
     /**
@@ -301,27 +289,11 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public ConfirmationCallback(String prompt, int messageType,
                 int optionType, int defaultOption) {
 
-        if (prompt == null || prompt.isEmpty() ||
-            messageType < INFORMATION || messageType > ERROR ||
-            optionType < YES_NO_OPTION || optionType > OK_CANCEL_OPTION)
-            throw new IllegalArgumentException();
-
-        switch (optionType) {
-        case YES_NO_OPTION:
-            if (defaultOption != YES && defaultOption != NO)
-                throw new IllegalArgumentException();
-            break;
-        case YES_NO_CANCEL_OPTION:
-            if (defaultOption != YES && defaultOption != NO &&
-                defaultOption != CANCEL)
-                throw new IllegalArgumentException();
-            break;
-        case OK_CANCEL_OPTION:
-            if (defaultOption != OK && defaultOption != CANCEL)
-                throw new IllegalArgumentException();
-            break;
+        String errMsg = doSanityCheck(messageType, optionType, false, null,
+                defaultOption, prompt, true);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
-
         this.prompt = prompt;
         this.messageType = messageType;
         this.optionType = optionType;
@@ -366,22 +338,20 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
     public ConfirmationCallback(String prompt, int messageType,
                 String[] options, int defaultOption) {
 
-        if (prompt == null || prompt.isEmpty() ||
-            messageType < INFORMATION || messageType > ERROR ||
-            options == null || options.length == 0 ||
-            defaultOption < 0 || defaultOption >= options.length)
-            throw new IllegalArgumentException();
-
-        for (int i = 0; i < options.length; i++) {
-            if (options[i] == null || options[i].isEmpty())
-                throw new IllegalArgumentException();
+        if (options != null) {
+            options = options.clone();
+        }
+        String errMsg = doSanityCheck(messageType, UNSPECIFIED_OPTION, true,
+                options, defaultOption, prompt, true);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
 
         this.prompt = prompt;
         this.messageType = messageType;
         this.optionType = UNSPECIFIED_OPTION;
-        this.options = options.clone();
         this.defaultOption = defaultOption;
+        this.options = options;
     }
 
     /**
@@ -486,5 +456,71 @@ public class ConfirmationCallback implements Callback, java.io.Serializable {
      */
     public int getSelectedIndex() {
         return selection;
+    }
+
+    private static String doSanityCheck(int msgType, int optionType,
+            boolean isUnspecifiedOption, String[] options, int defOption,
+            String prompt, boolean checkPrompt) {
+        // validate msgType
+        if (msgType < INFORMATION || msgType > ERROR) {
+            return "Invalid msgType";
+        }
+        // validate prompt if checkPrompt == true
+        if (checkPrompt && (prompt == null || prompt.isEmpty())) {
+            return "Invalid prompt";
+        }
+        // validate optionType
+        if (isUnspecifiedOption) {
+            if (optionType != UNSPECIFIED_OPTION) {
+                return "Invalid optionType";
+            }
+            // check options
+            if (options == null || options.length == 0 ||
+                    defOption < 0 || defOption >= options.length) {
+                return "Invalid options and/or default option";
+            }
+            for (String ov : options) {
+                if (ov == null || ov.isEmpty()) {
+                    return "Invalid option value";
+                }
+            }
+        } else {
+            if (optionType < YES_NO_OPTION || optionType > OK_CANCEL_OPTION) {
+                return "Invalid optionType";
+            }
+            // validate defOption based on optionType
+            if ((optionType == YES_NO_OPTION && (defOption != YES &&
+                    defOption != NO)) ||
+                    (optionType == YES_NO_CANCEL_OPTION && (defOption != YES &&
+                    defOption != NO && defOption != CANCEL)) ||
+                    (optionType == OK_CANCEL_OPTION && (defOption != OK &&
+                    defOption != CANCEL))) {
+                return "Invalid default option";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+
+        if (options != null) {
+            options = options.clone();
+        }
+        String errMsg = doSanityCheck(messageType, optionType,
+                (optionType == UNSPECIFIED_OPTION), options, defaultOption,
+                prompt, false);
+        if (errMsg != null) {
+            throw new InvalidObjectException(errMsg);
+        }
     }
 }

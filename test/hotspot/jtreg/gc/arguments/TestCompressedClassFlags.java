@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,22 +35,19 @@ import jdk.test.lib.Platform;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.opt.CompressedClassSpaceSize == null & vm.opt.UseCompressedClassPointers == null
  * @run driver gc.arguments.TestCompressedClassFlags
  */
 public class TestCompressedClassFlags {
     public static void main(String[] args) throws Exception {
         if (Platform.is64bit()) {
-            OutputAnalyzer output = runJava("-XX:CompressedClassSpaceSize=1g",
-                                            "-XX:-UseCompressedClassPointers",
-                                            "-version");
+            OutputAnalyzer output = GCArguments.executeTestJava(
+                "-XX:CompressedClassSpaceSize=1g",
+                "-XX:-UseCompressedClassPointers",
+                "-version");
             output.shouldContain("warning");
             output.shouldNotContain("error");
             output.shouldHaveExitValue(0);
         }
-    }
-
-    private static OutputAnalyzer runJava(String ... args) throws Exception {
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
-        return new OutputAnalyzer(pb.start());
     }
 }

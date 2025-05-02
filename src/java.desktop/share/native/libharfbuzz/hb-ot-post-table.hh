@@ -28,6 +28,7 @@
 #define HB_OT_POST_TABLE_HH
 
 #include "hb-open-type.hh"
+#include "hb-ot-var-mvar-table.hh"
 
 #define HB_STRING_ARRAY_NAME format1_names
 #define HB_STRING_ARRAY_LIST "hb-ot-post-macroman.hh"
@@ -84,7 +85,7 @@ struct post
     post *post_prime = c->allocate_min<post> ();
     if (unlikely (!post_prime))  return_trace (false);
 
-    memcpy (post_prime, this, post::min_size);
+    hb_memcpy (post_prime, this, post::min_size);
     if (!glyph_names)
       return_trace (c->check_assign (post_prime->version.major, 3,
                                      HB_SERIALIZE_ERROR_INT_OVERFLOW)); // Version 3 does not have any glyph names.
@@ -95,15 +96,36 @@ struct post
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    post *post_prime = c->serializer->start_embed<post> ();
-    if (unlikely (!post_prime)) return_trace (false);
+    auto *post_prime = c->serializer->start_embed<post> ();
 
     bool glyph_names = c->plan->flags & HB_SUBSET_FLAGS_GLYPH_NAMES;
     if (!serialize (c->serializer, glyph_names))
       return_trace (false);
 
+#ifndef HB_NO_VAR
+    if (c->plan->normalized_coords)
+    {
+      auto &MVAR = *c->plan->source->table.MVAR;
+      auto *table = post_prime;
+
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_UNDERLINE_SIZE,   underlineThickness);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_UNDERLINE_OFFSET, underlinePosition);
+    }
+#endif
+
+    Triple *axis_range;
+    if (c->plan->user_axes_location.has (HB_TAG ('s','l','n','t'), &axis_range))
+    {
+      float italic_angle = hb_max (-90.0, hb_min (axis_range->middle, 90.0));
+      if (post_prime->italicAngle.to_float () != italic_angle)
+        post_prime->italicAngle.set_float (italic_angle);
+    }
+
     if (glyph_names && version.major == 2)
+    {
+      hb_barrier ();
       return_trace (v2X.subset (c));
+    }
 
     return_trace (true);
   }
@@ -119,6 +141,7 @@ struct post
 
       version = table->version.to_int ();
       if (version != 0x00020000) return;
+      hb_barrier ();
 
       const postV2Tail &v2 = table->v2X;
 
@@ -126,6 +149,7 @@ struct post
       pool = &StructAfter<uint8_t> (v2.glyphNameIndex);
 
       const uint8_t *end = (const uint8_t *) (const void *) table + table_length;
+      index_to_offset.alloc (hb_min (face->get_num_glyphs (), table_length / 8));
       for (const uint8_t *data = pool;
            index_to_offset.length < 65535 && data < end && data + *data < end;
            data += 1 + *data)
@@ -133,7 +157,7 @@ struct post
     }
     ~accelerator_t ()
     {
-      hb_free (gids_sorted_by_name.get ());
+      hb_free (gids_sorted_by_name.get_acquire ());
       table.destroy ();
     }
 
@@ -160,7 +184,7 @@ struct post
       if (unlikely (!len)) return false;
 
     retry:
-      uint16_t *gids = gids_sorted_by_name.get ();
+      uint16_t *gids = gids_sorted_by_name.get_acquire ();
 
       if (unlikely (!gids))
       {
@@ -197,10 +221,16 @@ struct post
     unsigned int get_glyph_count () const
     {
       if (version == 0x00010000)
+      {
+        hb_barrier ();
         return format1_names_length;
+      }
 
       if (version == 0x00020000)
+      {
+        hb_barrier ();
         return glyphNameIndex->len;
+      }
 
       return 0;
     }
@@ -225,13 +255,18 @@ struct post
     {
       if (version == 0x00010000)
       {
+        hb_barrier ();
         if (glyph >= format1_names_length)
           return hb_bytes_t ();
 
         return format1_names (glyph);
       }
 
-      if (version != 0x00020000 || glyph >= glyphNameIndex->len)
+      if (version != 0x00020000)
+        return hb_bytes_t ();
+      hb_barrier ();
+
+      if (glyph >= glyphNameIndex->len)
         return hb_bytes_t ();
 
       unsigned int index = glyphNameIndex->arrayZ[glyph];
@@ -263,10 +298,11 @@ struct post
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this) &&
-                          (version.to_int () == 0x00010000 ||
-                           (version.to_int () == 0x00020000 && v2X.sanitize (c)) ||
-                           version.to_int () == 0x00030000)));
+    return_trace (c->check_struct (this) &&
+                  hb_barrier () &&
+                  (version.to_int () == 0x00010000 ||
+                   (version.to_int () == 0x00020000 && hb_barrier () && v2X.sanitize (c)) ||
+                   version.to_int () == 0x00030000));
   }
 
   public:
@@ -274,7 +310,7 @@ struct post
                                          * 0x00020000 for version 2.0
                                          * 0x00025000 for version 2.5 (deprecated)
                                          * 0x00030000 for version 3.0 */
-  HBFixed       italicAngle;            /* Italic angle in counter-clockwise degrees
+  F16DOT16      italicAngle;            /* Italic angle in counter-clockwise degrees
                                          * from the vertical. Zero for upright text,
                                          * negative for text that leans to the right
                                          * (forward). */

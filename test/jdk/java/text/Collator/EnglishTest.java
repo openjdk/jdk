@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
  * @test
  * @library /java/text/testlib
  * @summary test English Collation
+ * @run junit EnglishTest
  */
 
 import java.util.Locale;
 import java.text.Collator;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -42,11 +47,7 @@ attribution to Taligent may not be removed.
   Taligent is a registered trademark of Taligent, Inc.
 */
 
-public class EnglishTest extends CollatorTest {
-
-    public static void main(String[] args) throws Exception {
-        new EnglishTest().run(args);
-    }
+public class EnglishTest {
 
     /*
      * Data for TestPrimary()
@@ -201,23 +202,26 @@ public class EnglishTest extends CollatorTest {
         "x"
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
+    @Test
     public void TestSecondary() {
-        doTest(myCollation, Collator.SECONDARY,
+        TestUtils.doCollatorTest(myCollation, Collator.SECONDARY,
                secondarySourceData, secondaryTargetData, secondaryResults);
     }
 
+    @Test
     public void TestTertiary() {
-        doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
 
         for (int i = 0; i < testData.length-1; i++) {
             for (int j = i+1; j < testData.length; j++) {
-                doTest(myCollation, testData[i], testData[j], -1);
+                TestUtils.doCollatorTest(myCollation, testData[i], testData[j], -1);
             }
         }
     }

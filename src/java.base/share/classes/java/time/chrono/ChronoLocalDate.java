@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,7 +652,6 @@ public interface ChronoLocalDate
      * @param localTime  the local time to use, not null
      * @return the local date-time formed from this date and the specified time, not null
      */
-    @SuppressWarnings("unchecked")
     default ChronoLocalDateTime<?> atTime(LocalTime localTime) {
         return ChronoLocalDateTimeImpl.of(this, localTime);
     }
@@ -700,7 +699,11 @@ public interface ChronoLocalDate
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison of this local date with
+     *          the {@code other} local date and this chronology with the {@code other} chronology,
+     *          in order, returning the first non-zero result, and otherwise returning zero
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     default int compareTo(ChronoLocalDate other) {

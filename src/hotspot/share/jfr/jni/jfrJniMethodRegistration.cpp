@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJniMethod.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"
@@ -31,9 +30,9 @@
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
-  assert(env != NULL, "invariant");
+  assert(env != nullptr, "invariant");
   jclass jfr_clz = env->FindClass("jdk/jfr/internal/JVM");
-  if (jfr_clz != NULL) {
+  if (jfr_clz != nullptr) {
     JNINativeMethod method[] = {
       (char*)"beginRecording", (char*)"()V", (void*)jfr_begin_recording,
       (char*)"isRecording", (char*)"()Z", (void*)jfr_is_recording,
@@ -46,7 +45,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getAllEventClasses", (char*)"()Ljava/util/List;", (void*)jfr_get_all_event_classes,
       (char*)"getClassId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
       (char*)"getPid", (char*)"()Ljava/lang/String;", (void*)jfr_get_pid,
-      (char*)"getStackTraceId", (char*)"(I)J", (void*)jfr_stacktrace_id,
+      (char*)"getStackTraceId", (char*)"(IJ)J", (void*)jfr_stacktrace_id,
       (char*)"getThreadId", (char*)"(Ljava/lang/Thread;)J", (void*)jfr_id_for_thread,
       (char*)"getTicksFrequency", (char*)"()J", (void*)jfr_elapsed_frequency,
       (char*)"subscribeLogLevel", (char*)"(Ljdk/jfr/internal/LogTag;I)V", (void*)jfr_subscribe_log_level,
@@ -71,7 +70,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTypeId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_type_id,
       (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_get_event_writer,
       (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_new_event_writer,
-      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)Z", (void*)jfr_event_writer_flush,
+      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)V", (void*)jfr_event_writer_flush,
+      (char*)"commit", (char*)"(J)J", (void*)jfr_commit,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,
       (char*)"setRepositoryLocation", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_repository_location,
       (char*)"setDumpPath", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_dump_path,
@@ -81,7 +81,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"uncaughtException", (char*)"(Ljava/lang/Thread;Ljava/lang/Throwable;)V", (void*)jfr_uncaught_exception,
       (char*)"setForceInstrumentation", (char*)"(Z)V", (void*)jfr_set_force_instrumentation,
       (char*)"getUnloadedEventClassCount", (char*)"()J", (void*)jfr_get_unloaded_event_classes_count,
-      (char*)"setCutoff", (char*)"(JJ)Z", (void*)jfr_set_cutoff,
+      (char*)"setMiscellaneous", (char*)"(JJ)V", (void*)jfr_set_miscellaneous,
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,
@@ -95,13 +95,19 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
-      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory
+      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
+      (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
+      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
+      (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
+      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
+      (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
+      (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
     if (env->RegisterNatives(jfr_clz, method, (jint)method_array_length) != JNI_OK) {
       JavaThread* jt = JavaThread::thread_from_jni_environment(env);
-      assert(jt != NULL, "invariant");
+      assert(jt != nullptr, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
       ThreadInVMfromNative transition(jt);
       log_error(jfr, system)("RegisterNatives for JVM class failed!");

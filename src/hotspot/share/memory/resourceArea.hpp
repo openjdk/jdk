@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_RESOURCEAREA_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "runtime/javaThread.hpp"
 
 // The resource area holds temporary data structures in the VM.
@@ -42,25 +43,24 @@
 //------------------------------ResourceArea-----------------------------------
 // A ResourceArea is an Arena that supports safe usage of ResourceMark.
 class ResourceArea: public Arena {
-  friend class VMStructs;
-
 #ifdef ASSERT
   int _nesting;                 // current # of nested ResourceMarks
   void verify_has_resource_mark();
 #endif // ASSERT
 
 public:
-  ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags) DEBUG_ONLY(COMMA _nesting(0)) {}
+  ResourceArea(MemTag mem_tag = mtThread) :
+    Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, init_size) DEBUG_ONLY(COMMA _nesting(0)) {}
+  ResourceArea(size_t init_size, MemTag mem_tag = mtThread, Arena::Tag arena_tag = Arena::Tag::tag_ra) :
+    Arena(mem_tag, arena_tag, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
+
+  ResourceArea(MemTag mem_tag, Arena::Tag arena_tag) :
+    Arena(mem_tag, arena_tag) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-
-  // Bias this resource area to specific memory type
-  // (by default, ResourceArea is tagged as mtThread, per-thread general purpose storage)
-  void bias_to(MEMFLAGS flags);
 
   DEBUG_ONLY(int nesting() const { return _nesting; })
 
@@ -79,7 +79,7 @@ public:
       _chunk(area->_chunk),
       _hwm(area->_hwm),
       _max(area->_max),
-      _size_in_bytes(area->_size_in_bytes)
+      _size_in_bytes(area->size_in_bytes())
       DEBUG_ONLY(COMMA _nesting(area->_nesting))
     {}
   };
@@ -109,10 +109,10 @@ public:
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.
       assert(size_in_bytes() > state._size_in_bytes,
-             "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
+             "size: %zu, saved size: %zu",
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
-      state._chunk->next_chop();
+      Chunk::next_chop(state._chunk);
       assert(_hwm != state._hwm, "Sanity check: HWM moves when we have later chunks");
     } else {
       assert(size_in_bytes() == state._size_in_bytes, "Sanity check");
@@ -191,17 +191,7 @@ class ResourceMark: public StackObj {
 #ifndef ASSERT
   ResourceMark(ResourceArea* area, Thread* thread) : _impl(area) {}
 #else
-  ResourceMark(ResourceArea* area, Thread* thread) :
-    _impl(area),
-    _thread(thread),
-    _previous_resource_mark(nullptr)
-  {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current(), "not the current thread");
-      _previous_resource_mark = _thread->current_resource_mark();
-      _thread->set_current_resource_mark(this);
-    }
-  }
+  ResourceMark(ResourceArea* area, Thread* thread);
 #endif // ASSERT
 
 public:

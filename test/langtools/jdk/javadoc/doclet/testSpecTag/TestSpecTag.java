@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279 8297802
+ * @bug 6251738 8226279 8297802 8305407
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -112,21 +112,30 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
-                    <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
-                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <div class="top-nav" id="navbar-top">
+                    <div class="nav-content">
+                    <div class="nav-menu-button"><button id="navbar-toggle-button" aria-controls="na\
+                    vbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class\
+                    ="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</sp\
+                    an><span class="nav-bar-toggle-icon">&nbsp;</span></button></div>
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">S\
+                    kip navigation links</a></div>
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="p/package-summary.html">Package</a></li>
-                    <li>Class</li>
                     <li><a href="p/package-tree.html">Tree</a></li>
                     <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#external-specs">Help</a></li>
                     </ul>
                     </div>
+                    </div>
                     <div class="sub-nav">
-                    <div id="navbar-sub-list"></div>
-                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
-                    <input type="text" id="search-input" disabled placeholder="Search">
-                    <input type="reset" id="reset-button" disabled value="reset">
+                    <div class="nav-content">
+                    <ol class="sub-nav-list"></ol>
+                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
+                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
+                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
+                     value="Reset"></div>
                     </div>
                     </div>
                     <!-- ========= END OF TOP NAVBAR ========= -->
@@ -355,8 +364,8 @@ public class TestSpecTag extends JavadocTester {
                     <button id="external-specs-tab2" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
                     tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
                     class="table-tab">example.net</button></div>
-                    <div id="external-specs.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="external-specs-tab0">
+                    <div id="external-specs.tabpanel" role="tabpanel" aria-labelledby="external-specs-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>""",
                 """
@@ -413,6 +422,51 @@ public class TestSpecTag extends JavadocTester {
                            ^
                     """
                     .replace("#FILE#", src.resolve("p").resolve("C.java").toString()));
+    }
+
+    @Test
+    public void testDifferentWhitespaceTitlesForURL(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /** Class C. */
+                public class C {
+                    private C() { }
+
+                    /**
+                     * Method m1.
+                     * @spec http://example.com/index.html abc def
+                     */
+                     public void m1() { }
+
+                    /**
+                     * Method m2.
+                     * @spec http://example.com/index.html abc         def
+                     */
+                     public void m2() { }
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false, "error");
+
+        checkOutput("external-specs.html", true,
+                """
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Specification</div>
+                    <div class="table-header col-last">Referenced In</div>
+                    <div class="col-first even-row-color"><a href="http://example.com/index.html">abc def</a></div>
+                    <div class="col-last even-row-color">
+                    <ul class="ref-list">
+                    <li><code><a href="p/C.html#abcdef">p.C.m1()</a></code></li>
+                    <li><code><a href="p/C.html#abcdef-1">p.C.m2()</a></code></li>
+                    </ul>
+                    </div>
+                    </div>""");
     }
 
     @Test

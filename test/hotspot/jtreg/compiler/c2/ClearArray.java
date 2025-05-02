@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  *   -XX:InitArrayShortSize=32768 -XX:-IdealizeClearArrayNode compiler.c2.ClearArray
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch
  *   -XX:InitArrayShortSize=32768 -XX:-IdealizeClearArrayNode -XX:UseAVX=3 compiler.c2.ClearArray
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch
+ *   -XX:InitArrayShortSize=32768 -XX:MaxVectorSize=8 -XX:-IdealizeClearArrayNode -XX:UseAVX=3 compiler.c2.ClearArray
  */
 
 package compiler.c2;

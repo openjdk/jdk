@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,13 @@
  */
 package sun.awt.windows;
 
-import java.awt.*;
+import java.awt.Adjustable;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.ScrollPane;
+import java.awt.ScrollPaneAdjustable;
 import java.awt.event.AdjustmentEvent;
 import java.awt.peer.ScrollPanePeer;
 
@@ -105,7 +111,6 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         ScrollPane sp = (ScrollPane)target;
         Dimension vs = sp.getSize();
         setSpans(vs.width, vs.height, width, height);
-        setInsets();
     }
 
     synchronized native void setSpans(int viewWidth, int viewHeight,
@@ -162,7 +167,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * operation.
      */
     @SuppressWarnings("serial") // JDK-implementation class
-    static class ScrollEvent extends PeerEvent {
+    static final class ScrollEvent extends PeerEvent {
         ScrollEvent(Object source, Runnable runnable) {
             super(source, runnable, 0L);
         }
@@ -182,7 +187,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
     /*
      * Runnable for the ScrollEvent that performs the adjustment.
      */
-    class Adjustor implements Runnable {
+    final class Adjustor implements Runnable {
         int orient;             // selects scrollbar
         int type;               // adjustment type
         int pos;                // new position (only used for absolute)

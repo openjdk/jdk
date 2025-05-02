@@ -54,6 +54,7 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   PlatformEvent();
   void park();
   int  park(jlong millis);
+  int  park_nanos(jlong nanos);
   void unpark();
 
   // Use caution with reset() and fired() -- they may require MEMBARs

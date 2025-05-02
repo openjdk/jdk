@@ -1,3 +1,1 @@
-var f = new RemoveFilter("Hide mixed subgraph");
-f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.StringPropertyMatcher("category", "mixed"))));
-f.apply(graph);
+remove(matches("category", "mixed"));

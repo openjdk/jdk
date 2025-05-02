@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,33 +32,26 @@
 #include "runtime/safepoint.hpp"
 
 class nmethod;
+class DeoptimizationScope;
 class DepChange;
 
 //
 // nmethodBucket is used to record dependent nmethods for
 // deoptimization.  nmethod dependencies are actually <klass, method>
 // pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
+// finding nmethods which might need to be deoptimized.
 //
 class nmethodBucket: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   nmethod*       _nmethod;
-  volatile int   _count;
   nmethodBucket* volatile _next;
   nmethodBucket* volatile _purge_list_next;
 
  public:
   nmethodBucket(nmethod* nmethod, nmethodBucket* next) :
-    _nmethod(nmethod), _count(1), _next(next), _purge_list_next(nullptr) {}
+    _nmethod(nmethod), _next(next), _purge_list_next(nullptr) {}
 
-  int count()                                { return _count; }
-  int increment()                            { _count += 1; return _count; }
-  int decrement();
   nmethodBucket* next();
   nmethodBucket* next_not_unloading();
   void set_next(nmethodBucket* b);
@@ -70,7 +63,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 //
 // Utility class to manipulate nmethod dependency context.
 // Dependency context can be attached either to an InstanceKlass (_dep_context field)
-// or CallSiteContext oop for call_site_target dependencies (see javaClasses.hpp).
+// or CallSite oop for call_site_target dependencies (see javaClasses.hpp).
 // DependencyContext class operates on some location which holds a nmethodBucket* value
 // and uint64_t integer recording the safepoint counter at the last cleanup.
 //
@@ -82,6 +75,7 @@ class DependencyContext : public StackObj {
   volatile uint64_t*       _last_cleanup_addr;
 
   bool claim_cleanup();
+  static bool delete_on_release();
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
@@ -98,7 +92,6 @@ class DependencyContext : public StackObj {
 #ifdef ASSERT
   // Safepoints are forbidden during DC lifetime. GC can invalidate
   // _dependency_context_addr if it relocates the holder
-  // (e.g. CallSiteContext Java object).
   SafepointStateTracker _safepoint_tracker;
 
   DependencyContext(nmethodBucket* volatile* bucket_addr, volatile uint64_t* last_cleanup_addr)
@@ -117,12 +110,10 @@ class DependencyContext : public StackObj {
 
   static void init();
 
-  int  mark_dependent_nmethods(DepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_all_dependents();
-  int  remove_and_mark_for_deoptimization_all_dependents();
   void clean_unloading_dependents();
-  static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);
   static void cleaning_start();
@@ -130,6 +121,7 @@ class DependencyContext : public StackObj {
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose);
+  bool is_empty();
 #endif //PRODUCT
   bool is_dependent_nmethod(nmethod* nm);
 };

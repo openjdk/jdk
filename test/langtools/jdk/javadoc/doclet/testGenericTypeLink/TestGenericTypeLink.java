@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280 8262992 8259499
+ * @bug     8177280 8262992 8259499 8307377 8352249
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -56,13 +56,13 @@ public class TestGenericTypeLink extends JavadocTester {
                     ist.html" title="class or interface in java.util" class="external-link">List</a>&lt\
                     ;<a href="http://example.com/docs/api/java.base/java/lang/String.html" title="class\
                      or interface in java.lang" class="external-link">String</a>&gt;</code>
-                     <a href="http://example.com/docs/api/java.base/java/util/List.html" title="class o\
+                    <a href="http://example.com/docs/api/java.base/java/util/List.html" title="class o\
                     r interface in java.util" class="external-link">List</a>&lt;? extends <a href="http\
                     ://example.com/docs/api/java.base/java/lang/CharSequence.html" title="class or inte\
                     rface in java.lang" class="external-link">CharSequence</a>&gt;
-                     <a href="#someMethod(java.util.List,int)"><code>someMethod(ArrayList&lt;Integer&gt\
+                    <a href="#someMethod(java.util.List,int)"><code>someMethod(ArrayList&lt;Integer&gt\
                     ;, int)</code></a>
-                     <a href="#otherMethod(java.util.Map,double)"><code>otherMethod(Map&lt;String, Stri\
+                    <a href="#otherMethod(java.util.Map,double)"><code>otherMethod(Map&lt;String, Stri\
                     ngBuilder&gt;, double)</code></a></div>
                     """,
 
@@ -74,15 +74,15 @@ public class TestGenericTypeLink extends JavadocTester {
                     <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
                     class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
                     ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
-                    a.lang" class="external-link">String</a>,<wbr>? extends <a href="http://example.com/\
+                    a.lang" class="external-link">String</a>, ? extends <a href="http://example.com/\
                     docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.la\
                     ng" class="external-link">CharSequence</a>&gt;</code></li>
                     <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
                     class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
                     ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
-                    a.lang" class="external-link">String</a>,<wbr>? super <a href="A.html" title="class \
+                    a.lang" class="external-link">String</a>, ? super <a href="A.html" title="class \
                     in pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/lang/String.ht\
-                    ml" title="class or interface in java.lang" class="external-link">String</a>,<wbr>? \
+                    ml" title="class or interface in java.lang" class="external-link">String</a>, ? \
                     extends <a href="http://example.com/docs/api/java.base/java/lang/RuntimeException.ht\
                     ml" title="class or interface in java.lang" class="external-link">RuntimeException</\
                     a>&gt;&gt;</code></li>
@@ -97,9 +97,9 @@ public class TestGenericTypeLink extends JavadocTester {
                 """
                     <div class="block"><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="h\
                     ttp://example.com/docs/api/java.base/java/lang/String.html" title="class or interfa\
-                    ce in java.lang" class="external-link">String</a>,<wbr><a href="A.SomeException.htm\
+                    ce in java.lang" class="external-link">String</a>, <a href="A.SomeException.htm\
                     l" title="class in pkg1">A.SomeException</a>&gt;</code>
-                     <a href="http://example.com/docs/api/java.base/java/util/Map.html" title="class or\
+                    <a href="http://example.com/docs/api/java.base/java/util/Map.html" title="class or\
                      interface in java.util" class="external-link">link to generic type with label</a>\
                     </div>""",
                 """
@@ -109,11 +109,11 @@ public class TestGenericTypeLink extends JavadocTester {
                     <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://example.c\
                     om/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang\
-                    " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
+                    " class="external-link">String</a>, <a href="A.SomeException.html" title="class\
                      in pkg1">A.SomeException</a>&gt;</code></li>
                     <li><a href="http://example.com/docs/api/java.base/java/util/List.html" title="clas\
-                    s or interface in java.util" class="external-link"><code>Link to generic type with \
-                    label</code></a></li>
+                    s or interface in java.util" class="external-link">Link to generic type with label<\
+                    /a></li>
                     </ul>
                     </dd>
                     </dl>"""
@@ -126,17 +126,17 @@ public class TestGenericTypeLink extends JavadocTester {
                     <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://exampl\
                     e.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
-                    a.lang" class="external-link">String</a>,<wbr><a href="http://example.com/docs/a\
+                    a.lang" class="external-link">String</a>, <a href="http://example.com/docs/a\
                     pi/java.base/java/lang/RuntimeException.html" title="class or interface in java.\
                     lang" class="external-link">RuntimeException</a>&gt;.<a href="A.Inner.html" titl\
                     e="class in pkg1">Inner</a></code></li>
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="A.html" title\
                     ="class in pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/la\
                     ng/String.html" title="class or interface in java.lang" class="external-link">St\
-                    ring</a>,<wbr><a href="http://example.com/docs/api/java.base/java/lang/RuntimeEx\
+                    ring</a>, <a href="http://example.com/docs/api/java.base/java/lang/RuntimeEx\
                     ception.html" title="class or interface in java.lang" class="external-link">Runt\
-                    imeException</a>&gt;.<a href="A.Inner.html" title="class in pkg1">Inner</a>,<wbr\
-                    ><a href="A.SomeException.html" title="class in pkg1">A.SomeException</a>&gt;</c\
+                    imeException</a>&gt;.<a href="A.Inner.html" title="class in pkg1">Inner</a>, \
+                    <a href="A.SomeException.html" title="class in pkg1">A.SomeException</a>&gt;</c\
                     ode></li>
                     </ul>
                     </dd>
@@ -148,8 +148,8 @@ public class TestGenericTypeLink extends JavadocTester {
                     /a></code></span></div>
                     <div class="block">Here's a generic link: <code><a href="A.html" title="class in\
                      pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/lang/Object.\
-                    html" title="class or interface in java.lang" class="external-link">Object</a>,<\
-                    wbr><a href="http://example.com/docs/api/java.base/java/lang/RuntimeException.ht\
+                    html" title="class or interface in java.lang" class="external-link">Object</a>, \
+                    <a href="http://example.com/docs/api/java.base/java/lang/RuntimeException.ht\
                     ml" title="class or interface in java.lang" class="external-link">RuntimeExcepti\
                     on</a>&gt;.<a href="A.Inner.html" title="class in pkg1">Inner</a>""");
     }
@@ -168,19 +168,17 @@ public class TestGenericTypeLink extends JavadocTester {
                 """
                     <div class="block">
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>java.util.Foo&lt;String&gt;</code></pre>
                     </details>
 
-                    \s
                     <details class="invalid-tag">
-                    <summary>invalid @linkplain</summary>
+                    <summary>invalid reference</summary>
                     <pre>Baz&lt;Object&gt;</pre>
                     </details>
 
-                    \s
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>#b(List&lt;Integer&gt;)</code></pre>
                     </details>
                     </div>""",
@@ -192,19 +190,19 @@ public class TestGenericTypeLink extends JavadocTester {
                     <ul class="tag-list-long">
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>java.util.List&lt;Bar&gt;</code></pre>
                     </details>
                     </li>
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>Baz&lt;Object, String&gt;</code></pre>
                     </details>
                     </li>
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>B#b(List&lt;Baz&gt;)</code></pre>
                     </details>
                     </li>
@@ -213,4 +211,3 @@ public class TestGenericTypeLink extends JavadocTester {
                     </dl>""");
     }
 }
-

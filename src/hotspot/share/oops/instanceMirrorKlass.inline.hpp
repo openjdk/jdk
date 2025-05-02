@@ -56,10 +56,7 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
     if (klass != nullptr) {
       if (klass->class_loader_data() == nullptr) {
         // This is a mirror that belongs to a shared class that has not be loaded yet.
-        // It's only reachable via HeapShared::roots(). All of its fields should be zero
-        // so there's no need to scan.
         assert(klass->is_shared(), "must be");
-        return;
       } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
         // A non-strong hidden class doesn't have its own class loader,
         // so when handling the java mirror for the class we need to make sure its class

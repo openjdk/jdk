@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ hb_jdk_get_nominal_glyph (hb_font_t *font HB_UNUSED,
     jobject font2D = jdkFontInfo->font2D;
     *glyph = (hb_codepoint_t)env->CallIntMethod(
               font2D, sunFontIDs.f2dCharToGlyphMID, unicode);
-    if (env->ExceptionOccurred())
+    if (env->ExceptionCheck())
     {
         env->ExceptionClear();
     }
@@ -75,7 +75,7 @@ hb_jdk_get_variation_glyph (hb_font_t *font HB_UNUSED,
     *glyph = (hb_codepoint_t)env->CallIntMethod(
               font2D, sunFontIDs.f2dCharToVariationGlyphMID,
               unicode, variation_selector);
-    if (env->ExceptionOccurred())
+    if (env->ExceptionCheck())
     {
         env->ExceptionClear();
     }
@@ -412,19 +412,6 @@ static hb_font_t* _hb_jdk_font_create(hb_face_t* face,
                       HBFloatToFixed(jdkFontInfo->ptSize*jdkFontInfo->devScale));
   return font;
 }
-
-#ifdef MACOSX
-static hb_font_t* _hb_jdk_ct_font_create(hb_face_t* face,
-                   JDKFontInfo *jdkFontInfo) {
-
-    hb_font_t *font = NULL;
-    font = hb_font_create(face);
-    hb_font_set_scale(font,
-                     HBFloatToFixed(jdkFontInfo->ptSize),
-                     HBFloatToFixed(jdkFontInfo->ptSize));
-    return font;
-}
-#endif
 
 hb_font_t* hb_jdk_font_create(hb_face_t* hbFace,
                              JDKFontInfo *jdkFontInfo,

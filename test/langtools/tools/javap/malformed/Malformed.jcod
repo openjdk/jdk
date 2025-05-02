@@ -1,0 +1,54 @@
+class Malformed {
+  0xCAFEBABE;
+  0; // minor version
+  0; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Utf8 "Code"; // #1
+    Method #0 #0; // #2
+    class #0; // #3
+  } // Constant Pool
+
+  0x0000; // access
+  #0;// this_cpx
+  #3;// super_cpx
+
+  [] { // Interfaces
+    #0;
+    #3;
+  } // Interfaces
+
+  [] { // fields
+    { // Member
+      0x0000; // access
+      #0; // name_cpx
+      #0; // sig_cpx
+      [] { // Attributes
+      } // Attributes
+    } // Member
+  } // fields
+
+  [] { // methods
+    { // Member
+      0x0000; // access
+      #0; // name_cpx
+      #0; // sig_cpx
+      [] { // Attributes
+        Attr(#1) { // Code
+          0; // max_stack
+          0; // max_locals
+          Bytes[]{
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+          } // Attributes
+        } // end Code
+      } // Attributes
+    } // Member
+  } // methods
+
+  [] { // Attributes
+  } // Attributes
+} // end class Malformed
+

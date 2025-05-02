@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ extern void vm_shutdown_during_initialization(const char* error, const char* mes
 
 extern void vm_exit_during_cds_dumping(const char* error, const char* message = nullptr);
 
+// This is defined in linkType.cpp due to linking restraints
+extern bool is_vm_statically_linked();
+
 /**
  * With the integration of the changes to handle the version string
  * as defined by JEP-223, most of the code related to handle the version
@@ -77,11 +80,11 @@ class JDK_Version {
   static const char* _runtime_vendor_version;
   static const char* _runtime_vendor_vm_bug_url;
 
-  uint8_t _major;
-  uint8_t _minor;
-  uint8_t _security;
-  uint8_t _patch;
-  uint8_t _build;
+  int _major;
+  int _minor;
+  int _security;
+  int _patch;
+  int _build;
 
   bool is_valid() const {
     return (_major != 0);
@@ -96,8 +99,8 @@ class JDK_Version {
       _major(0), _minor(0), _security(0), _patch(0), _build(0)
       {}
 
-  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t security = 0,
-              uint8_t patch = 0, uint8_t build = 0) :
+  JDK_Version(int major, int minor = 0, int security = 0,
+              int patch = 0, int build = 0) :
       _major(major), _minor(minor), _security(security), _patch(patch), _build(build)
       {}
 
@@ -105,7 +108,7 @@ class JDK_Version {
   static JDK_Version current() { return _current; }
 
   // Factory methods for convenience
-  static JDK_Version jdk(uint8_t m) {
+  static JDK_Version jdk(int m) {
     return JDK_Version(m);
   }
 
@@ -117,11 +120,11 @@ class JDK_Version {
     return _major == 0;
   }
 
-  uint8_t major_version() const          { return _major; }
-  uint8_t minor_version() const          { return _minor; }
-  uint8_t security_version() const       { return _security; }
-  uint8_t patch_version() const          { return _patch; }
-  uint8_t build_number() const           { return _build; }
+  int major_version() const          { return _major; }
+  int minor_version() const          { return _minor; }
+  int security_version() const       { return _security; }
+  int patch_version() const          { return _patch; }
+  int build_number() const           { return _build; }
 
   // Performs a full ordering comparison using all fields (patch, build, etc.)
   int compare(const JDK_Version& other) const;

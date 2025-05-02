@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.RootPaneUI;
@@ -75,6 +73,7 @@ import com.apple.laf.AquaButtonExtendedTypes.TypeSpecifier;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
@@ -224,8 +223,6 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             // put the listener in the button's client properties so that
             // we can get at it later
             b.putClientProperty(this, listener);
-
-            b.addAncestorListener(listener);
         }
         installHierListener(b);
         AquaUtilControlSize.addSizePropertyListener(b);
@@ -251,11 +248,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
     protected void uninstallListeners(final AbstractButton b) {
         super.uninstallListeners(b);
-        final AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
-        if (listener != null) {
-            b.removeAncestorListener(listener);
-        }
         uninstallHierListener(b);
         AquaUtilControlSize.removeSizePropertyListener(b);
     }
@@ -338,20 +331,10 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         // performs icon and text rect calculations
-        final String text;
-        final Icon icon = b.getIcon();
-        final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-        if (v != null && icon == null) {
-            // use zero insets for HTML without an icon
-            // since layout only handles text calculations
-            text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
-                    viewRect, iconRect, textRect);
-        } else {
-            text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
-        }
+        final String text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
 
         // Paint the Icon
-        if (icon != null) {
+        if (b.getIcon() != null) {
             paintIcon(g, b, iconRect);
         }
 
@@ -360,6 +343,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         if (text != null && !text.isEmpty()) {
+            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
@@ -496,12 +480,10 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
-        final Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
-
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
         final FontMetrics fm = g.getFontMetrics();
-        final int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
+        final int mnemonicIndex = MnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
 
         /* Draw the Text */
         if (model.isEnabled()) {
@@ -601,7 +583,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    class AquaButtonListener extends BasicButtonListener implements AncestorListener {
+    class AquaButtonListener extends BasicButtonListener {
         protected final AbstractButton b;
 
         public AquaButtonListener(final AbstractButton b) {
@@ -667,28 +649,6 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
                     b.setBorder(AquaButtonExtendedTypes.getBorderForPosition(b, buttonType, buttonPosition));
                 }
             }
-        }
-
-        public void ancestorMoved(final AncestorEvent e) {}
-
-        public void ancestorAdded(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        public void ancestorRemoved(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        protected void updateDefaultButton() {
-            if (!(b instanceof JButton)) return;
-            if (!((JButton)b).isDefaultButton()) return;
-
-            final JRootPane rootPane = b.getRootPane();
-            if (rootPane == null) return;
-
-            final RootPaneUI ui = rootPane.getUI();
-            if (!(ui instanceof AquaRootPaneUI)) return;
-            ((AquaRootPaneUI)ui).updateDefaultButton(rootPane);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <process.h>
+typedef  unsigned int THREAD_ID;
+#else
 #include <pthread.h>
+typedef  pthread_t THREAD_ID;
+#endif
+
 #include <string.h>
 
 #include "jni.h"
@@ -63,7 +71,12 @@ void generateError(JNIEnv *env) {
   (*env)->FatalError(env, "Fatal error generated in test code");
 }
 
-static void * thread_start(void* unused) {
+#ifdef _WIN32
+unsigned
+#else
+void *
+#endif
+thread_start(void* unused) {
   JNIEnv *env;
   int res;
 
@@ -94,13 +107,17 @@ static void * thread_start(void* unused) {
 
   printf("Native thread terminating\n");
 
+#ifndef _WIN32
   return NULL;
+#else
+  return 0;
+#endif
 }
 
 JNIEXPORT void JNICALL
 Java_TestNativeStack_triggerJNIStackTrace
 (JNIEnv *env, jclass cls, jboolean warn) {
-  pthread_t thread;
+  THREAD_ID thread;
   int res = (*env)->GetJavaVM(env, &jvm);
   if (res != JNI_OK) {
     fprintf(stderr, "Test ERROR. Can't extract JavaVM: %d\n", res);
@@ -109,13 +126,36 @@ Java_TestNativeStack_triggerJNIStackTrace
 
   warning = warn;
 
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+#ifdef _WIN32
+  HANDLE hThread = (HANDLE) _beginthreadex(NULL, 0, thread_start,
+                                           NULL, 0, &thread);
+  if (hThread == 0) {
+    fprintf(stderr, "TEST ERROR: _beginthreadex failed: %s\n", strerror(errno));
+    exit(1);
+  }
+  if (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0) {
+    fprintf(stderr, "TEST ERROR: WaitForSingleObject failed: %d\n", GetLastError());
+    exit(1);
+  }
+  CloseHandle(hThread);
+
+#else
+
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  size_t stack_size = 0x100000;
+  pthread_attr_setstacksize(&attr, stack_size);
+
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+#endif
 }

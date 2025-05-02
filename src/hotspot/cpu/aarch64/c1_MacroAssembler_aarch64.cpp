@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -60,95 +59,108 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
   }
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
-  Label done;
+  assert_different_registers(hdr, obj, disp_hdr, temp, rscratch2);
   int null_check_offset = -1;
 
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj);
-    ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
-    tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
-    br(Assembler::NE, slow_case);
-  }
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lightweight_lock(disp_hdr, obj, hdr, temp, rscratch2, slow_case);
+  } else if (LockingMode == LM_LEGACY) {
 
-  // Load object header
-  ldr(hdr, Address(obj, hdr_offset));
-  // and mark it as unlocked
-  orr(hdr, hdr, markWord::unlocked_value);
-  // save unlocked object header into the displaced header location on the stack
-  str(hdr, Address(disp_hdr, 0));
-  // test if object header is still the same (i.e. unlocked), and if so, store the
-  // displaced header address in the object header - if it is not the same, get the
-  // object header instead
-  lea(rscratch2, Address(obj, hdr_offset));
-  cmpxchgptr(hdr, disp_hdr, rscratch2, rscratch1, done, /*fallthough*/NULL);
-  // if the object header was the same, we're done
-  // if the object header was not the same, it is now in the hdr register
-  // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
-  //
-  // 1) (hdr & aligned_mask) == 0
-  // 2) sp <= hdr
-  // 3) hdr <= sp + page_size
-  //
-  // these 3 tests can be done by evaluating the following expression:
-  //
-  // (hdr - sp) & (aligned_mask - page_size)
-  //
-  // assuming both the stack pointer and page_size have their least
-  // significant 2 bits cleared and page_size is a power of 2
-  mov(rscratch1, sp);
-  sub(hdr, hdr, rscratch1);
-  ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
-  // for recursive locking, the result is zero => save it in the displaced header
-  // location (NULL in the displaced hdr location indicates recursive locking)
-  str(hdr, Address(disp_hdr, 0));
-  // otherwise we don't care about the result and handle locking via runtime call
-  cbnz(hdr, slow_case);
-  // done
-  bind(done);
-  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(hdr, obj);
+      ldrb(hdr, Address(hdr, Klass::misc_flags_offset()));
+      tst(hdr, KlassFlags::_misc_is_value_based_class);
+      br(Assembler::NE, slow_case);
+    }
+
+    Label done;
+    // Load object header
+    ldr(hdr, Address(obj, hdr_offset));
+    // and mark it as unlocked
+    orr(hdr, hdr, markWord::unlocked_value);
+    // save unlocked object header into the displaced header location on the stack
+    str(hdr, Address(disp_hdr, 0));
+    // test if object header is still the same (i.e. unlocked), and if so, store the
+    // displaced header address in the object header - if it is not the same, get the
+    // object header instead
+    lea(rscratch2, Address(obj, hdr_offset));
+    cmpxchgptr(hdr, disp_hdr, rscratch2, rscratch1, done, /*fallthough*/nullptr);
+    // if the object header was the same, we're done
+    // if the object header was not the same, it is now in the hdr register
+    // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
+    //
+    // 1) (hdr & aligned_mask) == 0
+    // 2) sp <= hdr
+    // 3) hdr <= sp + page_size
+    //
+    // these 3 tests can be done by evaluating the following expression:
+    //
+    // (hdr - sp) & (aligned_mask - page_size)
+    //
+    // assuming both the stack pointer and page_size have their least
+    // significant 2 bits cleared and page_size is a power of 2
+    mov(rscratch1, sp);
+    sub(hdr, hdr, rscratch1);
+    ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
+    // for recursive locking, the result is zero => save it in the displaced header
+    // location (null in the displaced hdr location indicates recursive locking)
+    str(hdr, Address(disp_hdr, 0));
+    // otherwise we don't care about the result and handle locking via runtime call
+    cbnz(hdr, slow_case);
+    // done
+    bind(done);
+    inc_held_monitor_count(rscratch1);
+  }
   return null_check_offset;
 }
 
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
+  assert_different_registers(hdr, obj, disp_hdr, temp, rscratch2);
   Label done;
 
-  // load displaced header
-  ldr(hdr, Address(disp_hdr, 0));
-  // if the loaded hdr is NULL we had recursive locking
-  // if we had recursive locking, we are done
-  cbz(hdr, done);
-  // load object
-  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-  verify_oop(obj);
-  // test if object header is pointing to the displaced header, and if so, restore
-  // the displaced header in the object - if the object header is not pointing to
-  // the displaced header, get the object header instead
-  // if the object header was not pointing to the displaced header,
-  // we do unlocking via runtime call
-  if (hdr_offset) {
-    lea(rscratch1, Address(obj, hdr_offset));
-    cmpxchgptr(disp_hdr, hdr, rscratch1, rscratch2, done, &slow_case);
-  } else {
-    cmpxchgptr(disp_hdr, hdr, obj, rscratch2, done, &slow_case);
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    // load displaced header
+    ldr(hdr, Address(disp_hdr, 0));
+    // if the loaded hdr is null we had recursive locking
+    // if we had recursive locking, we are done
+    cbz(hdr, done);
   }
-  // done
-  bind(done);
-  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+
+  // load object
+  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  verify_oop(obj);
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lightweight_unlock(obj, hdr, temp, rscratch2, slow_case);
+  } else if (LockingMode == LM_LEGACY) {
+    // test if object header is pointing to the displaced header, and if so, restore
+    // the displaced header in the object - if the object header is not pointing to
+    // the displaced header, get the object header instead
+    // if the object header was not pointing to the displaced header,
+    // we do unlocking via runtime call
+    if (hdr_offset) {
+      lea(rscratch1, Address(obj, hdr_offset));
+      cmpxchgptr(disp_hdr, hdr, rscratch1, rscratch2, done, &slow_case);
+    } else {
+      cmpxchgptr(disp_hdr, hdr, obj, rscratch2, done, &slow_case);
+    }
+    // done
+    bind(done);
+    dec_held_monitor_count(rscratch1);
+  }
 }
 
 
@@ -163,20 +175,30 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
-  // This assumes that all prototype bits fit in an int32_t
-  mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
-  str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseCompressedClassPointers) { // Take care not to kill klass
-    encode_klass_not_null(t1, klass);
-    strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
+  if (UseCompactObjectHeaders) {
+    ldr(t1, Address(klass, Klass::prototype_header_offset()));
+    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
   } else {
-    str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    mov(t1, checked_cast<int32_t>(markWord::prototype().value()));
+    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    if (UseCompressedClassPointers) { // Take care not to kill klass
+      encode_klass_not_null(t1, klass);
+      strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
+    } else {
+      str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    }
   }
 
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
+    int base_offset = arrayOopDesc::length_offset_in_bytes() + BytesPerInt;
+    if (!is_aligned(base_offset, BytesPerWord)) {
+      assert(is_aligned(base_offset, BytesPerInt), "must be 4-byte aligned");
+      // Clear gap/first 4 bytes following the length field.
+      strw(zr, Address(obj, base_offset));
+    }
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
   }
 }
@@ -249,12 +271,12 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == r0, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
 }
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int base_offset_in_bytes, int f, Register klass, Label& slow_case, bool zero_array) {
   assert_different_registers(obj, len, t1, t2, klass);
 
   // determine alignment mask
@@ -267,7 +289,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   const Register arr_size = t2; // okay to be the same
   // align object end
-  mov(arr_size, (int32_t)header_size * BytesPerWord + MinObjAlignmentInBytesMask);
+  mov(arr_size, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
   add(arr_size, arr_size, len, ext::uxtw, f);
   andr(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
 
@@ -275,8 +297,13 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   initialize_header(obj, klass, len, t1, t2);
 
+  // Align-up to word boundary, because we clear the 4 bytes potentially
+  // following the length field in initialize_header().
+  int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
   // clear rest of allocated space
-  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  if (zero_array) {
+    initialize_body(obj, arr_size, base_offset, t1, t2);
+  }
   if (Compilation::current()->bailed_out()) {
     return;
   }
@@ -285,22 +312,11 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == r0, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
 }
-
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  verify_oop(receiver);
-  // explicit NULL check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-
-  cmp_klass(receiver, iCache, rscratch1);
-}
-
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");
@@ -311,7 +327,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
+  bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {

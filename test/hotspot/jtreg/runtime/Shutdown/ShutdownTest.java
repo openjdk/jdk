@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class ShutdownTest {
 
     private static void startVM(String... options) throws Throwable {
         // Combine VM flags given from command-line and your additional options
-        OutputAnalyzer output = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer output = ProcessTools.executeTestJava(options);
         output.shouldContain("- ShutdownTest -");
         output.shouldHaveExitValue(0);
 

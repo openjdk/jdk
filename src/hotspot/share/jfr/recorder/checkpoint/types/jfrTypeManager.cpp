@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
@@ -34,10 +33,10 @@
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
@@ -50,7 +49,7 @@ class JfrSerializerRegistration : public JfrCHeapObj {
   bool _permit_cache;
  public:
   JfrSerializerRegistration(JfrTypeId id, bool permit_cache, JfrSerializer* serializer) :
-    _next(NULL), _serializer(serializer), _cache(), _id(id), _permit_cache(permit_cache) {}
+    _next(nullptr), _serializer(serializer), _cache(), _id(id), _permit_cache(permit_cache) {}
   ~JfrSerializerRegistration() {
     delete _serializer;
   }
@@ -104,7 +103,7 @@ void JfrTypeManager::write_threads(JfrCheckpointWriter& writer) {
 }
 
 JfrBlobHandle JfrTypeManager::create_thread_blob(JavaThread* jt, traceid tid /* 0 */, oop vthread /* nullptr */) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   ResourceMark rm(jt);
   JfrCheckpointWriter writer(jt, true, THREADS, JFR_THREADLOCAL); // Thread local lease for blob creation.
   // TYPE_THREAD and count is written unconditionally for blobs, also for vthreads.
@@ -116,9 +115,9 @@ JfrBlobHandle JfrTypeManager::create_thread_blob(JavaThread* jt, traceid tid /* 
 }
 
 void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthread /* nullptr */) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   Thread* const current = Thread::current(); // not necessarily the same as t
-  assert(current != NULL, "invariant");
+  assert(current != nullptr, "invariant");
   const bool is_vthread = vthread != nullptr;
   ResourceMark rm(current);
   JfrCheckpointWriter writer(current, true, THREADS, is_vthread ? JFR_VIRTUAL_THREADLOCAL : JFR_THREADLOCAL);
@@ -131,6 +130,17 @@ void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthrea
   }
   JfrThreadConstant type_thread(t, tid, vthread);
   type_thread.serialize(writer);
+}
+
+void JfrTypeManager::write_simplified_vthread_checkpoint(traceid vtid) {
+  Thread* const current = Thread::current();
+  assert(current != nullptr, "invariant");
+  ResourceMark rm(current);
+  JfrCheckpointWriter writer(current, true, THREADS, JFR_VIRTUAL_THREADLOCAL);
+  // TYPE_THREAD and count is written later as part of vthread bulk serialization.
+  writer.set_count(1); // Only a logical marker for the checkpoint header.
+  JfrSimplifiedVirtualThreadConstant type_simple_vthread(vtid);
+  type_simple_vthread.serialize(writer);
 }
 
 class SerializerRegistrationGuard : public StackObj {
@@ -155,7 +165,7 @@ void JfrTypeManager::destroy() {
   JfrSerializerRegistration* registration;
   while (types.is_nonempty()) {
     registration = types.remove();
-    assert(registration != NULL, "invariant");
+    assert(registration != nullptr, "invariant");
     delete registration;
   }
 }
@@ -163,7 +173,7 @@ void JfrTypeManager::destroy() {
 class InvokeOnRotation {
  public:
   bool process(const JfrSerializerRegistration* r) {
-    assert(r != NULL, "invariant");
+    assert(r != nullptr, "invariant");
     r->on_rotation();
     return true;
   }
@@ -182,7 +192,7 @@ class Diversity {
  public:
   Diversity(JfrTypeId id) : _id(id) {}
   bool process(const JfrSerializerRegistration* r) {
-    assert(r != NULL, "invariant");
+    assert(r != nullptr, "invariant");
     assert(r->id() != _id, "invariant");
     return true;
   }
@@ -195,9 +205,9 @@ static void assert_not_registered_twice(JfrTypeId id, List& list) {
 #endif
 
 static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer* serializer) {
-  assert(serializer != NULL, "invariant");
+  assert(serializer != nullptr, "invariant");
   JfrSerializerRegistration* const registration = new JfrSerializerRegistration(id, permit_cache, serializer);
-  if (registration == NULL) {
+  if (registration == nullptr) {
     delete serializer;
     return false;
   }
@@ -256,7 +266,7 @@ class InvokeSerializer {
  public:
   InvokeSerializer(JfrCheckpointWriter& writer) : _writer(writer) {}
   bool process(const JfrSerializerRegistration* r) {
-    assert(r != NULL, "invariant");
+    assert(r != nullptr, "invariant");
     r->invoke(_writer);
     return true;
   }

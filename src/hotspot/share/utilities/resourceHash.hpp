@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,21 @@ public:
   V _value;
   ResourceHashtableNode* _next;
 
-  ResourceHashtableNode(unsigned hash, K const& key, V const& value) :
-    _hash(hash), _key(key), _value(value), _next(nullptr) {}
+  ResourceHashtableNode(unsigned hash, K const& key, V const& value,
+                        ResourceHashtableNode* next = nullptr) :
+    _hash(hash), _key(key), _value(value), _next(next) {}
 
   // Create a node with a default-constructed value.
-  ResourceHashtableNode(unsigned hash, K const& key) :
-    _hash(hash), _key(key), _value(), _next(nullptr) {}
+  ResourceHashtableNode(unsigned hash, K const& key,
+                        ResourceHashtableNode* next = nullptr) :
+    _hash(hash), _key(key), _value(), _next(next) {}
 };
 
 template<
     class STORAGE,
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE,
+    MemTag MEM_TAG,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
@@ -137,6 +139,29 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  /**
+  * Inserts a value in the front of the table, assuming that
+  * the entry is absent.
+  * The table must be locked for the get or test that the entry
+  * is absent, and for this operation.
+  * This is a faster variant of put_if_absent because it adds to the
+  * head of the bucket, and doesn't search the bucket.
+  * @return: true: a new item is always added
+  */
+  bool put_when_absent(K const& key, V const& value) {
+    unsigned hv = HASH(key);
+    unsigned index = hv % table_size();
+    assert(*lookup_node(hv, key) == nullptr, "use put_if_absent");
+    Node** ptr = bucket_at(index);
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
+      *ptr = new (MEM_TAG) Node(hv, key, value, *ptr);
+    } else {
+      *ptr = new Node(hv, key, value, *ptr);
+    }
+    _number_of_entries ++;
+    return true;
+  }
+
+ /**
   * Inserts or replaces a value in the table.
   * @return: true:  if a new item is added
   *          false: if the item already existed and the value is updated
@@ -149,7 +174,7 @@ class ResourceHashtableBase : public STORAGE {
       return false;
     } else {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key, value);
+        *ptr = new (MEM_TAG) Node(hv, key, value);
       } else {
         *ptr = new Node(hv, key, value);
       }
@@ -168,7 +193,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
     if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key);
+        *ptr = new (MEM_TAG) Node(hv, key);
       } else {
         *ptr = new Node(hv, key);
       }
@@ -190,7 +215,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
     if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key, value);
+        *ptr = new (MEM_TAG) Node(hv, key, value);
       } else {
         *ptr = new Node(hv, key, value);
       }
@@ -202,14 +227,15 @@ class ResourceHashtableBase : public STORAGE {
     return &(*ptr)->_value;
   }
 
-
-  bool remove(K const& key) {
+  template<typename Function>
+  bool remove(K const& key, Function function) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
 
     Node* node = *ptr;
     if (node != nullptr) {
       *ptr = node->_next;
+      function(node->_key, node->_value);
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
       }
@@ -217,6 +243,11 @@ class ResourceHashtableBase : public STORAGE {
       return true;
     }
     return false;
+  }
+
+  bool remove(K const& key) {
+    auto dummy = [&] (K& k, V& v) { };
+    return remove(key, dummy);
   }
 
   // ITER contains bool do_entry(K const&, V const&), which will be
@@ -333,17 +364,17 @@ template<
     typename K, typename V,
     unsigned SIZE = 256,
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal,
+    MemTag MEM_TAG = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
 class ResourceHashtable : public ResourceHashtableBase<
   FixedResourceHashtableStorage<SIZE, K, V>,
-    K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> {
+    K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> {
   NONCOPYABLE(ResourceHashtable);
 public:
   ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
-                                              K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>() {}
+                                              K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS>() {}
 };
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP

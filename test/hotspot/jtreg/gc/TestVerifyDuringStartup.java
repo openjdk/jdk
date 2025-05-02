@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createTestJvm(
+    OutputAnalyzer output = ProcessTools.executeTestJava(
         "-XX:-UseTLAB",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+VerifyDuringStartup",
         "-Xlog:gc+verify=debug",
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());
 

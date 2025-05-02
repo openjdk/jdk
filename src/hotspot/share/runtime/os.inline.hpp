@@ -35,7 +35,7 @@
 
 #ifndef HAVE_PLATFORM_PRINT_NATIVE_STACK
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                     char *buf, int buf_size) {
+                                     char *buf, int buf_size, address& lastpc) {
   return false;
 }
 #endif

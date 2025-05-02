@@ -23,23 +23,23 @@
  */
 
 /**
- * @test SharedTrampolineTest
+ * @test SharedTrampolineTest id=C2
  * @summary Checks that trampolines can be shared for static method.
  * @bug 8280152
  * @library /test/lib
  *
- * @requires os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires vm.compiler2.enabled
+ * @requires vm.opt.TieredCompilation == null
+ * @requires os.arch=="aarch64"
  * @requires vm.debug
  *
- * @run driver compiler.sharedstubs.SharedTrampolineTest
+ * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation
  */
 
 package compiler.sharedstubs;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -60,7 +60,7 @@ public class SharedTrampolineTest {
         command.add(testClassName);
         command.add("a");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -72,23 +72,10 @@ public class SharedTrampolineTest {
     }
 
     public static void main(String[] args) throws Exception {
-        List<String> compilers = List.of("-XX:-TieredCompilation" /* C2 */);
-        List<String> tests = List.of("StaticMethodTest");
-        for (String compiler : compilers) {
-            for (String test : tests) {
-                runTest(compiler, test);
-            }
+        String[] tests = new String[] {"StaticMethodTest"};
+        for (String test : tests) {
+            runTest(args[0], test);
         }
-    }
-
-    private static String skipTo(Iterator<String> iter, String substring) {
-        while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains(substring)) {
-                return nextLine;
-            }
-        }
-        return null;
     }
 
     private static void checkOutput(OutputAnalyzer output) {
@@ -96,9 +83,9 @@ public class SharedTrampolineTest {
             .matcher(output.getStdout())
             .results()
             .map(m -> m.group(1))
-            .collect(Collectors.toList());
+            .toList();
         if (addrs.stream().distinct().count() >= addrs.size()) {
-            throw new RuntimeException("No stubs reused");
+            throw new RuntimeException("No runtime trampoline stubs reused: distinct " + addrs.stream().distinct().count() + ", in total " + addrs.size());
         }
     }
 

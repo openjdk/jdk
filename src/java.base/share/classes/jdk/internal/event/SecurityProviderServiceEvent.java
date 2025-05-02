@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package jdk.internal.event;
  */
 
 public final class SecurityProviderServiceEvent extends Event {
-    private final static SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
+    private static final SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
 
     /**
      * Returns {@code true} if event is enabled, {@code false} otherwise.

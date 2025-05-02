@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @test
  * @bug 6492872
  * @summary Deadlock in SSLEngine
+ * @library /javax/net/ssl/templates
  * @run main/othervm SSLEngineDeadlock
  * @author Brad R. Wetmore
  */
@@ -70,12 +71,9 @@
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.security.*;
-import java.nio.*;
 import java.lang.management.*;
 
-public class SSLEngineDeadlock {
+public class SSLEngineDeadlock extends SSLEngineTemplate {
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -93,40 +91,7 @@ public class SSLEngineDeadlock {
      */
     private static boolean debug = false;
 
-    private SSLContext sslc;
-
-    private SSLEngine clientEngine;     // client Engine
-    private ByteBuffer clientOut;       // write side of clientEngine
-    private ByteBuffer clientIn;        // read side of clientEngine
-
-    private SSLEngine serverEngine;     // server Engine
-    private ByteBuffer serverOut;       // write side of serverEngine
-    private ByteBuffer serverIn;        // read side of serverEngine
-
     private volatile boolean testDone = false;
-
-    /*
-     * For data transport, this example uses local ByteBuffers.  This
-     * isn't really useful, but the purpose of this example is to show
-     * SSLEngine concepts, not how to do network transport.
-     */
-    private ByteBuffer cTOs;            // "reliable" transport client->server
-    private ByteBuffer sTOc;            // "reliable" transport server->client
-
-    /*
-     * The following is to set up the keystores.
-     */
-    private static String pathToStores = "../../../../javax/net/ssl/etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
-
-    private static String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
 
     /*
      * Main entry point for this test.
@@ -154,26 +119,7 @@ public class SSLEngineDeadlock {
      * Create an initialized SSLContext to use for these tests.
      */
     public SSLEngineDeadlock() throws Exception {
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
-
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        sslc = sslCtx;
+       super();
     }
 
     /*
@@ -213,9 +159,6 @@ public class SSLEngineDeadlock {
      */
     private void runTest() throws Exception {
         boolean dataDone = false;
-
-        createSSLEngines();
-        createBuffers();
 
         SSLEngineResult clientResult;   // results from client's last operation
         SSLEngineResult serverResult;   // results from server's last operation
@@ -287,80 +230,8 @@ public class SSLEngineDeadlock {
         testDone = true;
     }
 
-    /*
-     * Using the SSLContext created during object creation,
-     * create/configure the SSLEngines we'll use for this test.
-     */
-    private void createSSLEngines() throws Exception {
-        /*
-         * Configure the serverEngine to act as a server in the SSL/TLS
-         * handshake.  Also, require SSL client authentication.
-         */
-        serverEngine = sslc.createSSLEngine();
-        serverEngine.setUseClientMode(false);
-        serverEngine.setNeedClientAuth(true);
-
-        /*
-         * Similar to above, but using client mode instead.
-         */
-        clientEngine = sslc.createSSLEngine("client", 80);
-        clientEngine.setUseClientMode(true);
-    }
-
-    /*
-     * Create and size the buffers appropriately.
-     */
-    private void createBuffers() {
-
-        /*
-         * We'll assume the buffer sizes are the same
-         * between client and server.
-         */
-        SSLSession session = clientEngine.getSession();
-        int appBufferMax = session.getApplicationBufferSize();
-        int netBufferMax = session.getPacketBufferSize();
-
-        /*
-         * We'll make the input buffers a bit bigger than the max needed
-         * size, so that unwrap()s following a successful data transfer
-         * won't generate BUFFER_OVERFLOWS.
-         *
-         * We'll use a mix of direct and indirect ByteBuffers for
-         * tutorial purposes only.  In reality, only use direct
-         * ByteBuffers when they give a clear performance enhancement.
-         */
-        clientIn = ByteBuffer.allocate(appBufferMax + 50);
-        serverIn = ByteBuffer.allocate(appBufferMax + 50);
-
-        cTOs = ByteBuffer.allocateDirect(netBufferMax);
-        sTOc = ByteBuffer.allocateDirect(netBufferMax);
-
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
-    }
-
     private static boolean isEngineClosed(SSLEngine engine) {
         return (engine.isOutboundDone() && engine.isInboundDone());
-    }
-
-    /*
-     * Simple check to make sure everything came across as expected.
-     */
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("\tData transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
     }
 
     /*

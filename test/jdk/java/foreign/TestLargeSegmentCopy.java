@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires sun.arch.data.model == "64"
  * @bug 8292851
  * @run testng/othervm -Xmx4G TestLargeSegmentCopy
@@ -45,8 +44,8 @@ public class TestLargeSegmentCopy {
         final int longArrayLength = Integer.MAX_VALUE / Long.BYTES + 100;
         final long[] array = new long[longArrayLength];
 
-        try (var arena = Arena.openConfined()) {
-            var segment = MemorySegment.allocateNative((long) longArrayLength * Long.BYTES, Long.SIZE, arena.scope());
+        try (var arena = Arena.ofConfined()) {
+            var segment = arena.allocate((long) longArrayLength * Long.BYTES, Long.SIZE);
             // Should not throw an exception or error
             MemorySegment.copy(segment, JAVA_LONG, 0, array, 0, longArrayLength);
             // Should not throw an exception or error

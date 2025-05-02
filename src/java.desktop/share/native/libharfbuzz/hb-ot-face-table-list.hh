@@ -56,9 +56,9 @@ HB_OT_CORE_TABLE (OT, maxp)
 #if !defined(HB_NO_FACE_COLLECT_UNICODES) || !defined(HB_NO_OT_FONT)
 HB_OT_ACCELERATOR (OT, cmap)
 #endif
-HB_OT_TABLE (OT, hhea)
+HB_OT_CORE_TABLE (OT, hhea)
 HB_OT_ACCELERATOR (OT, hmtx)
-HB_OT_TABLE (OT, OS2)
+HB_OT_CORE_TABLE (OT, OS2)
 #if !defined(HB_NO_OT_FONT_GLYPH_NAMES) || !defined(HB_NO_METRICS) || !defined(HB_NO_STYLE)
 HB_OT_ACCELERATOR (OT, post)
 #endif
@@ -66,7 +66,7 @@ HB_OT_ACCELERATOR (OT, post)
 HB_OT_ACCELERATOR (OT, name)
 #endif
 #ifndef HB_NO_STYLE
-HB_OT_TABLE (OT, STAT)
+HB_OT_CORE_TABLE (OT, STAT)
 #endif
 #ifndef HB_NO_META
 HB_OT_ACCELERATOR (OT, meta)
@@ -74,9 +74,9 @@ HB_OT_ACCELERATOR (OT, meta)
 
 /* Vertical layout. */
 #ifndef HB_NO_VERTICAL
-HB_OT_TABLE (OT, vhea)
+HB_OT_CORE_TABLE (OT, vhea)
 HB_OT_ACCELERATOR (OT, vmtx)
-HB_OT_TABLE (OT, VORG)
+HB_OT_CORE_TABLE (OT, VORG)
 #endif
 
 /* TrueType outlines. */
@@ -91,15 +91,22 @@ HB_OT_ACCELERATOR (OT, cff2)
 
 /* OpenType variations. */
 #ifndef HB_NO_VAR
-HB_OT_TABLE (OT, fvar)
-HB_OT_TABLE (OT, avar)
+HB_OT_CORE_TABLE (OT, fvar)
+HB_OT_CORE_TABLE (OT, avar)
+HB_OT_CORE_TABLE (OT, cvar)
 HB_OT_ACCELERATOR (OT, gvar)
-HB_OT_TABLE (OT, MVAR)
+#ifndef HB_NO_BEYOND_64K
+HB_OT_ACCELERATOR (OT, GVAR)
+#endif
+HB_OT_CORE_TABLE (OT, MVAR)
+#ifndef HB_NO_VAR_COMPOSITES
+HB_OT_ACCELERATOR (OT, VARC)
+#endif
 #endif
 
 /* Legacy kern. */
 #ifndef HB_NO_OT_KERN
-HB_OT_TABLE (OT, kern)
+HB_OT_ACCELERATOR (OT, kern)
 #endif
 
 /* OpenType shaping. */
@@ -107,19 +114,19 @@ HB_OT_TABLE (OT, kern)
 HB_OT_ACCELERATOR (OT, GDEF)
 HB_OT_ACCELERATOR (OT, GSUB)
 HB_OT_ACCELERATOR (OT, GPOS)
-//HB_OT_TABLE (OT, JSTF)
+//HB_OT_CORE_TABLE (OT, JSTF)
 #endif
 
 /* OpenType baseline. */
 #ifndef HB_NO_BASE
-HB_OT_TABLE (OT, BASE)
+HB_OT_CORE_TABLE (OT, BASE)
 #endif
 
 /* AAT shaping. */
 #ifndef HB_NO_AAT
-HB_OT_TABLE (AAT, morx)
-HB_OT_TABLE (AAT, mort)
-HB_OT_TABLE (AAT, kerx)
+HB_OT_ACCELERATOR (AAT, morx)
+HB_OT_ACCELERATOR (AAT, mort)
+HB_OT_ACCELERATOR (AAT, kerx)
 HB_OT_TABLE (AAT, ankr)
 HB_OT_TABLE (AAT, trak)
 HB_OT_TABLE (AAT, ltag)
@@ -129,8 +136,8 @@ HB_OT_TABLE (AAT, feat)
 
 /* OpenType color fonts. */
 #ifndef HB_NO_COLOR
-HB_OT_TABLE (OT, COLR)
-HB_OT_TABLE (OT, CPAL)
+HB_OT_CORE_TABLE (OT, COLR)
+HB_OT_CORE_TABLE (OT, CPAL)
 HB_OT_ACCELERATOR (OT, CBDT)
 HB_OT_ACCELERATOR (OT, sbix)
 HB_OT_ACCELERATOR (OT, SVG)
@@ -138,7 +145,7 @@ HB_OT_ACCELERATOR (OT, SVG)
 
 /* OpenType math. */
 #ifndef HB_NO_MATH
-HB_OT_TABLE (OT, MATH)
+HB_OT_CORE_TABLE (OT, MATH)
 #endif
 
 

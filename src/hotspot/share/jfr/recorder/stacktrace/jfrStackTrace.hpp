@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,15 @@ class JfrStackFrame {
   u1 _type;
 
  public:
-  JfrStackFrame(const traceid& id, int bci, int type, const InstanceKlass* klass);
-  JfrStackFrame(const traceid& id, int bci, int type, int lineno, const InstanceKlass* klass);
+  JfrStackFrame(const traceid& id, int bci, u1 type, const InstanceKlass* klass);
+  JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* klass);
 
   bool equals(const JfrStackFrame& rhs) const;
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
   void resolve_lineno() const;
 
-  enum {
+  enum : u1 {
     FRAME_INTERPRETER = 0,
     FRAME_JIT,
     FRAME_INLINE,
@@ -64,6 +64,7 @@ class JfrStackFrame {
 class JfrStackTrace : public JfrCHeapObj {
   friend class JfrNativeSamplerCallback;
   friend class JfrStackTraceRepository;
+  friend class LeakProfilerStackTraceWriter;
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class OSThreadSampler;
@@ -72,7 +73,7 @@ class JfrStackTrace : public JfrCHeapObj {
   const JfrStackTrace* _next;
   JfrStackFrame* _frames;
   traceid _id;
-  unsigned int _hash;
+  traceid _hash;
   u4 _nr_of_frames;
   u4 _max_frames;
   bool _frames_ownership;
@@ -82,7 +83,6 @@ class JfrStackTrace : public JfrCHeapObj {
 
   const JfrStackTrace* next() const { return _next; }
 
-  bool should_write() const { return !_written; }
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
   bool equals(const JfrStackTrace& rhs) const;
@@ -93,8 +93,8 @@ class JfrStackTrace : public JfrCHeapObj {
   void set_reached_root(bool reached_root) { _reached_root = reached_root; }
   void resolve_linenos() const;
 
-  bool record(JavaThread* current_thread, int skip);
-  bool record(JavaThread* current_thread, const frame& frame, int skip);
+  bool record(JavaThread* current_thread, int skip, int64_t stack_frame_id);
+  bool record(JavaThread* current_thread, const frame& frame, int skip, int64_t stack_frame_id);
   bool record_async(JavaThread* other_thread, const frame& frame);
 
   bool have_lineno() const { return _lineno; }
@@ -105,8 +105,9 @@ class JfrStackTrace : public JfrCHeapObj {
   ~JfrStackTrace();
 
  public:
-  unsigned int hash() const { return _hash; }
+  traceid hash() const { return _hash; }
   traceid id() const { return _id; }
+  bool should_write() const { return !_written; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

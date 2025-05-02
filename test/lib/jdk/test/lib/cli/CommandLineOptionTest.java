@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class CommandLineOptionTest {
         finalOptions.add("-version");
 
         ProcessBuilder processBuilder
-                = ProcessTools.createJavaProcessBuilder(finalOptions.toArray(
+                = ProcessTools.createLimitedTestJavaProcessBuilder(finalOptions.toArray(
                 new String[finalOptions.size()]));
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());
@@ -199,7 +199,9 @@ public abstract class CommandLineOptionTest {
             String wrongWarningMessage, ExitCode exitCode, String... options)
             throws Throwable {
         List<String> finalOptions = new ArrayList<>();
-        finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        if (!Platform.isStatic()) {
+            finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        }
         String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
         if (extraFlagForEmulated != null) {
             finalOptions.add(extraFlagForEmulated);
@@ -263,7 +265,7 @@ public abstract class CommandLineOptionTest {
         Collections.addAll(vmOpts, additionalVMOpts);
         Collections.addAll(vmOpts, "-XX:+PrintFlagsFinal", "-version");
 
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
                 vmOpts.toArray(new String[vmOpts.size()]));
 
         OutputAnalyzer outputAnalyzer
@@ -333,7 +335,7 @@ public abstract class CommandLineOptionTest {
         Collections.addAll(vmOpts, additionalVMOpts);
         Collections.addAll(vmOpts, "-version");
 
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
                 vmOpts.toArray(new String[vmOpts.size()]));
 
         return new OutputAnalyzer(processBuilder.start());
@@ -394,7 +396,9 @@ public abstract class CommandLineOptionTest {
             String expectedValue, String optionErrorString,
             String... additionalVMOpts) throws Throwable {
         List<String> finalOptions = new ArrayList<>();
-        finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        if (!Platform.isStatic()) {
+            finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        }
         String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
         if (extraFlagForEmulated != null) {
             finalOptions.add(extraFlagForEmulated);

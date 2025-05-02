@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,19 @@
 
 /*
  * @test
- * @bug 8042261
+ * @bug 8042261 8298405
  * @summary Checking that deprecated attribute does not apply to classes of deprecated package.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main DeprecatedPackageTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Deprecated_attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.attribute.DeprecatedAttribute;
 
 public class DeprecatedPackageTest extends TestResult {
 
@@ -66,6 +65,7 @@ public class DeprecatedPackageTest extends TestResult {
             for (String src : sourceTest) {
                 test(PACKAGE_INFO, src);
                 test(PACKAGE_INFO.replaceAll("@Deprecated", "/** @deprecated */"), src);
+                test(PACKAGE_INFO.replaceAll("@Deprecated", "/// @deprecated\n"), src);
             }
         } catch (Exception e) {
             addFailure(e);
@@ -78,12 +78,11 @@ public class DeprecatedPackageTest extends TestResult {
         addTestCase(src);
         printf("Testing test case: \n%s\n", src);
         try {
-            ClassFile cf = readClassFile(compile(
+            ClassModel cm = readClassFile(compile(
                         new String[]{"package-info.java", package_info},
                         new String[]{"notDeprecated.java", src})
                     .getClasses().get(CLASS_NAME));
-            Deprecated_attribute attr =
-                    (Deprecated_attribute) cf.getAttribute(Attribute.Deprecated);
+            DeprecatedAttribute attr = cm.findAttribute(Attributes.deprecated()).orElse(null);
             checkNull(attr, "Class can not have deprecated attribute : " + CLASS_NAME);
         } catch (Exception e) {
             addFailure(e);

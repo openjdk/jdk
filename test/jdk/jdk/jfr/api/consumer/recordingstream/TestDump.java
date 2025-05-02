@@ -41,7 +41,7 @@ import jdk.jfr.consumer.RecordingStream;
 /**
  * @test
  * @summary Tests RecordingStream::dump(Path)
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestDump

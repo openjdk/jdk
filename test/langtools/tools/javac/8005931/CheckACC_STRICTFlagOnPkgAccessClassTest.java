@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8005931
  * @summary javac doesn't set ACC_STRICT for classes with package access
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main CheckACC_STRICTFlagOnPkgAccessClassTest
  */
 
@@ -40,13 +39,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Method;
-
-import static com.sun.tools.classfile.AccessFlags.ACC_STRICT;
+import java.lang.classfile.*;
 
 public class CheckACC_STRICTFlagOnPkgAccessClassTest {
 
@@ -62,14 +55,12 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
 
     private List<String> errors = new ArrayList<>();
 
-    public static void main(String[] args)
-            throws IOException, ConstantPoolException, InvalidDescriptor {
+    public static void main(String[] args) throws IOException {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
         new CheckACC_STRICTFlagOnPkgAccessClassTest().run(comp);
     }
 
-    private void run(JavaCompiler comp)
-            throws IOException, ConstantPoolException, InvalidDescriptor {
+    private void run(JavaCompiler comp) throws IOException {
         compile(comp);
         check();
         if (errors.size() > 0) {
@@ -95,18 +86,14 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
         }
     }
 
-    void check()
-        throws
-            IOException,
-            ConstantPoolException,
-            Descriptor.InvalidDescriptor {
-        ClassFile classFileToCheck = ClassFile.read(new File("Test.class"));
+    void check() throws IOException {
+        ClassModel classFileToCheck = ClassFile.of().parse(new File("Test.class").toPath());
 
-        for (Method method : classFileToCheck.methods) {
-            if ((method.access_flags.flags & ACC_STRICT) == 0) {
+        for (MethodModel method : classFileToCheck.methods()) {
+            if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                 errors.add(String.format(offendingMethodErrorMessage,
-                        method.getName(classFileToCheck.constant_pool),
-                        classFileToCheck.getName()));
+                        method.methodName().stringValue(),
+                        classFileToCheck.thisClass().asInternalName()));
             }
         }
     }

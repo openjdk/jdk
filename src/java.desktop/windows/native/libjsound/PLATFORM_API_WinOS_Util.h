@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,17 @@
 
 #include "PlatformMidi.h"
 
+typedef struct tag_MidiHeaderInfo {
+    MIDIHDR header;     // Windows specific structure to hold meta info
+    INT32 bufferLength; // the actual length of the buffer in MIDIHDR
+} MidiHeaderInfo;
+
 typedef struct tag_SysExQueue {
-    int count;         // number of sys ex headers
-    int size;          // data size per sys ex header
-    int ownsLinearMem; // true when linearMem is to be disposed
-    UBYTE* linearMem;  // where the actual sys ex data is, count*size bytes
-    MIDIHDR header[1]; // Windows specific structure to hold meta info
+    int count;                    // number of sys ex headers
+    int size;                     // data size per sys ex header
+    int ownsLinearMem;            // true when linearMem is to be disposed
+    UBYTE* linearMem;             // where the actual sys ex data is, count*size bytes
+    MidiHeaderInfo headerInfo[1]; // a structure to hold MIDIHDR and the actual buffer length
 } SysExQueue;
 
 /* set the startTime field in MidiDeviceHandle */

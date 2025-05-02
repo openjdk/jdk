@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -100,9 +100,9 @@ public class CK_ECDH1_DERIVE_PARAMS {
     }
 
     /**
-     * Returns the string representation of CK_PKCS5_PBKD2_PARAMS.
+     * Returns the string representation of CK_ECDH1_DERIVE_PARAMS.
      *
-     * @return the string representation of CK_PKCS5_PBKD2_PARAMS
+     * @return the string representation of CK_ECDH1_DERIVE_PARAMS
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();

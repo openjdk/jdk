@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,10 @@ public class value004 {
     private static Log log;
 
     public static void main( String argv[] ) {
-        System.exit(run(argv, System.out)+95); // JCK-compatible exit status
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[],PrintStream out) {
@@ -122,8 +125,7 @@ public class value004 {
                 }
                 flg = true;
                 ovl = argHandler.getLaunchExecPath() + " "
-                     + "-Xdebug -Xnoagent -Djava.compiler=NONE "
-                     + "-Xrunjdwp:transport=" + c.transport().name() + ",suspend=y,"
+                     +"-agentlib:jdwp=transport=" + c.transport().name() +",server=n,suspend=y,"
                      + "address=" + address + " nsk.jdi.Argument.value.value004a";
                 if (argval.isValid(ovl)) {
                     argval.setValue(ovl);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* constant names */
@@ -69,15 +69,15 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     /* perform testing */
     {
-        jthreadGroup rootGroup = NULL;
-        jthreadGroup runningGroup = NULL;
-        jthreadGroup notStartedGroup = NULL;
-        jthreadGroup finishedGroup = NULL;
+        jthreadGroup rootGroup = nullptr;
+        jthreadGroup runningGroup = nullptr;
+        jthreadGroup notStartedGroup = nullptr;
+        jthreadGroup finishedGroup = nullptr;
 
         /* find root thread group */
         {
             jint topGroupsCount = 0;
-            jthreadGroup* topGroups = NULL;
+            jthreadGroup* topGroups = nullptr;
 
             NSK_DISPLAY0("Get top level thread groups\n");
             if (!NSK_JVMTI_VERIFY(
@@ -87,13 +87,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
             NSK_DISPLAY1("  ... got groups: %d\n", (int)topGroupsCount);
 
-            if (!NSK_VERIFY(topGroupsCount > 0 && topGroups != NULL))
+            if (!NSK_VERIFY(topGroupsCount > 0 && topGroups != nullptr))
                 return;
 
             NSK_DISPLAY1("Find thread group by name: %s\n", ROOT_GROUP_NAME);
             if (!NSK_VERIFY((rootGroup =
                     findThreadGroupByName(jvmti, jni, ROOT_GROUP_NAME,
-                                            topGroupsCount, topGroups)) != NULL)) {
+                                            topGroupsCount, topGroups)) != nullptr)) {
                 NSK_COMPLAIN1("No tested root thread group found: %s\n", ROOT_GROUP_NAME);
                 nsk_jvmti_setFailStatus();
                 return;
@@ -105,8 +105,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         {
             jint groupsCount = 0;
             jint threadsCount = 0;
-            jthread* threads = NULL;
-            jthreadGroup* groups = NULL;
+            jthread* threads = nullptr;
+            jthreadGroup* groups = nullptr;
 
             NSK_DISPLAY1("Get children of root thread group: %p\n", (void*)rootGroup);
             if (!NSK_JVMTI_VERIFY(
@@ -150,7 +150,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                         if (strcmp(info.name, RUNNING_GROUP_NAME) == 0) {
                             NSK_DISPLAY2("  ... found runningThreadGroup: %p (%s)\n",
                                                                 groups[i], info.name);
-                            if (runningGroup != NULL) {
+                            if (runningGroup != nullptr) {
                                 NSK_COMPLAIN6("Duplicated runningThreadGroup in rootThreadGroup:\n"
                                               "#   parent group:   %p (%s)\n"
                                               "#   existing group: %p (%s)\n"
@@ -168,7 +168,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                         if (strcmp(info.name, NOT_STARTED_GROUP_NAME) == 0) {
                             NSK_DISPLAY2("  ... found notStartedThreadGroup: %p (%s)\n",
                                                                 groups[i], info.name);
-                            if (notStartedGroup != NULL) {
+                            if (notStartedGroup != nullptr) {
                                 NSK_COMPLAIN6("Duplicated notStartedThreadGroup in rootThreadGroup:\n"
                                               "#   parent group:   %p (%s)\n"
                                               "#   existing group: %p (%s)\n"
@@ -186,7 +186,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                         if (strcmp(info.name, FINISHED_GROUP_NAME) == 0) {
                             NSK_DISPLAY2("  ... found finishedThreadGroup: %p (%s)\n",
                                                                 groups[i], info.name);
-                            if (finishedGroup != NULL) {
+                            if (finishedGroup != nullptr) {
                                 NSK_COMPLAIN6("Duplicated finishedThreadGroup in rootThreadGroup:\n"
                                               "#   parent group:   %p (%s)\n"
                                               "#   existing group: %p (%s)\n"
@@ -243,7 +243,7 @@ static int checkThreadGroup(jvmtiEnv* jvmti, JNIEnv* jni,
                                 jint expectedThreadsCount, const char expectedThreadName[]) {
     size_t threadNameLen = strlen(expectedThreadName);
 
-    if (group == NULL) {
+    if (group == nullptr) {
         NSK_COMPLAIN1("No expected group found in rootThreadGroup: %s\n", groupName);
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
@@ -253,8 +253,8 @@ static int checkThreadGroup(jvmtiEnv* jvmti, JNIEnv* jni,
     {
         jint threadsCount = 0;
         jint groupsCount = 0;
-        jthread* threads = NULL;
-        jthreadGroup* groups = NULL;
+        jthread* threads = nullptr;
+        jthreadGroup* groups = nullptr;
 
         if (!NSK_JVMTI_VERIFY(
                 jvmti->GetThreadGroupChildren(group, &threadsCount, &threads, &groupsCount, &groups))) {
@@ -296,7 +296,7 @@ static int checkThreadGroup(jvmtiEnv* jvmti, JNIEnv* jni,
                 NSK_DISPLAY2("  ... found thread: %p (%s)\n",
                                     (void*)threads[i], nsk_null_string(info.name));
 
-                if (info.name == NULL ||
+                if (info.name == nullptr ||
                             strncmp(info.name, expectedThreadName, threadNameLen) != 0) {
                     NSK_COMPLAIN5("Found unexpected thread in thread group:\n"
                                   "#   thread group:  %p (%s)\n"
@@ -327,31 +327,31 @@ static int checkThreadGroup(jvmtiEnv* jvmti, JNIEnv* jni,
 /** Recursively find thread group by its name among given groups and their childrens. */
 static jthreadGroup findThreadGroupByName(jvmtiEnv* jvmti, JNIEnv* jni, const char name[],
                                                 jint count, jthreadGroup groupsList[]) {
-    jthreadGroup foundGroup = NULL;
+    jthreadGroup foundGroup = nullptr;
     int i;
 
-    for (i = 0; i < count && foundGroup == NULL; i++) {
+    for (i = 0; i < count && foundGroup == nullptr; i++) {
         jint threadsCount = 0;
         jint groupsCount = 0;
-        jthread* threads = NULL;
-        jthreadGroup * groups = NULL;
+        jthread* threads = nullptr;
+        jthreadGroup * groups = nullptr;
 
         if (!NSK_JVMTI_VERIFY(
                 jvmti->GetThreadGroupChildren(groupsList[i], &threadsCount, &threads, &groupsCount, &groups))) {
             nsk_jvmti_setFailStatus();
-            return NULL;
+            return nullptr;
         }
 
         if (groupsCount > 0) {
             int j;
 
-            if (!NSK_VERIFY(groups != NULL))
-                return NULL;
+            if (!NSK_VERIFY(groups != nullptr))
+                return nullptr;
 
             for (j = 0; j < groupsCount; j++) {
                 jvmtiThreadGroupInfo info;
 
-                if (groups[j] != NULL) {
+                if (groups[j] != nullptr) {
 
                     if (!NSK_JVMTI_VERIFY(
                             jvmti->GetThreadGroupInfo(groups[j], &info))) {
@@ -366,7 +366,7 @@ static jthreadGroup findThreadGroupByName(jvmtiEnv* jvmti, JNIEnv* jni, const ch
                 }
             }
 
-            if (foundGroup == NULL) {
+            if (foundGroup == nullptr) {
                 foundGroup = findThreadGroupByName(jvmti, jni, name, groupsCount, groups);
             }
         }
@@ -400,7 +400,7 @@ JNIEXPORT jint JNI_OnLoad_getthrdgrpchld001(JavaVM *jvm, char *options, void *re
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -415,11 +415,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

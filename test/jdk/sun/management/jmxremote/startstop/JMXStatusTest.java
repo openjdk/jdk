@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,14 +84,10 @@ abstract public class JMXStatusTest {
     @BeforeTest
     public final void setup() throws Exception {
         List<String> args = new ArrayList<>();
-        args.add("-cp");
-        args.add(System.getProperty("test.class.path"));
         args.add("-XX:+UsePerfData");
         args.addAll(getCustomVmArgs());
         args.add(TEST_APP_NAME);
-        testAppPb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
-
-        jcmd = new ManagementAgentJcmd(TEST_APP_NAME, false);
+        testAppPb = ProcessTools.createTestJavaProcessBuilder(args);
     }
 
     @BeforeMethod
@@ -100,6 +96,7 @@ abstract public class JMXStatusTest {
             TEST_APP_NAME, testAppPb,
             (Predicate<String>)l->l.trim().equals("main enter")
         );
+        jcmd = new ManagementAgentJcmd(testApp, false);
     }
 
     @AfterMethod

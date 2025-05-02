@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,11 @@ import java.util.*;
  */
 public class Diagram {
 
-    private List<Figure> figures;
+    private final Map<InputNode, Figure> figures;
+    private final Hashtable<Integer, Figure> figureHash;
     private final Map<InputBlock, Block> blocks;
+    private List<LiveRangeSegment> liveRangeSegments;
+    private final InputGraph inputGraph;
     private final String nodeText;
     private final String shortNodeText;
     private final String tinyNodeText;
@@ -63,9 +66,12 @@ public class Diagram {
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
-        this.figures = new ArrayList<>();
+        this.figures = new LinkedHashMap<>();
+        this.figureHash = new Hashtable<>();
         this.blocks = new LinkedHashMap<>(8);
+        this.liveRangeSegments = new ArrayList<>();
         this.blockConnections = new HashSet<>();
+        this.inputGraph = graph;
         this.cfg = false;
         int curId = 0;
 
@@ -74,14 +80,13 @@ public class Diagram {
         }
 
         Collection<InputNode> nodes = graph.getNodes();
-        Hashtable<Integer, Figure> figureHash = new Hashtable<>();
         for (InputNode n : nodes) {
             Figure f = new Figure(this, curId, n);
             curId++;
             f.getProperties().add(n.getProperties());
             f.setBlock(blocks.get(graph.getBlock(n)));
             figureHash.put(n.getId(), f);
-            this.figures.add(f);
+            this.figures.put(n, f);
         }
 
         for (InputEdge e : graph.getEdges()) {
@@ -113,16 +118,145 @@ public class Diagram {
             }
         }
 
+        for (Figure f : figures.values()) {
+            int i = 0;
+            for (InputSlot inputSlot : f.getInputSlots()) {
+                inputSlot.setOriginalIndex(i);
+                i++;
+            }
+        }
+
         for (InputBlockEdge e : graph.getBlockEdges()) {
             Block p = getBlock(e.getFrom());
             Block s = getBlock(e.getTo());
             blockConnections.add(new BlockConnection(p, s, e.getLabel()));
         }
+
+        Hashtable<Integer, InputLiveRange> liveRangeHash = new Hashtable<>();
+        for (InputLiveRange lrg : graph.getLiveRanges()) {
+            liveRangeHash.put(lrg.getId(), lrg);
+        }
+
+        // Pre-compute live ranges joined by each block.
+        Map<InputBlock, Set<Integer>> blockJoined = new HashMap<>();
+        for (InputBlock b : graph.getBlocks()) {
+            blockJoined.put(b, new HashSet<>());
+            for (InputNode n : b.getNodes()) {
+                LivenessInfo l = graph.getLivenessInfoForNode(n);
+                if (l != null && l.join != null) {
+                    blockJoined.get(b).addAll(l.join);
+                }
+            }
+        }
+
+        for (InputBlock b : graph.getBlocks()) {
+            if (b.getNodes().isEmpty()) {
+                continue;
+            }
+            Map<Integer, InputNode> active = new HashMap<>();
+            Set<Integer> instant = new HashSet<>();
+            Set<Integer> opening = new HashSet<>();
+            InputNode header = b.getNodes().get(0);
+            if (graph.getLivenessInfoForNode(header) == null) {
+                // No liveness information available, skip.
+                continue;
+            }
+            Set<Integer> joined = new HashSet<>();
+            if (b.getSuccessors().size() == 1) {
+                // We assume the live-out ranges in this block might only be
+                // joined if there is exactly one successor block (i.e. the CFG
+                // does not contain critical edges).
+                joined.addAll(b.getLiveOut());
+                InputBlock succ = b.getSuccessors().iterator().next();
+                joined.retainAll(blockJoined.get(succ));
+            }
+            for (int liveRangeId : graph.getLivenessInfoForNode(header).livein) {
+                active.put(liveRangeId, null);
+            }
+            for (InputNode n : b.getNodes()) {
+                LivenessInfo l = graph.getLivenessInfoForNode(n);
+                // Commit segments killed by n.
+                if (l.kill != null) {
+                    for (int liveRangeId : l.kill) {
+                        InputNode startNode = active.get(liveRangeId);
+                        Figure start = startNode == null ? null : figureHash.get(startNode.getId());
+                        InputNode endNode = n;
+                        Figure end = figureHash.get(endNode.getId());
+                        LiveRangeSegment s = new LiveRangeSegment(liveRangeHash.get(liveRangeId), getBlock(b), start, end);
+                        if (opening.contains(liveRangeId)) {
+                            s.setOpening(true);
+                        }
+                        s.setClosing(true);
+                        liveRangeSegments.add(s);
+                        active.remove(liveRangeId);
+                    }
+                }
+                // Activate new segments.
+                if (l.def != null && !active.containsKey(l.def)) {
+                    InputNode startNode = n;
+                    if (l.join != null && !l.join.isEmpty()) {
+                        // Start of a "joined" live range. These start always at
+                        // the beginning of the basic block.
+                        startNode = null;
+                    }
+                    active.put(l.def, startNode);
+                    opening.add(l.def);
+                    if (!l.liveout.contains(l.def)) {
+                        instant.add(l.def);
+                    }
+                }
+            }
+            // Commit segments live out the block.
+            for (Integer liveRangeId : active.keySet()) {
+                InputNode startNode = active.get(liveRangeId);
+                Figure start = startNode == null ? null : figureHash.get(startNode.getId());
+                LiveRangeSegment s = new LiveRangeSegment(liveRangeHash.get(liveRangeId), getBlock(b), start, null);
+                if (instant.contains(liveRangeId)) {
+                    s.setInstantaneous(true);
+                }
+                if (opening.contains(liveRangeId)) {
+                    s.setOpening(true);
+                }
+                if (instant.contains(liveRangeId) || joined.contains(liveRangeId)) {
+                    s.setClosing(true);
+                }
+                liveRangeSegments.add(s);
+            }
+        }
+        liveRangeSegments.sort(Comparator.comparingInt(s -> s.getLiveRange().getId()));
+        for (InputBlock inputBlock : graph.getBlocks()) {
+            // This loop could be sped up by fusing it with the above one.
+            List<Integer> liveRangeSegmentIds = new ArrayList<>();
+            int lastAddedLiveRangeId = -1;
+            for (LiveRangeSegment s : getLiveRangeSegments()) {
+                if (s.getCluster().getInputBlock().getName().equals(inputBlock.getName())) {
+                    int thisLiveRangeId = s.getLiveRange().getId();
+                    if (thisLiveRangeId != lastAddedLiveRangeId) {
+                        liveRangeSegmentIds.add(thisLiveRangeId);
+                        lastAddedLiveRangeId = thisLiveRangeId;
+                    }
+                }
+            }
+            blocks.get(inputBlock).setLiveRangeIds(liveRangeSegmentIds);
+        }
+    }
+
+    public InputGraph getInputGraph() {
+        return inputGraph;
     }
 
     public Block getBlock(InputBlock b) {
         assert blocks.containsKey(b);
         return blocks.get(b);
+    }
+
+    public boolean hasFigure(InputNode n) {
+        return figures.containsKey(n);
+    }
+
+    public Figure getFigure(InputNode n) {
+        assert figures.containsKey(n);
+        return figures.get(n);
     }
 
     public boolean hasBlock(InputBlock b) {
@@ -150,7 +284,11 @@ public class Diagram {
     }
 
     public List<Figure> getFigures() {
-        return Collections.unmodifiableList(figures);
+        return Collections.unmodifiableList(new ArrayList<>(figures.values()));
+    }
+
+    public List<LiveRangeSegment> getLiveRangeSegments() {
+        return Collections.unmodifiableList(liveRangeSegments);
     }
 
     public FigureConnection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
@@ -159,7 +297,7 @@ public class Diagram {
         return new FigureConnection(inputSlot, outputSlot, label);
     }
 
-    public void removeAllBlocks(Set<Block> blocksToRemove) {
+    public void removeAllBlocks(Collection<Block> blocksToRemove) {
         Set<Figure> figuresToRemove = new HashSet<>();
         for (Block b : blocksToRemove) {
             for (Figure f : getFigures()) {
@@ -174,18 +312,12 @@ public class Diagram {
         }
     }
 
-    public void removeAllFigures(Set<Figure> figuresToRemove) {
+    public void removeAllFigures(Collection<Figure> figuresToRemove) {
         for (Figure f : figuresToRemove) {
             freeFigure(f);
-        }
+            figures.remove(f.getInputNode());
 
-        ArrayList<Figure> newFigures = new ArrayList<>();
-        for (Figure f : this.figures) {
-            if (!figuresToRemove.contains(f)) {
-                newFigures.add(f);
-            }
         }
-        figures = newFigures;
     }
 
     private void freeFigure(Figure succ) {
@@ -207,15 +339,14 @@ public class Diagram {
 
     }
 
-    public void removeFigure(Figure succ) {
-        assert this.figures.contains(succ);
-        freeFigure(succ);
-        this.figures.remove(succ);
+    public void removeFigure(Figure figure) {
+        freeFigure(figure);
+        this.figures.remove(figure.getInputNode());
     }
 
     public Set<FigureConnection> getConnections() {
         Set<FigureConnection> connections = new HashSet<>();
-        for (Figure f : figures) {
+        for (Figure f : figures.values()) {
             for (InputSlot s : f.getInputSlots()) {
                 connections.addAll(s.getConnections());
             }
@@ -238,7 +369,7 @@ public class Diagram {
         System.out.println("=============================================================");
         System.out.println("Diagram statistics");
 
-        List<Figure> tmpFigures = getFigures();
+        Collection<Figure> tmpFigures = getFigures();
         Set<FigureConnection> connections = getConnections();
 
         System.out.println("Number of figures: " + tmpFigures.size());
@@ -270,7 +401,7 @@ public class Diagram {
     }
 
     public Figure getRootFigure() {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures.values());
         Figure root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Root"));
         if (root == null) {
             root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Start"));

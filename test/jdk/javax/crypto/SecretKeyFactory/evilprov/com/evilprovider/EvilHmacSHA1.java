@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -35,7 +33,8 @@ public final class EvilHmacSHA1 extends MacSpi {
     private final Mac internalMac;
 
     public EvilHmacSHA1() throws GeneralSecurityException {
-        internalMac = Mac.getInstance("HmacSHA1", "SunJCE");
+        internalMac = Mac.getInstance("HmacSHA1",
+                System.getProperty("test.provider.name", "SunJCE"));
     }
 
     @Override

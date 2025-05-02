@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ Java_sun_java2d_x11_XSurfaceData_flushNativeSurface(JNIEnv *env, jobject xsd)
 }
 
 
-JNIEXPORT X11SDOps * JNICALL
+X11SDOps *
 X11SurfaceData_GetOps(JNIEnv *env, jobject sData)
 {
 #ifdef HEADLESS
@@ -882,11 +882,9 @@ static void X11SD_GetRasInfo(JNIEnv *env,
     } else
 #endif /* MITSHM */
     if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE) {
-        int x, y, w, h;
+        int x, y;
         x = pRasInfo->bounds.x1;
         y = pRasInfo->bounds.y1;
-        w = pRasInfo->bounds.x2 - x;
-        h = pRasInfo->bounds.y2 - y;
 
         xpriv->img = X11SD_GetImage(env, xsdo, &pRasInfo->bounds, lockFlags);
         if (xpriv->img) {

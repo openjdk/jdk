@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
 # questions.
 #
 
-default: build
-
-include $(SPEC)
-include MakeBase.gmk
-include JavaCompilation.gmk
-include NativeCompilation.gmk
-
-TARGETS :=
+include MakeFileStart.gmk
 
 ################################################################################
+
+include CopyFiles.gmk
+include JavaCompilation.gmk
 
 FH_BASEDIR := $(TOPDIR)/test/failure_handler
 FH_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/failure_handler
@@ -51,7 +47,7 @@ $(eval $(call SetupJavaCompilation, BUILD_FAILURE_HANDLER, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(FH_BASEDIR)/src/share/classes $(FH_BASEDIR)/src/share/conf, \
     BIN := $(FH_SUPPORT)/classes, \
-    DISABLED_WARNINGS := options serial try, \
+    DISABLED_WARNINGS := options serial try this-escape, \
     COPY := .properties, \
     CLASSPATH := $(JTREG_JAR) $(TOOLS_JAR), \
     JAR := $(FH_JAR), \
@@ -80,6 +76,10 @@ IMAGES_TARGETS += $(COPY_FH)
 # Use JTREG_TEST_OPTS for test VM options
 # Use JTREG_TESTS for jtreg tests parameter
 #
+# Most likely you want to select a specific test from test/failure_handler/test
+# and manually inspect the results. This target does not actually verify
+# anything about the failure_handler's output or even if it ran at all.
+#
 RUN_DIR := $(FH_SUPPORT)/test
 
 test:
@@ -105,4 +105,8 @@ test:
 build: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
-.PHONY: all images test
+.PHONY: images test
+
+################################################################################
+
+include MakeFileEnd.gmk

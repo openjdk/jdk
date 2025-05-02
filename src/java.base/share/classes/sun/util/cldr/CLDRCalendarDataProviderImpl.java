@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@ package sun.util.cldr;
 
 import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.CalendarDataProviderImpl;
 import sun.util.locale.provider.CalendarDataUtility;
 
@@ -47,8 +45,8 @@ import sun.util.locale.provider.CalendarDataUtility;
  */
 public class CLDRCalendarDataProviderImpl extends CalendarDataProviderImpl {
 
-    private static Map<String, Integer> firstDay = new ConcurrentHashMap<>();
-    private static Map<String, Integer> minDays = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> firstDay = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> minDays = new ConcurrentHashMap<>();
 
     public CLDRCalendarDataProviderImpl(Type type, Set<String> langtags) {
         super(type, langtags);

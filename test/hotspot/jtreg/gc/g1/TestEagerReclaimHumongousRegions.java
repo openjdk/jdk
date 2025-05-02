@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ class TestEagerReclaimHumongousRegionsReclaimRegionFast {
 
 public class TestEagerReclaimHumongousRegions {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms128M",
             "-Xmx128M",
@@ -89,8 +89,6 @@ public class TestEagerReclaimHumongousRegions {
             TestEagerReclaimHumongousRegionsReclaimRegionFast.class.getName());
 
         Pattern p = Pattern.compile("Full GC");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         int found = 0;
         Matcher m = p.matcher(output.getStdout());

@@ -258,8 +258,8 @@ class UNSIGNED5 : AllStatic {
   //  MyReader r(array); while (r.has_next())  print(r.next_uint());
   template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
   class Reader {
-    const ARR _array;
-    const OFF _limit;
+    ARR _array;
+    OFF _limit;
     OFF _position;
     int next_length() {
       return UNSIGNED5::check_length(_array, _position, _limit, GET());
@@ -324,7 +324,7 @@ class UNSIGNED5 : AllStatic {
   public:
     Writer(const ARR& array)
       : _array(const_cast<ARR&>(array)), _limit_ptr(nullptr), _position(0) {
-      // Note: if _limit_ptr is nullptr, the ARR& is never reassigned,
+      // Note: if _limit_ptr is null, the ARR& is never reassigned,
       // because has_limit is false.  So the const_cast here is safe.
       assert(!has_limit(), "this writer cannot be growable");
     }

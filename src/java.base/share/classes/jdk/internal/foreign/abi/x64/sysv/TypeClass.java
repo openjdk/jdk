@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.x64.sysv;
+
+import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -31,8 +34,6 @@ import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
-import jdk.internal.foreign.Utils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -190,7 +191,13 @@ class TypeClass {
 
     private static List<ArgumentClassImpl>[] groupByEightBytes(GroupLayout group) {
         long offset = 0L;
-        int nEightbytes = (int) Utils.alignUp(group.byteSize(), 8) / 8;
+        int nEightbytes;
+        try {
+            // alignUp can overflow the value, but it's okay since toIntExact still catches it
+            nEightbytes = Math.toIntExact(Utils.alignUp(group.byteSize(), 8) / 8);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("GroupLayout is too large: " + group, e);
+        }
         @SuppressWarnings({"unchecked", "rawtypes"})
         List<ArgumentClassImpl>[] groups = new List[nEightbytes];
         for (MemoryLayout l : group.memberLayouts()) {
@@ -202,35 +209,40 @@ class TypeClass {
         return groups;
     }
 
-    private static void groupByEightBytes(MemoryLayout l, long offset, List<ArgumentClassImpl>[] groups) {
-        if (l instanceof GroupLayout group) {
-            for (MemoryLayout m : group.memberLayouts()) {
-                groupByEightBytes(m, offset, groups);
-                if (group instanceof StructLayout) {
-                    offset += m.byteSize();
+    private static void groupByEightBytes(MemoryLayout layout,
+                                          long offset,
+                                          List<ArgumentClassImpl>[] groups) {
+        switch (layout) {
+            case GroupLayout group -> {
+                for (MemoryLayout m : group.memberLayouts()) {
+                    groupByEightBytes(m, offset, groups);
+                    if (group instanceof StructLayout) {
+                        offset += m.byteSize();
+                    }
                 }
             }
-        } else if (l instanceof PaddingLayout) {
-            return;
-        } else if (l instanceof SequenceLayout seq) {
-            MemoryLayout elem = seq.elementLayout();
-            for (long i = 0 ; i < seq.elementCount() ; i++) {
-                groupByEightBytes(elem, offset, groups);
-                offset += elem.byteSize();
+            case PaddingLayout  _ -> {
             }
-        } else if (l instanceof ValueLayout vl) {
-            List<ArgumentClassImpl> layouts = groups[(int)offset / 8];
-            if (layouts == null) {
-                layouts = new ArrayList<>();
-                groups[(int)offset / 8] = layouts;
+            case SequenceLayout seq -> {
+                MemoryLayout elem = seq.elementLayout();
+                for (long i = 0; i < seq.elementCount(); i++) {
+                    groupByEightBytes(elem, offset, groups);
+                    offset += elem.byteSize();
+                }
             }
-            // if the aggregate contains unaligned fields, it has class MEMORY
-            ArgumentClassImpl argumentClass = (offset % vl.byteAlignment()) == 0 ?
-                    argumentClassFor(vl) :
-                    ArgumentClassImpl.MEMORY;
-            layouts.add(argumentClass);
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + l);
+            case ValueLayout vl -> {
+                List<ArgumentClassImpl> layouts = groups[(int) offset / 8];
+                if (layouts == null) {
+                    layouts = new ArrayList<>();
+                    groups[(int) offset / 8] = layouts;
+                }
+                // if the aggregate contains unaligned fields, it has class MEMORY
+                ArgumentClassImpl argumentClass = (offset % vl.byteAlignment()) == 0 ?
+                        argumentClassFor(vl) :
+                        ArgumentClassImpl.MEMORY;
+                layouts.add(argumentClass);
+            }
+            case null, default -> throw new IllegalStateException("Unexpected layout: " + layout);
         }
     }
 }

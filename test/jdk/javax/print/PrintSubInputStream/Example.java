@@ -23,9 +23,9 @@
 
 /**
  * @test
+ * key printer
  * @bug 4700712 4707777
  * @summary Should submit only 1 job in Windows and print only 1 page.
- * @author jgodinez
  * @run main/manual Example
  */
 import java.awt.*;

@@ -33,6 +33,9 @@
 
 package compiler.compilercontrol.parser;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+
 import compiler.compilercontrol.share.JSONFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -52,6 +55,7 @@ public class DirectiveParserTest {
         emptyFile();
         noFile();
         directory();
+        lineCommentTest();
     }
 
     private static void simpleTest() {
@@ -144,5 +148,21 @@ public class DirectiveParserTest {
         OutputAnalyzer output = HugeDirectiveUtil.execute(Utils.TEST_SRC);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "directory as "
                 + "a name");
+    }
+
+    private static void lineCommentTest() {
+        String fileName = "lineComment.json";
+        try {
+            PrintStream out = new PrintStream(fileName);
+            out.println("[{");
+            out.println("  match: \"*::*\",");
+            out.println("  c2: { Exclude: true } // c1 only for startup");
+            out.println("}]");
+            out.close();
+        } catch (FileNotFoundException e) {
+            throw new Error("TESTBUG: can't open/create file " + fileName, e);
+        }
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
+        output.shouldHaveExitValue(0);
     }
 }

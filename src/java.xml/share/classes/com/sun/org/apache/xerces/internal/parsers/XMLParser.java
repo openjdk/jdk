@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,13 +23,14 @@ package com.sun.org.apache.xerces.internal.parsers;
 import java.io.IOException;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
-
+import jdk.xml.internal.Utils;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXNotRecognizedException;
 
@@ -49,7 +50,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: May 2021
+ * @LastModified: Apr 2025
  */
 public abstract class XMLParser {
 
@@ -128,19 +129,28 @@ public abstract class XMLParser {
     public void parse(XMLInputSource inputSource)
         throws XNIException, IOException {
         // null indicates that the parser is called directly, initialize them
-        if (securityManager == null) {
-            securityManager = new XMLSecurityManager(true);
-            fConfiguration.setProperty(Constants.SECURITY_MANAGER, securityManager);
-        }
-        if (securityPropertyManager == null) {
-            securityPropertyManager = new XMLSecurityPropertyManager();
-            fConfiguration.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
-        }
-
+        initSecurityManager(null, null);
         reset();
         fConfiguration.parse(inputSource);
 
     } // parse(XMLInputSource)
+
+    /**
+     * Initiates the SecurityManager. This becomes necessary when the Parser
+     * is constructed directly by, for example, XMLReaderFactory rather than
+     * through SAXParserFactory.
+     */
+    void initSecurityManager(XMLSecurityPropertyManager spm, XMLSecurityManager sm) {
+        if (securityManager == null) {
+            securityManager = sm != null ? sm : new XMLSecurityManager(true);
+        }
+        fConfiguration.setProperty(Constants.SECURITY_MANAGER, securityManager);
+
+        if (securityPropertyManager == null) {
+            securityPropertyManager = spm != null ? spm : new XMLSecurityPropertyManager();
+        }
+        fConfiguration.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+    }
 
     //
     // Protected methods

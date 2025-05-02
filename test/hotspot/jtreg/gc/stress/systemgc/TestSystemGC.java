@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class SystemGCTask extends Exitable implements Runnable {
 }
 
 public class TestSystemGC {
-    private static long endTime;
+    private static long endTimeNanos;
 
     private static final int numGroups = 7;
     private static final int numGCsPerGroup = 4;
@@ -137,7 +137,7 @@ public class TestSystemGC {
         for (int i = 0; i < numGroups; i++) {
             for (int j = 0; j < numGCsPerGroup; j++) {
                System.gc();
-               if (System.currentTimeMillis() >= endTime) {
+               if (System.nanoTime() - endTimeNanos >= 0) {
                    return;
                }
                ThreadUtils.sleep(getDelayMS(i));
@@ -165,7 +165,7 @@ public class TestSystemGC {
     }
 
     private static void runAllPhases() {
-        for (int i = 0; i < 4 && System.currentTimeMillis() < endTime; i++) {
+        for (int i = 0; i < 4 && System.nanoTime() - endTimeNanos < 0; i++) {
             SystemGCTask gcTask =
                 (i % 2 == 1) ? createSystemGCTask(numGroups / 3) : null;
             ShortLivedAllocationTask shortTask =
@@ -191,9 +191,9 @@ public class TestSystemGC {
         if (args.length == 0) {
             throw new IllegalArgumentException("Must specify timeout in seconds as first argument");
         }
-        int timeout = Integer.parseInt(args[0]) * 1000;
-        System.out.println("Running with timeout of " + timeout + "ms");
-        endTime = System.currentTimeMillis() + timeout;
+        long timeoutNanos = Integer.parseInt(args[0]) * 1_000_000_000L;
+        System.out.println("Running with timeout of " + args[0] + " seconds");
+        endTimeNanos = System.nanoTime() + timeoutNanos;
         // First allocate the long lived objects and then run all phases.
         populateLongLived();
         runAllPhases();

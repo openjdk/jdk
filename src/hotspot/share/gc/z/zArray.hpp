@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,99 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
 
-template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
+#include <type_traits>
+
+template<typename T> class ZArray;
+class ZLock;
+
+template <typename T>
+class ZArraySlice : public GrowableArrayView<T> {
+  friend class ZArray<T>;
+  friend class ZArray<std::remove_const_t<T>>;
+  friend class ZArraySlice<std::remove_const_t<T>>;
+  friend class ZArraySlice<const T>;
+
+private:
+  ZArraySlice(T* data, int len);
+
+public:
+  ZArraySlice<T> slice_front(int end);
+  ZArraySlice<const T> slice_front(int end) const;
+
+  ZArraySlice<T> slice_back(int start);
+  ZArraySlice<const T> slice_back(int start) const;
+
+  ZArraySlice<T> slice(int start, int end);
+  ZArraySlice<const T> slice(int start, int end) const;
+
+  operator ZArraySlice<const T>() const;
+};
+
+template <typename T>
+class ZArray : public GrowableArrayCHeap<T, mtGC> {
+public:
+  using GrowableArrayCHeap<T, mtGC>::GrowableArrayCHeap;
+
+  ZArraySlice<T> slice_front(int end);
+  ZArraySlice<const T> slice_front(int end) const;
+
+  ZArraySlice<T> slice_back(int start);
+  ZArraySlice<const T> slice_back(int start) const;
+
+  ZArraySlice<T> slice(int start, int end);
+  ZArraySlice<const T> slice(int start, int end) const;
+
+  operator ZArraySlice<T>();
+  operator ZArraySlice<const T>() const;
+};
 
 template <typename T, bool Parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
-  const T*       _next;
-  const T* const _end;
+  size_t         _next;
+  const size_t   _end;
+  const T* const _array;
 
-  bool next_serial(T* elem);
-  bool next_parallel(T* elem);
+  bool next_serial(size_t* index);
+  bool next_parallel(size_t* index);
 
 public:
   ZArrayIteratorImpl(const T* array, size_t length);
   ZArrayIteratorImpl(const ZArray<T>* array);
 
   bool next(T* elem);
+  bool next_index(size_t* index);
+
+  T index_to_elem(size_t index);
 };
 
 template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, false /* Parallel */>;
 template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, true /* Parallel */>;
+
+template <typename T>
+class ZActivatedArray {
+private:
+  typedef typename std::remove_extent<T>::type ItemT;
+
+  ZLock*         _lock;
+  uint64_t       _count;
+  ZArray<ItemT*> _array;
+
+public:
+  explicit ZActivatedArray(bool locked = true);
+  ~ZActivatedArray();
+
+  void activate();
+  template <typename Function>
+  void deactivate_and_apply(Function function);
+
+  bool is_activated() const;
+  bool add_if_activated(ItemT* item);
+};
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

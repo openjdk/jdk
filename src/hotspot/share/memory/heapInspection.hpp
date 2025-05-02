@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,8 @@ class KlassInfoTable: public StackObj {
   size_t _size_of_instances_in_words;
 
   // An aligned reference address (typically the least
-  // address in the perm gen) used for hashing klass
-  // objects.
-  HeapWord* _ref;
+  // address in the metaspace) used for hashing klasses.
+  uintptr_t _ref;
 
   KlassInfoBucket* _buckets;
   uint hash(const Klass* p);
@@ -200,8 +199,8 @@ class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
  public:
-  void heap_inspection(outputStream* st, uint parallel_thread_num = 1) NOT_SERVICES_RETURN;
-  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = nullptr, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
+  void heap_inspection(outputStream* st, WorkerThreads* workers) NOT_SERVICES_RETURN;
+  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter, WorkerThreads* workers) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
 };
 

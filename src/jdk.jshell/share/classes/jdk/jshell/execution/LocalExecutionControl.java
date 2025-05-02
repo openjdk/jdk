@@ -24,17 +24,21 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LabelTarget;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -61,9 +65,19 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     /**
-     * Create an instance using the default class loading.
+     * Create an instance using the default class loading, which delegates to the system class loader.
      */
     public LocalExecutionControl() {
+    }
+
+    /**
+     * Create an instance using the default class loading, but delegating to the specified parent class loader.
+     *
+     * @param parent parent class loader
+     * @since 22
+     */
+    public LocalExecutionControl(ClassLoader parent) {
+        super(new DefaultLoaderDelegate(parent));
     }
 
     @Override
@@ -74,43 +88,39 @@ public class LocalExecutionControl extends DirectExecutionControl {
                 .toArray(ClassBytecodes[]::new));
     }
 
+    private static final String CANCEL_CLASS = "REPL.$Cancel$";
+    private static final ClassDesc CD_Cancel = ClassDesc.of(CANCEL_CLASS);
+    private static final ClassDesc CD_ThreadDeath = ClassDesc.of("java.lang.ThreadDeath");
+
     private static byte[] instrument(byte[] classFile) {
-        var reader  = new ClassReader(classFile);
-        var writer = new ClassWriter(reader, 0);
-        reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                return new MethodVisitor(Opcodes.ASM9, super.visitMethod(access, name, descriptor, signature, exceptions)) {
-                    @Override
-                    public void visitJumpInsn(int opcode, Label label) {
-                        visitMethodInsn(Opcodes.INVOKESTATIC, "REPL/$Cancel$", "stopCheck", "()V", false);
-                        super.visitJumpInsn(opcode, label);
-                    }
-                };
-            }
-        }, 0);
-        return writer.toByteArray();
+        var cc = ClassFile.of();
+        return cc.transformClass(cc.parse(classFile),
+                        ClassTransform.transformingMethodBodies(
+                            CodeTransform.ofStateful(() -> {
+                                Set<Label> priorLabels = new HashSet<>();
+                                return (builder, element) -> {
+                                    switch (element) {
+                                        case LabelTarget target -> priorLabels.add(target.label());
+                                        case BranchInstruction branch when priorLabels.contains(branch.target())
+                                            -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                        default -> { }
+                                    }
+                                    builder.with(element);
+                                };
+                            })));
     }
 
     private static ClassBytecodes genCancelClass() {
-        var cancelWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        cancelWriter.visit(Opcodes.V19, Opcodes.ACC_PUBLIC, "REPL/$Cancel$", null, "java/lang/Object", null);
-        cancelWriter.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_VOLATILE, "allStop", "Z", null, null);
-        var checkVisitor = cancelWriter.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "stopCheck", "()V", null, null);
-            checkVisitor.visitCode();
-            checkVisitor.visitFieldInsn(Opcodes.GETSTATIC, "REPL/$Cancel$", "allStop", "Z");
-            var skip = new Label();
-            checkVisitor.visitJumpInsn(Opcodes.IFEQ, skip);
-            checkVisitor.visitTypeInsn(Opcodes.NEW, "java/lang/ThreadDeath");
-            checkVisitor.visitInsn(Opcodes.DUP);
-            checkVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/ThreadDeath", "<init>", "()V", false);
-            checkVisitor.visitInsn(Opcodes.ATHROW);
-            checkVisitor.visitLabel(skip);
-            checkVisitor.visitInsn(Opcodes.RETURN);
-            checkVisitor.visitMaxs(0, 0);
-            checkVisitor.visitEnd();
-        cancelWriter.visitEnd();
-        return new ClassBytecodes("REPL.$Cancel$", cancelWriter.toByteArray());
+        return new ClassBytecodes(CANCEL_CLASS, ClassFile.of().build(CD_Cancel, clb ->
+             clb.withFlags(ClassFile.ACC_PUBLIC)
+                .withField("allStop", ConstantDescs.CD_boolean, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_VOLATILE)
+                .withMethodBody("stopCheck", ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob ->
+                        cob.getstatic(CD_Cancel, "allStop", ConstantDescs.CD_boolean)
+                           .ifThenElse(tb -> tb.new_(CD_ThreadDeath)
+                                               .dup()
+                                               .invokespecial(CD_ThreadDeath, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                               .athrow(),
+                                       eb -> eb.return_()))));
     }
 
     @Override
@@ -118,7 +128,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     protected String invoke(Method doitMethod) throws Exception {
         if (allStop == null) {
             super.load(new ClassBytecodes[]{ genCancelClass() });
-            allStop = findClass("REPL.$Cancel$").getDeclaredField("allStop");
+            allStop = findClass(CANCEL_CLASS).getDeclaredField("allStop");
         }
         allStop.set(null, false);
 

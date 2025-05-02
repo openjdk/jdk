@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_GCVMOPERATIONS_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/collectorCounters.hpp"
 #include "memory/metaspace.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
@@ -41,11 +41,11 @@
 //      VM_GC_Operation
 //        VM_GC_HeapInspection
 //        VM_PopulateDynamicDumpSharedSpace
-//        VM_GenCollectFull
-//        VM_ParallelGCSystemGC
+//        VM_SerialGCCollect
+//        VM_ParallelGCCollect
 //        VM_CollectForAllocation
-//          VM_GenCollectForAllocation
-//          VM_ParallelGCFailedAllocation
+//          VM_SerialCollectForAllocation
+//          VM_ParallelCollectForAllocation
 //      VM_Verify
 //      VM_PopulateDumpSharedSpace
 //
@@ -63,14 +63,14 @@
 //     is specified; and also the attach "inspectheap" operation
 //
 //  VM_CollectForAllocation
-//  VM_GenCollectForAllocation
-//  VM_ParallelGCFailedAllocation
+//  VM_SerialCollectForAllocation
+//  VM_ParallelCollectForAllocation
 //   - this operation is invoked when allocation is failed;
 //     operation performs garbage collection and tries to
 //     allocate afterwards;
 //
-//  VM_GenCollectFull
-//  VM_ParallelGCSystemGC
+//  VM_SerialGCCollect
+//  VM_ParallelGCCollect
 //   - these operations perform full collection of heaps of
 //     different kind
 //
@@ -108,7 +108,6 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   bool           _full;                    // whether a "full" collection
   bool           _prologue_succeeded;      // whether doit_prologue succeeded
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
-  bool           _gc_locked;               // will be set if gc was locked
 
   virtual bool skip_operation() const;
 
@@ -123,8 +122,6 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
 
     _gc_cause           = _cause;
 
-    _gc_locked = false;
-
     _full_gc_count_before = full_gc_count_before;
     // In ParallelScavengeHeap::mem_allocate() collections can be
     // executed within a loop and _all_soft_refs_clear can be set
@@ -137,6 +134,8 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
+  virtual const char* cause() const;
+
   // Acquire the Heap_lock and determine if this VM operation should be executed
   // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
@@ -145,9 +144,6 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
 
   virtual bool allow_nested_vm_operations() const  { return true; }
   bool prologue_succeeded() const { return _prologue_succeeded; }
-
-  void set_gc_locked() { _gc_locked = true; }
-  bool gc_locked() const  { return _gc_locked; }
 
   static void notify_gc_begin(bool full = false);
   static void notify_gc_end();
@@ -171,6 +167,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
+  virtual bool doit_prologue();
   virtual void doit();
  protected:
   bool collect();
@@ -187,40 +184,6 @@ class VM_CollectForAllocation : public VM_GC_Operation {
   HeapWord* result() const {
     return _result;
   }
-};
-
-class VM_GenCollectForAllocation : public VM_CollectForAllocation {
- private:
-  bool        _tlab;                       // alloc is of a tlab.
- public:
-  VM_GenCollectForAllocation(size_t word_size,
-                             bool tlab,
-                             uint gc_count_before)
-    : VM_CollectForAllocation(word_size, gc_count_before, GCCause::_allocation_failure),
-      _tlab(tlab) {
-    assert(word_size != 0, "An allocation should always be requested with this operation.");
-  }
-  ~VM_GenCollectForAllocation()  {}
-  virtual VMOp_Type type() const { return VMOp_GenCollectForAllocation; }
-  virtual void doit();
-};
-
-// VM operation to invoke a collection of the heap as a
-// GenCollectedHeap heap.
-class VM_GenCollectFull: public VM_GC_Operation {
- private:
-  GenCollectedHeap::GenerationType _max_generation;
- public:
-  VM_GenCollectFull(uint gc_count_before,
-                    uint full_gc_count_before,
-                    GCCause::Cause gc_cause,
-                    GenCollectedHeap::GenerationType max_generation)
-    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before,
-                      max_generation != GenCollectedHeap::YoungGen /* full */),
-      _max_generation(max_generation) { }
-  ~VM_GenCollectFull() {}
-  virtual VMOp_Type type() const { return VMOp_GenCollectFull; }
-  virtual void doit();
 };
 
 class VM_CollectForMetadataAllocation: public VM_GC_Operation {

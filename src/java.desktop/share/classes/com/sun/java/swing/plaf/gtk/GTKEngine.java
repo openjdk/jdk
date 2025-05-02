@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class GTKEngine {
     /** Size of the image cache */
     private static final int CACHE_SIZE = 50;
 
-    /** This enum mirrors that in gtk2_interface.h */
+    /** This enum mirrors that in gtk_interface.h */
     static enum WidgetType {
         BUTTON, CHECK_BOX, CHECK_BOX_MENU_ITEM, COLOR_CHOOSER,
         COMBO_BOX, COMBO_BOX_ARROW_BUTTON, COMBO_BOX_TEXT_FIELD,
@@ -337,7 +337,8 @@ class GTKEngine {
                 return widgets[0];
             }
         } else if (id == Region.ARROW_BUTTON) {
-            if (c.getParent() instanceof JScrollBar) {
+            if (c.getParent() instanceof JScrollBar
+                || c.getParent() instanceof JTabbedPane) {
                 Integer prop = (Integer)
                     c.getClientProperty("__arrow_direction__");
                 int dir = (prop != null) ?
@@ -492,13 +493,13 @@ class GTKEngine {
             GTKLookAndFeel.synthStateToGTKStateType(state).ordinal();
         int synthState = context.getComponentState();
         Container parent = context.getComponent().getParent();
-        if(GTKLookAndFeel.is3()) {
-            if (parent != null && parent.getParent() instanceof JComboBox) {
-                if (parent.getParent().hasFocus()) {
-                    synthState |= SynthConstants.FOCUSED;
-                }
+
+        if (parent != null && parent.getParent() instanceof JComboBox) {
+            if (parent.getParent().hasFocus()) {
+                synthState |= SynthConstants.FOCUSED;
             }
         }
+
         int dir = getTextDirection(context);
         int widget = getWidgetType(context.getComponent(), id).ordinal();
         native_paint_shadow(widget, gtkState, shadowType.ordinal(), detail,
@@ -531,14 +532,7 @@ class GTKEngine {
         native_paint_background(widget, state, x - x0, y - y0, w, h);
     }
 
-    private static final ColorModel[] COLOR_MODELS = {
-        // Transparency.OPAQUE
-        new DirectColorModel(24, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x00000000),
-        // Transparency.BITMASK
-        new DirectColorModel(25, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x01000000),
-        // Transparency.TRANSLUCENT
-        ColorModel.getRGBdefault(),
-    };
+    private static final ColorModel[] COLOR_MODELS = new ColorModel[3];
 
     private static final int[][] BAND_OFFSETS = {
         { 0x00ff0000, 0x0000ff00, 0x000000ff },             // OPAQUE
@@ -608,13 +602,25 @@ class GTKEngine {
         WritableRaster raster = Raster.createPackedRaster(
                 dataBuffer, w0, h0, w0, bands, null);
 
-        ColorModel cm = COLOR_MODELS[transparency - 1];
-        BufferedImage img = new BufferedImage(cm, raster, false, null);
+        ColorModel cm = colorModelFor(transparency);
+        BufferedImage img = new BufferedImage(cm, raster, true, null);
         if (useCache) {
             cache.setImage(getClass(), null, w0, h0, cacheArgs, img);
         }
         graphics.drawImage(img, x0, y0, null);
         return img;
+    }
+
+    private ColorModel colorModelFor(int transparency) {
+        synchronized (COLOR_MODELS) {
+            int index = transparency - 1;
+            if (COLOR_MODELS[index] == null) {
+                COLOR_MODELS[index] = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                        .getDefaultScreenDevice().getDefaultConfiguration()
+                        .getColorModel(transparency);
+            }
+            return COLOR_MODELS[index];
+        }
     }
 
     /**
@@ -627,7 +633,7 @@ class GTKEngine {
         cache.flush();
     }
 
-    /* GtkSettings enum mirrors that in gtk2_interface.h */
+    /* GtkSettings enum mirrors that in gtk_interface.h */
     public Object getSetting(Settings property) {
         synchronized(sun.awt.UNIXToolkit.GTK_LOCK) {
             return native_get_gtk_setting(property.ordinal());

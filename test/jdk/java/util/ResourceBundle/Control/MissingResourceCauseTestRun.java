@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4354216 8213127
+ * @bug 4354216 8213127 8334333
  * @summary Test for the cause support when throwing a
  *          MissingResourceBundle. (This test exists under
  *          ResourceBundle/Control because bad resource bundle data can be
@@ -32,6 +32,7 @@
  * @build jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Utils
  *        jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.Platform
  *        MissingResourceCauseTest
  *        NonResourceBundle
  *        PrivateConstructorRB
@@ -50,9 +51,14 @@ import java.nio.file.Paths;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class MissingResourceCauseTestRun {
     public static void main(String[] args) throws Throwable {
+        if (Platform.isRoot() && !Platform.isWindows()) {
+            throw new SkippedException("Unable to create an unreadable properties file.");
+        }
         Path path = Paths.get("UnreadableRB.properties");
         Files.deleteIfExists(path);
         try {
@@ -84,15 +90,13 @@ public class MissingResourceCauseTestRun {
         // UnreadableRB.properties is in current directory
         String cp = Utils.TEST_CLASSES + File.pathSeparator + Utils.TEST_SRC
                 + File.pathSeparator + ".";
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(cp)
-                .addToolArg("MissingResourceCauseTest");
-
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                .getExitValue();
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-ea", "-esa",
+                "-cp", cp,
+                "MissingResourceCauseTest");
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test failed. "
                     + "Unexpected exit code: " + exitCode);
@@ -100,7 +104,7 @@ public class MissingResourceCauseTestRun {
     }
 
     private static void deleteFile(Path path) throws Throwable {
-        if(path.toFile().exists()) {
+        if (path.toFile().exists()) {
             ProcessTools.executeCommand("chmod", "666", path.toString())
                         .outputTo(System.out)
                         .errorTo(System.out)

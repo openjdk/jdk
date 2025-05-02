@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,11 @@
 
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/methodCounters.hpp"
+#include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
-#include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
@@ -63,7 +61,7 @@ class MethodData;
 class MethodCounters;
 class ConstMethod;
 class InlineTableSizes;
-class CompiledMethod;
+class nmethod;
 class InterpreterOopMap;
 
 class Method : public Metadata {
@@ -77,25 +75,11 @@ class Method : public Metadata {
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
   AdapterHandlerEntry* _adapter;
-  AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
-                                                 // note: can have vtables with >2**16 elements (because of inheritance)
-  u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
+  AccessFlags       _access_flags;               // Access flags
+  MethodFlags       _flags;
 
-  // Flags
-  enum Flags {
-    _caller_sensitive       = 1 << 0,
-    _force_inline           = 1 << 1,
-    _dont_inline            = 1 << 2,
-    _hidden                 = 1 << 3,
-    _has_injected_profile   = 1 << 4,
-    _intrinsic_candidate    = 1 << 5,
-    _reserved_stack_access  = 1 << 6,
-    _scoped                 = 1 << 7,
-    _changes_current_thread = 1 << 8,
-    _jvmti_mount_transition = 1 << 9,
-  };
-  mutable u2 _flags;
+  u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
@@ -108,14 +92,14 @@ class Method : public Metadata {
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
-  volatile address _from_compiled_entry;        // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_entry;     // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
   // The entry point for calling both from and to compiled code is
   // "_code->entry_point()".  Because of tiered compilation and de-opt, this
   // field can come and go.  It can transition from null to not-null at any
   // time (whenever a compile completes).  It can transition from not-null to
   // null only at safepoints (because of a de-opt).
-  CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
-  volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
+  nmethod* volatile _code;                   // Points to the corresponding piece of native code
+  volatile address  _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name);
@@ -137,6 +121,7 @@ class Method : public Metadata {
 #if INCLUDE_CDS
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+  static void restore_archived_method_handle_intrinsic(methodHandle m, TRAPS);
 #endif
 
   // accessors for instance variables
@@ -155,18 +140,17 @@ class Method : public Metadata {
 
   // name
   Symbol* name() const                           { return constants()->symbol_at(name_index()); }
-  int name_index() const                         { return constMethod()->name_index();         }
+  u2 name_index() const                          { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
 
   // signature
   Symbol* signature() const                      { return constants()->symbol_at(signature_index()); }
-  int signature_index() const                    { return constMethod()->signature_index();         }
+  u2 signature_index() const                     { return constMethod()->signature_index();         }
   void set_signature_index(int index)            { constMethod()->set_signature_index(index);       }
 
   // generics support
   Symbol* generic_signature() const              { int idx = generic_signature_index(); return ((idx != 0) ? constants()->symbol_at(idx) : nullptr); }
-  int generic_signature_index() const            { return constMethod()->generic_signature_index(); }
-  void set_generic_signature_index(int index)    { constMethod()->set_generic_signature_index(index); }
+  u2 generic_signature_index() const             { return constMethod()->generic_signature_index(); }
 
   // annotations support
   AnnotationArray* annotations() const           {
@@ -230,33 +214,11 @@ class Method : public Metadata {
   void clear_all_breakpoints();
   // Tracking number of breakpoints, for fullspeed debugging.
   // Only mutated by VM thread.
-  u2   number_of_breakpoints() const {
-    MethodCounters* mcs = method_counters();
-    if (mcs == nullptr) {
-      return 0;
-    } else {
-      return mcs->number_of_breakpoints();
-    }
-  }
-  void incr_number_of_breakpoints(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->incr_number_of_breakpoints();
-    }
-  }
-  void decr_number_of_breakpoints(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->decr_number_of_breakpoints();
-    }
-  }
+  inline u2 number_of_breakpoints() const;
+  inline void incr_number_of_breakpoints(Thread* current);
+  inline void decr_number_of_breakpoints(Thread* current);
   // Initialization only
-  void clear_number_of_breakpoints() {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->clear_number_of_breakpoints();
-    }
-  }
+  inline void clear_number_of_breakpoints();
 #endif // !INCLUDE_JVMTI
 
   // index into InstanceKlass methods() array
@@ -268,7 +230,7 @@ class Method : public Metadata {
   void set_orig_method_idnum(u2 idnum)   { constMethod()->set_orig_method_idnum(idnum); }
 
   // code size
-  int code_size() const                  { return constMethod()->code_size(); }
+  u2 code_size() const                   { return constMethod()->code_size(); }
 
   // method size in words
   int method_size() const                { return sizeof(Method)/wordSize + ( is_native() ? 2 : 0 ); }
@@ -279,44 +241,33 @@ class Method : public Metadata {
 
   // max stack
   // return original max stack size for method verification
-  int  verifier_max_stack() const                { return constMethod()->max_stack(); }
-  int           max_stack() const                { return constMethod()->max_stack() + extra_stack_entries(); }
-  void      set_max_stack(int size)              {        constMethod()->set_max_stack(size); }
+  u2  verifier_max_stack() const               { return constMethod()->max_stack(); }
+  int          max_stack() const               { return constMethod()->max_stack() + extra_stack_entries(); }
+  void      set_max_stack(int size)            {        constMethod()->set_max_stack(size); }
 
   // max locals
-  int  max_locals() const                        { return constMethod()->max_locals(); }
-  void set_max_locals(int size)                  { constMethod()->set_max_locals(size); }
+  u2  max_locals() const                       { return constMethod()->max_locals(); }
+  void set_max_locals(int size)                { constMethod()->set_max_locals(size); }
 
-  int highest_comp_level() const;
+  void set_deprecated() { constMethod()->set_deprecated(); }
+  bool deprecated() const { return constMethod()->deprecated(); }
+
+  void set_deprecated_for_removal() { constMethod()->set_deprecated_for_removal(); }
+  bool deprecated_for_removal() const { return constMethod()->deprecated_for_removal(); }
+
+  inline int highest_comp_level() const;
   void set_highest_comp_level(int level);
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
 
 #if COMPILER2_OR_JVMCI
   // Count of times method was exited via exception while interpreting
-  void interpreter_throwout_increment(Thread* current) {
-    MethodCounters* mcs = get_method_counters(current);
-    if (mcs != nullptr) {
-      mcs->interpreter_throwout_increment();
-    }
-  }
+  inline void interpreter_throwout_increment(Thread* current);
 #endif
 
-  int  interpreter_throwout_count() const        {
-    MethodCounters* mcs = method_counters();
-    if (mcs == nullptr) {
-      return 0;
-    } else {
-      return mcs->interpreter_throwout_count();
-    }
-  }
+  inline int interpreter_throwout_count() const;
 
-  // Derive stuff from the signature at load time.
-  void compute_from_signature(Symbol* sig);
-
-  // size of parameters (receiver if any + arguments)
-  int  size_of_parameters() const                { return constMethod()->size_of_parameters(); }
-  void set_size_of_parameters(int size)          { constMethod()->set_size_of_parameters(size); }
+  u2 size_of_parameters() const { return constMethod()->size_of_parameters(); }
 
   bool has_stackmap_table() const {
     return constMethod()->has_stackmap_table();
@@ -332,8 +283,8 @@ class Method : public Metadata {
 
   // exception handler table
   bool has_exception_handler() const
-                             { return constMethod()->has_exception_handler(); }
-  int exception_table_length() const
+                             { return constMethod()->has_exception_table(); }
+  u2 exception_table_length() const
                              { return constMethod()->exception_table_length(); }
   ExceptionTableElement* exception_table_start() const
                              { return constMethod()->exception_table_start(); }
@@ -363,7 +314,8 @@ class Method : public Metadata {
     return _method_data;
   }
 
-  void set_method_data(MethodData* data);
+  // mark an exception handler as entered (used to prune dead catch blocks in C2)
+  void set_exception_handler_entered(int handler_bci);
 
   MethodCounters* method_counters() const {
     return _method_counters;
@@ -375,39 +327,15 @@ class Method : public Metadata {
 
   bool init_method_counters(MethodCounters* counters);
 
-  int prev_event_count() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->prev_event_count();
-  }
-  void set_prev_event_count(int count) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_prev_event_count(count);
-    }
-  }
-  jlong prev_time() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->prev_time();
-  }
-  void set_prev_time(jlong time) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_prev_time(time);
-    }
-  }
-  float rate() const {
-    MethodCounters* mcs = method_counters();
-    return mcs == nullptr ? 0 : mcs->rate();
-  }
-  void set_rate(float rate) {
-    MethodCounters* mcs = method_counters();
-    if (mcs != nullptr) {
-      mcs->set_rate(rate);
-    }
-  }
+  inline int prev_event_count() const;
+  inline void set_prev_event_count(int count);
+  inline jlong prev_time() const;
+  inline void set_prev_time(jlong time);
+  inline float rate() const;
+  inline void set_rate(float rate);
 
-  int invocation_count() const;
-  int backedge_count() const;
+  inline int invocation_count() const;
+  inline int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
@@ -416,7 +344,7 @@ class Method : public Metadata {
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
-  int interpreter_invocation_count()            { return invocation_count();          }
+  inline int interpreter_invocation_count() const;
 
 #ifndef PRODUCT
   int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
@@ -429,19 +357,23 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const;
+  nmethod* code() const;
 
-  // Locks CompiledMethod_lock if not held.
-  void unlink_code(CompiledMethod *compare);
-  // Locks CompiledMethod_lock if not held.
+  // Locks NMethodState_lock if not held.
+  void unlink_code(nmethod *compare);
+  // Locks NMethodState_lock if not held.
   void unlink_code();
 
 private:
-  // Either called with CompiledMethod_lock held or from constructor.
+  // Either called with NMethodState_lock held or from constructor.
   void clear_code();
 
+  void clear_method_data() {
+    _method_data = nullptr;
+  }
+
 public:
-  static void set_code(const methodHandle& mh, CompiledMethod* code);
+  static void set_code(const methodHandle& mh, nmethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     _adapter = adapter;
   }
@@ -460,9 +392,7 @@ public:
   void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
-
-  // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
+  void remove_unshareable_flags() NOT_CDS_RETURN;
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -516,11 +446,13 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -538,18 +470,18 @@ public:
   int method_parameters_length() const
                          { return constMethod()->method_parameters_length(); }
   MethodParametersElement* method_parameters_start() const
-                          { return constMethod()->method_parameters_start(); }
+                         { return constMethod()->method_parameters_start(); }
 
   // checked exceptions
-  int checked_exceptions_length() const
+  u2 checked_exceptions_length() const
                          { return constMethod()->checked_exceptions_length(); }
   CheckedExceptionElement* checked_exceptions_start() const
-                          { return constMethod()->checked_exceptions_start(); }
+                         { return constMethod()->checked_exceptions_start(); }
 
   // localvariable table
   bool has_localvariable_table() const
                           { return constMethod()->has_localvariable_table(); }
-  int localvariable_table_length() const
+  u2 localvariable_table_length() const
                         { return constMethod()->localvariable_table_length(); }
   LocalVariableTableElement* localvariable_table_start() const
                          { return constMethod()->localvariable_table_start(); }
@@ -602,31 +534,35 @@ public:
   // true if method can omit stack trace in throw in compiled code.
   bool can_omit_stack_trace();
 
+  // Flags getting and setting.
+#define M_STATUS_GET_SET(name, ignore)          \
+  bool name() const { return _flags.name(); }   \
+  void set_##name(bool x) { _flags.set_##name(x); } \
+  void set_##name() { _flags.set_##name(true); }
+  M_STATUS_DO(M_STATUS_GET_SET)
+#undef M_STATUS_GET_SET
+
   // returns true if the method has any backward branches.
   bool has_loops() {
-    return access_flags().loops_flag_init() ? access_flags().has_loops() : compute_has_loops_flag();
+    return has_loops_flag_init() ? has_loops_flag() : compute_has_loops_flag();
   };
 
   bool compute_has_loops_flag();
-
-  bool has_jsrs() {
-    return access_flags().has_jsrs();
-  };
-  void set_has_jsrs() {
-    _access_flags.set_has_jsrs();
+  bool set_has_loops() {
+    // set both the flags and that it's been initialized.
+    set_has_loops_flag();
+    set_has_loops_flag_init();
+    return true;
   }
 
   // returns true if the method has any monitors.
-  bool has_monitors() const                      { return is_synchronized() || access_flags().has_monitor_bytecodes(); }
-  bool has_monitor_bytecodes() const             { return access_flags().has_monitor_bytecodes(); }
-
-  void set_has_monitor_bytecodes()               { _access_flags.set_has_monitor_bytecodes(); }
+  bool has_monitors() const                      { return is_synchronized() || has_monitor_bytecodes(); }
 
   // monitor matching. This returns a conservative estimate of whether the monitorenter/monitorexit bytecodes
-  // propererly nest in the method. It might return false, even though they actually nest properly, since the info.
+  // properly nest in the method. It might return false, even though they actually nest properly, since the info.
   // has not been computed yet.
-  bool guaranteed_monitor_matching() const       { return access_flags().is_monitor_matching(); }
-  void set_guaranteed_monitor_matching()         { _access_flags.set_monitor_matching(); }
+  bool guaranteed_monitor_matching() const       { return monitor_matching(); }
+  void set_guaranteed_monitor_matching()         { set_monitor_matching(); }
 
   // returns true if the method is an accessor function (setter/getter).
   bool is_accessor() const;
@@ -640,9 +576,6 @@ public:
   // returns true if the method does nothing but return a constant of primitive type
   bool is_constant_getter() const;
 
-  // returns true if the method is an initializer (<init> or <clinit>).
-  bool is_initializer() const;
-
   // returns true if the method is static OR if the classfile version < 51
   bool has_valid_initializer_flags() const;
 
@@ -652,6 +585,9 @@ public:
 
   // returns true if the method name is <init>
   bool is_object_initializer() const;
+
+  // returns true if the method name is wait0
+  bool is_object_wait0() const;
 
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
@@ -674,9 +610,7 @@ public:
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
-  static ByteSize method_data_offset()           {
-    return byte_offset_of(Method, _method_data);
-  }
+
   static ByteSize method_counters_offset()       {
     return byte_offset_of(Method, _method_counters);
   }
@@ -690,8 +624,8 @@ public:
   static ByteSize itable_index_offset()          { return byte_offset_of(Method, _vtable_index ); }
 
   // for code generation
-  static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
-  static int intrinsic_id_offset_in_bytes()      { return offset_of(Method, _intrinsic_id); }
+  static ByteSize method_data_offset()  { return byte_offset_of(Method, _method_data); }
+  static ByteSize intrinsic_id_offset() { return byte_offset_of(Method, _intrinsic_id); }
   static int intrinsic_id_size_in_bytes()        { return sizeof(u2); }
 
   // Static methods that are used to implement member methods where an exposed this pointer
@@ -745,24 +679,13 @@ public:
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize
 
   // RedefineClasses() support:
-  bool is_old() const                               { return access_flags().is_old(); }
-  void set_is_old()                                 { _access_flags.set_is_old(); }
-  bool is_obsolete() const                          { return access_flags().is_obsolete(); }
-  void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
-  bool is_deleted() const                           { return access_flags().is_deleted(); }
-  void set_is_deleted()                             { _access_flags.set_is_deleted(); }
-
-  bool on_stack() const                             { return access_flags().on_stack(); }
+  bool on_stack() const                             { return on_stack_flag(); }
   void set_on_stack(const bool value);
 
   void record_gc_epoch();
 
   // see the definition in Method*.cpp for the gory details
   bool should_not_be_cached() const;
-
-  // JVMTI Native method prefixing support:
-  bool is_prefixed_native() const                   { return access_flags().is_prefixed_native(); }
-  void set_is_prefixed_native()                     { _access_flags.set_is_prefixed_native(); }
 
   // Rewriting support
   static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
@@ -775,7 +698,6 @@ public:
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
@@ -800,6 +722,7 @@ public:
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
+  void clear_jmethod_id();
   static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
@@ -820,78 +743,32 @@ public:
   void init_intrinsic_id(vmSymbolID klass_id);     // updates from _none if a match
   static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
-  bool caller_sensitive() {
-    return (_flags & _caller_sensitive) != 0;
-  }
-  void set_caller_sensitive(bool x) {
-    _flags = x ? (_flags | _caller_sensitive) : (_flags & ~_caller_sensitive);
-  }
+  bool caller_sensitive() const     { return constMethod()->caller_sensitive(); }
+  void set_caller_sensitive() { constMethod()->set_caller_sensitive(); }
 
-  bool force_inline() {
-    return (_flags & _force_inline) != 0;
-  }
-  void set_force_inline(bool x) {
-    _flags = x ? (_flags | _force_inline) : (_flags & ~_force_inline);
-  }
+  bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
+  void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
 
-  bool dont_inline() {
-    return (_flags & _dont_inline) != 0;
-  }
-  void set_dont_inline(bool x) {
-    _flags = x ? (_flags | _dont_inline) : (_flags & ~_dont_inline);
-  }
+  bool jvmti_hide_events() const { return constMethod()->jvmti_hide_events(); }
+  void set_jvmti_hide_events() { constMethod()->set_jvmti_hide_events(); }
 
-  bool changes_current_thread() {
-    return (_flags & _changes_current_thread) != 0;
-  }
-  void set_changes_current_thread(bool x) {
-    _flags = x ? (_flags | _changes_current_thread) : (_flags & ~_changes_current_thread);
-  }
+  bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
+  void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }
 
-  bool jvmti_mount_transition() {
-    return (_flags & _jvmti_mount_transition) != 0;
-  }
-  void set_jvmti_mount_transition(bool x) {
-    _flags = x ? (_flags | _jvmti_mount_transition) : (_flags & ~_jvmti_mount_transition);
-  }
+  bool is_hidden() const { return constMethod()->is_hidden(); }
+  void set_is_hidden() { constMethod()->set_is_hidden(); }
 
-  bool is_hidden() const {
-    return (_flags & _hidden) != 0;
-  }
+  bool is_scoped() const { return constMethod()->is_scoped(); }
+  void set_scoped() { constMethod()->set_is_scoped(); }
 
-  void set_hidden(bool x) {
-    _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
-  }
+  bool intrinsic_candidate() const { return constMethod()->intrinsic_candidate(); }
+  void set_intrinsic_candidate() { constMethod()->set_intrinsic_candidate(); }
 
-  bool is_scoped() const {
-    return (_flags & _scoped) != 0;
-  }
+  bool has_injected_profile() const { return constMethod()->has_injected_profile(); }
+  void set_has_injected_profile() { constMethod()->set_has_injected_profile(); }
 
-  void set_scoped(bool x) {
-    _flags = x ? (_flags | _scoped) : (_flags & ~_scoped);
-  }
-
-  bool intrinsic_candidate() {
-    return (_flags & _intrinsic_candidate) != 0;
-  }
-  void set_intrinsic_candidate(bool x) {
-    _flags = x ? (_flags | _intrinsic_candidate) : (_flags & ~_intrinsic_candidate);
-  }
-
-  bool has_injected_profile() {
-    return (_flags & _has_injected_profile) != 0;
-  }
-  void set_has_injected_profile(bool x) {
-    _flags = x ? (_flags | _has_injected_profile) : (_flags & ~_has_injected_profile);
-  }
-
-  bool has_reserved_stack_access() {
-    return (_flags & _reserved_stack_access) != 0;
-  }
-
-  void set_has_reserved_stack_access(bool x) {
-    _flags = x ? (_flags | _reserved_stack_access) : (_flags & ~_reserved_stack_access);
-  }
+  bool has_reserved_stack_access() const { return constMethod()->reserved_stack_access(); }
+  void set_has_reserved_stack_access() { constMethod()->set_reserved_stack_access(); }
 
   JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
@@ -905,17 +782,13 @@ public:
    return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != nullptr;
   }
 
-  int mark_osr_nmethods() {
-    return method_holder()->mark_osr_nmethods(this);
-  }
-
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {
     return method_holder()->lookup_osr_nmethod(this, bci, level, match_level);
   }
 
   // Find if klass for method is loaded
   bool is_klass_loaded_by_klass_index(int klass_index) const;
-  bool is_klass_loaded(int refinfo_index, bool must_be_resolved = false) const;
+  bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved = false) const;
 
   // Indicates whether compilation failed earlier for this method, or
   // whether it is not compilable for another reason like having a
@@ -943,24 +816,17 @@ public:
     return _method_counters;
   }
 
-  bool   is_not_c1_compilable() const         { return access_flags().is_not_c1_compilable();  }
-  void  set_not_c1_compilable()               {       _access_flags.set_not_c1_compilable();   }
-  void clear_not_c1_compilable()              {       _access_flags.clear_not_c1_compilable(); }
-  bool   is_not_c2_compilable() const         { return access_flags().is_not_c2_compilable();  }
-  void  set_not_c2_compilable()               {       _access_flags.set_not_c2_compilable();   }
-  void clear_not_c2_compilable()              {       _access_flags.clear_not_c2_compilable(); }
+  void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }
+  void clear_is_not_c2_compilable()           { set_is_not_c2_compilable(false); }
+  void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }
 
-  bool    is_not_c1_osr_compilable() const    { return is_not_c1_compilable(); }  // don't waste an accessFlags bit
-  void   set_not_c1_osr_compilable()          {       set_not_c1_compilable(); }  // don't waste an accessFlags bit
-  void clear_not_c1_osr_compilable()          {     clear_not_c1_compilable(); }  // don't waste an accessFlags bit
-  bool   is_not_c2_osr_compilable() const     { return access_flags().is_not_c2_osr_compilable();  }
-  void  set_not_c2_osr_compilable()           {       _access_flags.set_not_c2_osr_compilable();   }
-  void clear_not_c2_osr_compilable()          {       _access_flags.clear_not_c2_osr_compilable(); }
+  // not_c1_osr_compilable == not_c1_compilable
+  bool is_not_c1_osr_compilable() const       { return is_not_c1_compilable(); }
+  void set_is_not_c1_osr_compilable()         { set_is_not_c1_compilable(); }
+  void clear_is_not_c1_osr_compilable()       { clear_is_not_c1_compilable(); }
 
   // Background compilation support
-  bool queued_for_compilation() const  { return access_flags().queued_for_compilation(); }
-  void set_queued_for_compilation()    { _access_flags.set_queued_for_compilation();     }
-  void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
+  void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);
@@ -1014,8 +880,6 @@ public:
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }
   address* signature_handler_addr() const        { return native_function_addr() + 1; }
-
-  void set_num_stack_arg_slots(int n) { constMethod()->set_num_stack_arg_slots(n); }
 };
 
 
@@ -1127,7 +991,7 @@ class ExceptionTable : public StackObj {
     }
   }
 
-  int length() const {
+  u2 length() const {
     return _length;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class is used to protect Kerberos services and the
- * credentials necessary to access those services. There is a one to
- * one mapping of a service principal and the credentials necessary
- * to access the service. Therefore, granting access to a service
- * principal implicitly grants access to the credential necessary to
- * establish a security context with the service principal. This
- * applies regardless of whether the credentials are in a cache
- * or acquired via an exchange with the KDC. The credential can
- * be either a ticket granting ticket, a service ticket or a secret
- * key from a key table.
- * <p>
  * A ServicePermission contains a service principal name and
  * a list of actions which specify the context the credential can be
  * used within.
@@ -52,16 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * the KerberosPrincipal represents a Kerberos service
  * principal. This name is treated in a case sensitive manner.
  * An asterisk may appear by itself, to signify any service principal.
- * <p>
- * Granting this permission implies that the caller can use a cached
- * credential (TGT, service ticket or secret key) within the context
- * designated by the action. In the case of the TGT, granting this
- * permission also implies that the TGT can be obtained by an
- * Authentication Service exchange.
- * <p>
- * Granting this permission also implies creating {@link KerberosPrincipal}
- * or {@link org.ietf.jgss.GSSName GSSName} without providing a Kerberos
- * realm, as long as the permission's service principal is in this realm.
  * <p>
  * The possible actions are:
  *
@@ -75,30 +54,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *                            principal.
  * </pre>
  *
- * For example, to specify the permission to access to the TGT to
- * initiate a security context the permission is constructed as follows:
- *
- * <pre>
- *     ServicePermission("krbtgt/EXAMPLE.COM@EXAMPLE.COM", "initiate");
- * </pre>
- * <p>
- * To obtain a service ticket to initiate a context with the "host"
- * service the permission is constructed as follows:
- * <pre>
- *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "initiate");
- * </pre>
- * <p>
- * For a Kerberized server the action is "accept". For example, the permission
- * necessary to access and use the secret key of the  Kerberized "host"
- * service (telnet and the likes)  would be constructed as follows:
- *
- * <pre>
- *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "accept");
- * </pre>
+ * @deprecated
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */
 
+@Deprecated(since="25", forRemoval=true)
 public final class ServicePermission extends Permission
     implements java.io.Serializable {
 
@@ -240,9 +203,7 @@ public final class ServicePermission extends Permission
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
@@ -449,43 +410,6 @@ public final class ServicePermission extends Permission
         s.defaultReadObject();
         init(getName(),getMask(actions));
     }
-
-
-    /*
-      public static void main(String[] args) throws Exception {
-      ServicePermission this_ =
-      new ServicePermission(args[0], "accept");
-      ServicePermission that_ =
-      new ServicePermission(args[1], "accept,initiate");
-      System.out.println("-----\n");
-      System.out.println("this.implies(that) = " + this_.implies(that_));
-      System.out.println("-----\n");
-      System.out.println("this = "+this_);
-      System.out.println("-----\n");
-      System.out.println("that = "+that_);
-      System.out.println("-----\n");
-
-      KrbServicePermissionCollection nps =
-      new KrbServicePermissionCollection();
-      nps.add(this_);
-      nps.add(new ServicePermission("nfs/example.com@EXAMPLE.COM",
-      "accept"));
-      nps.add(new ServicePermission("host/example.com@EXAMPLE.COM",
-      "initiate"));
-      System.out.println("nps.implies(that) = " + nps.implies(that_));
-      System.out.println("-----\n");
-
-      Enumeration e = nps.elements();
-
-      while (e.hasMoreElements()) {
-      ServicePermission x =
-      (ServicePermission) e.nextElement();
-      System.out.println("nps.e = " + x);
-      }
-
-      }
-    */
-
 }
 
 
@@ -510,6 +434,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * the collection, false if not.
      */
     @Override
+    @SuppressWarnings("removal")
     public boolean implies(Permission permission) {
         if (! (permission instanceof ServicePermission np))
             return false;
@@ -557,6 +482,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
      *                                has been marked readonly
      */
     @Override
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (! (permission instanceof ServicePermission sp))
             throw new IllegalArgumentException("invalid permission: "+

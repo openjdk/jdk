@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=sq
  * @summary Stress test virtual threads with a SynchronousQueue
  * @requires vm.debug != true
- * @enablePreview
  * @run main PingPong SQ 500000
  */
 
@@ -33,11 +32,11 @@
  * @test id=ltq
  * @summary Stress test virtual threads with a LinkedTransferQueue
  * @requires vm.debug != true
- * @enablePreview
  * @run main PingPong LTQ 500000
  */
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,11 +92,12 @@ public class PingPong {
         boolean terminated;
         do {
             terminated = t1.join(Duration.ofMillis(500));
-            if (terminated)
+            if (terminated) {
                 terminated = t2.join(Duration.ofMillis(500));
-            System.out.format("%d %s%n", count1.get(), count2.get());
+            }
+            System.out.format("%s => T1 %d of %d, T2 %d of %d%n",
+                    Instant.now(), count1.get(), iterations, count2.get(), iterations);
         } while (!terminated);
-
     }
 
     interface Exchanger<E> {

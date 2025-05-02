@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.internal.net.http;
 
 import java.io.EOFException;
 import java.lang.System.Logger.Level;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -114,21 +116,26 @@ class Http1Response<T> {
     // of a pending operation. Although there usually is a single
     // point where the operation starts, it may terminate at
     // different places.
-    private final class ClientRefCountTracker {
-        final HttpClientImpl client = connection.client();
+    private static final class ClientRefCountTracker {
+        final HttpClientImpl client;
+        final Logger debug;
         // state & 0x01 != 0 => acquire called
         // state & 0x02 != 0 => tryRelease called
-        byte state;
+        volatile byte state;
 
-        public synchronized boolean acquire() {
-            if (state == 0) {
+        ClientRefCountTracker(HttpClientImpl client, Logger logger) {
+            this.client = client;
+            this.debug = logger;
+        }
+
+        public boolean acquire() {
+            if (STATE.compareAndSet(this, (byte) 0, (byte) 0x01)) {
                 // increment the reference count on the HttpClientImpl
                 // to prevent the SelectorManager thread from exiting
                 // until our operation is complete.
                 if (debug.on())
                     debug.log("Operation started: incrementing ref count for %s", client);
                 client.reference();
-                state = 0x01;
                 return true;
             } else {
                 if (debug.on())
@@ -139,8 +146,8 @@ class Http1Response<T> {
             }
         }
 
-        public synchronized void tryRelease() {
-            if (state == 0x01) {
+        public void tryRelease() {
+            if (STATE.compareAndSet(this, (byte) 0x01, (byte) 0x03)) {
                 // decrement the reference count on the HttpClientImpl
                 // to allow the SelectorManager thread to exit if no
                 // other operation is pending and the facade is no
@@ -150,12 +157,21 @@ class Http1Response<T> {
                 client.unreference();
             } else if (state == 0) {
                 if (debug.on())
-                    debug.log("Operation finished: releasing ref count for %s", client);
+                    debug.log("Operation not started: releasing ref count for %s", client);
             } else if ((state & 0x02) == 0x02) {
                 if (debug.on())
                     debug.log("ref count for %s already released", client);
             }
-            state |= 0x02;
+        }
+
+        private static final VarHandle STATE;
+        static {
+            try {
+                STATE = MethodHandles.lookup().findVarHandle(
+                        ClientRefCountTracker.class, "state", byte.class);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new ExceptionInInitializerError(e);
+            }
         }
     }
 
@@ -269,7 +285,7 @@ class Http1Response<T> {
 
     // Used for those response codes that have no body associated
     public void nullBody(HttpResponse<T> resp, Throwable t) {
-        if (t != null) connection.close();
+        if (t != null) connection.close(t);
         else {
             return2Cache = !request.isWebSocket();
             onFinished();
@@ -301,7 +317,7 @@ class Http1Response<T> {
         // if we reach here, we must reset the headersReader state.
         asyncReceiver.unsubscribe(headersReader);
         headersReader.reset();
-        ClientRefCountTracker refCountTracker = new ClientRefCountTracker();
+        ClientRefCountTracker refCountTracker = new ClientRefCountTracker(connection.client(), debug);
 
         // We need to keep hold on the client facade until the
         // tracker has been incremented.
@@ -315,7 +331,7 @@ class Http1Response<T> {
                 );
                 if (cf.isCompletedExceptionally()) {
                     // if an error occurs during subscription
-                    connection.close();
+                    connection.close(Utils.exceptionNow(cf));
                     return;
                 }
                 // increment the reference count on the HttpClientImpl
@@ -336,7 +352,7 @@ class Http1Response<T> {
                         } finally {
                             bodyReader.onComplete(t);
                             if (t != null) {
-                                connection.close();
+                                connection.close(t);
                             }
                         }
                     });
@@ -455,7 +471,7 @@ class Http1Response<T> {
             debug.log(Level.DEBUG, "onReadError", t);
         }
         debug.log(Level.DEBUG, () -> "closing connection: cause is " + t);
-        connection.close();
+        connection.close(t);
     }
 
     // ========================================================================

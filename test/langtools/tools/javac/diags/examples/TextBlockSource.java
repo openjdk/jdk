@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
  // key: compiler.misc.feature.text.blocks
  // key: compiler.err.feature.not.supported.in.source.plural
- // key: compiler.warn.source.no.system.modules.path
- // options: -source 14
+ // options: --release 14
 
 class TextBlockSource {
     String m() {

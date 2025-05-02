@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key printer
  * @bug 8048328
  * @summary CUPS Printing does not report supported printer resolutions.
  * @run main PrintResAttr

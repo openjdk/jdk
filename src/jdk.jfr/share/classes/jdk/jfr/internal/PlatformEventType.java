@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.ImplicitFields;
+import jdk.jfr.internal.util.Utils;
 /**
  * Implementation of event type.
  *
@@ -44,6 +46,7 @@ public final class PlatformEventType extends Type {
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
+    private long startFilterId = -1;
 
     // default values
     private boolean largeSize = false;
@@ -55,8 +58,6 @@ public final class PlatformEventType extends Type {
 
     private boolean beginChunk;
     private boolean endChunk;
-    private boolean hasStackTrace = true;
-    private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
     private boolean hasThrottle = false;
@@ -64,6 +65,7 @@ public final class PlatformEventType extends Type {
     private boolean markForInstrumentation;
     private boolean registered = true;
     private boolean committable = enabled && registered;
+    private boolean hasLevel = false;
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -130,14 +132,6 @@ public final class PlatformEventType extends Type {
         return settings;
     }
 
-    public void setHasStackTrace(boolean hasStackTrace) {
-        this.hasStackTrace = hasStackTrace;
-    }
-
-    public void setHasDuration(boolean hasDuration) {
-        this.hasDuration = hasDuration;
-    }
-
     public void setHasCutoff(boolean hasCutoff) {
        this.hasCutoff = hasCutoff;
     }
@@ -148,14 +142,24 @@ public final class PlatformEventType extends Type {
 
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
-            long cutoffTicks = Utils.nanosToTicks(cutoffNanos);
-            JVM.getJVM().setCutoff(getId(), cutoffTicks);
+            long cutoffTicks = JVMSupport.nanosToTicks(cutoffNanos);
+            JVM.setMiscellaneous(getId(), cutoffTicks);
+        }
+    }
+
+    public void setLevel(long level) {
+        setMiscellaneous(level);
+    }
+
+    private void setMiscellaneous(long value) {
+        if (isJVM) {
+            JVM.setMiscellaneous(getId(), value);
         }
     }
 
     public void setThrottle(long eventSampleSize, long period_ms) {
         if (isJVM) {
-            JVM.getJVM().setThrottle(getId(), eventSampleSize, period_ms);
+            JVM.setThrottle(getId(), eventSampleSize, period_ms);
         }
     }
 
@@ -163,12 +167,24 @@ public final class PlatformEventType extends Type {
         this.hasPeriod = hasPeriod;
     }
 
-    public boolean hasStackTrace() {
-        return this.hasStackTrace;
+    public void setHasLevel(boolean hasLevel) {
+        this.hasLevel = hasLevel;
     }
 
-    public boolean hasDuration() {
-        return this.hasDuration;
+    public boolean hasLevel() {
+        return this.hasLevel;
+    }
+
+    public boolean hasStackTrace() {
+        return getField(ImplicitFields.STACK_TRACE) != null;
+    }
+
+    public boolean hasThreshold() {
+        if (hasCutoff) {
+            // Event has a duration, but not a threshold. Used by OldObjectSample
+            return false;
+        }
+        return getField(ImplicitFields.DURATION) != null;
     }
 
     public boolean hasPeriod() {
@@ -206,9 +222,9 @@ public final class PlatformEventType extends Type {
         if (isJVM) {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
-                JVM.getJVM().setMethodSamplingPeriod(getId(), p);
+                JVM.setMethodSamplingPeriod(getId(), p);
             } else {
-                JVM.getJVM().setEnabled(getId(), enabled);
+                JVM.setEnabled(getId(), enabled);
             }
         }
         if (changed) {
@@ -219,7 +235,7 @@ public final class PlatformEventType extends Type {
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
         if (isMethodSampling) {
             long p = enabled ? periodMillis : 0;
-            JVM.getJVM().setMethodSamplingPeriod(getId(), p);
+            JVM.setMethodSamplingPeriod(getId(), p);
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;
@@ -233,14 +249,14 @@ public final class PlatformEventType extends Type {
     public void setStackTraceEnabled(boolean stackTraceEnabled) {
         this.stackTraceEnabled = stackTraceEnabled;
         if (isJVM) {
-            JVM.getJVM().setStackTraceEnabled(getId(), stackTraceEnabled);
+            JVM.setStackTraceEnabled(getId(), stackTraceEnabled);
         }
     }
 
     public void setThreshold(long thresholdNanos) {
-        this.thresholdTicks = Utils.nanosToTicks(thresholdNanos);
+        this.thresholdTicks = JVMSupport.nanosToTicks(thresholdNanos);
         if (isJVM) {
-            JVM.getJVM().setThreshold(getId(), thresholdTicks);
+            JVM.setThreshold(getId(), thresholdTicks);
         }
     }
 
@@ -342,5 +358,17 @@ public final class PlatformEventType extends Type {
 
     public boolean isMethodSampling() {
         return isMethodSampling;
+    }
+
+    public void setStackFilterId(long id) {
+        startFilterId = id;
+    }
+
+    public boolean hasStackFilters() {
+        return startFilterId >= 0;
+    }
+
+    public long getStackFilterId() {
+        return startFilterId;
     }
 }

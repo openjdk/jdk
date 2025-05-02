@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ class DynamicArchiveTestBase {
         if (!executedIn_run) {
             throw new Exception("Test error: dynamic archive tests must be executed via DynamicArchiveTestBase.run()");
         }
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         if (jarDir != null) {
             pb.directory(new File(jarDir));
         }

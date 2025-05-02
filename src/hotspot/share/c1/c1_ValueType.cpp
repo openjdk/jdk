@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "ci/ciArray.hpp"
 #include "ci/ciInstance.hpp"
@@ -31,46 +30,53 @@
 
 
 // predefined types
-VoidType*       voidType     = NULL;
-IntType*        intType      = NULL;
-LongType*       longType     = NULL;
-FloatType*      floatType    = NULL;
-DoubleType*     doubleType   = NULL;
-ObjectType*     objectType   = NULL;
-ArrayType*      arrayType    = NULL;
-InstanceType*   instanceType = NULL;
-ClassType*      classType    = NULL;
-AddressType*    addressType  = NULL;
-IllegalType*    illegalType  = NULL;
+VoidType*       voidType     = nullptr;
+IntType*        intType      = nullptr;
+LongType*       longType     = nullptr;
+FloatType*      floatType    = nullptr;
+DoubleType*     doubleType   = nullptr;
+ObjectType*     objectType   = nullptr;
+ArrayType*      arrayType    = nullptr;
+InstanceType*   instanceType = nullptr;
+ClassType*      classType    = nullptr;
+AddressType*    addressType  = nullptr;
+IllegalType*    illegalType  = nullptr;
 
 
 // predefined constants
-IntConstant*    intZero      = NULL;
-IntConstant*    intOne       = NULL;
-ObjectConstant* objectNull   = NULL;
+IntConstant*    intZero      = nullptr;
+IntConstant*    intOne       = nullptr;
+ObjectConstant* objectNull   = nullptr;
 
 
-void ValueType::initialize(Arena* arena) {
-  // Note: Must initialize all types for each compilation
-  //       as they are allocated within a ResourceMark!
+void ValueType::initialize() {
+#define VALUE_TYPE_STORAGE_NAME(name) name##_storage
+#define VALUE_TYPE_STORAGE(name, type) alignas(type) static uint8_t VALUE_TYPE_STORAGE_NAME(name)[sizeof(type)]
+#define VALUE_TYPE(name, type, ...)                                \
+  assert(name == nullptr, "ValueType initialized more than once"); \
+  VALUE_TYPE_STORAGE(name, type);                                  \
+  name = ::new(static_cast<void*>(VALUE_TYPE_STORAGE_NAME(name))) type(__VA_ARGS__)
 
-  // types
-  voidType     = new (arena) VoidType();
-  intType      = new (arena) IntType();
-  longType     = new (arena) LongType();
-  floatType    = new (arena) FloatType();
-  doubleType   = new (arena) DoubleType();
-  objectType   = new (arena) ObjectType();
-  arrayType    = new (arena) ArrayType();
-  instanceType = new (arena) InstanceType();
-  classType    = new (arena) ClassType();
-  addressType  = new (arena) AddressType();
-  illegalType  = new (arena) IllegalType();
+  VALUE_TYPE(voidType    , VoidType);
+  VALUE_TYPE(intType     , IntType);
+  VALUE_TYPE(longType    , LongType);
+  VALUE_TYPE(floatType   , FloatType);
+  VALUE_TYPE(doubleType  , DoubleType);
+  VALUE_TYPE(objectType  , ObjectType);
+  VALUE_TYPE(arrayType   , ArrayType);
+  VALUE_TYPE(instanceType, InstanceType);
+  VALUE_TYPE(classType   , ClassType);
+  VALUE_TYPE(addressType , AddressType);
+  VALUE_TYPE(illegalType , IllegalType);
 
-  intZero     = new (arena) IntConstant(0);
-  intOne      = new (arena) IntConstant(1);
-  objectNull  = new (arena) ObjectConstant(ciNullObject::make());
-};
+  VALUE_TYPE(intZero     , IntConstant   , 0);
+  VALUE_TYPE(intOne      , IntConstant   , 1);
+  VALUE_TYPE(objectNull  , ObjectConstant, ciNullObject::make());
+
+#undef VALUE_TYPE
+#undef VALUE_TYPE_STORAGE
+#undef VALUE_TYPE_STORAGE_NAME
+}
 
 
 ValueType* ValueType::meet(ValueType* y) const {
@@ -82,15 +88,15 @@ ValueType* ValueType::meet(ValueType* y) const {
 
 ciType* ObjectConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* ArrayConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* InstanceConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* ClassConstant::exact_type() const {
   return Compilation::current()->env()->Class_klass();

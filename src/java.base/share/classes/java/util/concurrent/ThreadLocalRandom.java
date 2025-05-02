@@ -39,17 +39,13 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
-import java.math.BigInteger;
-import java.security.AccessControlContext;
-import java.util.Map;
 import java.util.Random;
-import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
@@ -89,12 +85,6 @@ import jdk.internal.misc.VM;
  * @since 1.7
  * @author Doug Lea
  */
-
-@RandomGeneratorProperties(
-        name = "ThreadLocalRandom",
-        i = 64, j = 0, k = 0,
-        equidistribution = 1
-)
 public final class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
@@ -169,11 +159,19 @@ public final class ThreadLocalRandom extends Random {
      * rely on (static) atomic generators to initialize the values.
      */
     static final void localInit() {
-        int p = probeGenerator.addAndGet(PROBE_INCREMENT);
-        int probe = (p == 0) ? 1 : p; // skip 0
         long seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
-        Thread t = Thread.currentThread();
+        Thread t = Thread.currentThread(), carrier;
         U.putLong(t, SEED, seed);
+        int probe = 0; // if virtual, share probe with carrier
+        if ((carrier = JLA.currentCarrierThread()) != t &&
+            (probe = U.getInt(carrier, PROBE)) == 0) {
+            seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
+            U.putLong(carrier, SEED, seed);
+        }
+        if (probe == 0 && (probe = probeGenerator.addAndGet(PROBE_INCREMENT)) == 0)
+            probe = 1; // skip 0
+        if (carrier != t)
+            U.putInt(carrier, PROBE, probe);
         U.putInt(t, PROBE, probe);
     }
 
@@ -244,16 +242,18 @@ public final class ThreadLocalRandom extends Random {
      * the classes that use them. Briefly, a thread's "probe" value is
      * a non-zero hash code that (probably) does not collide with
      * other existing threads with respect to any power of two
-     * collision space. When it does collide, it is pseudo-randomly
-     * adjusted (using a Marsaglia XorShift). The nextSecondarySeed
-     * method is used in the same contexts as ThreadLocalRandom, but
-     * only for transient usages such as random adaptive spin/block
-     * sequences for which a cheap RNG suffices and for which it could
-     * in principle disrupt user-visible statistical properties of the
-     * main ThreadLocalRandom if we were to use it.
+     * collision space, based on carrier threads in the case of
+     * VirtualThreads to reduce the expected collision rate. When it
+     * does collide, it is pseudo-randomly adjusted (using a Marsaglia
+     * XorShift). The nextSecondarySeed method is used in the same
+     * contexts as ThreadLocalRandom, but only for transient usages
+     * such as random adaptive spin/block sequences for which a cheap
+     * RNG suffices and for which it could in principle disrupt
+     * user-visible statistical properties of the main
+     * ThreadLocalRandom if we were to use it.
      *
-     * Note: Because of package-protection issues, versions of some
-     * these methods also appear in some subpackage classes.
+     * Note: jdk SharedSecrets are used enable use in jdk classes
+     * outside this package.
      */
 
     /**
@@ -262,7 +262,7 @@ public final class ThreadLocalRandom extends Random {
      * can be used to force initialization on zero return.
      */
     static final int getProbe() {
-        return U.getInt(Thread.currentThread(), PROBE);
+        return U.getInt(JLA.currentCarrierThread(), PROBE);
     }
 
     /**
@@ -273,7 +273,7 @@ public final class ThreadLocalRandom extends Random {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        U.putInt(Thread.currentThread(), PROBE, probe);
+        U.putInt(JLA.currentCarrierThread(), PROBE, probe);
         return probe;
     }
 
@@ -302,11 +302,6 @@ public final class ThreadLocalRandom extends Random {
     static final void eraseThreadLocals(Thread thread) {
         U.putReference(thread, THREADLOCALS, null);
         U.putReference(thread, INHERITABLETHREADLOCALS, null);
-    }
-
-    static final void setInheritedAccessControlContext(Thread thread,
-                                                       @SuppressWarnings("removal") AccessControlContext acc) {
-        U.putReferenceRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 
     // Serialization support
@@ -368,11 +363,6 @@ public final class ThreadLocalRandom extends Random {
      */
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
 
-    // IllegalArgumentException messages
-    static final String BAD_BOUND = "bound must be positive";
-    static final String BAD_RANGE = "bound must be greater than origin";
-    static final String BAD_SIZE  = "size must be non-negative";
-
     // Unsafe mechanics
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final long SEED
@@ -385,8 +375,6 @@ public final class ThreadLocalRandom extends Random {
         = U.objectFieldOffset(Thread.class, "threadLocals");
     private static final long INHERITABLETHREADLOCALS
         = U.objectFieldOffset(Thread.class, "inheritableThreadLocals");
-    private static final long INHERITEDACCESSCONTROLCONTEXT
-        = U.objectFieldOffset(Thread.class, "inheritedAccessControlContext");
 
     /** Generates per-thread initialization/probe field */
     private static final AtomicInteger probeGenerator = new AtomicInteger();
@@ -401,6 +389,8 @@ public final class ThreadLocalRandom extends Random {
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     // used by ScopedValue
     private static class Access {
         static {
@@ -408,6 +398,12 @@ public final class ThreadLocalRandom extends Random {
                 new JavaUtilConcurrentTLRAccess() {
                     public int nextSecondaryThreadLocalRandomSeed() {
                         return nextSecondarySeed();
+                    }
+                    public int getThreadLocalRandomProbe() {
+                        return getProbe();
+                    }
+                    public int advanceThreadLocalRandomProbe(int r) {
+                        return advanceProbe(r);
                     }
                 }
             );
@@ -515,6 +511,8 @@ public final class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public float nextFloat(float bound) {
@@ -525,6 +523,8 @@ public final class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public float nextFloat(float origin, float bound) {

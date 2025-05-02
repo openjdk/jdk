@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package java.nio.file;
 
-import java.nio.file.spi.FileSystemProvider;
-import java.net.URI;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.lang.reflect.Constructor;
+import java.net.URI;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import sun.nio.fs.DefaultFileSystemProvider;
 
@@ -96,13 +95,7 @@ public final class FileSystems {
         // returns default file system
         private static FileSystem defaultFileSystem() {
             // load default provider
-            @SuppressWarnings("removal")
-            FileSystemProvider provider = AccessController
-                .doPrivileged(new PrivilegedAction<>() {
-                    public FileSystemProvider run() {
-                        return getDefaultProvider();
-                    }
-                });
+            FileSystemProvider provider = getDefaultProvider();
 
             // return file system
             return provider.getFileSystem(URI.create("file:///"));
@@ -120,11 +113,9 @@ public final class FileSystems {
             if (propValue != null) {
                 for (String cn: propValue.split(",")) {
                     try {
-                        Class<?> c = Class
-                            .forName(cn, true, ClassLoader.getSystemClassLoader());
-                        Constructor<?> ctor = c
-                            .getDeclaredConstructor(FileSystemProvider.class);
-                        provider = (FileSystemProvider)ctor.newInstance(provider);
+                        Class<?> c = Class.forName(cn, true, ClassLoaders.appClassLoader());
+                        Constructor<?> ctor = c.getDeclaredConstructor(FileSystemProvider.class);
+                        provider = (FileSystemProvider) ctor.newInstance(provider);
 
                         // must be "file"
                         if (!provider.getScheme().equals("file"))
@@ -154,13 +145,17 @@ public final class FileSystems {
      * is invoked to create the default file system.
      *
      * <p> If the system property {@code java.nio.file.spi.DefaultFileSystemProvider}
-     * is defined then it is taken to be a list of one or more fully-qualified
-     * names of concrete provider classes identified by the URI scheme
-     * {@code "file"}. Where the property is a list of more than one name then
-     * the names are separated by a comma. Each class is loaded, using the system
-     * class loader, and instantiated by invoking a one argument constructor
-     * whose formal parameter type is {@code FileSystemProvider}. The providers
-     * are loaded and instantiated in the order they are listed in the property.
+     * is defined then it is taken to be a list of one or more fully-qualified names
+     * of concrete provider classes identified by the URI scheme {@code "file"}.
+     * If the property is a list of more than one name then the names are separated
+     * by a comma character. Each provider class is a {@code public} class with a
+     * {@code public} constructor that has one formal parameter of type {@code
+     * FileSystemProvider}. If the provider class is in a named module then the module
+     * exports the package containing the provider class to at least {@code java.base}.
+     * Each provider class is loaded, using the
+     * {@linkplain ClassLoader#getSystemClassLoader() default system class loader},
+     * and instantiated by invoking the constructor. The providers are loaded and
+     * instantiated in the order they are listed in the property.
      * If this process fails or a provider's scheme is not equal to {@code "file"}
      * then an unspecified error is thrown. URI schemes are normally compared
      * without regard to case but for the default provider, the scheme is
@@ -206,11 +201,6 @@ public final class FileSystems {
      * exception if invoked after the file system is closed (and before a new
      * instance is created by the {@link #newFileSystem newFileSystem} method).
      *
-     * <p> If a security manager is installed then a provider implementation
-     * may require to check a permission before returning a reference to an
-     * existing file system. In the case of the {@link FileSystems#getDefault
-     * default} file system, no permission check is required.
-     *
      * @param   uri  the URI to locate the file system
      *
      * @return  the reference to the file system
@@ -221,9 +211,6 @@ public final class FileSystems {
      *          if the file system, identified by the URI, does not exist
      * @throws  ProviderNotFoundException
      *          if a provider supporting the URI scheme is not installed
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission
      */
     public static FileSystem getFileSystem(URI uri) {
         String scheme = uri.getScheme();
@@ -255,10 +242,10 @@ public final class FileSystems {
      * <p> <b>Usage Example:</b>
      * Suppose there is a provider identified by the scheme {@code "memory"}
      * installed:
-     * <pre>
-     *  FileSystem fs = FileSystems.newFileSystem(URI.create("memory:///?name=logfs"),
-     *                                            Map.of("capacity", "16G", "blockSize", "4k"));
-     * </pre>
+     * {@snippet lang=java :
+     *     FileSystem fs = FileSystems.newFileSystem(URI.create("memory:///?name=logfs"),
+     *                                               Map.of("capacity", "16G", "blockSize", "4k"));
+     * }
      *
      * @param   uri
      *          the URI identifying the file system
@@ -278,9 +265,6 @@ public final class FileSystems {
      *          if a provider supporting the URI scheme is not installed
      * @throws  IOException
      *          if an I/O error occurs creating the file system
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission required by the file system provider implementation
      */
     public static FileSystem newFileSystem(URI uri, Map<String,?> env)
         throws IOException
@@ -323,9 +307,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          an I/O error occurs creating the file system
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission required by the file system provider implementation
      */
     public static FileSystem newFileSystem(URI uri, Map<String,?> env, ClassLoader loader)
         throws IOException
@@ -389,9 +370,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission
      */
     public static FileSystem newFileSystem(Path path,
                                            ClassLoader loader)
@@ -428,9 +406,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission
      *
      * @since 13
      */
@@ -465,9 +440,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission
      *
      * @since 13
      */
@@ -510,9 +482,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission
      *
      * @since 13
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by JL, LS
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
@@ -55,11 +54,11 @@
 void NativeInstruction::verify() {
   // Make sure code pattern is actually an instruction address.
   // Do not allow:
-  //  - NULL
+  //  - null
   //  - any address in first page (0x0000 .. 0x0fff)
   //  - odd address (will cause a "specification exception")
   address addr = addr_at(0);
-  if ((addr == 0) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
+  if ((addr == nullptr) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
     tty->print_cr(INTPTR_FORMAT ": bad instruction address", p2i(addr));
     fatal("not an instruction address");
   }
@@ -68,7 +67,7 @@ void NativeInstruction::verify() {
 // Print location and value (hex representation) of current NativeInstruction
 void NativeInstruction::print(const char* msg) const {
   int len = Assembler::instr_len(addr_at(0));
-  if (msg == NULL) { // Output line without trailing blanks.
+  if (msg == nullptr) { // Output line without trailing blanks.
     switch (len) {
       case 2: tty->print_cr(INTPTR_FORMAT "(len=%d): %4.4x",             p2i(addr_at(0)), len, halfword_at(0));                                 break;
       case 4: tty->print_cr(INTPTR_FORMAT "(len=%d): %4.4x %4.4x",       p2i(addr_at(0)), len, halfword_at(0), halfword_at(2));                 break;
@@ -89,20 +88,20 @@ void NativeInstruction::print(const char* msg) const {
   }
 }
 void NativeInstruction::print() const {
-  print(NULL);
+  print(nullptr);
 }
 
 // Hex-Dump of storage around current NativeInstruction. Also try disassembly.
 void NativeInstruction::dump(const unsigned int range, const char* msg) const {
-  Assembler::dump_code_range(tty, addr_at(0), range, (msg == NULL) ? "":msg);
+  Assembler::dump_code_range(tty, addr_at(0), range, (msg == nullptr) ? "":msg);
 }
 
 void NativeInstruction::dump(const unsigned int range) const {
-  dump(range, NULL);
+  dump(range, nullptr);
 }
 
 void NativeInstruction::dump() const {
-  dump(32, NULL);
+  dump(32, nullptr);
 }
 
 void NativeInstruction::set_halfword_at(int offset, short i) {
@@ -176,7 +175,7 @@ bool NativeInstruction::is_sigill_not_entrant() {
   // (see implementation of is_illegal() for details).
 
   CodeBlob* cb = CodeCache::find_blob(addr_at(0));
-  if (cb == NULL || !cb->is_nmethod()) {
+  if (cb == nullptr || !cb->is_nmethod()) {
     return false;
   }
 
@@ -255,7 +254,7 @@ void NativeFarCall::verify() {
 
 address NativeFarCall::destination() {
   assert(MacroAssembler::is_call_far_patchable_at((address)this), "unexpected call type");
-  address ctable = NULL;
+  address ctable = nullptr;
   return MacroAssembler::get_dest_of_call_far_patchable_at((address)this, ctable);
 }
 
@@ -368,7 +367,7 @@ address NativeMovConstReg::next_instruction_address(int offset) const  {
 #else
   guarantee(false, "Not a NativeMovConstReg site");
 #endif
-  return NULL;
+  return nullptr;
 }
 
 intptr_t NativeMovConstReg::data() const {
@@ -385,7 +384,7 @@ intptr_t NativeMovConstReg::data() const {
 #else
     ShouldNotReachHere();
 #endif
-    return *(intptr_t *)NULL;
+    return *(intptr_t *)nullptr;
   } else {
     // Otherwise, assume data resides in TOC. Is asserted in called method.
     return MacroAssembler::get_const_from_toc(loc);
@@ -481,15 +480,15 @@ void NativeMovConstReg::set_data(intptr_t data, relocInfo::relocType expected_ty
   address next_address = set_data_plain(data, cb);
 
   // 'RelocIterator' requires an nmethod
-  nmethod* nm = cb ? cb->as_nmethod_or_null() : NULL;
-  if (nm != NULL) {
+  nmethod* nm = cb ? cb->as_nmethod_or_null() : nullptr;
+  if (nm != nullptr) {
     RelocIterator iter(nm, instruction_address(), next_address);
-    oop* oop_addr = NULL;
-    Metadata** metadata_addr = NULL;
+    oop* oop_addr = nullptr;
+    Metadata** metadata_addr = nullptr;
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
         oop_Relocation *r = iter.oop_reloc();
-        if (oop_addr == NULL) {
+        if (oop_addr == nullptr) {
           oop_addr = r->oop_addr();
           *oop_addr = cast_to_oop(data);
         } else {
@@ -498,7 +497,7 @@ void NativeMovConstReg::set_data(intptr_t data, relocInfo::relocType expected_ty
       }
       if (iter.type() == relocInfo::metadata_type) {
         metadata_Relocation *r = iter.metadata_reloc();
-        if (metadata_addr == NULL) {
+        if (metadata_addr == nullptr) {
           metadata_addr = r->metadata_addr();
           *metadata_addr = (Metadata*)data;
         } else {
@@ -507,8 +506,8 @@ void NativeMovConstReg::set_data(intptr_t data, relocInfo::relocType expected_ty
       }
     }
     assert(expected_type == relocInfo::none ||
-          (expected_type == relocInfo::metadata_type && metadata_addr != NULL) ||
-          (expected_type == relocInfo::oop_type && oop_addr != NULL),
+          (expected_type == relocInfo::metadata_type && metadata_addr != nullptr) ||
+          (expected_type == relocInfo::oop_type && oop_addr != nullptr),
           "%s relocation not found", expected_type == relocInfo::oop_type ? "oop" : "metadata");
   }
 }
@@ -540,7 +539,7 @@ void NativeMovConstReg::set_narrow_klass(intptr_t data) {
   ICache::invalidate_range(start, range);
 }
 
-void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passed_nm /* = NULL */) {
+void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, nmethod *passed_nm /* = nullptr */) {
   address next_address;
   address loc = addr_at(0);
 
@@ -565,7 +564,7 @@ void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passe
   }
 }
 
-void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_nm /* = NULL */) {
+void NativeMovConstReg::set_pcrel_data(intptr_t newData, nmethod *passed_nm /* = nullptr */) {
   address  next_address;
   address  loc = addr_at(0);
 
@@ -658,8 +657,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(((intptr_t)instr_addr & (BytesPerWord-1)) == 0, "requirement for mt safe patching");
-  // Bytes_after_jump cannot change, because we own the Patching_lock.
-  assert(Patching_lock->owned_by_self(), "must hold lock to patch instruction");
+  // Bytes_after_jump cannot change, because we own the CodeCache_lock.
+  assert(CodeCache_lock->owned_by_self(), "must hold lock to patch instruction");
   intptr_t bytes_after_jump = (*(intptr_t*)instr_addr)  & 0x000000000000ffffL; // 2 bytes after jump.
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ final class JrtFileAttributes  implements BasicFileAttributes {
         this.node = node;
     }
 
-    ///////// basic attributes ///////////
+    //-------- basic attributes --------
     @Override
     public FileTime creationTime() {
         return node.creationTime();
@@ -92,7 +92,7 @@ final class JrtFileAttributes  implements BasicFileAttributes {
         return node.resolveLink(true);
     }
 
-    ///////// jrtfs specific attributes ///////////
+    //-------- jrtfs specific attributes --------
     /**
      * Compressed resource file. If not available or not applicable, 0L is
      * returned.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public interface RoundEnvironment {
      * processing. The set of annotation interfaces present in the runtime
      * context may differ from the set of annotation interfaces present in
      * the context of annotation processing in a particular
-     * environmental configuration. If an runtime annotation interface is
+     * environmental configuration. If a runtime annotation interface is
      * not present in the annotation processing context, the situation
      * is not treated as an error and no elements are found for that
      * annotation interface.
@@ -173,7 +173,7 @@ public interface RoundEnvironment {
      * processing. The set of annotation interfaces present in the runtime
      * context may differ from the set of annotation interfaces present in
      * the context of annotation processing in a particular
-     * environmental configuration. If an runtime annotation interface is
+     * environmental configuration. If a runtime annotation interface is
      * not present in the annotation processing context, the situation
      * is not treated as an error and no elements are found for that
      * annotation interface.

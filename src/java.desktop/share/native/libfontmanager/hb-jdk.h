@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ typedef struct JDKFontInfo_Struct {
 #define HBFloatToFixedScale ((float)(1 << 16))
 #define HBFloatToFixed(f) ((unsigned int)((f) * HBFloatToFixedScale))
 
+// Matches sun.font.CharToGlyphMapper.INVISIBLE_GLYPH_ID
+#define INVISIBLE_GLYPH_ID 0xffff
+
 /*
  * Note:
  *
@@ -57,9 +60,6 @@ typedef struct JDKFontInfo_Struct {
  * Otherwise hb-ft would NOT pick up the font size correctly.
  */
 
-hb_face_t *
-hb_jdk_face_create(JDKFontInfo*   jdkFontInfo,
-                   hb_destroy_func_t destroy);
 hb_font_t *
 hb_jdk_font_create(hb_face_t* hbFace,
                    JDKFontInfo*   jdkFontInfo,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestObjectAlignment {
             agent.attach(Integer.parseInt(pid));
             int actualAlign = VM.getVM().getObjectAlignmentInBytes();
             Asserts.assertEquals(expectedAlign, actualAlign,
-                                 "Address of HeapRegion does not match.");
+                                 "Address of G1HeapRegion does not match.");
         } finally {
             agent.detach();
         }
@@ -64,7 +64,7 @@ public class TestObjectAlignment {
     private static void createAnotherToAttach(long lingeredAppPid, int expectedAlign)
                                                          throws Exception {
         // Start a new process to attach to the lingered app
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.runtime=ALL-UNNAMED",

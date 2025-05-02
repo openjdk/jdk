@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Set the debug level
 #    release: no debug information, all optimizations, no asserts.
 #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
@@ -81,7 +81,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   AC_SUBST(DEBUG_LEVEL)
 ])
 
-###############################################################################
+################################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
 #
@@ -121,7 +121,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$DOT" != "x"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -129,7 +129,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$ENABLE_PANDOC" = "xtrue"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -190,6 +190,16 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(INCLUDE_SA)
 
+  # Setup default CDS alignment. On platforms where one build may run on machines with different
+  # page sizes, the JVM choses a compatible alignment to fit all possible page sizes. This slightly
+  # increases archive size.
+  # The only platform having this problem at the moment is Linux on aarch64, which may encounter
+  # three different page sizes: 4K, 64K, and if run on Mac m1 hardware, 16K.
+  COMPATIBLE_CDS_ALIGNMENT_DEFAULT=false
+  if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+    COMPATIBLE_CDS_ALIGNMENT_DEFAULT=auto
+  fi
+
   # Compress jars
   COMPRESS_JARS=false
 
@@ -225,8 +235,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   else
     HOTSPOT_OVERRIDE_LIBPATH=${with_jni_libpath}
     if test "x$OPENJDK_TARGET_OS" != "xlinux" &&
-         test "x$OPENJDK_TARGET_OS" != "xbsd" &&
-         test "x$OPENJDK_TARGET_OS" != "xaix"; then
+        test "x$OPENJDK_TARGET_OS" != "xbsd" &&
+        test "x$OPENJDK_TARGET_OS" != "xaix"; then
       AC_MSG_RESULT([fail])
       AC_MSG_ERROR([Overriding JNI library path is supported only on Linux, BSD and AIX.])
     fi
@@ -236,7 +246,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
 ])
 
-###############################################################################
+################################################################################
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
@@ -256,11 +266,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
         fi
       ],
       [
-        if test "x$STATIC_BUILD" = xtrue; then
-          with_native_debug_symbols="none"
-        else
-          with_native_debug_symbols="external"
-        fi
+        with_native_debug_symbols="external"
       ])
   AC_MSG_RESULT([$with_native_debug_symbols])
 
@@ -363,6 +369,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $GCOV_LDFLAGS"
       ])
   AC_SUBST(GCOV_ENABLED)
 
@@ -404,7 +411,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
   AC_SUBST(JCOV_FILTERS)
 ])
 
-###############################################################################
+################################################################################
 #
 # AddressSanitizer
 #
@@ -415,8 +422,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang" ||
-           test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang" ||
+            test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
@@ -425,18 +432,30 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       ],
       IF_ENABLED: [
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
           # ASan is simply incompatible with gcc -Wstringop-truncation. See
           # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
           # It's harmless to be suppressed in clang as well.
           ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
           ASAN_LDFLAGS="-fsanitize=address"
+          # detect_stack_use_after_return causes ASAN to offload stack-local
+          # variables to c-heap and therefore breaks assumptions in hotspot
+          # that rely on data (e.g. Marks) living in thread stacks.
+          if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+            ASAN_CFLAGS="$ASAN_CFLAGS --param asan-use-after-return=0"
+          fi
+          if test "x$TOOLCHAIN_TYPE" = "xclang"; then
+            ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
+            ASAN_LDFLAGS="$ASAN_LDFLAGS -shared-libasan"
+          fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
           ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"
           # MSVC produces a warning if you pass -fsanitize=address to the linker. It also complains
           $ if -DEBUG is not passed to the linker when building with ASan.
           ASAN_LDFLAGS="-debug"
+          # -fsanitize-address-use-after-return is off by default in MS Visual Studio 22 (19.37.32824).
+          # cl : Command line warning D9002 : ignoring unknown option '-fno-sanitize-address-use-after-return'
         fi
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -446,11 +465,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $ASAN_LDFLAGS"
       ])
   AC_SUBST(ASAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # LeakSanitizer
 #
@@ -479,21 +499,42 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $LSAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $LSAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $LSAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $LSAN_LDFLAGS"
       ])
   AC_SUBST(LSAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # UndefinedBehaviorSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 [
+  UTIL_ARG_WITH(NAME: additional-ubsan-checks, TYPE: string,
+      DEFAULT: [],
+      DESC: [Customizes the ubsan checks],
+      OPTIONAL: true)
+
   # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
+  # GCC 13 also for array-bounds and stringop-overflow
   # Silence them for now.
-  UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
+      $ADDITIONAL_UBSAN_CHECKS"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
+  fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
+  # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
+  # full qualified llvm_symbolizer path in the __ubsan_default_options() function in
+  # make/data/ubsan/ubsan_default_options.c. To get it there we compile our sources
+  # with an additional define LLVM_SYMBOLIZER, which we set here.
+  # To calculate the correct llvm_symbolizer path we can use the location of the compiler, because
+  # their relation is fixed.
+  if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      UBSAN_CFLAGS="$UBSAN_CFLAGS -fno-sanitize=function,vptr -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+      UBSAN_LDFLAGS="$UBSAN_LDFLAGS -fno-sanitize=function,vptr -Wl,-bbigtoc"
+  fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [
@@ -515,6 +556,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $UBSAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $UBSAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $UBSAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $UBSAN_LDFLAGS"
       ])
   if test "x$UBSAN_ENABLED" = xfalse; then
     UBSAN_CFLAGS=""
@@ -523,33 +565,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   AC_SUBST(UBSAN_CFLAGS)
   AC_SUBST(UBSAN_LDFLAGS)
   AC_SUBST(UBSAN_ENABLED)
-])
-
-################################################################################
-#
-# Static build support.  When enabled will generate static
-# libraries instead of shared libraries for all JDK libs.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
-[
-  UTIL_ARG_ENABLE(NAME: static-build, DEFAULT: false, RESULT: STATIC_BUILD,
-      DESC: [enable static library build],
-      CHECKING_MSG: [if static build is enabled],
-      CHECK_AVAILABLE: [
-        AC_MSG_CHECKING([if static build is available])
-        if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-          AC_MSG_RESULT([yes])
-        else
-          AC_MSG_RESULT([no])
-          AVAILABLE=false
-        fi
-      ],
-      IF_ENABLED: [
-        STATIC_BUILD_CFLAGS="-DSTATIC_BUILD=1"
-        CFLAGS_JDKLIB_EXTRA="$CFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
-        CXXFLAGS_JDKLIB_EXTRA="$CXXFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
-      ])
-  AC_SUBST(STATIC_BUILD)
 ])
 
 ################################################################################
@@ -580,15 +595,56 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
 ################################################################################
 #
 # jlink options.
-# We always keep packaged modules in JDK image.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 [
-  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: true,
+
+  ################################################################################
+  #
+  # Configure option for building a JDK that is suitable for linking from the
+  # run-time image without JMODs.
+  #
+  # Determines whether or not a suitable run-time image is being produced from
+  # packaged modules. If set to 'true, changes the *default* of packaged
+  # modules to 'false'.
+  #
+  UTIL_ARG_ENABLE(NAME: linkable-runtime, DEFAULT: false,
+      RESULT: JLINK_PRODUCE_LINKABLE_RUNTIME,
+      DESC: [enable a JDK build suitable for linking from the run-time image],
+      CHECKING_MSG: [whether or not a JDK suitable for linking from the run-time image should be produced])
+  AC_SUBST(JLINK_PRODUCE_LINKABLE_RUNTIME)
+
+  if test "x$JLINK_PRODUCE_LINKABLE_RUNTIME" = xtrue; then
+    DEFAULT_PACKAGED_MODULES=false
+  else
+    DEFAULT_PACKAGED_MODULES=true
+  fi
+
+  ################################################################################
+  #
+  # Configure option for packaged modules
+  #
+  # We keep packaged modules in the JDK image unless --enable-linkable-runtime is
+  # requested.
+  #
+  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: $DEFAULT_PACKAGED_MODULES,
       RESULT: JLINK_KEEP_PACKAGED_MODULES,
       DESC: [enable keeping of packaged modules in jdk image],
+      DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+
+  ################################################################################
+  #
+  # Extra jlink options to be (optionally) passed to the JDK build
+  #
+  UTIL_ARG_WITH(NAME: extra-jlink-flags, TYPE: string,
+      DEFAULT: [],
+      DESC: [extra flags to be passed to jlink during the build],
+      OPTIONAL: true)
+
+  JLINK_USER_EXTRA_FLAGS="$EXTRA_JLINK_FLAGS"
+  AC_SUBST(JLINK_USER_EXTRA_FLAGS)
 ])
 
 ################################################################################
@@ -632,18 +688,6 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 
 ################################################################################
 #
-# Optionally disable man pages
-#
-AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
-[
-  UTIL_ARG_ENABLE(NAME: manpages, DEFAULT: true, RESULT: BUILD_MANPAGES,
-      DESC: [enable copying of static man pages],
-      CHECKING_MSG: [if static man pages should be copied])
-  AC_SUBST(BUILD_MANPAGES)
-])
-
-################################################################################
-#
 # Disable the default CDS archive generation
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
@@ -669,14 +713,45 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable or disable the default CDS archive generation for Compact Object Headers
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
+      DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
+      DEFAULT_DESC: [auto],
+      CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive with compact object headers is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AC_MSG_RESULT([no (CDS default archive generation is disabled)])
+          AVAILABLE=false
+        elif test "x$OPENJDK_TARGET_CPU" != "xx86_64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xaarch64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64le" &&
+             test "x$OPENJDK_TARGET_CPU" != "xriscv64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xs390x"; then
+          AC_MSG_RESULT([no (compact object headers not supported for this platform)])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+          AVAILABLE=true
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
+])
+
+################################################################################
+#
 # Enable the alternative CDS core region alignment
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
 [
-  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: $COMPATIBLE_CDS_ALIGNMENT_DEFAULT,
       RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
       DESC: [enable use alternative compatible cds core region alignment],
-      DEFAULT_DESC: [disabled],
+      DEFAULT_DESC: [disabled except on linux-aarch64],
       CHECKING_MSG: [if compatible cds region alignment enabled],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if CDS archive is available])
@@ -701,9 +776,8 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 [
   AC_ARG_ENABLE([absolute-paths-in-output],
       [AS_HELP_STRING([--disable-absolute-paths-in-output],
-       [Set to disable to prevent any absolute paths from the build to end up in
-        any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])
-      ])
+      [Set to disable to prevent any absolute paths from the build to end up in
+      any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])])
 
   AC_MSG_CHECKING([if absolute paths should be allowed in the build output])
   if test "x$enable_absolute_paths_in_output" = "xno"; then
@@ -798,8 +872,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
-
-  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])
 
 ################################################################################
@@ -822,6 +894,9 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
   $RM "$CODESIGN_TESTFILE"
   $TOUCH "$CODESIGN_TESTFILE"
   CODESIGN_SUCCESS=false
+
+  $ECHO "check codesign, calling $CODESIGN $PARAMS $CODESIGN_TESTFILE" >&AS_MESSAGE_LOG_FD
+
   eval \"$CODESIGN\" $PARAMS \"$CODESIGN_TESTFILE\" 2>&AS_MESSAGE_LOG_FD \
       >&AS_MESSAGE_LOG_FD && CODESIGN_SUCCESS=true
   $RM "$CODESIGN_TESTFILE"
@@ -846,7 +921,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_DEBUG],
 
 AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 [
-  ENABLE_CODESIGN=false
+  MACOSX_CODESIGN_MODE=disabled
   if test "x$OPENJDK_TARGET_OS" = "xmacosx" && test "x$CODESIGN" != "x"; then
 
     UTIL_ARG_WITH(NAME: macosx-codesign, TYPE: literal, OPTIONAL: true,
@@ -856,7 +931,6 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
         DESC: [set the macosx code signing mode (hardened, debug, auto)]
     )
 
-    MACOSX_CODESIGN_MODE=disabled
     if test "x$MACOSX_CODESIGN_ENABLED" = "xtrue"; then
 
       # Check for user provided code signing identity.
@@ -899,7 +973,61 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
         AC_MSG_ERROR([unknown value for --with-macosx-codesign: $MACOSX_CODESIGN])
       fi
     fi
-    AC_SUBST(MACOSX_CODESIGN_IDENTITY)
-    AC_SUBST(MACOSX_CODESIGN_MODE)
   fi
+  AC_SUBST(MACOSX_CODESIGN_IDENTITY)
+  AC_SUBST(MACOSX_CODESIGN_MODE)
+])
+
+################################################################################
+#
+# Setup a hook to invoke a script that runs for file produced by the native
+# compilation steps, after linking.
+# Parameter is the path to the script to be called.
+#
+AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
+[
+  UTIL_ARG_WITH(NAME: signing-hook, TYPE: executable,
+      OPTIONAL: true, DEFAULT: "",
+      DESC: [specify path to script used to code sign native binaries]
+  )
+
+  AC_MSG_CHECKING([for signing hook])
+  if test "x$SIGNING_HOOK" != x; then
+    UTIL_FIXUP_EXECUTABLE(SIGNING_HOOK)
+    AC_MSG_RESULT([$SIGNING_HOOK])
+  else
+    AC_MSG_RESULT([none])
+  fi
+  AC_SUBST(SIGNING_HOOK)
+])
+
+################################################################################
+#
+# Setup how javac should handle warnings.
+#
+AC_DEFUN([JDKOPT_SETUP_JAVA_WARNINGS],
+[
+  UTIL_ARG_ENABLE(NAME: java-warnings-as-errors, DEFAULT: true,
+      RESULT: JAVA_WARNINGS_AS_ERRORS,
+      DESC: [consider java warnings to be an error])
+  AC_SUBST(JAVA_WARNINGS_AS_ERRORS)
+])
+
+################################################################################
+#
+# fallback linker
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_FALLBACK_LINKER],
+[
+  FALLBACK_LINKER_DEFAULT=false
+
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    FALLBACK_LINKER_DEFAULT=true
+  fi
+
+  UTIL_ARG_ENABLE(NAME: fallback-linker, DEFAULT: $FALLBACK_LINKER_DEFAULT,
+      RESULT: ENABLE_FALLBACK_LINKER,
+      DESC: [enable libffi-based fallback implementation of java.lang.foreign.Linker],
+      CHECKING_MSG: [if fallback linker enabled])
+  AC_SUBST(ENABLE_FALLBACK_LINKER)
 ])

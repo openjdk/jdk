@@ -108,6 +108,9 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool in_progress() const;
 
   bool in_undo_mark() const;
+
+  // Update the perf data counter for concurrent mark.
+  void update_threads_cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

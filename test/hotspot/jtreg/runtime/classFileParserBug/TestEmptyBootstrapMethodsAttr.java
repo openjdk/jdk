@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestEmptyBootstrapMethodsAttr {
         // ======= execute test case #1
         // Expect a lack of main method, this implies that the class loaded correctly
         // with an empty bootstrap_methods and did not generate a ClassFormatError.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Duser.language=en", "-Duser.country=US", className);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");
@@ -65,7 +65,7 @@ public class TestEmptyBootstrapMethodsAttr {
         // ======= execute test case #2
         // Expect a lack of main method, this implies that the class loaded correctly
         // with an empty bootstrap_methods and did not generate ClassFormatError.
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Duser.language=en", "-Duser.country=US", className);
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");

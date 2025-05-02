@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@ package java.util;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.HexDigits;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -140,14 +142,6 @@ public final class HexFormat {
     // Access to create strings from a byte array.
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
-    private static final byte[] UPPERCASE_DIGITS = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-    };
-    private static final byte[] LOWERCASE_DIGITS = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-    };
     // Analysis has shown that generating the whole array allows the JIT to generate
     // better code compared to a slimmed down array, such as one cutting off after 'f'
     private static final byte[] DIGITS = {
@@ -158,29 +152,24 @@ public final class HexFormat {
             -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
     };
     /**
      * Format each byte of an array as a pair of hexadecimal digits.
      * The hexadecimal characters are from lowercase alpha digits.
      */
     private static final HexFormat HEX_FORMAT =
-            new HexFormat("", "", "", LOWERCASE_DIGITS);
+            new HexFormat("", "", "", false);
+
+    private static final HexFormat HEX_UPPER_FORMAT =
+            new HexFormat("", "", "", true);
 
     private static final byte[] EMPTY_BYTES = {};
 
     private final String delimiter;
     private final String prefix;
     private final String suffix;
-    private final byte[] digits;
+    private final boolean ucase;
 
     /**
      * Returns a HexFormat with a delimiter, prefix, suffix, and array of digits.
@@ -188,14 +177,14 @@ public final class HexFormat {
      * @param delimiter a delimiter, non-null
      * @param prefix a prefix, non-null
      * @param suffix a suffix, non-null
-     * @param digits byte array of digits indexed by low nibble, non-null
+     * @param ucase enum indicating how to case digits
      * @throws NullPointerException if any argument is null
      */
-    private HexFormat(String delimiter, String prefix, String suffix, byte[] digits) {
+    private HexFormat(String delimiter, String prefix, String suffix, boolean ucase) {
         this.delimiter = Objects.requireNonNull(delimiter, "delimiter");
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.suffix = Objects.requireNonNull(suffix, "suffix");
-        this.digits = digits;
+        this.ucase = ucase;
     }
 
     /**
@@ -224,7 +213,7 @@ public final class HexFormat {
      * @return a {@link HexFormat} with the delimiter and lowercase characters
      */
     public static HexFormat ofDelimiter(String delimiter) {
-        return new HexFormat(delimiter, "", "", LOWERCASE_DIGITS);
+        return new HexFormat(delimiter, "", "", false);
     }
 
     /**
@@ -233,7 +222,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the delimiter
      */
     public HexFormat withDelimiter(String delimiter) {
-        return new HexFormat(delimiter, this.prefix, this.suffix, this.digits);
+        return new HexFormat(delimiter, this.prefix, this.suffix, this.ucase);
     }
 
     /**
@@ -243,7 +232,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the prefix
      */
     public HexFormat withPrefix(String prefix) {
-        return new HexFormat(this.delimiter, prefix, this.suffix, this.digits);
+        return new HexFormat(this.delimiter, prefix, this.suffix, this.ucase);
     }
 
     /**
@@ -253,7 +242,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the suffix
      */
     public HexFormat withSuffix(String suffix) {
-        return new HexFormat(this.delimiter, this.prefix, suffix, this.digits);
+        return new HexFormat(this.delimiter, this.prefix, suffix, this.ucase);
     }
 
     /**
@@ -263,7 +252,9 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with uppercase hexadecimal characters
      */
     public HexFormat withUpperCase() {
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, UPPERCASE_DIGITS);
+        if (this == HEX_FORMAT)
+            return HEX_UPPER_FORMAT;
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, true);
     }
 
     /**
@@ -273,7 +264,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with lowercase hexadecimal characters
      */
     public HexFormat withLowerCase() {
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, LOWERCASE_DIGITS);
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, false);
     }
 
     /**
@@ -311,7 +302,7 @@ public final class HexFormat {
      *          otherwise {@code false}
      */
     public boolean isUpperCase() {
-        return Arrays.equals(digits, UPPERCASE_DIGITS);
+        return ucase;
     }
 
     /**
@@ -401,20 +392,20 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                String between = suffix + delimiter + prefix;
-                out.append(prefix);
-                toHexDigits(out, bytes[fromIndex]);
-                if (between.isEmpty()) {
-                    for (int i = 1; i < length; i++) {
-                        toHexDigits(out, bytes[fromIndex + i]);
-                    }
+                String s = formatOptDelimiter(bytes, fromIndex, toIndex);
+                if (s != null) {
+                    out.append(s);
                 } else {
+                    out.append(prefix);
+                    toHexDigits(out, bytes[fromIndex]);
                     for (int i = 1; i < length; i++) {
-                        out.append(between);
+                        out.append(suffix);
+                        out.append(delimiter);
+                        out.append(prefix);
                         toHexDigits(out, bytes[fromIndex + i]);
                     }
+                    out.append(suffix);
                 }
-                out.append(suffix);
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe.getMessage(), ioe);
             }
@@ -435,29 +426,35 @@ public final class HexFormat {
      *         or non-empty prefix or suffix
      */
     private String formatOptDelimiter(byte[] bytes, int fromIndex, int toIndex) {
+        char sep;
         byte[] rep;
         if (!prefix.isEmpty() || !suffix.isEmpty()) {
             return null;
         }
+
         int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
             for (int i = 0; i < length; i++) {
-                rep[i * 2] = (byte)toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[fromIndex + i]);
+                short pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                int pos = i * 2;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
-        } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
+        } else if (delimiter.length() == 1 && (sep = delimiter.charAt(0)) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
-            char sep = delimiter.charAt(0);
             rep = new byte[checkMaxArraySize(length * 3L - 1L)];
-            rep[0] = (byte) toHighHexDigit(bytes[fromIndex]);
-            rep[1] = (byte) toLowHexDigit(bytes[fromIndex]);
+            short pair = HexDigits.digitPair(bytes[fromIndex], ucase);
+            rep[0] = (byte)pair;
+            rep[1] = (byte)(pair >>> 8);
             for (int i = 1; i < length; i++) {
-                rep[i * 3 - 1] = (byte) sep;
-                rep[i * 3    ] = (byte) toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[fromIndex + i]);
+                int pos = i * 3;
+                pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                rep[pos - 1] = (byte) sep;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
         } else {
             // Delimiter formatting not to a single byte
@@ -631,7 +628,14 @@ public final class HexFormat {
      * @return the hexadecimal character for the low 4 bits {@code 0-3} of the value
      */
     public char toLowHexDigit(int value) {
-        return (char)digits[value & 0xf];
+        value = value & 0xf;
+        if (value < 10) {
+            return (char)('0' + value);
+        }
+        if (!ucase) {
+            return (char)('a' - 10 + value);
+        }
+        return (char)('A' - 10 + value);
     }
 
     /**
@@ -645,7 +649,14 @@ public final class HexFormat {
      * @return the hexadecimal character for the bits {@code 4-7} of the value
      */
     public char toHighHexDigit(int value) {
-        return (char)digits[(value >> 4) & 0xf];
+        value = (value >> 4) & 0xf;
+        if (value < 10) {
+            return (char)('0' + value);
+        }
+        if (!ucase) {
+            return (char)('a' - 10 + value);
+        }
+        return (char)('A' - 10 + value);
     }
 
     /**
@@ -662,9 +673,8 @@ public final class HexFormat {
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
      */
     public <A extends Appendable> A toHexDigits(A out, byte value) {
-        Objects.requireNonNull(out, "out");
         try {
-            out.append(toHighHexDigit(value));
+            out.append(toHighHexDigit(value)); // implicit null-check
             out.append(toLowHexDigit(value));
             return out;
         } catch (IOException ioe) {
@@ -871,7 +881,7 @@ public final class HexFormat {
      *          otherwise {@code false}
      */
     public static boolean isHexDigit(int ch) {
-        return ((ch >>> 8) == 0 && DIGITS[ch] >= 0);
+        return ((ch >>> 7) == 0 && DIGITS[ch] >= 0);
     }
 
     /**
@@ -889,7 +899,7 @@ public final class HexFormat {
      */
     public static int fromHexDigit(int ch) {
         int value;
-        if ((ch >>> 8) == 0 && (value = DIGITS[ch]) >= 0) {
+        if ((ch >>> 7) == 0 && (value = DIGITS[ch]) >= 0) {
             return value;
         }
         throw new NumberFormatException("not a hexadecimal digit: \"" + (char) ch + "\" = " + ch);
@@ -1052,7 +1062,7 @@ public final class HexFormat {
         if (o == null || getClass() != o.getClass())
             return false;
         HexFormat otherHex = (HexFormat) o;
-        return Arrays.equals(digits, otherHex.digits) &&
+        return ucase == otherHex.ucase &&
                 delimiter.equals(otherHex.delimiter) &&
                 prefix.equals(otherHex.prefix) &&
                 suffix.equals(otherHex.suffix);
@@ -1066,7 +1076,7 @@ public final class HexFormat {
     @Override
     public int hashCode() {
         int result = Objects.hash(delimiter, prefix, suffix);
-        result = 31 * result + Boolean.hashCode(Arrays.equals(digits, UPPERCASE_DIGITS));
+        result = 31 * result + Boolean.hashCode(ucase);
         return result;
     }
 
@@ -1078,7 +1088,7 @@ public final class HexFormat {
      */
     @Override
     public String toString() {
-        return escapeNL("uppercase: " + Arrays.equals(digits, UPPERCASE_DIGITS) +
+        return escapeNL("uppercase: " + ucase +
                 ", delimiter: \"" + delimiter +
                 "\", prefix: \"" + prefix +
                 "\", suffix: \"" + suffix + "\"");

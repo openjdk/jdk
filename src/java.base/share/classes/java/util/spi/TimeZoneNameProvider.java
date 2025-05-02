@@ -74,6 +74,8 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      *     getAvailableLocales()}.
      * @throws    NullPointerException if {@code ID} or {@code locale}
      *     is null
+     *
+     * @spec https://www.iana.org/time-zones Time Zone Database
      * @see java.util.TimeZone#getDisplayName(boolean, int, java.util.Locale)
      */
     public abstract String getDisplayName(String ID, boolean daylight, int style, Locale locale);

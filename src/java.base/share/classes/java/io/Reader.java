@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
-import jdk.internal.misc.InternalLock;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -141,6 +140,119 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
+     * Returns a {@code Reader} that reads characters from a
+     * {@code CharSequence}. The reader is initially open and reading starts at
+     * the first character in the sequence.
+     *
+     * <p> The returned reader supports the {@link #mark mark()} and
+     * {@link #reset reset()} operations.
+     *
+     * <p> The resulting reader is not safe for use by multiple
+     * concurrent threads. If the reader is to be used by more than one
+     * thread it should be controlled by appropriate synchronization.
+     *
+     * <p> If the sequence changes while the reader is open, e.g. the length
+     * changes, the behavior is undefined.
+     *
+     * @param cs {@code CharSequence} providing the character stream.
+     * @return a {@code Reader} which reads characters from {@code cs}
+     * @throws NullPointerException if {@code cs} is {@code null}
+     *
+     * @since 24
+     */
+    public static Reader of(final CharSequence cs) {
+        Objects.requireNonNull(cs);
+
+        return new Reader() {
+            private boolean isClosed;
+            private int next = 0;
+            private int mark = 0;
+
+            /** Check to make sure that the stream has not been closed */
+            private void ensureOpen() throws IOException {
+                if (isClosed)
+                    throw new IOException("Stream closed");
+            }
+
+            @Override
+            public int read() throws IOException {
+                ensureOpen();
+                if (next >= cs.length())
+                    return -1;
+                return cs.charAt(next++);
+            }
+
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                ensureOpen();
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (len == 0) {
+                    return 0;
+                }
+                int length = cs.length();
+                if (next >= length)
+                    return -1;
+                int n = Math.min(length - next, len);
+                switch (cs) {
+                    case String s -> s.getChars(next, next + n, cbuf, off);
+                    case StringBuilder sb -> sb.getChars(next, next + n, cbuf, off);
+                    case StringBuffer sb -> sb.getChars(next, next + n, cbuf, off);
+                    case CharBuffer cb -> cb.get(next, cbuf, off, n);
+                    default -> {
+                        for (int i = 0; i < n; i++)
+                            cbuf[off + i] = cs.charAt(next + i);
+                    }
+                }
+                next += n;
+                return n;
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                ensureOpen();
+                if (next >= cs.length())
+                    return 0;
+                // Bound skip by beginning and end of the source
+                long r = Math.min(cs.length() - next, n);
+                r = Math.max(-next, r);
+                next += (int)r;
+                return r;
+            }
+
+            @Override
+            public boolean ready() throws IOException {
+                ensureOpen();
+                return true;
+            }
+
+            @Override
+            public boolean markSupported() {
+                return true;
+            }
+
+            @Override
+            public void mark(int readAheadLimit) throws IOException {
+                if (readAheadLimit < 0){
+                    throw new IllegalArgumentException("Read-ahead limit < 0");
+                }
+                ensureOpen();
+                mark = next;
+            }
+
+            @Override
+            public void reset() throws IOException {
+                ensureOpen();
+                next = mark;
+            }
+
+            @Override
+            public void close() {
+                isClosed = true;
+            }
+        };
+    }
+
+    /**
      * The object used to synchronize operations on this stream.  For
      * efficiency, a character-stream object may use an object other than
      * itself to protect critical sections.  A subclass should therefore use
@@ -171,32 +283,21 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
-     * For use by BufferedReader to create a character-stream reader that uses an
-     * internal lock when BufferedReader is not extended and the given reader is
-     * trusted, otherwise critical sections will synchronize on the given reader.
-     */
-    Reader(Reader in) {
-        Class<?> clazz = in.getClass();
-        if (getClass() == BufferedReader.class &&
-                (clazz == InputStreamReader.class || clazz == FileReader.class)) {
-            this.lock = InternalLock.newLockOr(in);
-        } else {
-            this.lock = in;
-        }
-    }
-
-    /**
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain
+     * java.nio.CharBuffer#length length} of the specified character
+     * buffer is zero, then no characters will be read and zero will be
+     * returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
-     * @throws java.nio.ReadOnlyBufferException if target is a read only buffer
+     * @throws java.nio.ReadOnlyBufferException if target is a read only buffer,
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
@@ -312,33 +413,19 @@ public abstract class Reader implements Readable, Closeable {
     public long skip(long n) throws IOException {
         if (n < 0L)
             throw new IllegalArgumentException("skip value is negative");
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                return implSkip(n);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            int nn = (int) Math.min(n, maxSkipBufferSize);
+            if ((skipBuffer == null) || (skipBuffer.length < nn))
+                skipBuffer = new char[nn];
+            long r = n;
+            while (r > 0) {
+                int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
+                if (nc == -1)
+                    break;
+                r -= nc;
             }
-        } else {
-            synchronized (lock) {
-                return implSkip(n);
-            }
+            return n - r;
         }
-    }
-
-    private long implSkip(long n) throws IOException {
-        int nn = (int) Math.min(n, maxSkipBufferSize);
-        if ((skipBuffer == null) || (skipBuffer.length < nn))
-            skipBuffer = new char[nn];
-        long r = n;
-        while (r > 0) {
-            int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
-            if (nc == -1)
-                break;
-            r -= nc;
-        }
-        return n - r;
     }
 
     /**

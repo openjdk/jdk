@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,38 @@
 
 package java.lang.invoke;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.loader.BootLoader;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.BytecodeName;
-
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.lang.invoke.LambdaForm.*;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.loader.BootLoader;
+import jdk.internal.vm.annotation.Stable;
+import sun.invoke.util.BytecodeName;
+import sun.invoke.util.Wrapper;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_putStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * Class specialization code.
@@ -61,6 +66,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  */
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
+
+    private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_BoundMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
+            Annotation.of(ConstantUtils.referenceClassDesc(Stable.class))
+    );
+
     private final Class<T> topClass;
     private final Class<K> keyType;
     private final Class<S> metaType;
@@ -221,7 +233,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * it would appear that a shorter species could serve as a supertype of a
      * longer one which extends it.
      */
-    public abstract class SpeciesData {
+    abstract class SpeciesData {
         // Bootstrapping requires circular relations Class -> SpeciesData -> Class
         // Therefore, we need non-final links in the chain.  Use @Stable fields.
         private final K key;
@@ -269,11 +281,10 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof ClassSpecializer.SpeciesData)) {
+            if (!(obj instanceof ClassSpecializer<?, ?, ?>.SpeciesData that)) {
                 return false;
             }
-            @SuppressWarnings("rawtypes")
-            ClassSpecializer.SpeciesData that = (ClassSpecializer.SpeciesData) obj;
+
             return this.outer() == that.outer() && this.key.equals(that.key);
         }
 
@@ -409,7 +420,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     buf.append(basicType.basicTypeChar());
                 } else {
                     buf.append('V');
-                    end.append(classSig(type));
+                    end.append(type.descriptorString());
                 }
             }
             String typeString;
@@ -458,7 +469,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * Code generation support for instances.
      * Subclasses can modify the behavior.
      */
-    public class Factory {
+    class Factory {
         /**
          * Constructs a factory.
          */
@@ -567,31 +578,18 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
          * @param speciesData what species we are generating
          * @return the generated concrete TopClass class
          */
-        @SuppressWarnings("removal")
         Class<? extends T> generateConcreteSpeciesCode(String className, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             byte[] classFile = generateConcreteSpeciesCodeFile(className, speciesData);
-
-            // load class
-            InvokerBytecodeGenerator.maybeDump(classBCName(className), classFile);
-            ClassLoader cl = topClass.getClassLoader();
-            ProtectionDomain pd = null;
-            if (cl != null) {
-                pd = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public ProtectionDomain run() {
-                                return topClass().getProtectionDomain();
-                            }
-                        });
-            }
-            Class<?> speciesCode = SharedSecrets.getJavaLangAccess()
-                    .defineClass(cl, className, classFile, pd, "_ClassSpecializer_generateConcreteSpeciesCode");
+            var lookup = new MethodHandles.Lookup(topClass);
+            Class<?> speciesCode = lookup.makeClassDefiner(classBCName(className), classFile, dumper())
+                                         .defineClass(false);
             return speciesCode.asSubclass(topClass());
         }
 
         // These are named like constants because there is only one per specialization scheme:
-        private final String SPECIES_DATA = classBCName(metaType);
-        private final String SPECIES_DATA_SIG = classSig(SPECIES_DATA);
+
+        private final ClassDesc CD_SPECIES_DATA = classDesc(metaType);
+        private final MethodTypeDesc MTD_SPECIES_DATA = MethodTypeDescImpl.ofValidated(CD_SPECIES_DATA);
         private final String SPECIES_DATA_NAME = sdAccessor.getName();
         private final int SPECIES_DATA_MODS = sdAccessor.getModifiers();
         private final List<String> TRANSFORM_NAMES;  // derived from transformMethods
@@ -613,268 +611,235 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             TRANSFORM_TYPES = List.of(tts.toArray(new MethodType[0]));
             TRANSFORM_MODS = List.of(tms.toArray(new Integer[0]));
         }
+        private static final MethodTypeDesc MTD_TRANFORM_HELPER = MethodTypeDescImpl.ofValidated(CD_MethodHandle, CD_int);
         private static final int ACC_PPP = ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED;
 
         /*non-public*/
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
-            final String className = classBCName(className0);
-            final String superClassName = classBCName(speciesData.deriveSuperClass());
+            final ClassDesc classDesc = ClassDesc.of(className0);
+            final ClassDesc superClassDesc = classDesc(speciesData.deriveSuperClass());
+            return ClassFile.of().build(classDesc, new Consumer<>() {
+                @Override
+                public void accept(ClassBuilder clb) {
+                    clb.withFlags(ACC_FINAL | ACC_SUPER)
+                       .withSuperclass(superClassDesc)
+                       .with(SourceFileAttribute.of(classDesc.displayName()))
 
-            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-            final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
-            cw.visit(CLASSFILE_VERSION, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
+                    // emit static types and BMH_SPECIES fields
+                       .withField(sdFieldName, CD_SPECIES_DATA, new Consumer<>() {
+                           @Override
+                           public void accept(FieldBuilder fb) {
+                               fb.withFlags(ACC_STATIC)
+                                 .with(STABLE_ANNOTATION);
+                           }
+                       });
 
-            final String sourceFile = className.substring(className.lastIndexOf('.')+1);
-            cw.visitSource(sourceFile, null);
-
-            // emit static types and BMH_SPECIES fields
-            FieldVisitor fw = cw.visitField(NOT_ACC_PUBLIC + ACC_STATIC, sdFieldName, SPECIES_DATA_SIG, null, null);
-            fw.visitAnnotation(STABLE_SIG, true);
-            fw.visitEnd();
-
-            // handy holder for dealing with groups of typed values (ctor arguments and fields)
-            class Var {
-                final int index;
-                final String name;
-                final Class<?> type;
-                final String desc;
-                final BasicType basicType;
-                final int slotIndex;
-                Var(int index, int slotIndex) {
-                    this.index = index;
-                    this.slotIndex = slotIndex;
-                    name = null; type = null; desc = null;
-                    basicType = BasicType.V_TYPE;
-                }
-                Var(String name, Class<?> type, Var prev) {
-                    int slotIndex = prev.nextSlotIndex();
-                    int index = prev.nextIndex();
-                    if (name == null)  name = "x";
-                    if (name.endsWith("#"))
-                        name = name.substring(0, name.length()-1) + index;
-                    assert(!type.equals(void.class));
-                    String desc = classSig(type);
-                    BasicType basicType = BasicType.basicType(type);
-                    this.index = index;
-                    this.name = name;
-                    this.type = type;
-                    this.desc = desc;
-                    this.basicType = basicType;
-                    this.slotIndex = slotIndex;
-                }
-                Var lastOf(List<Var> vars) {
-                    int n = vars.size();
-                    return (n == 0 ? this : vars.get(n-1));
-                }
-                <X> List<Var> fromTypes(List<X> types) {
-                    Var prev = this;
-                    ArrayList<Var> result = new ArrayList<>(types.size());
-                    int i = 0;
-                    for (X x : types) {
-                        String vn = name;
-                        Class<?> vt;
-                        if (x instanceof Class) {
-                            vt = (Class<?>) x;
-                            // make the names friendlier if debugging
-                            assert((vn = vn + "_" + (i++)) != null);
-                        } else {
-                            @SuppressWarnings("unchecked")
-                            Var v = (Var) x;
-                            vn = v.name;
-                            vt = v.type;
+                    // handy holder for dealing with groups of typed values (ctor arguments and fields)
+                    class Var {
+                        final int index;
+                        final String name;
+                        final Class<?> type;
+                        final ClassDesc desc;
+                        final BasicType basicType;
+                        final int slotIndex;
+                        Var(int index, int slotIndex) {
+                            this.index = index;
+                            this.slotIndex = slotIndex;
+                            name = null; type = null; desc = null;
+                            basicType = BasicType.V_TYPE;
                         }
-                        prev = new Var(vn, vt, prev);
-                        result.add(prev);
+                        Var(String name, Class<?> type, Var prev) {
+                            int slotIndex = prev.nextSlotIndex();
+                            int index = prev.nextIndex();
+                            if (name == null)  name = "x";
+                            if (name.endsWith("#"))
+                                name = name.substring(0, name.length()-1) + index;
+                            assert(!type.equals(void.class));
+                            this.index = index;
+                            this.name = name;
+                            this.type = type;
+                            this.desc = classDesc(type);
+                            this.basicType = BasicType.basicType(type);
+                            this.slotIndex = slotIndex;
+                        }
+                        Var lastOf(List<Var> vars) {
+                            int n = vars.size();
+                            return (n == 0 ? this : vars.get(n-1));
+                        }
+                        <X> List<Var> fromTypes(List<X> types) {
+                            Var prev = this;
+                            ArrayList<Var> result = new ArrayList<>(types.size());
+                            int i = 0;
+                            for (X x : types) {
+                                String vn = name;
+                                Class<?> vt;
+                                if (x instanceof Class<?> cl) {
+                                    vt = cl;
+                                    // make the names friendlier if debugging
+                                    assert((vn = vn + "_" + (i++)) != null);
+                                } else {
+                                    @SuppressWarnings("unchecked")
+                                    Var v = (Var) x;
+                                    vn = v.name;
+                                    vt = v.type;
+                                }
+                                prev = new Var(vn, vt, prev);
+                                result.add(prev);
+                            }
+                            return result;
+                        }
+
+                        int slotSize() { return basicType.basicTypeSlots(); }
+                        int nextIndex() { return index + (slotSize() == 0 ? 0 : 1); }
+                        int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
+                        boolean isInHeap() { return slotIndex < 0; }
+                        void emitLoadInstruction(CodeBuilder cob) {
+                            cob.loadLocal(basicType.btKind, slotIndex);
+                        }
                     }
-                    return result;
-                }
 
-                int slotSize() { return basicType.basicTypeSlots(); }
-                int nextIndex() { return index + (slotSize() == 0 ? 0 : 1); }
-                int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
-                boolean isInHeap() { return slotIndex < 0; }
-                void emitVarInstruction(int asmop, MethodVisitor mv) {
-                    if (asmop == ALOAD)
-                        asmop = typeLoadOp(basicType.basicTypeChar());
-                    else
-                        throw new AssertionError("bad op="+asmop+" for desc="+desc);
-                    mv.visitVarInsn(asmop, slotIndex);
-                }
-                public void emitFieldInsn(int asmop, MethodVisitor mv) {
-                    mv.visitFieldInsn(asmop, className, name, desc);
-                }
-            }
+                    final Var NO_THIS = new Var(0, 0),
+                            AFTER_THIS = new Var(0, 1),
+                            IN_HEAP = new Var(0, -1);
 
-            final Var NO_THIS = new Var(0, 0),
-                    AFTER_THIS = new Var(0, 1),
-                    IN_HEAP = new Var(0, -1);
+                    // figure out the field types
+                    final List<Class<?>> fieldTypes = speciesData.fieldTypes();
+                    final List<Var> fields = new ArrayList<>(fieldTypes.size());
+                    {
+                        Var nextF = IN_HEAP;
+                        for (Class<?> ft : fieldTypes) {
+                            String fn = chooseFieldName(ft, nextF.nextIndex());
+                            nextF = new Var(fn, ft, nextF);
+                            fields.add(nextF);
+                        }
+                    }
 
-            // figure out the field types
-            final List<Class<?>> fieldTypes = speciesData.fieldTypes();
-            final List<Var> fields = new ArrayList<>(fieldTypes.size());
-            {
-                Var nextF = IN_HEAP;
-                for (Class<?> ft : fieldTypes) {
-                    String fn = chooseFieldName(ft, nextF.nextIndex());
-                    nextF = new Var(fn, ft, nextF);
-                    fields.add(nextF);
-                }
-            }
+                    // emit bound argument fields
+                    for (Var field : fields) {
+                        clb.withField(field.name, field.desc, ACC_FINAL);
+                    }
 
-            // emit bound argument fields
-            for (Var field : fields) {
-                cw.visitField(ACC_FINAL, field.name, field.desc, null, null).visitEnd();
-            }
+                    // emit implementation of speciesData()
+                    clb.withMethodBody(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
+                            new Consumer<>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
+                                            .areturn();
+                                }
+                            });
 
-            MethodVisitor mv;
+                    // figure out the constructor arguments
+                    MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
+                    MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
-            // emit implementation of speciesData()
-            mv = cw.visitMethod((SPECIES_DATA_MODS & ACC_PPP) + ACC_FINAL,
-                    SPECIES_DATA_NAME, "()" + SPECIES_DATA_SIG, null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, className, sdFieldName, SPECIES_DATA_SIG);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+                    // emit constructor
+                    clb.withMethodBody(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE,
+                            new Consumer<>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    cob.aload(0); // this
 
-            // figure out the constructor arguments
-            MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
-            MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
+                                    final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
+                                    for (Var ca : ctorArgs) {
+                                        ca.emitLoadInstruction(cob);
+                                    }
 
-            // emit constructor
-            {
-                mv = cw.visitMethod(ACC_PRIVATE,
-                        "<init>", methodSig(thisCtorType), null, null);
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0); // this
+                                    // super(ca...)
+                                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
 
-                final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
-                for (Var ca : ctorArgs) {
-                    ca.emitVarInstruction(ALOAD, mv);
-                }
+                                    // store down fields
+                                    Var lastFV = AFTER_THIS.lastOf(ctorArgs);
+                                    for (Var f : fields) {
+                                        // this.argL1 = argL1
+                                        cob.aload(0);  // this
+                                        lastFV = new Var(f.name, f.type, lastFV);
+                                        lastFV.emitLoadInstruction(cob);
+                                        cob.putfield(classDesc, f.name, f.desc);
+                                    }
 
-                // super(ca...)
-                mv.visitMethodInsn(INVOKESPECIAL, superClassName,
-                        "<init>", methodSig(superCtorType), false);
+                                    cob.return_();
+                                }
+                            });
 
-                // store down fields
-                Var lastFV = AFTER_THIS.lastOf(ctorArgs);
-                for (Var f : fields) {
-                    // this.argL1 = argL1
-                    mv.visitVarInsn(ALOAD, 0);  // this
-                    lastFV = new Var(f.name, f.type, lastFV);
-                    lastFV.emitVarInstruction(ALOAD, mv);
-                    f.emitFieldInsn(PUTFIELD, mv);
-                }
+                    // emit make()  ...factory method wrapping constructor
+                    MethodType ftryType = thisCtorType.changeReturnType(topClass());
+                    clb.withMethodBody("make", methodDesc(ftryType), ACC_STATIC,
+                            new Consumer<>() {
+                                @Override
+                                public void accept(CodeBuilder cob) {
+                                    // make instance
+                                    cob.new_(classDesc)
+                                            .dup();
+                                    // load factory method arguments:  ctarg... and arg...
+                                    for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
+                                        v.emitLoadInstruction(cob);
+                                    }
 
-                mv.visitInsn(RETURN);
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
-            }
+                                    // finally, invoke the constructor and return
+                                    cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
+                                            .areturn();
+                                }
+                            });
 
-            // emit make()  ...factory method wrapping constructor
-            {
-                MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_STATIC,
-                        "make", methodSig(ftryType), null, null);
-                mv.visitCode();
-                // make instance
-                mv.visitTypeInsn(NEW, className);
-                mv.visitInsn(DUP);
-                // load factory method arguments:  ctarg... and arg...
-                for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
-                    v.emitVarInstruction(ALOAD, mv);
-                }
+                    // For each transform, emit the customized override of the transform method.
+                    // This method mixes together some incoming arguments (from the transform's
+                    // static type signature) with the field types themselves, and passes
+                    // the resulting mish-mosh of values to a method handle produced by
+                    // the species itself.  (Typically this method handle is the factory
+                    // method of this species or a related one.)
+                    for (int i = 0; i < TRANSFORM_NAMES.size(); i++) {
+                        final int whichtm = i;
+                        final String     TNAME = TRANSFORM_NAMES.get(whichtm);
+                        final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
+                        final int        TMODS = TRANSFORM_MODS.get(whichtm);
+                        clb.withMethod(TNAME, methodDesc(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, new Consumer<MethodBuilder>() {
+                            @Override
+                            public void accept(MethodBuilder mb) {
+                                mb.with(ExceptionsAttribute.ofSymbols(CD_Throwable))
+                                  .withCode(new Consumer<CodeBuilder>() {
+                                    @Override
+                                    public void accept(CodeBuilder cob) {
+                                        // return a call to the corresponding "transform helper", something like this:
+                                        //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
+                                        cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
+                                                .loadConstant(whichtm)
+                                                .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_TRANFORM_HELPER);
 
-                // finally, invoke the constructor and return
-                mv.visitMethodInsn(INVOKESPECIAL, className,
-                        "<init>", methodSig(thisCtorType), false);
-                mv.visitInsn(ARETURN);
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
-            }
+                                        List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
+                                        List<Var> tfields = new ArrayList<>(fields);
+                                        // mix them up and load them for the transform helper:
+                                        List<Var> helperArgs = speciesData.deriveTransformHelperArguments(transformMethods.get(whichtm), whichtm, targs, tfields);
+                                        ClassDesc[] helperTypes = new ClassDesc[helperArgs.size()];
+                                        for (int hi = 0; hi < helperTypes.length; hi++) {
+                                            Var ha = helperArgs.get(hi);
+                                            helperTypes[hi] = ha.basicType.basicTypeWrapper().basicClassDescriptor();
+                                            if (ha.isInHeap()) {
+                                                assert(tfields.contains(ha));
+                                                cob.aload(0);
+                                                cob.getfield(classDesc, ha.name, ha.desc);
+                                            } else {
+                                                assert(targs.contains(ha));
+                                                ha.emitLoadInstruction(cob);
+                                            }
+                                        }
 
-            // For each transform, emit the customized override of the transform method.
-            // This method mixes together some incoming arguments (from the transform's
-            // static type signature) with the field types themselves, and passes
-            // the resulting mish-mosh of values to a method handle produced by
-            // the species itself.  (Typically this method handle is the factory
-            // method of this species or a related one.)
-            for (int whichtm = 0; whichtm < TRANSFORM_NAMES.size(); whichtm++) {
-                final String     TNAME = TRANSFORM_NAMES.get(whichtm);
-                final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
-                final int        TMODS = TRANSFORM_MODS.get(whichtm);
-                mv = cw.visitMethod((TMODS & ACC_PPP) | ACC_FINAL,
-                        TNAME, TTYPE.toMethodDescriptorString(), null, E_THROWABLE);
-                mv.visitCode();
-                // return a call to the corresponding "transform helper", something like this:
-                //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
-                mv.visitFieldInsn(GETSTATIC, className,
-                        sdFieldName, SPECIES_DATA_SIG);
-                emitIntConstant(whichtm, mv);
-                mv.visitMethodInsn(INVOKEVIRTUAL, SPECIES_DATA,
-                        "transformHelper", "(I)" + MH_SIG, false);
-
-                List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
-                List<Var> tfields = new ArrayList<>(fields);
-                // mix them up and load them for the transform helper:
-                List<Var> helperArgs = speciesData.deriveTransformHelperArguments(transformMethods.get(whichtm), whichtm, targs, tfields);
-                List<Class<?>> helperTypes = new ArrayList<>(helperArgs.size());
-                for (Var ha : helperArgs) {
-                    helperTypes.add(ha.basicType.basicTypeClass());
-                    if (ha.isInHeap()) {
-                        assert(tfields.contains(ha));
-                        mv.visitVarInsn(ALOAD, 0);
-                        ha.emitFieldInsn(GETFIELD, mv);
-                    } else {
-                        assert(targs.contains(ha));
-                        ha.emitVarInstruction(ALOAD, mv);
+                                        // jump into the helper (which is probably a factory method)
+                                        final Class<?> rtype = TTYPE.returnType();
+                                        if (!rtype.isPrimitive()) {
+                                            cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDescImpl.ofValidated(CD_Object, helperTypes))
+                                                    .checkcast(classDesc(rtype))
+                                                    .areturn();
+                                        } else {
+                                            throw newInternalError("NYI: transform of type "+rtype);
+                                        }
+                                    }
+                                });
+                            }
+                        });
                     }
                 }
-
-                // jump into the helper (which is probably a factory method)
-                final Class<?> rtype = TTYPE.returnType();
-                final BasicType rbt = BasicType.basicType(rtype);
-                MethodType invokeBasicType = MethodType.methodType(rbt.basicTypeClass(), helperTypes);
-                mv.visitMethodInsn(INVOKEVIRTUAL, MH,
-                        "invokeBasic", methodSig(invokeBasicType), false);
-                if (rbt == BasicType.L_TYPE) {
-                    mv.visitTypeInsn(CHECKCAST, classBCName(rtype));
-                    mv.visitInsn(ARETURN);
-                } else {
-                    throw newInternalError("NYI: transform of type "+rtype);
-                }
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
-            }
-
-            cw.visitEnd();
-
-            return cw.toByteArray();
-        }
-
-        private int typeLoadOp(char t) {
-            return switch (t) {
-                case 'L' -> ALOAD;
-                case 'I' -> ILOAD;
-                case 'J' -> LLOAD;
-                case 'F' -> FLOAD;
-                case 'D' -> DLOAD;
-                default -> throw newInternalError("unrecognized type " + t);
-            };
-        }
-
-        private void emitIntConstant(int con, MethodVisitor mv) {
-            if (ICONST_M1 - ICONST_0 <= con && con <= ICONST_5 - ICONST_0)
-                mv.visitInsn(ICONST_0 + con);
-            else if (con == (byte) con)
-                mv.visitIntInsn(BIPUSH, con);
-            else if (con == (short) con)
-                mv.visitIntInsn(SIPUSH, con);
-            else {
-                mv.visitLdcInsn(con);
-            }
-
+            });
         }
 
         //
@@ -1008,39 +973,25 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
 
     // Other misc helpers:
-    private static final String MH = "java/lang/invoke/MethodHandle";
-    private static final String MH_SIG = "L" + MH + ";";
-    private static final String STABLE = "jdk/internal/vm/annotation/Stable";
-    private static final String STABLE_SIG = "L" + STABLE + ";";
-    private static final String[] E_THROWABLE = new String[] { "java/lang/Throwable" };
-    static {
-        assert(MH_SIG.equals(classSig(MethodHandle.class)));
-        assert(MH.equals(classBCName(MethodHandle.class)));
-    }
-
-    static String methodSig(MethodType mt) {
-        return mt.toMethodDescriptorString();
-    }
-    static String classSig(Class<?> cls) {
-        if (cls.isPrimitive() || cls.isArray())
-            return MethodType.methodType(cls).toMethodDescriptorString().substring(2);
-        return classSig(classBCName(cls));
-    }
-    static String classSig(String bcName) {
-        assert(bcName.indexOf('.') < 0);
-        assert(!bcName.endsWith(";"));
-        assert(!bcName.startsWith("["));
-        return "L" + bcName + ";";
-    }
-    static String classBCName(Class<?> cls) {
-        return classBCName(className(cls));
-    }
     static String classBCName(String str) {
         assert(str.indexOf('/') < 0) : str;
         return str.replace('.', '/');
     }
-    static String className(Class<?> cls) {
-        assert(!cls.isArray() && !cls.isPrimitive());
-        return cls.getName();
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
+             : cls == Object.class ? CD_Object
+             : cls == MethodType.class ? CD_MethodType
+             : cls == LambdaForm.class ? CD_LambdaForm
+             : cls == BoundMethodHandle.class ? CD_BoundMethodHandle
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
+    }
+
+    static MethodTypeDesc methodDesc(MethodType mt) {
+        var params = new ClassDesc[mt.parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            params[i] = classDesc(mt.parameterType(i));
+        }
+        return MethodTypeDescImpl.ofValidated(classDesc(mt.returnType()), params);
     }
 }

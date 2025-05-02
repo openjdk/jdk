@@ -28,6 +28,33 @@
 # Properties in this file are typically parsed only once. If any of the
 # properties are modified, applications should be restarted to ensure the
 # changes are properly reflected.
+#
+# The special "include" property can be defined one or multiple times with
+# a filesystem path value. The effect of each definition is to include a
+# referred security properties file inline, adding all its properties.
+# Security properties defined before an include statement may be overridden
+# by properties in the included file, if their names match. Conversely,
+# properties defined after an include statement may override properties in
+# the included file.
+#
+# Included files, as well as files pointed to by java.security.properties,
+# can include other files recursively. Paths may be absolute or relative.
+# Each relative path is resolved against the base file containing its
+# "include" definition, if local. Paths may contain system properties for
+# expansion in the form of ${system.property}. If a system property does
+# not have a value, it expands to the empty string.
+#
+# An error will be thrown if a file cannot be included. This may happen
+# if the file cannot be resolved, does not exist, is a directory, there are
+# insufficient permissions to read it, it is recursively included more than
+# once, or for any other reason. For a secure JDK configuration, it is
+# important to review OS write permissions assigned to any file included.
+#
+# Examples:
+#   1) include ${java.home}/conf/security/extra.security
+#   2) include extra.security
+#   3) include ${java.home}/conf/security/profile${SecurityProfile}.security
+#
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
@@ -255,40 +282,18 @@ login.configuration.provider=sun.security.provider.ConfigFile
 #
 #login.config.url.1=file:${user.home}/.java.login.config
 
-#
-# Class to instantiate as the system Policy. This is the name of the class
-# that will be used as the Policy object. The system class loader is used to
-# locate this class.
-#
-policy.provider=sun.security.provider.PolicyFile
-
-# The default is to have a single system-wide policy file,
-# and a policy file in the user's home directory.
-#
-policy.url.1=file:${java.home}/conf/security/java.policy
-policy.url.2=file:${user.home}/.java.policy
-
-# Controls whether or not properties are expanded in policy and login
-# configuration files. If set to false, properties (${...}) will not
-# be expanded in policy and login configuration files. If commented out or
-# set to an empty string, the default value is "false" for policy files and
-# "true" for login configuration files.
+# Controls whether or not properties are expanded in login configuration files.
+# If set to false, properties (${...}) will not be expanded in login
+# configuration files. If commented out or set to an empty string, the default
+# value is "true" for login configuration files.
 #
 policy.expandProperties=true
 
-# Controls whether or not an extra policy or login configuration file is
-# allowed to be passed on the command line with -Djava.security.policy=somefile
-# or -Djava.security.auth.login.config=somefile. If commented out or set to
-# an empty string, the default value is "false".
+# Controls whether or not an extra login configuration file is allowed to be
+# passed on the command line with -Djava.security.auth.login.config=somefile.
+# If commented out or set to an empty string, the default value is "false".
 #
 policy.allowSystemProperty=true
-
-# whether or not we look into the IdentityScope for trusted Identities
-# when encountering a 1.1 signed JAR file. If the identity is found
-# and is trusted, we grant it AllPermission. Note: the default policy
-# provider (sun.security.provider.PolicyFile) does not support this property.
-#
-policy.ignoreIdentityScope=false
 
 #
 # Default keystore type.
@@ -304,27 +309,6 @@ keystore.type=pkcs12
 # keystore type supports loading only PKCS12 keystore files.
 #
 keystore.type.compat=true
-
-#
-# List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when passed to the
-# SecurityManager::checkPackageAccess method unless the corresponding
-# RuntimePermission("accessClassInPackage."+package) has been granted.
-#
-package.access=sun.misc.,\
-               sun.reflect.,\
-
-#
-# List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when passed to the
-# SecurityManager::checkPackageDefinition method unless the corresponding
-# RuntimePermission("defineClassInPackage."+package) has been granted.
-#
-# By default, none of the class loaders supplied with the JDK call
-# checkPackageDefinition.
-#
-package.definition=sun.misc.,\
-                   sun.reflect.,\
 
 #
 # Determines whether this properties file can be appended to
@@ -346,16 +330,24 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # any positive value: the number of seconds to cache an address for
 # zero: do not cache
 #
-# default value is forever (FOREVER). For security reasons, this
-# caching is made forever when a security manager is set. When a security
-# manager is not set, the default behavior in this implementation
-# is to cache for 30 seconds.
+# The default behavior in this implementation is to cache for 30 seconds.
 #
 # NOTE: setting this to anything other than the default value can have
 #       serious security implications. Do not set it unless
 #       you are sure you are not exposed to DNS spoofing attack.
 #
 #networkaddress.cache.ttl=-1
+
+#
+# The Java-level namelookup cache stale policy:
+#
+# any positive value: the number of seconds to use the stale names
+# zero: do not use stale names
+# negative values are ignored
+#
+# default value is 0 (NEVER).
+#
+#networkaddress.cache.stale.ttl=0
 
 # The Java-level namelookup cache policy for failed lookups:
 #
@@ -543,7 +535,10 @@ sun.security.krb5.maxReferrals=5
 #       denyAfter YYYY-MM-DD
 #
 #   UsageConstraint:
-#       usage [TLSServer] [TLSClient] [SignedJAR]
+#       usage UsageType { UsageType }
+#
+#   UsageType:
+#       TLSServer | TLSClient | SignedJAR
 #
 #   IncludeProperty:
 #       include <security property>
@@ -606,9 +601,9 @@ sun.security.krb5.maxReferrals=5
 #       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
 #
 #   UsageConstraint:
-#     usage [TLSServer] [TLSClient] [SignedJAR]
+#     usage UsageType { UsageType }
 #       This constraint prohibits the specified algorithm for
-#       a specified usage.  This should be used when disabling an algorithm
+#       a specified UsageType.  This should be used when disabling an algorithm
 #       for all usages is not practical. 'TLSServer' restricts the algorithm
 #       in TLS server certificate chains when server authentication is
 #       performed. 'TLSClient' restricts the algorithm in TLS client
@@ -739,6 +734,29 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
 # syntax of the disabled algorithm string.
 #
+# Additional TLS-specific syntax supported by this property:
+#
+#   - TLS cipher suites can be disabled with this property using one or more
+#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
+#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "TLS_" are allowed to have wildcard characters.
+#
+#   - TLS protocol specific usage constraints are supported by this property:
+#
+#     UsageConstraint:
+#         usage UsageType { UsageType }
+#
+#     UsageType:
+#         HandshakeSignature | CertificateSignature
+#
+#     HandshakeSignature restricts the use of the algorithm in TLS handshake
+#     signatures. CertificateSignature restricts the use of the algorithm in
+#     certificate signatures. An algorithm with this constraint cannot include
+#     other usage types defined in the jdk.certpath.disabledAlgorithms
+#     property. The usage type follows the keyword and more than one usage type
+#     can be specified with a whitespace delimiter.
+#     Example: "rsa_pkcs1_sha1 usage HandshakeSignature"
+#
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
 #
@@ -747,10 +765,11 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1
+#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH
+    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, \
+    ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -881,7 +900,7 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 #   KeyLimits:
 #       " KeyLimit { , KeyLimit } "
 #
-#   WeakKeyLimit:
+#   KeyLimit:
 #       AlgorithmName Action Length
 #
 #   AlgorithmName:
@@ -901,7 +920,8 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 # Note: This property is currently used by OpenJDK's JSSE implementation. It
 # is not guaranteed to be examined and used by other implementations.
 #
-jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
+jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37, \
+                  ChaCha20-Poly1305 KeyUpdate 2^37
 
 #
 # Cryptographic Jurisdiction Policy defaults
@@ -1001,6 +1021,23 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+#
+# Support for the here() function
+#
+# This security property determines whether the here() XPath function is
+# supported in XML Signature generation and verification.
+#
+# If this property is set to false, the here() function is not supported.
+# Generating an XML Signature that uses the here() function will throw an
+# XMLSignatureException. Validating an existing XML Signature that uses the
+# here() function will also throw an XMLSignatureException.
+#
+# The default value for this property is true.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#jdk.xml.dsig.hereFunctionSupported=true
 
 #
 # Deserialization JVM-wide filter factory
@@ -1301,6 +1338,12 @@ jdk.sasl.disabledMechanisms=
 #        A4FE7C7F15155F3F0AEF7AAA83CF6E06DEB97CA3F909DF920AC1490882D488ED
 #        Distrust after December 31, 2019.
 #
+#   ENTRUST_TLS : Distrust TLS Server certificates anchored by
+#   an Entrust root CA and issued after November 11, 2024.
+#
+#   CAMERFIRMA_TLS : Distrust TLS Server certificates anchored by
+#   a Camerfirma root CA and issued after April 15, 2025.
+#
 # Leading and trailing whitespace surrounding each value are ignored.
 # Unknown values are ignored. If the property is commented out or set to the
 # empty String, no policies are enforced.
@@ -1312,7 +1355,7 @@ jdk.sasl.disabledMechanisms=
 # jdk.certpath.disabledAlgorithms; those restrictions are still enforced even
 # if this property is not enabled.
 #
-jdk.security.caDistrustPolicies=SYMANTEC_TLS
+jdk.security.caDistrustPolicies=SYMANTEC_TLS,ENTRUST_TLS,CAMERFIRMA_TLS
 
 #
 # FilePermission path canonicalization
@@ -1486,3 +1529,23 @@ jdk.tls.alpnCharset=ISO_8859_1
 #
 # [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
 #jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false
+
+#
+# Policy for name comparison in keytab and ccache entry lookup
+#
+# When looking up a keytab or credentials cache (ccache) entry for a Kerberos
+# principal, the principal name is compared with the name in the entry.
+# The comparison is by default case-insensitive. However, many Kerberos
+# implementations consider principal names to be case-sensitive. Consequently,
+# if two principals have names that differ only in case, there is a risk that
+# an incorrect keytab or ccache entry might be selected.
+#
+# If this security property is set to "true", the comparison of principal
+# names at keytab and ccache entry lookup is case-sensitive.
+#
+# The default value is "false".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+#jdk.security.krb5.name.case.sensitive=false

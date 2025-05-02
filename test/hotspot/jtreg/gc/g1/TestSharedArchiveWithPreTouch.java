@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,6 @@ public class TestSharedArchiveWithPreTouch {
         final List<String> BaseOptions = Arrays.asList(new String[] {"-XX:+UseG1GC", "-XX:+AlwaysPreTouch",
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + ArchiveFileName });
 
-        ProcessBuilder pb;
-
         List<String> dump_args = new ArrayList<String>(BaseOptions);
 
         if (Platform.is64bit()) {
@@ -59,8 +57,8 @@ public class TestSharedArchiveWithPreTouch {
         }
         dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
-        pb = ProcessTools.createJavaProcessBuilder(dump_args);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(dump_args);
+
         try {
             output.shouldContain("Loading classes to share");
             output.shouldHaveExitValue(0);
@@ -72,8 +70,7 @@ public class TestSharedArchiveWithPreTouch {
             }
             load_args.addAll(Arrays.asList(new String[] { "-Xshare:on", "-version" }));
 
-            pb = ProcessTools.createJavaProcessBuilder(load_args.toArray(new String[0]));
-            output = new OutputAnalyzer(pb.start());
+            output = ProcessTools.executeLimitedTestJava(load_args.toArray(new String[0]));
             output.shouldContain("sharing");
             output.shouldHaveExitValue(0);
         } catch (RuntimeException e) {

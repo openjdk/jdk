@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.inline.hpp"
 #include "asm/macroAssembler.hpp"
 
@@ -69,8 +68,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   assert(requests->number_of_entries() >= 1, "at least one");
   const int total_requested_size = MacroAssembler::max_trampoline_stub_size() * requests->number_of_entries();
-  if (cb->stubs()->maybe_expand_to_ensure_remaining(total_requested_size) && cb->blob() == NULL) {
-    ciEnv::current()->record_failure("CodeCache is full");
+  if (cb->stubs()->maybe_expand_to_ensure_remaining(total_requested_size) && cb->blob() == nullptr) {
     return false;
   }
 

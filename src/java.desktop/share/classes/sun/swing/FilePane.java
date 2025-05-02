@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,8 @@ import sun.awt.shell.ShellFolderColumnInfo;
  * this public API.
  * <p>
  * This component is intended to be used in a subclass of
- * javax.swing.plaf.basic.BasicFileChooserUI. It realies heavily on the
- * implementation of BasicFileChooserUI, and is intended to be API compatible
+ * javax.swing.plaf.basic.BasicFileChooserUI. It relies heavily on the
+ * implementation of BasicFileChooserUI and is intended to be API compatible
  * with earlier implementations of MetalFileChooserUI and WindowsFileChooserUI.
  *
  * @author Leif Samuelsson
@@ -659,7 +659,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         JPanel p = new JPanel(new BorderLayout());
         final JFileChooser fileChooser = getFileChooser();
 
-        @SuppressWarnings("serial") // anonymous class
         final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel<?> model = getModel();
@@ -1262,7 +1261,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         JPanel p = new JPanel(new BorderLayout());
 
-        @SuppressWarnings("serial") // anonymous class
         final JTable detailsTable = new JTable(getDetailsTableModel()) {
             // Handle Escape key events here
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
@@ -1317,13 +1315,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             detailsTable.addFocusListener(repaintListener);
         }
 
-        // TAB/SHIFT-TAB should transfer focus and ENTER should select an item.
-        // We don't want them to navigate within the table
-        ActionMap am = SwingUtilities.getUIActionMap(detailsTable);
-        am.remove("selectNextRowCell");
-        am.remove("selectPreviousRowCell");
-        am.remove("selectNextColumnCell");
-        am.remove("selectPreviousColumnCell");
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
                      null);
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
@@ -1582,7 +1573,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     protected Action newFolderAction;
 
-    @SuppressWarnings("serial") // anonymous class inside
     public Action getNewFolderAction() {
         if (!readOnly && newFolderAction == null) {
             newFolderAction = new AbstractAction(newFolderActionLabelText) {
@@ -1932,6 +1922,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (viewMenu != null) {
             viewMenu.getPopupMenu().setInvoker(viewMenu);
         }
+
+        contextMenu.applyComponentOrientation(getFileChooser().getComponentOrientation());
         return contextMenu;
     }
 
@@ -1951,6 +1943,10 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
+
+            if (!source.isEnabled()) {
+                return;
+            }
 
             int index;
             if (source instanceof JList) {
@@ -2123,24 +2119,20 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return false;
         }
 
-        try {
-            if (f instanceof ShellFolder) {
-                return f.canWrite();
-            } else {
-                if (usesShellFolder(getFileChooser())) {
-                    try {
-                        return ShellFolder.getShellFolder(f).canWrite();
-                    } catch (FileNotFoundException ex) {
-                        // File doesn't exist
-                        return false;
-                    }
-                } else {
-                    // Ordinary file
-                    return f.canWrite();
+        if (f instanceof ShellFolder) {
+            return f.canWrite();
+        } else {
+            if (usesShellFolder(getFileChooser())) {
+                try {
+                    return ShellFolder.getShellFolder(f).canWrite();
+                } catch (FileNotFoundException ex) {
+                    // File doesn't exist
+                    return false;
                 }
+            } else {
+                // Ordinary file
+                return f.canWrite();
             }
-        } catch (SecurityException e) {
-            return false;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
 
 class ZBarrierSetAssemblerBase : public BarrierSetAssembler {
 public:
-  static Address address_bad_mask_from_thread(Register thread);
-  static Address address_bad_mask_from_jni_env(Register env);
+  static Address load_bad_mask_from_thread(Register thread);
+  static Address mark_bad_mask_from_thread(Register thread);
+
+  static Address load_bad_mask_from_jni_env(Register env);
+  static Address mark_bad_mask_from_jni_env(Register env);
 };
 
 // Needs to be included after definition of ZBarrierSetAssemblerBase

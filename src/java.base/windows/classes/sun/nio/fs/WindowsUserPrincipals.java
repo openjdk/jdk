@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,8 @@ class WindowsUserPrincipals {
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (!(obj instanceof WindowsUserPrincipals.User))
-                return false;
-            WindowsUserPrincipals.User other = (WindowsUserPrincipals.User)obj;
-            return this.sidString.equals(other.sidString);
+            return obj instanceof WindowsUserPrincipals.User other
+                    && this.sidString.equals(other.sidString);
         }
 
         @Override
@@ -133,12 +131,6 @@ class WindowsUserPrincipals {
     }
 
     static UserPrincipal lookup(String name) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("lookupUserInformation"));
-        }
-
         // invoke LookupAccountName to get buffer size needed for SID
         int size;
         try {

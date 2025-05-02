@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+
+import jdk.internal.util.OperatingSystem;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -57,8 +59,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
+import jdk.jpackage.internal.util.XmlUtils;
 
-public final class AppImageFile {
+final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
     private final String appVersion;
@@ -72,9 +75,10 @@ public final class AppImageFile {
 
     private static final String FILENAME = ".jpackage.xml";
 
-    private static final Map<Platform, String> PLATFORM_LABELS = Map.of(
-            Platform.LINUX, "linux", Platform.WINDOWS, "windows", Platform.MAC,
-            "macOS");
+    private static final Map<OperatingSystem, String> PLATFORM_LABELS = Map.of(
+            OperatingSystem.LINUX, "linux",
+            OperatingSystem.WINDOWS, "windows",
+            OperatingSystem.MACOS, "macOS");
 
     private AppImageFile(Path appImageDir, String appVersion, String launcherName,
             String mainClass, List<LauncherInfo> launcherInfos,
@@ -244,7 +248,7 @@ public final class AppImageFile {
             addLauncherInfoSave = appImage.getAddLaunchers();
         }
 
-        IOUtils.createXml(getPathInAppImage(appImageDir), xml -> {
+        XmlUtils.createXml(getPathInAppImage(appImageDir), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", getVersion());
             xml.writeAttribute("platform", getPlatform());
@@ -434,7 +438,7 @@ public final class AppImageFile {
     }
 
     public static String getPlatform() {
-        return PLATFORM_LABELS.get(Platform.getPlatform());
+        return PLATFORM_LABELS.get(OperatingSystem.current());
     }
 
     static class LauncherInfo {

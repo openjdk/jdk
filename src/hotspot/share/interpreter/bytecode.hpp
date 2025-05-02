@@ -32,6 +32,7 @@
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;
+class ResolvedIndyEntry;
 
 // The base class for different kinds of bytecode abstractions.
 // Provides the primitive operations to manipulate code relative
@@ -70,11 +71,11 @@ class Bytecode: public StackObj {
   Bytecodes::Code invoke_code() const            { return (code() == Bytecodes::_invokehandle) ? code() : java_code(); }
 
   // Static functions for parsing bytecodes in place.
-  int get_index_u1(Bytecodes::Code bc) const {
+  u1 get_index_u1(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1);
+    return *(u1*)addr_at(1);
   }
-  int get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
+  u2 get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
     if (can_use_native_byte_order(bc, is_wide)) {
@@ -82,14 +83,6 @@ class Bytecode: public StackObj {
     } else {
       return Bytes::get_Java_u2(p);
     }
-  }
-  int get_index_u1_cpcache(Bytecodes::Code bc) const {
-    assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
-  }
-  int get_index_u2_cpcache(Bytecodes::Code bc) const {
-    assert_same_format_as(bc); assert_index_size(2, bc); assert_native_index(bc);
-    return Bytes::get_native_u2(addr_at(1)) + ConstantPool::CPCACHE_INDEX_TAG;
   }
   int get_index_u4(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(4, bc);
@@ -187,7 +180,8 @@ class Bytecode_member_ref: public Bytecode {
   const Method* method() const                 { return _method; }
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
-  ConstantPoolCacheEntry* cpcache_entry() const;
+  ResolvedIndyEntry* resolved_indy_entry() const;
+  ResolvedMethodEntry* resolved_method_entry() const;
 
  public:
   int          index() const;                    // cache index (loaded from instruction)
@@ -232,6 +226,8 @@ class Bytecode_invoke: public Bytecode_member_ref {
 
   bool has_appendix();
 
+  bool has_member_arg() const;
+
   int size_of_parameters() const;
 
  private:
@@ -272,7 +268,7 @@ class Bytecode_checkcast: public Bytecode {
   void verify() const { assert(Bytecodes::java_code(code()) == Bytecodes::_checkcast, "check checkcast"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_checkcast); };
+  u2 index() const   { return get_index_u2(Bytecodes::_checkcast); };
 };
 
 // Abstraction for instanceof
@@ -282,7 +278,7 @@ class Bytecode_instanceof: public Bytecode {
   void verify() const { assert(code() == Bytecodes::_instanceof, "check instanceof"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_instanceof); };
+  u2 index() const   { return get_index_u2(Bytecodes::_instanceof); };
 };
 
 class Bytecode_new: public Bytecode {
@@ -291,7 +287,7 @@ class Bytecode_new: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_new, "check new"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_new); };
+  u2 index() const   { return get_index_u2(Bytecodes::_new); };
 };
 
 class Bytecode_multianewarray: public Bytecode {
@@ -300,7 +296,7 @@ class Bytecode_multianewarray: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_multianewarray, "check new"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_multianewarray); };
+  u2 index() const   { return get_index_u2(Bytecodes::_multianewarray); };
 };
 
 class Bytecode_anewarray: public Bytecode {
@@ -309,7 +305,7 @@ class Bytecode_anewarray: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_anewarray, "check anewarray"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_anewarray); };
+  u2 index() const   { return get_index_u2(Bytecodes::_anewarray); };
 };
 
 // Abstraction for ldc, ldc_w and ldc2_w

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
+include MakeFileStart.gmk
+
+################################################################################
+
+include CopyFiles.gmk
 include TextFileProcessing.gmk
 
 default: bundles
@@ -69,7 +72,7 @@ ifeq ($(call isTargetOs, macosx), true)
   ))
 
   $(eval $(call SetupTextFileProcessing, BUILD_JDK_PLIST, \
-      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist, \
+      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist.template, \
       OUTPUT_FILE := $(JDK_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
           @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).jdk ; \
@@ -82,7 +85,7 @@ ifeq ($(call isTargetOs, macosx), true)
   ))
 
   $(eval $(call SetupTextFileProcessing, BUILD_JRE_PLIST, \
-      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JRE-Info.plist, \
+      SOURCE_FILES := $(MACOSX_PLIST_SRC)/JRE-Info.plist.template, \
       OUTPUT_FILE := $(JRE_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
           @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).jre ; \
@@ -116,3 +119,7 @@ else # Not macosx
 endif # macosx
 
 .PHONY: jdk-bundle jre-bundle bundles
+
+################################################################################
+
+include MakeFileEnd.gmk

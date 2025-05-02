@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/continuation.hpp"
@@ -40,143 +40,145 @@
 #include "opto/runtime.hpp"
 #endif
 
-UnsafeCopyMemory* UnsafeCopyMemory::_table                      = nullptr;
-int UnsafeCopyMemory::_table_length                             = 0;
-int UnsafeCopyMemory::_table_max_length                         = 0;
-address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
+UnsafeMemoryAccess* UnsafeMemoryAccess::_table                  = nullptr;
+int UnsafeMemoryAccess::_table_length                           = 0;
+int UnsafeMemoryAccess::_table_max_length                       = 0;
+address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
-// Implementation of StubRoutines - for a description
-// of how to extend it, see the header file.
+// Implementation of StubRoutines - for a description of how to
+// declare new blobs, stubs and entries , see stubDefinitions.hpp.
 
-// Class Variables
+// define arrays to hold stub and blob names
 
-BufferBlob* StubRoutines::_code1                                = nullptr;
-BufferBlob* StubRoutines::_code2                                = nullptr;
-BufferBlob* StubRoutines::_code3                                = nullptr;
+// use a template to generate the initializer for the blob names array
 
-address StubRoutines::_call_stub_return_address                 = nullptr;
-address StubRoutines::_call_stub_entry                          = nullptr;
+#define DEFINE_BLOB_NAME(blob_name)             \
+  # blob_name,
 
-address StubRoutines::_catch_exception_entry                    = nullptr;
-address StubRoutines::_forward_exception_entry                  = nullptr;
-address StubRoutines::_throw_AbstractMethodError_entry          = nullptr;
-address StubRoutines::_throw_IncompatibleClassChangeError_entry = nullptr;
-address StubRoutines::_throw_NullPointerException_at_call_entry = nullptr;
-address StubRoutines::_throw_StackOverflowError_entry           = nullptr;
-address StubRoutines::_throw_delayed_StackOverflowError_entry   = nullptr;
+const char* StubRoutines::_blob_names[StubGenBlobId::NUM_BLOBIDS] = {
+  STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
+};
+
+#undef DEFINE_BLOB_NAME
+
+#define DEFINE_STUB_NAME(blob_name, stub_name)          \
+  # stub_name ,                                         \
+
+// use a template to generate the initializer for the stub names array
+const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS] = {
+  STUBGEN_STUBS_DO(DEFINE_STUB_NAME)
+};
+
+#undef DEFINE_STUB_NAME
+
+// Define fields used to store blobs
+
+#define DEFINE_BLOB_FIELD(blob_name) \
+  BufferBlob* StubRoutines:: STUBGEN_BLOB_FIELD_NAME(blob_name) = nullptr;
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
+
+#undef DEFINE_BLOB_FIELD
+
+// Define fields used to store stub entries
+
+#define DEFINE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = nullptr;
+
+#define DEFINE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
+
+#define DEFINE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name)[count] = { nullptr };
+
+STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT, DEFINE_ENTRY_FIELD_ARRAY)
+
+#undef DEFINE_ENTRY_FIELD_ARRAY
+#undef DEFINE_ENTRY_FIELD_INIT
+#undef DEFINE_ENTRY_FIELD
+
 jint    StubRoutines::_verify_oop_count                         = 0;
-address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
-address StubRoutines::_atomic_xchg_entry                        = nullptr;
-address StubRoutines::_atomic_cmpxchg_entry                     = nullptr;
-address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
-address StubRoutines::_atomic_add_entry                         = nullptr;
-address StubRoutines::_fence_entry                              = nullptr;
 
-// Compiled code entry points default values
-// The default functions don't have separate disjoint versions.
-address StubRoutines::_jbyte_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
-address StubRoutines::_jbyte_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_disjoint_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_disjoint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_disjoint_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_disjoint_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
 
-address StubRoutines::_arrayof_jbyte_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_arraycopy_uninit      = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
-address StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_disjoint_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_disjoint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
+address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 
-address StubRoutines::_data_cache_writeback              = nullptr;
-address StubRoutines::_data_cache_writeback_sync         = nullptr;
+const char* StubRoutines::get_blob_name(StubGenBlobId id) {
+  assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");
+  return _blob_names[id];
+}
 
-address StubRoutines::_checkcast_arraycopy               = nullptr;
-address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
-address StubRoutines::_unsafe_arraycopy                  = nullptr;
-address StubRoutines::_generic_arraycopy                 = nullptr;
+const char* StubRoutines::get_stub_name(StubGenStubId id) {
+  assert(0 <= id && id < StubGenStubId::NUM_STUBIDS, "invalid stub id");
+  return _stub_names[id];
+}
 
-address StubRoutines::_jbyte_fill;
-address StubRoutines::_jshort_fill;
-address StubRoutines::_jint_fill;
-address StubRoutines::_arrayof_jbyte_fill;
-address StubRoutines::_arrayof_jshort_fill;
-address StubRoutines::_arrayof_jint_fill;
+#ifdef ASSERT
 
-address StubRoutines::_aescrypt_encryptBlock               = nullptr;
-address StubRoutines::_aescrypt_decryptBlock               = nullptr;
-address StubRoutines::_cipherBlockChaining_encryptAESCrypt = nullptr;
-address StubRoutines::_cipherBlockChaining_decryptAESCrypt = nullptr;
-address StubRoutines::_electronicCodeBook_encryptAESCrypt  = nullptr;
-address StubRoutines::_electronicCodeBook_decryptAESCrypt  = nullptr;
-address StubRoutines::_counterMode_AESCrypt                = nullptr;
-address StubRoutines::_galoisCounterMode_AESCrypt          = nullptr;
-address StubRoutines::_ghash_processBlocks                 = nullptr;
-address StubRoutines::_chacha20Block                       = nullptr;
-address StubRoutines::_base64_encodeBlock                  = nullptr;
-address StubRoutines::_base64_decodeBlock                  = nullptr;
-address StubRoutines::_poly1305_processBlocks              = nullptr;
+// array holding start and end indices for stub ids associated with a
+// given blob. Given a blob with id (StubGenBlobId) blob_id for any
+// stub with id (StubGenStubId) stub_id declared within the blob:
+// _blob_offsets[blob_id] <= stub_id < _blob_offsets[blob_id+1]
 
-address StubRoutines::_md5_implCompress      = nullptr;
-address StubRoutines::_md5_implCompressMB    = nullptr;
-address StubRoutines::_sha1_implCompress     = nullptr;
-address StubRoutines::_sha1_implCompressMB   = nullptr;
-address StubRoutines::_sha256_implCompress   = nullptr;
-address StubRoutines::_sha256_implCompressMB = nullptr;
-address StubRoutines::_sha512_implCompress   = nullptr;
-address StubRoutines::_sha512_implCompressMB = nullptr;
-address StubRoutines::_sha3_implCompress     = nullptr;
-address StubRoutines::_sha3_implCompressMB   = nullptr;
+static int _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
 
-address StubRoutines::_updateBytesCRC32 = nullptr;
-address StubRoutines::_crc_table_adr =    nullptr;
+// macro used to compute blob limits
+#define BLOB_COUNT(blob_name)                                           \
+  counter += StubGenStubId_ ## blob_name :: NUM_STUBIDS_ ## blob_name;  \
+  _blob_limits[++index] = counter;                                      \
 
-address StubRoutines::_crc32c_table_addr = nullptr;
-address StubRoutines::_updateBytesCRC32C = nullptr;
-address StubRoutines::_updateBytesAdler32 = nullptr;
+// macro that checks stubs are associated with the correct blobs
+#define STUB_VERIFY(blob_name, stub_name)                               \
+  localStubId = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _id); \
+  globalStubId = (int) (StubGenStubId:: stub_name ## _id);              \
+  blobId = (int) (StubGenBlobId:: blob_name ## _id);                    \
+  assert((globalStubId >= _blob_limits[blobId] &&                       \
+          globalStubId < _blob_limits[blobId+1]),                       \
+         "stub " # stub_name " uses incorrect blob name " # blob_name); \
+  assert(globalStubId == _blob_limits[blobId] + localStubId,            \
+         "stub " # stub_name " id found at wrong offset!");             \
 
-address StubRoutines::_multiplyToLen = nullptr;
-address StubRoutines::_squareToLen = nullptr;
-address StubRoutines::_mulAdd = nullptr;
-address StubRoutines::_montgomeryMultiply = nullptr;
-address StubRoutines::_montgomerySquare = nullptr;
-address StubRoutines::_bigIntegerRightShiftWorker = nullptr;
-address StubRoutines::_bigIntegerLeftShiftWorker = nullptr;
+bool verifyStubIds() {
+  // first compute the blob limits
+  int counter = 0;
+  int index = 0;
+  // populate offsets table with cumulative total of local enum counts
+  STUBGEN_BLOBS_DO(BLOB_COUNT);
 
-address StubRoutines::_vectorizedMismatch = nullptr;
+  // ensure 1) global stub ids lie in the range of the associated blob
+  // and 2) each blob's base + local stub id == global stub id
+  int globalStubId, blobId, localStubId;
+  STUBGEN_STUBS_DO(STUB_VERIFY);
+  return true;
+}
 
-address StubRoutines::_dexp = nullptr;
-address StubRoutines::_dlog = nullptr;
-address StubRoutines::_dlog10 = nullptr;
-address StubRoutines::_dpow = nullptr;
-address StubRoutines::_dsin = nullptr;
-address StubRoutines::_dcos = nullptr;
-address StubRoutines::_dlibm_sin_cos_huge = nullptr;
-address StubRoutines::_dlibm_reduce_pi04l = nullptr;
-address StubRoutines::_dlibm_tan_cot_huge = nullptr;
-address StubRoutines::_dtan = nullptr;
+#undef BLOB_COUNT
+#undef STUB_VERIFY
 
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
+// ensure we verify the blob ids when this compile unit is first entered
+bool _verified_stub_ids = verifyStubIds();
 
-address StubRoutines::_cont_thaw          = nullptr;
-address StubRoutines::_cont_returnBarrier = nullptr;
-address StubRoutines::_cont_returnBarrierExc = nullptr;
 
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
-JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
+// macro used by stub to blob translation
+
+#define BLOB_CHECK_OFFSET(blob_name)                                \
+  if (id < _blob_limits[((int)blobId) + 1]) { return blobId; }      \
+  blobId = StubGenBlobId:: blob_name ## _id;                        \
+
+// translate a global stub id to an associated blob id based on the
+// computed blob limits
+
+StubGenBlobId StubRoutines::stub_to_blob(StubGenStubId stubId) {
+  int id = (int)stubId;
+  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range!");
+  // start with no blob to catch stub id == -1
+  StubGenBlobId blobId = StubGenBlobId::NO_BLOBID;
+  STUBGEN_BLOBS_DO(BLOB_CHECK_OFFSET);
+  // if we reach here we should have the last blob id
+  assert(blobId == StubGenBlobId::NUM_BLOBIDS - 1, "unexpected blob id");
+  return blobId;
+}
+
+#endif // ASSERT
 
 // Initialization
 //
@@ -184,16 +186,16 @@ JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 // The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
 // The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, int phase); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id); // only interface to generators
 
-void UnsafeCopyMemory::create_table(int max_size) {
-  UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
-  UnsafeCopyMemory::_table_max_length = max_size;
+void UnsafeMemoryAccess::create_table(int max_size) {
+  UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
+  UnsafeMemoryAccess::_table_max_length = max_size;
 }
 
-bool UnsafeCopyMemory::contains_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+bool UnsafeMemoryAccess::contains_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return true;
     }
@@ -201,9 +203,9 @@ bool UnsafeCopyMemory::contains_pc(address pc) {
   return false;
 }
 
-address UnsafeCopyMemory::page_error_continue_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return entry->error_exit_pc();
     }
@@ -211,182 +213,88 @@ address UnsafeCopyMemory::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
-void StubRoutines::initialize1() {
-  if (_code1 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 10;
-    int size = code_size1 + CodeEntryAlignment * max_aligned_stubs;
-    _code1 = BufferBlob::create("StubRoutines (1)", size);
-    if (_code1 == nullptr) {
-      vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
-    }
-    CodeBuffer buffer(_code1);
-    StubGenerator_generate(&buffer, 0);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size1 == 0 || buffer.insts_remaining() > 200, "increase code_size1");
+
+static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
+                                    int code_size, int max_aligned_stubs,
+                                    const char* timer_msg,
+                                    const char* buffer_name,
+                                    const char* assert_msg) {
+  ResourceMark rm;
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  // Add extra space for large CodeEntryAlignment
+  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
+  BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
+  if (stubs_code == nullptr) {
+    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
+  }
+  CodeBuffer buffer(stubs_code);
+  StubGenerator_generate(&buffer, blob_id);
+  // When new stubs added we need to make sure there is some space left
+  // to catch situation when we should increase size again.
+  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+
+  LogTarget(Info, stubs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s\t [" INTPTR_FORMAT ", " INTPTR_FORMAT "] used: %d, free: %d",
+                buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
+                buffer.total_content_size(), buffer.insts_remaining());
+  }
+  return stubs_code;
+}
+
+#define DEFINE_BLOB_INIT_METHOD(blob_name)                              \
+  void StubRoutines::initialize_ ## blob_name ## _stubs() {             \
+    if (STUBGEN_BLOB_FIELD_NAME(blob_name) == nullptr) {                \
+      StubGenBlobId blob_id = StubGenBlobId:: STUB_ID_NAME(blob_name);  \
+      int size = _ ## blob_name ## _code_size;                          \
+      int max_aligned_size = 10;                                        \
+      const char* timer_msg = "StubRoutines generation " # blob_name " stubs"; \
+      const char* name = "StubRoutines (" # blob_name "stubs)";         \
+      const char* assert_msg = "_" # blob_name "_code_size";            \
+      STUBGEN_BLOB_FIELD_NAME(blob_name) =                              \
+        initialize_stubs(blob_id, size, max_aligned_size, timer_msg,    \
+                         name, assert_msg);                             \
+    }                                                                   \
+  }
+
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
+
+#undef DEFINE_BLOB_INIT_METHOD
+
+
+#define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
+void blob_name ## _stubs_init()  {                      \
+  StubRoutines::initialize_ ## blob_name ## _stubs();   \
+}
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
+
+#undef DEFINE_BLOB_INIT_FUNCTION
+
+/*
+ * we generate the underlying driver method but this wrapper is needed
+ * to perform special handling depending on where the compiler init
+ * gets called from. it ought to be possible to remove this at some
+ * point and have adeterminate ordered init.
+ */
+
+void compiler_stubs_init(bool in_compiler_thread) {
+  if (in_compiler_thread && DelayCompilerStubsGeneration) {
+    // Temporarily revert state of stubs generation because
+    // it is called after final_stubs_init() finished
+    // during compiler runtime initialization.
+    // It is fine because these stubs are only used by
+    // compiled code and compiler is not running yet.
+    StubCodeDesc::unfreeze();
+    StubRoutines::initialize_compiler_stubs();
+    StubCodeDesc::freeze();
+  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
+    StubRoutines::initialize_compiler_stubs();
   }
 }
 
-#ifdef ASSERT
-typedef void (*arraycopy_fn)(address src, address dst, int count);
-
-// simple tests of generated arraycopy functions
-static void test_arraycopy_func(address func, int alignment) {
-  int v = 0xcc;
-  int v2 = 0x11;
-  jlong lbuffer[8];
-  jlong lbuffer2[8];
-  address fbuffer  = (address) lbuffer;
-  address fbuffer2 = (address) lbuffer2;
-  unsigned int i;
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    fbuffer[i] = v; fbuffer2[i] = v2;
-  }
-  // C++ does not guarantee jlong[] array alignment to 8 bytes.
-  // Use middle of array to check that memory before it is not modified.
-  address buffer  = align_up((address)&lbuffer[4], BytesPerLong);
-  address buffer2 = align_up((address)&lbuffer2[4], BytesPerLong);
-  // do an aligned copy
-  ((arraycopy_fn)func)(buffer, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust destination alignment
-  ((arraycopy_fn)func)(buffer, buffer2 + alignment, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust source alignment
-  ((arraycopy_fn)func)(buffer + alignment, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-}
-#endif // ASSERT
-
-void StubRoutines::initializeContinuationStubs() {
-  if (_code3 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 3", TRACETIME_LOG(Info, startuptime));
-    _code3 = BufferBlob::create("StubRoutines (3)", code_size2);
-    if (_code3 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (3)");
-    }
-    CodeBuffer buffer(_code3);
-    StubGenerator_generate(&buffer, 1);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size3");
-  }
-}
-
-void StubRoutines::initialize2() {
-  if (_code2 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 100;
-    int size = code_size2 + CodeEntryAlignment * max_aligned_stubs;
-    _code2 = BufferBlob::create("StubRoutines (2)", size);
-    if (_code2 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
-    }
-    CodeBuffer buffer(_code2);
-    StubGenerator_generate(&buffer, 2);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size2");
-  }
-
-#ifdef ASSERT
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
-
-#define TEST_ARRAYCOPY(type)                                                    \
-  test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
-  test_arraycopy_func(          type##_disjoint_arraycopy(), sizeof(type));     \
-  test_arraycopy_func(arrayof_##type##_arraycopy(),          sizeof(HeapWord)); \
-  test_arraycopy_func(arrayof_##type##_disjoint_arraycopy(), sizeof(HeapWord))
-
-  // Make sure all the arraycopy stubs properly handle zero count
-  TEST_ARRAYCOPY(jbyte);
-  TEST_ARRAYCOPY(jshort);
-  TEST_ARRAYCOPY(jint);
-  TEST_ARRAYCOPY(jlong);
-
-#undef TEST_ARRAYCOPY
-
-#define TEST_FILL(type)                                                                      \
-  if (_##type##_fill != nullptr) {                                                              \
-    union {                                                                                  \
-      double d;                                                                              \
-      type body[96];                                                                         \
-    } s;                                                                                     \
-                                                                                             \
-    int v = 32;                                                                              \
-    for (int offset = -2; offset <= 2; offset++) {                                           \
-      for (int i = 0; i < 96; i++) {                                                         \
-        s.body[i] = 1;                                                                       \
-      }                                                                                      \
-      type* start = s.body + 8 + offset;                                                     \
-      for (int aligned = 0; aligned < 2; aligned++) {                                        \
-        if (aligned) {                                                                       \
-          if (((intptr_t)start) % HeapWordSize == 0) {                                       \
-            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
-          } else {                                                                           \
-            continue;                                                                        \
-          }                                                                                  \
-        } else {                                                                             \
-          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
-        }                                                                                    \
-        for (int i = 0; i < 96; i++) {                                                       \
-          if (i < (8 + offset) || i >= (88 + offset)) {                                      \
-            assert(s.body[i] == 1, "what?");                                                 \
-          } else {                                                                           \
-            assert(s.body[i] == 32, "what?");                                                \
-          }                                                                                  \
-        }                                                                                    \
-      }                                                                                      \
-    }                                                                                        \
-  }                                                                                          \
-
-  TEST_FILL(jbyte);
-  TEST_FILL(jshort);
-  TEST_FILL(jint);
-
-#undef TEST_FILL
-
-#define TEST_COPYRTN(type) \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::arrayof_conjoint_##type##s), (int)MAX2(sizeof(HeapWord), sizeof(type)))
-
-  // Make sure all the copy runtime routines properly handle zero count
-  TEST_COPYRTN(jbyte);
-  TEST_COPYRTN(jshort);
-  TEST_COPYRTN(jint);
-  TEST_COPYRTN(jlong);
-
-#undef TEST_COPYRTN
-
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words_atomic), sizeof(HeapWord));
-  // Aligned to BytesPerLong
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
-
-#endif
-}
-
-
-void stubRoutines_init1() { StubRoutines::initialize1(); }
-void stubRoutines_init2() { StubRoutines::initialize2(); }
-void stubRoutines_initContinuationStubs() { StubRoutines::initializeContinuationStubs(); }
 
 //
 // Default versions of arraycopy functions
@@ -591,20 +499,20 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
 #undef RETURN_STUB_PARM
 }
 
-UnsafeCopyMemoryMark::UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
+UnsafeMemoryAccessMark::UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
   _cgen = cgen;
   _ucm_entry = nullptr;
   if (add_entry) {
     address err_exit_pc = nullptr;
     if (!continue_at_scope_end) {
-      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeCopyMemory::common_exit_stub_pc();
+      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeMemoryAccess::common_exit_stub_pc();
     }
     assert(err_exit_pc != nullptr || continue_at_scope_end, "error exit not set");
-    _ucm_entry = UnsafeCopyMemory::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
+    _ucm_entry = UnsafeMemoryAccess::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
   }
 }
 
-UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
+UnsafeMemoryAccessMark::~UnsafeMemoryAccessMark() {
   if (_ucm_entry != nullptr) {
     _ucm_entry->set_end_pc(_cgen->assembler()->pc());
     if (_ucm_entry->error_exit_pc() == nullptr) {

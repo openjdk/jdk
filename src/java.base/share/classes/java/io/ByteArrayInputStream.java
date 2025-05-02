@@ -44,6 +44,7 @@ import java.util.Objects;
  * @since   1.0
  */
 public class ByteArrayInputStream extends InputStream {
+    private static final int MAX_TRANSFER_SIZE = 128*1024;
 
     /**
      * An array of bytes that was provided
@@ -205,8 +206,31 @@ public class ByteArrayInputStream extends InputStream {
     @Override
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
-        out.write(buf, pos, len);
-        pos = count;
+        if (len > 0) {
+            // 'tmpbuf' is null if and only if 'out' is trusted
+            byte[] tmpbuf;
+            Class<?> outClass = out.getClass();
+            if (outClass == ByteArrayOutputStream.class ||
+                outClass == FileOutputStream.class ||
+                outClass == PipedOutputStream.class)
+                tmpbuf = null;
+            else
+                tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
+
+            int nwritten = 0;
+            while (nwritten < len) {
+                int nbyte = Integer.min(len - nwritten, MAX_TRANSFER_SIZE);
+                // if 'out' is not trusted, transfer via a temporary buffer
+                if (tmpbuf != null) {
+                    System.arraycopy(buf, pos, tmpbuf, 0, nbyte);
+                    out.write(tmpbuf, 0, nbyte);
+                } else
+                    out.write(buf, pos, nbyte);
+                pos += nbyte;
+                nwritten += nbyte;
+            }
+            assert pos == count;
+        }
         return len;
     }
 

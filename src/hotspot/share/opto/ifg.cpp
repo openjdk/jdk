@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -313,7 +312,7 @@ void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
 // at this point can end up in bad places).  Copies I re-insert later I have
 // more opportunity to insert them in low-frequency locations.
 void PhaseChaitin::build_ifg_virtual( ) {
-  Compile::TracePhase tp("buildIFG_virt", &timers[_t_buildIFGvirtual]);
+  Compile::TracePhase tp(_t_buildIFGvirtual);
 
   // For all blocks (in any order) do...
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
@@ -622,7 +621,7 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
     b->remove_node(location);
     LRG& lrg = lrgs(lid);
     if (lrg._def == n) {
-      lrg._def = 0;
+      lrg._def = nullptr;
     }
     n->disconnect_inputs(C);
     _cfg.unmap_node_from_block(n);
@@ -819,7 +818,7 @@ void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, P
 }
 
 void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
-  if (str != NULL) {
+  if (str != nullptr) {
     tty->print_cr("#  *** %s ***", str);
   }
   tty->print_cr("#     start pressure is = %d", pressure.start_pressure());
@@ -843,7 +842,7 @@ void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
  *   low to high register pressure transition within the block (if any).
  */
 uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
-  Compile::TracePhase tp("buildIFG", &timers[_t_buildIFGphysical]);
+  Compile::TracePhase tp(_t_buildIFGphysical);
 
   uint must_spill = 0;
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {

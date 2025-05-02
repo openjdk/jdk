@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #ifndef SHARE_OOPS_CONSTMETHOD_HPP
 #define SHARE_OOPS_CONSTMETHOD_HPP
 
+#include "oops/constMethodFlags.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 // An ConstMethod represents portions of a Java method which are not written to after
 // the classfile is parsed(*see below).  This part of the method can be shared across
@@ -173,19 +175,6 @@ public:
   typedef enum { NORMAL, OVERPASS } MethodType;
 
 private:
-  enum {
-    _has_linenumber_table = 0x0001,
-    _has_checked_exceptions = 0x0002,
-    _has_localvariable_table = 0x0004,
-    _has_exception_table = 0x0008,
-    _has_generic_signature = 0x0010,
-    _has_method_parameters = 0x0020,
-    _is_overpass = 0x0040,
-    _has_method_annotations = 0x0080,
-    _has_parameter_annotations = 0x0100,
-    _has_type_annotations = 0x0200,
-    _has_default_annotations = 0x0400
-  };
 
   // Bit vector of signature
   // Callers interpret 0=not initialized yet and
@@ -204,7 +193,7 @@ private:
   Array<u1>*        _stackmap_data;
 
   int               _constMethod_size;
-  u2                _flags;
+  ConstMethodFlags  _flags;                       // for sizing
   u1                _result_type;                 // BasicType of result
 
   // Size of Java bytecodes allocated immediately after Method*.
@@ -225,6 +214,11 @@ private:
               InlineTableSizes* sizes,
               MethodType is_overpass,
               int size);
+
+  void set_size_of_parameters(int size)          { _size_of_parameters = checked_cast<u2>(size); }
+  void set_num_stack_arg_slots(int n)            { _num_stack_arg_slots = checked_cast<u2>(n); }
+  void set_result_type(BasicType rt)             { assert(rt < 16, "result type too large");
+                                                   _result_type = (u1)rt; }
 public:
 
   static ConstMethod* allocate(ClassLoaderData* loader_data,
@@ -236,33 +230,20 @@ public:
   // Inlined tables
   void set_inlined_tables_length(InlineTableSizes* sizes);
 
-  bool has_generic_signature() const
-    { return (_flags & _has_generic_signature) != 0; }
-
-  bool has_linenumber_table() const
-    { return (_flags & _has_linenumber_table) != 0; }
-
-  bool has_checked_exceptions() const
-    { return (_flags & _has_checked_exceptions) != 0; }
-
-  bool has_localvariable_table() const
-    { return (_flags & _has_localvariable_table) != 0; }
-
-  bool has_exception_handler() const
-    { return (_flags & _has_exception_table) != 0; }
-
-  bool has_method_parameters() const
-    { return (_flags & _has_method_parameters) != 0; }
+  // Create getters and setters for the flag values.
+#define CM_FLAGS_GET_SET(name, ignore)          \
+  bool name() const       { return _flags.name(); } \
+  void set_##name()       { _flags.set_##name(); }
+  CM_FLAGS_DO(CM_FLAGS_GET_SET)
+#undef CM_FLAGS_GET_SET
 
   MethodType method_type() const {
-    return ((_flags & _is_overpass) == 0) ? NORMAL : OVERPASS;
+    return (_flags.is_overpass()) ? OVERPASS : NORMAL;
   }
 
   void set_method_type(MethodType mt) {
-    if (mt == NORMAL) {
-      _flags &= ~(_is_overpass);
-    } else {
-      _flags |= _is_overpass;
+    if (mt != NORMAL) {
+      set_is_overpass();
     }
   }
 
@@ -308,22 +289,22 @@ public:
   }
 
   // name
-  int name_index() const                         { return _name_index; }
-  void set_name_index(int index)                 { _name_index = index; }
+  u2 name_index() const                          { return _name_index; }
+  void set_name_index(int index)                 { _name_index = checked_cast<u2>(index); }
 
   // signature
-  int signature_index() const                    { return _signature_index; }
-  void set_signature_index(int index)            { _signature_index = index; }
+  u2 signature_index() const                     { return _signature_index; }
+  void set_signature_index(int index)            { _signature_index = checked_cast<u2>(index); }
 
   // generics support
-  int generic_signature_index() const            {
+  u2 generic_signature_index() const             {
     if (has_generic_signature()) {
       return *generic_signature_index_addr();
     } else {
       return 0;
     }
   }
-  void set_generic_signature_index(u2 index)    {
+  void set_generic_signature_index(u2 index)     {
     assert(has_generic_signature(), "");
     u2* addr = generic_signature_index_addr();
     *addr = index;
@@ -344,12 +325,12 @@ public:
   static bool is_read_only_by_default() { return true; }
 
   // code size
-  int code_size() const                          { return _code_size; }
+  u2 code_size() const                          { return _code_size; }
   void set_code_size(int size) {
     assert(max_method_code_size < (1 << 16),
            "u2 is too small to hold method code size in general");
     assert(0 <= size && size <= max_method_code_size, "invalid code size");
-    _code_size = size;
+    _code_size = (u2)size;
   }
 
   // linenumber table - note that length is unknown until decompression,
@@ -362,15 +343,15 @@ public:
   u2* method_parameters_length_addr() const;
 
   // checked exceptions
-  int checked_exceptions_length() const;
+  u2 checked_exceptions_length() const;
   CheckedExceptionElement* checked_exceptions_start() const;
 
   // localvariable table
-  int localvariable_table_length() const;
+  u2 localvariable_table_length() const;
   LocalVariableTableElement* localvariable_table_start() const;
 
   // exception table
-  int exception_table_length() const;
+  u2 exception_table_length() const;
   ExceptionTableElement* exception_table_start() const;
 
   // method parameters table
@@ -381,20 +362,6 @@ public:
   // same.
   int method_parameters_length() const;
   MethodParametersElement* method_parameters_start() const;
-
-  // method annotations
-  bool has_method_annotations() const
-    { return (_flags & _has_method_annotations) != 0; }
-
-  bool has_parameter_annotations() const
-    { return (_flags & _has_parameter_annotations) != 0; }
-
-  bool has_type_annotations() const
-    { return (_flags & _has_type_annotations) != 0; }
-
-  bool has_default_annotations() const
-    { return (_flags & _has_default_annotations) != 0; }
-
 
   AnnotationArray** method_annotations_addr() const;
   AnnotationArray* method_annotations() const  {
@@ -480,31 +447,29 @@ public:
   u2 orig_method_idnum() const                   { return _orig_method_idnum; }
   void set_orig_method_idnum(u2 idnum)           { _orig_method_idnum = idnum; }
 
+  // Derive stuff from the signature at load time.
+  void compute_from_signature(Symbol* sig, bool is_static);
+
   // max stack
-  int  max_stack() const                         { return _max_stack; }
-  void set_max_stack(int size)                   { _max_stack = size; }
+  u2   max_stack() const                         { return _max_stack; }
+  void set_max_stack(int size)                   { _max_stack = checked_cast<u2>(size); }
 
   // max locals
-  int  max_locals() const                        { return _max_locals; }
-  void set_max_locals(int size)                  { _max_locals = size; }
+  u2  max_locals() const                         { return _max_locals; }
+  void set_max_locals(int size)                  { _max_locals = checked_cast<u2>(size); }
 
   // size of parameters
-  int  size_of_parameters() const                { return _size_of_parameters; }
-  void set_size_of_parameters(int size)          { _size_of_parameters = size; }
+  u2 size_of_parameters() const                  { return _size_of_parameters; }
 
   // Number of arguments passed on the stack even when compiled
-  int  num_stack_arg_slots() const               { return _num_stack_arg_slots; }
-  void set_num_stack_arg_slots(int n)            { _num_stack_arg_slots = n; }
+  u2 num_stack_arg_slots() const                 { return _num_stack_arg_slots; }
 
   // result type (basic type of return value)
   BasicType result_type() const                  { assert(_result_type >= T_BOOLEAN, "Must be set");
                                                    return (BasicType)_result_type; }
 
-  void set_result_type(BasicType rt)             { assert(rt < 16, "result type too large");
-                                                   _result_type = (u1)rt; }
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);
-  bool is_klass() const { return false; }
   DEBUG_ONLY(bool on_stack() { return false; })
 
   void metaspace_pointers_do(MetaspaceClosure* it);

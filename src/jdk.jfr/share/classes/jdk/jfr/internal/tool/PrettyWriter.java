@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -51,7 +50,7 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * Print events in a human-readable format.
@@ -60,13 +59,20 @@ import jdk.jfr.internal.Utils;
  */
 public final class PrettyWriter extends EventPrintWriter {
     private static final String TYPE_OLD_OBJECT = Type.TYPES_PREFIX + "OldObject";
+    private static final DateTimeFormatter TIME_FORMAT_EXACT = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS (yyyy-MM-dd)");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (yyyy-MM-dd)");
     private static final Long ZERO = 0L;
+    private final boolean showExact;
     private boolean showIds;
     private RecordedEvent currentEvent;
 
-    public PrettyWriter(PrintWriter destination) {
+    public PrettyWriter(PrintWriter destination, boolean showExact) {
         super(destination);
+        this.showExact = showExact;
+    }
+
+    public PrettyWriter(PrintWriter destination) {
+        this(destination, false);
     }
 
     @Override
@@ -418,7 +424,7 @@ public final class PrettyWriter extends EventPrintWriter {
         if (clazz != null) {
             String className = clazz.getName();
             if (className!= null && className.startsWith("[")) {
-                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").get(0);
+                className = ValueFormatter.decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").getFirst();
             }
             print(className);
             String description = object.getString("description");
@@ -463,7 +469,7 @@ public final class PrettyWriter extends EventPrintWriter {
         StringJoiner sj = new StringJoiner(", ");
         String md = m.getDescriptor().replace("/", ".");
         String parameter = md.substring(1, md.lastIndexOf(")"));
-        for (String qualifiedName : decodeDescriptors(parameter, "")) {
+        for (String qualifiedName : ValueFormatter.decodeDescriptors(parameter, "")) {
             String typeName = qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1);
             sj.add(typeName);
         }
@@ -484,58 +490,9 @@ public final class PrettyWriter extends EventPrintWriter {
         }
         String className = clazz.getName();
         if (className.startsWith("[")) {
-            className = decodeDescriptors(className, "").get(0);
+            className = ValueFormatter.decodeDescriptors(className, "").getFirst();
         }
         println(className + " (classLoader = " + classLoaderName + ")" + postFix);
-    }
-
-    List<String> decodeDescriptors(String descriptor, String arraySize) {
-        List<String> descriptors = new ArrayList<>();
-        for (int index = 0; index < descriptor.length(); index++) {
-            String arrayBrackets = "";
-            while (descriptor.charAt(index) == '[') {
-                arrayBrackets = arrayBrackets +  "[" + arraySize + "]" ;
-                arraySize = "";
-                index++;
-            }
-            char c = descriptor.charAt(index);
-            String type;
-            switch (c) {
-            case 'L':
-                int endIndex = descriptor.indexOf(';', index);
-                type = descriptor.substring(index + 1, endIndex);
-                index = endIndex;
-                break;
-            case 'I':
-                type = "int";
-                break;
-            case 'J':
-                type = "long";
-                break;
-            case 'Z':
-                type = "boolean";
-                break;
-            case 'D':
-                type = "double";
-                break;
-            case 'F':
-                type = "float";
-                break;
-            case 'S':
-                type = "short";
-                break;
-            case 'C':
-                type = "char";
-                break;
-            case 'B':
-                type = "byte";
-                break;
-            default:
-                type = "<unknown-descriptor-type>";
-            }
-            descriptors.add(type + arrayBrackets);
-        }
-        return descriptors;
     }
 
     private void printThread(RecordedThread thread, String postFix) {
@@ -558,7 +515,11 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("Forever");
                 return true;
             }
-            println(Utils.formatDuration(d));
+            if (showExact) {
+                println(String.format("%.9f s", (double) d.toNanos() / 1_000_000_000));
+            } else {
+                println(ValueFormatter.formatDuration(d));
+            }
             return true;
         }
         if (value instanceof OffsetDateTime odt) {
@@ -566,40 +527,34 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("N/A");
                 return true;
             }
-            println(TIME_FORMAT.format(odt));
+            if (showExact) {
+                println(TIME_FORMAT_EXACT.format(odt));
+            } else {
+                println(TIME_FORMAT.format(odt));
+            }
             return true;
         }
         Percentage percentage = field.getAnnotation(Percentage.class);
         if (percentage != null) {
             if (value instanceof Number n) {
-                double d = n.doubleValue();
-                println(String.format("%.2f", d * 100) + "%");
+                double p = 100 * n.doubleValue();
+                if (showExact) {
+                    println(String.format("%.9f%%", p));
+                } else {
+                    println(String.format("%.2f%%", p));
+                }
                 return true;
             }
         }
         DataAmount dataAmount = field.getAnnotation(DataAmount.class);
-        if (dataAmount != null) {
-            if (value instanceof Number n) {
-                long amount = n.longValue();
-                if (field.getAnnotation(Frequency.class) != null) {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(Utils.formatBytesPerSecond(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(Utils.formatBitsPerSecond(amount));
-                        return true;
-                    }
-                } else {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(Utils.formatBytes(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(Utils.formatBits(amount));
-                        return true;
-                    }
-                }
+        if (dataAmount != null && value instanceof Number number) {
+            boolean frequency = field.getAnnotation(Frequency.class) != null;
+            String unit = dataAmount.value();
+            boolean bits = unit.equals(DataAmount.BITS);
+            boolean bytes = unit.equals(DataAmount.BYTES);
+            if (bits || bytes) {
+                formatMemory(number.longValue(), bytes, frequency);
+                return true;
             }
         }
         MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
@@ -619,6 +574,35 @@ public final class PrettyWriter extends EventPrintWriter {
         }
 
         return false;
+    }
+
+    private void formatMemory(long value, boolean bytesUnit, boolean frequency) {
+        if (showExact) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(value);
+            sb.append(bytesUnit ? " byte" : " bit");
+            if (value > 1) {
+                sb.append("s");
+            }
+            if (frequency) {
+                sb.append("/s");
+            }
+            println(sb.toString());
+            return;
+        }
+        if (frequency) {
+            if (bytesUnit) {
+                println(ValueFormatter.formatBytesPerSecond(value));
+            } else {
+                println(ValueFormatter.formatBitsPerSecond(value));
+            }
+            return;
+        }
+        if (bytesUnit) {
+            println(ValueFormatter.formatBytes(value));
+        } else {
+            println(ValueFormatter.formatBits(value));
+        }
     }
 
     public void setShowIds(boolean showIds) {

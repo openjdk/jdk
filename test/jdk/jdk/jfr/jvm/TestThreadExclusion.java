@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,10 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @enablePreview
  * @compile TestThreadExclusion.java LatchedThread.java
  * @run main/othervm jdk.jfr.jvm.TestThreadExclusion
  */
@@ -55,7 +54,6 @@ public class TestThreadExclusion {
     private final static String EVENT_NAME_THREAD_START = EventNames.ThreadStart;
     private final static String EVENT_NAME_THREAD_END = EventNames.ThreadEnd;
     private static final String THREAD_NAME_PREFIX = "TestThread-";
-    private static JVM jvm;
 
     public static void main(String[] args) throws Throwable {
         // Test Java Thread Start event
@@ -85,10 +83,9 @@ public class TestThreadExclusion {
 
     private static LatchedThread[] startThreads() {
         LatchedThread threads[] = new LatchedThread[10];
-        jvm = JVM.getJVM();
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new LatchedThread(THREAD_NAME_PREFIX + i, false);
-            jvm.exclude(threads[i].getThread());
+            JVM.exclude(threads[i].getThread());
             threads[i].start();
             System.out.println("Started thread id=" + threads[i].getId());
         }
@@ -105,7 +102,7 @@ public class TestThreadExclusion {
 
     private static void stopThreads(LatchedThread[] threads) {
         for (LatchedThread t : threads) {
-            assertTrue(jvm.isExcluded(t.getThread()), "Thread " + t.getThread() + "should be excluded");
+            assertTrue(JVM.isExcluded(t.getThread()), "Thread " + t.getThread() + "should be excluded");
             try {
                 t.stopAndJoin();
             } catch (InterruptedException e) {

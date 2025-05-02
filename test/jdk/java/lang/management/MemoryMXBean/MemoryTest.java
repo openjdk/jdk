@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,39 @@
  */
 
 /*
- * @test
+ * @test id=Z
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Z" | vm.gc == "Shenandoah"
+ * @requires vm.gc.Z
+ * @author  Mandy Chung
+ *
+ * @modules jdk.management
+ * @run main/othervm -XX:+UseZGC MemoryTest 4 2
+ */
+
+/*
+ * @test id=Shenandoah
+ * @bug     4530538
+ * @summary Shenandoah has a gc mgr bean for cycles and another
+ *          for pauses, they both have one pool.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode != "generational"
  * @author  Mandy Chung
  *
  * @modules jdk.management
  * @run main MemoryTest 2 1
+ */
+
+/*
+ * @test id=Genshen
+ * @bug     4530538
+ * @summary Shenandoah's generational mode has a gc mgr bean for cycles
+ *          and another for pauses. They both reference the young and old pools.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode == "generational"
+ * @author  Mandy Chung
+ *
+ * @modules jdk.management
+ * @run main MemoryTest 2 2
  */
 
 /*
@@ -54,7 +78,7 @@
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 3 3
+ * @run main/othervm -XX:+UseG1GC MemoryTest 3 3
  */
 
 /*

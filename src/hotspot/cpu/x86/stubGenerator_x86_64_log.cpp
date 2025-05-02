@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
 * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
@@ -25,7 +25,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -54,7 +53,7 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(16) juint _L_tbl[] =
+ATTRIBUTE_ALIGNED(16) static const juint _L_tbl[] =
 {
     0xfefa3800UL, 0x3fe62e42UL, 0x93c76730UL, 0x3d2ef357UL, 0xaa241800UL,
     0x3fe5ee82UL, 0x0cda46beUL, 0x3d220238UL, 0x5c364800UL, 0x3fe5af40UL,
@@ -162,12 +161,12 @@ ATTRIBUTE_ALIGNED(16) juint _L_tbl[] =
     0x80000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _log2[] =
+ATTRIBUTE_ALIGNED(16) static const juint _log2[] =
 {
     0xfefa3800UL, 0x3fa62e42UL, 0x93c76730UL, 0x3ceef357UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _coeff[] =
+ATTRIBUTE_ALIGNED(16) static const juint _coeff[] =
 {
     0x92492492UL, 0x3fc24924UL, 0x00000000UL, 0xbfd00000UL, 0x3d6fb175UL,
     0xbfc5555eUL, 0x55555555UL, 0x3fd55555UL, 0x9999999aUL, 0x3fc99999UL,
@@ -177,7 +176,8 @@ ATTRIBUTE_ALIGNED(16) juint _coeff[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmLog() {
-  StubCodeMark mark(this, "StubRoutines", "libmLog");
+  StubGenStubId stub_id = StubGenStubId::dlog_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
@@ -387,15 +387,15 @@ address StubGenerator::generate_libmLog() {
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(16) juint _HIGHSIGMASK_log10[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _HIGHSIGMASK_log10[] = {
     0xf8000000UL, 0xffffffffUL, 0x00000000UL, 0xffffe000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _LOG10_E[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _LOG10_E[] = {
     0x00000000UL, 0x3fdbc000UL, 0xbf2e4108UL, 0x3f5a7a6cUL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _L_tbl_log10[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _L_tbl_log10[] = {
     0x509f7800UL, 0x3fd34413UL, 0x1f12b358UL, 0x3d1fef31UL, 0x80333400UL,
     0x3fd32418UL, 0xc671d9d0UL, 0xbcf542bfUL, 0x51195000UL, 0x3fd30442UL,
     0x78a4b0c3UL, 0x3d18216aUL, 0x6fc79400UL, 0x3fd2e490UL, 0x80fa389dUL,
@@ -502,12 +502,12 @@ ATTRIBUTE_ALIGNED(16) juint _L_tbl_log10[] = {
     0x00000000UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _log2_log10[] =
+ATTRIBUTE_ALIGNED(16) static const juint _log2_log10[] =
 {
     0x509f7800UL, 0x3f934413UL, 0x1f12b358UL, 0x3cdfef31UL
 };
 
-ATTRIBUTE_ALIGNED(16) juint _coeff_log10[] =
+ATTRIBUTE_ALIGNED(16) static const juint _coeff_log10[] =
 {
     0xc1a5f12eUL, 0x40358874UL, 0x64d4ef0dUL, 0xc0089309UL, 0x385593b1UL,
     0xc025c917UL, 0xdc963467UL, 0x3ffc6a02UL, 0x7f9d3aa1UL, 0x4016ab9fUL,
@@ -515,7 +515,8 @@ ATTRIBUTE_ALIGNED(16) juint _coeff_log10[] =
 };
 
 address StubGenerator::generate_libmLog10() {
-  StubCodeMark mark(this, "StubRoutines", "libmLog10");
+  StubGenStubId stub_id = StubGenStubId::dlog10_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;

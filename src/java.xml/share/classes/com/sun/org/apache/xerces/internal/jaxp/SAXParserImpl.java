@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,8 +26,6 @@ import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.jaxp.validation.XSGrammarPoolContainer;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
@@ -43,8 +41,11 @@ import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.HandlerBase;
@@ -63,7 +64,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @LastModified: May 2021
+ * @LastModified: Apr 2025
  */
 @SuppressWarnings("deprecation")
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
@@ -131,8 +132,8 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
     SAXParserImpl(SAXParserFactoryImpl spf, Map<String, Boolean> features, boolean secureProcessing)
         throws SAXException
     {
-        fSecurityManager = new XMLSecurityManager(secureProcessing);
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        fSecurityManager = spf.fSecurityManager;
+        fSecurityPropertyMgr = spf.fSecurityPropertyMgr;
         // Instantiate a SAXParser directly and not through SAX so that we use the right ClassLoader
         xmlReader = new JAXPSAXParser(this, fSecurityPropertyMgr, fSecurityManager);
 
@@ -169,9 +170,9 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 Boolean temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
                 if (temp != null && temp) {
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
-                            XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
-                            XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 }
             }
         }
@@ -402,7 +403,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
 
         JAXPSAXParser(SAXParserImpl saxParser, XMLSecurityPropertyManager securityPropertyMgr,
                 XMLSecurityManager securityManager) {
-            super();
+            super(null, null, securityPropertyMgr, securityManager);
             fSAXParser = saxParser;
             fSecurityManager = securityManager;
             fSecurityPropertyMgr = securityPropertyMgr;
@@ -412,23 +413,24 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
              */
             if (fSecurityManager == null) {
                 fSecurityManager = new XMLSecurityManager(true);
-                try {
-                    super.setProperty(SECURITY_MANAGER, fSecurityManager);
-                } catch (SAXException e) {
-                    throw new UnsupportedOperationException(
-                    SAXMessageFormatter.formatMessage(fConfiguration.getLocale(),
-                    "property-not-recognized", new Object [] {SECURITY_MANAGER}), e);
-                }
             }
+            try {
+                super.setProperty(SECURITY_MANAGER, fSecurityManager);
+            } catch (SAXException e) {
+                throw new UnsupportedOperationException(
+                SAXMessageFormatter.formatMessage(fConfiguration.getLocale(),
+                "property-not-recognized", new Object [] {SECURITY_MANAGER}), e);
+            }
+
             if (fSecurityPropertyMgr == null) {
                 fSecurityPropertyMgr = new XMLSecurityPropertyManager();
-                try {
-                    super.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
-                } catch (SAXException e) {
-                    throw new UnsupportedOperationException(
-                    SAXMessageFormatter.formatMessage(fConfiguration.getLocale(),
-                    "property-not-recognized", new Object [] {SECURITY_MANAGER}), e);
-                }
+            }
+            try {
+                super.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+            } catch (SAXException e) {
+                throw new UnsupportedOperationException(
+                SAXMessageFormatter.formatMessage(fConfiguration.getLocale(),
+                "property-not-recognized", new Object [] {XML_SECURITY_PROPERTY_MANAGER}), e);
             }
         }
 
@@ -562,20 +564,18 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 setSchemaValidatorProperty(name, value);
             }
 
-            //check if the property is managed by security manager
-            if (fSecurityManager == null ||
-                    !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
-                //check if the property is managed by security property manager
-                if (fSecurityPropertyMgr == null ||
-                        !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {
-                    //fall back to the existing property manager
-                    if (!fInitProperties.containsKey(name)) {
-                        fInitProperties.put(name, super.getProperty(name));
-                    }
-                    super.setProperty(name, value);
-                }
+            if (SECURITY_MANAGER.equals(name)) {
+                fSecurityManager = XMLSecurityManager.convert(value, fSecurityManager);
+                super.setProperty(name, value);
             }
 
+            if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, value)) {
+                //fall back to the existing property manager
+                if (!fInitProperties.containsKey(name)) {
+                    fInitProperties.put(name, super.getProperty(name));
+                }
+                super.setProperty(name, value);
+            }
         }
 
         public synchronized Object getProperty(String name)
@@ -589,19 +589,10 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 return fSAXParser.schemaLanguage;
             }
 
-            /** Check to see if the property is managed by the security manager **/
-            String propertyValue = (fSecurityManager != null) ?
-                    fSecurityManager.getLimitAsString(name) : null;
-            if (propertyValue != null) {
-                return propertyValue;
-            } else {
-                propertyValue = (fSecurityPropertyMgr != null) ?
-                    fSecurityPropertyMgr.getValue(name) : null;
-                if (propertyValue != null) {
-                    return propertyValue;
-                }
+            String value;
+            if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+                return value;
             }
-
             return super.getProperty(name);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class JfrStorage : public JfrCHeapObj {
   BufferPtr flush_regular(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
   BufferPtr flush_large(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
   BufferPtr provision_large(BufferPtr cur, const u1* cur_pos, size_t used, size_t req, bool native, Thread* thread);
+  BufferPtr acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread);
   void release(BufferPtr buffer, Thread* thread);
 
   size_t clear();

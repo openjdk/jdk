@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
@@ -79,6 +80,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -110,6 +112,7 @@ public class TypeAnnotations {
     final Annotate annotate;
     final Attr attr;
 
+    @SuppressWarnings("this-escape")
     protected TypeAnnotations(Context context) {
         context.put(typeAnnosKey, this);
         names = Names.instance(context);
@@ -469,7 +472,6 @@ public class TypeAnnotations {
                         enclEl.getKind() != ElementKind.PACKAGE &&
                         enclTy != null &&
                         enclTy.getKind() != TypeKind.NONE &&
-                        enclTy.getKind() != TypeKind.ERROR &&
                         (enclTr.getKind() == JCTree.Kind.MEMBER_SELECT ||
                                 enclTr.getKind() == JCTree.Kind.PARAMETERIZED_TYPE ||
                                 enclTr.getKind() == JCTree.Kind.ANNOTATED_TYPE)) {
@@ -494,22 +496,20 @@ public class TypeAnnotations {
                  */
                 if (enclTy != null &&
                         enclTy.hasTag(TypeTag.NONE)) {
-                    switch (onlyTypeAnnotations.size()) {
-                        case 0:
-                            // Don't issue an error if all type annotations are
-                            // also declaration annotations.
-                            // If the annotations are also declaration annotations, they are
-                            // illegal as type annotations but might be legal as declaration annotations.
-                            // The normal declaration annotation checks make sure that the use is valid.
-                            break;
-                        case 1:
-                            log.error(typetree.pos(),
-                                      Errors.CantTypeAnnotateScoping1(onlyTypeAnnotations.head));
-                            break;
-                        default:
-                            log.error(typetree.pos(),
-                                      Errors.CantTypeAnnotateScoping(onlyTypeAnnotations));
+                    if (onlyTypeAnnotations.isEmpty()) {
+                        // Don't issue an error if all type annotations are
+                        // also declaration annotations.
+                        // If the annotations are also declaration annotations, they are
+                        // illegal as type annotations but might be legal as declaration annotations.
+                        // The normal declaration annotation checks make sure that the use is valid.
+                        return type;
                     }
+                    Type annotated = typeWithAnnotations(type.stripMetadata(), enclTy, annotations);
+                    JCDiagnostic.Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
+                            Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
+                            Fragments.TypeAnnotation(onlyTypeAnnotations);
+                    log.error(typetree.pos(), Errors.TypeAnnotationInadmissible(
+                            annotationFragment, annotated.tsym.owner, new JCDiagnostic.AnnotatedType(annotated)));
                     return type;
                 }
 
@@ -1017,7 +1017,11 @@ public class TypeAnnotations {
                     if (!invocation.typeargs.contains(tree)) {
                         return TypeAnnotationPosition.unknown;
                     }
-                    MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
+                    Symbol exsym = TreeInfo.symbol(invocation.getMethodSelect());
+                    if (exsym.type.isErroneous()) {
+                        // bail out, don't deal with erroneous types which would be reported anyways
+                        return TypeAnnotationPosition.unknown;
+                    }
                     final int type_index = invocation.typeargs.indexOf(tree);
                     if (exsym == null) {
                         throw new AssertionError("could not determine symbol for {" + invocation + "}");

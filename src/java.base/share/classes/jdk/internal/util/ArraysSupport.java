@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  * questions.
  */
 package jdk.internal.util;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -162,17 +166,177 @@ public class ArraysSupport {
         }
     }
 
+    /**
+     * Calculates the hash code for the subrange of an integer array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(int[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_INT);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a short array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(short[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_SHORT);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a char array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(char[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BYTE);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array whose elements
+     * are treated as unsigned bytes.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCodeOfUnsigned(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + Byte.toUnsignedInt(a[fromIndex]);
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BOOLEAN);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array whose contents
+     * are treated as UTF-16 chars.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * <p> {@code fromIndex} and {@code length} must be scaled down to char
+     * indexes.
+     *
+     * @param a the array
+     * @param fromIndex the first index of a char in the subrange of the array
+     * @param length the number of chars in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCodeOfUTF16(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + JLA.getUTF16Char(a, fromIndex);
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of an object array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(Object[] a, int fromIndex, int length, int initialValue) {
+        int result = initialValue;
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + Objects.hashCode(a[i]);
+        }
+        return result;
+    }
+
     // Possible values for the type operand of the NEWARRAY instruction.
     // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
-    public static final int T_BOOLEAN = 4;
-    public static final int T_CHAR = 5;
-    public static final int T_FLOAT = 6;
-    public static final int T_DOUBLE = 7;
-    public static final int T_BYTE = 8;
-    public static final int T_SHORT = 9;
-    public static final int T_INT = 10;
-    public static final int T_LONG = 11;
+    private static final int T_BOOLEAN = 4;
+    private static final int T_CHAR = 5;
+    private static final int T_FLOAT = 6;
+    private static final int T_DOUBLE = 7;
+    private static final int T_BYTE = 8;
+    private static final int T_SHORT = 9;
+    private static final int T_INT = 10;
+    private static final int T_LONG = 11;
 
     /**
      * Calculate the hash code for an array in a way that enables efficient
@@ -195,10 +359,10 @@ public class ArraysSupport {
      * @return the calculated hash value
      */
     @IntrinsicCandidate
-    public static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
-                                         int basicType) {
+    private static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
+                                          int basicType) {
         return switch (basicType) {
-            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_BOOLEAN -> unsignedHashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_CHAR -> array instanceof byte[]
                     ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
                     : hashCode(initialValue, (char[]) array, fromIndex, length);
@@ -209,10 +373,10 @@ public class ArraysSupport {
         };
     }
 
-    private static int signedHashCode(int result, byte[] a, int fromIndex, int length) {
+    private static int unsignedHashCode(int result, byte[] a, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
-            result = 31 * result + (a[i] & 0xff);
+            result = 31 * result + Byte.toUnsignedInt(a[i]);
         }
         return result;
     }
@@ -253,7 +417,7 @@ public class ArraysSupport {
     /*
      * fromIndex and length must be scaled to char indexes.
      */
-    public static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
+    private static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
             result = 31 * result + JLA.getUTF16Char(value, i);
@@ -293,8 +457,8 @@ public class ArraysSupport {
         if (length > 7) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+            long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -386,8 +550,8 @@ public class ArraysSupport {
         if (length > 7) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+            long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -435,8 +599,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -484,8 +648,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -533,8 +697,8 @@ public class ArraysSupport {
         if (length > 1) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            int aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -565,8 +729,8 @@ public class ArraysSupport {
         int i = 0;
         if (length > 1) {
             if (Float.floatToRawIntBits(a[aFromIndex]) == Float.floatToRawIntBits(b[bFromIndex])) {
-                int aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
-                int bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
                 i = vectorizedMismatch(
                         a, aOffset,
                         b, bOffset,
@@ -623,8 +787,8 @@ public class ArraysSupport {
         }
         if (a[aFromIndex] != b[bFromIndex])
             return 0;
-        int aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
-        int bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
         int i = vectorizedMismatch(
                 a, aOffset,
                 b, bOffset,
@@ -649,8 +813,8 @@ public class ArraysSupport {
         }
         int i = 0;
         if (Double.doubleToRawLongBits(a[aFromIndex]) == Double.doubleToRawLongBits(b[bFromIndex])) {
-            int aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -753,6 +917,55 @@ public class ArraysSupport {
             return SOFT_MAX_ARRAY_LENGTH;
         } else {
             return minLength;
+        }
+    }
+
+    /**
+     * Reverses the elements of an array in-place.
+     *
+     * @param <T> the array component type
+     * @param a the array to be reversed
+     * @return the reversed array, always the same array as the argument
+     */
+    public static <T> T[] reverse(T[] a) {
+        int limit = a.length / 2;
+        for (int i = 0, j = a.length - 1; i < limit; i++, j--) {
+            T t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+        }
+        return a;
+    }
+
+    /**
+     * Dump the contents of the given collection into the given array, in reverse order.
+     * This mirrors the semantics of Collection.toArray(T[]) in regard to reusing the given
+     * array, appending null if necessary, or allocating a new array of the same component type.
+     * <p>
+     * A constraint is that this method should issue exactly one method call on the collection
+     * to obtain the elements and the size. Having a separate size() call or using an Iterator
+     * could result in errors if the collection changes size between calls. This implies that
+     * the elements need to be obtained via a single call to one of the toArray() methods.
+     * This further implies allocating memory proportional to the number of elements and
+     * making an extra copy, but this seems unavoidable.
+     * <p>
+     * An obvious approach would be simply to call coll.toArray(array) and then reverse the
+     * order of the elements. This doesn't work, because if given array is sufficiently long,
+     * we cannot tell how many elements were copied into it and thus there is no way to reverse
+     * the right set of elements while leaving the remaining array elements undisturbed.
+     *
+     * @throws ArrayStoreException if coll contains elements that can't be stored in the array
+     */
+    public static <T> T[] toArrayReversed(Collection<?> coll, T[] array) {
+        T[] newArray = reverse(coll.toArray(Arrays.copyOfRange(array, 0, 0)));
+        if (newArray.length > array.length) {
+            return newArray;
+        } else {
+            System.arraycopy(newArray, 0, array, 0, newArray.length);
+            if (array.length > newArray.length) {
+                array[newArray.length] = null;
+            }
+            return array;
         }
     }
 }

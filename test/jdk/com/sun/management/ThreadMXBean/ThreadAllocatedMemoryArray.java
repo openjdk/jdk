@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public class ThreadAllocatedMemoryArray {
             return;
         }
 
-
         // start threads, wait for them to block
         long[] ids = new long[NUM_THREADS];
 
@@ -58,7 +57,6 @@ public class ThreadAllocatedMemoryArray {
         }
 
         waitUntilThreadBlocked();
-
 
         // disable allocated memory measurement
         if (mbean.isThreadAllocatedMemoryEnabled()) {
@@ -117,19 +115,9 @@ public class ThreadAllocatedMemoryArray {
         // restarted after we're done sleeping.
         goSleep(400);
 
-        long[] sizes1 = mbean.getThreadAllocatedBytes(ids);
-
+        long[] afterSizes = mbean.getThreadAllocatedBytes(ids);
         for (int i = 0; i < NUM_THREADS; i++) {
-            long newSize = sizes1[i];
-            if (sizes[i] > newSize) {
-                throw new RuntimeException("TEST FAILED: " +
-                    threads[i].getName() +
-                    " previous allocated bytes = " + sizes[i] +
-                    " > current allocated bytes = " + newSize);
-            }
-            System.out.println(threads[i].getName() +
-                " Previous allocated bytes = " + sizes[i] +
-                " Current allocated bytes = " + newSize);
+            checkResult(threads[i], sizes[i], afterSizes[i]);
         }
 
         try {
@@ -147,7 +135,6 @@ public class ThreadAllocatedMemoryArray {
                 "Caught expected IllegalArgumentException: " + e.getMessage());
         }
 
-
         // let threads exit
         synchronized (obj) {
             done1 = true;
@@ -158,9 +145,7 @@ public class ThreadAllocatedMemoryArray {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception is thrown.");
-                e.printStackTrace(System.out);
-                testFailed = true;
+                reportUnexpected(e, "during join");
                 break;
             }
         }
@@ -173,11 +158,30 @@ public class ThreadAllocatedMemoryArray {
     }
 
 
+    private static void checkResult(Thread curThread,
+                                    long prevSize, long currSize) {
+        System.out.println(curThread.getName() +
+                           " Previous allocated bytes = " + prevSize +
+                           " Current allocated bytes = " + currSize);
+        if (currSize < prevSize) {
+            throw new RuntimeException("TEST FAILED: " +
+                                       curThread.getName() +
+                                       " previous allocated bytes = " + prevSize +
+                                       " > current allocated bytes = " + currSize);
+
+        }
+    }
+
+    private static void reportUnexpected(Exception e, String when) {
+        System.out.println("Unexpected exception thrown " + when + ".");
+        e.printStackTrace(System.out);
+        testFailed = true;
+    }
+
     private static void goSleep(long ms) throws Exception {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception is thrown.");
             throw e;
         }
     }
@@ -221,9 +225,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
-                        e.printStackTrace(System.out);
-                        testFailed = true;
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }
@@ -236,9 +238,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
-                        e.printStackTrace(System.out);
-                        testFailed = true;
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }

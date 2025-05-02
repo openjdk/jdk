@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 // This file is organized as os_linux_x86.cpp.
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
@@ -141,6 +139,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, epc);
 }
 
@@ -310,7 +314,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
         if (nm != nullptr && nm->has_unsafe_access()) {
           // We don't really need a stub here! Just set the pending exception and
           // continue at the next instruction after the faulting read. Returning
@@ -443,37 +447,26 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*intrsize=*/4);
-  st->cr();
-}
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 16 /* r0-r15 */ + 1 /* pc */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
-  for (int i = 0; i < 16; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, uc->uc_mcontext.gregs[i]);
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    if (n == register_count - 1) {
+      st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
+    } else {
+      st->print("r%-2d=", n);
+      print_location(st, uc->uc_mcontext.gregs[n]);
+    }
+    ++n;
   }
-  st->cr();
 }
 
 #ifndef PRODUCT

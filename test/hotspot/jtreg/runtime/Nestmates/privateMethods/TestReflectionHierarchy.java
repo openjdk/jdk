@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  *          is an inheritance hierarchy and we invoke private methods that
  *          exist in specific classes in the hierarchy.
  * @run main TestReflectionHierarchy
- * @run main/othervm -Dsun.reflect.noInflation=true TestReflectionHierarchy
  */
 
 // The first run will use NativeMethodAccessor and due to the limited number

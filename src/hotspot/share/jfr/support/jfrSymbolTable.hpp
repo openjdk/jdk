@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ template <typename T, typename IdType>
 class ListEntry : public JfrHashtableEntry<T, IdType> {
  public:
   ListEntry(uintptr_t hash, const T& data) : JfrHashtableEntry<T, IdType>(hash, data),
-    _list_next(NULL), _serialized(false), _unloading(false), _leakp(false) {}
+    _list_next(nullptr), _serialized(false), _unloading(false), _leakp(false) {}
   const ListEntry<T, IdType>* list_next() const { return _list_next; }
   void reset() const {
-    _list_next = NULL; _serialized = false; _unloading = false; _leakp = false;
+    _list_next = nullptr; _serialized = false; _unloading = false; _leakp = false;
   }
   void set_list_next(const ListEntry<T, IdType>* next) const { _list_next = next; }
   bool is_serialized() const { return _serialized; }
@@ -100,15 +100,12 @@ class JfrSymbolTable : public JfrCHeapObj {
   traceid mark(const Symbol* sym, bool leakp = false);
   traceid mark(const char* str, bool leakp = false);
   traceid mark(uintptr_t hash, const char* str, bool leakp);
+  traceid mark_hidden_klass_name(const Klass* k, bool leakp);
   traceid bootstrap_name(bool leakp);
 
   bool has_entries() const { return has_symbol_entries() || has_string_entries(); }
-  bool has_symbol_entries() const { return _symbol_list != NULL; }
-  bool has_string_entries() const { return _string_list != NULL; }
-
-  traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
-  bool is_hidden_klass(const Klass* k);
-  uintptr_t hidden_klass_name_hash(const InstanceKlass* ik);
+  bool has_symbol_entries() const { return _symbol_list != nullptr; }
+  bool has_string_entries() const { return _string_list != nullptr; }
 
   // hashtable(s) callbacks
   void on_link(const SymbolEntry* entry);
@@ -137,7 +134,7 @@ class JfrSymbolTable : public JfrCHeapObj {
   template <typename Functor, typename T>
   void iterate(Functor& functor, const T* list) {
     const T* symbol = list;
-    while (symbol != NULL) {
+    while (symbol != nullptr) {
       const T* next = symbol->list_next();
       functor(symbol);
       symbol = next;

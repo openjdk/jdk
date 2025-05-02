@@ -23,6 +23,8 @@
 
 package java.lang;
 
+import jdk.internal.util.DecimalDigits;
+
 /**
  * A helper class to get access to package-private members
  */
@@ -45,10 +47,20 @@ public class Helper {
     }
 
     @jdk.internal.vm.annotation.ForceInline
+    public static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        return StringUTF16.compress(src, srcOff, dst, dstOff, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
     public static byte[] compressChar(char[] src, int srcOff, int dstSize, int dstOff, int len) {
         byte[] dst = new byte[dstSize];
         StringUTF16.compress(src, srcOff, dst, dstOff, len);
         return dst;
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
+    public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        return StringUTF16.compress(src, srcOff, dst, dstOff, len);
     }
 
     @jdk.internal.vm.annotation.ForceInline
@@ -77,6 +89,11 @@ public class Helper {
         return dst;
     }
 
+    @jdk.internal.vm.annotation.ForceInline
+    public static char getChar(byte[] value, int index) {
+        return StringUTF16.getChar(value, index);
+    }
+
     public static void putCharSB(byte[] val, int index, int c) {
         StringUTF16.putCharSB(val, index, c);
     }
@@ -102,11 +119,17 @@ public class Helper {
     }
 
     public static int getChars(int i, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(i, begin, end, value);
+        StringUTF16.checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(i, end, value);
+        assert begin == pos;
+        return pos;
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(l, begin, end, value);
+        StringUTF16.checkBoundsBeginEnd(begin, end, value);
+        int pos = DecimalDigits.getCharsUTF16(l, end, value);
+        assert begin == pos;
+        return pos;
     }
 
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@
  *      -cp ${test.class.path}
  *      ${test.src}/newclass/b4689395a.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.regression.b4689395.b4689395
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -131,13 +131,9 @@ public class b4689395 extends JdbTest {
         private String classFile;
 
         public static void main (String argv[]) {
-                System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-        }
-
-        public static int run(String argv[], PrintStream out) {
                 debuggeeClass =  DEBUGGEE_CLASS;
                 firstBreak = FIRST_BREAK;
-                return new b4689395().runTest(argv, out);
+                new b4689395().runTest(argv);
         }
 
         public b4689395() {

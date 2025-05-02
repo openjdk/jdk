@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import static jdk.test.lib.Asserts.assertEquals;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Duration;
@@ -42,7 +44,8 @@ import jdk.test.lib.thread.XRun;
 
 /**
  * @test
- * @key jfr
+ * @summary test socket read/write events on Socket
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.event.io.TestSocketEvents
@@ -69,8 +72,8 @@ public class TestSocketEvents {
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
-                ss.setReuseAddress(true);
-                ss.bind(null);
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ss.bind(new InetSocketAddress(lb, 0));
 
                 TestThread readerThread = new TestThread(new XRun() {
                     @Override

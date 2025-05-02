@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (1 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,6 +39,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (2 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -49,6 +51,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (3 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -60,6 +63,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (4 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -71,6 +75,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (5 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -82,6 +87,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (6 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -93,6 +99,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (7 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -104,6 +111,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (8 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -115,6 +123,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (9 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -126,6 +135,7 @@
  * @test
  * @bug 8205633
  * @summary Test VM Options with ranges (10 of 10)
+ * @requires vm.flagless
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -200,7 +210,7 @@ public class TestOptionsWithRanges {
     public static void main(String[] args) throws Exception {
         int failedTests;
 
-        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
+        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!origin.contains("develop")));
 
         /*
          * Exclude VMThreadStackSize from max range testing, because it will always exit with code 1,
@@ -230,7 +240,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("MaxHeapSize");
         excludeTestMaxRange("MaxRAM");
         excludeTestMaxRange("NewSize");
-        excludeTestMaxRange("OldSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");
 

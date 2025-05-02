@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,6 @@
 
 #include "jfr/jfrEvents.hpp"
 
-inline ZTracer* ZTracer::tracer() {
-  return _tracer;
-}
-
 inline void ZTracer::report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value) {
   if (EventZStatisticsCounter::is_enabled()) {
     send_stat_counter(counter, increment, value);
@@ -56,12 +52,12 @@ inline void ZTracer::report_thread_debug(const char* name, const Ticks& start, c
   }
 }
 
-inline ZTraceThreadDebug::ZTraceThreadDebug(const char* name) :
-    _start(Ticks::now()),
+inline ZTraceThreadDebug::ZTraceThreadDebug(const char* name)
+  : _start(Ticks::now()),
     _name(name) {}
 
 inline ZTraceThreadDebug::~ZTraceThreadDebug() {
-  ZTracer::tracer()->report_thread_debug(_name, _start, Ticks::now());
+  ZTracer::report_thread_debug(_name, _start, Ticks::now());
 }
 
 #endif // SHARE_GC_Z_ZTRACER_INLINE_HPP

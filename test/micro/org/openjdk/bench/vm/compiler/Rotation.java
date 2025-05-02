@@ -41,7 +41,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Fork(value = 3)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)

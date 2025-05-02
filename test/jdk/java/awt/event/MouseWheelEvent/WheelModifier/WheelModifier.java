@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,55 @@
  * questions.
  */
 
-/*
-   @test
-   @key headful
-   @bug 8041470
-   @summary JButtons stay pressed after they have lost focus if you use the mouse wheel
-   @author Anton Nashatyrev
- */
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
+/*
+ * @test
+ * @key headful
+ * @bug 8041470
+ * @summary JButtons stay pressed after they have lost focus if you use the mouse wheel
+ */
 public class WheelModifier {
 
     JFrame f;
     JButton fb;
 
-    CountDownLatch pressSema = new CountDownLatch(1);
-    CountDownLatch exitSema = new CountDownLatch(1);
-    CountDownLatch releaseSema = new CountDownLatch(1);
+    final CountDownLatch focusSema = new CountDownLatch(1);
+    final CountDownLatch pressSema = new CountDownLatch(1);
+    final CountDownLatch exitSema = new CountDownLatch(1);
+    final CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
+
+    private volatile Point sLoc;
+    private volatile Dimension bSize;
 
     void createGui() {
         f = new JFrame("frame");
         fb = new JButton("frame_button");
+
+        fb.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent focusEvent) {
+                focusSema.countDown();
+            }
+        });
+
         fb.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -57,7 +80,6 @@ public class WheelModifier {
             @Override
             public void mouseEntered(MouseEvent e) {
                 System.out.println("WheelModifier.mouseEntered: " + e);
-
             }
 
             @Override
@@ -94,41 +116,66 @@ public class WheelModifier {
     }
 
     void run() throws Exception {
+        System.out.println("# Started");
+        if (!focusSema.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Didn't receive focus in time");
+        }
+
         Robot r = new Robot();
         r.waitForIdle();
-        System.out.println("# Started");
 
-        Point sLoc = fb.getLocationOnScreen();
-        Dimension bSize = fb.getSize();
+        SwingUtilities.invokeAndWait(() -> {
+            sLoc = fb.getLocationOnScreen();
+            bSize = fb.getSize();
+        });
+
         r.mouseMove(sLoc.x + bSize.width / 2, sLoc.y + bSize.height / 2);
-        r.mousePress(MouseEvent.BUTTON1_MASK);
-        pressSema.await();
+        r.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
+        if (!pressSema.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not pressed");
+        }
         System.out.println("# Pressed");
 
         r.mouseMove(sLoc.x + bSize.width / 2, sLoc.y + bSize.height * 2);
-        exitSema.await();
+        if (!exitSema.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse did not exit");
+        }
         System.out.println("# Exited");
 
         wheelSema = new CountDownLatch(1);
         r.mouseWheel(1);
-        wheelSema.await();
+        if (!wheelSema.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not wheeled 1");
+        }
         System.out.println("# Wheeled 1");
 
         wheelSema = new CountDownLatch(1);
         r.mouseWheel(-1);
-        wheelSema.await();
+        if (!wheelSema.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not wheeled 2");
+        }
         System.out.println("# Wheeled 2");
 
-        r.mouseRelease(MouseEvent.BUTTON1_MASK);
-        releaseSema.await();
+        r.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
+        if (!releaseSema.await(1, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not released");
+        }
         System.out.println("# Released!");
     }
 
     public static void main(String[] args) throws Exception {
         WheelModifier test = new WheelModifier();
 
-        SwingUtilities.invokeAndWait(() -> test.createGui());
-        test.run();
+        try {
+            SwingUtilities.invokeAndWait(test::createGui);
+            test.run();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (test.f != null) {
+                    test.f.dispose();
+                }
+            });
+        }
 
         System.out.println("Done.");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test
  * @bug 6917130 8006775
  * @summary test that optimized away annotations are not emited to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class DeadCode extends ClassfileTestHelper {
@@ -43,14 +42,13 @@ public class DeadCode extends ClassfileTestHelper {
     public void run() throws Exception {
         expected_tinvisibles = 1;
         expected_tvisibles = 0;
-
-        ClassFile cf = getClassFile("DeadCode$Test.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("DeadCode$Test.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m, true);
+        for (MethodModel mm: cm.methods()) {
+            test(mm, true);
         }
 
         countAnnotations();

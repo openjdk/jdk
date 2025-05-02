@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public class Main {
                         throw new RuntimeException("Error: incorrect charset line [" + line + "]");
                     }
                     if ((cs = charsets.get(tokens[2])) != null) {
-                        throw new RuntimeException("Error: deplicate charset line [" + line + "]");
+                        throw new RuntimeException("Error: duplicate charset line [" + line + "]");
                     }
                     cs = new Charset();
                     cs.csName = tokens[1];
@@ -179,8 +179,8 @@ public class Main {
                     case "os":
                         cs.os = tokens[2];
                         break;
-                    case "hisname":
-                        cs.hisName = tokens[2];
+                    case "histname":
+                        cs.histName = tokens[2];
                         break;
                     case "ascii":
                         cs.isASCII = Boolean.parseBoolean(tokens[2]);
@@ -229,7 +229,7 @@ public class Main {
 
     static void verbose(Charset cs) {
          System.out.printf("%s, %s, %s, %s, %s  %b%n",
-                           cs.clzName, cs.csName, cs.hisName, cs.pkgName, cs.type, cs.isASCII);
+                           cs.clzName, cs.csName, cs.histName, cs.pkgName, cs.type, cs.isASCII);
     }
 
     static int toInteger(String s) {

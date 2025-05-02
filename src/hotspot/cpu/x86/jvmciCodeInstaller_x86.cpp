@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -38,6 +38,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/vmreg.hpp"
 #include "vmreg_x86.inline.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif
 
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   if (inst->is_call() || inst->is_jump()) {
@@ -45,12 +48,17 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
     return (pc_offset + NativeCall::instruction_size);
   } else if (inst->is_mov_literal64()) {
     // mov+call instruction pair
-    jint offset = pc_offset + NativeMovConstReg::instruction_size;
+    jint offset = pc_offset + ((NativeMovConstReg*)inst)->instruction_size();
     u_char* call = (u_char*) (_instructions->start() + offset);
     if (call[0] == Assembler::REX_B) {
       offset += 1; /* prefix byte for extended register R8-R15 */
       call++;
     }
+    if (call[0] == Assembler::REX2) {
+      offset += 2; /* prefix byte for APX extended GPR register R16-R31 */
+      call+=2;
+    }
+    // Register indirect call.
     assert(call[0] == 0xFF, "expected call");
     offset += 2; /* opcode byte + modrm byte */
     return (offset);
@@ -146,7 +154,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
       return;
@@ -185,9 +193,18 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, j
   if (!call->is_displacement_aligned()) {
     JVMCI_ERROR("unaligned displacement for call at offset %d", pc_offset);
   }
+  if (Continuations::enabled()) {
+    // Check for proper post_call_nop
+    NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
+    if (nop == nullptr) {
+      JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
+    } else {
+      _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);
+    }
+  }
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
+bool CodeInstaller::pd_relocate(address pc, jint mark) {
   switch (mark) {
     case POLL_NEAR:
     case POLL_FAR:
@@ -196,15 +213,37 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
       // so that poll_Relocation::fix_relocation_after_move does the right
       // thing (i.e. ignores this relocation record)
       _instructions->relocate(pc, relocInfo::poll_type, Assembler::imm_operand);
-      break;
+      return true;
     case POLL_RETURN_NEAR:
     case POLL_RETURN_FAR:
       // see comment above for POLL_FAR
       _instructions->relocate(pc, relocInfo::poll_return_type, Assembler::imm_operand);
-      break;
+      return true;
+#if INCLUDE_ZGC
+    case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadAfterTest);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_AFTER_TEST:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadAfterTest);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_CMP:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterCmp);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_AFTER_TEST:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadAfterTest);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_OR:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
+      return true;
+    case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV:
+      _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterMov);
+      return true;
+#endif
     default:
-      JVMCI_ERROR("invalid mark value: %d", mark);
-      break;
+      return false;
   }
 }
 

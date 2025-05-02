@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -34,70 +34,39 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/lightweightSynchronizer.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/perfData.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalCounter.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
 
-class ObjectMonitorsHashtable::PtrList :
-  public LinkedListImpl<ObjectMonitor*,
-                        AnyObj::C_HEAP, mtThread,
-                        AllocFailStrategy::RETURN_NULL> {};
-
-class CleanupObjectMonitorsHashtable: StackObj {
- public:
-  bool do_entry(void*& key, ObjectMonitorsHashtable::PtrList*& list) {
-    list->clear();  // clear the LinkListNodes
-    delete list;    // then delete the LinkedList
-    return true;
-  }
-};
-
-ObjectMonitorsHashtable::~ObjectMonitorsHashtable() {
-  CleanupObjectMonitorsHashtable cleanup;
-  _ptrs->unlink(&cleanup);  // cleanup the LinkedLists
-  delete _ptrs;             // then delete the hash table
-}
-
-void ObjectMonitorsHashtable::add_entry(void* key, ObjectMonitor* om) {
-  ObjectMonitorsHashtable::PtrList* list = get_entry(key);
-  if (list == nullptr) {
-    // Create new list and add it to the hash table:
-    list = new (mtThread) ObjectMonitorsHashtable::PtrList;
-    add_entry(key, list);
-  }
-  list->add(om);  // Add the ObjectMonitor to the list.
-  _om_count++;
-}
-
-bool ObjectMonitorsHashtable::has_entry(void* key, ObjectMonitor* om) {
-  ObjectMonitorsHashtable::PtrList* list = get_entry(key);
-  if (list == nullptr || list->find(om) == nullptr) {
-    return false;
-  }
-  return true;
-}
+class ObjectMonitorDeflationLogging;
 
 void MonitorList::add(ObjectMonitor* m) {
   ObjectMonitor* head;
@@ -106,10 +75,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
@@ -120,44 +93,77 @@ size_t MonitorList::max() const {
   return Atomic::load(&_max);
 }
 
-// Walk the in-use list and unlink (at most MonitorDeflationMax) deflated
-// ObjectMonitors. Returns the number of unlinked ObjectMonitors.
-size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
-                                    elapsedTimer* timer_p,
-                                    GrowableArray<ObjectMonitor*>* unlinked_list) {
+class ObjectMonitorDeflationSafepointer : public StackObj {
+  JavaThread* const                    _current;
+  ObjectMonitorDeflationLogging* const _log;
+
+public:
+  ObjectMonitorDeflationSafepointer(JavaThread* current, ObjectMonitorDeflationLogging* log)
+    : _current(current), _log(log) {}
+
+  void block_for_safepoint(const char* op_name, const char* count_name, size_t counter);
+};
+
+// Walk the in-use list and unlink deflated ObjectMonitors.
+// Returns the number of unlinked ObjectMonitors.
+size_t MonitorList::unlink_deflated(size_t deflated_count,
+                                    GrowableArray<ObjectMonitor*>* unlinked_list,
+                                    ObjectMonitorDeflationSafepointer* safepointer) {
   size_t unlinked_count = 0;
   ObjectMonitor* prev = nullptr;
-  ObjectMonitor* head = Atomic::load_acquire(&_head);
-  ObjectMonitor* m = head;
-  // The in-use list head can be null during the final audit.
+  ObjectMonitor* m = Atomic::load_acquire(&_head);
+
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
-      // Find next live ObjectMonitor.
+      // Find next live ObjectMonitor. Batch up the unlinkable monitors, so we can
+      // modify the list once per batch. The batch starts at "m".
+      size_t unlinked_batch = 0;
       ObjectMonitor* next = m;
+      // Look for at most MonitorUnlinkBatch monitors, or the number of
+      // deflated and not unlinked monitors, whatever comes first.
+      assert(deflated_count >= unlinked_count, "Sanity: underflow");
+      size_t unlinked_batch_limit = MIN2<size_t>(deflated_count - unlinked_count, MonitorUnlinkBatch);
       do {
         ObjectMonitor* next_next = next->next_om();
-        unlinked_count++;
+        unlinked_batch++;
         unlinked_list->append(next);
         next = next_next;
-        if (unlinked_count >= (size_t)MonitorDeflationMax) {
-          // Reached the max so bail out on the gathering loop.
+        if (unlinked_batch >= unlinked_batch_limit) {
+          // Reached the max batch, so bail out of the gathering loop.
+          break;
+        }
+        if (prev == nullptr && Atomic::load(&_head) != m) {
+          // Current batch used to be at head, but it is not at head anymore.
+          // Bail out and figure out where we currently are. This avoids long
+          // walks searching for new prev during unlink under heavy list inserts.
           break;
         }
       } while (next != nullptr && next->is_being_async_deflated());
+
+      // Unlink the found batch.
       if (prev == nullptr) {
-        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, head, next);
-        if (prev_head != head) {
-          // Find new prev ObjectMonitor that just got inserted.
+        // The current batch is the first batch, so there is a chance that it starts at head.
+        // Optimistically assume no inserts happened, and try to unlink the entire batch from the head.
+        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, m, next);
+        if (prev_head != m) {
+          // Something must have updated the head. Figure out the actual prev for this batch.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
             prev = n;
           }
+          assert(prev != nullptr, "Should have found the prev for the current batch");
           prev->set_next_om(next);
         }
       } else {
+        // The current batch is preceded by another batch. This guarantees the current batch
+        // does not start at head. Unlink the entire current batch without updating the head.
+        assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
-      if (unlinked_count >= (size_t)MonitorDeflationMax) {
-        // Reached the max so bail out on the searching loop.
+
+      unlinked_count += unlinked_batch;
+      if (unlinked_count >= deflated_count) {
+        // Reached the max so bail out of the searching loop.
+        // There should be no more deflated monitors left.
         break;
       }
       m = next;
@@ -166,13 +172,23 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
       m = m->next_om();
     }
 
-    if (current->is_Java_thread()) {
-      // A JavaThread must check for a safepoint/handshake and honor it.
-      ObjectSynchronizer::chk_for_block_req(JavaThread::cast(current), "unlinking",
-                                            "unlinked_count", unlinked_count,
-                                            ls, timer_p);
+    // Must check for a safepoint/handshake and honor it.
+    safepointer->block_for_safepoint("unlinking", "unlinked_count", unlinked_count);
+  }
+
+#ifdef ASSERT
+  // Invariant: the code above should unlink all deflated monitors.
+  // The code that runs after this unlinking does not expect deflated monitors.
+  // Notably, attempting to deflate the already deflated monitor would break.
+  {
+    ObjectMonitor* m = Atomic::load_acquire(&_head);
+    while (m != nullptr) {
+      assert(!m->is_being_async_deflated(), "All deflated monitors should be unlinked");
+      m = m->next_om();
     }
   }
+#endif
+
   Atomic::sub(&_count, unlinked_count);
   return unlinked_count;
 }
@@ -240,20 +256,35 @@ ObjectMonitor* MonitorList::Iterator::next() {
 #endif // ndef DTRACE_ENABLED
 
 // This exists only as a workaround of dtrace bug 6254741
-int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
+static int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   DTRACE_MONITOR_PROBE(waited, monitor, obj(), thr);
   return 0;
 }
 
-static const int NINFLATIONLOCKS = 256;
-static PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+static constexpr size_t inflation_lock_count() {
+  return 256;
+}
+
+// Static storage for an array of PlatformMutex.
+alignas(PlatformMutex) static uint8_t _inflation_locks[inflation_lock_count()][sizeof(PlatformMutex)];
+
+static inline PlatformMutex* inflation_lock(size_t index) {
+  return reinterpret_cast<PlatformMutex*>(_inflation_locks[index]);
+}
 
 void ObjectSynchronizer::initialize() {
-  for (int i = 0; i < NINFLATIONLOCKS; i++) {
-    gInflationLocks[i] = new PlatformMutex();
+  for (size_t i = 0; i < inflation_lock_count(); i++) {
+    ::new(static_cast<void*>(inflation_lock(i))) PlatformMutex();
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
+
+  // Start the timer for deflations, so it does not trigger immediately.
+  _last_async_deflation_time_ns = os::javaTimeNanos();
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    LightweightSynchronizer::initialize();
+  }
 }
 
 MonitorList ObjectSynchronizer::_in_use_list;
@@ -282,6 +313,7 @@ bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
+static bool _no_progress_skip_increment = false;
 
 // =====================> Quick functions
 
@@ -311,32 +343,37 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   if (obj == nullptr) return false;  // slow-path for invalid obj
   const markWord mark = obj->mark();
 
-  if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
-    // Degenerate notify
-    // stack-locked by caller so by definition the implied waitset is empty.
-    return true;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (mark.is_fast_locked() && current->lock_stack().contains(cast_to_oop(obj))) {
+      // Degenerate notify
+      // fast-locked by caller so by definition the implied waitset is empty.
+      return true;
+    }
+  } else if (LockingMode == LM_LEGACY) {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Degenerate notify
+      // stack-locked by caller so by definition the implied waitset is empty.
+      return true;
+    }
   }
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const mon = mark.monitor();
+    ObjectMonitor* const mon = read_monitor(current, obj, mark);
+    if (LockingMode == LM_LIGHTWEIGHT && mon == nullptr) {
+      // Racing with inflation/deflation go slow path
+      return false;
+    }
     assert(mon->object() == oop(obj), "invariant");
-    if (mon->owner() != current) return false;  // slow-path for IMS exception
+    if (!mon->has_owner(current)) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
-      // that we own, we can transfer one or more threads from the waitset
-      // to the entrylist here and now, avoiding the slow-path.
+      // that we own, we quickly notify them here and now, avoiding the slow-path.
       if (all) {
-        DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
+        mon->quick_notifyAll(current);
       } else {
-        DTRACE_MONITOR_PROBE(notify, mon, obj, current);
+        mon->quick_notify(current);
       }
-      int free_count = 0;
-      do {
-        mon->INotify(current);
-        ++free_count;
-      } while (mon->first_waiter() != nullptr && all);
-      OM_PERFDATA_OP(Notifications, inc(free_count));
     }
     return true;
   }
@@ -345,6 +382,13 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   return false;
 }
 
+static bool useHeavyMonitors() {
+#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64) || defined(S390)
+  return LockingMode == LM_MONITOR;
+#else
+  return false;
+#endif
+}
 
 // The LockNode emitted directly at the synchronization site would have
 // been too big if it were to have included support for the cases of inflated
@@ -352,35 +396,34 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 // Note that we can't safely call AsyncPrintJavaStack() from within
 // quick_enter() as our thread state remains _in_Java.
 
-bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
-                                     BasicLock * lock) {
+bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread* current) {
   assert(current->thread_state() == _thread_in_Java, "invariant");
-  NoSafepointVerifier nsv;
-  if (obj == nullptr) return false;       // Need to throw NPE
 
-  if (obj->klass()->is_value_based()) {
-    return false;
+  if (useHeavyMonitors()) {
+    return false;  // Slow path
   }
+
+  assert(LockingMode == LM_LEGACY, "legacy mode below");
 
   const markWord mark = obj->mark();
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const m = mark.monitor();
+
+    ObjectMonitor* const m = read_monitor(mark);
     // An async deflation or GC can race us before we manage to make
     // the ObjectMonitor busy by setting the owner below. If we detect
     // that race we just bail out to the slow-path here.
     if (m->object_peek() == nullptr) {
       return false;
     }
-    JavaThread* const owner = static_cast<JavaThread*>(m->owner_raw());
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
     // Case: light contention possibly amenable to TLE
     // Case: TLE inimical operations such as nested/recursive synchronization
 
-    if (owner == current) {
-      m->_recursions++;
+    if (m->has_owner(current)) {
+      m->increment_recursions(current);
       current->inc_held_monitor_count();
       return true;
     }
@@ -396,8 +439,8 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
     lock->set_displaced_header(markWord::unused_mark());
 
-    if (owner == nullptr && m->try_set_owner_from(nullptr, current) == nullptr) {
-      assert(m->_recursions == 0, "invariant");
+    if (!m->has_owner() && m->try_set_owner(current)) {
+      assert(m->recursions() == 0, "invariant");
       current->inc_held_monitor_count();
       return true;
     }
@@ -413,8 +456,9 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
 }
 
 // Handle notifications when synchronizing on value based classes
-void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread* current) {
-  frame last_frame = current->last_frame();
+void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread* locking_thread) {
+  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
+  frame last_frame = locking_thread->last_frame();
   bool bcp_was_adjusted = false;
   // Don't decrement bcp if it points to the frame's first instruction.  This happens when
   // handle_sync_on_value_based_class() is called because of a synchronized method.  There
@@ -427,9 +471,9 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
   }
 
   if (DiagnoseSyncOnValueBasedClasses == FATAL_EXIT) {
-    ResourceMark rm(current);
+    ResourceMark rm;
     stringStream ss;
-    current->print_active_stack_on(&ss);
+    locking_thread->print_active_stack_on(&ss);
     char* base = (char*)strstr(ss.base(), "at");
     char* newline = (char*)strchr(ss.base(), '\n');
     if (newline != nullptr) {
@@ -438,13 +482,13 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
     fatal("Synchronizing on object " INTPTR_FORMAT " of klass %s %s", p2i(obj()), obj->klass()->external_name(), base);
   } else {
     assert(DiagnoseSyncOnValueBasedClasses == LOG_WARNING, "invalid value for DiagnoseSyncOnValueBasedClasses");
-    ResourceMark rm(current);
+    ResourceMark rm;
     Log(valuebasedclasses) vblog;
 
     vblog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
-    if (current->has_last_Java_frame()) {
+    if (locking_thread->has_last_Java_frame()) {
       LogStream info_stream(vblog.info());
-      current->print_active_stack_on(&info_stream);
+      locking_thread->print_active_stack_on(&info_stream);
     } else {
       vblog.info("Cannot find the last Java frame");
     }
@@ -461,160 +505,162 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
   }
 }
 
-static bool useHeavyMonitors() {
-#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64)
-  return UseHeavyMonitors;
-#else
-  return false;
-#endif
-}
-
 // -----------------------------------------------------------------------------
 // Monitor Enter/Exit
+
+void ObjectSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
+  // When called with locking_thread != Thread::current() some mechanism must synchronize
+  // the locking_thread with respect to the current thread. Currently only used when
+  // deoptimizing and re-locking locks. See Deoptimization::relock_objects
+  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    return LightweightSynchronizer::enter_for(obj, lock, locking_thread);
+  }
+
+  if (!enter_fast_impl(obj, lock, locking_thread)) {
+    // Inflated ObjectMonitor::enter_for is required
+
+    // An async deflation can race after the inflate_for() call and before
+    // enter_for() can make the ObjectMonitor busy. enter_for() returns false
+    // if we have lost the race to async deflation and we simply try again.
+    while (true) {
+      ObjectMonitor* monitor = inflate_for(locking_thread, obj(), inflate_cause_monitor_enter);
+      if (monitor->enter_for(locking_thread)) {
+        return;
+      }
+      assert(monitor->is_being_async_deflated(), "must be");
+    }
+  }
+}
+
+void ObjectSynchronizer::enter_legacy(Handle obj, BasicLock* lock, JavaThread* current) {
+  if (!enter_fast_impl(obj, lock, current)) {
+    // Inflated ObjectMonitor::enter is required
+
+    // An async deflation can race after the inflate() call and before
+    // enter() can make the ObjectMonitor busy. enter() returns false if
+    // we have lost the race to async deflation and we simply try again.
+    while (true) {
+      ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_monitor_enter);
+      if (monitor->enter(current)) {
+        return;
+      }
+    }
+  }
+}
+
 // The interpreter and compiler assembly code tries to lock using the fast path
 // of this algorithm. Make sure to update that code if the following function is
 // changed. The implementation is extremely sensitive to race condition. Be careful.
+bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Use LightweightSynchronizer");
 
-void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
   if (obj->klass()->is_value_based()) {
-    handle_sync_on_value_based_class(obj, current);
+    handle_sync_on_value_based_class(obj, locking_thread);
   }
 
-  current->inc_held_monitor_count();
+  locking_thread->inc_held_monitor_count();
 
   if (!useHeavyMonitors()) {
-    markWord mark = obj->mark();
-    if (mark.is_neutral()) {
-      // Anticipate successful CAS -- the ST of the displaced mark must
-      // be visible <= the ST performed by the CAS.
-      lock->set_displaced_header(mark);
-      if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
-        return;
+    if (LockingMode == LM_LEGACY) {
+      markWord mark = obj->mark();
+      if (mark.is_unlocked()) {
+        // Anticipate successful CAS -- the ST of the displaced mark must
+        // be visible <= the ST performed by the CAS.
+        lock->set_displaced_header(mark);
+        if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
+          return true;
+        }
+      } else if (mark.has_locker() &&
+                 locking_thread->is_lock_owned((address) mark.locker())) {
+        assert(lock != mark.locker(), "must not re-lock the same lock");
+        assert(lock != (BasicLock*) obj->mark().value(), "don't relock with same BasicLock");
+        lock->set_displaced_header(markWord::from_pointer(nullptr));
+        return true;
       }
-      // Fall through to inflate() ...
-    } else if (mark.has_locker() &&
-               current->is_lock_owned((address)mark.locker())) {
-      assert(lock != mark.locker(), "must not re-lock the same lock");
-      assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
-      lock->set_displaced_header(markWord::from_pointer(nullptr));
-      return;
-    }
 
-    // The object header will never be displaced to this lock,
-    // so it does not matter what the value is, except that it
-    // must be non-zero to avoid looking like a re-entrant lock,
-    // and must not look locked either.
-    lock->set_displaced_header(markWord::unused_mark());
+      // The object header will never be displaced to this lock,
+      // so it does not matter what the value is, except that it
+      // must be non-zero to avoid looking like a re-entrant lock,
+      // and must not look locked either.
+      lock->set_displaced_header(markWord::unused_mark());
+
+      // Failed to fast lock.
+      return false;
+    }
   } else if (VerifyHeavyMonitors) {
-    guarantee(!obj->mark().has_locker(), "must not be stack-locked");
+    guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
   }
 
-  // An async deflation can race after the inflate() call and before
-  // enter() can make the ObjectMonitor busy. enter() returns false if
-  // we have lost the race to async deflation and we simply try again.
-  while (true) {
-    ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_monitor_enter);
-    if (monitor->enter(current)) {
-      return;
-    }
-  }
+  return false;
 }
 
-void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
-  current->dec_held_monitor_count();
+void ObjectSynchronizer::exit_legacy(oop object, BasicLock* lock, JavaThread* current) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Use LightweightSynchronizer");
 
   if (!useHeavyMonitors()) {
     markWord mark = object->mark();
-
-    markWord dhw = lock->displaced_header();
-    if (dhw.value() == 0) {
-      // If the displaced header is null, then this exit matches up with
-      // a recursive enter. No real work to do here except for diagnostics.
+    if (LockingMode == LM_LEGACY) {
+      markWord dhw = lock->displaced_header();
+      if (dhw.value() == 0) {
+        // If the displaced header is null, then this exit matches up with
+        // a recursive enter. No real work to do here except for diagnostics.
 #ifndef PRODUCT
-      if (mark != markWord::INFLATING()) {
-        // Only do diagnostics if we are not racing an inflation. Simply
-        // exiting a recursive enter of a Java Monitor that is being
-        // inflated is safe; see the has_monitor() comment below.
-        assert(!mark.is_neutral(), "invariant");
-        assert(!mark.has_locker() ||
-        current->is_lock_owned((address)mark.locker()), "invariant");
-        if (mark.has_monitor()) {
-          // The BasicLock's displaced_header is marked as a recursive
-          // enter and we have an inflated Java Monitor (ObjectMonitor).
-          // This is a special case where the Java Monitor was inflated
-          // after this thread entered the stack-lock recursively. When a
-          // Java Monitor is inflated, we cannot safely walk the Java
-          // Monitor owner's stack and update the BasicLocks because a
-          // Java Monitor can be asynchronously inflated by a thread that
-          // does not own the Java Monitor.
-          ObjectMonitor* m = mark.monitor();
-          assert(m->object()->mark() == mark, "invariant");
-          assert(m->is_entered(current), "invariant");
+        if (mark != markWord::INFLATING()) {
+          // Only do diagnostics if we are not racing an inflation. Simply
+          // exiting a recursive enter of a Java Monitor that is being
+          // inflated is safe; see the has_monitor() comment below.
+          assert(!mark.is_unlocked(), "invariant");
+          assert(!mark.has_locker() ||
+                 current->is_lock_owned((address)mark.locker()), "invariant");
+          if (mark.has_monitor()) {
+            // The BasicLock's displaced_header is marked as a recursive
+            // enter and we have an inflated Java Monitor (ObjectMonitor).
+            // This is a special case where the Java Monitor was inflated
+            // after this thread entered the stack-lock recursively. When a
+            // Java Monitor is inflated, we cannot safely walk the Java
+            // Monitor owner's stack and update the BasicLocks because a
+            // Java Monitor can be asynchronously inflated by a thread that
+            // does not own the Java Monitor.
+            ObjectMonitor* m = read_monitor(mark);
+            assert(m->object()->mark() == mark, "invariant");
+            assert(m->is_entered(current), "invariant");
+          }
         }
-      }
 #endif
-      return;
-    }
-
-    if (mark == markWord::from_pointer(lock)) {
-      // If the object is stack-locked by the current thread, try to
-      // swing the displaced header from the BasicLock back to the mark.
-      assert(dhw.is_neutral(), "invariant");
-      if (object->cas_set_mark(dhw, mark) == mark) {
         return;
+      }
+
+      if (mark == markWord::from_pointer(lock)) {
+        // If the object is stack-locked by the current thread, try to
+        // swing the displaced header from the BasicLock back to the mark.
+        assert(dhw.is_neutral(), "invariant");
+        if (object->cas_set_mark(dhw, mark) == mark) {
+          return;
+        }
       }
     }
   } else if (VerifyHeavyMonitors) {
-    guarantee(!object->mark().has_locker(), "must not be stack-locked");
+    guarantee((object->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
   }
 
   // We have to take the slow-path of possible inflation and then exit.
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
+  assert(!monitor->has_anonymous_owner(), "must not be");
   monitor->exit(current);
-}
-
-// -----------------------------------------------------------------------------
-// Class Loader  support to workaround deadlocks on the class loader lock objects
-// Also used by GC
-// complete_exit()/reenter() are used to wait on a nested lock
-// i.e. to give up an outer lock completely and then re-enter
-// Used when holding nested locks - lock acquisition order: lock1 then lock2
-//  1) complete_exit lock1 - saving recursion count
-//  2) wait on lock2
-//  3) when notified on lock2, unlock lock2
-//  4) reenter lock1 with original recursion count
-//  5) lock lock2
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-intx ObjectSynchronizer::complete_exit(Handle obj, JavaThread* current) {
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped inside exit() and the ObjectMonitor* must be !is_busy().
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-  intx recur_count = monitor->complete_exit(current);
-  current->dec_held_monitor_count(recur_count + 1);
-  return recur_count;
-}
-
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-void ObjectSynchronizer::reenter(Handle obj, intx recursions, JavaThread* current) {
-  // An async deflation can race after the inflate() call and before
-  // reenter() -> enter() can make the ObjectMonitor busy. reenter() ->
-  // enter() returns false if we have lost the race to async deflation
-  // and we simply try again.
-  while (true) {
-    ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-    if (monitor->reenter(recursions, current)) {
-      current->inc_held_monitor_count(recursions + 1);
-      return;
-    }
-  }
 }
 
 // -----------------------------------------------------------------------------
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
+  // Top native frames in the stack will not be seen if we attempt
+  // preemption, since we start walking from the last Java anchor.
+  NoPreemptMark npm(current);
+
   if (obj->klass()->is_value_based()) {
     handle_sync_on_value_based_class(obj, current);
   }
@@ -625,8 +671,17 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
   // enter() can make the ObjectMonitor busy. enter() returns false if
   // we have lost the race to async deflation and we simply try again.
   while (true) {
-    ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_jni_enter);
-    if (monitor->enter(current)) {
+    ObjectMonitor* monitor;
+    bool entered;
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      BasicLock lock;
+      entered = LightweightSynchronizer::inflate_and_enter(obj(), &lock, inflate_cause_jni_enter, current, current) != nullptr;
+    } else {
+      monitor = inflate(current, obj(), inflate_cause_jni_enter);
+      entered = monitor->enter(current);
+    }
+
+    if (entered) {
       current->inc_held_monitor_count(1, true);
       break;
     }
@@ -638,9 +693,14 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
 void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
   JavaThread* current = THREAD;
 
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped inside exit() and the ObjectMonitor* must be !is_busy().
-  ObjectMonitor* monitor = inflate(current, obj, inflate_cause_jni_exit);
+  ObjectMonitor* monitor;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj, inflate_cause_jni_exit, CHECK);
+  } else {
+    // The ObjectMonitor* can't be async deflated until ownership is
+    // dropped inside exit() and the ObjectMonitor* must be !is_busy().
+    monitor = inflate(current, obj, inflate_cause_jni_exit);
+  }
   // If this thread has locked the object, exit the monitor. We
   // intentionally do not use CHECK on check_owner because we must exit the
   // monitor even if an exception was already pending.
@@ -653,7 +713,7 @@ void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
 // -----------------------------------------------------------------------------
 // Internal VM locks on java objects
 // standard constructor, allows locking failures
-ObjectLocker::ObjectLocker(Handle obj, JavaThread* thread) {
+ObjectLocker::ObjectLocker(Handle obj, JavaThread* thread) : _npm(thread) {
   _thread = thread;
   _thread->check_for_valid_safepoint_state();
   _obj = obj;
@@ -673,15 +733,22 @@ ObjectLocker::~ObjectLocker() {
 // -----------------------------------------------------------------------------
 //  Wait/Notify/NotifyAll
 // NOTE: must use heavy weight monitor to handle wait()
+
 int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   JavaThread* current = THREAD;
   if (millis < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
   }
-  // The ObjectMonitor* can't be async deflated because the _waiters
-  // field is incremented before ownership is dropped and decremented
-  // after ownership is regained.
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_wait);
+
+  ObjectMonitor* monitor;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_wait, CHECK_0);
+  } else {
+    // The ObjectMonitor* can't be async deflated because the _waiters
+    // field is incremented before ownership is dropped and decremented
+    // after ownership is regained.
+    monitor = inflate(current, obj(), inflate_cause_wait);
+  }
 
   DTRACE_MONITOR_WAIT_PROBE(monitor, obj(), current, millis);
   monitor->wait(millis, true, THREAD); // Not CHECK as we need following code
@@ -694,17 +761,45 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   return ret_code;
 }
 
+void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
+  if (millis < 0) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
+  }
+
+  ObjectMonitor* monitor;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_wait, CHECK);
+  } else {
+    monitor = inflate(THREAD, obj(), inflate_cause_wait);
+  }
+  monitor->wait(millis, false, THREAD);
+}
+
+
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
-    // Not inflated so there can't be any waiters to notify.
-    return;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
+  } else if (LockingMode == LM_LEGACY) {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
   }
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped by the calling thread.
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_notify);
+
+  ObjectMonitor* monitor;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
+  } else {
+    // The ObjectMonitor* can't be async deflated until ownership is
+    // dropped by the calling thread.
+    monitor = inflate(current, obj(), inflate_cause_notify);
+  }
   monitor->notify(CHECK);
 }
 
@@ -713,13 +808,26 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
-    // Not inflated so there can't be any waiters to notify.
-    return;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
+  } else if (LockingMode == LM_LEGACY) {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
   }
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped by the calling thread.
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_notify);
+
+  ObjectMonitor* monitor;
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_notify, CHECK);
+  } else {
+    // The ObjectMonitor* can't be async deflated until ownership is
+    // dropped by the calling thread.
+    monitor = inflate(current, obj(), inflate_cause_notify);
+  }
   monitor->notifyAll(CHECK);
 }
 
@@ -741,7 +849,8 @@ static SharedGlobals GVars;
 
 static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark_acquire();
-  if (!mark.is_being_inflated()) {
+  if (!mark.is_being_inflated() || LockingMode == LM_LIGHTWEIGHT) {
+    // New lightweight locking does not use the markWord::INFLATING() protocol.
     return mark;       // normal fast-path return
   }
 
@@ -776,11 +885,11 @@ static markWord read_stable_mark(oop obj) {
         // then for each thread on the list, set the flag and unpark() the thread.
 
         // Index into the lock array based on the current object address.
-        static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
+        static_assert(is_power_of_2(inflation_lock_count()), "must be");
+        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (inflation_lock_count() - 1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        gInflationLocks[ix]->lock();
+        assert(ix < inflation_lock_count(), "invariant");
+        inflation_lock(ix)->lock();
         while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
@@ -791,7 +900,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        gInflationLocks[ix]->unlock();
+        inflation_lock(ix)->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
@@ -816,7 +925,7 @@ static markWord read_stable_mark(oop obj) {
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
 
-static inline intptr_t get_next_hash(Thread* current, oop obj) {
+static intptr_t get_next_hash(Thread* current, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
     // This form uses global Park-Miller RNG.
@@ -856,7 +965,33 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
+static intptr_t install_hash_code(Thread* current, oop obj) {
+  assert(UseObjectMonitorTable && LockingMode == LM_LIGHTWEIGHT, "must be");
+
+  markWord mark = obj->mark_acquire();
+  for (;;) {
+    intptr_t hash = mark.hash();
+    if (hash != 0) {
+      return hash;
+    }
+
+    hash = get_next_hash(current, obj);
+    const markWord old_mark = mark;
+    const markWord new_mark = old_mark.copy_set_hash(hash);
+
+    mark = obj->cas_set_mark(new_mark, old_mark);
+    if (old_mark == mark) {
+      return hash;
+    }
+  }
+}
+
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
+  if (UseObjectMonitorTable) {
+    // Since the monitor isn't in the object header, the hash can simply be
+    // installed in the object header.
+    return install_hash_code(current, obj);
+  }
 
   while (true) {
     ObjectMonitor* monitor = nullptr;
@@ -864,10 +999,10 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     intptr_t hash;
     markWord mark = read_stable_mark(obj);
     if (VerifyHeavyMonitors) {
-      assert(UseHeavyMonitors, "+VerifyHeavyMonitors requires +UseHeavyMonitors");
-      guarantee(!mark.has_locker(), "must not be stack locked");
+      assert(LockingMode == LM_MONITOR, "+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
+      guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
     }
-    if (mark.is_neutral()) {               // if this is a normal header
+    if (mark.is_unlocked() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
@@ -878,6 +1013,10 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       test = obj->cas_set_mark(temp, mark);
       if (test == mark) {                  // if the hash was installed, return it
         return hash;
+      }
+      if (LockingMode == LM_LIGHTWEIGHT) {
+        // CAS failed, retry
+        continue;
       }
       // Failed to install the hash. It could be that another thread
       // installed the hash just before our attempt or inflation has
@@ -910,8 +1049,10 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (current->is_lock_owned((address)mark.locker())) {
-      // This is a stack lock owned by the calling thread so fetch the
+    } else if (LockingMode == LM_LEGACY && mark.has_locker()
+               && current->is_Java_thread()
+               && JavaThread::cast(current)->is_lock_owned((address)mark.locker())) {
+      // This is a stack-lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
       temp = mark.displaced_mark_helper();
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
@@ -922,7 +1063,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       // WARNING:
       // The displaced header in the BasicLock on a thread's stack
       // is strictly immutable. It CANNOT be changed in ANY cases.
-      // So we have to inflate the stack lock into an ObjectMonitor
+      // So we have to inflate the stack-lock into an ObjectMonitor
       // even if the current thread owns the lock. The BasicLock on
       // a thread's stack can be asynchronously read by other threads
       // during an inflate() call so any change to that stack memory
@@ -931,9 +1072,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
     // Inflate the monitor to set the hash.
 
-    // An async deflation can race after the inflate() call and before we
-    // can update the ObjectMonitor's header with the hash value below.
-    monitor = inflate(current, obj, inflate_cause_hash_code);
+    // There's no need to inflate if the mark has already got a monitor.
+    // NOTE: an async deflation can race after we get the monitor and
+    // before we can update the ObjectMonitor's header with the hash
+    // value below.
+    monitor = mark.has_monitor() ? mark.monitor() : inflate(current, obj, inflate_cause_hash_code);
     // Load ObjectMonitor's header/dmw field and see if it has a hash.
     mark = monitor->header();
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
@@ -942,7 +1085,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       hash = get_next_hash(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash)   ;  // merge the hash into header
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-      uintptr_t v = Atomic::cmpxchg((volatile uintptr_t*)monitor->header_addr(), mark.value(), temp.value());
+      uintptr_t v = Atomic::cmpxchg(monitor->metadata_addr(), mark.value(), temp.value());
       test = markWord(v);
       if (test != mark) {
         // The attempt to update the ObjectMonitor's header/dmw field
@@ -954,7 +1097,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
         assert(test.is_neutral(), "invariant: header=" INTPTR_FORMAT, test.value());
         assert(hash != 0, "should only have lost the race to a thread that set a non-zero hash");
       }
-      if (monitor->is_being_async_deflated()) {
+      if (monitor->is_being_async_deflated() && !UseObjectMonitorTable) {
         // If we detect that async deflation has occurred, then we
         // attempt to restore the header/dmw to the object's header
         // so that we only retry once if the deflater thread happens
@@ -975,140 +1118,199 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
 
   markWord mark = read_stable_mark(obj);
 
-  // Uncontended case, header points to stack
-  if (mark.has_locker()) {
+  if (LockingMode == LM_LEGACY && mark.has_locker()) {
+    // stack-locked case, header points into owner's stack
     return current->is_lock_owned((address)mark.locker());
   }
-  // Contended case, header points to ObjectMonitor (tagged pointer)
-  if (mark.has_monitor()) {
+
+  if (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked()) {
+    // fast-locking case, see if lock is in current's lock stack
+    return current->lock_stack().contains(h_obj());
+  }
+
+  while (LockingMode == LM_LIGHTWEIGHT && mark.has_monitor()) {
+    ObjectMonitor* monitor = read_monitor(current, obj, mark);
+    if (monitor != nullptr) {
+      return monitor->is_entered(current) != 0;
+    }
+    // Racing with inflation/deflation, retry
+    mark = obj->mark_acquire();
+
+    if (mark.is_fast_locked()) {
+      // Some other thread fast_locked, current could not have held the lock
+      return false;
+    }
+  }
+
+  if (LockingMode != LM_LIGHTWEIGHT && mark.has_monitor()) {
+    // Inflated monitor so header points to ObjectMonitor (tagged pointer).
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
-    ObjectMonitor* monitor = mark.monitor();
+    ObjectMonitor* monitor = read_monitor(mark);
     return monitor->is_entered(current) != 0;
   }
   // Unlocked case, header in place
-  assert(mark.is_neutral(), "sanity check");
+  assert(mark.is_unlocked(), "sanity check");
   return false;
 }
 
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   oop obj = h_obj();
-  address owner = nullptr;
-
   markWord mark = read_stable_mark(obj);
 
-  // Uncontended case, header points to stack
-  if (mark.has_locker()) {
-    owner = (address) mark.locker();
+  if (LockingMode == LM_LEGACY && mark.has_locker()) {
+    // stack-locked so header points into owner's stack.
+    // owning_thread_from_monitor_owner() may also return null here:
+    return Threads::owning_thread_from_stacklock(t_list, (address) mark.locker());
   }
 
-  // Contended case, header points to ObjectMonitor (tagged pointer)
-  else if (mark.has_monitor()) {
+  if (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked()) {
+    // fast-locked so get owner from the object.
+    // owning_thread_from_object() may also return null here:
+    return Threads::owning_thread_from_object(t_list, h_obj());
+  }
+
+  while (LockingMode == LM_LIGHTWEIGHT && mark.has_monitor()) {
+    ObjectMonitor* monitor = read_monitor(Thread::current(), obj, mark);
+    if (monitor != nullptr) {
+      return Threads::owning_thread_from_monitor(t_list, monitor);
+    }
+    // Racing with inflation/deflation, retry
+    mark = obj->mark_acquire();
+
+    if (mark.is_fast_locked()) {
+      // Some other thread fast_locked
+      return Threads::owning_thread_from_object(t_list, h_obj());
+    }
+  }
+
+  if (LockingMode != LM_LIGHTWEIGHT && mark.has_monitor()) {
+    // Inflated monitor so header points to ObjectMonitor (tagged pointer).
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
-    ObjectMonitor* monitor = mark.monitor();
+    ObjectMonitor* monitor = read_monitor(mark);
     assert(monitor != nullptr, "monitor should be non-null");
-    owner = (address) monitor->owner();
-  }
-
-  if (owner != nullptr) {
-    // owning_thread_from_monitor_owner() may also return null here
-    return Threads::owning_thread_from_monitor_owner(t_list, owner);
+    // owning_thread_from_monitor() may also return null here:
+    return Threads::owning_thread_from_monitor(t_list, monitor);
   }
 
   // Unlocked case, header in place
   // Cannot have assertion since this object may have been
   // locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
+  // assert(mark.is_unlocked(), "sanity check");
 
   return nullptr;
 }
 
 // Visitors ...
 
-// Iterate ObjectMonitors where the owner == thread; this does NOT include
-// ObjectMonitors where owner is set to a stack lock address in thread.
-//
-// This version of monitors_iterate() works with the in-use monitor list.
-//
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
+// Iterate over all ObjectMonitors.
+template <typename Function>
+void ObjectSynchronizer::monitors_iterate(Function function) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   while (iter.has_next()) {
-    ObjectMonitor* mid = iter.next();
-    if (mid->owner() != thread) {
-      // Not owned by the target thread and intentionally skips when owner
-      // is set to a stack lock address in the target thread.
-      continue;
-    }
-    if (!mid->is_being_async_deflated() && mid->object_peek() != nullptr) {
-      // Only process with closure if the object is set.
-
-      // monitors_iterate() is only called at a safepoint or when the
-      // target thread is suspended or when the target thread is
-      // operating on itself. The current closures in use today are
-      // only interested in an owned ObjectMonitor and ownership
-      // cannot be dropped under the calling contexts so the
-      // ObjectMonitor cannot be async deflated.
-      closure->do_monitor(mid);
-    }
+    ObjectMonitor* monitor = iter.next();
+    function(monitor);
   }
 }
 
-// This version of monitors_iterate() works with the specified linked list.
-//
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure,
-                                          ObjectMonitorsHashtable::PtrList* list,
-                                          JavaThread* thread) {
-  typedef LinkedListIterator<ObjectMonitor*> ObjectMonitorIterator;
-  ObjectMonitorIterator iter(list->head());
-  while (!iter.is_empty()) {
-    ObjectMonitor* mid = *iter.next();
-    // Owner set to a stack lock address in thread should never be seen here:
-    assert(mid->owner() == thread, "must be");
-    if (!mid->is_being_async_deflated() && mid->object_peek() != nullptr) {
-      // Only process with closure if the object is set.
+// Iterate ObjectMonitors owned by any thread and where the owner `filter`
+// returns true.
+template <typename OwnerFilter>
+void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
+  monitors_iterate([&](ObjectMonitor* monitor) {
+    // This function is only called at a safepoint or when the
+    // target thread is suspended or when the target thread is
+    // operating on itself. The current closures in use today are
+    // only interested in an owned ObjectMonitor and ownership
+    // cannot be dropped under the calling contexts so the
+    // ObjectMonitor cannot be async deflated.
+    if (monitor->has_owner() && filter(monitor)) {
+      assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
 
-      // monitors_iterate() is only called at a safepoint or when the
-      // target thread is suspended or when the target thread is
-      // operating on itself. The current closures in use today are
-      // only interested in an owned ObjectMonitor and ownership
-      // cannot be dropped under the calling contexts so the
-      // ObjectMonitor cannot be async deflated.
-      closure->do_monitor(mid);
+      closure->do_monitor(monitor);
     }
-  }
+  });
+}
+
+// Iterate ObjectMonitors where the owner == thread; this does NOT include
+// ObjectMonitors where owner is set to a stack-lock address in thread.
+void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
+  int64_t key = ObjectMonitor::owner_id_from(thread);
+  auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
+  return owned_monitors_iterate_filtered(closure, thread_filter);
+}
+
+void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, oop vthread) {
+  int64_t key = ObjectMonitor::owner_id_from(vthread);
+  auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
+  return owned_monitors_iterate_filtered(closure, thread_filter);
+}
+
+// Iterate ObjectMonitors owned by any thread.
+void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure) {
+  auto all_filter = [&](ObjectMonitor* monitor) { return true; };
+  return owned_monitors_iterate_filtered(closure, all_filter);
 }
 
 static bool monitors_used_above_threshold(MonitorList* list) {
   if (MonitorUsedDeflationThreshold == 0) {  // disabled case is easy
     return false;
   }
-  // Start with ceiling based on a per-thread estimate:
-  size_t ceiling = ObjectSynchronizer::in_use_list_ceiling();
-  size_t old_ceiling = ceiling;
-  if (ceiling < list->max()) {
-    // The max used by the system has exceeded the ceiling so use that:
-    ceiling = list->max();
-  }
   size_t monitors_used = list->count();
   if (monitors_used == 0) {  // empty list is easy
     return false;
   }
-  if (NoAsyncDeflationProgressMax != 0 &&
-      _no_progress_cnt >= NoAsyncDeflationProgressMax) {
-    float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-    size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
-    ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
-    log_info(monitorinflation)("Too many deflations without progress; "
-                               "bumping in_use_list_ceiling from " SIZE_FORMAT
-                               " to " SIZE_FORMAT, old_ceiling, new_ceiling);
-    _no_progress_cnt = 0;
-    ceiling = new_ceiling;
-  }
+  size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
+  // Make sure that we use a ceiling value that is not lower than
+  // previous, not lower than the recorded max used by the system, and
+  // not lower than the current number of monitors in use (which can
+  // race ahead of max). The result is guaranteed > 0.
+  size_t ceiling = MAX3(old_ceiling, list->max(), monitors_used);
 
   // Check if our monitor usage is above the threshold:
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
-  return int(monitor_usage) > MonitorUsedDeflationThreshold;
+  if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
+    // Deflate monitors if over the threshold percentage, unless no
+    // progress on previous deflations.
+    bool is_above_threshold = true;
+
+    // Check if it's time to adjust the in_use_list_ceiling up, due
+    // to too many async deflation attempts without any progress.
+    if (NoAsyncDeflationProgressMax != 0 &&
+        _no_progress_cnt >= NoAsyncDeflationProgressMax) {
+      double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
+      size_t delta = (size_t)(ceiling * remainder) + 1;
+      size_t new_ceiling = (ceiling > SIZE_MAX - delta)
+        ? SIZE_MAX         // Overflow, let's clamp new_ceiling.
+        : ceiling + delta;
+
+      ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
+      log_info(monitorinflation)("Too many deflations without progress; "
+                                 "bumping in_use_list_ceiling from %zu"
+                                 " to %zu", old_ceiling, new_ceiling);
+      _no_progress_cnt = 0;
+      ceiling = new_ceiling;
+
+      // Check if our monitor usage is still above the threshold:
+      monitor_usage = (monitors_used * 100LL) / ceiling;
+      is_above_threshold = int(monitor_usage) > MonitorUsedDeflationThreshold;
+    }
+    log_info(monitorinflation)("monitors_used=%zu, ceiling=%zu"
+                               ", monitor_usage=%zu, threshold=%d",
+                               monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
+    return is_above_threshold;
+  }
+
+  return false;
+}
+
+size_t ObjectSynchronizer::in_use_list_count() {
+  return _in_use_list.count();
+}
+
+size_t ObjectSynchronizer::in_use_list_max() {
+  return _in_use_list.max();
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
@@ -1130,30 +1332,66 @@ void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
 bool ObjectSynchronizer::is_async_deflation_needed() {
   if (is_async_deflation_requested()) {
     // Async deflation request.
+    log_info(monitorinflation)("Async deflation needed: explicit request");
     return true;
   }
+
+  jlong time_since_last = time_since_last_async_deflation_ms();
+
   if (AsyncDeflationInterval > 0 &&
-      time_since_last_async_deflation_ms() > AsyncDeflationInterval &&
+      time_since_last > AsyncDeflationInterval &&
       monitors_used_above_threshold(&_in_use_list)) {
     // It's been longer than our specified deflate interval and there
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the MonitorDeflationThread.
+    log_info(monitorinflation)("Async deflation needed: monitors used are above the threshold");
     return true;
   }
+
+  if (GuaranteedAsyncDeflationInterval > 0 &&
+      time_since_last > GuaranteedAsyncDeflationInterval) {
+    // It's been longer than our specified guaranteed deflate interval.
+    // We need to clean up the used monitors even if the threshold is
+    // not reached, to keep the memory utilization at bay when many threads
+    // touched many monitors.
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (%zd ms) "
+                               "is greater than time since last deflation (" JLONG_FORMAT " ms)",
+                               GuaranteedAsyncDeflationInterval, time_since_last);
+
+    // If this deflation has no progress, then it should not affect the no-progress
+    // tracking, otherwise threshold heuristics would think it was triggered, experienced
+    // no progress, and needs to backoff more aggressively. In this "no progress" case,
+    // the generic code would bump the no-progress counter, and we compensate for that
+    // by telling it to skip the update.
+    //
+    // If this deflation has progress, then it should let non-progress tracking
+    // know about this, otherwise the threshold heuristics would kick in, potentially
+    // experience no-progress due to aggressive cleanup by this deflation, and think
+    // it is still in no-progress stride. In this "progress" case, the generic code would
+    // zero the counter, and we allow it to happen.
+    _no_progress_skip_increment = true;
+
+    return true;
+  }
+
   return false;
 }
 
-bool ObjectSynchronizer::request_deflate_idle_monitors() {
+void ObjectSynchronizer::request_deflate_idle_monitors() {
+  MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
+  set_is_async_deflation_requested(true);
+  ml.notify_all();
+}
+
+bool ObjectSynchronizer::request_deflate_idle_monitors_from_wb() {
   JavaThread* current = JavaThread::current();
   bool ret_code = false;
 
   jlong last_time = last_async_deflation_time_ns();
-  set_is_async_deflation_requested(true);
-  {
-    MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
-    ml.notify_all();
-  }
+
+  request_deflate_idle_monitors();
+
   const int N_CHECKS = 5;
   for (int i = 0; i < N_CHECKS; i++) {  // sleep for at most 5 seconds
     if (last_async_deflation_time_ns() > last_time) {
@@ -1182,7 +1420,11 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != nullptr, "invariant");
-  event->set_monitorClass(obj->klass());
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
   event->commit();
@@ -1190,9 +1432,10 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 
 // Fast path code shared by multiple functions
 void ObjectSynchronizer::inflate_helper(oop obj) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "only inflate through enter");
   markWord mark = obj->mark_acquire();
   if (mark.has_monitor()) {
-    ObjectMonitor* monitor = mark.monitor();
+    ObjectMonitor* monitor = read_monitor(mark);
     markWord dmw = monitor->header();
     assert(dmw.is_neutral(), "sanity check: header=" INTPTR_FORMAT, dmw.value());
     return;
@@ -1200,24 +1443,52 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
   (void)inflate(Thread::current(), obj, inflate_cause_vm_internal);
 }
 
-ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
-                                           const InflateCause cause) {
+ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop obj, const InflateCause cause) {
+  assert(current == Thread::current(), "must be");
+  assert(LockingMode != LM_LIGHTWEIGHT, "only inflate through enter");
+  return inflate_impl(current->is_Java_thread() ? JavaThread::cast(current) : nullptr, obj, cause);
+}
+
+ObjectMonitor* ObjectSynchronizer::inflate_for(JavaThread* thread, oop obj, const InflateCause cause) {
+  assert(thread == Thread::current() || thread->is_obj_deopt_suspend(), "must be");
+  assert(LockingMode != LM_LIGHTWEIGHT, "LM_LIGHTWEIGHT cannot use inflate_for");
+  return inflate_impl(thread, obj, cause);
+}
+
+ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop object, const InflateCause cause) {
+  // The JavaThread* locking_thread requires that the locking_thread == Thread::current() or
+  // is suspended throughout the call by some other mechanism.
+  // The thread might be nullptr when called from a non JavaThread. (As may still be
+  // the case from FastHashCode). However it is only important for correctness that the
+  // thread is set when called from ObjectSynchronizer::enter from the owning thread,
+  // ObjectSynchronizer::enter_for from any thread, or ObjectSynchronizer::exit.
+  assert(LockingMode != LM_LIGHTWEIGHT, "LM_LIGHTWEIGHT cannot use inflate_impl");
   EventJavaMonitorInflate event;
 
   for (;;) {
     const markWord mark = object->mark_acquire();
 
     // The mark can be in one of the following states:
-    // *  Inflated     - just return
-    // *  Stack-locked - coerce it to inflated
-    // *  INFLATING    - busy wait for conversion to complete
-    // *  Neutral      - aggressively inflate the object.
+    // *  inflated     - If the ObjectMonitor owner is anonymous and the
+    //                   locking_thread owns the object lock, then we
+    //                   make the locking_thread the ObjectMonitor owner.
+    // *  stack-locked - Coerce it to inflated from stack-locked.
+    // *  INFLATING    - Busy wait for conversion from stack-locked to
+    //                   inflated.
+    // *  unlocked     - Aggressively inflate the object.
 
     // CASE: inflated
     if (mark.has_monitor()) {
       ObjectMonitor* inf = mark.monitor();
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+      if (inf->has_anonymous_owner() && locking_thread != nullptr) {
+        assert(LockingMode == LM_LEGACY, "invariant");
+        if (locking_thread->is_lock_owned((address)inf->stack_locker())) {
+          inf->set_stack_locker(nullptr);
+          inf->set_owner_from_anonymous(locking_thread);
+        }
+      }
       return inf;
     }
 
@@ -1233,18 +1504,18 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     }
 
     // CASE: stack-locked
-    // Could be stack-locked either by this thread or by some other thread.
+    // Could be stack-locked either by current or by some other thread.
     //
     // Note that we allocate the ObjectMonitor speculatively, _before_ attempting
     // to install INFLATING into the mark word.  We originally installed INFLATING,
     // allocated the ObjectMonitor, and then finally STed the address of the
     // ObjectMonitor into the mark.  This was correct, but artificially lengthened
     // the interval in which INFLATING appeared in the mark, thus increasing
-    // the odds of inflation contention.
-
+    // the odds of inflation contention. If we lose the race to set INFLATING,
+    // then we just delete the ObjectMonitor and loop around again.
+    //
     LogStreamHandle(Trace, monitorinflation) lsh;
-
-    if (mark.has_locker()) {
+    if (LockingMode == LM_LEGACY && mark.has_locker()) {
       ObjectMonitor* m = new ObjectMonitor(object);
       // Optimistically prepare the ObjectMonitor - anticipate successful CAS
       // We do this before the CAS in order to minimize the length of time
@@ -1294,12 +1565,17 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // Setup monitor fields to proper values -- prepare the monitor
       m->set_header(dmw);
 
-      // Optimization: if the mark.locker stack address is associated
-      // with this thread we could simply set m->_owner = current.
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-nullptr .... ST idiom.
-      m->set_owner_from(nullptr, mark.locker());
+      if (locking_thread != nullptr && locking_thread->is_lock_owned((address)mark.locker())) {
+        m->set_owner(locking_thread);
+      } else {
+        // Use ANONYMOUS_OWNER to indicate that the owner is the BasicLock on the stack,
+        // and set the stack locker field in the monitor.
+        m->set_stack_locker(mark.locker());
+        m->set_anonymous_owner();
+      }
       // TODO-FIXME: assert BasicLock->dhw != 0.
 
       // Must preserve store ordering. The monitor state must
@@ -1312,11 +1588,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // with the ObjectMonitor, it is safe to allow async deflation:
       _in_use_list.add(m);
 
-      // Hopefully the performance counters are allocated on distinct cache lines
-      // to avoid false sharing on MP systems ...
-      OM_PERFDATA_OP(Inflations, inc());
       if (log_is_enabled(Trace, monitorinflation)) {
-        ResourceMark rm(current);
+        ResourceMark rm;
         lsh.print_cr("inflate(has_locker): object=" INTPTR_FORMAT ", mark="
                      INTPTR_FORMAT ", type='%s'", p2i(object),
                      object->mark().value(), object->klass()->external_name());
@@ -1327,7 +1600,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       return m;
     }
 
-    // CASE: neutral
+    // CASE: unlocked
     // TODO-FIXME: for entry we currently inflate and then try to CAS _owner.
     // If we know we're inflating for entry it's better to inflate by swinging a
     // pre-locked ObjectMonitor pointer into the object header.   A successful
@@ -1336,9 +1609,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // to inflate and then CAS() again to try to swing _owner from null to current.
     // An inflateTry() method that we could call from enter() would be useful.
 
-    // Catch if the object's header is not neutral (not locked and
-    // not marked is what we care about here).
-    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    assert(mark.is_unlocked(), "invariant: header=" INTPTR_FORMAT, mark.value());
     ObjectMonitor* m = new ObjectMonitor(object);
     // prepare m for installation - set monitor to initial state
     m->set_header(mark);
@@ -1356,12 +1627,9 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // with the ObjectMonitor, it is safe to allow async deflation:
     _in_use_list.add(m);
 
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     if (log_is_enabled(Trace, monitorinflation)) {
-      ResourceMark rm(current);
-      lsh.print_cr("inflate(neutral): object=" INTPTR_FORMAT ", mark="
+      ResourceMark rm;
+      lsh.print_cr("inflate(unlocked): object=" INTPTR_FORMAT ", mark="
                    INTPTR_FORMAT ", type='%s'", p2i(object),
                    object->mark().value(), object->klass()->external_name());
     }
@@ -1372,77 +1640,25 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
   }
 }
 
-void ObjectSynchronizer::chk_for_block_req(JavaThread* current, const char* op_name,
-                                           const char* cnt_name, size_t cnt,
-                                           LogStream* ls, elapsedTimer* timer_p) {
-  if (!SafepointMechanism::should_process(current)) {
-    return;
-  }
-
-  // A safepoint/handshake has started.
-  if (ls != nullptr) {
-    timer_p->stop();
-    ls->print_cr("pausing %s: %s=" SIZE_FORMAT ", in_use_list stats: ceiling="
-                 SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                 op_name, cnt_name, cnt, in_use_list_ceiling(),
-                 _in_use_list.count(), _in_use_list.max());
-  }
-
-  {
-    // Honor block request.
-    ThreadBlockInVM tbivm(current);
-  }
-
-  if (ls != nullptr) {
-    ls->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
-                 ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
-                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-    timer_p->start();
-  }
-}
-
 // Walk the in-use list and deflate (at most MonitorDeflationMax) idle
 // ObjectMonitors. Returns the number of deflated ObjectMonitors.
 //
-// If table != nullptr, we gather owned ObjectMonitors indexed by the
-// owner in the table. Please note that ObjectMonitors where the owner
-// is set to a stack lock address are NOT associated with the JavaThread
-// that holds that stack lock. All of the current consumers of
-// ObjectMonitorsHashtable info only care about JNI locked monitors and
-// those do not have the owner set to a stack lock address.
-//
-size_t ObjectSynchronizer::deflate_monitor_list(Thread* current, LogStream* ls,
-                                                elapsedTimer* timer_p,
-                                                ObjectMonitorsHashtable* table) {
+size_t ObjectSynchronizer::deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   size_t deflated_count = 0;
+  Thread* current = Thread::current();
 
   while (iter.has_next()) {
     if (deflated_count >= (size_t)MonitorDeflationMax) {
       break;
     }
     ObjectMonitor* mid = iter.next();
-    if (mid->deflate_monitor()) {
+    if (mid->deflate_monitor(current)) {
       deflated_count++;
-    } else if (table != nullptr) {
-      // The caller is interested in the owned ObjectMonitors. This does
-      // not include when owner is set to a stack lock address in thread.
-      // This also does not capture unowned ObjectMonitors that cannot be
-      // deflated because of a waiter.
-      void* key = mid->owner();
-      // Since deflate_idle_monitors() and deflate_monitor_list() can be
-      // called more than once, we have to make sure the entry has not
-      // already been added.
-      if (key != nullptr && !table->has_entry(key, mid)) {
-        table->add_entry(key, mid);
-      }
     }
 
-    if (current->is_Java_thread()) {
-      // A JavaThread must check for a safepoint/handshake and honor it.
-      chk_for_block_req(JavaThread::cast(current), "deflation", "deflated_count",
-                        deflated_count, ls, timer_p);
-    }
+    // Must check for a safepoint/handshake and honor it.
+    safepointer->block_for_safepoint("deflation", "deflated_count", deflated_count);
   }
 
   return deflated_count;
@@ -1455,109 +1671,195 @@ class HandshakeForDeflation : public HandshakeClosure {
   void do_thread(Thread* thread) {
     log_trace(monitorinflation)("HandshakeForDeflation::do_thread: thread="
                                 INTPTR_FORMAT, p2i(thread));
+    if (thread->is_Java_thread()) {
+      // Clear OM cache
+      JavaThread* jt = JavaThread::cast(thread);
+      jt->om_clear_monitor_cache();
+    }
   }
 };
 
+class VM_RendezvousGCThreads : public VM_Operation {
+public:
+  bool evaluate_at_safepoint() const override { return false; }
+  VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
+  void doit() override {
+    Universe::heap()->safepoint_synchronize_begin();
+    Universe::heap()->safepoint_synchronize_end();
+  };
+};
+
+static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list,
+                              ObjectMonitorDeflationSafepointer* safepointer) {
+  NativeHeapTrimmer::SuspendMark sm("monitor deletion");
+  size_t deleted_count = 0;
+  for (ObjectMonitor* monitor: *delete_list) {
+    delete monitor;
+    deleted_count++;
+    // A JavaThread must check for a safepoint/handshake and honor it.
+    safepointer->block_for_safepoint("deletion", "deleted_count", deleted_count);
+  }
+  return deleted_count;
+}
+
+class ObjectMonitorDeflationLogging: public StackObj {
+  LogStreamHandle(Debug, monitorinflation) _debug;
+  LogStreamHandle(Info, monitorinflation)  _info;
+  LogStream*                               _stream;
+  elapsedTimer                             _timer;
+
+  size_t ceiling() const { return ObjectSynchronizer::in_use_list_ceiling(); }
+  size_t count() const   { return ObjectSynchronizer::in_use_list_count(); }
+  size_t max() const     { return ObjectSynchronizer::in_use_list_max(); }
+
+public:
+  ObjectMonitorDeflationLogging()
+    : _debug(), _info(), _stream(nullptr) {
+    if (_debug.is_enabled()) {
+      _stream = &_debug;
+    } else if (_info.is_enabled()) {
+      _stream = &_info;
+    }
+  }
+
+  void begin() {
+    if (_stream != nullptr) {
+      _stream->print_cr("begin deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
+                        ceiling(), count(), max());
+      _timer.start();
+    }
+  }
+
+  void before_handshake(size_t unlinked_count) {
+    if (_stream != nullptr) {
+      _timer.stop();
+      _stream->print_cr("before handshaking: unlinked_count=%zu"
+                        ", in_use_list stats: ceiling=%zu, count="
+                        "%zu, max=%zu",
+                        unlinked_count, ceiling(), count(), max());
+    }
+  }
+
+  void after_handshake() {
+    if (_stream != nullptr) {
+      _stream->print_cr("after handshaking: in_use_list stats: ceiling="
+                        "%zu, count=%zu, max=%zu",
+                        ceiling(), count(), max());
+      _timer.start();
+    }
+  }
+
+  void end(size_t deflated_count, size_t unlinked_count) {
+    if (_stream != nullptr) {
+      _timer.stop();
+      if (deflated_count != 0 || unlinked_count != 0 || _debug.is_enabled()) {
+        _stream->print_cr("deflated_count=%zu, {unlinked,deleted}_count=%zu monitors in %3.7f secs",
+                          deflated_count, unlinked_count, _timer.seconds());
+      }
+      _stream->print_cr("end deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
+                        ceiling(), count(), max());
+    }
+  }
+
+  void before_block_for_safepoint(const char* op_name, const char* cnt_name, size_t cnt) {
+    if (_stream != nullptr) {
+      _timer.stop();
+      _stream->print_cr("pausing %s: %s=%zu, in_use_list stats: ceiling="
+                        "%zu, count=%zu, max=%zu",
+                        op_name, cnt_name, cnt, ceiling(), count(), max());
+    }
+  }
+
+  void after_block_for_safepoint(const char* op_name) {
+    if (_stream != nullptr) {
+      _stream->print_cr("resuming %s: in_use_list stats: ceiling=%zu"
+                        ", count=%zu, max=%zu", op_name,
+                        ceiling(), count(), max());
+      _timer.start();
+    }
+  }
+};
+
+void ObjectMonitorDeflationSafepointer::block_for_safepoint(const char* op_name, const char* count_name, size_t counter) {
+  if (!SafepointMechanism::should_process(_current)) {
+    return;
+  }
+
+  // A safepoint/handshake has started.
+  _log->before_block_for_safepoint(op_name, count_name, counter);
+
+  {
+    // Honor block request.
+    ThreadBlockInVM tbivm(_current);
+  }
+
+  _log->after_block_for_safepoint(op_name);
+}
+
 // This function is called by the MonitorDeflationThread to deflate
-// ObjectMonitors. It is also called via do_final_audit_and_print_stats()
-// and VM_ThreadDump::doit() by the VMThread.
-size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table) {
-  Thread* current = Thread::current();
-  if (current->is_Java_thread()) {
-    // The async deflation request has been processed.
-    _last_async_deflation_time_ns = os::javaTimeNanos();
-    set_is_async_deflation_requested(false);
-  }
+// ObjectMonitors.
+size_t ObjectSynchronizer::deflate_idle_monitors() {
+  JavaThread* current = JavaThread::current();
+  assert(current->is_monitor_deflation_thread(), "The only monitor deflater");
 
-  LogStreamHandle(Debug, monitorinflation) lsh_debug;
-  LogStreamHandle(Info, monitorinflation) lsh_info;
-  LogStream* ls = nullptr;
-  if (log_is_enabled(Debug, monitorinflation)) {
-    ls = &lsh_debug;
-  } else if (log_is_enabled(Info, monitorinflation)) {
-    ls = &lsh_info;
-  }
+  // The async deflation request has been processed.
+  _last_async_deflation_time_ns = os::javaTimeNanos();
+  set_is_async_deflation_requested(false);
 
-  elapsedTimer timer;
-  if (ls != nullptr) {
-    ls->print_cr("begin deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-    timer.start();
-  }
+  ObjectMonitorDeflationLogging log;
+  ObjectMonitorDeflationSafepointer safepointer(current, &log);
+
+  log.begin();
 
   // Deflate some idle ObjectMonitors.
-  size_t deflated_count = deflate_monitor_list(current, ls, &timer, table);
+  size_t deflated_count = deflate_monitor_list(&safepointer);
+
+  // Unlink the deflated ObjectMonitors from the in-use list.
   size_t unlinked_count = 0;
   size_t deleted_count = 0;
-  if (deflated_count > 0 || is_final_audit()) {
-    // There are ObjectMonitors that have been deflated or this is the
-    // final audit and all the remaining ObjectMonitors have been
-    // deflated, BUT the MonitorDeflationThread blocked for the final
-    // safepoint during unlinking.
-
-    // Unlink deflated ObjectMonitors from the in-use list.
-    ResourceMark rm;
+  if (deflated_count > 0) {
+    ResourceMark rm(current);
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
-    unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, &delete_list);
-    if (current->is_Java_thread()) {
-      if (ls != nullptr) {
-        timer.stop();
-        ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
-                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                     SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, in_use_list_ceiling(),
-                     _in_use_list.count(), _in_use_list.max());
-      }
+    unlinked_count = _in_use_list.unlink_deflated(deflated_count, &delete_list, &safepointer);
 
-      // A JavaThread needs to handshake in order to safely free the
-      // ObjectMonitors that were deflated in this cycle.
-      HandshakeForDeflation hfd_hc;
-      Handshake::execute(&hfd_hc);
-
-      if (ls != nullptr) {
-        ls->print_cr("after handshaking: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        timer.start();
+#ifdef ASSERT
+    if (UseObjectMonitorTable) {
+      for (ObjectMonitor* monitor : delete_list) {
+        assert(!LightweightSynchronizer::contains_monitor(current, monitor), "Should have been removed");
       }
     }
+#endif
+
+    log.before_handshake(unlinked_count);
+
+    // A JavaThread needs to handshake in order to safely free the
+    // ObjectMonitors that were deflated in this cycle.
+    HandshakeForDeflation hfd_hc;
+    Handshake::execute(&hfd_hc);
+    // Also, we sync and desync GC threads around the handshake, so that they can
+    // safely read the mark-word and look-through to the object-monitor, without
+    // being afraid that the object-monitor is going away.
+    VM_RendezvousGCThreads sync_gc;
+    VMThread::execute(&sync_gc);
+
+    log.after_handshake();
 
     // After the handshake, safely free the ObjectMonitors that were
-    // deflated in this cycle.
-    for (ObjectMonitor* monitor: delete_list) {
-      delete monitor;
-      deleted_count++;
+    // deflated and unlinked in this cycle.
 
-      if (current->is_Java_thread()) {
-        // A JavaThread must check for a safepoint/handshake and honor it.
-        chk_for_block_req(JavaThread::cast(current), "deletion", "deleted_count",
-                          deleted_count, ls, &timer);
-      }
-    }
+    // Delete the unlinked ObjectMonitors.
+    deleted_count = delete_monitors(&delete_list, &safepointer);
     assert(unlinked_count == deleted_count, "must be");
   }
 
-  if (ls != nullptr) {
-    timer.stop();
-    if (deflated_count != 0 || unlinked_count != 0 || log_is_enabled(Debug, monitorinflation)) {
-      ls->print_cr("deflated_count=" SIZE_FORMAT ", {unlinked,deleted}_count=" SIZE_FORMAT " monitors in %3.7f secs",
-                   deflated_count, unlinked_count, timer.seconds());
-    }
-    ls->print_cr("end deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-    if (table != nullptr) {
-      ls->print_cr("ObjectMonitorsHashtable: key_count=" SIZE_FORMAT ", om_count=" SIZE_FORMAT,
-                   table->key_count(), table->om_count());
-    }
-  }
-
-  OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
-  OM_PERFDATA_OP(Deflations, inc(deflated_count));
+  log.end(deflated_count, unlinked_count);
 
   GVars.stw_random = os::random();
 
   if (deflated_count != 0) {
     _no_progress_cnt = 0;
+  } else if (_no_progress_skip_increment) {
+    _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
   }
@@ -1599,7 +1901,7 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(JavaThread* current) {
   assert(current == JavaThread::current(), "must be current Java thread");
   NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(current);
-  ObjectSynchronizer::monitors_iterate(&rjmc, current);
+  ObjectSynchronizer::owned_monitors_iterate(&rjmc, current);
   assert(!current->has_pending_exception(), "Should not be possible");
   current->clear_pending_exception();
   assert(current->held_monitor_count() == 0, "Should not be possible");
@@ -1653,44 +1955,18 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
-    // Do deflations in order to reduce the in-use monitor population
-    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // which is called by ObjectSynchronizer::audit_and_print_stats().
-    while (deflate_idle_monitors(/* ObjectMonitorsHashtable is not needed here */ nullptr) > 0) {
-      ; // empty
-    }
-    // The other audit_and_print_stats() call is done at the Debug
-    // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
-    audit_and_print_stats(true /* on_exit */);
+    LogStreamHandle(Info, monitorinflation) ls;
+    audit_and_print_stats(&ls, true /* on_exit */);
   }
 }
 
-// This function can be called at a safepoint or it can be called when
-// we are trying to exit the VM. When we are trying to exit the VM, the
-// list walker functions can run in parallel with the other list
-// operations so spin-locking is used for safety.
-//
+// This function can be called by the MonitorDeflationThread or it can be called when
+// we are trying to exit the VM. The list walker functions can run in parallel with
+// the other list operations.
 // Calls to this function can be added in various places as a debugging
-// aid; pass 'true' for the 'on_exit' parameter to have in-use monitor
-// details logged at the Info level and 'false' for the 'on_exit'
-// parameter to have in-use monitor details logged at the Trace level.
+// aid.
 //
-void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
-  assert(on_exit || SafepointSynchronize::is_at_safepoint(), "invariant");
-
-  LogStreamHandle(Debug, monitorinflation) lsh_debug;
-  LogStreamHandle(Info, monitorinflation) lsh_info;
-  LogStreamHandle(Trace, monitorinflation) lsh_trace;
-  LogStream* ls = nullptr;
-  if (log_is_enabled(Trace, monitorinflation)) {
-    ls = &lsh_trace;
-  } else if (log_is_enabled(Debug, monitorinflation)) {
-    ls = &lsh_debug;
-  } else if (log_is_enabled(Info, monitorinflation)) {
-    ls = &lsh_info;
-  }
-  assert(ls != nullptr, "sanity check");
-
+void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
   int error_cnt = 0;
 
   ls->print_cr("Checking in_use_list:");
@@ -1702,12 +1978,14 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     log_error(monitorinflation)("found in_use_list errors: error_cnt=%d", error_cnt);
   }
 
-  if ((on_exit && log_is_enabled(Info, monitorinflation)) ||
-      (!on_exit && log_is_enabled(Trace, monitorinflation))) {
-    // When exiting this log output is at the Info level. When called
-    // at a safepoint, this log output is at the Trace level since
-    // there can be a lot of it.
-    log_in_use_monitor_details(ls);
+  // When exiting, only log the interesting entries at the Info level.
+  // When called at intervals by the MonitorDeflationThread, log output
+  // at the Trace level since there can be a lot of it.
+  if (!on_exit && log_is_enabled(Trace, monitorinflation)) {
+    LogStreamHandle(Trace, monitorinflation) ls_tr;
+    log_in_use_monitor_details(&ls_tr, true /* log_all */);
+  } else if (on_exit) {
+    log_in_use_monitor_details(ls, false /* log_all */);
   }
 
   ls->flush();
@@ -1719,7 +1997,7 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
 void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   size_t l_in_use_count = _in_use_list.count();
   size_t l_in_use_max = _in_use_list.max();
-  out->print_cr("count=" SIZE_FORMAT ", max=" SIZE_FORMAT, l_in_use_count,
+  out->print_cr("count=%zu, max=%zu", l_in_use_count,
                 l_in_use_max);
 
   size_t ck_in_use_count = 0;
@@ -1731,21 +2009,21 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   }
 
   if (l_in_use_count == ck_in_use_count) {
-    out->print_cr("in_use_count=" SIZE_FORMAT " equals ck_in_use_count="
-                  SIZE_FORMAT, l_in_use_count, ck_in_use_count);
+    out->print_cr("in_use_count=%zu equals ck_in_use_count=%zu",
+                  l_in_use_count, ck_in_use_count);
   } else {
-    out->print_cr("WARNING: in_use_count=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_count=" SIZE_FORMAT, l_in_use_count,
+    out->print_cr("WARNING: in_use_count=%zu is not equal to "
+                  "ck_in_use_count=%zu", l_in_use_count,
                   ck_in_use_count);
   }
 
   size_t ck_in_use_max = _in_use_list.max();
   if (l_in_use_max == ck_in_use_max) {
-    out->print_cr("in_use_max=" SIZE_FORMAT " equals ck_in_use_max="
-                  SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("in_use_max=%zu equals ck_in_use_max=%zu",
+                  l_in_use_max, ck_in_use_max);
   } else {
-    out->print_cr("WARNING: in_use_max=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_max=" SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("WARNING: in_use_max=%zu is not equal to "
+                  "ck_in_use_max=%zu", l_in_use_max, ck_in_use_max);
   }
 }
 
@@ -1753,63 +2031,73 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
 void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                           int* error_cnt_p) {
   if (n->owner_is_DEFLATER_MARKER()) {
-    // This should not happen, but if it does, it is not fatal.
-    out->print_cr("WARNING: monitor=" INTPTR_FORMAT ": in-use monitor is "
-                  "deflated.", p2i(n));
+    // This could happen when monitor deflation blocks for a safepoint.
     return;
   }
-  if (n->header().value() == 0) {
+
+
+  if (n->metadata() == 0) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor must "
-                  "have non-null _header field.", p2i(n));
+                  "have non-null _metadata (header/hash) field.", p2i(n));
     *error_cnt_p = *error_cnt_p + 1;
   }
+
   const oop obj = n->object_peek();
-  if (obj != nullptr) {
-    const markWord mark = obj->mark();
-    if (!mark.has_monitor()) {
-      out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
-                    "object does not think it has a monitor: obj="
-                    INTPTR_FORMAT ", mark=" INTPTR_FORMAT, p2i(n),
-                    p2i(obj), mark.value());
-      *error_cnt_p = *error_cnt_p + 1;
-    }
-    ObjectMonitor* const obj_mon = mark.monitor();
-    if (n != obj_mon) {
-      out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
-                    "object does not refer to the same monitor: obj="
-                    INTPTR_FORMAT ", mark=" INTPTR_FORMAT ", obj_mon="
-                    INTPTR_FORMAT, p2i(n), p2i(obj), mark.value(), p2i(obj_mon));
-      *error_cnt_p = *error_cnt_p + 1;
-    }
+  if (obj == nullptr) {
+    return;
+  }
+
+  const markWord mark = obj->mark();
+  if (!mark.has_monitor()) {
+    out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
+                  "object does not think it has a monitor: obj="
+                  INTPTR_FORMAT ", mark=" INTPTR_FORMAT, p2i(n),
+                  p2i(obj), mark.value());
+    *error_cnt_p = *error_cnt_p + 1;
+    return;
+  }
+
+  ObjectMonitor* const obj_mon = read_monitor(Thread::current(), obj, mark);
+  if (n != obj_mon) {
+    out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
+                  "object does not refer to the same monitor: obj="
+                  INTPTR_FORMAT ", mark=" INTPTR_FORMAT ", obj_mon="
+                  INTPTR_FORMAT, p2i(n), p2i(obj), mark.value(), p2i(obj_mon));
+    *error_cnt_p = *error_cnt_p + 1;
   }
 }
 
 // Log details about ObjectMonitors on the in_use_list. The 'BHL'
 // flags indicate why the entry is in-use, 'object' and 'object type'
 // indicate the associated object and its type.
-void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
-  stringStream ss;
+void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
-    out->print_cr("In-use monitor info:");
+    stringStream ss;
+    out->print_cr("In-use monitor info%s:", log_all ? "" : " (eliding idle monitors)");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
     out->print_cr("==================  ===  ==================  ==================");
-    MonitorList::Iterator iter = _in_use_list.iterator();
-    while (iter.has_next()) {
-      ObjectMonitor* mid = iter.next();
-      const oop obj = mid->object_peek();
-      const markWord mark = mid->header();
-      ResourceMark rm;
-      out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(mid),
-                 mid->is_busy(), mark.hash() != 0, mid->owner() != nullptr,
-                 p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
-      if (mid->is_busy()) {
-        out->print(" (%s)", mid->is_busy_to_string(&ss));
-        ss.reset();
+
+    auto is_interesting = [&](ObjectMonitor* monitor) {
+      return log_all || monitor->has_owner() || monitor->is_busy();
+    };
+
+    monitors_iterate([&](ObjectMonitor* monitor) {
+      if (is_interesting(monitor)) {
+        const oop obj = monitor->object_peek();
+        const intptr_t hash = UseObjectMonitorTable ? monitor->hash() : monitor->header().hash();
+        ResourceMark rm;
+        out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(monitor),
+                   monitor->is_busy(), hash != 0, monitor->has_owner(),
+                   p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
+        if (monitor->is_busy()) {
+          out->print(" (%s)", monitor->is_busy_to_string(&ss));
+          ss.reset();
+        }
+        out->cr();
       }
-      out->cr();
-    }
+    });
   }
 
   out->flush();

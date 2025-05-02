@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 // Note: the Posix API aims to capture functionality available on all Posix
 // compliant platforms, but in practice the implementations may depend on
-// non-Posix functionality. For example, the use of lseek64 and ftruncate64.
+// non-Posix functionality.
 // This use of non-Posix API's is made possible by compiling/linking in a mode
 // that is not restricted to being fully Posix complaint, such as by declaring
 // -D_GNU_SOURCE. But be aware that in doing so we may enable non-Posix
@@ -44,8 +44,8 @@
     _result = _cmd; \
   } while(((int)_result == OS_ERR) && (errno == EINTR))
 
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
+#define RESTARTABLE_RETURN_SSIZE_T(_cmd) do { \
+  ssize_t _result; \
   RESTARTABLE(_cmd, _result); \
   return _result; \
 } while(false)
@@ -73,13 +73,6 @@ public:
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
 
-  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
-  //   is longer than PATH_MAX.
-  // On success, returns 'outbuf', which now contains the path.
-  // On error, it will return null and set errno. The content of 'outbuf' is undefined.
-  // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
-  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
-
   // Returns true if given uid is root.
   static bool is_root(uid_t uid);
 
@@ -97,6 +90,9 @@ public:
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  // clock ticks per second of the system
+  static int clock_tics_per_second();
 
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,

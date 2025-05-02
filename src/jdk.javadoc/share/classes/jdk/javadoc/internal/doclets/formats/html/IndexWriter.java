@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,22 +36,21 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DeprecatedTree;
-
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generator for either a single index or split index for all
@@ -64,6 +63,8 @@ public class IndexWriter extends HtmlDocletWriter {
 
     protected final IndexBuilder mainIndex;
     protected final boolean splitIndex;
+    protected final List<Character> allFirstCharacters;
+    protected final List<Character> displayFirstCharacters;
 
     /**
      * Generates the main index of all documented elements, terms defined in some documentation
@@ -73,22 +74,21 @@ public class IndexWriter extends HtmlDocletWriter {
      * initial letter; otherwise, a single page is generated for all items in the index.
      *
      * @param configuration the configuration
-     * @throws DocFileIOException if an error occurs while writing the files
+     * @throws DocletException if an error occurs while writing the files
      */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        IndexBuilder mainIndex = configuration.mainIndex;
+    public static void generate(HtmlConfiguration configuration) throws DocletException {
+        var writerFactory = configuration.getWriterFactory();
+        IndexBuilder mainIndex = configuration.indexBuilder;
         List<Character> firstCharacters = mainIndex.getFirstCharacters();
         if (configuration.getOptions().splitIndex()) {
             ListIterator<Character> iter = firstCharacters.listIterator();
             while (iter.hasNext()) {
                 Character ch = iter.next();
                 DocPath file = DocPaths.INDEX_FILES.resolve(DocPaths.indexN(iter.nextIndex()));
-                IndexWriter writer = new IndexWriter(configuration, file);
-                writer.generateIndexFile(firstCharacters, List.of(ch));
+                writerFactory.newIndexWriter(file, firstCharacters, List.of(ch)).buildPage();
             }
         } else {
-            IndexWriter writer = new IndexWriter(configuration, DocPaths.INDEX_ALL);
-            writer.generateIndexFile(firstCharacters, firstCharacters);
+            writerFactory.newIndexWriter(DocPaths.INDEX_ALL, firstCharacters, firstCharacters).buildPage();
         }
     }
 
@@ -97,22 +97,25 @@ public class IndexWriter extends HtmlDocletWriter {
      *
      * @param configuration  the current configuration
      * @param path           the file to be generated
+     * @param allFirstCharacters     the initial characters of all index items
+     * @param displayFirstCharacters the initial characters of the index items to appear on this page
      */
-    protected IndexWriter(HtmlConfiguration configuration, DocPath path) {
+    protected IndexWriter(HtmlConfiguration configuration, DocPath path,
+                          List<Character> allFirstCharacters, List<Character> displayFirstCharacters) {
         super(configuration, path);
-        this.mainIndex = configuration.mainIndex;
+        this.mainIndex = configuration.indexBuilder;
         this.splitIndex = configuration.getOptions().splitIndex();
+        this.allFirstCharacters = allFirstCharacters;
+        this.displayFirstCharacters = displayFirstCharacters;
     }
 
     /**
      * Generates a page containing some or all of the overall index.
      *
-     * @param allFirstCharacters     the initial characters of all index items
-     * @param displayFirstCharacters the initial characters of the index items to appear on this page
      * @throws DocFileIOException if an error occurs while writing the page
      */
-    protected void generateIndexFile(List<Character> allFirstCharacters,
-                                     List<Character> displayFirstCharacters) throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String title = splitIndex
                 ? resources.getText("doclet.Window_Split_Index", displayFirstCharacters.get(0))
                 : resources.getText("doclet.Window_Single_Index");
@@ -125,7 +128,7 @@ public class IndexWriter extends HtmlDocletWriter {
         addLinksForIndexes(allFirstCharacters, mainContent);
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.INDEX))
-                .addMainContent(HtmlTree.DIV(HtmlStyle.header,
+                .addMainContent(HtmlTree.DIV(HtmlStyles.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
@@ -145,7 +148,7 @@ public class IndexWriter extends HtmlDocletWriter {
     protected void addContents(char ch, SortedSet<IndexItem> items, Content content) {
         addHeading(ch, content);
 
-        var dl = HtmlTree.DL(HtmlStyle.index);
+        var dl = HtmlTree.DL(HtmlStyles.index);
         for (IndexItem item : items) {
             addDescription(item, dl);
         }
@@ -160,7 +163,7 @@ public class IndexWriter extends HtmlDocletWriter {
      */
     protected void addHeading(char ch, Content content) {
         Content headContent = Text.of(String.valueOf(ch));
-        var heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
+        var heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyles.title, headContent)
                 .setId(HtmlIds.forIndexChar(ch));
         content.add(heading);
     }
@@ -190,46 +193,35 @@ public class IndexWriter extends HtmlDocletWriter {
         Element element = item.getElement();
         String label = item.getLabel();
         switch (element.getKind()) {
-            case MODULE:
+            case MODULE -> {
                 dt = HtmlTree.DT(getModuleLink((ModuleElement) element, Text.of(label)));
                 dt.add(" - ").add(contents.module_).add(" " + label);
-                break;
+            }
 
-            case PACKAGE:
+            case PACKAGE -> {
                 dt = HtmlTree.DT(getPackageLink((PackageElement) element, Text.of(label)));
-                if (configuration.showModules) {
-                    item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
                 dt.add(" - ").add(contents.package_).add(" " + label);
-                break;
+            }
 
-            case CLASS:
-            case ENUM:
-            case RECORD:
-            case ANNOTATION_TYPE:
-            case INTERFACE:
+            case CLASS, ENUM, RECORD, ANNOTATION_TYPE, INTERFACE -> {
                 dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, (TypeElement) element).style(HtmlStyle.typeNameLink)));
+                        HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, (TypeElement) element).style(HtmlStyles.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
-                break;
+            }
 
-            case CONSTRUCTOR:
-            case METHOD:
-            case FIELD:
-            case ENUM_CONSTANT:
+            case CONSTRUCTOR, METHOD, FIELD, ENUM_CONSTANT -> {
                 TypeElement containingType = item.getContainingTypeElement();
                 dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.PLAIN, containingType, element,
-                                label, HtmlStyle.memberNameLink));
+                        label, HtmlStyles.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
-                break;
+            }
 
-            default:
-                throw new Error();
+            default -> throw new Error();
         }
         target.add(dt);
-        var dd = new HtmlTree(TagName.DD);
+        var dd = HtmlTree.DD();
         if (element.getKind() == ElementKind.MODULE || element.getKind() == ElementKind.PACKAGE) {
             addSummaryComment(element, dd);
         } else {
@@ -262,11 +254,18 @@ public class IndexWriter extends HtmlDocletWriter {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
         var labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
-        var dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
+        var dt = HtmlTree.DT(labelLink.setStyle(HtmlStyles.searchTagLink));
         dt.add(" - ");
-        dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
+        var tagKindKey = switch (item.getKind()) {
+            case SEARCH_ITEM -> "doclet.Search_tag_in";
+            case SYSTEM_PROPERTY -> "doclet.System_property_in";
+            case SECTION -> "doclet.Section_in";
+            case EXTERNAL_SPEC -> "doclet.External_specification_in";
+            default -> throw new Error();
+        };
+        dt.add(contents.getContent(tagKindKey, item.getHolder()));
         target.add(dt);
-        var dd = new HtmlTree(TagName.DD);
+        var dd = HtmlTree.DD();
         if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
@@ -285,13 +284,13 @@ public class IndexWriter extends HtmlDocletWriter {
      * @param content the content to which the comment will be added
      */
     protected void addComment(Element element, Content content) {
-        var span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
-        var div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+        var span = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(element));
+        var div = HtmlTree.DIV(HtmlStyles.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
-            List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);
+            var tags = utils.getDeprecatedTrees(element);
             if (!tags.isEmpty())
-                addInlineDeprecatedComment(element, tags.get(0), div);
+                addInlineDeprecatedComment(element, tags.getFirst(), div);
             content.add(div);
         } else {
             TypeElement encl = utils.getEnclosingTypeElement(element);
@@ -353,8 +352,8 @@ public class IndexWriter extends HtmlDocletWriter {
             content.add(Entity.NO_BREAK_SPACE);
         }
 
-        content.add(new HtmlTree(TagName.BR));
-        List<Content> pageLinks = Stream.of(IndexItem.Category.values())
+        content.add(HtmlTree.BR());
+        var pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))
                 .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))
@@ -365,6 +364,6 @@ public class IndexWriter extends HtmlDocletWriter {
     }
 
     private Content getVerticalSeparator() {
-        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
+        return HtmlTree.SPAN(HtmlStyles.verticalSeparator, Text.of("|"));
     }
 }

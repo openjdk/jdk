@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/ostream.hpp"
 #include "windbghelp.hpp"
 
@@ -35,6 +34,7 @@ typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAG
 typedef DWORD (WINAPI *pfn_UnDecorateSymbolName)(const char*, char*, DWORD, DWORD);
 typedef BOOL  (WINAPI *pfn_SymSetSearchPath)(HANDLE, PCTSTR);
 typedef BOOL  (WINAPI *pfn_SymGetSearchPath)(HANDLE, PTSTR, int);
+typedef BOOL  (WINAPI *pfn_SymRefreshModuleList)(HANDLE);
 typedef BOOL  (WINAPI *pfn_StackWalk64)(DWORD MachineType,
                                         HANDLE hProcess,
                                         HANDLE hThread,
@@ -68,7 +68,8 @@ typedef LPAPI_VERSION (WINAPI *pfn_ImagehlpApiVersion)(void);
  DO(SymFunctionTableAccess64) \
  DO(SymGetModuleBase64) \
  DO(MiniDumpWriteDump) \
- DO(SymGetLineFromAddr64)
+ DO(SymGetLineFromAddr64) \
+ DO(SymRefreshModuleList)
 
 
 #define DECLARE_FUNCTION_POINTER(functionname) \
@@ -139,7 +140,7 @@ namespace { // Do not export.
   };
 }
 
-// Called at DLL_PROCESS_ATTACH.
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void WindowsDbgHelp::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }
@@ -201,6 +202,14 @@ BOOL WindowsDbgHelp::symGetSearchPath(HANDLE hProcess, PTSTR SearchPath, int Sea
   WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetSearchPath != nullptr) {
     return g_pfn_SymGetSearchPath(hProcess, SearchPath, SearchPathLength);
+  }
+  return FALSE;
+}
+
+BOOL WindowsDbgHelp::symRefreshModuleList(HANDLE hProcess) {
+  WindowsDbgHelpEntry entry_guard;
+  if (g_pfn_SymRefreshModuleList != nullptr) {
+    return g_pfn_SymRefreshModuleList(hProcess);
   }
   return FALSE;
 }
@@ -301,4 +310,3 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
   }
   st->cr();
 }
-

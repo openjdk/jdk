@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.management
@@ -60,7 +60,7 @@ public class TestHeapDump {
             if (events.size() != 1) {
                 throw new Exception("Expected one event, got " + events.size());
             }
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             Events.assertField(e, "destination").equal(path.toString());
             Events.assertField(e, "gcBeforeDump").equal(true);
             Events.assertField(e, "onOutOfMemoryError").equal(false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4749567 8071982 8175200 8186332 8185371 8182765 8217034 8261976 8261976
- *           8275786
+ *           8275786 8347058
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist,
  *           -nonavbar, -notree, -stylesheetfile, --main-stylesheet, --add-stylesheet,
  *           --add-script options.
@@ -116,9 +116,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css">""");
     }
 
     @Test
@@ -129,9 +129,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css">""");
     }
 
     @Test
@@ -144,14 +144,14 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
-        checkOutput("additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
-        checkOutput("additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
+        checkOutput("resource-files/additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
+        checkOutput("resource-files/additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
+        checkOutput("resource-files/additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-1.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-2.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-3.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-1.css">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-2.css">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-3.css">""");
     }
 
     @Test
@@ -189,12 +189,12 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("script-dir/additional-script-1.js", true, "Additional script file 1");
-        checkOutput("script-dir/additional-script-2.js", true, "Additional script file 2");
+        checkOutput("script-files/additional-script-1.js", true, "Additional script file 1");
+        checkOutput("script-files/additional-script-2.js", true, "Additional script file 2");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <script type="text/javascript" src="../script-dir/additional-script-1.js"></script>
-                    <script type="text/javascript" src="../script-dir/additional-script-2.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-1.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-2.js"></script>
                     """);
     }
 
@@ -232,6 +232,7 @@ public class TestOptions extends JavadocTester {
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
                     span class="return-type">java.lang.String</span>&nbsp;<span class="element-name"><a href\
                     ="../src-html/linksource/AnnotationTypeField.html#line-32">DEFAULT_NAME</a></spa\
@@ -239,6 +240,7 @@ public class TestOptions extends JavadocTester {
                 """
                     <section class="detail" id="name()">
                     <h3>name</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&\
                     nbsp;<span class="element-name"><a href="../src-html/linksource/AnnotationTypeField.html\
                     #line-34">name</a></span></div>""");

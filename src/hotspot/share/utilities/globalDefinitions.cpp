@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
@@ -40,8 +39,6 @@ int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
 // Old CDS options
-bool DumpSharedSpaces;
-bool DynamicDumpSharedSpaces;
 bool RequireSharedSpaces;
 extern "C" {
 JNIEXPORT jboolean UseSharedSpaces = true;
@@ -62,7 +59,7 @@ uint64_t OopEncodingHeapMax = 0;
 // Something to help porters sleep at night
 
 #ifdef ASSERT
-BasicType char2type(int ch) {
+static BasicType char2type(int ch) {
   switch (ch) {
 #define EACH_SIG(ch, bt, ignore) \
     case ch: return bt;
@@ -159,7 +156,6 @@ void basic_types_init() {
   static_assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
   static_assert((size_t)HeapWordSize >= sizeof(juint),
                 "HeapWord should be at least as large as juint");
-  static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )
@@ -409,3 +405,32 @@ STATIC_ASSERT(nth_bit(1|2) == 0x8);
 
 STATIC_ASSERT(right_n_bits(3)   == 0x7);
 STATIC_ASSERT(right_n_bits(1|2) == 0x7);
+
+// Check for Flush-To-Zero mode
+
+// On some processors faster execution can be achieved by setting a
+// mode to return zero for extremely small results, rather than an
+// IEEE-754 subnormal number. This mode is not compatible with the
+// Java Language Standard.
+
+// We need the addition of _large_subnormal and _small_subnormal to be
+// performed at runtime. _small_subnormal is volatile so that
+// expressions involving it cannot be evaluated at compile time.
+static const double large_subnormal_double
+  = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
+static const volatile double small_subnormal_double
+  = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
+
+// Quickly test to make sure IEEE-754 subnormal numbers are correctly
+// handled.
+bool IEEE_subnormal_handling_OK() {
+  // _small_subnormal is the smallest subnormal number that has two
+  // bits set. _large_subnormal is a number such that, when
+  // _small_subnormal is added to it, must be rounded according to the
+  // mode. These two tests detect the rounding mode in use. If
+  // subnormals are turned off (i.e. subnormals-are-zero) flush-to-
+  // zero mode is in use.
+
+  return (large_subnormal_double + small_subnormal_double > large_subnormal_double
+          && -large_subnormal_double - small_subnormal_double < -large_subnormal_double);
+}

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class NativeInstruction {
   friend class Relocation;
 
  public:
-  bool is_nop() const { return Assembler::is_nop(long_at(0)); }
+  bool is_post_call_nop() const { return MacroAssembler::is_post_call_nop(long_at(0)); }
 
   bool is_jump() const { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
 
@@ -91,7 +91,7 @@ class NativeInstruction {
       return MacroAssembler::is_tdi(long_at(0), Assembler::traptoGreaterThanUnsigned | Assembler::traptoEqual,
                                     -1, encoding);
     }
-    return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
+    return MacroAssembler::is_load_from_polling_page(long_at(0), nullptr);
   }
 
   bool is_safepoint_poll_return() {
@@ -137,6 +137,8 @@ class NativeCall: public NativeInstruction {
     instruction_size                            = 16 // Used in shared code for calls with reloc_info.
   };
 
+  static int byte_size() { return instruction_size; }
+
   static bool is_call_at(address a) {
     return Assembler::is_bl(*(int*)(a));
   }
@@ -177,7 +179,7 @@ inline NativeCall* nativeCall_at(address instr) {
 }
 
 inline NativeCall* nativeCall_before(address return_address) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   if (MacroAssembler::is_bl(*(int*)(return_address - 4)))
     call = (NativeCall*)(return_address - 4);
   call->verify();
@@ -260,7 +262,7 @@ class NativeMovConstReg: public NativeInstruction {
   void set_data(intptr_t x);
 
   // Patch narrow oop constants.
-  void set_narrow_oop(narrowOop data, CodeBlob *code = NULL);
+  void set_narrow_oop(narrowOop data, CodeBlob *code = nullptr);
 
   void verify() NOT_DEBUG_RETURN;
 };
@@ -307,7 +309,7 @@ class NativeJump: public NativeInstruction {
       return (address)((NativeMovConstReg *)this)->data();
     } else {
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -377,7 +379,7 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
  public:
 
-  address destination(nmethod *nm = NULL) const;
+  address destination(nmethod *nm = nullptr) const;
   int destination_toc_offset() const;
 
   void set_destination(address new_destination);
@@ -506,10 +508,50 @@ class NativeMovRegMem: public NativeInstruction {
 };
 
 class NativePostCallNop: public NativeInstruction {
+
+    // We use CMPI/CMPLI to represent Post Call Nops (PCN)
+
+    //   Bit |0         5|6    |9 |10|11     |16                          31|
+    //       +--------------------------------------------------------------+
+    // Field |OPCODE     |BF   |/ |L |RA     |SI                            |
+    //       +--------------------------------------------------------------+
+    //       |0 0 1 0 1|DATA HI| 1|        DATA LO                          |
+    //       |         |4 bits |  |        22 bits                          |
+    //
+    // Bit 9 is always 1 for PCNs to distinguish them from regular CMPI/CMPLI
+    //
+    // Using both, CMPLI (opcode 10 = 0b001010) and CMPI (opcode 11 = 0b001011) for
+    // PCNs allows using bit 5 from the opcode to encode DATA HI.
+
+    enum {
+      ppc_data_lo_bits = 31 - 9,
+      ppc_data_lo_mask = right_n_bits(ppc_data_lo_bits),
+      ppc_data_hi_bits = 9 - 5,
+      ppc_data_hi_shift = ppc_data_lo_bits + 1,
+      ppc_data_hi_mask = right_n_bits(ppc_data_hi_bits) << ppc_data_hi_shift,
+      ppc_data_bits = ppc_data_lo_bits + ppc_data_hi_bits,
+
+      ppc_oopmap_slot_bits = 9,
+      ppc_oopmap_slot_mask = right_n_bits(ppc_oopmap_slot_bits),
+      ppc_cb_offset_bits = ppc_data_bits - ppc_oopmap_slot_bits,
+      ppc_cb_offset_mask = right_n_bits(ppc_cb_offset_bits),
+};
+
 public:
-  bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
-  void patch(jint diff);
+  bool check() const { return is_post_call_nop(); }
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
+    uint32_t instr_bits = long_at(0);
+    uint32_t data_lo = instr_bits & ppc_data_lo_mask;
+    uint32_t data_hi = (instr_bits & ppc_data_hi_mask) >> 1;
+    uint32_t data = data_hi | data_lo;
+    if (data == 0) {
+      return false; // no data found
+    }
+    cb_offset = (data & ppc_cb_offset_mask) << 2;
+    oopmap_slot = data >> ppc_cb_offset_bits;
+    return true; // decoding succeeded
+  }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
@@ -518,7 +560,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {

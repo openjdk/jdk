@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
@@ -77,8 +76,8 @@ Node* RegionNode::Identity(PhaseGVN* phase) {
 // hard to do if there is stuff that has to happen
 static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
   if( region->Opcode() != Op_Region ) // Do not do to LoopNodes
-    return NULL;
-  Node *progress = NULL;        // Progress flag
+    return nullptr;
+  Node *progress = nullptr;        // Progress flag
   PhaseIterGVN *igvn = phase->is_IterGVN();
 
   uint rreq = region->req();
@@ -91,7 +90,7 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
       assert(!r->as_Region()->has_phi(), "no phi users");
       if( !progress ) {         // No progress
         if (region->has_phi()) {
-          return NULL;        // Only flatten if no Phi users
+          return nullptr;        // Only flatten if no Phi users
           // igvn->hash_delete( phi );
         }
         igvn->hash_delete( region );
@@ -126,7 +125,7 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
 
 
 //--------------------------------has_phi--------------------------------------
-// Helper function: Return any PhiNode that uses this region or NULL
+// Helper function: Return any PhiNode that uses this region or null
 PhiNode* RegionNode::has_phi() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* phi = fast_out(i);
@@ -136,23 +135,23 @@ PhiNode* RegionNode::has_phi() const {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
 //-----------------------------has_unique_phi----------------------------------
-// Helper function: Return the only PhiNode that uses this region or NULL
+// Helper function: Return the only PhiNode that uses this region or null
 PhiNode* RegionNode::has_unique_phi() const {
   // Check that only one use is a Phi
-  PhiNode* only_phi = NULL;
+  PhiNode* only_phi = nullptr;
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* phi = fast_out(i);
     if (phi->is_Phi()) {   // Check for Phi users
       assert(phi->in(0) == (Node*)this, "phi uses region only via in(0)");
-      if (only_phi == NULL) {
+      if (only_phi == nullptr) {
         only_phi = phi->as_Phi();
       } else {
-        return NULL;  // multiple phis
+        return nullptr;  // multiple phis
       }
     }
   }
@@ -165,9 +164,9 @@ PhiNode* RegionNode::has_unique_phi() const {
 // Helper function for RegionNode's identification of FP clipping
 // Check inputs to the Phi
 static bool check_phi_clipping( PhiNode *phi, ConNode * &min, uint &min_idx, ConNode * &max, uint &max_idx, Node * &val, uint &val_idx ) {
-  min     = NULL;
-  max     = NULL;
-  val     = NULL;
+  min     = nullptr;
+  max     = nullptr;
+  val     = nullptr;
   min_idx = 0;
   max_idx = 0;
   val_idx = 0;
@@ -179,11 +178,11 @@ static bool check_phi_clipping( PhiNode *phi, ConNode * &min, uint &min_idx, Con
       switch( opcode ) {
       case Op_ConI:
         {
-          if( min == NULL ) {
-            min     = n->Opcode() == Op_ConI ? (ConNode*)n : NULL;
+          if( min == nullptr ) {
+            min     = n->Opcode() == Op_ConI ? (ConNode*)n : nullptr;
             min_idx = j;
           } else {
-            max     = n->Opcode() == Op_ConI ? (ConNode*)n : NULL;
+            max     = n->Opcode() == Op_ConI ? (ConNode*)n : nullptr;
             max_idx = j;
             if( min->get_int() > max->get_int() ) {
               // Swap min and max
@@ -220,8 +219,8 @@ static bool check_phi_clipping( PhiNode *phi, ConNode * &min, uint &min_idx, Con
 //  RegionNode_inputs
 //
 static bool check_if_clipping( const RegionNode *region, IfNode * &bot_if, IfNode * &top_if ) {
-  top_if = NULL;
-  bot_if = NULL;
+  top_if = nullptr;
+  bot_if = nullptr;
 
   // Check control structure above RegionNode for (if  ( if  ) )
   Node *in1 = region->in(1);
@@ -233,14 +232,14 @@ static bool check_if_clipping( const RegionNode *region, IfNode * &bot_if, IfNod
     Node *in20 = in2->in(0);
     Node *in30 = in3->in(0);
     // Check that #1 and #2 are ifTrue and ifFalse from same If
-    if( in10 != NULL && in10->is_If() &&
-        in20 != NULL && in20->is_If() &&
-        in30 != NULL && in30->is_If() && in10 == in20 &&
+    if( in10 != nullptr && in10->is_If() &&
+        in20 != nullptr && in20->is_If() &&
+        in30 != nullptr && in30->is_If() && in10 == in20 &&
         (in1->Opcode() != in2->Opcode()) ) {
       Node  *in100 = in10->in(0);
-      Node *in1000 = (in100 != NULL && in100->is_Proj()) ? in100->in(0) : NULL;
+      Node *in1000 = (in100 != nullptr && in100->is_Proj()) ? in100->in(0) : nullptr;
       // Check that control for in10 comes from other branch of IF from in3
-      if( in1000 != NULL && in1000->is_If() &&
+      if( in1000 != nullptr && in1000->is_If() &&
           in30 == in1000 && (in3->Opcode() != in100->Opcode()) ) {
         // Control pattern checks
         top_if = (IfNode*)in1000;
@@ -249,7 +248,7 @@ static bool check_if_clipping( const RegionNode *region, IfNode * &bot_if, IfNod
     }
   }
 
-  return (top_if != NULL);
+  return (top_if != nullptr);
 }
 
 
@@ -257,7 +256,7 @@ static bool check_if_clipping( const RegionNode *region, IfNode * &bot_if, IfNod
 // Helper function for RegionNode's identification of FP clipping
 // Verify that the value input to the phi comes from "ConvF2I; LShift; RShift"
 static bool check_convf2i_clipping( PhiNode *phi, uint idx, ConvF2INode * &convf2i, Node *min, Node *max) {
-  convf2i = NULL;
+  convf2i = nullptr;
 
   // Check for the RShiftNode
   Node *rshift = phi->in(idx);
@@ -318,7 +317,7 @@ static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit,
 // Check if the RegionNode is part of an unsafe loop and unreachable from root.
 bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   Node* top = phase->C->top();
-  assert(req() == 2 || (req() == 3 && in(1) != NULL && in(2) == top), "sanity check arguments");
+  assert(req() == 2 || (req() == 3 && in(1) != nullptr && in(2) == top), "sanity check arguments");
   if (_is_unreachable_region) {
     // Return cached result from previous evaluation which should still be valid
     assert(is_unreachable_from_root(phase), "walk the graph again and check if its indeed unreachable");
@@ -342,7 +341,7 @@ bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
   uint i;
   for (i = 0; i < max; i++) {
     Node* n = raw_out(i);
-    if (n != NULL && n->is_Phi()) {
+    if (n != nullptr && n->is_Phi()) {
       PhiNode* phi = n->as_Phi();
       assert(phi->in(0) == this, "sanity check phi");
       if (phi->outcnt() == 0) {
@@ -352,7 +351,7 @@ bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
         Node* u = phi->raw_out(0);
         // Skip if only one use is an other Phi or Call or Uncommon trap.
         // It is safe to consider this case as fallthrough.
-        if (u != NULL && (u->is_Phi() || u->is_CFG())) {
+        if (u != nullptr && (u->is_Phi() || u->is_CFG())) {
           continue;
         }
       }
@@ -382,7 +381,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
     uint max = n->outcnt();
     for (uint i = 0; i < max; i++) {
       Node* m = n->raw_out(i);
-      if (m != NULL && m->is_CFG()) {
+      if (m != nullptr && m->is_CFG()) {
         if (m == this) {
           return false; // We reached the Region node - it is not dead.
         }
@@ -437,17 +436,20 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
 
 void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
   assert(loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "why set our status again?");
+  assert(status != RegionNode::LoopStatus::MaybeIrreducibleEntry || !is_Loop(), "LoopNode is never irreducible entry.");
   _loop_status = status;
 }
 
-#ifdef ASSERT
-void RegionNode::verify_can_be_irreducible_entry() const {
-  assert(loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry, "must be marked irreducible");
-  assert(!is_Loop(), "LoopNode cannot be irreducible loop entry");
+// A Region can only be an irreducible entry if:
+// - It is marked as "maybe irreducible entry". Any other loop status would guarantee
+//   that it is never an irreducible loop entry.
+// - And it is not a LoopNode, those are guaranteed to be reducible loop entries.
+bool RegionNode::can_be_irreducible_entry() const {
+  return loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry &&
+         !is_Loop();
 }
-#endif //ASSERT
 
-bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
+void RegionNode::try_clean_mem_phis(PhaseIterGVN* igvn) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
   // cmpP with 1 top input
@@ -464,47 +466,73 @@ bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // replaced by If's control input but because there's still a Phi,
   // the Region stays in the graph. The top input from the cmpP is
   // propagated forward and a subgraph that is useful goes away. The
-  // code below replaces the Phi with the MergeMem so that the Region
-  // is simplified.
+  // code in PhiNode::try_clean_memory_phi() replaces the Phi with the
+  // MergeMem in order to remove the Region if its last phi dies.
 
-  PhiNode* phi = has_unique_phi();
-  if (phi && phi->type() == Type::MEMORY && req() == 3 && phi->is_diamond_phi(true)) {
-    MergeMemNode* m = NULL;
-    assert(phi->req() == 3, "same as region");
-    for (uint i = 1; i < 3; ++i) {
-      Node *mem = phi->in(i);
-      if (mem && mem->is_MergeMem() && in(i)->outcnt() == 1) {
-        // Nothing is control-dependent on path #i except the region itself.
-        m = mem->as_MergeMem();
-        uint j = 3 - i;
-        Node* other = phi->in(j);
-        if (other && other == m->base_memory()) {
-          // m is a successor memory to other, and is not pinned inside the diamond, so push it out.
-          // This will allow the diamond to collapse completely.
-          phase->is_IterGVN()->replace_node(phi, m);
-          return true;
-        }
-      }
+  if (!is_diamond()) {
+    return;
+  }
+
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* phi = fast_out(i);
+    if (phi->is_Phi() && phi->as_Phi()->try_clean_memory_phi(igvn)) {
+      --i;
+      --imax;
     }
   }
-  return false;
 }
 
+// Does this region merge a simple diamond formed by a proper IfNode?
+//
+//              Cmp
+//              /
+//     ctrl   Bool
+//       \    /
+//       IfNode
+//      /      \
+//  IfFalse   IfTrue
+//      \      /
+//       Region
+bool RegionNode::is_diamond() const {
+  if (req() != 3) {
+    return false;
+  }
+
+  Node* left_path = in(1);
+  Node* right_path = in(2);
+  if (left_path == nullptr || right_path == nullptr) {
+    return false;
+  }
+  Node* diamond_if = left_path->in(0);
+  if (diamond_if == nullptr || !diamond_if->is_If() || diamond_if != right_path->in(0)) {
+    // Not an IfNode merging a diamond or TOP.
+    return false;
+  }
+
+  // Check for a proper bool/cmp
+  const Node* bol = diamond_if->in(1);
+  if (!bol->is_Bool()) {
+    return false;
+  }
+  const Node* cmp = bol->in(1);
+  if (!cmp->is_Cmp()) {
+    return false;
+  }
+  return true;
+}
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
 Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( !can_reshape && !in(0) ) return NULL;     // Already degraded to a Copy
+  if( !can_reshape && !in(0) ) return nullptr;     // Already degraded to a Copy
   assert(!in(0) || !in(0)->is_Root(), "not a specially hidden merge");
 
   // Check for RegionNode with no Phi users and both inputs come from either
   // arm of the same IF.  If found, then the control-flow split is useless.
   bool has_phis = false;
   if (can_reshape) {            // Need DU info to check for Phi users
-    has_phis = (has_phi() != NULL);       // Cache result
-    if (has_phis && try_clean_mem_phi(phase)) {
-      has_phis = false;
-    }
+    try_clean_mem_phis(phase->is_IterGVN());
+    has_phis = (has_phi() != nullptr);       // Cache result
 
     if (!has_phis) {            // No Phi users?  Nothing merging?
       for (uint i = 1; i < req()-1; i++) {
@@ -519,7 +547,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // will be eliminated if dead.
             phase->is_IterGVN()->add_users_to_worklist(iff);
             set_req(i, iff->in(0));// Skip around the useless IF diamond
-            set_req(j, NULL);
+            set_req(j, nullptr);
             return this;      // Record progress
           }
         }
@@ -527,18 +555,19 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Remove TOP or NULL input paths. If only 1 input path remains, this Region
+  // Remove TOP or null input paths. If only 1 input path remains, this Region
   // degrades to a copy.
   bool add_to_worklist = true;
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
+  DEBUG_ONLY( uint outcnt_orig = outcnt(); )
   int del_it = 0;               // The last input path we delete
   bool found_top = false; // irreducible loops need to check reachability if we find TOP
   // For all inputs...
   for( uint i=1; i<req(); ++i ){// For all paths in
     Node *n = in(i);            // Get the input
-    if( n != NULL ) {
+    if( n != nullptr ) {
       // Remove useless control copy inputs
       if( n->is_Region() && n->as_Region()->is_copy() ) {
         set_req(i, n->nonnull_req());
@@ -556,43 +585,39 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
       }
       if( phase->type(n) == Type::TOP ) {
-        set_req_X(i, NULL, phase); // Ignore TOP inputs
+        set_req_X(i, nullptr, phase); // Ignore TOP inputs
         modified = true;
         found_top = true;
         i--;
         continue;
       }
       cnt++;                    // One more value merging
-
     } else if (can_reshape) {   // Else found dead path with DU info
       PhaseIterGVN *igvn = phase->is_IterGVN();
       del_req(i);               // Yank path from self
       del_it = i;
-      uint max = outcnt();
-      DUIterator j;
-      bool progress = true;
-      while(progress) {         // Need to establish property over all users
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->req() != req() && n->is_Phi() ) {
-            assert( n->in(0) == this, "" );
-            igvn->hash_delete(n); // Yank from hash before hacking edges
-            n->set_req_X(i,NULL,igvn);// Correct DU info
-            n->del_req(i);        // Yank path from Phis
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
-            }
-          }
+
+      for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
+        Node* use = fast_out(j);
+
+        if (use->req() != req() && use->is_Phi()) {
+          assert(use->in(0) == this, "unexpected control input");
+          igvn->hash_delete(use);          // Yank from hash before hacking edges
+          use->set_req_X(i, nullptr, igvn);// Correct DU info
+          use->del_req(i);                 // Yank path from Phis
         }
       }
-      add_to_worklist = false;
-      phase->is_IterGVN()->add_users_to_worklist(this);
+
+      if (add_to_worklist) {
+        igvn->add_users_to_worklist(this);
+        add_to_worklist = false;
+      }
+
       i--;
     }
   }
+
+  assert(outcnt() == outcnt_orig, "not expect to remove any use");
 
   if (can_reshape && found_top && loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     // Is it a dead irreducible loop?
@@ -624,10 +649,10 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if( cnt <= 1 ) {              // Only 1 path in?
-    set_req(0, NULL);           // Null control input for region copy
+    set_req(0, nullptr);        // Null control input for region copy
     if( cnt == 0 && !can_reshape) { // Parse phase - leave the node as it is.
-      // No inputs or all inputs are NULL.
-      return NULL;
+      // No inputs or all inputs are null.
+      return nullptr;
     } else if (can_reshape) {   // Optimization phase - remove the node
       PhaseIterGVN *igvn = phase->is_IterGVN();
       // Strip mined (inner) loop is going away, remove outer loop.
@@ -635,7 +660,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           as_Loop()->is_strip_mined()) {
         Node* outer_sfpt = as_CountedLoop()->outer_safepoint();
         Node* outer_out = as_CountedLoop()->outer_loop_exit();
-        if (outer_sfpt != NULL && outer_out != NULL) {
+        if (outer_sfpt != nullptr && outer_out != nullptr) {
           Node* in = outer_sfpt->in(0);
           igvn->replace_node(outer_out, in);
           LoopNode* outer = as_CountedLoop()->outer_loop();
@@ -644,7 +669,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
       if (is_CountedLoop()) {
         Node* opaq = as_CountedLoop()->is_canonical_loop_entry();
-        if (opaq != NULL) {
+        if (opaq != nullptr) {
           // This is not a loop anymore. No need to keep the Opaque1 node on the test that guards the loop as it won't be
           // subject to further loop opts.
           assert(opaq->Opcode() == Op_OpaqueZeroTripGuard, "");
@@ -662,7 +687,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       } else {
         // The fallthrough case since we already checked dead loops above.
         parent_ctrl = in(1);
-        assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
+        assert(parent_ctrl != nullptr, "Region is a copy of some non-null control");
         assert(parent_ctrl != this, "Close dead loop");
       }
       if (add_to_worklist) {
@@ -685,7 +710,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             assert( n->req() == 1, "No data inputs expected" );
             in = parent_ctrl; // replaced by top
           } else {
-            assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
+            assert( n->req() == 2 &&  n->in(1) != nullptr, "Only one data input expected" );
             in = n->in(1);               // replaced by unique input
             if( n->as_Phi()->is_unsafe_data_reference(in) )
               in = phase->C->top();      // replaced by top
@@ -711,7 +736,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
       // Remove the RegionNode itself from DefUse info
       igvn->remove_dead_node(this);
-      return NULL;
+      return nullptr;
     }
     return this;                // Record progress
   }
@@ -720,14 +745,14 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // If a Region flows into a Region, merge into one big happy merge.
   if (can_reshape) {
     Node *m = merge_region(this, phase);
-    if (m != NULL)  return m;
+    if (m != nullptr)  return m;
   }
 
   // Check if this region is the root of a clipping idiom on floats
   if( ConvertFloat2IntClipping && can_reshape && req() == 4 ) {
     // Check that only one use is a Phi and that it simplifies to two constants +
     PhiNode* phi = has_unique_phi();
-    if (phi != NULL) {          // One Phi user
+    if (phi != nullptr) {          // One Phi user
       // Check inputs to the Phi
       ConNode *min;
       ConNode *max;
@@ -740,13 +765,13 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         IfNode *bot_if;
         if( check_if_clipping( this, bot_if, top_if ) ) {
           // Control pattern checks, now verify compares
-          Node   *top_in = NULL;   // value being compared against
-          Node   *bot_in = NULL;
+          Node   *top_in = nullptr;   // value being compared against
+          Node   *bot_in = nullptr;
           if( check_compare_clipping( true,  bot_if, min, bot_in ) &&
               check_compare_clipping( false, top_if, max, top_in ) ) {
             if( bot_in == top_in ) {
               PhaseIterGVN *gvn = phase->is_IterGVN();
-              assert( gvn != NULL, "Only had DefUse info in IterGVN");
+              assert( gvn != nullptr, "Only had DefUse info in IterGVN");
               // Only remaining check is that bot_in == top_in == (Phi's val + mods)
 
               // Check for the ConvF2INode
@@ -788,7 +813,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     modified |= optimize_trichotomy(phase->is_IterGVN());
   }
 
-  return modified ? this : NULL;
+  return modified ? this : nullptr;
 }
 
 //--------------------------remove_unreachable_subgraph----------------------
@@ -876,19 +901,19 @@ void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
 // The method returns true if 'this' is modified and false otherwise.
 bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   int idx1 = 1, idx2 = 2;
-  Node* region = NULL;
-  if (req() == 3 && in(1) != NULL && in(2) != NULL) {
+  Node* region = nullptr;
+  if (req() == 3 && in(1) != nullptr && in(2) != nullptr) {
     // Shape 1: Check if one of the inputs is a region that merges two control
     // inputs and has no other users (especially no Phi users).
     region = in(1)->isa_Region() ? in(1) : in(2)->isa_Region();
-    if (region == NULL || region->outcnt() != 2 || region->req() != 3) {
+    if (region == nullptr || region->outcnt() != 2 || region->req() != 3) {
       return false; // No suitable region input found
     }
   } else if (req() == 4) {
     // Shape 2: Check if two control inputs map to the same value of the unique phi
     // user and treat these as if they would come from another region (shape (1)).
     PhiNode* phi = has_unique_phi();
-    if (phi == NULL) {
+    if (phi == nullptr) {
       return false; // No unique phi user
     }
     if (phi->in(idx1) != phi->in(idx2)) {
@@ -903,22 +928,22 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
     assert(phi->in(idx1) == phi->in(idx2), "must be"); // Region is merging same value
     region = this;
   }
-  if (region == NULL || region->in(idx1) == NULL || region->in(idx2) == NULL) {
+  if (region == nullptr || region->in(idx1) == nullptr || region->in(idx2) == nullptr) {
     return false; // Region does not merge two control inputs
   }
   // At this point we know that region->in(idx1) and region->(idx2) map to the same
   // value and control flow. Now search for ifs that feed into these region inputs.
   ProjNode* proj1 = region->in(idx1)->isa_Proj();
   ProjNode* proj2 = region->in(idx2)->isa_Proj();
-  if (proj1 == NULL || proj1->outcnt() != 1 ||
-      proj2 == NULL || proj2->outcnt() != 1) {
+  if (proj1 == nullptr || proj1->outcnt() != 1 ||
+      proj2 == nullptr || proj2->outcnt() != 1) {
     return false; // No projection inputs with region as unique user found
   }
   assert(proj1 != proj2, "should be different projections");
   IfNode* iff1 = proj1->in(0)->isa_If();
   IfNode* iff2 = proj2->in(0)->isa_If();
-  if (iff1 == NULL || iff1->outcnt() != 2 ||
-      iff2 == NULL || iff2->outcnt() != 2) {
+  if (iff1 == nullptr || iff1->outcnt() != 2 ||
+      iff2 == nullptr || iff2->outcnt() != 2) {
     return false; // No ifs found
   }
   if (iff1 == iff2) {
@@ -929,7 +954,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   }
   BoolNode* bol1 = iff1->in(1)->isa_Bool();
   BoolNode* bol2 = iff2->in(1)->isa_Bool();
-  if (bol1 == NULL || bol2 == NULL) {
+  if (bol1 == nullptr || bol2 == nullptr) {
     return false; // No bool inputs found
   }
   Node* cmp1 = bol1->in(1);
@@ -1015,7 +1040,7 @@ Node *Node::nonnull_req() const {
     if( in(i) )
       return in(i);
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1030,7 +1055,7 @@ bool PhiNode::cmp( const Node &n ) const {
 }
 static inline
 const TypePtr* flatten_phi_adr_type(const TypePtr* at) {
-  if (at == NULL || at == TypePtr::BOTTOM)  return at;
+  if (at == nullptr || at == TypePtr::BOTTOM)  return at;
   return Compile::current()->alias_type(at)->adr_type();
 }
 
@@ -1042,20 +1067,20 @@ PhiNode* PhiNode::make(Node* r, Node* x, const Type *t, const TypePtr* at) {
   PhiNode* p = new PhiNode(r, t, at);
   for (uint j = 1; j < preds; j++) {
     // Fill in all inputs, except those which the region does not yet have
-    if (r->in(j) != NULL)
+    if (r->in(j) != nullptr)
       p->init_req(j, x);
   }
   return p;
 }
 PhiNode* PhiNode::make(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
-  const TypePtr* at = NULL;
+  const TypePtr* at = nullptr;
   if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
   return make(r, x, t, at);
 }
 PhiNode* PhiNode::make_blank(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
-  const TypePtr* at = NULL;
+  const TypePtr* at = nullptr;
   if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
   return new PhiNode(r, t, at);
 }
@@ -1078,7 +1103,7 @@ PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
 // Split out an instance type from a bottom phi.
 PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const {
   const TypeOopPtr *t_oop = at->isa_oopptr();
-  assert(t_oop != NULL && t_oop->is_known_instance(), "expecting instance oopptr");
+  assert(t_oop != nullptr && t_oop->is_known_instance(), "expecting instance oopptr");
 
   // Check if an appropriate node already exists.
   Node *region = in(0);
@@ -1092,9 +1117,9 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     }
   }
   Compile *C = igvn->C;
-  Arena *a = Thread::current()->resource_area();
-  Node_Array node_map = new Node_Array(a);
-  Node_Stack stack(a, C->live_nodes() >> 4);
+  ResourceMark rm;
+  Node_Array node_map;
+  Node_Stack stack(C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
   node_map.map(_idx, nphi);
@@ -1107,13 +1132,13 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     nphi = node_map[ophi->_idx]->as_Phi();
     for (; i < ophi->req(); i++) {
       Node *in = ophi->in(i);
-      if (in == NULL || igvn->type(in) == Type::TOP)
+      if (in == nullptr || igvn->type(in) == Type::TOP)
         continue;
-      Node *opt = MemNode::optimize_simple_memory_chain(in, t_oop, NULL, igvn);
-      PhiNode *optphi = opt->is_Phi() ? opt->as_Phi() : NULL;
-      if (optphi != NULL && optphi->adr_type() == TypePtr::BOTTOM) {
+      Node *opt = MemNode::optimize_simple_memory_chain(in, t_oop, nullptr, igvn);
+      PhiNode *optphi = opt->is_Phi() ? opt->as_Phi() : nullptr;
+      if (optphi != nullptr && optphi->adr_type() == TypePtr::BOTTOM) {
         opt = node_map[optphi->_idx];
-        if (opt == NULL) {
+        if (opt == nullptr) {
           stack.push(ophi, i);
           nphi = optphi->slice_memory(at);
           igvn->register_new_node_with_optimizer( nphi );
@@ -1144,7 +1169,7 @@ void PhiNode::verify_adr_type(VectorSet& visited, const TypePtr* at) const {
   // walk around
   for (uint i = 1; i < req(); i++) {
     Node* n = in(i);
-    if (n == NULL)  continue;
+    if (n == nullptr)  continue;
     const Node* np = in(i);
     if (np->is_Phi()) {
       np->as_Phi()->verify_adr_type(visited, at);
@@ -1154,7 +1179,7 @@ void PhiNode::verify_adr_type(VectorSet& visited, const TypePtr* at) const {
     } else {
       const TypePtr* nat = flatten_phi_adr_type(n->adr_type());
       // recheck phi/non-phi consistency at leaves:
-      assert((nat != NULL) == (at != NULL), "");
+      assert((nat != nullptr) == (at != nullptr), "");
       assert(nat == at || nat == TypePtr::BOTTOM,
              "adr_type must be consistent at leaves of phi nest");
     }
@@ -1166,7 +1191,7 @@ void PhiNode::verify_adr_type(bool recursive) const {
   if (VMError::is_error_reported())  return;  // muzzle asserts when debugging an error
   if (Node::in_dump())               return;  // muzzle asserts when printing
 
-  assert((_type == Type::MEMORY) == (_adr_type != NULL), "adr_type for memory phis only");
+  assert((_type == Type::MEMORY) == (_adr_type != nullptr), "adr_type for memory phis only");
 
   if (!VerifyAliases)       return;  // verify thoroughly only if requested
 
@@ -1194,18 +1219,18 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
 
   // Check for trip-counted loop.  If so, be smarter.
-  BaseCountedLoopNode* l = r->is_BaseCountedLoop() ? r->as_BaseCountedLoop() : NULL;
+  BaseCountedLoopNode* l = r->is_BaseCountedLoop() ? r->as_BaseCountedLoop() : nullptr;
   if (l && ((const Node*)l->phi() == this)) { // Trip counted loop!
-    // protect against init_trip() or limit() returning NULL
+    // protect against init_trip() or limit() returning null
     if (l->can_be_counted_loop(phase)) {
       const Node* init = l->init_trip();
       const Node* limit = l->limit();
       const Node* stride = l->stride();
-      if (init != NULL && limit != NULL && stride != NULL) {
+      if (init != nullptr && limit != nullptr && stride != nullptr) {
         const TypeInteger* lo = phase->type(init)->isa_integer(l->bt());
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
-        if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
+        if (lo != nullptr && hi != nullptr && stride_t != nullptr) { // Dying loops might have TOP here
           assert(stride_t->is_con(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
@@ -1259,8 +1284,8 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
           }
         }
       }
-    } else if (l->in(LoopNode::LoopBackControl) != NULL &&
-               in(LoopNode::EntryControl) != NULL &&
+    } else if (l->in(LoopNode::LoopBackControl) != nullptr &&
+               in(LoopNode::EntryControl) != nullptr &&
                phase->type(l->in(LoopNode::LoopBackControl)) == Type::TOP) {
       // During CCP, if we saturate the type of a counted loop's Phi
       // before the special code for counted loop above has a chance
@@ -1331,42 +1356,60 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   return ft;
 }
 
-
-//------------------------------is_diamond_phi---------------------------------
 // Does this Phi represent a simple well-shaped diamond merge?  Return the
 // index of the true path or 0 otherwise.
-// If check_control_only is true, do not inspect the If node at the
-// top, and return -1 (not an edge number) on success.
-int PhiNode::is_diamond_phi(bool check_control_only) const {
-  // Check for a 2-path merge
-  Node *region = in(0);
-  if( !region ) return 0;
-  if( region->req() != 3 ) return 0;
-  if(         req() != 3 ) return 0;
-  // Check that both paths come from the same If
-  Node *ifp1 = region->in(1);
-  Node *ifp2 = region->in(2);
-  if( !ifp1 || !ifp2 ) return 0;
-  Node *iff = ifp1->in(0);
-  if( !iff || !iff->is_If() ) return 0;
-  if( iff != ifp2->in(0) ) return 0;
-  if (check_control_only)  return -1;
-  // Check for a proper bool/cmp
-  const Node *b = iff->in(1);
-  if( !b->is_Bool() ) return 0;
-  const Node *cmp = b->in(1);
-  if( !cmp->is_Cmp() ) return 0;
+int PhiNode::is_diamond_phi() const {
+  Node* region = in(0);
+  assert(region != nullptr && region->is_Region(), "phi must have region");
+  if (!region->as_Region()->is_diamond()) {
+    return 0;
+  }
 
-  // Check for branching opposite expected
-  if( ifp2->Opcode() == Op_IfTrue ) {
-    assert( ifp1->Opcode() == Op_IfFalse, "" );
-    return 2;
-  } else {
-    assert( ifp1->Opcode() == Op_IfTrue, "" );
+  if (region->in(1)->is_IfTrue()) {
+    assert(region->in(2)->is_IfFalse(), "bad If");
     return 1;
+  } else {
+    // Flipped projections.
+    assert(region->in(2)->is_IfTrue(), "bad If");
+    return 2;
   }
 }
 
+// Do the following transformation if we find the corresponding graph shape, remove the involved memory phi and return
+// true. Otherwise, return false if the transformation cannot be applied.
+//
+//           If                                     If
+//          /  \                                   /  \
+//    IfFalse  IfTrue  /- Some Node          IfFalse  IfTrue
+//          \  /      /    /                       \  /        Some Node
+//         Region    / /-MergeMem     ===>        Region          |
+//          /   \---Phi                             |          MergeMem
+// [other phis]      \                        [other phis]        |
+//                   use                                         use
+bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
+  if (_type != Type::MEMORY) {
+    return false;
+  }
+  assert(is_diamond_phi() > 0, "sanity");
+  assert(req() == 3, "same as region");
+  const Node* region = in(0);
+  for (uint i = 1; i < 3; i++) {
+    Node* phi_input = in(i);
+    if (phi_input != nullptr && phi_input->is_MergeMem() && region->in(i)->outcnt() == 1) {
+      // Nothing is control-dependent on path #i except the region itself.
+      MergeMemNode* merge_mem = phi_input->as_MergeMem();
+      uint j = 3 - i;
+      Node* other_phi_input = in(j);
+      if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory()) {
+        // merge_mem is a successor memory to other_phi_input, and is not pinned inside the diamond, so push it out.
+        // This will allow the diamond to collapse completely if there are no other phis left.
+        igvn->replace_node(this, merge_mem);
+        return true;
+      }
+    }
+  }
+  return false;
+}
 //----------------------------check_cmove_id-----------------------------------
 // Check for CMove'ing a constant after comparing against the constant.
 // Happens all the time now, since if we compare equality vs a constant in
@@ -1387,19 +1430,19 @@ Node* PhiNode::is_cmove_id(PhaseTransform* phase, int true_path) {
   Node*     tval   = in(true_path);
   Node*     fval   = in(3-true_path);
   Node*     id     = CMoveNode::is_cmove_id(phase, cmp, tval, fval, b);
-  if (id == NULL)
-    return NULL;
+  if (id == nullptr)
+    return nullptr;
 
   // Either value might be a cast that depends on a branch of 'iff'.
   // Since the 'id' value will float free of the diamond, either
   // decast or return failure.
   Node* ctl = id->in(0);
-  if (ctl != NULL && ctl->in(0) == iff) {
+  if (ctl != nullptr && ctl->in(0) == iff) {
     if (id->is_ConstraintCast()) {
       return id->in(1);
     } else {
       // Don't know how to disentangle this value.
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -1418,7 +1461,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
   // trivially, perhaps with a single cast.  The unique_input method
   // does all this and more, by reducing such tributaries to 'this'.)
   Node* uin = unique_input(phase, false);
-  if (uin != NULL) {
+  if (uin != nullptr) {
     return uin;
   }
 
@@ -1426,7 +1469,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
   // Delay CMove'ing identity if Ideal has not had the chance to handle unsafe cases, yet.
   if (true_path != 0 && !(phase->is_IterGVN() && wait_for_region_igvn(phase))) {
     Node* id = is_cmove_id(phase, true_path);
-    if (id != NULL) {
+    if (id != nullptr) {
       return id;
     }
   }
@@ -1444,11 +1487,11 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
           u->req() == phi_len) {
         for (uint j = 1; j < phi_len; j++) {
           if (in(j) != u->in(j)) {
-            u = NULL;
+            u = nullptr;
             break;
           }
         }
-        if (u != NULL) {
+        if (u != nullptr) {
           return u;
         }
       }
@@ -1461,7 +1504,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 //-----------------------------unique_input------------------------------------
 // Find the unique value, discounting top, self-loops, and casts.
 // Return top if there are no inputs, and self if there are multiple.
-Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
+Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
   //  2) some of the inputs have an intervening ConstraintCast
@@ -1474,21 +1517,21 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
   //                      phi               /    --
 
   Node* r = in(0);                      // RegionNode
-  Node* input = NULL; // The unique direct input (maybe uncasted = ConstraintCasts removed)
+  Node* input = nullptr; // The unique direct input (maybe uncasted = ConstraintCasts removed)
 
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
     Node* rc = r->in(i);
-    if (rc == NULL || phase->type(rc) == Type::TOP)
+    if (rc == nullptr || phase->type(rc) == Type::TOP)
       continue;                 // ignore unreachable control path
     Node* n = in(i);
-    if (n == NULL)
+    if (n == nullptr)
       continue;
     Node* un = n;
     if (uncast) {
 #ifdef ASSERT
       Node* m = un->uncast();
 #endif
-      while (un != NULL && un->req() == 2 && un->is_ConstraintCast()) {
+      while (un != nullptr && un->req() == 2 && un->is_ConstraintCast()) {
         Node* next = un->in(1);
         if (phase->type(next)->isa_rawptr() && phase->type(un)->isa_oopptr()) {
           // risk exposing raw ptr at safepoint
@@ -1498,17 +1541,17 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
       }
       assert(m == un || un->in(1) == m, "Only expected at CheckCastPP from allocation");
     }
-    if (un == NULL || un == this || phase->type(un) == Type::TOP) {
+    if (un == nullptr || un == this || phase->type(un) == Type::TOP) {
       continue; // ignore if top, or in(i) and "this" are in a data cycle
     }
     // Check for a unique input (maybe uncasted)
-    if (input == NULL) {
+    if (input == nullptr) {
       input = un;
     } else if (input != un) {
       input = NodeSentinel; // no unique input
     }
   }
-  if (input == NULL) {
+  if (input == nullptr) {
     return phase->C->top();        // no inputs
   }
 
@@ -1517,7 +1560,7 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
   }
 
   // Nothing.
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------is_x2logic-------------------------------------
@@ -1526,6 +1569,12 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
 // Convert Phi to an ConvIB.
 static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   assert(true_path !=0, "only diamond shape graph expected");
+
+  // If we're late in the optimization process, we may have already expanded Conv2B nodes
+  if (phase->C->post_loop_opts_phase() && !Matcher::match_rule_supported(Op_Conv2B)) {
+    return nullptr;
+  }
+
   // Convert the true/false index into an expected 0/1 return.
   // Map 2->0 and 1->1.
   int flipped = 2-true_path;
@@ -1547,30 +1596,31 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   if( tcmp != TypeInt::ZERO && tcmp != TypePtr::NULL_PTR ) {
     // Allow cmp-vs-1 if the other input is bounded by 0-1
     if( !(tcmp == TypeInt::ONE && phase->type(cmp->in(1)) == TypeInt::BOOL) )
-      return NULL;
+      return nullptr;
     flipped = 1-flipped;        // Test is vs 1 instead of 0!
   }
 
   // Check for setting zero/one opposite expected
   if( tzero == TypeInt::ZERO ) {
     if( tone == TypeInt::ONE ) {
-    } else return NULL;
+    } else return nullptr;
   } else if( tzero == TypeInt::ONE ) {
     if( tone == TypeInt::ZERO ) {
       flipped = 1-flipped;
-    } else return NULL;
-  } else return NULL;
+    } else return nullptr;
+  } else return nullptr;
 
   // Check for boolean test backwards
   if( b->_test._test == BoolTest::ne ) {
   } else if( b->_test._test == BoolTest::eq ) {
     flipped = 1-flipped;
-  } else return NULL;
+  } else return nullptr;
 
   // Build int->bool conversion
-  Node *n = new Conv2BNode(cmp->in(1));
-  if( flipped )
-    n = new XorINode( phase->transform(n), phase->intcon(1) );
+  Node* n = new Conv2BNode(cmp->in(1));
+  if (flipped) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }
@@ -1594,16 +1644,16 @@ static Node* is_cond_add(PhaseGVN *phase, PhiNode *phi, int true_path) {
   const CmpNode *cmp = (CmpNode*)b->in(1);
 
   // Make sure only merging this one phi here
-  if (region->has_unique_phi() != phi)  return NULL;
+  if (region->has_unique_phi() != phi)  return nullptr;
 
   // Make sure each arm of the diamond has exactly one output, which we assume
   // is the region.  Otherwise, the control flow won't disappear.
-  if (region->in(1)->outcnt() != 1) return NULL;
-  if (region->in(2)->outcnt() != 1) return NULL;
+  if (region->in(1)->outcnt() != 1) return nullptr;
+  if (region->in(2)->outcnt() != 1) return nullptr;
 
   // Check for "(P < Q)" of type signed int
-  if (b->_test._test != BoolTest::lt)  return NULL;
-  if (cmp->Opcode() != Op_CmpI)        return NULL;
+  if (b->_test._test != BoolTest::lt)  return nullptr;
+  if (cmp->Opcode() != Op_CmpI)        return nullptr;
 
   Node *p = cmp->in(1);
   Node *q = cmp->in(2);
@@ -1616,19 +1666,19 @@ static Node* is_cond_add(PhaseGVN *phase, PhiNode *phi, int true_path) {
       op != Op_AddP &&
       op != Op_XorI &&
       op != Op_OrI*/ )
-    return NULL;
+    return nullptr;
 
   Node *x = n2;
-  Node *y = NULL;
+  Node *y = nullptr;
   if( x == n1->in(1) ) {
     y = n1->in(2);
   } else if( x == n1->in(2) ) {
     y = n1->in(1);
-  } else return NULL;
+  } else return nullptr;
 
   // Not so profitable if compare and add are constants
   if( q->is_Con() && phase->type(q) != TypeInt::ZERO && y->is_Con() )
-    return NULL;
+    return nullptr;
 
   Node *cmplt = phase->transform( new CmpLTMaskNode(p,q) );
   Node *j_and   = phase->transform( new AndINode(cmplt,y) );
@@ -1659,7 +1709,7 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = false_path; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = true_path;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = false_path; break;
-    default:           return NULL;                              break;
+    default:           return nullptr;                           break;
     }
   } else if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpL) {
     switch (bol->_test._test) {
@@ -1667,22 +1717,22 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = false_path; break;
     case BoolTest::gt:
     case BoolTest::ge: cmp_zero_idx = 2; phi_x_idx = true_path;  break;
-    default:           return NULL;                              break;
+    default:           return nullptr;                           break;
     }
   }
 
   // Test is next
-  const Type *tzero = NULL;
+  const Type *tzero = nullptr;
   switch (cmp->Opcode()) {
   case Op_CmpI:    tzero = TypeInt::ZERO; break;  // Integer ABS
   case Op_CmpL:    tzero = TypeLong::ZERO; break; // Long ABS
   case Op_CmpF:    tzero = TypeF::ZERO; break; // Float ABS
   case Op_CmpD:    tzero = TypeD::ZERO; break; // Double ABS
-  default: return NULL;
+  default: return nullptr;
   }
 
   // Find zero input of compare; the other input is being abs'd
-  Node *x = NULL;
+  Node *x = nullptr;
   bool flip = false;
   if( phase->type(cmp->in(cmp_zero_idx)) == tzero ) {
     x = cmp->in(3 - cmp_zero_idx);
@@ -1691,12 +1741,12 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     x = cmp->in(cmp_zero_idx);
     flip = true;
   } else {
-    return NULL;
+    return nullptr;
   }
 
   // Next get the 2 pieces being selected, one is the original value
   // and the other is the negated value.
-  if( phi_root->in(phi_x_idx) != x ) return NULL;
+  if( phi_root->in(phi_x_idx) != x ) return nullptr;
 
   // Check other phi input for subtract node
   Node *sub = phi_root->in(3 - phi_x_idx);
@@ -1705,7 +1755,7 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
                 sub->Opcode() == Op_SubI || sub->Opcode() == Op_SubL;
 
   // Allow only Sub(0,X) and fail out for all others; Neg is not OK
-  if (!is_sub || phase->type(sub->in(1)) != tzero || sub->in(2) != x) return NULL;
+  if (!is_sub || phase->type(sub->in(1)) != tzero || sub->in(2) != x) return nullptr;
 
   if (tzero == TypeF::ZERO) {
     x = new AbsFNode(x);
@@ -1727,7 +1777,7 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     if (flip) {
       x = new SubLNode(sub->in(1), phase->transform(x));
     }
-  } else return NULL;
+  } else return nullptr;
 
   return x;
 }
@@ -1773,21 +1823,21 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   }
   BasicType bt = phi->type()->basic_type();
   if( bt == T_ILLEGAL || type2size[bt] <= 0 )
-    return NULL;                // Bail out on funny non-value stuff
+    return nullptr;             // Bail out on funny non-value stuff
   if( phi->req() <= 3 )         // Need at least 2 matched inputs and a
-    return NULL;                // third unequal input to be worth doing
+    return nullptr;             // third unequal input to be worth doing
 
   // Scan for a constant
   uint i;
   for( i = 1; i < phi->req()-1; i++ ) {
     Node *n = phi->in(i);
-    if( !n ) return NULL;
-    if( phase->type(n) == Type::TOP ) return NULL;
+    if( !n ) return nullptr;
+    if( phase->type(n) == Type::TOP ) return nullptr;
     if( n->Opcode() == Op_ConP || n->Opcode() == Op_ConN || n->Opcode() == Op_ConNKlass )
       break;
   }
   if( i >= phi->req() )         // Only split for constants
-    return NULL;
+    return nullptr;
 
   Node *val = phi->in(i);       // Constant to split for
   uint hit = 0;                 // Number of times it occurs
@@ -1795,19 +1845,19 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 
   for( ; i < phi->req(); i++ ){ // Count occurrences of constant
     Node *n = phi->in(i);
-    if( !n ) return NULL;
-    if( phase->type(n) == Type::TOP ) return NULL;
+    if( !n ) return nullptr;
+    if( phase->type(n) == Type::TOP ) return nullptr;
     if( phi->in(i) == val ) {
       hit++;
-      if (PhaseIdealLoop::find_predicate(r->in(i)) != NULL) {
-        return NULL;            // don't split loop entry path
+      if (Node::may_be_loop_entry(r->in(i))) {
+        return nullptr; // don't split loop entry path
       }
     }
   }
 
   if( hit <= 1 ||               // Make sure we find 2 or more
       hit == phi->req()-1 )     // and not ALL the same value
-    return NULL;
+    return nullptr;
 
   // Now start splitting out the flow paths that merge the same value.
   // Split first the RegionNode.
@@ -1836,6 +1886,17 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   return phi;
 }
 
+// Returns the BasicType of a given convert node and a type, with special handling to ensure that conversions to
+// and from half float will return the SHORT basic type, as that wouldn't be returned typically from TypeInt.
+static BasicType get_convert_type(Node* convert, const Type* type) {
+  int convert_op = convert->Opcode();
+  if (type->isa_int() && (convert_op == Op_ConvHF2F || convert_op == Op_ConvF2HF)) {
+    return T_SHORT;
+  }
+
+  return type->basic_type();
+}
+
 //=============================================================================
 //------------------------------simple_data_loop_check-------------------------
 //  Try to determining if the phi node in a simple safe/unsafe data loop.
@@ -1860,7 +1921,7 @@ PhiNode::LoopSafety PhiNode::simple_data_loop_check(Node *in) const {
   // Unsafe loop if the phi node references itself through an unsafe data node.
   // Exclude cases with null inputs or data nodes which could reference
   // itself (safe for dead loops).
-  if (in != NULL && !in->is_dead_loop_safe()) {
+  if (in != nullptr && !in->is_dead_loop_safe()) {
     // Check inputs of phi's inputs also.
     // It is much less expensive then full graph walk.
     uint cnt = in->req();
@@ -1869,13 +1930,13 @@ PhiNode::LoopSafety PhiNode::simple_data_loop_check(Node *in) const {
       Node* m = in->in(i);
       if (m == (Node*)this)
         return UnsafeLoop; // Unsafe loop
-      if (m != NULL && !m->is_dead_loop_safe()) {
+      if (m != nullptr && !m->is_dead_loop_safe()) {
         // Check the most common case (about 30% of all cases):
         // phi->Load/Store->AddP->(ConP ConP Con)/(Parm Parm Con).
-        Node *m1 = (m->is_AddP() && m->req() > 3) ? m->in(1) : NULL;
+        Node *m1 = (m->is_AddP() && m->req() > 3) ? m->in(1) : nullptr;
         if (m1 == (Node*)this)
           return UnsafeLoop; // Unsafe loop
-        if (m1 != NULL && m1 == m->in(2) &&
+        if (m1 != nullptr && m1 == m->in(2) &&
             m1->is_dead_loop_safe() && m->in(3)->is_Con()) {
           continue; // Safe case
         }
@@ -1918,7 +1979,7 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
       if (m == (Node*)this) {
         return true;    // Data loop
       }
-      if (m != NULL && !m->is_dead_loop_safe()) { // Only look for unsafe cases.
+      if (m != nullptr && !m->is_dead_loop_safe()) { // Only look for unsafe cases.
         if (!visited.test_set(m->_idx))
           nstack.push(m);
       }
@@ -1937,28 +1998,32 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   for (uint j = 1; j < req(); j++) {
     Node* rc = r->in(j);
     Node* n = in(j);
-    if (rc != NULL &&
-        rc->is_Proj()) {
-      if (worklist.member(rc)) {
-        delay = true;
-      } else if (rc->in(0) != NULL &&
-                 rc->in(0)->is_If()) {
-        if (worklist.member(rc->in(0))) {
-          delay = true;
-        } else if (rc->in(0)->in(1) != NULL &&
-                   rc->in(0)->in(1)->is_Bool()) {
-          if (worklist.member(rc->in(0)->in(1))) {
-            delay = true;
-          } else if (rc->in(0)->in(1)->in(1) != NULL &&
-                     rc->in(0)->in(1)->in(1)->is_Cmp()) {
-            if (worklist.member(rc->in(0)->in(1)->in(1))) {
-              delay = true;
-            }
-          }
-        }
-      }
+
+    if (rc == nullptr || !rc->is_Proj()) { continue; }
+    if (worklist.member(rc)) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0) == nullptr || !rc->in(0)->is_If()) { continue; }
+    if (worklist.member(rc->in(0))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1) == nullptr || !rc->in(0)->in(1)->is_Bool()) { continue; }
+    if (worklist.member(rc->in(0)->in(1))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1)->in(1) == nullptr || !rc->in(0)->in(1)->in(1)->is_Cmp()) { continue; }
+    if (worklist.member(rc->in(0)->in(1)->in(1))) {
+      delay = true;
+      break;
     }
   }
+
   if (delay) {
     worklist.push(this);
   }
@@ -1990,24 +2055,64 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
   return false;
 }
 
+// Check if splitting a bot memory Phi through a parent MergeMem may lead to
+// non-termination. For more details, see comments at the call site in
+// PhiNode::Ideal.
+bool PhiNode::is_split_through_mergemem_terminating() const {
+  ResourceMark rm;
+  VectorSet visited;
+  GrowableArray<const Node*> worklist;
+  worklist.push(this);
+  visited.set(this->_idx);
+  auto maybe_add_to_worklist = [&](Node* input) {
+    if (input != nullptr &&
+        (input->is_MergeMem() || input->is_memory_phi()) &&
+        !visited.test_set(input->_idx)) {
+      worklist.push(input);
+      assert(input->adr_type() == TypePtr::BOTTOM,
+          "should only visit bottom memory");
+    }
+  };
+  while (worklist.length() > 0) {
+    const Node* n = worklist.pop();
+    if (n->is_MergeMem()) {
+      Node* input = n->as_MergeMem()->base_memory();
+      if (input == this) {
+        return false;
+      }
+      maybe_add_to_worklist(input);
+    } else {
+      assert(n->is_memory_phi(), "invariant");
+      for (uint i = PhiNode::Input; i < n->req(); i++) {
+        Node* input = n->in(i);
+        if (input == this) {
+          return false;
+        }
+        maybe_add_to_worklist(input);
+      }
+    }
+  }
+  return true;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
 Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *r = in(0);              // RegionNode
-  assert(r != NULL && r->is_Region(), "this phi must have a region");
-  assert(r->in(0) == NULL || !r->in(0)->is_Root(), "not a specially hidden merge");
+  assert(r != nullptr && r->is_Region(), "this phi must have a region");
+  assert(r->in(0) == nullptr || !r->in(0)->is_Root(), "not a specially hidden merge");
 
   // Note: During parsing, phis are often transformed before their regions.
   // This means we have to use type_or_null to defend against untyped regions.
   if( phase->type_or_null(r) == Type::TOP ) // Dead code?
-    return NULL;                // No change
+    return nullptr;                // No change
 
   Node *top = phase->C->top();
   bool new_phi = (outcnt() == 0); // transforming new Phi
   // No change for igvn if new phi is not hooked
   if (new_phi && can_reshape)
-    return NULL;
+    return nullptr;
 
   if (must_wait_for_region_in_irreducible_loop(phase)) {
     return nullptr;
@@ -2018,15 +2123,15 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // One: region is not loop - replace phi with this input.
   // Two: region is loop - replace phi with top since this data path is dead
   //                       and we need to break the dead data loop.
-  Node* progress = NULL;        // Record if any progress made
+  Node* progress = nullptr;        // Record if any progress made
   for( uint j = 1; j < req(); ++j ){ // For all paths in
     // Check unreachable control paths
     Node* rc = r->in(j);
     Node* n = in(j);            // Get the input
-    if (rc == NULL || phase->type(rc) == Type::TOP) {
+    if (rc == nullptr || phase->type(rc) == Type::TOP) {
       if (n != top) {           // Not already top?
         PhaseIterGVN *igvn = phase->is_IterGVN();
-        if (can_reshape && igvn != NULL) {
+        if (can_reshape && igvn != nullptr) {
           igvn->_worklist.push(r);
         }
         // Nuke it down
@@ -2044,7 +2149,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   bool uncasted = false;
   Node* uin = unique_input(phase, false);
-  if (uin == NULL && can_reshape &&
+  if (uin == nullptr && can_reshape &&
       // If there is a chance that the region can be optimized out do
       // not add a cast node that we can't remove yet.
       !wait_for_region_igvn(phase)) {
@@ -2055,12 +2160,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (can_reshape)            // IGVN transformation
       return top;
     else
-      return NULL;              // Identity will return TOP
-  } else if (uin != NULL) {
-    // Only one not-NULL unique input path is left.
+      return nullptr;              // Identity will return TOP
+  } else if (uin != nullptr) {
+    // Only one not-null unique input path is left.
     // Determine if this input is backedge of a loop.
     // (Skip new phis which have no uses and dead regions).
-    if (outcnt() > 0 && r->in(0) != NULL) {
+    if (outcnt() > 0 && r->in(0) != nullptr) {
       if (is_data_loop(r->as_Region(), uin, phase)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
@@ -2069,7 +2174,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // We can't return top if we are in Parse phase - cut inputs only
           // let Identity to handle the case.
           replace_edge(uin, top, phase);
-          return NULL;
+          return nullptr;
         }
       }
     }
@@ -2081,11 +2186,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       const Type* phi_type = bottom_type();
       // Add casts to carry the control dependency of the Phi that is
       // going away
-      Node* cast = NULL;
+      Node* cast = nullptr;
+      const TypeTuple* extra_types = collect_types(phase);
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2095,7 +2201,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency);
+            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2103,20 +2209,20 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // that of phi
           if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
             Node* n = uin;
-            if (cast != NULL) {
+            if (cast != nullptr) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
-          if (cast == NULL) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency);
+          if (cast == nullptr) {
+            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
         }
       } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency);
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
       }
-      assert(cast != NULL, "cast should be set");
+      assert(cast != nullptr, "cast should be set");
       cast = phase->transform(cast);
       // set all inputs to the new cast(s) so the Phi is removed by Identity
       PhaseIterGVN* igvn = phase->is_IterGVN();
@@ -2127,7 +2233,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    debug_only(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = Identity(phase));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
@@ -2140,10 +2246,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
     // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
     assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
-    return NULL;
+    return nullptr;
   }
 
-  Node* opt = NULL;
+  Node* opt = nullptr;
   int true_path = is_diamond_phi();
   if (true_path != 0 &&
       // If one of the diamond's branch is in the process of dying then, the Phi's input for that branch might transform
@@ -2153,24 +2259,24 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Check for CMove'ing identity. If it would be unsafe,
     // handle it here. In the safe case, let Identity handle it.
     Node* unsafe_id = is_cmove_id(phase, true_path);
-    if( unsafe_id != NULL && is_unsafe_data_reference(unsafe_id) )
+    if( unsafe_id != nullptr && is_unsafe_data_reference(unsafe_id) )
       opt = unsafe_id;
 
     // Check for simple convert-to-boolean pattern
-    if( opt == NULL )
+    if( opt == nullptr )
       opt = is_x2logic(phase, this, true_path);
 
     // Check for absolute value
-    if( opt == NULL )
+    if( opt == nullptr )
       opt = is_absolute(phase, this, true_path);
 
     // Check for conditional add
-    if( opt == NULL && can_reshape )
+    if( opt == nullptr && can_reshape )
       opt = is_cond_add(phase, this, true_path);
 
     // These 4 optimizations could subsume the phi:
     // have to check for a dead data loop creation.
-    if( opt != NULL ) {
+    if( opt != nullptr ) {
       if( opt == unsafe_id || is_unsafe_data_reference(opt) ) {
         // Found dead loop.
         if( can_reshape )
@@ -2180,7 +2286,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(req() == 3, "only diamond merge phi here");
         set_req(1, top);
         set_req(2, top);
-        return NULL;
+        return nullptr;
       } else {
         return opt;
       }
@@ -2191,11 +2297,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape) {
     opt = split_flow_path(phase, this);
     // This optimization only modifies phi - don't need to check for dead loop.
-    assert(opt == NULL || opt == this, "do not elide phi");
-    if (opt != NULL)  return opt;
+    assert(opt == nullptr || opt == this, "do not elide phi");
+    if (opt != nullptr)  return opt;
   }
 
-  if (in(1) != NULL && in(1)->Opcode() == Op_AddP && can_reshape) {
+  if (in(1) != nullptr && in(1)->Opcode() == Op_AddP && can_reshape) {
     // Try to undo Phi of AddP:
     // (Phi (AddP base address offset) (AddP base2 address2 offset2))
     // becomes:
@@ -2211,7 +2317,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* base = addp->in(AddPNode::Base);
     Node* address = addp->in(AddPNode::Address);
     Node* offset = addp->in(AddPNode::Offset);
-    if (base != NULL && address != NULL && offset != NULL &&
+    if (base != nullptr && address != nullptr && offset != nullptr &&
         !base->is_top() && !address->is_top() && !offset->is_top()) {
       const Type* base_type = base->bottom_type();
       const Type* address_type = address->bottom_type();
@@ -2219,11 +2325,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // i.e. AddP with base == address and same offset as first AddP
       bool doit = true;
       for (uint i = 2; i < req(); i++) {
-        if (in(i) == NULL ||
+        if (in(i) == nullptr ||
             in(i)->Opcode() != Op_AddP ||
-            in(i)->in(AddPNode::Base) == NULL ||
-            in(i)->in(AddPNode::Address) == NULL ||
-            in(i)->in(AddPNode::Offset) == NULL ||
+            in(i)->in(AddPNode::Base) == nullptr ||
+            in(i)->in(AddPNode::Address) == nullptr ||
+            in(i)->in(AddPNode::Offset) == nullptr ||
             in(i)->in(AddPNode::Base)->is_top() ||
             in(i)->in(AddPNode::Address)->is_top() ||
             in(i)->in(AddPNode::Offset)->is_top()) {
@@ -2231,27 +2337,27 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           break;
         }
         if (in(i)->in(AddPNode::Base) != base) {
-          base = NULL;
+          base = nullptr;
         }
         if (in(i)->in(AddPNode::Offset) != offset) {
-          offset = NULL;
+          offset = nullptr;
         }
         if (in(i)->in(AddPNode::Address) != address) {
-          address = NULL;
+          address = nullptr;
         }
         // Accumulate type for resulting Phi
         base_type = base_type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
         address_type = address_type->meet_speculative(in(i)->in(AddPNode::Address)->bottom_type());
       }
-      if (doit && base == NULL) {
+      if (doit && base == nullptr) {
         // Check for neighboring AddP nodes in a tree.
         // If they have a base, use that it.
         for (DUIterator_Fast kmax, k = this->fast_outs(kmax); k < kmax; k++) {
           Node* u = this->fast_out(k);
           if (u->is_AddP()) {
             Node* base2 = u->in(AddPNode::Base);
-            if (base2 != NULL && !base2->is_top()) {
-              if (base == NULL)
+            if (base2 != nullptr && !base2->is_top()) {
+              if (base == nullptr)
                 base = base2;
               else if (base != base2)
                 { doit = false; break; }
@@ -2260,22 +2366,22 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
       }
       if (doit) {
-        if (base == NULL) {
-          base = new PhiNode(in(0), base_type, NULL);
+        if (base == nullptr) {
+          base = new PhiNode(in(0), base_type, nullptr);
           for (uint i = 1; i < req(); i++) {
             base->init_req(i, in(i)->in(AddPNode::Base));
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(base);
         }
-        if (address == NULL) {
-          address = new PhiNode(in(0), address_type, NULL);
+        if (address == nullptr) {
+          address = new PhiNode(in(0), address_type, nullptr);
           for (uint i = 1; i < req(); i++) {
             address->init_req(i, in(i)->in(AddPNode::Address));
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(address);
         }
-        if (offset == NULL) {
-          offset = new PhiNode(in(0), TypeX_X, NULL);
+        if (offset == nullptr) {
+          offset = new PhiNode(in(0), TypeX_X, nullptr);
           for (uint i = 1; i < req(); i++) {
             offset->init_req(i, in(i)->in(AddPNode::Offset));
           }
@@ -2292,27 +2398,80 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // (Do not attempt this optimization unless parsing is complete.
   // It would make the parser's memory-merge logic sick.)
   // (MergeMemNode is not dead_loop_safe - need to check for dead loop.)
-  if (progress == NULL && can_reshape && type() == Type::MEMORY) {
-    // see if this phi should be sliced
+  if (progress == nullptr && can_reshape && type() == Type::MEMORY) {
+
+    // See if this Phi should be sliced. Determine the merge width of input
+    // MergeMems and check if there is a direct loop to self, as illustrated
+    // below.
+    //
+    //               +-------------+
+    //               |             |
+    // (base_memory) v             |
+    //              MergeMem       |
+    //                 |           |
+    //                 v           |
+    //                Phi (this)   |
+    //                 |           |
+    //                 +-----------+
+    //
+    // Generally, there are issues with non-termination with such circularity
+    // (see comment further below). However, if there is a direct loop to self,
+    // splitting the Phi through the MergeMem will result in the below.
+    //
+    //               +---+
+    //               |   |
+    //               v   |
+    //              Phi  |
+    //               |\  |
+    //               | +-+
+    // (base_memory) v
+    //              MergeMem
+    //
+    // This split breaks the circularity and consequently does not lead to
+    // non-termination.
     uint merge_width = 0;
-    bool saw_self = false;
+    bool split_always_terminates = false; // Is splitting guaranteed to terminate?
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       // TOP inputs should not be counted as safe inputs because if the
       // Phi references itself through all other inputs then splitting the
       // Phi through memory merges would create dead loop at later stage.
       if (ii == top) {
-        return NULL; // Delay optimization until graph is cleaned.
+        return nullptr; // Delay optimization until graph is cleaned.
       }
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
-        saw_self = saw_self || (n->base_memory() == this);
+        if (n->base_memory() == this) {
+          split_always_terminates = true;
+        }
       }
     }
 
-    // This restriction is temporarily necessary to ensure termination:
-    if (!saw_self && adr_type() == TypePtr::BOTTOM)  merge_width = 0;
+    // There are cases with circular dependencies between bottom Phis
+    // and MergeMems. Below is a minimal example.
+    //
+    //               +------------+
+    //               |            |
+    // (base_memory) v            |
+    //              MergeMem      |
+    //                 |          |
+    //                 v          |
+    //                Phi (this)  |
+    //                 |          |
+    //                 v          |
+    //                Phi         |
+    //                 |          |
+    //                 +----------+
+    //
+    // Here, we cannot break the circularity through a self-loop as there
+    // are two Phis involved. Repeatedly splitting the Phis through the
+    // MergeMem leads to non-termination. We check for non-termination below.
+    // Only check for non-termination if necessary.
+    if (!split_always_terminates && adr_type() == TypePtr::BOTTOM &&
+        merge_width > Compile::AliasIdxRaw) {
+      split_always_terminates = is_split_through_mergemem_terminating();
+    }
 
     if (merge_width > Compile::AliasIdxRaw) {
       // found at least one non-empty MergeMem
@@ -2344,10 +2503,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-      } else {
-        // We know that at least one MergeMem->base_memory() == this
-        // (saw_self == true). If all other inputs also references this phi
-        // (directly or through data nodes) - it is a dead loop.
+      } else if (split_always_terminates) {
+        // If all inputs reference this phi (directly or through data nodes) -
+        // it is a dead loop.
         bool saw_safe_input = false;
         for (uint j = 1; j < req(); ++j) {
           Node* n = in(j);
@@ -2371,12 +2529,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN* igvn = phase->is_IterGVN();
-        assert(igvn != NULL, "sanity check");
-        Node* hook = new Node(1);
+        assert(igvn != nullptr, "sanity check");
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
         igvn->register_new_node_with_optimizer(new_base);
-        hook->add_req(new_base);
 
         MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
@@ -2390,7 +2546,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 Node* new_phi = new_base->slice_memory(mms.adr_type(phase->C));
                 made_new_phi = true;
                 igvn->register_new_node_with_optimizer(new_phi);
-                hook->add_req(new_phi);
                 mms.set_memory(new_phi);
               }
               Node* phi = mms.memory();
@@ -2408,19 +2563,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-        // Already replace this phi node to cut it off from the graph to not interfere in dead loop checks during the
-        // transformations of the new phi nodes below. Otherwise, we could wrongly conclude that there is no dead loop
-        // because we are finding this phi node again. Also set the type of the new MergeMem node in case we are also
-        // visiting it in the transformations below.
-        igvn->replace_node(this, result);
-        igvn->set_type(result, result->bottom_type());
 
-        // now transform the new nodes, and return the mergemem
-        for (MergeMemStream mms(result); mms.next_non_empty(); ) {
-          Node* phi = mms.memory();
-          mms.set_memory(phase->transform(phi));
-        }
-        hook->destruct(igvn);
+        // We could immediately transform the new Phi nodes here, but that can
+        // result in creating an excessive number of new nodes within a single
+        // IGVN iteration. We have put the Phi nodes on the IGVN worklist, so
+        // they are transformed later on in any case.
+
         // Replace self with the result.
         return result;
       }
@@ -2431,7 +2579,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const TypePtr* at = adr_type();
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
-      Node *new_in = MemNode::optimize_memory_chain(ii, at, NULL, phase);
+      Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
       if (ii != new_in ) {
         set_req(i, new_in);
         progress = this;
@@ -2442,7 +2590,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifdef _LP64
   // Push DecodeN/DecodeNKlass down through phi.
   // The rest of phi graph will transform by split EncodeP node though phis up.
-  if ((UseCompressedOops || UseCompressedClassPointers) && can_reshape && progress == NULL) {
+  if ((UseCompressedOops || UseCompressedClassPointers) && can_reshape && progress == nullptr) {
     bool may_push = true;
     bool has_decodeN = false;
     bool is_decodeN = false;
@@ -2472,7 +2620,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       uint orig_cnt = req();
       for (uint i=1; i<req(); ++i) {// For all paths in
         Node *ii = in(i);
-        Node* new_ii = NULL;
+        Node* new_ii = nullptr;
         if (ii->is_DecodeNarrowPtr()) {
           assert(ii->bottom_type() == bottom_type(), "sanity");
           new_ii = ii->in(1);
@@ -2501,12 +2649,93 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif
 
+  // Try to convert a Phi with two duplicated convert nodes into a phi of the pre-conversion type and the convert node
+  // proceeding the phi, to de-duplicate the convert node and compact the IR.
+  if (can_reshape && progress == nullptr) {
+    ConvertNode* convert = in(1)->isa_Convert();
+    if (convert != nullptr) {
+      int conv_op = convert->Opcode();
+      bool ok = true;
+
+      // Check the rest of the inputs
+      for (uint i = 2; i < req(); i++) {
+        // Make sure that all inputs are of the same type of convert node
+        if (in(i)->Opcode() != conv_op) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) {
+        // Find the local bottom type to set as the type of the phi
+        const Type* source_type = Type::get_const_basic_type(convert->in_type()->basic_type());
+        const Type* dest_type = convert->bottom_type();
+
+        PhiNode* newphi = new PhiNode(in(0), source_type, nullptr);
+        // Set inputs to the new phi be the inputs of the convert
+        for (uint i = 1; i < req(); i++) {
+          newphi->init_req(i, in(i)->in(1));
+        }
+
+        phase->is_IterGVN()->register_new_node_with_optimizer(newphi, this);
+
+        return ConvertNode::create_convert(get_convert_type(convert, source_type), get_convert_type(convert, dest_type), newphi);
+      }
+    }
+  }
+
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
-  if (EnableVectorReboxing && can_reshape && progress == NULL && type()->isa_oopptr()) {
+  if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->isa_oopptr()) {
     progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
   return progress;              // Return any progress
+}
+
+static int compare_types(const Type* const& e1, const Type* const& e2) {
+  return (intptr_t)e1 - (intptr_t)e2;
+}
+
+// Collect types at casts that are going to be eliminated at that Phi and store them in a TypeTuple.
+// Sort the types using an arbitrary order so a list of some types always hashes to the same TypeTuple (and TypeTuple
+// pointer comparison is enough to tell if 2 list of types are the same or not)
+const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
+  const Node* region = in(0);
+  const Type* phi_type = bottom_type();
+  ResourceMark rm;
+  GrowableArray<const Type*> types;
+  for (uint i = 1; i < req(); i++) {
+    if (region->in(i) == nullptr || phase->type(region->in(i)) == Type::TOP) {
+      continue;
+    }
+    Node* in = Node::in(i);
+    const Type* t = phase->type(in);
+    if (in == nullptr || in == this || t == Type::TOP) {
+      continue;
+    }
+    if (t != phi_type && t->higher_equal_speculative(phi_type)) {
+      types.insert_sorted<compare_types>(t);
+    }
+    while (in != nullptr && in->is_ConstraintCast()) {
+      Node* next = in->in(1);
+      if (phase->type(next)->isa_rawptr() && phase->type(in)->isa_oopptr()) {
+        break;
+      }
+      ConstraintCastNode* cast = in->as_ConstraintCast();
+      for (int j = 0; j < cast->extra_types_count(); ++j) {
+        const Type* extra_t = cast->extra_type_at(j);
+        if (extra_t != phi_type && extra_t->higher_equal_speculative(phi_type)) {
+          types.insert_sorted<compare_types>(extra_t);
+        }
+      }
+      in = next;
+    }
+  }
+  const Type **flds = (const Type **)(phase->C->type_arena()->AmallocWords(types.length()*sizeof(Type*)));
+  for (int i = 0; i < types.length(); ++i) {
+    flds[i] = types.at(i);
+  }
+  return TypeTuple::make(types.length(), flds);
 }
 
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
@@ -2527,7 +2756,7 @@ Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIte
     if (idx < n->req()) {
       stack.set_index(idx + 1);
       Node* def = n->in(idx);
-      if (def == NULL) {
+      if (def == nullptr) {
         continue; // ignore dead path
       } else if (def->is_Phi()) { // inner node
         Node* new_phi = node_map[n->_idx];
@@ -2543,7 +2772,7 @@ Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIte
         new_phi->set_req(idx, def->in(c));
       } else {
         assert(false, "not optimizeable");
-        return NULL;
+        return nullptr;
       }
     } else {
       Node* new_phi = node_map[n->_idx];
@@ -2561,14 +2790,14 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
   stack.push(root_phi, 1); // ignore control
   visited.set(root_phi->_idx);
 
-  VectorBoxNode* cached_vbox = NULL;
+  VectorBoxNode* cached_vbox = nullptr;
   while (stack.is_nonempty()) {
     Node* n   = stack.node();
     uint  idx = stack.index();
     if (idx < n->req()) {
       stack.set_index(idx + 1);
       Node* in = n->in(idx);
-      if (in == NULL) {
+      if (in == nullptr) {
         continue; // ignore dead path
       } else if (in->isa_Phi()) {
         if (!visited.test_set(in->_idx)) {
@@ -2576,18 +2805,18 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
         }
       } else if (in->Opcode() == Op_VectorBox) {
         VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in);
-        if (cached_vbox == NULL) {
+        if (cached_vbox == nullptr) {
           cached_vbox = vbox;
         } else if (vbox->vec_type() != cached_vbox->vec_type()) {
           // TODO: vector type mismatch can be handled with additional reinterpret casts
-          assert(Type::cmp(vbox->vec_type(), cached_vbox->vec_type()) != 0, "inconsistent");
-          return NULL; // not optimizable: vector type mismatch
+          assert(!Type::equals(vbox->vec_type(), cached_vbox->vec_type()), "inconsistent");
+          return nullptr; // not optimizable: vector type mismatch
         } else if (vbox->box_type() != cached_vbox->box_type()) {
-          assert(Type::cmp(vbox->box_type(), cached_vbox->box_type()) != 0, "inconsistent");
-          return NULL; // not optimizable: box type mismatch
+          assert(!Type::equals(vbox->box_type(), cached_vbox->box_type()), "inconsistent");
+          return nullptr; // not optimizable: box type mismatch
         }
       } else {
-        return NULL; // not optimizable: neither Phi nor VectorBox
+        return nullptr; // not optimizable: neither Phi nor VectorBox
       }
     } else {
       stack.pop();
@@ -2623,7 +2852,7 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 
 //------------------------------is_tripcount-----------------------------------
 bool PhiNode::is_tripcount(BasicType bt) const {
-  return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
+  return (in(0) != nullptr && in(0)->is_BaseCountedLoop() &&
           in(0)->as_BaseCountedLoop()->bt() == bt &&
           in(0)->as_BaseCountedLoop()->phi() == this);
 }
@@ -2708,7 +2937,7 @@ const Type* PCTableNode::Value(PhaseGVN* phase) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *PCTableNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -2745,7 +2974,7 @@ const Type* CatchNode::Value(PhaseGVN* phase) const {
   for( uint i = 0; i < _size; i++ ) f[i] = Type::CONTROL;
   // Identify cases that will always throw an exception
   // () rethrow call
-  // () virtual or interface call with NULL receiver
+  // () virtual or interface call with null receiver
   // () call is a check cast with incompatible arguments
   if( in(1)->is_Proj() ) {
     Node *i10 = in(1)->in(0);
@@ -2803,7 +3032,7 @@ Node* CatchProjNode::Identity(PhaseGVN* phase) {
   // an exception) or for "rethrow", because a further optimization will
   // yank the rethrow (happens when we inline a function that can throw an
   // exception and the caller has no handler).  Not legal, e.g., for passing
-  // a NULL receiver to a v-call, or passing bad types to a slow-check-cast.
+  // a null receiver to a v-call, or passing bad types to a slow-check-cast.
   // These cases MUST throw an exception via the runtime system, so the VM
   // will be looking for a table entry.
   Node *proj = in(0)->in(1);    // Expect a proj feeding CatchNode
@@ -2866,12 +3095,12 @@ Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Dead code elimination can sometimes delete this projection so
     // if it's not there, there's nothing to do.
     Node* fallthru = proj_out_or_null(0);
-    if (fallthru != NULL) {
+    if (fallthru != nullptr) {
       phase->is_IterGVN()->replace_node(fallthru, in(0));
     }
     return phase->C->top();
   }
-  return NULL;
+  return nullptr;
 }
 
 #ifndef PRODUCT
@@ -2880,13 +3109,17 @@ void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
+Node* BlackholeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+}
+
 #ifndef PRODUCT
 void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   st->print("blackhole ");
   bool first = true;
   for (uint i = 0; i < req(); i++) {
     Node* n = in(i);
-    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+    if (n != nullptr && OptoReg::is_valid(ra->get_reg_first(n))) {
       if (first) {
         first = false;
       } else {

@@ -36,7 +36,8 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopRangeStrideTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -78,7 +79,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nonConstantRange() {
         int[] res = new int[SIZE];
@@ -89,7 +90,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] crossZeroRange() {
         int[] res = new int[SIZE];
@@ -100,7 +101,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nonEqualTestRange() {
         int[] res = new int[SIZE];
@@ -111,7 +112,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] shortInductionLoop() {
         int[] res = new int[SIZE];
@@ -122,7 +123,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] whileLoop() {
         int[] res = new int[SIZE];
@@ -135,7 +136,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] doWhileLoop() {
         int[] res = new int[SIZE];
@@ -176,7 +177,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoop() {
         int[] res = new int[SIZE];
@@ -197,7 +198,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     // ---------- Stride with scale ----------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countupLoopWithNegScale() {
         int[] res = new int[SIZE];
@@ -208,7 +209,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoopWithNegScale() {
         int[] res = new int[SIZE];

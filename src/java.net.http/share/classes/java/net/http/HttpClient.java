@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,17 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
-import java.net.URLPermission;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -45,6 +46,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
+import java.util.concurrent.Flow.Subscription;
+
 import jdk.internal.net.http.HttpClientBuilderImpl;
 
 /**
@@ -61,7 +64,11 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * and can be used to send multiple requests.
  *
  * <p> An {@code HttpClient} provides configuration information, and resource
- * sharing, for all requests sent through it.
+ * sharing, for all requests sent through it. An {@code HttpClient} instance
+ * typically manages its own pools of connections, which it may then reuse
+ * as and when necessary. Connection pools are  typically not shared between
+ * {@code HttpClient} instances. Creating a new client for each operation,
+ * though possible, will usually prevent reusing such connections.
  *
  * <p> A {@link BodyHandler BodyHandler} must be supplied for each {@link
  * HttpRequest} sent. The {@code BodyHandler} determines how to handle the
@@ -109,30 +116,55 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .thenApply(HttpResponse::body)
  *        .thenAccept(System.out::println);  }
  *
- * <p> <a id="securitychecks"><b>Security checks</b></a>
+ * @apiNote
+ * Resources allocated by the {@code HttpClient} may be
+ * reclaimed early by {@linkplain #close() closing} the client.
  *
- * <p> If a security manager is present then security checks are performed by
- * the HTTP Client's sending methods. An appropriate {@link URLPermission} is
- * required to access the destination server, and proxy server if one has
- * been configured. The form of the {@code URLPermission} required to access a
- * proxy has a {@code method} parameter of {@code "CONNECT"} (for all kinds of
- * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
- * where host and port specify the proxy's address.
+ * @implNote
+ *  <p id="streaming">
+ *  The {@link BodyHandlers} and {@link BodySubscribers}
+ *  classes provide some {@linkplain BodySubscribers##streaming-body streaming
+ *  or publishing {@code BodyHandler} and {@code BodySubscriber}
+ *  implementations} which allow to stream body data back to the caller.
+ *  In order for the resources associated with these streams to be
+ *  reclaimed, and for the HTTP request to be considered completed,
+ *  a caller must eventually {@linkplain  HttpResponse#body()
+ *  obtain the streaming response body} and close, cancel, or
+ *  read the returned streams to exhaustion. Likewise, a custom
+ *  {@link BodySubscriber} implementation should either {@linkplain
+ *  Subscription#request(long) request} all data until {@link
+ *  BodySubscriber#onComplete() onComplete} or {@link
+ *  BodySubscriber#onError(Throwable) onError} is signalled, or eventually
+ *  {@linkplain Subscription#cancel() cancel} its subscription.
  *
- * @implNote If an explicit {@linkplain HttpClient.Builder#executor(Executor)
- * executor} has not been set for an {@code HttpClient}, and a security manager
- * has been installed, then the default executor will execute asynchronous and
- * dependent tasks in a context that is granted no permissions. Custom
- * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
- * HttpResponse.BodyHandler response body handlers}, {@linkplain
- * HttpResponse.BodySubscriber response body subscribers}, and {@linkplain
- * WebSocket.Listener WebSocket Listeners}, if executing operations that require
- * privileges, should do so within an appropriate {@linkplain
- * AccessController#doPrivileged(PrivilegedAction) privileged context}.
+ * <p id="closing">
+ * The JDK built-in implementation of the {@code HttpClient} overrides
+ * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
+ * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
+ * provide a best effort implementation. Failing to close, cancel, or
+ * read {@link ##streaming streaming or publishing bodies} to exhaustion
+ * may stop delivery of data while leaving the request open, and
+ * {@linkplain #awaitTermination(Duration) stall an
+ * orderly shutdown}. The {@link #shutdownNow()} method, if called, will
+ * attempt to cancel any such non-completed requests, but may cause
+ * abrupt termination of any on going operation.
+ *
+ * <p id="gc">
+ * If not {@linkplain ##closing explicitly closed}, the JDK
+ * built-in implementation of the {@code HttpClient} releases
+ * its resources when an {@code HttpClient} instance is no longer
+ * strongly reachable, and all operations started on that instance have
+ * eventually completed. This relies both on the garbage collector
+ * to notice that the instance is no longer reachable, and on all
+ * requests started on the client to eventually complete. Failure
+ * to properly close {@linkplain ##streaming streaming or publishing bodies}
+ * may prevent the associated requests from running to completion, and
+ * prevent the resources allocated by the associated client from
+ * being reclaimed by the garbage collector.
  *
  * @since 11
  */
-public abstract class HttpClient {
+public abstract class HttpClient implements AutoCloseable {
 
     /**
      * Creates an HttpClient.
@@ -267,9 +299,7 @@ public abstract class HttpClient {
          * HttpClient}.
          *
          * @implNote The default executor uses a thread pool, with a custom
-         * thread factory. If a security manager has been installed, the thread
-         * factory creates threads that run with an access control context that
-         * has no permissions.
+         * thread factory.
          *
          * @param executor the Executor
          * @return this builder
@@ -352,6 +382,16 @@ public abstract class HttpClient {
         /**
          * Sets an authenticator to use for HTTP authentication.
          *
+         * @implNote
+         * In the JDK built-in implementation of the {@code HttpClient},
+         * if a {@link HttpRequest} has an {@code Authorization} or {@code
+         * Proxy-Authorization} header set then its value is used and
+         * the {@link Authenticator} is not invoked for the corresponding
+         * authentication. In this case, any authentication errors are returned
+         * to the user and requests are not automatically retried.
+         * Additionally, the JDK built-in implementation currently only supports HTTP
+         * {@code Basic} authentication.
+         *
          * @param authenticator the Authenticator
          * @return this builder
          */
@@ -396,20 +436,12 @@ public abstract class HttpClient {
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
-         * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
-         * address and a security manager is installed, then
-         * this method calls {@link SecurityManager#checkListen checkListen} to check that
-         * the caller has necessary permission to bind to that local address.
-         *
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
          * by the implementation cannot be allocated. For instance,
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
-         * @throws SecurityException If a security manager has been installed and the
-         *         security manager's {@link SecurityManager#checkListen checkListen}
-         *         method disallows binding to the given address.
          */
         public HttpClient build();
     }
@@ -599,16 +631,12 @@ public abstract class HttpClient {
      * @param request the request
      * @param responseBodyHandler the response body handler
      * @return the response
-     * @throws IOException if an I/O error occurs when sending or receiving
+     * @throws IOException if an I/O error occurs when sending or receiving, or
+     *         the client has {@linkplain ##closing shut down}
      * @throws InterruptedException if the operation is interrupted
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
      *         HttpRequest.Builder HttpRequest.Builder}.
-     * @throws SecurityException If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.
      */
     public abstract <T> HttpResponse<T>
     send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler)
@@ -646,15 +674,11 @@ public abstract class HttpClient {
      *
      * <p> The returned completable future completes exceptionally with:
      * <ul>
-     * <li>{@link IOException} - if an I/O error occurs when sending or receiving</li>
-     * <li>{@link SecurityException} - If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.</li>
+     * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
+     *      or the client has {@linkplain ##closing shut down}.</li>
      * </ul>
      *
-     * <p> The default {@code HttpClient} implementation returns
+     * <p id="cancel"> The default {@code HttpClient} implementation returns
      * {@code CompletableFuture} objects that are <em>cancelable</em>.
      * {@code CompletableFuture} objects {@linkplain CompletableFuture#newIncompleteFuture()
      * derived} from cancelable futures are themselves <em>cancelable</em>.
@@ -730,4 +754,154 @@ public abstract class HttpClient {
     public WebSocket.Builder newWebSocketBuilder() {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted with {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}, which will all have to
+     * run to completion until the request is considered completed.
+     *
+     * Invocation has no additional effect if already shut down.
+     *
+     * <p>This method does not wait for previously submitted request
+     * to complete execution.  Use {@link #awaitTermination(Duration)
+     * awaitTermination} or {@link #close() close} to do that.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing. Subclasses should
+     * override this method to implement the appropriate behavior.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public void shutdown() { }
+
+    /**
+     * Blocks until all operations have completed execution after a shutdown
+     * request, or the {@code duration} elapses, or the current thread is
+     * {@linkplain Thread#interrupt() interrupted}, whichever happens first.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     *
+     * <p> This method does not wait if the duration to wait is less than or
+     * equal to zero. In this case, the method just tests if the thread has
+     * terminated.
+     *
+     * @implSpec
+     * The default implementation of this method checks for null arguments, but
+     * otherwise does nothing and returns true.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @param duration the maximum time to wait
+     * @return {@code true} if this client terminated and
+     *         {@code false} if the timeout elapsed before termination
+     * @throws InterruptedException if interrupted while waiting
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration);
+        return true;
+    }
+
+    /**
+     * Returns {@code true} if all operations have completed following
+     * a shutdown.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     * <p> Note that {@code isTerminated} is never {@code true} unless
+     * either {@code shutdown} or {@code shutdownNow} was called first.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing and returns false.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @return {@code true} if all tasks have completed following a shutdown
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public boolean isTerminated() {
+        return false;
+    }
+
+    /**
+     * This method attempts to initiate an immediate shutdown.
+     * An implementation of this method may attempt to
+     * interrupt operations that are actively running.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     * The behavior of actively running operations when interrupted
+     * is undefined. In particular, there is no guarantee that
+     * interrupted operations will terminate, or that code waiting
+     * on these operations will ever be notified.
+     *
+     * @implSpec
+     * The default implementation of this method simply calls {@link #shutdown()}.
+     * Subclasses should override this method to implement the appropriate
+     * behavior.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public void shutdownNow() {
+        shutdown();
+    }
+
+    /**
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted to {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}.
+     * This method waits until all operations have completed execution
+     * and the client has terminated.
+     *
+     * <p> If interrupted while waiting, this method may attempt to stop all
+     * operations by calling {@link #shutdownNow()}. It then continues to wait
+     * until all actively executing operations have completed.
+     * The interrupt status will be re-asserted before this method returns.
+     *
+     * <p> If already terminated, invoking this method has no effect.
+     *
+     * @implSpec
+     * The default implementation invokes {@code shutdown()} and waits for tasks
+     * to complete execution with {@code awaitTermination}.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    @Override
+    public void close() {
+        boolean terminated = isTerminated();
+        if (!terminated) {
+            shutdown();
+            boolean interrupted = false;
+            while (!terminated) {
+                try {
+                    terminated = awaitTermination(Duration.ofDays(1L));
+                } catch (InterruptedException e) {
+                    if (!interrupted) {
+                        interrupted = true;
+                        shutdownNow();
+                        if (isTerminated()) break;
+                    }
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
 }

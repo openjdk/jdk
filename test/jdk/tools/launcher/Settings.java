@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -67,15 +67,67 @@ public class Settings extends TestHelper {
     private static final String VM_SETTINGS = "VM settings:";
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
+    private static final String LOCALE_SUMMARY_SETTINGS =
+                "Locale settings summary:";
+    private static final String AVAILABLE_LOCALES = "available locales";
+    private static final String SEC_PROPS_SETTINGS = "Security properties:";
+    private static final String SEC_SUMMARY_PROPS_SETTINGS =
+                "Security settings summary:";
+    private static final String SEC_PROVIDER_SETTINGS =
+                "Security provider static configuration:";
+    private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
+    private static final String BAD_SEC_OPTION_MSG = "Valid \"security\" suboption values are";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
+    private static final String METRICS_NOT_AVAILABLE_MSG = "No metrics available for this platform";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
+    private static final String TIMEZONE_SETTINGS = "default timezone";
+    private static final String TZDATA_SETTINGS = "tzdata version";
+    private static final String ERR_MSG = "Unrecognized showSettings option:";
 
+    /*
+     * "all" should print verbose settings
+     */
     static void containsAllOptions(TestResult tr) {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, AVAILABLE_LOCALES);
+        checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        checkContains(tr, TIMEZONE_SETTINGS);
+        checkContains(tr, TZDATA_SETTINGS);
         if (System.getProperty("os.name").contains("Linux")) {
             checkContains(tr, SYSTEM_SETTINGS);
+        } else {
+            // only invoke system option by default on Linux
+            checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
+        }
+    }
+    /*
+     * default (no options) should print non verbose
+     * details on each component
+     */
+    static void containsDefaultOptions(TestResult tr) {
+        checkContains(tr, VM_SETTINGS);
+        checkContains(tr, PROP_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, AVAILABLE_LOCALES);
+        checkContains(tr, LOCALE_SUMMARY_SETTINGS);
+        // no verbose security settings unless "security" or "all" used
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        checkContains(tr, TIMEZONE_SETTINGS);
+        checkContains(tr, TZDATA_SETTINGS);
+        if (System.getProperty("os.name").contains("Linux")) {
+            checkContains(tr, SYSTEM_SETTINGS);
+        } else {
+            // only invoke system option by default on Linux
+            checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
     }
 
@@ -99,7 +151,7 @@ public class Settings extends TestHelper {
                 "-Xss" + stackSize + "k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         // Check the stack size logs printed by -XshowSettings to verify -Xss meaningfully.
         checkContains(tr, STACKSIZE_SETTINGS);
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test fails");
@@ -107,7 +159,7 @@ public class Settings extends TestHelper {
         tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
                 "-Xss" + (stackSize * 1024), "-XshowSettings", "-jar", testJar.getAbsolutePath());
         checkContains(tr, STACKSIZE_SETTINGS);
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test fails");
@@ -139,8 +191,61 @@ public class Settings extends TestHelper {
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, AVAILABLE_LOCALES);
+        checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
+        checkContains(tr, TIMEZONE_SETTINGS);
+        checkContains(tr, TZDATA_SETTINGS);
     }
 
+    static void runTestOptionSecurity() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security");
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+    }
+
+    static void runTestOptionSecurityProps() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:properties");
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+        // test a well known property for sanity
+        checkContains(tr, "keystore.type=pkcs12");
+    }
+
+    static void runTestOptionSecurityProv() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers");
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+        // test a well known Provider for sanity
+        checkContains(tr, "Provider name: SUN");
+        // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
+        checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
+                "DH, OID.1.2.840.113549.1.3.1]");
+    }
+
+    static void runTestOptionSecurityTLS() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:tls");
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        // test a well known TLS config for sanity
+        checkContains(tr, "TLSv1.2");
+    }
+
+    // ensure error message is printed when unrecognized option used
+    static void runTestOptionBadSecurityOption() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:bad");
+        tr.checkNegative();
+        checkContains(tr, BAD_SEC_OPTION_MSG);
+        // we print all security settings in such scenario
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+    }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
         if (System.getProperty("os.name").contains("Linux")) {
@@ -149,18 +254,50 @@ public class Settings extends TestHelper {
             checkNotContains(tr, LOCALE_SETTINGS);
             checkContains(tr, SYSTEM_SETTINGS);
         } else {
-            // -XshowSettings prints all available settings when
-            // settings argument is not recognized.
-            containsAllOptions(tr);
+            // "system" should print a "No metrics available"
+            // message on other OSes
+            checkNotContains(tr, VM_SETTINGS);
+            checkContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
     }
 
     static void runTestBadOptions() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettingsBadOption");
+        tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
+
+        // no such component option
+        tr = doExec(javaCmd, "-XshowSettings:BadOption");
+        tr.checkNegative();
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, ERR_MSG);
+
+        // don't allow invalid sub options
+        tr = doExec(javaCmd, "-XshowSettings:locale:bad");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // don't allow ":" as an option
+        tr = doExec(javaCmd, "-XshowSettings:");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // case-sensitive test
+        tr = doExec(javaCmd, "-XshowSettings:VM");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // exclude this enum value
+        tr = doExec(javaCmd, "-XshowSettings:empty");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+
     }
 
     static void runTest7123582() throws IOException {
@@ -169,7 +306,7 @@ public class Settings extends TestHelper {
             System.out.println(tr);
             throw new RuntimeException("test fails");
         }
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
     }
 
     public static void main(String... args) throws IOException {
@@ -178,6 +315,11 @@ public class Settings extends TestHelper {
         runTestOptionVM();
         runTestOptionProperty();
         runTestOptionLocale();
+        runTestOptionSecurity();
+        runTestOptionSecurityProps();
+        runTestOptionSecurityProv();
+        runTestOptionSecurityTLS();
+        runTestOptionBadSecurityOption();
         runTestOptionSystem();
         runTestBadOptions();
         runTest7123582();

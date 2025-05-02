@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,12 +75,11 @@ public enum G1SampleClass {
      * @param wrkDir working dir where generated classes are put and compiled
      * @param classNamePrefix prefix for service classes (ones we use to create chain of inheritance)
      * @return a class with instances of the specified size loaded in specified class loader
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * @throws Exception
      */
 
     public Class<?> getCls(ClassLoader classLoader, Path wrkDir, String classNamePrefix)
-            throws IOException, ClassNotFoundException {
+            throws Exception {
         return Helpers.generateCompileAndLoad(classLoader, Helpers.enumNameToClassName(name()) + "Class",
                 expectedInstanceSize(), wrkDir, classNamePrefix);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_ALIGN_HPP
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -63,15 +64,22 @@ constexpr T align_down(T size, A alignment) {
   // Convert mask to T before logical_not.  Otherwise, if alignment is unsigned
   // and smaller than T, the result of the logical_not will be zero-extended
   // by integral promotion, and upper bits of size will be discarded.
-  T result = size & ~T(alignment_mask(alignment));
+  T result = T(size & ~T(alignment_mask(alignment)));
   assert(is_aligned(result, alignment),
          "must be aligned: " UINT64_FORMAT, (uint64_t)result);
   return result;
 }
 
+// Checks whether it is possible to align size to alignment without overflowing.
+template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
+constexpr bool can_align_up(T size, A alignment) {
+  return align_down(std::numeric_limits<T>::max(), alignment) >= size;
+}
+
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
-  T adjusted = size + alignment_mask(alignment);
+  assert(can_align_up(size, alignment), "precondition");
+  T adjusted = checked_cast<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
 
@@ -83,6 +91,12 @@ constexpr T align_down_bounded(T size, A alignment) {
 }
 
 // Align pointers and check for alignment.
+
+template <typename A>
+inline bool can_align_up(void* ptr, A alignment) {
+  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
+  return can_align_up((uintptr_t)ptr, alignment);
+}
 
 template <typename T, typename A>
 inline T* align_up(T* ptr, A alignment) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #define SHARE_GC_Z_ZREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zValue.hpp"
 
+class ConcurrentGCTimer;
 class ReferencePolicy;
 class ZWorkers;
 
@@ -34,46 +36,49 @@ class ZReferenceProcessor : public ReferenceDiscoverer {
   friend class ZReferenceProcessorTask;
 
 private:
-  static const size_t reference_type_count = REF_PHANTOM + 1;
-  typedef size_t Counters[reference_type_count];
+  static const size_t ReferenceTypeCount = REF_PHANTOM + 1;
+  typedef size_t Counters[ReferenceTypeCount];
 
   ZWorkers* const      _workers;
   ReferencePolicy*     _soft_reference_policy;
+  bool                 _uses_clear_all_soft_reference_policy;
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
-  ZPerWorker<oop>      _discovered_list;
-  ZContended<oop>      _pending_list;
-  oop*                 _pending_list_tail;
+  ZPerWorker<zaddress> _discovered_list;
+  ZContended<zaddress> _pending_list;
+  zaddress             _pending_list_tail;
 
-  bool is_inactive(oop reference, oop referent, ReferenceType type) const;
+  bool is_inactive(zaddress reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
-  bool is_softly_live(oop reference, ReferenceType type) const;
+  bool is_softly_live(zaddress reference, ReferenceType type) const;
 
-  bool should_discover(oop reference, ReferenceType type) const;
-  bool should_drop(oop reference, ReferenceType type) const;
-  void keep_alive(oop reference, ReferenceType type) const;
-  void make_inactive(oop reference, ReferenceType type) const;
+  bool should_discover(zaddress reference, ReferenceType type) const;
+  bool try_make_inactive(zaddress reference, ReferenceType type) const;
 
-  void discover(oop reference, ReferenceType type);
+  void discover(zaddress reference, ReferenceType type);
 
-  oop drop(oop reference, ReferenceType type);
-  oop* keep(oop reference, ReferenceType type);
+  void verify_empty() const;
 
-  bool is_empty() const;
-
+  void process_worker_discovered_list(zaddress discovered_list);
   void work();
   void collect_statistics();
+
+  zaddress swap_pending_list(zaddress pending_list);
 
 public:
   ZReferenceProcessor(ZWorkers* workers);
 
-  void set_soft_reference_policy(bool clear);
+  void set_soft_reference_policy(bool clear_all_soft_references);
+  bool uses_clear_all_soft_reference_policy() const;
+
   void reset_statistics();
 
   virtual bool discover_reference(oop reference, ReferenceType type);
   void process_references();
   void enqueue_references();
+
+  void verify_pending_references();
 };
 
 #endif // SHARE_GC_Z_ZREFERENCEPROCESSOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,8 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            String[] params = new String[0];;
-            LingeredApp.startAppExactJvmOpts(app1, params);
-            LingeredApp.startAppExactJvmOpts(app2, params);
+            LingeredApp.startApp(app1);
+            LingeredApp.startApp(app2);
             OutputAnalyzer output = jinfo("-flag", "MinHeapFreeRatio=1", "JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             output = jinfo("-flag", "MinHeapFreeRatio", "JInfoTestLingeredApp");
@@ -89,9 +88,8 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            String[] params = new String[0];
-            LingeredApp.startAppExactJvmOpts(app1, params);
-            LingeredApp.startAppExactJvmOpts(app2, params);
+            LingeredApp.startApp(app1);
+            LingeredApp.startApp(app2);
             OutputAnalyzer output = jinfo("JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             // "Runtime Environment" written once per proc

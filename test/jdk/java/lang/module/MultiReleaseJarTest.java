@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /**
  * @test
- * @library /test/lib
  * @modules java.base/jdk.internal.module
- * @build MultiReleaseJarTest jdk.test.lib.util.JarUtils
+ * @library /test/lib
+ * @build MultiReleaseJarTest
+ *        jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.util.ModuleInfoWriter
  * @run testng MultiReleaseJarTest
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarTest
  * @summary Basic test of modular JARs as multi-release JARs
@@ -54,7 +56,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import jdk.internal.module.ModuleInfoWriter;
+import jdk.test.lib.util.ModuleInfoWriter;
 import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.Test;

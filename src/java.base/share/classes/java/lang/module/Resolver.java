@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,6 @@ final class Resolver {
      * and m2 reads m3.
      */
     private Map<ResolvedModule, Set<ResolvedModule>> makeGraph(Configuration cf) {
-
         int moduleCount = nameToReference.size();
 
         // the "reads" graph starts as a module dependence graph and
@@ -537,9 +536,7 @@ final class Resolver {
         }
 
         // populate g1 and g2 with the dependences from the selected modules
-
         Map<String, ResolvedModule> nameToResolved = HashMap.newHashMap(moduleCount);
-
         for (ModuleReference mref : nameToReference.values()) {
             ModuleDescriptor descriptor = mref.descriptor();
             String name = descriptor.name();
@@ -595,8 +592,7 @@ final class Resolver {
                     String name2 = descriptor2.name();
 
                     if (!name.equals(name2)) {
-                        ResolvedModule m2
-                            = computeIfAbsent(nameToResolved, name2, cf, mref2);
+                        ResolvedModule m2 = computeIfAbsent(nameToResolved, name2, cf, mref2);
                         reads.add(m2);
                         if (descriptor2.isAutomatic())
                             requiresTransitive.add(m2);
@@ -622,29 +618,33 @@ final class Resolver {
             g2.put(m1, requiresTransitive);
         }
 
-        // Iteratively update g1 until there are no more requires transitive
-        // to propagate
+        // Iteratively update g1 until there are no more requires transitive to propagate
         boolean changed;
         List<ResolvedModule> toAdd = new ArrayList<>();
         do {
             changed = false;
-            for (Set<ResolvedModule> m1Reads : g1.values()) {
-                for (ResolvedModule m2 : m1Reads) {
-                    Set<ResolvedModule> m2RequiresTransitive = g2.get(m2);
-                    if (m2RequiresTransitive != null) {
-                        for (ResolvedModule m3 : m2RequiresTransitive) {
-                            if (!m1Reads.contains(m3)) {
-                                // m1 reads m2, m2 requires transitive m3
-                                // => need to add m1 reads m3
-                                toAdd.add(m3);
+            for (Map.Entry<ResolvedModule, Set<ResolvedModule>> e : g1.entrySet()) {
+                ResolvedModule m1 = e.getKey();
+                // automatic module already reads all selected modules so nothing to propagate
+                if (!m1.descriptor().isAutomatic()) {
+                    Set<ResolvedModule> m1Reads = e.getValue();
+                    for (ResolvedModule m2 : m1Reads) {
+                        Set<ResolvedModule> m2RequiresTransitive = g2.get(m2);
+                        if (m2RequiresTransitive != null) {
+                            for (ResolvedModule m3 : m2RequiresTransitive) {
+                                if (!m1Reads.contains(m3)) {
+                                    // m1 reads m2, m2 requires transitive m3
+                                    // => need to add m1 reads m3
+                                    toAdd.add(m3);
+                                }
                             }
                         }
                     }
-                }
-                if (!toAdd.isEmpty()) {
-                    m1Reads.addAll(toAdd);
-                    toAdd.clear();
-                    changed = true;
+                    if (!toAdd.isEmpty()) {
+                        m1Reads.addAll(toAdd);
+                        toAdd.clear();
+                        changed = true;
+                    }
                 }
             }
         } while (changed);
@@ -689,7 +689,6 @@ final class Resolver {
      * </ol>
      */
     private void checkExportSuppliers(Map<ResolvedModule, Set<ResolvedModule>> graph) {
-
         for (Map.Entry<ResolvedModule, Set<ResolvedModule>> e : graph.entrySet()) {
             ModuleDescriptor descriptor1 = e.getKey().descriptor();
             String name1 = descriptor1.name();
@@ -754,7 +753,6 @@ final class Resolver {
                             failTwoSuppliers(descriptor1, source, descriptor2, supplier);
                         }
                     }
-
                 }
             }
 
@@ -764,18 +762,21 @@ final class Resolver {
                 // uses S
                 for (String service : descriptor1.uses()) {
                     String pn = packageName(service);
-                    if (!packageToExporter.containsKey(pn)) {
-                        resolveFail("Module %s does not read a module that exports %s",
-                                    descriptor1.name(), pn);
+                    if (!packageToExporter.containsKey(pn)
+                            && !requiresStaticMissingModule(descriptor1, reads)) {
+                        resolveFail("Module %s uses %s but does not read a module that exports %s to %s",
+                                    descriptor1.name(), service, pn, descriptor1.name());
+
                     }
                 }
 
                 // provides S
                 for (ModuleDescriptor.Provides provides : descriptor1.provides()) {
                     String pn = packageName(provides.service());
-                    if (!packageToExporter.containsKey(pn)) {
-                        resolveFail("Module %s does not read a module that exports %s",
-                                    descriptor1.name(), pn);
+                    if (!packageToExporter.containsKey(pn)
+                            && !requiresStaticMissingModule(descriptor1, reads)) {
+                        resolveFail("Module %s provides %s but does not read a module that exports %s to %s",
+                                    descriptor1.name(), provides.service(), pn, descriptor1.name());
                     }
                 }
 
@@ -783,6 +784,34 @@ final class Resolver {
 
         }
 
+    }
+
+    /**
+     * Returns true if a module 'requires static' a module that is not in the
+     * readability graph, or reads a module that 'requires static transitive'
+     * a module that is not in the readability graph.
+     */
+    private boolean requiresStaticMissingModule(ModuleDescriptor descriptor,
+                                                Set<ResolvedModule> reads) {
+        Set<String> moduleNames = reads.stream()
+                .map(ResolvedModule::name)
+                .collect(Collectors.toSet());
+        for (ModuleDescriptor.Requires r : descriptor.requires()) {
+            if (r.modifiers().contains(Modifier.STATIC)
+                    && !moduleNames.contains(r.name())) {
+                return true;
+            }
+        }
+        for (ResolvedModule rm : reads) {
+            for (ModuleDescriptor.Requires r : rm.descriptor().requires()) {
+                if (r.modifiers().contains(Modifier.STATIC)
+                        && r.modifiers().contains(Modifier.TRANSITIVE)
+                        && !moduleNames.contains(r.name())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

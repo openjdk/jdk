@@ -23,8 +23,8 @@
 package com.sun.org.apache.xml.internal.security.utils;
 
 import java.math.BigInteger;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import org.w3c.dom.Attr;
@@ -512,6 +512,9 @@ public abstract class ElementProxy {
             "http://www.nue.et-inf.uni-siegen.de/~geuer-pollmann/#xpathFilter", "xx"
         );
         setNamespacePrefix("http://www.w3.org/2009/xmldsig11#", "dsig11");
+        setNamespacePrefix("http://www.w3.org/2001/04/xmldsig-more", "rfc4051");
+        setNamespacePrefix("http://www.w3.org/2007/05/xmldsig-more#", "rfc6931");
+        setNamespacePrefix("http://www.w3.org/2021/04/xmldsig-more#", "rfc9231");
     }
 
     /**

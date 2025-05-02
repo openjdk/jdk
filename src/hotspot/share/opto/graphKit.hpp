@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class GraphKit : public Phase {
 
  private:
   SafePointNode*     map_not_null() const {
-    assert(_map != NULL, "must call stopped() to test for reset compiler map");
+    assert(_map != nullptr, "must call stopped() to test for reset compiler map");
     return _map;
   }
 
@@ -82,12 +82,13 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(!has_exceptions(), "user must call transfer_exceptions_into_jvms");
+    assert(failing_internal() || !has_exceptions(),
+           "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
 
-  virtual Parse*          is_Parse()          const { return NULL; }
-  virtual LibraryCallKit* is_LibraryCallKit() const { return NULL; }
+  virtual Parse*          is_Parse()          const { return nullptr; }
+  virtual LibraryCallKit* is_LibraryCallKit() const { return nullptr; }
 
   ciEnv*        env()               const { return _env; }
   PhaseGVN&     gvn()               const { return _gvn; }
@@ -132,7 +133,7 @@ class GraphKit : public Phase {
   // See layout accessors in class JVMState.
 
   SafePointNode*     map()      const { return _map; }
-  bool               has_exceptions() const { return _exceptions != NULL; }
+  bool               has_exceptions() const { return _exceptions != nullptr; }
   JVMState*          jvms()     const { return map_not_null()->_jvms; }
   int                sp()       const { return _sp; }
   int                bci()      const { return _bci; }
@@ -143,8 +144,8 @@ class GraphKit : public Phase {
                                         assert(jvms == this->jvms(), "sanity");
                                         _sp = jvms->sp();
                                         _bci = jvms->bci();
-                                        _method = jvms->has_method() ? jvms->method() : NULL; }
-  void set_map(SafePointNode* m)      { _map = m; debug_only(verify_map()); }
+                                        _method = jvms->has_method() ? jvms->method() : nullptr; }
+  void set_map(SafePointNode* m)      { _map = m; DEBUG_ONLY(verify_map()); }
   void set_sp(int sp)                 { assert(sp >= 0, "sp must be non-negative: %d", sp); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
 
@@ -181,19 +182,20 @@ class GraphKit : public Phase {
 
   // Tell if the compilation is failing.
   bool failing() const { return C->failing(); }
+  bool failing_internal() const { return C->failing_internal(); }
 
-  // Set _map to NULL, signalling a stop to further bytecode execution.
+  // Set _map to null, signalling a stop to further bytecode execution.
   // Preserve the map intact for future use, and return it back to the caller.
-  SafePointNode* stop() { SafePointNode* m = map(); set_map(NULL); return m; }
+  SafePointNode* stop() { SafePointNode* m = map(); set_map(nullptr); return m; }
 
-  // Stop, but first smash the map's inputs to NULL, to mark it dead.
+  // Stop, but first smash the map's inputs to null, to mark it dead.
   void stop_and_kill_map();
 
-  // Tell if _map is NULL, or control is top.
+  // Tell if _map is null, or control is top.
   bool stopped();
 
   // Tell if this method or any caller method has exception handlers.
-  bool has_ex_handler();
+  bool has_exception_handler();
 
   // Save an exception without blowing stack contents or other JVM state.
   // (The extra pointer is stuck with add_req on the map, beyond the JVMS.)
@@ -221,17 +223,17 @@ class GraphKit : public Phase {
   // Detach and return an exception state.
   SafePointNode* pop_exception_state() {
     SafePointNode* ex_map = _exceptions;
-    if (ex_map != NULL) {
+    if (ex_map != nullptr) {
       _exceptions = ex_map->next_exception();
-      ex_map->set_next_exception(NULL);
-      debug_only(verify_exception_state(ex_map));
+      ex_map->set_next_exception(nullptr);
+      DEBUG_ONLY(verify_exception_state(ex_map));
     }
     return ex_map;
   }
 
   // Add an exception, using the given JVM state, without commoning.
   void push_exception_state(SafePointNode* ex_map) {
-    debug_only(verify_exception_state(ex_map));
+    DEBUG_ONLY(verify_exception_state(ex_map));
     ex_map->set_next_exception(_exceptions);
     _exceptions = ex_map;
   }
@@ -246,10 +248,10 @@ class GraphKit : public Phase {
 
   // Combine all exceptions of any sort whatever into a single master state.
   SafePointNode* combine_and_pop_all_exception_states() {
-    if (_exceptions == NULL)  return NULL;
+    if (_exceptions == nullptr)  return nullptr;
     SafePointNode* phi_map = pop_exception_state();
     SafePointNode* ex_map;
-    while ((ex_map = pop_exception_state()) != NULL) {
+    while ((ex_map = pop_exception_state()) != nullptr) {
       combine_exception_states(ex_map, phi_map);
     }
     return phi_map;
@@ -274,6 +276,16 @@ class GraphKit : public Phase {
   // Helper to throw a built-in exception.
   // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
   void builtin_throw(Deoptimization::DeoptReason reason);
+  void builtin_throw(Deoptimization::DeoptReason reason,
+                     ciInstance* exception_object,
+                     bool allow_too_many_traps);
+  bool builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
+                                    ciInstance* exception_object);
+ private:
+  bool is_builtin_throw_hot(Deoptimization::DeoptReason reason);
+  ciInstance* builtin_throw_exception(Deoptimization::DeoptReason reason) const;
+
+ public:
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -353,16 +365,16 @@ class GraphKit : public Phase {
                            bool replace_length_in_map);
 
 
-  // Helper function to do a NULL pointer check or ZERO check based on type.
+  // Helper function to do a null pointer check or ZERO check based on type.
   // Throw an exception if a given value is null.
   // Return the value cast to not-null.
   // Be clever about equivalent dominating null checks.
   Node* null_check_common(Node* value, BasicType type,
                           bool assert_null = false,
-                          Node* *null_control = NULL,
+                          Node* *null_control = nullptr,
                           bool speculative = false);
   Node* null_check(Node* value, BasicType type = T_OBJECT) {
-    return null_check_common(value, type, false, NULL, !_gvn.type(value)->speculative_maybe_null());
+    return null_check_common(value, type, false, nullptr, !_gvn.type(value)->speculative_maybe_null());
   }
   Node* null_check_receiver() {
     assert(argument(0)->bottom_type()->isa_ptr(), "must be");
@@ -381,7 +393,7 @@ class GraphKit : public Phase {
   // Throw an uncommon trap if a given value is __not__ null.
   // Return the value cast to null, and be clever about dominating checks.
   Node* null_assert(Node* value, BasicType type = T_OBJECT) {
-    return null_check_common(value, type, true, NULL, _gvn.type(value)->speculative_always_null());
+    return null_check_common(value, type, true, nullptr, _gvn.type(value)->speculative_always_null());
   }
 
   // Check if value is null and abort if it is
@@ -414,7 +426,7 @@ class GraphKit : public Phase {
         profile.morphism() == 1) {
       return profile.receiver(0);
     }
-    return NULL;
+    return nullptr;
   }
 
   // record type from profiling with the type system
@@ -439,6 +451,8 @@ class GraphKit : public Phase {
   Node* cast_not_null(Node* obj, bool do_replace_in_map = true);
   // Replace all occurrences of one node by another.
   void replace_in_map(Node* old, Node* neww);
+
+  Node* maybe_narrow_object_type(Node* obj, ciKlass* type);
 
   void  push(Node* n)     { map_not_null();        _map->set_stack(_map->_jvms,   _sp++        , n); }
   Node* pop()             { map_not_null(); return _map->stack(    _map->_jvms, --_sp             ); }
@@ -479,7 +493,7 @@ class GraphKit : public Phase {
     int n_size = type2size[n_type];
     if      (n_size == 1)  return pop();
     else if (n_size == 2)  return pop_pair();
-    else                   return NULL;
+    else                   return nullptr;
   }
 
   Node* control()               const { return map_not_null()->control(); }
@@ -538,26 +552,6 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from bottom_type
-    return make_load(ctl, adr, t, bt, adr->bottom_type()->is_ptr(),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != NULL, "use other make_load factory");
-    return make_load(ctl, adr, t, bt, C->get_alias_index(adr_type),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  // This is the base version which is given an alias index.
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
                   bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
 
   // Create & transform a StoreNode and store the effect into the
@@ -568,26 +562,8 @@ class GraphKit : public Phase {
   // procedure must indicate that the store requires `release'
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
-  Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        const TypePtr* adr_type,
-                        MemNode::MemOrd mo,
-                        bool require_atomic_access = false,
-                        bool unaligned = false,
-                        bool mismatched = false,
-                        bool unsafe = false,
-                        int barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != NULL, "use other store_to_memory factory");
-    return store_to_memory(ctl, adr, val, bt,
-                           C->get_alias_index(adr_type),
-                           mo, require_atomic_access,
-                           unaligned, mismatched, unsafe,
-                           barrier_data);
-  }
-  // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        int adr_idx,
                         MemNode::MemOrd,
                         bool require_atomic_access = false,
                         bool unaligned = false,
@@ -660,9 +636,9 @@ class GraphKit : public Phase {
   // Return addressing for an array element.
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt,
                               // Optional constraint on the array size:
-                              const TypeInt* sizetype = NULL,
+                              const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
-                              Node* ctrl = NULL);
+                              Node* ctrl = nullptr);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
@@ -717,17 +693,17 @@ class GraphKit : public Phase {
 
   // Similar to set_edges_for_java_call, but simplified for runtime calls.
   void  set_predefined_output_for_runtime_call(Node* call) {
-    set_predefined_output_for_runtime_call(call, NULL, NULL);
+    set_predefined_output_for_runtime_call(call, nullptr, nullptr);
   }
   void  set_predefined_output_for_runtime_call(Node* call,
                                                Node* keep_mem,
                                                const TypePtr* hook_mem);
-  Node* set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem = NULL);
+  Node* set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem = nullptr);
 
   // Replace the call with the current state of the kit.  Requires
   // that the call was generated with separate io_projs so that
   // exceptional control flow can be handled properly.
-  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false);
+  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false, bool do_asserts = true);
 
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
@@ -738,13 +714,13 @@ class GraphKit : public Phase {
   // The optional reason is debug information written to the compile log.
   // Optional must_throw is the same as with add_safepoint_edges.
   Node* uncommon_trap(int trap_request,
-                     ciKlass* klass = NULL, const char* reason_string = NULL,
+                     ciKlass* klass = nullptr, const char* reason_string = nullptr,
                      bool must_throw = false, bool keep_exact_action = false);
 
   // Shorthand, to avoid saying "Deoptimization::" so many times.
   Node* uncommon_trap(Deoptimization::DeoptReason reason,
                      Deoptimization::DeoptAction action,
-                     ciKlass* klass = NULL, const char* reason_string = NULL,
+                     ciKlass* klass = nullptr, const char* reason_string = nullptr,
                      bool must_throw = false, bool keep_exact_action = false) {
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
@@ -753,7 +729,7 @@ class GraphKit : public Phase {
   // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
   Node* uncommon_trap_exact(Deoptimization::DeoptReason reason,
                            Deoptimization::DeoptAction action,
-                           ciKlass* klass = NULL, const char* reason_string = NULL,
+                           ciKlass* klass = nullptr, const char* reason_string = nullptr,
                            bool must_throw = false) {
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, /*keep_exact_action=*/true);
@@ -786,25 +762,16 @@ class GraphKit : public Phase {
   void final_sync(IdealKit& ideal);
 
   public:
-  // Helper function to round double arguments before a call
-  void round_double_arguments(ciMethod* dest_method);
-
-  // rounding for strict float precision conformance
-  Node* precision_rounding(Node* n);
-
-  // rounding for strict double precision conformance
-  Node* dprecision_rounding(Node* n);
-
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
                           const TypeFunc* call_type, address call_addr,
                           const char* call_name,
-                          const TypePtr* adr_type, // NULL if no memory effects
-                          Node* parm0 = NULL, Node* parm1 = NULL,
-                          Node* parm2 = NULL, Node* parm3 = NULL,
-                          Node* parm4 = NULL, Node* parm5 = NULL,
-                          Node* parm6 = NULL, Node* parm7 = NULL);
+                          const TypePtr* adr_type, // null if no memory effects
+                          Node* parm0 = nullptr, Node* parm1 = nullptr,
+                          Node* parm2 = nullptr, Node* parm3 = nullptr,
+                          Node* parm4 = nullptr, Node* parm5 = nullptr,
+                          Node* parm6 = nullptr, Node* parm7 = nullptr);
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);
@@ -826,8 +793,8 @@ class GraphKit : public Phase {
 
   // Helper functions to build synchronizations
   int next_monitor();
-  Node* insert_mem_bar(int opcode, Node* precedent = NULL);
-  Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = NULL);
+  Node* insert_mem_bar(int opcode, Node* precedent = nullptr);
+  Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr);
   // Optional 'precedent' is appended as an extra edge, to force ordering.
   FastLockNode* shared_lock(Node* obj);
   void shared_unlock(Node* box, Node* obj);
@@ -842,7 +809,7 @@ class GraphKit : public Phase {
   // Generate a check-cast idiom.  Used by both the check-cast bytecode
   // and the array-store bytecode
   Node* gen_checkcast( Node *subobj, Node* superkls,
-                       Node* *failure_control = NULL );
+                       Node* *failure_control = nullptr );
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
 
@@ -862,11 +829,11 @@ class GraphKit : public Phase {
                                   bool deoptimize_on_exception=false);
   Node* get_layout_helper(Node* klass_node, jint& constant_value);
   Node* new_instance(Node* klass_node,
-                     Node* slow_test = NULL,
-                     Node* *return_size_val = NULL,
+                     Node* slow_test = nullptr,
+                     Node* *return_size_val = nullptr,
                      bool deoptimize_on_exception = false);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
-                  Node* *return_size_val = NULL,
+                  Node* *return_size_val = nullptr,
                   bool deoptimize_on_exception = false);
 
   // java.lang.String helpers
@@ -897,14 +864,14 @@ class GraphKit : public Phase {
     return iff;
   }
 
-  void add_empty_predicates(int nargs = 0);
-  void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+  void add_parse_predicates(int nargs = 0);
+  void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

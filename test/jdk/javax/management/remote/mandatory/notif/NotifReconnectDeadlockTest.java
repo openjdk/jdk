@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6199899
  * @summary Tests reconnection done by a fetching notif thread.
  * @author Shanliang JIANG
+ * @requires vm.compMode != "Xcomp"
+ * @comment Running with -Xcomp is likely to cause a timeout from ServerCommunicatorAdmin
+ *          before addNotificationListener can complete.
  *
  * @run clean NotifReconnectDeadlockTest
  * @run build NotifReconnectDeadlockTest
@@ -176,7 +179,7 @@ public class NotifReconnectDeadlockTest {
 
     // serverTimeout increased to avoid occasional problems with initial connect.
     // Not using Utils.adjustTimeout to avoid accidentally making it too long.
-    private static final long serverTimeout = 2000;
+    private static final long serverTimeout = 3000;
     private static final long listenerSleep = serverTimeout*6;
 
     private volatile static String clientState = null;

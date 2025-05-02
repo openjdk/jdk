@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284037
+ * @bug 8284037 8352249
  * @summary Snippet-files subdirectory not automatically detected when in unnamed package
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class TestSnippetUnnamedPackage extends SnippetTester {
 
@@ -86,12 +87,9 @@ public class TestSnippetUnnamedPackage extends SnippetTester {
         checkOutput("C.html", useSourcePath,
                 """
                         Before.
-                        \s
-                        <div class="snippet-container"><button class="copy snippet-copy" onclick="copySnippet\
-                        (this)"><span data-copied="Copied!">Copy</span><img src="copy.svg" alt="Copy"></button>
-                        <pre class="snippet"><code class="language-java">public class S { }</code></pre>
-                        </div>
+                        %s
 
-                         After.""");
+                        After.""".formatted(getSnippetHtmlRepresentation("C.html",
+                        "public class S { }", Optional.of("java"), Optional.of("snippet-C1"))));
     }
 }

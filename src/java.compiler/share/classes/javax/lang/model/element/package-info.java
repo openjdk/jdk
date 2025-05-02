@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,17 @@
  * elements, the declared entities that make up a program.  Elements
  * include classes, interfaces, methods, constructors, and fields.
  * The interfaces in this package do not model the structure of a
- * program inside a method body; for example there is no
+ * program inside a method body; for example, there is no
  * representation of a {@code for} loop or {@code try}-{@code finally}
- * block.  However, the interfaces can model some structures only
- * appearing inside method bodies, such as local variables and
- * anonymous classes.
+ * block. Concretely, there is no model of any abstract syntax tree
+ * (AST) structure of a Java program.  However, the interfaces can
+ * model some structures only appearing inside method bodies, such as
+ * {@linkplain ElementKind#LOCAL_VARIABLE local variables},
+ * {@linkplain NestingKind#ANONYMOUS anonymous classes}, and
+ * {@linkplain ElementKind#EXCEPTION_PARAMETER exception parameters}.
+ * Therefore, these interfaces can be used by an AST API to model the
+ * declarations found in the method bodies of Java compilation units
+ * (JLS {@jls 7.3}).
  *
  * <p id="accurate_model">When used in the context of annotation
  * processing, an accurate model of the element being represented must
@@ -75,10 +81,10 @@
  * javax.lang.model.util.Elements.Origin#SYNTHETIC synthetic}
  * constructs in a class file, such as accessor methods used in
  * implementing nested classes and {@linkplain
- * javax.lang.model.util.Elements.Origin#isBridge(ExecutableElement)
+ * javax.lang.model.util.Elements#isBridge(ExecutableElement)
  * bridge methods} used in implementing covariant returns, are
  * translation artifacts strictly outside of this model. However, when
- * operating on class files, it is helpful be able to operate on such
+ * operating on class files, it is helpful to be able to operate on such
  * elements, screening them out when appropriate.
  *
  * <p>During annotation processing, operating on incomplete or
@@ -110,6 +116,7 @@
  * a {@code NullPointerException} if given a {@code null} argument.
  *
  * @see javax.lang.model.util.Elements
+ * @see javax.lang.model##elementsAndTypes Elements and Types
  * @see <a href="https://jcp.org/en/jsr/detail?id=269">
  * JSR 269: Pluggable Annotation Processing API</a>
  * @jls 6.1 Declarations

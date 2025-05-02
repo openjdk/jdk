@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,10 +271,14 @@ void
 SplashCreateThread(Splash * splash) {
     pthread_t thr;
     pthread_attr_t attr;
-    int rc;
 
-    pthread_attr_init(&attr);
-    rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    int rslt = pthread_attr_init(&attr);
+    if (rslt != 0) return;
+    rslt = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    if (rslt != 0) {
+        fprintf(stderr, "Could not create SplashScreen thread, error number:%d\n", rslt);
+    }
+    pthread_attr_destroy(&attr);
 }
 
 void

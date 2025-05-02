@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "runtime/mutex.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "runtime/mutex.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;
+class G1OldGenerationCounters;
+class G1YoungGenerationCounters;
 class HSpaceCounters;
 class MemoryPool;
 
@@ -146,10 +148,10 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with
   // this "generational" counter.
-  GenerationCounters*  _young_gen_counters;
+  G1YoungGenerationCounters*  _young_gen_counters;
   //  old collection set counters. The _old_space_counters
   // below are associated with this "generational" counter.
-  GenerationCounters*  _old_gen_counters;
+  G1OldGenerationCounters*  _old_gen_counters;
   // Counters for the capacity and used for
   //   the whole heap
   HSpaceCounters*      _old_space_counters;
@@ -180,8 +182,6 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   // Recalculate all the sizes.
   void recalculate_sizes();
 
-  void recalculate_eden_size();
-
 public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
   ~G1MonitoringSupport();
@@ -191,21 +191,6 @@ public:
   MemoryUsage memory_usage();
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
-
-  // Unfortunately, the jstat tool assumes that no space has 0
-  // capacity. In our case, given that each space is logical, it's
-  // possible that no regions will be allocated to it, hence to have 0
-  // capacity (e.g., if there are no survivor regions, the survivor
-  // space has 0 capacity). The way we deal with this is to always pad
-  // each capacity value we report to jstat by a very small amount to
-  // make sure that it's never zero. Given that we sometimes have to
-  // report a capacity of a generation that contains several spaces
-  // (e.g., young gen includes one eden, two survivor spaces), the
-  // mult parameter is provided in order to adding the appropriate
-  // padding multiple times so that the capacities add up correctly.
-  static size_t pad_capacity(size_t size_bytes, size_t mult = 1) {
-    return size_bytes + MinObjAlignmentInBytes * mult;
-  }
 
   // Recalculate all the sizes from scratch and update all the jstat
   // counters accordingly.
@@ -244,6 +229,7 @@ protected:
   G1MonitoringScope(G1MonitoringSupport* monitoring_support,
                     CollectorCounters* collection_counters,
                     GCMemoryManager* gc_memory_manager,
+                    const char* end_message,
                     bool all_memory_pools_affected = true);
   ~G1MonitoringScope();
 };

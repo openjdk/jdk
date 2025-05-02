@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
@@ -41,7 +40,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_survivor_size,
                                            size_t space_alignment,
                                            double gc_pause_goal_sec,
-                                           double gc_minor_pause_goal_sec,
                                            uint gc_cost_ratio) :
      AdaptiveSizePolicy(init_eden_size,
                         init_promo_size,
@@ -50,13 +48,11 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                         gc_cost_ratio),
      _avg_major_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
      _avg_base_footprint(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
-     _gc_stats(),
-     _collection_cost_margin_fraction(AdaptiveSizePolicyCollectionCostMargin / 100.0),
+     _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _major_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
      _space_alignment(space_alignment),
-     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _live_at_last_full_gc(init_promo_size),
      _change_old_gen_for_min_pauses(0),
      _change_young_gen_for_maj_pauses(0),
@@ -169,22 +165,6 @@ void PSAdaptiveSizePolicy::major_collection_end(size_t amount_live,
   _major_timer.start();
 }
 
-// If the remaining free space in the old generation is less that
-// that expected to be needed by the next collection, do a full
-// collection now.
-bool PSAdaptiveSizePolicy::should_full_GC(size_t old_free_in_bytes) {
-
-  // A similar test is done in the scavenge's should_attempt_scavenge().  If
-  // this is changed, decide if that test should also be changed.
-  bool result = padded_average_promoted_in_bytes() > (float) old_free_in_bytes;
-  log_trace(gc, ergo)("%s after scavenge average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
-                      result ? "Full" : "No full",
-                      (size_t) average_promoted_in_bytes(),
-                      (size_t) padded_average_promoted_in_bytes(),
-                      old_free_in_bytes);
-  return result;
-}
-
 void PSAdaptiveSizePolicy::clear_generation_free_space_flags() {
 
   AdaptiveSizePolicy::clear_generation_free_space_flags();
@@ -224,8 +204,6 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
                                            bool   is_full_gc) {
 
   // Update statistics
-  // Time statistics are updated as we go, update footprint stats here
-  _avg_base_footprint->sample(BaseFootPrintEstimate);
   avg_young_live()->sample(young_live);
   avg_eden_live()->sample(eden_live);
 
@@ -297,11 +275,11 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     //
     // Make changes only to affect one of the pauses (the larger)
     // at a time.
-    adjust_eden_for_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
+    adjust_eden_for_pause_time(&desired_eden_size);
 
-  } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
+  } else if (_avg_minor_pause->padded_average() > gc_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
-    adjust_eden_for_minor_pause_time(is_full_gc, &desired_eden_size);
+    adjust_eden_for_minor_pause_time(&desired_eden_size);
 
   } else if(adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
@@ -336,12 +314,12 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
   if (desired_eden_size > eden_limit) {
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_eden_space_size limits:"
-          " desired_eden_size: " SIZE_FORMAT
-          " old_eden_size: " SIZE_FORMAT
-          " eden_limit: " SIZE_FORMAT
-          " cur_eden: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " avg_young_live: " SIZE_FORMAT,
+          " desired_eden_size: %zu"
+          " old_eden_size: %zu"
+          " eden_limit: %zu"
+          " cur_eden: %zu"
+          " max_eden_size: %zu"
+          " avg_young_live: %zu",
           desired_eden_size, _eden_size, eden_limit, cur_eden,
           max_eden_size, (size_t)avg_young_live()->average());
   }
@@ -349,7 +327,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_eden_space_size: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINTX_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 
@@ -379,15 +357,14 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
                       _avg_major_interval->average(),
                       gc_pause_goal_sec());
 
-  log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
+  log_debug(gc, ergo)("Live_space: %zu free_space: %zu",
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: %zu avg_old_live: %zu",
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 
-  log_debug(gc, ergo)("Old eden_size: " SIZE_FORMAT " desired_eden_size: " SIZE_FORMAT,
+  log_debug(gc, ergo)("Old eden_size: %zu desired_eden_size: %zu",
                       _eden_size, desired_eden_size);
 
   set_eden_size(desired_eden_size);
@@ -472,7 +449,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     // at a time.
     if (is_full_gc) {
       set_decide_at_full_gc(decide_at_full_gc_true);
-      adjust_promo_for_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
+      adjust_promo_for_pause_time(&desired_promo_size);
     }
   } else if (adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
@@ -514,11 +491,11 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     size_t free_in_old_gen = (size_t)(max_old_gen_size - avg_old_live()->average());
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_old_gen_free_space limits:"
-          " desired_promo_size: " SIZE_FORMAT
-          " promo_limit: " SIZE_FORMAT
-          " free_in_old_gen: " SIZE_FORMAT
-          " max_old_gen_size: " SIZE_FORMAT
-          " avg_old_live: " SIZE_FORMAT,
+          " desired_promo_size: %zu"
+          " promo_limit: %zu"
+          " free_in_old_gen: %zu"
+          " max_old_gen_size: %zu"
+          " avg_old_live: %zu",
           desired_promo_size, promo_limit, free_in_old_gen,
           max_old_gen_size, (size_t) avg_old_live()->average());
   }
@@ -526,7 +503,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_old_gen_free_space: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINTX_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 
@@ -551,15 +528,14 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
                       gc_pause_goal_sec());
 
   // Footprint stats
-  log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
+  log_debug(gc, ergo)("Live_space: %zu free_space: %zu",
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: %zu avg_old_live: %zu",
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 
-  log_debug(gc, ergo)("Old promo_size: " SIZE_FORMAT " desired_promo_size: " SIZE_FORMAT,
+  log_debug(gc, ergo)("Old promo_size: %zu desired_promo_size: %zu",
                       _promo_size, desired_promo_size);
 
   set_promo_size(desired_promo_size);
@@ -587,9 +563,7 @@ void PSAdaptiveSizePolicy::decay_supplemental_growth(bool is_full_gc) {
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(bool is_full_gc,
-    size_t* desired_eden_size_ptr) {
-
+void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr) {
   // Adjust the young generation size to reduce pause time of
   // of collections.
   //
@@ -602,25 +576,17 @@ void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(bool is_full_gc,
           decrease_young_gen_for_min_pauses_true);
     *desired_eden_size_ptr = *desired_eden_size_ptr -
       eden_decrement_aligned_down(*desired_eden_size_ptr);
-    } else {
-      // EXPERIMENTAL ADJUSTMENT
-      // Only record that the estimator indicated such an action.
-      // *desired_eden_size_ptr = *desired_eden_size_ptr + eden_heap_delta;
-      set_change_young_gen_for_min_pauses(
-          increase_young_gen_for_min_pauses_true);
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
-                                             size_t* desired_promo_size_ptr,
-                                             size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_size_ptr) {
 
   size_t promo_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
   // a change less than the required alignment is probably not worth
   // attempting.
 
-  if (_avg_minor_pause->padded_average() <= _avg_major_pause->padded_average() && is_full_gc) {
+  if (_avg_minor_pause->padded_average() <= _avg_major_pause->padded_average()) {
     // Adjust for the major pause time only at full gc's because the
     // affects of a change can only be seen at full gc's.
 
@@ -630,38 +596,30 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
       set_change_old_gen_for_maj_pauses(decrease_old_gen_for_maj_pauses_true);
       promo_heap_delta = promo_decrement_aligned_down(*desired_promo_size_ptr);
       *desired_promo_size_ptr = _promo_size - promo_heap_delta;
-    } else {
-      // EXPERIMENTAL ADJUSTMENT
-      // Only record that the estimator indicated such an action.
-      // *desired_promo_size_ptr = _promo_size +
-      //   promo_increment_aligned_up(*desired_promo_size_ptr);
-      set_change_old_gen_for_maj_pauses(increase_old_gen_for_maj_pauses_true);
     }
   }
 
   log_trace(gc, ergo)(
     "PSAdaptiveSizePolicy::adjust_promo_for_pause_time "
     "adjusting gen sizes for major pause (avg %f goal %f). "
-    "desired_promo_size " SIZE_FORMAT " promo delta " SIZE_FORMAT,
+    "desired_promo_size %zu promo delta %zu",
     _avg_major_pause->average(), gc_pause_goal_sec(),
     *desired_promo_size_ptr, promo_heap_delta);
 }
 
-void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(bool is_full_gc,
-                                             size_t* desired_promo_size_ptr,
-                                             size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(size_t* desired_eden_size_ptr) {
 
   size_t eden_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
   // a change less than the required alignment is probably not worth
   // attempting.
   if (_avg_minor_pause->padded_average() > _avg_major_pause->padded_average()) {
-    adjust_eden_for_minor_pause_time(is_full_gc, desired_eden_size_ptr);
+    adjust_eden_for_minor_pause_time(desired_eden_size_ptr);
   }
   log_trace(gc, ergo)(
     "PSAdaptiveSizePolicy::adjust_eden_for_pause_time "
     "adjusting gen sizes for major pause (avg %f goal %f). "
-    "desired_eden_size " SIZE_FORMAT " eden delta " SIZE_FORMAT,
+    "desired_eden_size %zu eden delta %zu",
     _avg_major_pause->average(), gc_pause_goal_sec(),
     *desired_eden_size_ptr, eden_heap_delta);
 }
@@ -677,7 +635,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
     return;
   }
 
-  log_trace(gc, ergo)("PSAdaptiveSizePolicy::adjust_promo_for_throughput(is_full: %d, promo: " SIZE_FORMAT "): mutator_cost %f  major_gc_cost %f minor_gc_cost %f",
+  log_trace(gc, ergo)("PSAdaptiveSizePolicy::adjust_promo_for_throughput(is_full: %d, promo: %zu): mutator_cost %f  major_gc_cost %f minor_gc_cost %f",
                       is_full_gc, *desired_promo_size_ptr, mutator_cost(), major_gc_cost(), minor_gc_cost());
 
   // Tenured generation
@@ -691,7 +649,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
       double scale_by_ratio = major_gc_cost() / gc_cost();
       scaled_promo_heap_delta =
         (size_t) (scale_by_ratio * (double) promo_heap_delta);
-      log_trace(gc, ergo)("Scaled tenured increment: " SIZE_FORMAT " by %f down to " SIZE_FORMAT,
+      log_trace(gc, ergo)("Scaled tenured increment: %zu by %f down to %zu",
                           promo_heap_delta, scale_by_ratio, scaled_promo_heap_delta);
     } else if (major_gc_cost() >= 0.0) {
       // Scaling is not going to work.  If the major gc time is the
@@ -723,14 +681,6 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
           set_change_old_gen_for_throughput(
               increase_old_gen_for_throughput_true);
               _old_gen_change_for_major_throughput++;
-        } else {
-          // EXPERIMENTAL ADJUSTMENT
-          // Record that decreasing the old gen size would decrease
-          // the major collection cost but don't do it.
-          // *desired_promo_size_ptr = _promo_size -
-          //   promo_decrement_aligned_down(*desired_promo_size_ptr);
-          set_change_old_gen_for_throughput(
-                decrease_old_gen_for_throughput_true);
         }
 
         break;
@@ -746,7 +696,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
         _old_gen_change_for_major_throughput++;
     }
 
-    log_trace(gc, ergo)("Adjusting tenured gen for throughput (avg %f goal %f). desired_promo_size " SIZE_FORMAT " promo_delta " SIZE_FORMAT ,
+    log_trace(gc, ergo)("Adjusting tenured gen for throughput (avg %f goal %f). desired_promo_size %zu promo_delta %zu",
                         mutator_cost(),
                         _throughput_goal,
                         *desired_promo_size_ptr, scaled_promo_heap_delta);
@@ -764,7 +714,7 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
     return;
   }
 
-  log_trace(gc, ergo)("PSAdaptiveSizePolicy::adjust_eden_for_throughput(is_full: %d, cur_eden: " SIZE_FORMAT "): mutator_cost %f  major_gc_cost %f minor_gc_cost %f",
+  log_trace(gc, ergo)("PSAdaptiveSizePolicy::adjust_eden_for_throughput(is_full: %d, cur_eden: %zu): mutator_cost %f  major_gc_cost %f minor_gc_cost %f",
                       is_full_gc, *desired_eden_size_ptr, mutator_cost(), major_gc_cost(), minor_gc_cost());
 
   // Young generation
@@ -777,7 +727,7 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
     assert(scale_by_ratio <= 1.0 && scale_by_ratio >= 0.0, "Scaling is wrong");
     scaled_eden_heap_delta =
       (size_t) (scale_by_ratio * (double) eden_heap_delta);
-    log_trace(gc, ergo)("Scaled eden increment: " SIZE_FORMAT " by %f down to " SIZE_FORMAT,
+    log_trace(gc, ergo)("Scaled eden increment: %zu by %f down to %zu",
                         eden_heap_delta, scale_by_ratio, scaled_eden_heap_delta);
   } else if (minor_gc_cost() >= 0.0) {
     // Scaling is not going to work.  If the minor gc time is the
@@ -810,14 +760,6 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
         set_change_young_gen_for_throughput(
           increase_young_gen_for_througput_true);
         _young_gen_change_for_minor_throughput++;
-      } else {
-        // EXPERIMENTAL ADJUSTMENT
-        // Record that decreasing the young gen size would decrease
-        // the minor collection cost but don't do it.
-        // *desired_eden_size_ptr = _eden_size -
-        //   eden_decrement_aligned_down(*desired_eden_size_ptr);
-        set_change_young_gen_for_throughput(
-          decrease_young_gen_for_througput_true);
       }
           break;
     default:
@@ -831,7 +773,7 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
       _young_gen_change_for_minor_throughput++;
   }
 
-    log_trace(gc, ergo)("Adjusting eden for throughput (avg %f goal %f). desired_eden_size " SIZE_FORMAT " eden delta " SIZE_FORMAT,
+    log_trace(gc, ergo)("Adjusting eden for throughput (avg %f goal %f). desired_eden_size %zu eden delta %zu",
                         mutator_cost(), _throughput_goal, *desired_eden_size_ptr, scaled_eden_heap_delta);
 }
 
@@ -848,9 +790,9 @@ size_t PSAdaptiveSizePolicy::adjust_promo_for_footprint(
   log_trace(gc, ergo)(
     "AdaptiveSizePolicy::adjust_promo_for_footprint "
     "adjusting tenured gen for footprint. "
-    "starting promo size " SIZE_FORMAT
-    " reduced promo size " SIZE_FORMAT
-    " promo delta " SIZE_FORMAT,
+    "starting promo size %zu"
+    " reduced promo size %zu"
+    " promo delta %zu",
     desired_promo_size, reduced_size, change );
 
   assert(reduced_size <= desired_promo_size, "Inconsistent result");
@@ -870,9 +812,9 @@ size_t PSAdaptiveSizePolicy::adjust_eden_for_footprint(
   log_trace(gc, ergo)(
     "AdaptiveSizePolicy::adjust_eden_for_footprint "
     "adjusting eden for footprint. "
-    " starting eden size " SIZE_FORMAT
-    " reduced eden size " SIZE_FORMAT
-    " eden delta " SIZE_FORMAT,
+    " starting eden size %zu"
+    " reduced eden size %zu"
+    " eden delta %zu",
     desired_eden_size, reduced_size, change);
 
   assert(reduced_size <= desired_eden_size, "Inconsistent result");
@@ -896,17 +838,6 @@ size_t PSAdaptiveSizePolicy::scale_down(size_t change,
   return reduced_change;
 }
 
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden,
-                                            uint percent_change) {
-  size_t eden_heap_delta;
-  eden_heap_delta = cur_eden / 100 * percent_change;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden) {
-  return eden_increment(cur_eden, YoungGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::eden_increment_with_supplement_aligned_up(
   size_t cur_eden) {
   size_t result = eden_increment(cur_eden,
@@ -919,23 +850,6 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-size_t PSAdaptiveSizePolicy::eden_decrement(size_t cur_eden) {
-  size_t eden_heap_delta = eden_increment(cur_eden) /
-    AdaptiveSizeDecrementScaleFactor;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo,
-                                             uint percent_change) {
-  size_t promo_heap_delta;
-  promo_heap_delta = cur_promo / 100 * percent_change;
-  return promo_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo) {
-  return promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
   size_t cur_promo) {
   size_t result =  promo_increment(cur_promo,
@@ -946,12 +860,6 @@ size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
 size_t PSAdaptiveSizePolicy::promo_decrement_aligned_down(size_t cur_promo) {
   size_t promo_heap_delta = promo_decrement(cur_promo);
   return align_down(promo_heap_delta, _space_alignment);
-}
-
-size_t PSAdaptiveSizePolicy::promo_decrement(size_t cur_promo) {
-  size_t promo_heap_delta = promo_increment(cur_promo);
-  promo_heap_delta = promo_heap_delta / AdaptiveSizeDecrementScaleFactor;
-  return promo_heap_delta;
 }
 
 uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
@@ -1038,12 +946,10 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
   // Finally, increment or decrement the tenuring threshold, as decided above.
   // We test for decrementing first, as we might have hit the target size
   // limit.
-  if (decr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold > 1) {
+  if (!(AlwaysTenure || NeverTenure)) {
+    if (decr_tenuring_threshold && tenuring_threshold > 1) {
       tenuring_threshold--;
-    }
-  } else if (incr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold < MaxTenuringThreshold) {
+    } else if (incr_tenuring_threshold && tenuring_threshold < MaxTenuringThreshold) {
       tenuring_threshold++;
     }
   }
@@ -1057,7 +963,7 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
   log_debug(gc, ergo)("avg_survived_padded_avg: %f", _avg_survived->padded_average());
 
   log_trace(gc, ergo)("avg_promoted_avg: %f  avg_promoted_dev: %f", avg_promoted()->average(), avg_promoted()->deviation());
-  log_debug(gc, ergo)("avg_promoted_padded_avg: %f  avg_pretenured_padded_avg: %f  tenuring_thresh: %d  target_size: " SIZE_FORMAT,
+  log_debug(gc, ergo)("avg_promoted_padded_avg: %f  avg_pretenured_padded_avg: %f  tenuring_thresh: %d  target_size: %zu",
                       avg_promoted()->padded_average(),
                       _avg_pretenured->padded_average(),
                       tenuring_threshold, target_size);
@@ -1080,7 +986,7 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
   }
   avg_promoted()->sample(promoted);
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: "  SIZE_FORMAT "  promoted: "  SIZE_FORMAT "  overflow: %s",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: %zu  promoted: %zu  overflow: %s",
                       survived, promoted, is_survivor_overflow ? "true" : "false");
 }
 

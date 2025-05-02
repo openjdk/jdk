@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.TerminatingThreadLocal;
@@ -77,6 +78,8 @@ import jdk.internal.misc.TerminatingThreadLocal;
  * @since   1.2
  */
 public class ThreadLocal<T> {
+    private static final boolean TRACE_VTHREAD_LOCALS = traceVirtualThreadLocals();
+
     /**
      * ThreadLocals rely on per-thread linear-probe hash maps attached
      * to each thread (Thread.threadLocals and
@@ -93,7 +96,7 @@ public class ThreadLocal<T> {
      * The next hash code to be given out. Updated atomically. Starts at
      * zero.
      */
-    private static AtomicInteger nextHashCode =
+    private static final AtomicInteger nextHashCode =
         new AtomicInteger();
 
     /**
@@ -161,11 +164,8 @@ public class ThreadLocal<T> {
      * thread-local variable.  If the variable has no value for the
      * current thread, it is first initialized to the value returned
      * by an invocation of the {@link #initialValue} method.
-     * If the current thread does not support thread locals then
-     * this method returns its {@link #initialValue}.
      *
      * @return the current thread's value of this thread-local
-     * @see Thread.Builder#allowSetThreadLocals(boolean)
      */
     public T get() {
         return get(Thread.currentThread());
@@ -183,15 +183,11 @@ public class ThreadLocal<T> {
     private T get(Thread t) {
         ThreadLocalMap map = getMap(t);
         if (map != null) {
-            if (map == ThreadLocalMap.NOT_SUPPORTED) {
-                return initialValue();
-            } else {
-                ThreadLocalMap.Entry e = map.getEntry(this);
-                if (e != null) {
-                    @SuppressWarnings("unchecked")
-                    T result = (T) e.value;
-                    return result;
-                }
+            ThreadLocalMap.Entry e = map.getEntry(this);
+            if (e != null) {
+                @SuppressWarnings("unchecked")
+                T result = (T) e.value;
+                return result;
             }
         }
         return setInitialValue(t);
@@ -211,7 +207,7 @@ public class ThreadLocal<T> {
 
     private boolean isPresent(Thread t) {
         ThreadLocalMap map = getMap(t);
-        if (map != null && map != ThreadLocalMap.NOT_SUPPORTED) {
+        if (map != null) {
             return map.getEntry(this) != null;
         } else {
             return false;
@@ -227,7 +223,6 @@ public class ThreadLocal<T> {
     private T setInitialValue(Thread t) {
         T value = initialValue();
         ThreadLocalMap map = getMap(t);
-        assert map != ThreadLocalMap.NOT_SUPPORTED;
         if (map != null) {
             map.set(this, value);
         } else {
@@ -235,6 +230,9 @@ public class ThreadLocal<T> {
         }
         if (this instanceof TerminatingThreadLocal<?> ttl) {
             TerminatingThreadLocal.register(ttl);
+        }
+        if (TRACE_VTHREAD_LOCALS && t == Thread.currentThread() && t.isVirtual()) {
+            printStackTrace();
         }
         return value;
     }
@@ -247,14 +245,12 @@ public class ThreadLocal<T> {
      *
      * @param value the value to be stored in the current thread's copy of
      *        this thread-local.
-     *
-     * @throws UnsupportedOperationException if the current thread is not
-     *         allowed to set its copy of thread-local variables
-     *
-     * @see Thread.Builder#allowSetThreadLocals(boolean)
      */
     public void set(T value) {
         set(Thread.currentThread(), value);
+        if (TRACE_VTHREAD_LOCALS && Thread.currentThread().isVirtual()) {
+            printStackTrace();
+        }
     }
 
     void setCarrierThreadLocal(T value) {
@@ -264,9 +260,6 @@ public class ThreadLocal<T> {
 
     private void set(Thread t, T value) {
         ThreadLocalMap map = getMap(t);
-        if (map == ThreadLocalMap.NOT_SUPPORTED) {
-            throw new UnsupportedOperationException();
-        }
         if (map != null) {
             map.set(this, value);
         } else {
@@ -296,7 +289,7 @@ public class ThreadLocal<T> {
 
      private void remove(Thread t) {
          ThreadLocalMap m = getMap(t);
-         if (m != null && m != ThreadLocalMap.NOT_SUPPORTED) {
+         if (m != null) {
              m.remove(this);
          }
      }
@@ -393,9 +386,6 @@ public class ThreadLocal<T> {
                 value = v;
             }
         }
-
-        // Placeholder when thread locals not supported
-        static final ThreadLocalMap NOT_SUPPORTED = new ThreadLocalMap();
 
         /**
          * The initial capacity -- MUST be a power of two.
@@ -807,4 +797,40 @@ public class ThreadLocal<T> {
             }
         }
     }
+
+    /**
+     * Reads the value of the jdk.traceVirtualThreadLocals property to determine if
+     * a stack trace should be printed when a virtual thread sets a thread local.
+     */
+    private static boolean traceVirtualThreadLocals() {
+        String propValue = System.getProperty("jdk.traceVirtualThreadLocals");
+        return (propValue != null)
+                && (propValue.isEmpty() || Boolean.parseBoolean(propValue));
+    }
+
+    /**
+     * Print the stack trace of the current thread, skipping the printStackTrace frame.
+     * A thread local is used to detect reentrancy as the printing may itself use
+     * thread locals.
+     */
+    private void printStackTrace() {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map.getEntry(DUMPING_STACK) == null) {
+            map.set(DUMPING_STACK, true);
+            try {
+                var stack = StackWalker.getInstance().walk(s ->
+                        s.skip(1)  // skip caller
+                         .collect(Collectors.toList()));
+                System.out.println(t);
+                for (StackWalker.StackFrame frame : stack) {
+                    System.out.format("    %s%n", frame.toStackTraceElement());
+                }
+            } finally {
+                map.remove(DUMPING_STACK);
+            }
+        }
+    }
+
+    private static final ThreadLocal<Boolean> DUMPING_STACK = new ThreadLocal<>();
 }

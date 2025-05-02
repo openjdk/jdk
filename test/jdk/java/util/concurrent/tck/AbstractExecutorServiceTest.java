@@ -146,10 +146,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
                 assertSame(TEST_STRING, future.get());
             }};
 
-        runWithPermissions(r,
-                           new RuntimePermission("getClassLoader"),
-                           new RuntimePermission("setContextClassLoader"),
-                           new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -167,7 +164,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
                 assertSame(TEST_STRING, future.get());
             }};
 
-        runWithPermissions(r);
+        r.run();
     }
 
     /**
@@ -189,7 +186,7 @@ public class AbstractExecutorServiceTest extends JSR166TestCase {
                     assertTrue(success.getCause() instanceof IndexOutOfBoundsException);
                 }}};
 
-        runWithPermissions(r);
+        r.run();
     }
 
     /**

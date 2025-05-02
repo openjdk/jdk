@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
  * @summary need test program to validate javac resource bundles
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.resources:open
- *          jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.tools.*;
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 
 /**
@@ -490,10 +490,10 @@ public class CheckResourceKeys {
      */
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
         try (InputStream in = fo.openInputStream()) {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Utf8) {
-                    String v = ((ConstantPool.CONSTANT_Utf8_info) cpinfo).value;
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
+            for (PoolEntry pe : cm.constantPool()) {
+                if (pe instanceof Utf8Entry entry) {
+                    String v = entry.stringValue();
                     if (v.matches("[A-Za-z0-9-_.]+"))
                         results.add(v);
                 }
@@ -522,7 +522,7 @@ public class CheckResourceKeys {
     List<ResourceBundle> getMessageFormatBundles() {
         Module jdk_compiler = ModuleLayer.boot().findModule("jdk.compiler").get();
         List<ResourceBundle> results = new ArrayList<>();
-        for (String name : new String[]{"compiler", "launcher"}) {
+        for (String name : new String[]{"javac", "compiler", "launcher"}) {
             ResourceBundle b =
                     ResourceBundle.getBundle("com.sun.tools.javac.resources." + name, jdk_compiler);
             results.add(b);

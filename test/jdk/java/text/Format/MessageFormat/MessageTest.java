@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @library /java/text/testlib
  * @summary test MessageFormat
+ * @run junit MessageTest
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -43,13 +43,14 @@ import java.util.*;
 import java.io.*;
 import java.text.*;
 
-public class MessageTest extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new MessageTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class MessageTest {
 
 
+    @Test
    public void TestMSGPatternTest() {
         Object[] testArgs = {
              1D, 3456D,
@@ -71,12 +72,12 @@ public class MessageTest extends IntlTest {
             Locale save = Locale.getDefault();
             try {
                 Locale.setDefault(Locale.US);
-                logln("");
-                logln( i + " Pat in:  " + testCases[i]);
+                System.out.println("");
+                System.out.println( i + " Pat in:  " + testCases[i]);
                 MessageFormat form = new MessageFormat(testCases[i]);
-                logln( i + " Pat out: " + form.toPattern());
+                System.out.println( i + " Pat out: " + form.toPattern());
                 String result = form.format(testArgs);
-                logln( i + " Result:  " + result);
+                System.out.println( i + " Result:  " + result);
                 Object[] values = form.parse(result);
                 for (int j = 0; j < testArgs.length; ++j) {
                     Object testArg = testArgs[j];
@@ -86,8 +87,8 @@ public class MessageTest extends IntlTest {
                     }
                     if ((testArg == null && value != null)
                         || (testArg != null && !testArg.equals(value))) {
-                       logln( i + " " + j + " old: " + testArg);
-                       logln( i + " " + j + " new: " + value);
+                       System.out.println( i + " " + j + " old: " + testArg);
+                       System.out.println( i + " " + j + " new: " + value);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
 #include "logging/logStream.hpp"
 
@@ -64,7 +63,7 @@ void G1NUMAStats::NodeDataArray::create_hit_rate(Stat* result) const {
     }
   }
 
-  assert(result != NULL, "Invariant");
+  assert(result != nullptr, "Invariant");
   result->_hit = hit;
   result->_requested = requested;
 }
@@ -77,7 +76,7 @@ void G1NUMAStats::NodeDataArray::create_hit_rate(Stat* result, uint req_index) c
     requested += _data[req_index][column];
   }
 
-  assert(result != NULL, "Invariant");
+  assert(result != nullptr, "Invariant");
   result->_hit = hit;
   result->_requested = requested;
 }
@@ -112,14 +111,14 @@ size_t G1NUMAStats::NodeDataArray::get(uint req_index, uint alloc_index) {
 }
 
 void G1NUMAStats::NodeDataArray::copy(uint req_index, size_t* stat) {
-  assert(stat != NULL, "Invariant");
+  assert(stat != nullptr, "Invariant");
 
   for (uint column = 0; column < _num_column; column++) {
     _data[req_index][column] += stat[column];
   }
 }
 
-G1NUMAStats::G1NUMAStats(const int* node_ids, uint num_node_ids) :
+G1NUMAStats::G1NUMAStats(const uint* node_ids, uint num_node_ids) :
   _node_ids(node_ids), _num_node_ids(num_node_ids), _node_data() {
 
   assert(_num_node_ids > 1, "Should have at least one node id: %u", _num_node_ids);
@@ -162,7 +161,7 @@ static const char* phase_to_explanatory_string(G1NUMAStats::NodeDataItems phase)
   }
 }
 
-#define RATE_TOTAL_FORMAT "%0.0f%% " SIZE_FORMAT "/" SIZE_FORMAT
+#define RATE_TOTAL_FORMAT "%0.0f%% %zu/%zu"
 
 void G1NUMAStats::print_info(G1NUMAStats::NodeDataItems phase) {
   LogTarget(Info, gc, heap, numa) lt;
@@ -206,18 +205,18 @@ void G1NUMAStats::print_mutator_alloc_stat_debug() {
     for (uint req = 0; req < array_width; req++) {
       ls.print("%3d ", _node_ids[req]);
       for (uint alloc = 0; alloc < array_width; alloc++) {
-        ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->get(req, alloc));
+        ls.print("%8zu", _node_data[NewRegionAlloc]->get(req, alloc));
       }
-      ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->sum(req));
+      ls.print("%8zu",  _node_data[NewRegionAlloc]->sum(req));
       ls.print_cr("");
       // Add padding to align with the string 'Requested NUMA id'.
       ls.print("                  ");
     }
     ls.print("Any ");
     for (uint alloc = 0; alloc < array_width; alloc++) {
-      ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->get(array_width, alloc));
+      ls.print("%8zu", _node_data[NewRegionAlloc]->get(array_width, alloc));
     }
-    ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->sum(array_width));
+    ls.print("%8zu", _node_data[NewRegionAlloc]->sum(array_width));
     ls.print_cr("");
   }
 }

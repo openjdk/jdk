@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -39,6 +38,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
@@ -134,6 +134,8 @@ void G1ConcurrentMarkThread::run_service() {
     concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
 
     _vtime_accum = (os::elapsedVTime() - _vtime_start);
+
+    update_threads_cpu_time();
   }
   _cm->root_regions()->cancel_scan();
 }
@@ -142,8 +144,7 @@ void G1ConcurrentMarkThread::stop_service() {
   if (in_progress()) {
     // We are not allowed to abort the marking threads during root region scan.
     // Needs to be done separately.
-    _cm->root_regions()->abort();
-    _cm->root_regions()->wait_until_scan_finished();
+    _cm->root_region_scan_abort_and_wait();
 
     _cm->abort_marking_threads();
   }
@@ -170,6 +171,7 @@ bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   G1ConcPhaseTimer p(_cm, "Concurrent Scan Root Regions");
   _cm->scan_root_regions();
+  update_threads_cpu_time();
   return _cm->has_aborted();
 }
 
@@ -229,6 +231,7 @@ bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
 
 bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
+  update_threads_cpu_time();
   VM_G1PauseRemark op;
   VMThread::execute(&op);
   return _cm->has_aborted();
@@ -238,6 +241,7 @@ bool G1ConcurrentMarkThread::phase_rebuild_and_scrub() {
   ConcurrentGCBreakpoints::at("AFTER REBUILD STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets and Scrub Regions");
   _cm->rebuild_and_scrub();
+  update_threads_cpu_time();
   return _cm->has_aborted();
 }
 
@@ -336,4 +340,13 @@ void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
 
   _cm->concurrent_cycle_end(mark_cycle_completed);
   ConcurrentGCBreakpoints::notify_active_to_idle();
+}
+
+void G1ConcurrentMarkThread::update_threads_cpu_time() {
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+  ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_mark);
+  tttc.do_thread(this);
+  _cm->threads_do(&tttc);
 }

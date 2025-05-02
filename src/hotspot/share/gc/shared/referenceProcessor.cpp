@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -67,20 +66,15 @@ void ReferenceProcessor::init_statics() {
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
   }
-  guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
-            RefDiscoveryPolicy == ReferentBasedDiscovery,
-            "Unrecognized RefDiscoveryPolicy");
 }
 
-void ReferenceProcessor::enable_discovery(bool check_no_refs) {
+void ReferenceProcessor::enable_discovery() {
 #ifdef ASSERT
   // Verify that we're not currently discovering refs
   assert(!_discovering_refs, "nested call?");
 
-  if (check_no_refs) {
-    // Verify that the discovered lists are empty
-    verify_no_references_recorded();
-  }
+  // Verify that the discovered lists are empty
+  verify_no_references_recorded();
 #endif // ASSERT
 
   _discovering_refs = true;
@@ -180,7 +174,7 @@ size_t ReferenceProcessor::total_count(DiscoveredList lists[]) const {
 #ifdef ASSERT
 void ReferenceProcessor::verify_total_count_zero(DiscoveredList lists[], const char* type) {
   size_t count = total_count(lists);
-  assert(count == 0, "%ss must be empty but has " SIZE_FORMAT " elements", type, count);
+  assert(count == 0, "%ss must be empty but has %zu elements", type, count);
 }
 #endif
 
@@ -370,7 +364,7 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
     refs_list.clear();
   }
 
-  log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
+  log_develop_trace(gc, ref)(" Dropped %zu active Refs out of %zu"
                              " Refs in discovered list " PTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
   return iter.removed();
@@ -564,10 +558,10 @@ void ReferenceProcessor::log_reflist(const char* prefix, DiscoveredList list[], 
   LogStream ls(lt);
   ls.print("%s", prefix);
   for (uint i = 0; i < num_active_queues; i++) {
-    ls.print(SIZE_FORMAT " ", list[i].length());
+    ls.print("%zu ", list[i].length());
     total += list[i].length();
   }
-  ls.print_cr("(" SIZE_FORMAT ")", total);
+  ls.print_cr("(%zu)", total);
 }
 
 #ifndef PRODUCT
@@ -579,7 +573,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint num
   log_reflist("", ref_lists, num_active_queues);
 #ifdef ASSERT
   for (uint i = num_active_queues; i < _max_num_queues; i++) {
-    assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
+    assert(ref_lists[i].length() == 0, "%zu unexpected References in %u",
            ref_lists[i].length(), i);
   }
 #endif
@@ -923,32 +917,16 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
   return _is_subject_to_discovery->do_object_b(obj);
 }
 
-// We mention two of several possible choices here:
-// #0: if the reference object is not in the "originating generation"
-//     (or part of the heap being collected, indicated by our "span")
-//     we don't treat it specially (i.e. we scan it as we would
-//     a normal oop, treating its references as strong references).
-//     This means that references can't be discovered unless their
-//     referent is also in the same span. This is the simplest,
-//     most "local" and most conservative approach, albeit one
-//     that may cause weak references to be enqueued least promptly.
-//     We call this choice the "ReferenceBasedDiscovery" policy.
-// #1: the reference object may be in any generation (span), but if
-//     the referent is in the generation (span) being currently collected
-//     then we can discover the reference object, provided
-//     the object has not already been discovered by
-//     a different concurrently running discoverer (as may be the
-//     case, for instance, if the reference object is in G1 old gen and
-//     the referent in G1 young gen), and provided the processing
-//     of this reference object by the current collector will
-//     appear atomically to every other discoverer in the system.
-//     (Thus, for instance, a concurrent discoverer may not
-//     discover references in other generations even if the
-//     referent is in its own generation). This policy may,
-//     in certain cases, enqueue references somewhat sooner than
-//     might Policy #0 above, but at marginally increased cost
-//     and complexity in processing these references.
-//     We call this choice the "ReferentBasedDiscovery" policy.
+// Reference discovery policy:
+//   if the reference object is not in the "originating generation"
+//   (or part of the heap being collected, indicated by our "span")
+//   we don't treat it specially (i.e. we scan it as we would
+//   a normal oop, treating its references as strong references).
+//   This means that references can't be discovered unless their
+//   referent is also in the same span. This is the simplest,
+//   most "local" and most conservative approach, albeit one
+//   that may cause weak references to be enqueued least promptly.
+//   We call this choice the "ReferenceBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
@@ -960,8 +938,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;
   }
 
-  if (RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-      !is_subject_to_discovery(obj)) {
+  if (!is_subject_to_discovery(obj)) {
     // Reference is not in the originating generation;
     // don't treat it specially (i.e. we want to scan it as a normal
     // object with strong references).
@@ -999,36 +976,14 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
-    if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-      // assumes that an object is not processed twice;
-      // if it's been already discovered it must be on another
-      // generation's discovered list; so we won't discover it.
-      return false;
-    } else {
-      assert(RefDiscoveryPolicy == ReferenceBasedDiscovery,
-             "Unrecognized policy");
-      // Check assumption that an object is not potentially
-      // discovered twice except by concurrent collectors that potentially
-      // trace the same Reference object twice.
-      assert(UseG1GC, "Only possible with a concurrent marking collector");
-      return true;
-    }
-  }
 
-  if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-    verify_referent(obj);
-    // Discover if and only if EITHER:
-    // .. reference is in our span, OR
-    // .. we are a stw discoverer and referent is in our span
-    if (is_subject_to_discovery(obj) ||
-        (discovery_is_stw() &&
-         is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
-    } else {
-      return false;
-    }
-  } else {
-    assert(RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-           is_subject_to_discovery(obj), "code inconsistency");
+    // Encountering an already-discovered non-strong ref because G1 can restart
+    // concurrent marking on marking-stack overflow. Must continue to treat
+    // this non-strong ref as discovered to avoid keeping the referent
+    // unnecessarily alive.
+    assert(UseG1GC, "inv");
+    assert(_discovery_is_concurrent, "inv");
+    return true;
   }
 
   // Get the right type of discovered queue head.
@@ -1139,7 +1094,7 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
   }
 
   if (iter.processed() > 0) {
-    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " PTR_FORMAT,
+    log_develop_trace(gc, ref)(" Dropped %zu Refs out of %zu Refs in discovered list " PTR_FORMAT,
                                iter.removed(), iter.processed(), p2i(&refs_list));
   }
   return false;

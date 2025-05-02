@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test Visibility
  * @bug 6843077
  * @summary test that type annotations are recorded in the classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class Visibility {
@@ -40,9 +41,9 @@ public class Visibility {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassFile cf = ClassFile.read(classFile);
-        for (Method m: cf.methods) {
-            test(cf, m);
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
 
         countAnnotations();
@@ -52,24 +53,27 @@ public class Visibility {
         System.out.println("PASSED");
     }
 
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+    void test(MethodModel mm) {
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
-    // test the result of Attributes.getIndex according to expectations
+    // test the result of mm.findAttribute according to expectations
     // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
+    <T extends Attribute<T>> void test(MethodModel mm, AttributeMapper<T> attr_name) {
+        Attribute<T> attr_instance = mm.findAttribute(attr_name).orElse(null);
+        if (attr_instance != null) {
+            switch (attr_instance) {
+                case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    invisibles += tAttr.annotations().size();
+                }
+                case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    visibles += tAttr.annotations().size();
+                }
+                default -> throw new AssertionError();
+            }
         }
     }
 
@@ -109,7 +113,7 @@ public class Visibility {
     }
 
     File compileTestFile(File f) {
-      int rc = com.sun.tools.javac.Main.compile(new String[] {"-g", f.getPath() });
+        int rc = com.sun.tools.javac.Main.compile(new String[] {"-g", f.getPath() });
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);
         String path = f.getPath();

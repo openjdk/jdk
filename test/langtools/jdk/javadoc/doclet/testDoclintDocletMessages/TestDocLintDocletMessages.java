@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8252717
+ * @bug      8252717 8307377
  * @summary  Integrate/merge legacy standard doclet diagnostics and doclint
  * @library  ../../lib /tools/lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -87,7 +87,7 @@ public class TestDocLintDocletMessages extends JavadocTester {
                 """);
 
         var doclintResult = new Result(Exit.ERROR, "C.java:3: error: reference not found");
-        var docletResult  = new Result(Exit.OK, "C.java:3: warning: Tag @see: reference not found: DoesNotExist");
+        var docletResult  = new Result(Exit.OK, "C.java:3: warning: reference not found: DoesNotExist");
 
         testSingle(base, "reference", doclintResult, docletResult);
     }

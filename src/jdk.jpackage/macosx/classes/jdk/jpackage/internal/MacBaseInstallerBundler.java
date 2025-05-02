@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,23 @@
 
 package jdk.jpackage.internal;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
@@ -79,6 +77,13 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             params -> "",
             null);
 
+    public static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
+            String.class,
+            params -> "",
+            null);
+
     public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
             new StandardBundlerParam<> (
             "mac.installerName",
@@ -100,16 +105,20 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
      static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
-        if (defaultOnly && returnValue != null) {
-            Log.info(I18N.getString("message.install-dir-ignored"));
+
+        final String defaultInstallDir;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            defaultInstallDir = "/Library/Java/JavaVirtualMachines";
+        } else {
+            defaultInstallDir = "/Applications";
+        }
+
+        if (defaultOnly && returnValue != null && !Path.of(returnValue).equals(Path.of(defaultInstallDir))) {
+            Log.info(MessageFormat.format(I18N.getString("message.install-dir-ignored"), defaultInstallDir));
             returnValue = null;
         }
         if (returnValue == null) {
-            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                returnValue = "/Library/Java/JavaVirtualMachines";
-            } else {
-               returnValue = "/Applications";
-            }
+            returnValue = defaultInstallDir;
         }
         return returnValue;
     }
@@ -135,22 +144,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
             Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-            if (!IOUtils.exists(applicationImage)) {
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist"),
-                                PREDEFINED_APP_IMAGE.getID(),
-                                applicationImage.toString()),
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist.advice"),
-                                PREDEFINED_APP_IMAGE.getID()));
-            }
-            if (APP_NAME.fetchFrom(params) == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-app-name"),
-                        I18N.getString(
-                            "message.app-image-requires-app-name.advice"));
-            }
             if (AppImageFile.load(applicationImage).isSigned()) {
                 if (!Files.exists(
                         PackageFile.getPathInAppImage(applicationImage))) {
@@ -180,14 +173,20 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
             appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
-            IOUtils.copyRecursive(predefinedImage, appDir,
+            FileUtils.copyRecursive(predefinedImage, appDir,
                     LinkOption.NOFOLLOW_LINKS);
 
-            // Create PackageFile if predefined app image is not signed
-            if (!StandardBundlerParam.isRuntimeInstaller(params) &&
-                    !AppImageFile.load(predefinedImage).isSigned()) {
+            // Alter app image if predefined app image is not signed
+            if (!AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayout.macAppImage().resolveAt(appDir));
+                Files.deleteIfExists(AppImageFile.getPathInAppImage(appDir));
+                // We need to re-sign app image after adding ".package" to it.
+                // We only do this if app image was not signed which means it is
+                // signed with ad-hoc signature. App bundles with ad-hoc
+                // signature are sealed, but without a signing identity, so we
+                // need to re-sign it after modification.
+                MacAppImageBuilder.signAppBundle(params, appDir, "-", null, null);
             }
         } else {
             appDir = appImageBundler.execute(params, appImageRoot);
@@ -199,48 +198,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     @Override
     public String getBundleType() {
         return "INSTALLER";
-    }
-
-    public static String findKey(String keyPrefix, String teamName, String keychainName) {
-
-        boolean useAsIs = teamName.startsWith(keyPrefix)
-                || teamName.startsWith("Developer ID")
-                || teamName.startsWith("3rd Party Mac");
-
-        String key = (useAsIs) ? teamName : (keyPrefix + teamName);
-
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                PrintStream ps = new PrintStream(baos)) {
-            List<String> searchOptions = new ArrayList<>();
-            searchOptions.add("/usr/bin/security");
-            searchOptions.add("find-certificate");
-            searchOptions.add("-c");
-            searchOptions.add(key);
-            searchOptions.add("-a");
-            if (keychainName != null && !keychainName.isEmpty()) {
-                searchOptions.add(keychainName);
-            }
-
-            ProcessBuilder pb = new ProcessBuilder(searchOptions);
-
-            IOUtils.exec(pb, false, ps);
-            Pattern p = Pattern.compile("\"alis\"<blob>=\"([^\"]+)\"");
-            Matcher m = p.matcher(baos.toString());
-            if (!m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.cert.not.found"), key, keychainName));
-                return null;
-            }
-            String matchedKey = m.group(1);
-            if (m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.multiple.certs.found"), key, keychainName));
-            }
-            return matchedKey;
-        } catch (IOException ioe) {
-            Log.verbose(ioe);
-            return null;
-        }
     }
 
     private final Bundler appImageBundler;

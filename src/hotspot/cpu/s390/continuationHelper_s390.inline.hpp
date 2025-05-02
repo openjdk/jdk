@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,11 @@
 template<typename FKind>
 static inline intptr_t** link_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
+}
+
+static inline void patch_return_pc_with_preempt_stub(frame& f) {
+  Unimplemented();
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
@@ -42,7 +46,7 @@ inline int ContinuationHelper::frame_align_words(int size) {
 
 inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* sp) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template<typename FKind>
@@ -62,11 +66,11 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
   Unimplemented();
 }
 
-#ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   Unimplemented();
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   Unimplemented();
   return false;
@@ -75,18 +79,18 @@ inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
 
 inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template<typename FKind>
 static inline intptr_t* real_fp(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
@@ -95,12 +99,12 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, cons
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline address ContinuationHelper::Frame::real_pc(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
@@ -109,22 +113,22 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, InterpreterOopMap* mask) { // inclusive; this will be copied with the frame
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 #endif // CPU_S390_CONTINUATIONHELPER_S390_INLINE_HPP

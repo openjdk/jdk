@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.jvm.hotspot.gc.parallel.ParallelScavengeHeap;
 import sun.jvm.hotspot.gc.serial.SerialHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shenandoah.ShenandoahHeap;
+import sun.jvm.hotspot.gc.shenandoah.ShenandoahGenerationalHeap;
 import sun.jvm.hotspot.gc.z.ZCollectedHeap;
 import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.runtime.BasicType;
@@ -88,6 +89,7 @@ public class Universe {
     addHeapTypeIfInDB(db, EpsilonHeap.class);
     addHeapTypeIfInDB(db, ZCollectedHeap.class);
     addHeapTypeIfInDB(db, ShenandoahHeap.class);
+    addHeapTypeIfInDB(db, ShenandoahGenerationalHeap.class);
 
     UniverseExt.initialize(heapConstructor);
   }
@@ -112,13 +114,6 @@ public class Universe {
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {
     heap().printOn(tty);
-  }
-
-  // Check whether an element of a typeArrayOop with the given type must be
-  // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
-  // strongly.
-  public static boolean elementTypeShouldBeAligned(BasicType type) {
-    return type == BasicType.T_DOUBLE || type == BasicType.T_LONG;
   }
 
   // Check whether an object field (static/non-static) of the given type must be

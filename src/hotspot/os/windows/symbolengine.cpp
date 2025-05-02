@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "windbghelp.hpp"
 
 #include <windows.h>
@@ -103,7 +103,7 @@ public:
   virtual void initialize () {
     assert(_p == nullptr && _capacity == 0, "Only call once.");
     const size_t bytes = OPTIMAL_CAPACITY * sizeof(T);
-    T* q = (T*) ::malloc(bytes);
+    T* q = (T*) permit_forbidden_function::malloc(bytes);
     if (q != nullptr) {
       _p = q;
       _capacity = OPTIMAL_CAPACITY;
@@ -111,7 +111,7 @@ public:
       _p = _fallback_buffer;
       _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
     }
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -119,11 +119,11 @@ public:
   // case, where two buffers need to be of identical capacity.
   void reset_to_fallback_capacity() {
     if (_p != _fallback_buffer) {
-      ::free(_p);
+      permit_forbidden_function::free(_p);
     }
     _p = _fallback_buffer;
     _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -526,7 +526,7 @@ namespace { // Do not export.
   };
 }
 
-// Called at DLL_PROCESS_ATTACH.
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void SymbolEngine::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }
@@ -574,6 +574,11 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
   return recalc_search_path_locked(p_search_path_was_updated);
 
+}
+
+bool SymbolEngine::refreshModuleList() {
+  SymbolEngineEntry entry_guard;
+  return WindowsDbgHelp::symRefreshModuleList(::GetCurrentProcess());
 }
 
 bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,

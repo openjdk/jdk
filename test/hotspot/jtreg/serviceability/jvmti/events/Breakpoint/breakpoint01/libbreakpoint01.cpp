@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "jni_md.h"
 #include "jvmti.h"
 
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -52,7 +52,7 @@ static const char *THREAD_NAME = "breakpoint01Thr";
 
 static volatile int bpEvents[METH_NUM];
 static volatile jint result = PASSED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 
 static volatile int callbacksEnabled = JNI_TRUE;
@@ -92,7 +92,7 @@ ClassLoad(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jclass klass) {
       jni->FatalError("failed to obtain a class signature\n");
     }
 
-    if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
+    if (sig != nullptr && (strcmp(sig, CLASS_SIG) == 0)) {
       LOG("ClassLoad event received for the class %s setting breakpoints ...\n", sig);
       setBP(jvmti, jni, klass);
     }
@@ -116,10 +116,10 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     return;
   }
 
-  const char* thr_name = thr_info.name == NULL ? "NULL" : thr_info.name;
+  const char* thr_name = thr_info.name == nullptr ? "null" : thr_info.name;
   const char* thr_virtual_tag = jni->IsVirtualThread(thread) == JNI_TRUE ? "virtual" : "platform";
   const char* thr_daemon_tag = thr_info.is_daemon == JNI_TRUE ? "deamon" : "user";
-  if (thr_info.name == NULL || strcmp(thr_info.name, THREAD_NAME) != 0) {
+  if (thr_info.name == nullptr || strcmp(thr_info.name, THREAD_NAME) != 0) {
     result = checkStatus = STATUS_FAILED;
     LOG("TEST FAILED: Breakpoint event with unexpected thread info:\n");
     LOG("\tname: \"%s\"\ttype: %s %s thread\n\n", thr_name, thr_virtual_tag, thr_daemon_tag);
@@ -148,14 +148,14 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     LOG("TEST FAILED: unable to obtain a class signature during Breakpoint callback\n\n");
     return;
   }
-  if (clsSig == NULL || strcmp(clsSig, CLASS_SIG) != 0) {
+  if (clsSig == nullptr || strcmp(clsSig, CLASS_SIG) != 0) {
     result = checkStatus = STATUS_FAILED;
-    LOG("TEST FAILED: Breakpoint event with unexpected class signature: %s\n\n", (clsSig == NULL) ? "NULL" : clsSig);
+    LOG("TEST FAILED: Breakpoint event with unexpected class signature: %s\n\n", (clsSig == nullptr) ? "null" : clsSig);
   } else {
     LOG("CHECK PASSED: class signature: \"%s\"\n", clsSig);
   }
 
-  err = jvmti->GetMethodName(method, &methNam, &methSig, NULL);
+  err = jvmti->GetMethodName(method, &methNam, &methSig, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     result = checkStatus = STATUS_FAILED;
     LOG("TEST FAILED: unable to get method name during Breakpoint callback\n\n");
@@ -230,7 +230,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -268,22 +268,22 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
   if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
   if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
   LOG("enabling the events done\n\n");
 
   agent_lock = create_raw_monitor(jvmti, "agent_lock");
-  if (agent_lock == NULL)
+  if (agent_lock == nullptr)
     return JNI_ERR;
 
   return JNI_OK;

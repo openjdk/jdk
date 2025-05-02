@@ -92,9 +92,6 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
         try {
             m = ThreadLocalRandom.class.getDeclaredMethod("next", int.class);
             m.setAccessible(true);
-        } catch (SecurityException acceptable) {
-            // Security manager may deny access
-            return;
         } catch (Exception ex) {
             // jdk9 module system may deny access
             if (ex.getClass().getSimpleName()

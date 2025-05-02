@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.jfr.internal.JVM;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Unit test for JVM#getUnloadedEventClassCount
  * @requires vm.hasJFR
  *
@@ -65,7 +65,7 @@ public class TestUnloadEventClassCount {
         FlightRecorder.getFlightRecorder();
         myClassLoader = createClassLoaderWithEventClass();
         System.out.println("MyClassLoader instance created");
-        long initialCount = JVM.getJVM().getUnloadedEventClassCount();
+        long initialCount = JVM.getUnloadedEventClassCount();
         System.out.println("Initiali unloaded count is " + initialCount);
         myClassLoader = null;
         System.out.println("Reference to class loader cleared");
@@ -73,7 +73,7 @@ public class TestUnloadEventClassCount {
         do {
             System.gc();
             System.out.println("GC triggered");
-            count = JVM.getJVM().getUnloadedEventClassCount();
+            count = JVM.getUnloadedEventClassCount();
             System.out.println("Unloaded count was " + count);
             Thread.sleep(1000); // sleep to reduce log
         } while (count != initialCount + 1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@
  * @summary basic test of SHA1withECDSA and NONEwithECDSA signing/verifying
  * @author Andreas Sterbenz
  * @library /test/lib ..
- * @library ../../../../java/security/testlibrary
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDSA
- * @run main/othervm -Djava.security.manager=allow TestECDSA sm policy
  */
 
 import java.security.KeyFactory;
@@ -46,6 +44,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Random;
+import jdk.test.lib.security.Providers;
 
 public class TestECDSA extends PKCS11Test {
 

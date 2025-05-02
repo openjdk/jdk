@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,13 +127,24 @@ public final class ObjectIdentifier implements Serializable {
     // Is the component's field calculated?
     private transient boolean   componentsCalculated = false;
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  is the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     @java.io.Serial
     private void readObject(ObjectInputStream is)
             throws IOException, ClassNotFoundException {
         is.defaultReadObject();
 
         if (encoding == null) {  // from an old version
-            int[] comp = (int[])components;
+            if (components == null) {
+                throw new InvalidObjectException("OID components is null");
+            }
+
+            int[] comp = ((int[]) components).clone();
             if (componentLen > comp.length) {
                 componentLen = comp.length;
             }
@@ -142,7 +153,9 @@ public final class ObjectIdentifier implements Serializable {
             // will be performed again in init().
             checkOidSize(componentLen);
             init(comp, componentLen);
+            components = comp;
         } else {
+            encoding = encoding.clone(); // defensive copying
             checkOidSize(encoding.length);
             check(encoding);
         }
@@ -261,6 +274,7 @@ public final class ObjectIdentifier implements Serializable {
         encoding = in.getDerValue().getOID().encoding;
     }
 
+    // set 'encoding' field based on the specified 'components' and 'length'
     private void init(int[] components, int length) throws IOException {
         int pos = 0;
         byte[] tmp = new byte[length * 5 + 1];  // +1 for empty input

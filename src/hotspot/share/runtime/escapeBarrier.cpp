@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/scopeDesc.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
@@ -75,7 +74,8 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     // These frames are about to be removed. We must not interfere with that and signal failure.
     return false;
   }
-  if (deoptee_thread()->has_last_Java_frame()) {
+  if (deoptee_thread()->has_last_Java_frame() &&
+      deoptee_thread()->last_continuation() == nullptr) {
     assert(calling_thread() == Thread::current(), "should be");
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
@@ -123,9 +123,8 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-    oop vt_oop = jt->jvmti_vthread();
-    // Skip virtual threads
-    if (vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop)) {
+    // Skip thread with mounted continuation
+    if (jt->last_continuation() != nullptr) {
       continue;
     }
     if (jt->frames_to_pop_failed_realloc() > 0) {

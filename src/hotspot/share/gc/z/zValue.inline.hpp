@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #include "gc/z/zValue.hpp"
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zNUMA.hpp"
-#include "gc/z/zThread.inline.hpp"
-#include "gc/z/zUtils.hpp"
+#include "gc/z/zNUMA.inline.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 
@@ -44,7 +44,7 @@ template <typename T> uintptr_t ZValueStorage<T>::_top = 0;
 
 template <typename S>
 uintptr_t ZValueStorage<S>::alloc(size_t size) {
-  assert(size <= offset, "Allocation too large");
+  assert(size <= Offset, "Allocation too large");
 
   // Allocate entry in existing memory block
   const uintptr_t addr = align_up(_top, S::alignment());
@@ -56,10 +56,10 @@ uintptr_t ZValueStorage<S>::alloc(size_t size) {
   }
 
   // Allocate new block of memory
-  const size_t block_alignment = offset;
-  const size_t block_size = offset * S::count();
-  _top = ZUtils::alloc_aligned(block_alignment, block_size);
-  _end = _top + offset;
+  const size_t block_alignment = Offset;
+  const size_t block_size = Offset * S::count();
+  _top = ZUtils::alloc_aligned_unfreeable(block_alignment, block_size);
+  _end = _top + Offset;
 
   // Retry allocation
   return alloc(size);
@@ -106,11 +106,11 @@ inline size_t ZPerWorkerStorage::alignment() {
 }
 
 inline uint32_t ZPerWorkerStorage::count() {
-  return UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
+  return ConcGCThreads;
 }
 
 inline uint32_t ZPerWorkerStorage::id() {
-  return ZThread::worker_id();
+  return WorkerThread::worker_id();
 }
 
 //
@@ -119,12 +119,12 @@ inline uint32_t ZPerWorkerStorage::id() {
 
 template <typename S, typename T>
 inline uintptr_t ZValue<S, T>::value_addr(uint32_t value_id) const {
-  return _addr + (value_id * S::offset);
+  return _addr + (value_id * S::Offset);
 }
 
 template <typename S, typename T>
-inline ZValue<S, T>::ZValue() :
-    _addr(S::alloc(sizeof(T))) {
+inline ZValue<S, T>::ZValue()
+  : _addr(S::alloc(sizeof(T))) {
   // Initialize all instances
   ZValueIterator<S, T> iter(this);
   for (T* addr; iter.next(&addr);) {
@@ -133,12 +133,24 @@ inline ZValue<S, T>::ZValue() :
 }
 
 template <typename S, typename T>
-inline ZValue<S, T>::ZValue(const T& value) :
-    _addr(S::alloc(sizeof(T))) {
+inline ZValue<S, T>::ZValue(const T& value)
+  : _addr(S::alloc(sizeof(T))) {
   // Initialize all instances
   ZValueIterator<S, T> iter(this);
   for (T* addr; iter.next(&addr);) {
     ::new (addr) T(value);
+  }
+}
+
+template <typename S, typename T>
+template <typename... Args>
+inline ZValue<S, T>::ZValue(ZValueIdTagType, Args&&... args)
+  : _addr(S::alloc(sizeof(T))) {
+  // Initialize all instances
+  uint32_t value_id;
+  ZValueIterator<S, T> iter(this);
+  for (T* addr; iter.next(&addr, &value_id);) {
+    ::new (addr) T(value_id, args...);
   }
 }
 
@@ -175,13 +187,18 @@ inline void ZValue<S, T>::set_all(const T& value) {
   }
 }
 
+template <typename S, typename T>
+uint32_t ZValue<S, T>::count() const {
+  return S::count();
+}
+
 //
 // Iterator
 //
 
 template <typename S, typename T>
-inline ZValueIterator<S, T>::ZValueIterator(ZValue<S, T>* value) :
-    _value(value),
+inline ZValueIterator<S, T>::ZValueIterator(ZValue<S, T>* value)
+  : _value(value),
     _value_id(0) {}
 
 template <typename S, typename T>
@@ -192,11 +209,25 @@ inline bool ZValueIterator<S, T>::next(T** value) {
   }
   return false;
 }
+template <typename S, typename T>
+inline bool ZValueIterator<S, T>::next(T** value, uint32_t* value_id) {
+  if (_value_id < S::count()) {
+    *value_id = _value_id;
+    *value = _value->addr(_value_id++);
+    return true;
+  }
+  return false;
+}
 
 template <typename S, typename T>
-inline ZValueConstIterator<S, T>::ZValueConstIterator(const ZValue<S, T>* value) :
-    _value(value),
+inline ZValueConstIterator<S, T>::ZValueConstIterator(const ZValue<S, T>* value)
+  : _value(value),
     _value_id(0) {}
+
+template <typename S, typename T>
+inline ZValueConstIterator<S, T>::ZValueConstIterator(const ZValueIterator<S, T>& other)
+  : _value(other._value),
+    _value_id(other._value_id) {}
 
 template <typename S, typename T>
 inline bool ZValueConstIterator<S, T>::next(const T** value) {

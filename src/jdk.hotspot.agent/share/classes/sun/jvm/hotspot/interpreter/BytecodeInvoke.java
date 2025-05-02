@@ -57,7 +57,7 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     if (isInvokedynamic()) {
       return cp.uncachedGetNameRefAt(indexForFieldOrMethod());
     }
-    return cp.getNameRefAt(index());
+    return cp.getNameRefAt(index(), adjustedInvokeCode());
   }
 
   // returns the signature of the invoked method
@@ -66,11 +66,11 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     if (isInvokedynamic()) {
       return cp.uncachedGetSignatureRefAt(indexForFieldOrMethod());
     }
-    return cp.getSignatureRefAt(index());
+    return cp.getSignatureRefAt(index(), adjustedInvokeCode());
   }
 
   public Method getInvokedMethod() {
-    return method().getConstants().getMethodRefAt(index());
+    return method().getConstants().getMethodRefAt(index(), adjustedInvokeCode());
   }
 
   // returns the result type (see BasicType.java) of the invoke

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,6 @@ public final class Constructor<T> extends Executable {
     private final int                 modifiers;
     // Generics and annotations support
     private final transient String    signature;
-    // generic info repository; lazily initialized
-    private transient ConstructorRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
 
@@ -87,25 +85,28 @@ public final class Constructor<T> extends Executable {
     // Accessor for generic info repository
     @Override
     ConstructorRepository getGenericInfo() {
-        // lazily initialize repository if necessary
+        var genericInfo = this.genericInfo;
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo =
-                ConstructorRepository.make(getSignature(),
-                                           getFactory());
+            var root = this.root;
+            if (root != null) {
+                genericInfo = root.getGenericInfo();
+            } else {
+                genericInfo = ConstructorRepository.make(getSignature(), getFactory());
+            }
+            this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return genericInfo;
     }
 
-    @Stable
-    private ConstructorAccessor constructorAccessor;
-    // For sharing of ConstructorAccessors. This branching structure
-    // is currently only two levels deep (i.e., one root Constructor
-    // and potentially many Constructor objects pointing to it.)
-    //
-    // If this branching structure would ever contain cycles, deadlocks can
-    // occur in annotation code.
-    private Constructor<T>      root;
+    /**
+     * Constructors are mutable due to {@link AccessibleObject#setAccessible(boolean)}.
+     * Thus, we return a new copy of a root each time a constructor is returned.
+     * Some lazily initialized immutable states can be stored on root and shared to the copies.
+     */
+    private Constructor<T> root;
+    private transient volatile ConstructorRepository genericInfo;
+    private @Stable ConstructorAccessor constructorAccessor;
+    // End shared states
 
     @Override
     Constructor<T> getRoot() {
@@ -141,13 +142,6 @@ public final class Constructor<T> extends Executable {
      * "root" field points to this Constructor.
      */
     Constructor<T> copy() {
-        // This routine enables sharing of ConstructorAccessor objects
-        // among Constructor objects which refer to the same underlying
-        // method in the VM. (All of this contortion is only necessary
-        // because of the "accessibility" bit in AccessibleObject,
-        // which implicitly requires that new java.lang.reflect
-        // objects be fabricated for each reflective call on Class
-        // objects.)
         if (this.root != null)
             throw new IllegalArgumentException("Can not copy a non-root Constructor");
 
@@ -160,27 +154,33 @@ public final class Constructor<T> extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
+        res.genericInfo = genericInfo;
+        return res;
+    }
+
+    // Creates a new root constructor with a custom accessor for serialization hooks.
+    Constructor<T> newWithAccessor(ConstructorAccessor accessor) {
+        var res = new Constructor<>(clazz, parameterTypes, exceptionTypes, modifiers, slot,
+                signature, annotations, parameterAnnotations);
+        res.constructorAccessor = accessor;
         return res;
     }
 
     /**
      * {@inheritDoc}
      *
-     * <p> A {@code SecurityException} is also thrown if this object is a
+     * <p> A {@code SecurityException} is thrown if this object is a
      * {@code Constructor} object for the class {@code Class} and {@code flag}
      * is true. </p>
      *
      * @param flag {@inheritDoc}
      *
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException if the request is denied by the security manager
-     *         or this is a constructor for {@code java.lang.Class}
-     *
+     * @throws SecurityException if this is a constructor for {@code java.lang.Class}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }
@@ -240,7 +240,7 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
       if (getSignature() != null) {
         return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
@@ -264,7 +264,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getParameterTypes() {
-        return parameterTypes.clone();
+        return parameterTypes.length == 0 ? parameterTypes : parameterTypes.clone();
     }
 
     /**
@@ -290,9 +290,8 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Class<?>[] getExceptionTypes() {
-        return exceptionTypes.clone();
+        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
     }
-
 
     /**
      * {@inheritDoc}

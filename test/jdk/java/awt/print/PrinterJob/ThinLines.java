@@ -25,7 +25,7 @@
   @test
   @bug 4190081
   @summary  Confirm that the you see "Z" shapes on the printed page.
-  @author prr/rbi: area=PrinterJob
+  @key printer
   @run main/manual ThinLines
 */
 
@@ -41,9 +41,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.print.*;
-
-// This test is a "main" test as applets would need Runtime permission
-// "queuePrintJob".
 
 public class ThinLines implements Printable {
 

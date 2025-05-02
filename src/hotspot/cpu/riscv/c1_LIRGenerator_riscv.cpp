@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -108,43 +107,41 @@ LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
 
 
 bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
-  if (v->type()->as_IntConstant() != NULL) {
+  if (v->type()->as_IntConstant() != nullptr) {
     return v->type()->as_IntConstant()->value() == 0;
-  } else if (v->type()->as_LongConstant() != NULL) {
+  } else if (v->type()->as_LongConstant() != nullptr) {
     return v->type()->as_LongConstant()->value() == 0;
-  } else if (v->type()->as_ObjectConstant() != NULL) {
+  } else if (v->type()->as_ObjectConstant() != nullptr) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
-  } else if (v->type()->as_FloatConstant() != NULL) {
+  } else if (v->type()->as_FloatConstant() != nullptr) {
     return jint_cast(v->type()->as_FloatConstant()->value()) == 0.0f;
-  } else if (v->type()->as_DoubleConstant() != NULL) {
+  } else if (v->type()->as_DoubleConstant() != nullptr) {
     return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0.0;
   }
   return false;
 }
 
 bool LIRGenerator::can_inline_as_constant(Value v) const {
-  if (v->type()->as_IntConstant() != NULL) {
+  if (v->type()->as_IntConstant() != nullptr) {
     int value = v->type()->as_IntConstant()->value();
     // "-value" must be defined for value may be used for sub
-    return Assembler::operand_valid_for_add_immediate(value) &&
-           Assembler::operand_valid_for_add_immediate(- value);
-  } else if (v->type()->as_ObjectConstant() != NULL) {
+    return Assembler::is_simm12(value) && Assembler::is_simm12(- value);
+  } else if (v->type()->as_ObjectConstant() != nullptr) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
-  } else if (v->type()->as_LongConstant() != NULL) {
+  } else if (v->type()->as_LongConstant() != nullptr) {
     long value = v->type()->as_LongConstant()->value();
     // "-value" must be defined for value may be used for sub
-    return Assembler::operand_valid_for_add_immediate(value) &&
-           Assembler::operand_valid_for_add_immediate(- value);
-  } else if (v->type()->as_FloatConstant() != NULL) {
+    return Assembler::is_simm12(value) && Assembler::is_simm12(- value);
+  } else if (v->type()->as_FloatConstant() != nullptr) {
     return v->type()->as_FloatConstant()->value() == 0.0f;
-  } else if (v->type()->as_DoubleConstant() != NULL) {
+  } else if (v->type()->as_DoubleConstant() != nullptr) {
     return v->type()->as_DoubleConstant()->value() == 0.0;
   }
   return false;
 }
 
 bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
-  if (c->as_constant() != NULL) {
+  if (c->as_constant() != nullptr) {
     long constant = 0;
     switch (c->type()) {
       case T_INT:  constant = c->as_jint();   break;
@@ -152,8 +149,7 @@ bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
       default:     return false;
     }
     // "-constant" must be defined for c may be used for sub
-    return Assembler::operand_valid_for_add_immediate(constant) &&
-           Assembler::operand_valid_for_add_immediate(- constant);
+    return Assembler::is_simm12(constant) && Assembler::is_simm12(- constant);
   }
   return false;
 }
@@ -277,15 +273,16 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
   LIR_Opr lock = new_register(T_INT);
+  LIR_Opr scratch = new_register(T_INT);
 
-  CodeEmitInfo* info_for_exception = NULL;
+  CodeEmitInfo* info_for_exception = nullptr;
   if (x->needs_null_check()) {
     info_for_exception = state_for(x);
   }
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
+  monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
                 x->monitor_no(), info_for_exception, info);
 }
 
@@ -297,8 +294,9 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
 
   LIR_Opr lock = new_register(T_INT);
   LIR_Opr obj_temp = new_register(T_INT);
+  LIR_Opr scratch = new_register(T_INT);
   set_no_result(x);
-  monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
+  monitor_exit(obj_temp, lock, syncTempOpr(), scratch, x->monitor_no());
 }
 
 // neg
@@ -357,7 +355,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   LIR_Opr reg = rlock(x);
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _ladd, _lmul, _lsub, _ldiv, _lrem
@@ -411,9 +409,9 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
       if (x->op() == Bytecodes::_lmul ||
           !right.is_constant() ||
           (x->op() == Bytecodes::_ladd &&
-          !Assembler::operand_valid_for_add_immediate(right.get_jlong_constant())) ||
+          !Assembler::is_simm12(right.get_jlong_constant())) ||
           (x->op() == Bytecodes::_lsub &&
-          !Assembler::operand_valid_for_add_immediate(-right.get_jlong_constant()))) {
+          !Assembler::is_simm12(-right.get_jlong_constant()))) {
             right.load_item();
       } else { // add, sub
         assert(x->op() == Bytecodes::_ladd || x->op() == Bytecodes::_lsub, "expected ladd or lsub");
@@ -422,7 +420,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
       }
     }
     rlock_result(x);
-    arithmetic_op_long(x->op(), x->operand(), left.result(), right.result(), NULL);
+    arithmetic_op_long(x->op(), x->operand(), left.result(), right.result(), nullptr);
   }
 }
 
@@ -467,15 +465,15 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
 
     LIR_Opr ill = LIR_OprFact::illegalOpr;
     if (x->op() == Bytecodes::_irem) {
-      __ irem(left_arg->result(), right_arg->result(), x->operand(), ill, NULL);
+      __ irem(left_arg->result(), right_arg->result(), x->operand(), ill, nullptr);
     } else if (x->op() == Bytecodes::_idiv) {
-      __ idiv(left_arg->result(), right_arg->result(), x->operand(), ill, NULL);
+      __ idiv(left_arg->result(), right_arg->result(), x->operand(), ill, nullptr);
     }
 
   } else if (x->op() == Bytecodes::_iadd || x->op() == Bytecodes::_isub) {
     if (right.is_constant() &&
-        ((x->op() == Bytecodes::_iadd && !Assembler::operand_valid_for_add_immediate(right.get_jint_constant())) ||
-         (x->op() == Bytecodes::_isub && !Assembler::operand_valid_for_add_immediate(-right.get_jint_constant())))) {
+        ((x->op() == Bytecodes::_iadd && !Assembler::is_simm12(right.get_jint_constant())) ||
+         (x->op() == Bytecodes::_isub && !Assembler::is_simm12(-right.get_jint_constant())))) {
       right.load_nonconstant();
     } else {
       right.load_item();
@@ -503,7 +501,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
 void LIRGenerator::do_ArithmeticOp(ArithmeticOp* x) {
   // when an operand with use count 1 is the left operand, then it is
   // likely that no move for 2-operand-LIR-form is necessary
-  if (x->is_commutative() && x->y()->as_Constant() == NULL && x->x()->use_count() > x->y()->use_count()) {
+  if (x->is_commutative() && x->y()->as_Constant() == nullptr && x->x()->use_count() > x->y()->use_count()) {
     x->swap_operands();
   }
 
@@ -525,7 +523,7 @@ void LIRGenerator::do_ShiftOp(ShiftOp* x) {
 
   value.load_item();
   if (count.is_constant()) {
-    assert(count.type()->as_IntConstant() != NULL || count.type()->as_LongConstant() != NULL , "should be");
+    assert(count.type()->as_IntConstant() != nullptr || count.type()->as_LongConstant() != nullptr , "should be");
     count.dont_load_item();
   } else {
     count.load_item();
@@ -546,8 +544,8 @@ void LIRGenerator::do_LogicOp(LogicOp* x) {
   rlock_result(x);
   ValueTag tag = right.type()->tag();
   if (right.is_constant() &&
-     ((tag == longTag && Assembler::operand_valid_for_add_immediate(right.get_jlong_constant())) ||
-      (tag == intTag && Assembler::operand_valid_for_add_immediate(right.get_jint_constant()))))  {
+     ((tag == longTag && Assembler::is_simm12(right.get_jlong_constant())) ||
+      (tag == intTag && Assembler::is_simm12(right.get_jint_constant()))))  {
     right.dont_load_item();
   } else {
     right.load_item();
@@ -675,7 +673,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
   LIR_Opr calc_result = rlock_result(x);
   LIR_Opr result_reg = result_register_for(x->type());
 
-  CallingConvention* cc = NULL;
+  CallingConvention* cc = nullptr;
 
   if (x->id() == vmIntrinsics::_dpow) {
     LIRItem value1(x->argument_at(1), this);
@@ -697,31 +695,31 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
 
   switch (x->id()) {
     case vmIntrinsics::_dexp:
-      if (StubRoutines::dexp() != NULL) { __ call_runtime_leaf(StubRoutines::dexp(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dexp() != nullptr) { __ call_runtime_leaf(StubRoutines::dexp(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dexp), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dlog:
-      if (StubRoutines::dlog() != NULL) {  __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dlog() != nullptr) {  __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dlog10:
-      if (StubRoutines::dlog10() != NULL) { __ call_runtime_leaf(StubRoutines::dlog10(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dlog10() != nullptr) { __ call_runtime_leaf(StubRoutines::dlog10(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dsin:
-      if (StubRoutines::dsin() != NULL) { __ call_runtime_leaf(StubRoutines::dsin(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dsin() != nullptr) { __ call_runtime_leaf(StubRoutines::dsin(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dcos:
-      if (StubRoutines::dcos() != NULL) {  __ call_runtime_leaf(StubRoutines::dcos(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dcos() != nullptr) {  __ call_runtime_leaf(StubRoutines::dcos(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dtan:
-      if (StubRoutines::dtan() != NULL) { __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dtan() != nullptr) { __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args()); }
       break;
     case vmIntrinsics::_dpow:
-      if (StubRoutines::dpow() != NULL) { __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args()); }
+      if (StubRoutines::dpow() != nullptr) { __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args()); }
       else { __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args()); }
       break;
     default:  ShouldNotReachHere();
@@ -734,7 +732,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
@@ -765,15 +769,90 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   set_no_result(x);
 
   int flags;
-  ciArrayKlass* expected_type = NULL;
+  ciArrayKlass* expected_type = nullptr;
   arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp,
                expected_type, flags, info); // does add_safepoint
 }
 
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
-  ShouldNotReachHere();
+  assert(UseCRC32Intrinsics, "why are we here?");
+  // Make all state_for calls early since they can emit code
+  LIR_Opr result = rlock_result(x);
+  switch (x->id()) {
+    case vmIntrinsics::_updateCRC32: {
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem val(x->argument_at(1), this);
+      // val is destroyed by update_crc32
+      val.set_destroys_register();
+      crc.load_item();
+      val.load_item();
+      __ update_crc32(crc.result(), val.result(), result);
+      break;
+    }
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateByteBufferCRC32: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32);
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem len(x->argument_at(3), this);
+      buf.load_item();
+      off.load_nonconstant();
+
+      LIR_Opr index = off.result();
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+      }
+
+      if (offset) {
+        LIR_Opr tmp = new_pointer_register();
+        __ add(base_op, LIR_OprFact::intConst(offset), tmp);
+        base_op = tmp;
+        offset = 0;
+      }
+
+      LIR_Address* a = new LIR_Address(base_op,
+                                       index,
+                                       offset,
+                                       T_BYTE);
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr addr = new_pointer_register();
+      __ leal(LIR_OprFact::address(a), addr);
+
+      crc.load_item_force(cc->at(0));
+      __ move(addr, cc->at(1));
+      len.load_item_force(cc->at(2));
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32(), getThreadTemp(), result_reg, cc->args());
+      __ move(result_reg, result);
+
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
@@ -804,7 +883,7 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
-  fatal("vectorizedMismatch intrinsic is not implemented on this platform");
+  ShouldNotReachHere();
 }
 
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
@@ -845,7 +924,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 }
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::r9_opr);
@@ -862,7 +947,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -872,7 +957,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIRItem length(x->length(), this);
   // in case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed
-  CodeEmitInfo* patching_info = NULL;
+  CodeEmitInfo* patching_info = nullptr;
   if (!x->klass()->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
@@ -905,14 +990,14 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
 void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   Values* dims = x->dims();
   int i = dims->length();
-  LIRItemList* items = new LIRItemList(i, i, NULL);
+  LIRItemList* items = new LIRItemList(i, i, nullptr);
   while (i-- > 0) {
     LIRItem* size = new LIRItem(dims->at(i), this);
     items->at_put(i, size);
   }
 
   // Evaluate state_for early since it may emit code.
-  CodeEmitInfo* patching_info = NULL;
+  CodeEmitInfo* patching_info = nullptr;
   if (!x->klass()->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
 
@@ -944,7 +1029,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -959,7 +1044,7 @@ void LIRGenerator::do_BlockBegin(BlockBegin* x) {
 void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIRItem obj(x->obj(), this);
 
-  CodeEmitInfo* patching_info = NULL;
+  CodeEmitInfo* patching_info = nullptr;
   if (!x->klass()->is_loaded() ||
       (PatchALot && !x->is_incompatible_class_change_check() && !x->is_invokespecial_receiver_check())) {
     // must do this before locking the destination register as an oop register,
@@ -973,18 +1058,18 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
       (x->needs_exception_state() ? state_for(x) :
                                     state_for(x, x->state_before(), true /*ignore_xhandler*/ ));
 
-  CodeStub* stub = NULL;
+  CodeStub* stub = nullptr;
   if (x->is_incompatible_class_change_check()) {
-    assert(patching_info == NULL, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr,
+    assert(patching_info == nullptr, "can't patch this");
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr,
                                    info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
-    assert(patching_info == NULL, "can't patch this");
+    assert(patching_info == nullptr, "can't patch this");
     stub = new DeoptimizeStub(info_for_exception,
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
@@ -1002,7 +1087,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
 
   // result and test object may not be in same register
   LIR_Opr reg = rlock_result(x);
-  CodeEmitInfo* patching_info = NULL;
+  CodeEmitInfo* patching_info = nullptr;
   if ((!x->klass()->is_loaded() || PatchALot)) {
     // must do this before locking the destination register as an oop register
     patching_info = state_for(x, x->state_before());
@@ -1015,6 +1100,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {

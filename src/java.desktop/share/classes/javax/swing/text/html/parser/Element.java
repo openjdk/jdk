@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package javax.swing.text.html.parser;
 
-import java.util.Hashtable;
+import java.io.Serializable;
 import java.util.BitSet;
-import java.io.*;
+import java.util.Map;
 import sun.awt.AppContext;
 
 /**
@@ -41,8 +41,7 @@ import sun.awt.AppContext;
  * @author Arthur van Hoff
  */
 @SuppressWarnings("serial") // Same-version serialization only
-public final
-class Element implements DTDConstants, Serializable {
+public final class Element implements DTDConstants, Serializable {
 
     /**
      * The element index
@@ -234,15 +233,12 @@ class Element implements DTDConstants, Serializable {
         return null;
     }
 
-
-    static Hashtable<String, Integer> contentTypes = new Hashtable<String, Integer>();
-
-    static {
-        contentTypes.put("CDATA", Integer.valueOf(CDATA));
-        contentTypes.put("RCDATA", Integer.valueOf(RCDATA));
-        contentTypes.put("EMPTY", Integer.valueOf(EMPTY));
-        contentTypes.put("ANY", Integer.valueOf(ANY));
-    }
+    private static final Map<String, Integer> contentTypes = Map.of(
+            "CDATA", CDATA,
+            "RCDATA", RCDATA,
+            "EMPTY", EMPTY,
+            "ANY", ANY
+    );
 
     /**
      * Converts {@code nm} to type. Returns appropriate DTDConstants
@@ -253,7 +249,6 @@ class Element implements DTDConstants, Serializable {
      * CDATA, RCDATA, EMPTY or ANY, 0 otherwise.
      */
     public static int name2type(String nm) {
-        Integer val = contentTypes.get(nm);
-        return (val != null) ? val.intValue() : 0;
+        return contentTypes.getOrDefault(nm, 0);
     }
 }

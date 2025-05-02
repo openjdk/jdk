@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 import build.tools.generatecharacter.CharacterName;
@@ -74,6 +75,7 @@ public class GenerateCharacter {
     static String DefaultSpecialCasingFileName = ROOT + "SpecialCasing.txt";
     static String DefaultPropListFileName     = ROOT + "PropList.txt";
     static String DefaultDerivedPropsFileName = ROOT + "DerivedCoreProperties.txt";
+    static String DefaultEmojiDataFileName    = ROOT + "emoji-data.txt";
     static String DefaultJavaTemplateFileName = ROOT + "Character.java.template";
     static String DefaultJavaOutputFileName   = ROOT + "Character.java";
     static String DefaultCTemplateFileName    = ROOT + "Character.c.template";
@@ -105,7 +107,7 @@ public class GenerateCharacter {
     entries are short rather than byte).
     */
 
-    /* The character properties are currently encoded into A (32 bits) and B (8 bits)
+    /* The character properties are currently encoded into A (32 bits) and B (16 bits)
        two parts.
 
     A: the low 32 bits are defined  in the following manner:
@@ -160,6 +162,13 @@ public class GenerateCharacter {
     1 bit Ideographic property
     1 bit ID_Start property
     1 bit ID_Continue property
+    6 bits for Emoji properties :-
+        1 bit for Emoji
+        1 bit for Emoji_Presentation
+        1 bit for Emoji_Modifier
+        1 bit for Emoji_Modifier_Base
+        1 bit for Emoji_Component
+        1 bit for Extended_Pictographic
     */
 
 
@@ -188,15 +197,21 @@ public class GenerateCharacter {
     // maskMirrored needs to be long, if up 16-bit
     private static final long maskMirrored          = 0x80000000L;
 
-    // bit masks identify the 8-bit property field described above, in B
+    // bit masks identify the 16-bit property field described above, in B
     // table
-    private static final long
-        maskOtherLowercase  = 0x0100000000L,
-        maskOtherUppercase  = 0x0200000000L,
-        maskOtherAlphabetic = 0x0400000000L,
-        maskIdeographic     = 0x0800000000L,
-        maskIDStart         = 0x1000000000L,
-        maskIDContinue      = 0x2000000000L;
+    static final long
+        maskOtherLowercase          = 1L << 32,
+        maskOtherUppercase          = 1L << 33,
+        maskOtherAlphabetic         = 1L << 34,
+        maskIdeographic             = 1L << 35,
+        maskIDStart                 = 1L << 36,
+        maskIDContinue              = 1L << 37,
+        maskEmoji                   = 1L << 38,
+        maskEmojiPresentation       = 1L << 39,
+        maskEmojiModifier           = 1L << 40,
+        maskEmojiModifierBase       = 1L << 41,
+        maskEmojiComponent          = 1L << 42,
+        maskExtendedPictographic    = 1L << 43;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -304,7 +319,7 @@ public class GenerateCharacter {
     * @see GenerateCharacter#buildOne
     */
 
-    static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps, PropList propList)
+    static long[] buildMap(UnicodeSpec[] data, SpecialCaseMap[] specialMaps, PropList propList, EmojiData emojiData)
     {
         long[] result = new long[bLatin1 ? 256 : 1 << 16];
         int k = 0;
@@ -360,6 +375,9 @@ public class GenerateCharacter {
         addExProp(result, propList, "Ideographic", maskIdeographic);
         addExProp(result, propList, "ID_Start", maskIDStart);
         addExProp(result, propList, "ID_Continue", maskIDContinue);
+
+        // add Emoji properties to the upper 16-bit
+        addEmojiProps(result, emojiData);
 
         return result;
     }
@@ -583,6 +601,14 @@ public class GenerateCharacter {
         }
     }
 
+    static void addEmojiProps(long[] map, EmojiData emojiData) {
+        for (int cp : emojiData.codepoints()) {
+            var index = cp & 0xFFFF;
+            if (index < map.length)
+                map[index] |= emojiData.properties(cp);
+        }
+    }
+
     /**
     * This is the heart of the table compression strategy.  The inputs are a map
     * and a number of bits (size).  The map is simply an array of long integer values;
@@ -776,6 +802,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.equals("maskIdeographic")) return "0x" + hex4(maskIdeographic >> 32);
         if (x.equals("maskIDStart")) return "0x" + hex4(maskIDStart >> 32);
         if (x.equals("maskIDContinue")) return "0x" + hex4(maskIDContinue >> 32);
+        if (x.equals("maskEmoji")) return "0x" + hex4(maskEmoji >> 32);
+        if (x.equals("maskEmojiPresentation")) return "0x" + hex4(maskEmojiPresentation >> 32);
+        if (x.equals("maskEmojiModifier")) return "0x" + hex4(maskEmojiModifier >> 32);
+        if (x.equals("maskEmojiModifierBase")) return "0x" + hex4(maskEmojiModifierBase >> 32);
+        if (x.equals("maskEmojiComponent")) return "0x" + hex4(maskEmojiComponent >> 32);
+        if (x.equals("maskExtendedPictographic")) return "0x" + hex4(maskExtendedPictographic >> 32);
         if (x.equals("valueIgnorable")) return "0x" + hex8(valueIgnorable);
         if (x.equals("valueJavaUnicodeStart")) return "0x" + hex8(valueJavaUnicodeStart);
         if (x.equals("valueJavaOnlyStart")) return "0x" + hex8(valueJavaOnlyStart);
@@ -952,7 +984,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
 
         // If we ever need more than 32 bits to represent the character properties,
         // then a table "B" may be needed as well.
-        genTable(result, "B", tables[n - 1], 32, 8, sizes[n - 1], false, 0, true, true, false);
+        genTable(result, "B", tables[n - 1], 32, 16, sizes[n - 1], false, 0, true, true, false);
 
         totalBytes += ((((tables[n - 1].length * (identifiers ? 2 : 32)) + 31) >> 5) << 2);
         result.append(commentStart);
@@ -1434,6 +1466,42 @@ OUTER:  for (int i = 0; i < n; i += m) {
             result.append(", supradecimal ");
             result.append((val & maskDigitOffset) >> shiftDigitOffset);
         }
+        if ((val & maskOtherLowercase) == maskOtherLowercase) {
+            result.append(", otherLowercase");
+        }
+        if ((val & maskOtherUppercase) == maskOtherUppercase) {
+            result.append(", otherUppercase");
+        }
+        if ((val & maskOtherAlphabetic) == maskOtherAlphabetic) {
+            result.append(", otherAlphabetic");
+        }
+        if ((val & maskIdeographic) == maskIdeographic) {
+            result.append(", ideographic");
+        }
+        if ((val & maskIDStart) == maskIDStart) {
+            result.append(", IDStart");
+        }
+        if ((val & maskIDContinue) == maskIDContinue) {
+            result.append(", IDContinue");
+        }
+        if ((val & maskEmoji) == maskEmoji) {
+            result.append(", emoji");
+        }
+        if ((val & maskEmojiPresentation) == maskEmojiPresentation) {
+            result.append(", emojiPresentation");
+        }
+        if ((val & maskEmojiModifier) == maskEmojiModifier) {
+            result.append(", emojiModifier");
+        }
+        if ((val & maskEmojiModifierBase) == maskEmojiModifierBase) {
+            result.append(", emojiModifierBase");
+        }
+        if ((val & maskEmojiComponent) == maskEmojiComponent) {
+            result.append(", emojiComponent");
+        }
+        if ((val & maskExtendedPictographic) == maskExtendedPictographic) {
+            result.append(", extendedPictographic");
+        }
     }
 
     static String[] tableNames = { "X", "Y", "Z", "P", "Q", "R", "S", "T", "U", "V", "W" };
@@ -1512,6 +1580,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String SpecialCasingFileName = null;
     static String PropListFileName = null;
     static String DerivedPropsFileName = null;
+    static String EmojiDataFileName = null;
     static boolean useCharForByte = false;
     static int[] sizes;
     static int bins = 0; // liu; if > 0, then perform search
@@ -1649,6 +1718,14 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     DerivedPropsFileName = args[++j];
                 }
             }
+            else if (args[j].equals("-emojidata")) {
+                if (j == args.length -1) {
+                    FAIL("File name missing after -emojidata");
+                }
+                else {
+                    EmojiDataFileName = args[++j];
+                }
+            }
             else if (args[j].equals("-plane")) {
                 if (j == args.length -1) {
                     FAIL("Plane number missing after -plane");
@@ -1716,6 +1793,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (DerivedPropsFileName == null) {
             DerivedPropsFileName = DefaultDerivedPropsFileName;
             desc.append(" [-derivedprops " + DerivedPropsFileName + ']');
+        }
+        if (EmojiDataFileName == null) {
+            EmojiDataFileName = DefaultEmojiDataFileName;
+            desc.append(" [-emojidata " + EmojiDataFileName + ']');
         }
         if (TemplateFileName == null) {
             TemplateFileName = (Csyntax ? DefaultCTemplateFileName
@@ -1871,11 +1952,12 @@ OUTER:  for (int i = 0; i < n; i += m) {
             specialCaseMaps = SpecialCaseMap.readSpecFile(new File(SpecialCasingFileName), plane);
             PropList propList = PropList.readSpecFile(new File(PropListFileName), plane);
             propList.putAll(PropList.readSpecFile(new File(DerivedPropsFileName), plane));
+            EmojiData emojiData = EmojiData.readSpecFile(Paths.get(EmojiDataFileName), plane);
 
             if (verbose) {
                 System.out.println(data.length + " items read from Unicode spec file " + UnicodeSpecFileName); // liu
             }
-            long[] map = buildMap(data, specialCaseMaps, propList);
+            long[] map = buildMap(data, specialCaseMaps, propList, emojiData);
             if (verbose) {
                 System.err.println("Completed building of initial map");
             }

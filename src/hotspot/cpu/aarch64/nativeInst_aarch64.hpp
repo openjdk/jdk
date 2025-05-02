@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,21 +29,25 @@
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciExceptions.hpp"
+#endif
+
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
 // - - NativeCall
 // - - NativeMovConstReg
-// - - NativeMovConstRegPatching
 // - - NativeMovRegMem
-// - - NativeMovRegMemPatching
 // - - NativeJump
-// - - NativeIllegalOpCode
-// - - NativeGeneralJump
-// - - NativeReturn
-// - - NativeReturnX (return with argument)
-// - - NativePushConst
-// - - NativeTstRegMem
+// - - - NativeGeneralJump
+// - - NativeIllegalInstruction
+// - - NativeCallTrampolineStub
+// - - NativeMembar
+// - - NativeLdSt
+// - - NativePostCallNop
+// - - NativeDeoptInstruction
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -150,44 +154,6 @@ inline NativeInstruction* nativeInstruction_at(uint32_t* address) {
   return (NativeInstruction*)address;
 }
 
-class NativePltCall: public NativeInstruction {
-public:
-  enum Arm_specific_constants {
-    instruction_size           =    4,
-    instruction_offset         =    0,
-    displacement_offset        =    1,
-    return_address_offset      =    4
-  };
-  address instruction_address() const { return addr_at(instruction_offset); }
-  address next_instruction_address() const { return addr_at(return_address_offset); }
-  address displacement_address() const { return addr_at(displacement_offset); }
-  int displacement() const { return (jint) int_at(displacement_offset); }
-  address return_address() const { return addr_at(return_address_offset); }
-  address destination() const;
-  address plt_entry() const;
-  address plt_jump() const;
-  address plt_load_got() const;
-  address plt_resolve_call() const;
-  address plt_c2i_stub() const;
-  void set_stub_to_clean();
-
-  void reset_to_plt_resolve_call();
-  void set_destination_mt_safe(address dest);
-
-  void verify() const;
-};
-
-inline NativePltCall* nativePltCall_at(address address) {
-  NativePltCall* call = (NativePltCall*)address;
-  DEBUG_ONLY(call->verify());
-  return call;
-}
-
-inline NativePltCall* nativePltCall_before(address addr) {
-  address at = addr - NativePltCall::instruction_size;
-  return nativePltCall_at(at);
-}
-
 inline NativeCall* nativeCall_at(address address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
@@ -202,11 +168,13 @@ public:
     return_address_offset       =    4
   };
 
+  static int byte_size() { return instruction_size; }
   address instruction_address() const { return addr_at(instruction_offset); }
   address next_instruction_address() const { return addr_at(return_address_offset); }
   int displacement() const { return (int_at(displacement_offset) << 6) >> 4; }
   address displacement_address() const { return addr_at(displacement_offset); }
   address return_address() const { return addr_at(return_address_offset); }
+  address raw_destination() const { return instruction_address() + displacement(); }
   address destination() const;
 
   void set_destination(address dest) {
@@ -246,12 +214,12 @@ public:
   //
   // Used in the runtime linkage of calls; see class CompiledIC.
   // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
-
-  // The parameter assert_lock disables the assertion during code generation.
-  void set_destination_mt_safe(address dest, bool assert_lock = true);
+  void set_destination_mt_safe(address dest);
 
   address get_trampoline();
-  address trampoline_jump(CodeBuffer &cbuf, address dest);
+#if INCLUDE_JVMCI
+  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
+#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -287,7 +255,7 @@ public:
     else if (is_ldr_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
-    return NULL;
+    return nullptr;
   }
 
   intptr_t data() const;
@@ -318,15 +286,6 @@ inline NativeMovConstReg* nativeMovConstReg_before(address address) {
   DEBUG_ONLY(test->verify());
   return test;
 }
-
-class NativeMovConstRegPatching: public NativeMovConstReg {
-private:
-  friend NativeMovConstRegPatching* nativeMovConstRegPatching_at(address address) {
-    NativeMovConstRegPatching* test = (NativeMovConstRegPatching*)(address - instruction_offset);
-    DEBUG_ONLY(test->verify());
-    return test;
-  }
-};
 
 // An interface for accessing/manipulating native moves of the form:
 //      mov[b/w/l/q] [reg + offset], reg   (instruction_code_reg2mem)
@@ -378,60 +337,6 @@ inline NativeMovRegMem* nativeMovRegMem_at(address address) {
   NativeMovRegMem* test = (NativeMovRegMem*)(address - NativeMovRegMem::instruction_offset);
   DEBUG_ONLY(test->verify());
   return test;
-}
-
-class NativeMovRegMemPatching: public NativeMovRegMem {
-private:
-  friend NativeMovRegMemPatching* nativeMovRegMemPatching_at(address address) {
-    Unimplemented();
-    return 0;
-  }
-};
-
-// An interface for accessing/manipulating native leal instruction of form:
-//        leal reg, [reg + offset]
-
-class NativeLoadAddress: public NativeInstruction {
-  enum AArch64_specific_constants {
-    instruction_size            =    4,
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    4
-  };
-
-public:
-  void verify();
-};
-
-//   adrp    x16, #page
-//   add     x16, x16, #offset
-//   ldr     x16, [x16]
-class NativeLoadGot: public NativeInstruction {
-public:
-  enum AArch64_specific_constants {
-    instruction_length = 4 * NativeInstruction::instruction_size,
-    offset_offset = 0,
-  };
-
-  address instruction_address() const { return addr_at(0); }
-  address return_address() const { return addr_at(instruction_length); }
-  address got_address() const;
-  address next_instruction_address() const { return return_address(); }
-  intptr_t data() const;
-  void set_data(intptr_t data) {
-    intptr_t* addr = (intptr_t*)got_address();
-    *addr = data;
-  }
-
-  void verify() const;
-private:
-  void report_and_fail() const;
-};
-
-inline NativeLoadGot* nativeLoadGot_at(address addr) {
-  NativeLoadGot* load = (NativeLoadGot*)addr;
-  DEBUG_ONLY(load->verify());
-  return load;
 }
 
 class NativeJump: public NativeInstruction {
@@ -489,58 +394,10 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   return jump;
 }
 
-class NativeGotJump: public NativeInstruction {
-public:
-  enum AArch64_specific_constants {
-    instruction_size = 4 * NativeInstruction::instruction_size,
-  };
-
-  void verify() const;
-  address instruction_address() const { return addr_at(0); }
-  address destination() const;
-  address return_address() const { return addr_at(instruction_size); }
-  address got_address() const;
-  address next_instruction_address() const { return addr_at(instruction_size); }
-  bool is_GotJump() const;
-
-  void set_jump_destination(address dest) {
-    address* got = (address*)got_address();
-    *got = dest;
-  }
-};
-
-inline NativeGotJump* nativeGotJump_at(address addr) {
-  NativeGotJump* jump = (NativeGotJump*)(addr);
-  DEBUG_ONLY(jump->verify());
-  return jump;
-}
-
-class NativePopReg : public NativeInstruction {
-public:
-  // Insert a pop instruction
-  static void insert(address code_pos, Register reg);
-};
-
-
 class NativeIllegalInstruction: public NativeInstruction {
 public:
   // Insert illegal opcode as specific address
   static void insert(address code_pos);
-};
-
-// return instruction that does not pop values of the stack
-class NativeReturn: public NativeInstruction {
-public:
-};
-
-// return instruction that does pop values of the stack
-class NativeReturnX: public NativeInstruction {
-public:
-};
-
-// Simple test vs memory
-class NativeTstRegMem: public NativeInstruction {
-public:
 };
 
 inline bool NativeInstruction::is_nop() const{
@@ -582,7 +439,7 @@ public:
     next_instruction_offset     =    4 * 4
   };
 
-  address destination(nmethod* nm = NULL) const;
+  address destination(nmethod* nm = nullptr) const;
   void set_destination(address new_destination);
   ptrdiff_t destination_offset() const;
 };
@@ -684,16 +541,20 @@ public:
     return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
   }
 
-  jint displacement() const {
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     uint64_t movk_insns = *(uint64_t*)addr_at(4);
     uint32_t lo = (movk_insns >> 5) & 0xffff;
     uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
-    uint32_t result = (hi << 16) | lo;
-
-    return (jint)result;
+    uint32_t data = (hi << 16) | lo;
+    if (data == 0) {
+      return false; // no information encoded
+    }
+    cb_offset = (data & 0xffffff);
+    oopmap_slot = (data >> 24) & 0xff;
+    return true; // decoding succeeded
   }
 
-  void patch(jint diff);
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
@@ -702,7 +563,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
@@ -724,7 +585,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   void  verify();
 
   static bool is_deopt_at(address instr) {
-    assert(instr != NULL, "");
+    assert(instr != nullptr, "");
     uint32_t value = *(uint32_t *) instr;
     return value == 0xd4ade001;
   }

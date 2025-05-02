@@ -30,6 +30,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
@@ -102,7 +103,7 @@ class GCTracer {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
-  void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
+  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:
@@ -211,19 +212,4 @@ class DefNewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
   DefNewTracer() : YoungGCTracer(DefNew) {}
 };
 
-class GCLockerTracer : public AllStatic {
-#if INCLUDE_JFR
-private:
-  static Ticks _needs_gc_start_timestamp;
-  static volatile jint _jni_lock_count;
-  static volatile jint _stall_count;
-#endif
-
-  static bool is_started() NOT_JFR_RETURN_(false);
-
-public:
-  static void start_gc_locker(jint jni_lock_count) NOT_JFR_RETURN();
-  static void inc_stall_count() NOT_JFR_RETURN();
-  static void report_gc_locker() NOT_JFR_RETURN();
-};
 #endif // SHARE_GC_SHARED_GCTRACE_HPP

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 ################################################################################
 
 # Minimum supported versions
-JTREG_MINIMUM_VERSION=7.1.1
-GTEST_MINIMUM_VERSION=1.13.0
+JTREG_MINIMUM_VERSION=7.5.1
+GTEST_MINIMUM_VERSION=1.14.0
 
-###############################################################################
+################################################################################
 #
 # Setup and check for gtest framework source files
 #
@@ -61,7 +61,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
 
         # Verify that the version is the required one.
         # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
-        gtest_version="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
+        gtest_version="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -e 's/set(GOOGLETEST_VERSION \(.*\))/\1/'`"
         comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$gtest_version"`
         comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$GTEST_MINIMUM_VERSION"`
         if test $comparable_actual_version -lt $comparable_minimum_version ; then
@@ -74,7 +74,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
   AC_SUBST(GTEST_FRAMEWORK_SRC)
 ])
 
-###############################################################################
+################################################################################
 #
 # Setup and check the Java Microbenchmark Harness
 #
@@ -227,12 +227,47 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
   UTIL_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
 
+  # Specify a JDK for running jtreg. Defaults to the BOOT_JDK.
+  AC_ARG_WITH(jtreg-jdk, [AS_HELP_STRING([--with-jdk],
+    [path to JDK for running jtreg @<:@BOOT_JDK@:>@])])
+
+  AC_MSG_CHECKING([for jtreg jdk])
+  if test "x${with_jtreg_jdk}" != x; then
+    if test "x${with_jtreg_jdk}" = xno; then
+      AC_MSG_RESULT([no, jtreg jdk not specified])
+    elif test "x${with_jtreg_jdk}" = xyes; then
+      AC_MSG_RESULT([not specified])
+      AC_MSG_ERROR([--with-jtreg-jdk needs a value])
+    else
+      JTREG_JDK="${with_jtreg_jdk}"
+      AC_MSG_RESULT([$JTREG_JDK])
+      UTIL_FIXUP_PATH(JTREG_JDK)
+      if test ! -f "$JTREG_JDK/bin/java"; then
+        AC_MSG_ERROR([Could not find jtreg java at $JTREG_JDK/bin/java])
+      fi
+    fi
+  else
+    JTREG_JDK="${BOOT_JDK}"
+    AC_MSG_RESULT([no, using BOOT_JDK])
+  fi
+
+  UTIL_FIXUP_PATH(JTREG_JDK)
+  AC_SUBST([JTREG_JDK])
+  # For use in the configure script
+  JTREG_JAVA="$FIXPATH $JTREG_JDK/bin/java"
+
   # Verify jtreg version
   if test "x$JT_HOME" != x; then
+    AC_MSG_CHECKING([jtreg jar existence])
+    if test ! -f "$JT_HOME/lib/jtreg.jar"; then
+      AC_MSG_ERROR([Could not find jtreg jar at $JT_HOME/lib/jtreg.jar])
+    fi
+
     AC_MSG_CHECKING([jtreg version number])
     # jtreg -version looks like this: "jtreg 6.1+1-19"
     # Extract actual version part ("6.1" in this case)
-    jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
+    jtreg_version_full=$($JTREG_JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2)
+
     jtreg_version=${jtreg_version_full/%+*}
     AC_MSG_RESULT([$jtreg_version])
 
@@ -273,6 +308,32 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JIB],
   AC_SUBST(JIB_HOME)
 ])
 
+# Setup the tidy html checker
+AC_DEFUN_ONCE([LIB_TESTS_SETUP_TIDY],
+[
+  UTIL_LOOKUP_PROGS(TIDY, tidy)
+
+  if test "x$TIDY" != x; then
+    AC_MSG_CHECKING([if tidy is working properly])
+    tidy_output=`$TIDY --version 2>&1`
+    if ! $ECHO "$tidy_output" | $GREP -q "HTML Tidy" 2>&1 > /dev/null; then
+      AC_MSG_RESULT([no])
+      AC_MSG_NOTICE([$TIDY is not a valid tidy executable and will be ignored. Output from --version: $tidy_output])
+      TIDY=
+    elif ! $ECHO "$tidy_output" | $GREP -q "version" 2>&1 > /dev/null; then
+      AC_MSG_RESULT([no])
+      AC_MSG_NOTICE([$TIDY is missing a proper version number and will be ignored. Output from --version: $tidy_output])
+      TIDY=
+    else
+      AC_MSG_RESULT([yes])
+      AC_MSG_CHECKING([for tidy version])
+      tidy_version=`$ECHO $tidy_output | $SED -e 's/.*version //g'`
+      AC_MSG_RESULT([$tidy_version])
+    fi
+  fi
+  AC_SUBST(TIDY)
+])
+
 ################################################################################
 #
 # Check if building of the jtreg failure handler should be enabled.
@@ -300,4 +361,23 @@ AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
         fi
       ])
   AC_SUBST(BUILD_FAILURE_HANDLER)
+])
+
+AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_JTREG_TEST_THREAD_FACTORY],
+[
+  UTIL_ARG_ENABLE(NAME: jtreg-test-thread-factory, DEFAULT: auto,
+      RESULT: BUILD_JTREG_TEST_THREAD_FACTORY,
+      DESC: [enable building of the jtreg test thread factory],
+      DEFAULT_DESC: [enabled if jtreg is present],
+      CHECKING_MSG: [if the jtreg test thread factory should be built],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if the jtreg test thread factory is available])
+        if test "x$JT_HOME" != "x"; then
+          AC_MSG_RESULT([yes])
+        else
+          AVAILABLE=false
+          AC_MSG_RESULT([no (jtreg not present)])
+        fi
+      ])
+  AC_SUBST(BUILD_JTREG_TEST_THREAD_FACTORY)
 ])

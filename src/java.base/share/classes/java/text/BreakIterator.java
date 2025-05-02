@@ -105,7 +105,10 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <a href="https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries">
  * Grapheme Cluster Boundaries</a> section in the Unicode Standard Annex #29.
  *
- * <p>
+ * @implNote The default implementations of {@code BreakIterator} will perform the equivalent
+ * of calling {@code setText("")} if the text hasn't been set by either
+ * {@link #setText(String)} or {@link #setText(CharacterIterator)}
+ * and a boundary searching operation is called by the {@code BreakIterator} instance.
  * The {@code BreakIterator} instances returned by the factory methods
  * of this class are intended for use with natural languages only, not for
  * programming language text. It is however possible to define subclasses

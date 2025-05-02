@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,17 @@
 #  or visit www.oracle.com if you need additional information or have any
 #  questions.
 #
+
+###############################################################################
+#
+# All tests
+#
+
+all = \
+    :jdk_all
+
+jdk_all = \
+    /
 
 ###############################################################################
 #
@@ -44,6 +55,7 @@ tier1_part3 = \
     :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
+    jdk/classfile \
     sun/nio/cs/ISO8859x.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
@@ -74,18 +86,21 @@ tier2_part3 = \
 tier3 = \
     :build \
     :jdk_vector \
+    -:jdk_vector_sanity \
     :jdk_rmi \
     :jdk_svc \
-   -:jdk_svc_sanity \
-   -:jdk_vector_sanity \
-   -:svc_tools
+    -:jdk_svc_sanity \
+    -:svc_tools \
+    :jdk_jpackage \
+    :jdk_since_checks
 
 # Everything not in other tiers
 tier4 = \
     / \
    -:tier1 \
    -:tier2 \
-   -:tier3
+   -:tier3 \
+   :jdk_foreign_stress
 
 ###############################################################################
 #
@@ -170,6 +185,7 @@ jdk_collections_core = \
     java/util/Map \
     java/util/NavigableMap \
     java/util/PriorityQueue \
+    java/util/SequencedCollection \
     java/util/TimSort \
     java/util/TreeMap \
     java/util/Vector \
@@ -211,15 +227,14 @@ jdk_security1 = \
 jdk_security2 = \
     javax/crypto \
     javax/xml/crypto \
+    com/sun/org/apache/xml/internal/security \
     com/sun/crypto
 
 jdk_security3 = \
     javax/security  \
     -javax/security/auth/kerberos \
-    com/sun/jarsigner \
     com/sun/security \
     -com/sun/security/jgss \
-    com/sun/org/apache/xml/internal/security \
     jdk/security \
     sun/security \
     -sun/security/krb5 \
@@ -238,8 +253,10 @@ jdk_security = \
     :jdk_security3 \
     :jdk_security4
 
+# Tests in this group are manual as they depend on external infra
+# and may fail with external reasons, for instance - change in CA test portal.
 jdk_security_infra = \
-    security/infra/java/security/cert/CertPathValidator/certification
+    security/infra
 
 jdk_text = \
     java/text \
@@ -247,6 +264,7 @@ jdk_text = \
 
 jdk_management = \
     java/lang/management \
+    jdk/management \
     com/sun/management \
     sun/management \
     jdk/internal/agent
@@ -270,23 +288,25 @@ jdk_launcher = \
     sun/tools
 
 jdk_loom = \
-    com/sun/management/HotSpotDiagnosticMXBean/ \
+    com/sun/management/HotSpotDiagnosticMXBean \
+    com/sun/management/ThreadMXBean \
+    jdk/management/VirtualThreadSchedulerMXBean \
     java/lang/Thread \
     java/lang/ThreadGroup \
     java/lang/management/ThreadMXBean \
     java/util/concurrent \
     java/net/vthread \
     java/nio/channels/vthread \
-    jdk/incubator/concurrent \
     jdk/internal/misc/ThreadFlock \
     jdk/internal/vm/Continuation \
     jdk/jfr/threading
 
 #
-# Tool (and tool API) tests are split into core and svc groups
+# Tool (and tool API) tests are mostly split into core and svc groups
 #
 core_tools = \
     tools \
+    -tools/jpackage \
     jdk/internal/jrtfs \
     sun/tools/jrunscript
 
@@ -298,10 +318,14 @@ svc_tools = \
 
 jdk_tools = \
     :core_tools \
-    :svc_tools
+    :svc_tools \
+    :jdk_jpackage
 
 jdk_jfr = \
     jdk/jfr
+
+jdk_jpackage = \
+    tools/jpackage
 
 #
 # Catch-all for other areas with a small number of tests
@@ -317,7 +341,6 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/dynalink \
-    jdk/incubator/concurrent \
     jdk/internal/jline \
     com/sun/jndi \
     lib/testlibrary
@@ -359,34 +382,20 @@ jdk_svc = \
 
 jdk_foreign = \
     java/foreign \
-    -java/foreign/TestMatrix.java
+    jdk/internal/reflect/CallerSensitive/CheckCSMs.java \
+    -java/foreign/TestMatrix.java \
+    -java/foreign/TestUpcallStress.java
+
+jdk_foreign_stress = \
+    java/foreign/TestMatrix.java \
+    java/foreign/TestUpcallStress.java
 
 jdk_vector = \
     jdk/incubator/vector
 
 jdk_vector_sanity = \
-    jdk/incubator/vector/AddTest.java \
-    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ByteMaxVectorTests.java \
-    jdk/incubator/vector/CovarOverrideTest.java \
-    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/DoubleMaxVectorTests.java \
-    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/FloatMaxVectorTests.java \
-    jdk/incubator/vector/ImageTest.java \
-    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/IntMaxVectorTests.java \
-    jdk/incubator/vector/LoadJsvmlTest.java \
-    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/LongMaxVectorTests.java \
-    jdk/incubator/vector/MethodOverideTest.java \
-    jdk/incubator/vector/MismatchTest.java \
     jdk/incubator/vector/PreferredSpeciesTest.java \
-    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ShortMaxVectorTests.java \
     jdk/incubator/vector/VectorHash.java \
-    jdk/incubator/vector/VectorMaxConversionTests.java \
-    jdk/incubator/vector/VectorReshapeTests.java \
     jdk/incubator/vector/VectorRuns.java
 
 #############################
@@ -419,8 +428,7 @@ jdk_imageio = \
     javax/imageio
 
 jdk_accessibility = \
-    javax/accessibility \
-    com/sun/java/accessibility
+    javax/accessibility
 
 jfc_demo = \
      demo/jfc
@@ -598,33 +606,31 @@ jdk_nio_networkchannel = \
 
 jdk_core_manual = \
     :jdk_core_manual_no_input \
-    :jdk_core_manual_no_input_security \
-    :jdk_core_manual_requires_human_input
+    :jdk_security_manual_no_input \
+    :jdk_core_manual_interactive \
+    :jdk_security_manual_interactive
 
 jdk_core_manual_no_input = \
     java/net/HugeDataTransferTest.java \
     java/net/httpclient/BodyProcessorInputStreamTest.java \
     java/net/httpclient/HttpInputStreamTest.java \
-    java/nio/MappedByteBuffer/PmemTest.java \
-    java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
     java/util/zip/ZipFile/TestZipFile.java \
     javax/net/ssl/compatibility/AlpnTest.java \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
     javax/net/ssl/compatibility/SniTest.java \
     jdk/nio/zipfs/TestLocOffsetFromZip64EF.java \
+    jdk/nio/zipfs/LargeCompressedEntrySizeTest.java \
     java/util/ArrayList/Bug8146568.java \
-    java/util/Vector/Bug8148174.java
+    java/util/Vector/Bug8148174.java \
+    com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
+    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
+    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java 
 
-jdk_core_manual_no_input_security = \
-    com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
-    com/sun/security/auth/callback/TextCallbackHandler/Default.java \
-    com/sun/security/auth/callback/TextCallbackHandler/Password.java \
-    com/sun/security/sasl/gsskerb/AuthOnly.java \
-    com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
-    com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
-    sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
-    sun/security/provider/PolicyParser/PrincipalExpansionError.java \
+jdk_security_manual_no_input = \
+    :jdk_security_infra \
+    com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
+    com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
     sun/security/smartcardio/TestChannel.java \
     sun/security/smartcardio/TestConnect.java \
     sun/security/smartcardio/TestConnectAgain.java \
@@ -636,16 +642,30 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
     sun/security/tools/jarsigner/compatibility/Compatibility.java \
-    java/security/Policy/Root/Root.java
+    sun/security/tools/keytool/ListKeyChainStore.java
 
-jdk_core_manual_requires_human_input = \
+jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \
     java/util/TimeZone/DefaultTimeZoneTest.java \
-    sun/security/tools/keytool/i18n.java
+    java/nio/MappedByteBuffer/PmemTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
 
+jdk_security_manual_interactive = \
+    sun/security/tools/keytool/i18n.java \
+    com/sun/security/auth/callback/TextCallbackHandler/Password.java \
+    sun/security/krb5/config/native/TestDynamicStore.java
 
 # Test sets for running inside container environment
 jdk_containers_extended = \
     :jdk_io \
     :jdk_nio \
     :jdk_svc
+
+jdk_core_no_security = \
+   :jdk_core \
+   -:jdk_security
+
+# Set of tests for `@since` checks in source code documentation
+jdk_since_checks = \
+   tools/sincechecker/

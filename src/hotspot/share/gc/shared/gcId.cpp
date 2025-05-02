@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "jvm.h"
 #include "runtime/javaThread.hpp"
@@ -30,8 +29,20 @@
 #include "runtime/safepoint.hpp"
 
 uint GCId::_next_id = 0;
+GCIdPrinter GCId::_default_printer;
+GCIdPrinter* GCId::_printer = &_default_printer;
 
-NamedThread* currentNamedthread() {
+size_t GCIdPrinter::print_gc_id(uint gc_id, char* buf, size_t len) {
+  int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
+  assert(ret > 0, "Failed to print prefix. Log buffer too small?");
+  return (size_t)ret;
+}
+
+void GCId::set_printer(GCIdPrinter* printer) {
+  _printer = printer;
+}
+
+static NamedThread* currentNamedthread() {
   assert(Thread::current()->is_Named_thread(), "This thread must be NamedThread");
   return (NamedThread*)Thread::current();
 }
@@ -59,24 +70,20 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   if (thread != nullptr) {
     uint gc_id = current_or_undefined();
     if (gc_id != undefined()) {
-      int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
-      assert(ret > 0, "Failed to print prefix. Log buffer too small?");
-      return (size_t)ret;
+      return _printer->print_gc_id(gc_id, buf, len);
     }
   }
   return 0;
 }
 
-GCIdMark::GCIdMark() {
-  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
+GCIdMark::GCIdMark() : _previous_gc_id(currentNamedthread()->gc_id()) {
   currentNamedthread()->set_gc_id(GCId::create());
 }
 
-GCIdMark::GCIdMark(uint gc_id) {
-  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
+GCIdMark::GCIdMark(uint gc_id) : _previous_gc_id(currentNamedthread()->gc_id()) {
   currentNamedthread()->set_gc_id(gc_id);
 }
 
 GCIdMark::~GCIdMark() {
-  currentNamedthread()->set_gc_id(GCId::undefined());
+  currentNamedthread()->set_gc_id(_previous_gc_id);
 }

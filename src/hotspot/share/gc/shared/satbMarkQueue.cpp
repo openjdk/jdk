@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -54,13 +53,13 @@ static void print_satb_buffer(const char* name,
                               void** buf,
                               size_t index,
                               size_t capacity) {
-  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT
-                " capacity: " SIZE_FORMAT,
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: %zu"
+                " capacity: %zu",
                 name, p2i(buf), index, capacity);
 }
 
 void SATBMarkQueue::print(const char* name) {
-  print_satb_buffer(name, _buf, index(), capacity());
+  print_satb_buffer(name, _buf, index(), current_capacity());
 }
 
 #endif // PRODUCT
@@ -124,7 +123,7 @@ void SATBMarkQueueSet::set_process_completed_buffers_threshold(size_t value) {
 
 void SATBMarkQueueSet::set_buffer_enqueue_threshold_percentage(uint value) {
   // Minimum threshold of 1 ensures enqueuing of completely full buffers.
-  size_t size = buffer_size();
+  size_t size = buffer_capacity();
   size_t enqueue_qty = (size * value) / 100;
   _buffer_enqueue_threshold = MAX2(size - enqueue_qty, (size_t)1);
 }
@@ -193,10 +192,10 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
       _qset(qset), _active(active) {}
     virtual void do_thread(Thread* t) {
       SATBMarkQueue& queue = _qset->satb_queue_for_thread(t);
-      if (queue.buffer() != nullptr) {
-        assert(!_active || queue.index() == _qset->buffer_size(),
-               "queues should be empty when activated");
-        queue.set_index(_qset->buffer_size());
+      if (_active) {
+        assert(queue.is_empty(), "queues should be empty when activated");
+      } else {
+        queue.set_index(queue.current_capacity());
       }
       queue.set_active(_active);
     }
@@ -208,10 +207,7 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   BufferNode* nd = get_completed_buffer();
   if (nd != nullptr) {
     void **buf = BufferNode::make_buffer_from_node(nd);
-    size_t index = nd->index();
-    size_t size = buffer_size();
-    assert(index <= size, "invariant");
-    cl->do_buffer(buf + index, size - index);
+    cl->do_buffer(buf + nd->index(), nd->size());
     deallocate_buffer(nd);
     return true;
   } else {
@@ -250,14 +246,15 @@ void SATBMarkQueueSet::handle_zero_index(SATBMarkQueue& queue) {
 }
 
 bool SATBMarkQueueSet::should_enqueue_buffer(SATBMarkQueue& queue) {
+  assert(queue.buffer() != nullptr, "precondition");
   // Keep the current buffer if filtered index >= threshold.
   size_t threshold = buffer_enqueue_threshold();
   // Ensure we'll enqueue completely full buffers.
   assert(threshold > 0, "enqueue threshold = 0");
   // Ensure we won't enqueue empty buffers.
-  assert(threshold <= buffer_size(),
+  assert(threshold <= queue.current_capacity(),
          "enqueue threshold %zu exceeds capacity %zu",
-         threshold, buffer_size());
+         threshold, queue.current_capacity());
   return queue.index() < threshold;
 }
 
@@ -310,7 +307,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
-    print_satb_buffer(buffer, buf, nd->index(), buffer_size());
+    print_satb_buffer(buffer, buf, nd->index(), nd->capacity());
     nd = nd->next();
     i += 1;
   }

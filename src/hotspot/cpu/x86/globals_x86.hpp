@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
 
 define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for implicit null checks
 define_pd_global(bool, TrapBasedNullChecks,      false); // Not needed on x86.
-define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs passed to check cast
+define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls passed to check cast
+
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
@@ -59,29 +61,19 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
 #define MIN_STACK_RESERVED_PAGES (0)
 
-#ifdef _LP64
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
-// stack if compiled for unix and LP64. To pass stack overflow tests we need
-// 20 shadow pages.
+// stack if compiled for unix. To pass stack overflow tests we need 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(8) DEBUG_ONLY(+4))
 // For those clients that do not use write socket, we allow
 // the min range value to be below that of the default
 #define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(8) DEBUG_ONLY(+4))
-#else
-#define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
-#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
-#endif // _LP64
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
-#ifdef _LP64
 define_pd_global(bool, VMContinuations, true);
-#else
-define_pd_global(bool, VMContinuations, false);
-#endif
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -96,7 +88,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
-                   notproduct,                                              \
                    range,                                                   \
                    constraint)                                              \
                                                                             \
@@ -113,6 +104,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(int, UseAVX, 3,                                                   \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
+                                                                            \
+  product(bool, UseAPX, false, EXPERIMENTAL,                                \
+          "Use Intel Advanced Performance Extensions")                      \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
           "Control whether Knights platform setting should be used")        \
@@ -150,49 +144,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseFastStosb, false,                                        \
           "Use fast-string operation for zeroing: rep stosb")               \
                                                                             \
-  /* Use Restricted Transactional Memory for lock eliding */                \
-  product(bool, UseRTMLocking, false,                                       \
-          "Enable RTM lock eliding for inflated locks in compiled code")    \
-                                                                            \
-  product(bool, UseRTMForStackLocks, false, EXPERIMENTAL,                   \
-          "Enable RTM lock eliding for stack locks in compiled code")       \
-                                                                            \
-  product(bool, UseRTMDeopt, false,                                         \
-          "Perform deopt and recompilation based on RTM abort ratio")       \
-                                                                            \
-  product(int, RTMRetryCount, 5,                                            \
-          "Number of RTM retries on lock abort or busy")                    \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMSpinLoopCount, 100, EXPERIMENTAL,                         \
-          "Spin count for lock to become free before RTM retry")            \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMAbortThreshold, 1000, EXPERIMENTAL,                       \
-          "Calculate abort ratio after this number of aborts")              \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMLockingThreshold, 10000, EXPERIMENTAL,                    \
-          "Lock count at which to do RTM lock eliding without "             \
-          "abort ratio calculation")                                        \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(int, RTMAbortRatio, 50, EXPERIMENTAL,                             \
-          "Lock abort ratio at which to stop use RTM lock eliding")         \
-          range(0, 100) /* natural range */                                 \
-                                                                            \
-  product(int, RTMTotalCountIncrRate, 64, EXPERIMENTAL,                     \
-          "Increment total RTM attempted lock count once every n times")    \
-          range(1, max_jint)                                                \
-          constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
-                                                                            \
-  product(intx, RTMLockingCalculationDelay, 0, EXPERIMENTAL,                \
-          "Number of milliseconds to wait before start calculating aborts " \
-          "for RTM locking")                                                \
-                                                                            \
-  product(bool, UseRTMXendForLockBusy, true, EXPERIMENTAL,                  \
-          "Use RTM Xend instead of Xabort when lock busy")                  \
-                                                                            \
   /* assembler */                                                           \
   product(bool, UseCountLeadingZerosInstruction, false,                     \
           "Use count leading zeros instruction")                            \
@@ -212,6 +163,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseLibmIntrinsic, true, DIAGNOSTIC,                         \
           "Use Libm Intrinsics")                                            \
                                                                             \
+  /* Autodetected, see vm_version_x86.cpp */                                \
+  product(bool, EnableX86ECoreOpts, false, DIAGNOSTIC,                      \
+          "Perform Ecore Optimization")                                     \
+                                                                            \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
   /* for copy, inflate and fill which don't bail out early based on any */  \
   /* condition. When this value is set to zero compare operations like */   \
@@ -225,8 +180,16 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \
-             "mitigations for the Intel JCC erratum")
-
+             "mitigations for the Intel JCC erratum")                       \
+                                                                            \
+  product(int, X86ICacheSync, -1, DIAGNOSTIC,                               \
+             "Select the X86 ICache sync mechanism: -1 = auto-select; "     \
+             "0 = none (dangerous); 1 = CLFLUSH loop; 2 = CLFLUSHOPT loop; "\
+             "3 = CLWB loop; 4 = single CPUID; 5 = single SERIALIZE. "      \
+             "Explicitly selected mechanism will fail at startup if "       \
+             "hardware does not support it.")                               \
+             range(-1, 5)                                                   \
+                                                                            \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

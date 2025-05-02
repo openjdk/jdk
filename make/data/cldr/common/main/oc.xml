@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,8 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
 			<localeKeyTypePattern draft="unconfirmed">{0} : {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
@@ -51,7 +49,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="da" draft="unconfirmed">danés</language>
 			<language type="de" draft="unconfirmed">alemand</language>
 			<language type="el" draft="unconfirmed">grèc</language>
-			<language type="en" draft="unconfirmed">anglés</language>
+			<language type="en" draft="contributed">anglés</language>
 			<language type="eo" draft="unconfirmed">esperanto</language>
 			<language type="es" draft="unconfirmed">espanhòl</language>
 			<language type="et" draft="unconfirmed">estonian</language>
@@ -75,6 +73,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gu" draft="unconfirmed">gujarati</language>
 			<language type="he" draft="unconfirmed">ebrèu</language>
 			<language type="hi" draft="unconfirmed">Indi</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">inglish</language>
 			<language type="hr" draft="unconfirmed">croat</language>
 			<language type="hsb" draft="unconfirmed">naut sorab</language>
 			<language type="hu" draft="unconfirmed">ongrés</language>
@@ -115,8 +114,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nb" draft="unconfirmed">norvegian bokmål</language>
 			<language type="ne" draft="unconfirmed">nepalés</language>
 			<language type="nl" draft="unconfirmed">neerlandés</language>
+			<language type="nl_BE" draft="unconfirmed">flamenc</language>
 			<language type="nn" draft="unconfirmed">norvegian nynorsk</language>
-			<language type="oc" draft="unconfirmed">occitan</language>
+			<language type="oc" draft="contributed">occitan</language>
 			<language type="os" draft="unconfirmed">osseta</language>
 			<language type="pa" draft="unconfirmed">punjabi</language>
 			<language type="phn" draft="unconfirmed">fenician</language>
@@ -168,7 +168,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi" draft="unconfirmed">yiddish</language>
 			<language type="yo" draft="unconfirmed">yoruba</language>
 			<language type="yue" draft="unconfirmed">cantonés</language>
-			<language type="zh" draft="unconfirmed">chinés (chinés mandarin)</language>
+			<language type="zh" draft="unconfirmed">chinés</language>
 			<language type="zh" alt="menu" draft="unconfirmed">chinés, mandarin</language>
 			<language type="zh_Hans" draft="unconfirmed">chinés simplificat</language>
 			<language type="zh_Hans" alt="long" draft="unconfirmed">chinés mandarin simplificat</language>
@@ -189,8 +189,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Gujr" draft="unconfirmed">gojrati</script>
 			<script type="Hang" draft="unconfirmed">hangol</script>
 			<script type="Hani" draft="unconfirmed">chinés</script>
-			<script type="Hans" draft="unconfirmed">chinés simplificat</script>
-			<script type="Hant" draft="unconfirmed">chinés tradicional</script>
+			<script type="Hans" draft="unconfirmed">simplificat</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">chinés simplificat</script>
+			<script type="Hant" draft="unconfirmed">tradicional</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">chinés tradicional</script>
 			<script type="Hebr" draft="unconfirmed">ebrèu</script>
 			<script type="Hira" draft="unconfirmed">hiragana</script>
 			<script type="Hrkt" draft="unconfirmed">sillabaris japoneses</script>
@@ -199,7 +201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Khmr" draft="unconfirmed">kmèr</script>
 			<script type="Kore" draft="unconfirmed">corean</script>
 			<script type="Laoo" draft="unconfirmed">lao</script>
-			<script type="Latn" draft="unconfirmed">latin</script>
+			<script type="Latn" draft="contributed">latin</script>
 			<script type="Mlym" draft="unconfirmed">malayalam</script>
 			<script type="Mong" draft="unconfirmed">mongòl</script>
 			<script type="Mymr" draft="unconfirmed">birman</script>
@@ -318,7 +320,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EG" draft="unconfirmed">Egipte</territory>
 			<territory type="EH" draft="unconfirmed">Saharà occidental</territory>
 			<territory type="ER" draft="unconfirmed">Eritrèa</territory>
-			<territory type="ES" draft="unconfirmed">Espanha</territory>
+			<territory type="ES" draft="contributed">Espanha</territory>
 			<territory type="ET" draft="unconfirmed">Etiopia</territory>
 			<territory type="EU" draft="unconfirmed">Union Europèa</territory>
 			<territory type="EZ" draft="unconfirmed">Zòna euro</territory>
@@ -328,7 +330,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FK" alt="variant" draft="unconfirmed">Malvinas</territory>
 			<territory type="FM" draft="unconfirmed">Micronesia</territory>
 			<territory type="FO" draft="unconfirmed">Illas Feròe</territory>
-			<territory type="FR" draft="unconfirmed">França</territory>
+			<territory type="FR" draft="contributed">França</territory>
 			<territory type="GA" draft="unconfirmed">Gabon</territory>
 			<territory type="GB" draft="unconfirmed">Reiaume Unit</territory>
 			<territory type="GB" alt="short" draft="unconfirmed">RU</territory>
@@ -344,6 +346,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GP" draft="unconfirmed">Guadalope</territory>
 			<territory type="GQ" draft="unconfirmed">Guinèa Eqüatoriala</territory>
 			<territory type="GR" draft="unconfirmed">Grècia</territory>
+			<territory type="GS" draft="unconfirmed">Georgie del Sud e les Illes Sandwich del Sud</territory>
 			<territory type="GT" draft="unconfirmed">Guatemala</territory>
 			<territory type="GU" draft="unconfirmed">Guam</territory>
 			<territory type="GW" draft="unconfirmed">Guinèa-Bissau</territory>
@@ -524,29 +527,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="standard" draft="unconfirmed">òrdre per defaut</type>
 			<type key="numbers" type="latn" draft="unconfirmed">chifras occidentalas</type>
 		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="UK" draft="contributed">anglosajon</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">estadounidenc</measurementSystemName>
+		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Lenga : {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Escritura : {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Region : {0}</codePattern>
+			<codePattern type="language" draft="contributed">Lenga : {0}</codePattern>
+			<codePattern type="script" draft="contributed">Escritura : {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Region : {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à b c ç d e é è f g h i í ï j k l m n o ó ò p q r s t u ú ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ă â å ä ã ā æ ĕ ê ë ē ì ĭ î ī ñ ŏ ô ö ø ō œ ù ŭ û ū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[A Á À B C Ç D E É È F G H I Í Ï J K L M N O Ó Ò P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
-		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
+		<exemplarCharacters>[aáà b cç d eéè f g h iíï j k l m n oóò p q r s t uúü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăâåäãā æ ĕêëē ìĭîī ñ ŏôöøō œ ùŭûū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B CÇ D E F G H I J K L M N O P Q R S T U V W X Y]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
 		<ellipsis type="word-final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="word-initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="word-medial" draft="unconfirmed">{0}… {1}</ellipsis>
-		<moreInformation draft="unconfirmed">?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample=":" draft="unconfirmed">[\: ∶]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
-		<quotationStart draft="unconfirmed">«</quotationStart>
-		<quotationEnd draft="unconfirmed">»</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">«</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">»</alternateQuotationEnd>
+		<quotationStart draft="contributed">«</quotationStart>
+		<quotationEnd draft="contributed">»</quotationEnd>
+		<alternateQuotationStart draft="contributed">«</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">»</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -555,7 +562,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE d MMMM 'de' y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -596,13 +602,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d" draft="unconfirmed">d</dateFormatItem>
-						<dateFormatItem id="E" draft="unconfirmed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
-						<dateFormatItem id="M" draft="unconfirmed">L</dateFormatItem>
-						<dateFormatItem id="Md" draft="unconfirmed">M/d</dateFormatItem>
-						<dateFormatItem id="MEd" draft="unconfirmed">E M/d</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="d">
@@ -629,35 +632,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">dec.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">de genièr</month>
-							<month type="2" draft="unconfirmed">de febrièr</month>
-							<month type="3" draft="unconfirmed">de març</month>
-							<month type="4" draft="unconfirmed">d’abril</month>
-							<month type="5" draft="unconfirmed">de mai</month>
-							<month type="6" draft="unconfirmed">de junh</month>
-							<month type="7" draft="unconfirmed">de julhet</month>
-							<month type="8" draft="unconfirmed">d’agost</month>
-							<month type="9" draft="unconfirmed">de setembre</month>
-							<month type="10" draft="unconfirmed">d’octòbre</month>
-							<month type="11" draft="unconfirmed">de novembre</month>
-							<month type="12" draft="unconfirmed">de decembre</month>
+							<month type="1" draft="contributed">de genièr</month>
+							<month type="2" draft="contributed">de febrièr</month>
+							<month type="3" draft="contributed">de març</month>
+							<month type="4" draft="contributed">d’abril</month>
+							<month type="5" draft="contributed">de mai</month>
+							<month type="6" draft="contributed">de junh</month>
+							<month type="7" draft="contributed">de julhet</month>
+							<month type="8" draft="contributed">d’agost</month>
+							<month type="9" draft="contributed">de setembre</month>
+							<month type="10" draft="contributed">d’octòbre</month>
+							<month type="11" draft="contributed">de novembre</month>
+							<month type="12" draft="contributed">de decembre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">gen.</month>
-							<month type="2" draft="unconfirmed">feb.</month>
-							<month type="3" draft="unconfirmed">març</month>
-							<month type="4" draft="unconfirmed">abr.</month>
-							<month type="5" draft="unconfirmed">mai</month>
-							<month type="6" draft="unconfirmed">junh</month>
-							<month type="7" draft="unconfirmed">jul.</month>
-							<month type="8" draft="unconfirmed">ago.</month>
-							<month type="9" draft="unconfirmed">set.</month>
-							<month type="10" draft="unconfirmed">oct.</month>
-							<month type="11" draft="unconfirmed">nov.</month>
-							<month type="12" draft="unconfirmed">dec.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">G</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -690,15 +679,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">Dg</day>
-							<day type="mon" draft="unconfirmed">Dl</day>
-							<day type="tue" draft="unconfirmed">Dm</day>
-							<day type="wed" draft="unconfirmed">Dc</day>
-							<day type="thu" draft="unconfirmed">Dj</day>
-							<day type="fri" draft="unconfirmed">Dv</day>
-							<day type="sat" draft="unconfirmed">Ds</day>
-						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun" draft="unconfirmed">dg</day>
 							<day type="mon" draft="unconfirmed">dl</day>
@@ -709,13 +689,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat" draft="unconfirmed">ds</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">dimenge</day>
-							<day type="mon" draft="unconfirmed">diluns</day>
-							<day type="tue" draft="unconfirmed">dimars</day>
-							<day type="wed" draft="unconfirmed">dimècres</day>
-							<day type="thu" draft="unconfirmed">dijòus</day>
-							<day type="fri" draft="unconfirmed">divendres</day>
-							<day type="sat" draft="unconfirmed">dissabte</day>
+							<day type="sun" draft="contributed">dimenge</day>
+							<day type="mon" draft="contributed">diluns</day>
+							<day type="tue" draft="contributed">dimars</day>
+							<day type="wed" draft="contributed">dimècres</day>
+							<day type="thu" draft="contributed">dijòus</day>
+							<day type="fri" draft="contributed">divendres</day>
+							<day type="sat" draft="contributed">dissabte</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
@@ -727,15 +707,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">Dj</day>
 							<day type="fri" draft="unconfirmed">Dv</day>
 							<day type="sat" draft="unconfirmed">Ds</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">dg</day>
-							<day type="mon" draft="unconfirmed">dl</day>
-							<day type="tue" draft="unconfirmed">dm</day>
-							<day type="wed" draft="unconfirmed">dc</day>
-							<day type="thu" draft="unconfirmed">dj</day>
-							<day type="fri" draft="unconfirmed">dv</day>
-							<day type="sat" draft="unconfirmed">ds</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -754,55 +725,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4" draft="unconfirmed">4en trimèstre</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">T1</quarter>
-							<quarter type="2" draft="unconfirmed">T2</quarter>
-							<quarter type="3" draft="unconfirmed">T3</quarter>
-							<quarter type="4" draft="unconfirmed">T4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1èr trimèstre</quarter>
-							<quarter type="2" draft="unconfirmed">2nd trimèstre</quarter>
-							<quarter type="3" draft="unconfirmed">3en trimèstre</quarter>
-							<quarter type="4" draft="unconfirmed">4en trimèstre</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">Abans Jèsus-Crist</era>
 						<era type="0" alt="variant" draft="unconfirmed">Abans l’èra nòstra</era>
+						<era type="1" draft="unconfirmed">despús Jèsus-Crist</era>
 						<era type="1" alt="variant" draft="unconfirmed">L’èra nòstra</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">Ab. J.C.</era>
 						<era type="0" alt="variant" draft="unconfirmed">Ab. E.N.</era>
+						<era type="1" draft="unconfirmed">de. J.-C.</era>
 						<era type="1" alt="variant" draft="unconfirmed">E.N.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="1" draft="unconfirmed">CE</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE d MMMM 'de' y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM 'de' y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="unconfirmed">d/MM/yy</pattern>
+							<pattern draft="unconfirmed">dd/MM/yy</pattern>
 							<datetimeSkeleton draft="unconfirmed">yyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -816,13 +775,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="unconfirmed">H'h'mm:ss z</pattern>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
 							<datetimeSkeleton draft="unconfirmed">Hmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="unconfirmed">H'h'mm:ss</pattern>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
 							<datetimeSkeleton draft="unconfirmed">Hmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -848,18 +807,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh" draft="unconfirmed">h'h' B</dateFormatItem>
 						<dateFormatItem id="Bhm" draft="unconfirmed">h'h'mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="unconfirmed">h'h'mm:ss B</dateFormatItem>
 						<dateFormatItem id="EBhm" draft="unconfirmed">E h'h'mm B</dateFormatItem>
-						<dateFormatItem id="EBhms" draft="unconfirmed">E h'h'mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">ccc d</dateFormatItem>
 						<dateFormatItem id="Ehm" draft="unconfirmed">E h'h'mm a</dateFormatItem>
 						<dateFormatItem id="EHm" draft="unconfirmed">E HH'h'mm</dateFormatItem>
@@ -870,11 +833,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
 						<dateFormatItem id="h" draft="unconfirmed">h'h' a</dateFormatItem>
-						<dateFormatItem id="hm" draft="unconfirmed">h'h'mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="unconfirmed">HH'h'mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="unconfirmed">h'h'mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="unconfirmed">HH'h'mm ss 'seg'.</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH'h'mm ss 'seg'. v</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h'h'mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="contributed">HH'h'mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h'h'mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="contributed">HH'h'mm ss 'seg'.</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">HH'h'mm ss 'seg'. v</dateFormatItem>
 						<dateFormatItem id="hmv" draft="unconfirmed">h'h'mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv" draft="unconfirmed">HH'h'mm v</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
@@ -883,12 +846,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'setmana' W MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">MM/y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="unconfirmed">dd/MM/y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM" draft="unconfirmed">LLLL 'de' y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
@@ -1015,7 +977,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d – d MMM y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d 'de' y</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'de' y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">d LLL 'de' y – d LLL 'de' y</greatestDifference>
 						</intervalFormatItem>
@@ -1044,15 +1006,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName draft="unconfirmed">an.</displayName>
-				<relative type="-1" draft="unconfirmed">l’an passat</relative>
-				<relative type="0" draft="unconfirmed">ongan</relative>
-				<relative type="1" draft="unconfirmed">l’an que ven</relative>
 			</field>
 			<field type="year-narrow">
-				<displayName draft="unconfirmed">an.</displayName>
-				<relative type="-1" draft="unconfirmed">l’an passat</relative>
-				<relative type="0" draft="unconfirmed">ongan</relative>
-				<relative type="1" draft="unconfirmed">l’an que ven</relative>
+				<displayName draft="unconfirmed">an</displayName>
 			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">trimèstre</displayName>
@@ -1061,7 +1017,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">trim.</displayName>
 			</field>
 			<field type="quarter-narrow">
-				<displayName draft="unconfirmed">trim.</displayName>
+				<displayName draft="unconfirmed">trim</displayName>
 			</field>
 			<field type="month">
 				<displayName draft="unconfirmed">mes</displayName>
@@ -1076,10 +1032,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName draft="unconfirmed">mes</displayName>
+				<displayName draft="unconfirmed">m.</displayName>
 			</field>
 			<field type="month-narrow">
-				<displayName draft="unconfirmed">mes</displayName>
+				<displayName draft="unconfirmed">m</displayName>
 				<relative type="-1" draft="unconfirmed">lo mes passat</relative>
 				<relative type="0" draft="unconfirmed">aqueste mes</relative>
 				<relative type="1" draft="unconfirmed">lo mes que ven</relative>
@@ -1092,24 +1048,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod draft="unconfirmed">la setmana del {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName draft="unconfirmed">setm.</displayName>
-				<relativePeriod draft="unconfirmed">la setmana del {0}</relativePeriod>
+				<displayName draft="unconfirmed">set.</displayName>
 			</field>
 			<field type="week-narrow">
-				<displayName draft="unconfirmed">setm.</displayName>
-				<relativePeriod draft="unconfirmed">la setmana del {0}</relativePeriod>
+				<displayName draft="unconfirmed">set</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">jorn</displayName>
 				<relative type="-1" draft="unconfirmed">ièr</relative>
 				<relative type="0" draft="unconfirmed">uèi</relative>
 				<relative type="1" draft="unconfirmed">deman</relative>
-			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">jorn</displayName>
-			</field>
-			<field type="day-narrow">
-				<displayName draft="unconfirmed">jorn</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">jorn de la setmana</displayName>
@@ -1132,16 +1080,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-short">
 				<displayName draft="unconfirmed">h</displayName>
 			</field>
-			<field type="hour-narrow">
-				<displayName draft="unconfirmed">h</displayName>
-			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minuta</displayName>
 			</field>
 			<field type="minute-short">
-				<displayName draft="unconfirmed">min.</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName draft="unconfirmed">min.</displayName>
 			</field>
 			<field type="second">
@@ -1150,20 +1092,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName draft="unconfirmed">seg.</displayName>
-				<relative type="0" draft="unconfirmed">ara</relative>
-			</field>
-			<field type="second-narrow">
-				<displayName draft="unconfirmed">seg.</displayName>
-				<relative type="0" draft="unconfirmed">ara</relative>
 			</field>
 			<field type="zone">
 				<displayName draft="unconfirmed">zòna orària</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat draft="unconfirmed">ora de {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">{0} (ora d’estiu)</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">{0} (ora estandard)</regionFormat>
+			<gmtFormat draft="contributed">UTC{0}</gmtFormat>
+			<gmtZeroFormat draft="contributed">UTC</gmtZeroFormat>
+			<regionFormat draft="contributed">ora de {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">{0} (ora d’estiu)</regionFormat>
+			<regionFormat type="standard" draft="contributed">{0} (ora estandard)</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">ora coordonada universala</standard>
@@ -1175,17 +1114,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Andorra">
 				<exemplarCity draft="unconfirmed">Andòrra</exemplarCity>
 			</zone>
-			<zone type="Australia/Perth">
-				<exemplarCity draft="unconfirmed">Perth</exemplarCity>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">Kabol</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
 				<exemplarCity draft="unconfirmed">Adelaïda</exemplarCity>
 			</zone>
-			<zone type="Australia/Melbourne">
-				<exemplarCity draft="unconfirmed">Melbourne</exemplarCity>
-			</zone>
-			<zone type="Australia/Sydney">
-				<exemplarCity draft="unconfirmed">Sydney</exemplarCity>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">Dacca</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity draft="unconfirmed">Brussèlas</exemplarCity>
@@ -1199,69 +1135,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Prague">
 				<exemplarCity draft="unconfirmed">Praga</exemplarCity>
 			</zone>
-			<zone type="Europe/Berlin">
-				<exemplarCity draft="unconfirmed">Berlin</exemplarCity>
-			</zone>
 			<zone type="Africa/Djibouti">
 				<exemplarCity draft="unconfirmed">Jiboti</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity draft="unconfirmed">Argièrs</exemplarCity>
 			</zone>
-			<zone type="Europe/Madrid">
-				<exemplarCity draft="unconfirmed">Madrid</exemplarCity>
-			</zone>
-			<zone type="Europe/Helsinki">
-				<exemplarCity draft="unconfirmed">Helsinki</exemplarCity>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Canàries</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity draft="unconfirmed">París</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight draft="unconfirmed">ora d’estiu anglesa</daylight>
+					<daylight draft="unconfirmed">ora d’estiu britanica</daylight>
 				</long>
 				<exemplarCity draft="unconfirmed">Londres</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
-				<exemplarCity draft="unconfirmed">Atenas</exemplarCity>
+				<exemplarCity draft="unconfirmed">Atenes</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">Budapèst</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight draft="unconfirmed">ora estandarda irlandesa</daylight>
 				</long>
-				<exemplarCity draft="unconfirmed">Dublin</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">Calcuta</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity draft="unconfirmed">Roma</exemplarCity>
 			</zone>
-			<zone type="Europe/Jersey">
-				<exemplarCity draft="unconfirmed">Jersey</exemplarCity>
-			</zone>
 			<zone type="Europe/Luxembourg">
 				<exemplarCity draft="unconfirmed">Luxemborg</exemplarCity>
-			</zone>
-			<zone type="Africa/Casablanca">
-				<exemplarCity draft="unconfirmed">Casablanca</exemplarCity>
 			</zone>
 			<zone type="Europe/Monaco">
 				<exemplarCity draft="unconfirmed">Mónegue</exemplarCity>
 			</zone>
-			<zone type="Europe/Amsterdam">
-				<exemplarCity draft="unconfirmed">Amsterdam</exemplarCity>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Ulan Bator</exemplarCity>
 			</zone>
-			<zone type="Pacific/Auckland">
-				<exemplarCity draft="unconfirmed">Auckland</exemplarCity>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">Malvines</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
-				<exemplarCity draft="unconfirmed">Azores</exemplarCity>
+				<exemplarCity draft="unconfirmed">Açòres</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity draft="unconfirmed">Lisbona</exemplarCity>
 			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Bucarèst</exemplarCity>
+			</zone>
 			<zone type="Europe/Belgrade">
 				<exemplarCity draft="unconfirmed">Belgrad</exemplarCity>
 			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Moscòu</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Ekaterimburg</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">Sajalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Singapor</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">Bangkòk</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">ora d’Afganistan</standard>
+				</long>
+			</metazone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard draft="unconfirmed">ora d’Africa centrala</standard>
@@ -1272,11 +1224,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">ora d’Africa de l’èst</standard>
 				</long>
 			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">ora de Sudafrica</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Africa occidentala</generic>
+					<standard draft="unconfirmed">ora estandarda d’Africa occidentala</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Africa occidentala</daylight>
+				</long>
+			</metazone>
 			<metazone type="Alaska">
 				<long>
 					<generic draft="unconfirmed">ora d’Alaska</generic>
 					<standard draft="unconfirmed">ora estandarda d’Alaska</standard>
 					<daylight draft="unconfirmed">ora d’estiu d’Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">ora de l’Amazònes</generic>
+					<standard draft="unconfirmed">ora estandarda de l’Amazònes</standard>
+					<daylight draft="unconfirmed">ora d’estiu l’Amazònes</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
@@ -1307,11 +1278,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ora d’estiu del Pacific</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">ora d’Apia</generic>
+					<standard draft="unconfirmed">ora estandard d’Apia</standard>
+					<daylight draft="unconfirmed">ora d’esiu d’Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">ora d’Arabia</generic>
+					<standard draft="unconfirmed">ora estandarda d’Arabia</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Arabia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic draft="unconfirmed">ora d’Argentina</generic>
 					<standard draft="unconfirmed">ora estandarda d’Argentina</standard>
 					<daylight draft="unconfirmed">ora d’estiu d’Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">ora de l’oèst d’Argentina</generic>
+					<standard draft="unconfirmed">ora estandarda de l’oèst d’Argentina</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’oèst d’Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">ora d’Armenia</generic>
+					<standard draft="unconfirmed">ora estandarda d’Armenia</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Armenia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
@@ -1321,9 +1320,132 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ora d’estiu de l’Atlantic</daylight>
 				</long>
 			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="unconfirmed">ora d’Austràlia centrala</generic>
+					<standard draft="unconfirmed">ora estandard d’Austràlia centrala</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Austràlia centrala</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="unconfirmed">ora d’Austràlia centreoccidentala</generic>
+					<standard draft="unconfirmed">ora estandard d’Austràlia centreoccidentala</standard>
+					<daylight draft="unconfirmed">ora d’estiu estandarda d’Austràlia centreoccidentala</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora d’Austràlia oriental</generic>
+					<standard draft="unconfirmed">ora estandard d’Austràlia oriental</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Austràlia oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Austràlia occidental</generic>
+					<standard draft="unconfirmed">ora estandard d’Austràlia occidental</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Austràlia occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">ora d’Azerbaijan</generic>
+					<standard draft="unconfirmed">ora estandarda d’Azerbaijan</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Azerbaijan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">ora de les Açòres</generic>
+					<standard draft="unconfirmed">ora estandarda de les Açòres</standard>
+					<daylight draft="unconfirmed">ora d’estiu de les Açòres</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">ora de Bangaldesh</generic>
+					<standard draft="unconfirmed">ora estandarda de Bangaldesh</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Bangaldesh</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">ora de Butan</standard>
+				</long>
+			</metazone>
 			<metazone type="Bolivia">
 				<long>
 					<standard draft="unconfirmed">ora de Bolivia</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">ora de Brasilia</generic>
+					<standard draft="unconfirmed">ora estandarda de Brasilia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">ora de Brunei</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">ora de Cap-Verd</generic>
+					<standard draft="unconfirmed">ora estandarda de Cap-Verd</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Cap-Verd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">ora estandard de Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">ora de Chatham</generic>
+					<standard draft="unconfirmed">ora estandard de Chatham</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">ora de Chile</generic>
+					<standard draft="unconfirmed">ora estandarda de Chile</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Chile</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="unconfirmed">ora de China</generic>
+					<standard draft="unconfirmed">ora estandarda de China</standard>
+					<daylight draft="unconfirmed">ora d’estiu de China</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">ora de l’illa de Nadau</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">ora de l’illa de Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">ora de Colòmbia</generic>
+					<standard draft="unconfirmed">ora estandarda de Colòmbia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Colòmbia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">ora de les Illes Cook</generic>
+					<standard draft="unconfirmed">ora estandard de les Illes Cook</standard>
+					<daylight draft="unconfirmed">ora d’estiu mieja de les Illes Cook</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
@@ -1333,30 +1455,429 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ora d’estiu de Cuba</daylight>
 				</long>
 			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">ora de Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">ora de Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">ora de Timòr oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">ora de la illa de Pascua</generic>
+					<standard draft="unconfirmed">ora estandarda de la illa de Pascua</standard>
+					<daylight draft="unconfirmed">ora d’estiu de la illa de Pascua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">ora d’Equator</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
 					<generic draft="unconfirmed">ora d’Euròpa centrala</generic>
-					<standard draft="unconfirmed">ora d’Euròpa centrala estandarda</standard>
-					<daylight draft="unconfirmed">ora d’estiu, Euròpa centrala</daylight>
+					<standard draft="unconfirmed">ora estandarda d’Euròpa centrala</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa centrala</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
 					<generic draft="unconfirmed">ora d’Euròpa de l’èst</generic>
-					<standard draft="unconfirmed">ora d’Euròpa de l’èst estandarda</standard>
-					<daylight draft="unconfirmed">ora d’estiu, Euròpa de l’èst</daylight>
+					<standard draft="unconfirmed">ora estandarda d’Euròpa de l’èst</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa de l’èst</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">ora de l’extrem d’Euròpa orientala</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic draft="unconfirmed">ora d’Euròpa de l’oèst</generic>
-					<standard draft="unconfirmed">ora d’Euròpa de l’oèst estandarda</standard>
-					<daylight draft="unconfirmed">ora d’estiu, Euròpa de l’oèst</daylight>
+					<standard draft="unconfirmed">ora estandarda d’Euròpa de l’oèst</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa de l’oèst</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">ora de les illes Malvinas</generic>
+					<standard draft="unconfirmed">ora estandarda de les illes Malvinas</standard>
+					<daylight draft="unconfirmed">ora d’estiu de les illes Malvinas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">ora de Fiji</generic>
+					<standard draft="unconfirmed">ora estandard de Fiji</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Fiji</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">ora de la Guayana Francesa</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">ora de les Terres australes e antartiques franceses</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">ora de Galapagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">ora de Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">ora de Geòrgia</generic>
+					<standard draft="unconfirmed">ora estandarda de Geòrgia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Geòrgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">ora de les illes Gilbert</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">ora al meridian de Greenwich</standard>
+					<standard draft="contributed">ora al meridian de Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora de l’èst de Groenlandia</generic>
+					<standard draft="unconfirmed">ora estandarda de l’èst de Groenlandia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’èst de Groenlandia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">ora de l’oèst de Groenlandia</generic>
+					<standard draft="unconfirmed">ora estandarda de l’oèst de Groenlandia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’oèst de Groenlandia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">ora estandard deth Gòlf</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">ora de la Guayana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">ora de Hawai-Aleutianes</generic>
+					<standard draft="unconfirmed">ora estandarda de Hawai-Aleutianes</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hawai-Aleutianes</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">ora de Hong Kong</generic>
+					<standard draft="unconfirmed">ora estandarda de Hong Kong</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">ora de Hovd</generic>
+					<standard draft="unconfirmed">ora estandarda de Hovd</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="unconfirmed">ora estandarda de l’India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">ora de l’Ocean Indic</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="unconfirmed">ora d’Indochina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia centrala</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia orientala</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia occidentala</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">ora d’Iran</generic>
+					<standard draft="unconfirmed">ora estandarda d’Iran</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">ora d’Irkutsk</generic>
+					<standard draft="unconfirmed">ora estandarda d’Irkutsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="unconfirmed">ora d’Israèl</generic>
+					<standard draft="unconfirmed">ora estandarda d’Israèl</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Israèl</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="unconfirmed">ora de Japon</generic>
+					<standard draft="unconfirmed">ora estandarda de Japon</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Japon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">ora de Kazajistan orientala</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">ora de Kazajistan occidenatal</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="unconfirmed">ora de Corèa</generic>
+					<standard draft="unconfirmed">ora estandarda de Corèa</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Corèa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">ora de Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">ora de Krasnoyarsk</generic>
+					<standard draft="unconfirmed">ora estandarda de Krasnoyarsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">ora de Kirguistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">ora de les Espòrades Equatorials</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">ora de Lord Howe</generic>
+					<standard draft="unconfirmed">ora estandard de Lord Howe</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">ora de Magadan</generic>
+					<standard draft="unconfirmed">ora estandarda de Magadan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">ora de Malàisia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">ora des Malvines</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">ora de les Illes Marqueses</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">ora de les Illes Marshall</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">ora de Maurici</generic>
+					<standard draft="unconfirmed">ora estandarda de Maurici</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Maurici</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="unconfirmed">ora de Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">ora del Pacific Mexican</generic>
+					<standard draft="unconfirmed">ora estandarda del Pacific Mexican</standard>
+					<daylight draft="unconfirmed">ora d’estiu del Pacific Mexican</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">ora de Ulan Bator</generic>
+					<standard draft="unconfirmed">ora estandarda de Ulan Bator</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Ulan Bator</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">ora de Moscòu</generic>
+					<standard draft="unconfirmed">ora estandarda de Moscòu</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Moscòu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">ora de Myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">ora de Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">ora de Nepal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">ora de Nòva Caledònia</generic>
+					<standard draft="unconfirmed">ora estandard de Nòva Caledònia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Nòva Caledònia</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">ora de Nòva Zelanda</generic>
+					<standard draft="unconfirmed">ora estandard de Nòva Zelanda</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Nòva Zelanda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">ora de Terra-Nòva</generic>
+					<standard draft="unconfirmed">ora estandarda de Terra-Nòva</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Terra-Nòva</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">ora de Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">ora de l’illa Norfolk</generic>
+					<standard draft="unconfirmed">ora estandard de l’illa Norfolk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’illa Norfolk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">ora de Fernando Noronha</generic>
+					<standard draft="unconfirmed">ora estandarda de Fernando Noronha</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Fernando Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">ora de Novosibirsk</generic>
+					<standard draft="unconfirmed">ora estandarda de Novosibirsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">ora d’Omsk</generic>
+					<standard draft="unconfirmed">ora estandarda d’Omsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">ora de Pakistan</generic>
+					<standard draft="unconfirmed">ora estandarda de Pakistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Pakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">ora de Palaos</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">ora de Papua Nòva Guinèa</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">ora de Paraguay</generic>
+					<standard draft="unconfirmed">ora estandarda de Paraguay</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Paraguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">ora de Perú</generic>
+					<standard draft="unconfirmed">ora estandarda de Perú</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Perú</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">ora de Filipines</generic>
+					<standard draft="unconfirmed">ora estandarda de Filipines</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Filipines</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">ora de les Illes Fénix</standard>
 				</long>
 			</metazone>
 			<metazone type="Pierre_Miquelon">
@@ -1366,9 +1887,188 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ora d’estiu de St. Pierre e Miquelon</daylight>
 				</long>
 			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">ora de Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">ora de Pohnpei</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">ora de Pyongyang</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard draft="unconfirmed">ora de la Reünion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">ora de Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">ora de Sajalin</generic>
+					<standard draft="unconfirmed">ora estandarda de Sajalin</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Sajalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">ora de Samoa</generic>
+					<standard draft="unconfirmed">ora estandard de Samoa</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Samoa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">ora de Seychelles</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">ora de Singapor</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">ora de les Illes Salomon</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">ora de Geòrgia del Sud</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">ora de Surinam</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">ora de Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">ora de Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">ora de Taipei</generic>
+					<standard draft="unconfirmed">ora estandarda de Taipei</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Taipei</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">ora de Tajikistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">ora de Tokelau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">ora de Tonga</generic>
+					<standard draft="unconfirmed">ora estandard de Tonga</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">ora de Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">ora de Turkmenistan</generic>
+					<standard draft="unconfirmed">ora estandarda de Turkmenistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Turkmenistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">ora de Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">ora de l’Uruguay</generic>
+					<standard draft="unconfirmed">ora estandarda de l’Uruguay</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">ora de Uzbekistan</generic>
+					<standard draft="unconfirmed">ora estandarda de Uzbekistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Uzbekistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">ora de Vanuatu</generic>
+					<standard draft="unconfirmed">ora estandard de Vanuatu</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">ora de Veneçuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">ora de Vladivostok</generic>
+					<standard draft="unconfirmed">ora estandarda de Vladivostok</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">ora de Volgograd</generic>
+					<standard draft="unconfirmed">ora estandarda de Volgograd</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">ora de Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">ora de l’Illa Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">ora de Wallis e Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">ora de Yakutsk</generic>
+					<standard draft="unconfirmed">ora estandarda de Yakutsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">ora d’Ekaterimburg</generic>
+					<standard draft="unconfirmed">ora estandarda d’Ekaterimburg</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Ekaterimburg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -1379,40 +2079,327 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="unconfirmed">latn</native>
-		</otherNumberingSystems>
+		<symbols numberSystem="adlm">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="bali">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="beng">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="brah">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="cham">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="deva">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="gong">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="guru">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="java">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="kali">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="knda">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="lana">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
 		<symbols numberSystem="latn">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed"> </group>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<perMille draft="unconfirmed">‰</perMille>
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed"> </group>
+			<approximatelySign draft="unconfirmed">≃</approximatelySign>
 			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
+		<symbols numberSystem="lepc">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="limb">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="mong">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="olck">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="orya">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="osma">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="saur">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="sora">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="sund">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="takr">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="talu">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="telu">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="thai">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+		</symbols>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern draft="unconfirmed">#,##0 %</pattern>
+					<pattern draft="contributed">#,##0 %</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern draft="contributed">#,##0.00¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -1431,60 +2418,1006 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other" draft="unconfirmed">000T¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">dírham des Emirats Arabi Units</displayName>
+				<displayName count="other" draft="unconfirmed">dírhams des Emirats Arabi Units</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">afgani</displayName>
+				<displayName count="other" draft="unconfirmed">afganis</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">lek</displayName>
+				<displayName count="other" draft="unconfirmed">leks</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">dram</displayName>
+				<displayName count="other" draft="unconfirmed">drams</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">florin atillans</displayName>
+				<displayName count="other" draft="unconfirmed">florins atillans</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">kuanza</displayName>
+				<displayName count="other" draft="unconfirmed">kuances</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">peso argentí</displayName>
+				<displayName count="other" draft="unconfirmed">pesi argentís</displayName>
+				<symbol draft="unconfirmed">$AR</symbol>
+			</currency>
 			<currency type="AUD">
 				<displayName draft="unconfirmed">dòlar australian</displayName>
-				<displayName count="other" draft="unconfirmed">dòlar australian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars australians</displayName>
+				<symbol draft="unconfirmed">$AU</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">florin arubenc</displayName>
+				<displayName count="other" draft="unconfirmed">florins arubencs</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">manat azerbaiyan</displayName>
+				<displayName count="other" draft="unconfirmed">manats azerbaiyans</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">marc convertible de Bosnia e Herzegovina</displayName>
+				<displayName count="other" draft="unconfirmed">marcs convertibles de Bosnia e Herzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">dòlar barbadenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars barbadencs</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">taka</displayName>
+				<displayName count="other" draft="unconfirmed">takas</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">leva búlgara</displayName>
+				<displayName count="other" draft="unconfirmed">leves búlgares</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">dinar bareiní</displayName>
+				<displayName count="other" draft="unconfirmed">dinars bareinís</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">franc burundés</displayName>
+				<displayName count="other" draft="unconfirmed">francs burundessi</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">dòlar bermudense</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bermudenses</displayName>
+				<symbol draft="unconfirmed">$BM</symbol>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">dòlar bruneian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bruneians</displayName>
+				<symbol draft="unconfirmed">$BN</symbol>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">bolivian</displayName>
+				<displayName count="other" draft="unconfirmed">bolivians</displayName>
 			</currency>
 			<currency type="BRL">
-				<displayName draft="unconfirmed">real bresilian</displayName>
+				<displayName draft="unconfirmed">real brasilian</displayName>
 				<displayName count="other" draft="unconfirmed">reals brasilians</displayName>
 			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">dòlar bahamenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bahamencs</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">gultrum</displayName>
+				<displayName count="other" draft="unconfirmed">gultrums</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">pula</displayName>
+				<displayName count="other" draft="unconfirmed">pules</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">roble bielorrús</displayName>
+				<displayName count="other" draft="unconfirmed">robles bielorrussi</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">dòlar belizen</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars belizens</displayName>
+				<symbol draft="unconfirmed">$BZ</symbol>
+			</currency>
 			<currency type="CAD">
+				<displayName draft="unconfirmed">dòlar canadiense</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars canadienses</displayName>
 				<symbol draft="unconfirmed">$CA</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">franc congolenc</displayName>
+				<displayName count="other" draft="unconfirmed">francs congolencs</displayName>
 			</currency>
 			<currency type="CHF">
-				<displayName draft="unconfirmed">franc soïsse</displayName>
-				<displayName count="other" draft="unconfirmed">franc soïsse</displayName>
+				<displayName draft="unconfirmed">franc suís</displayName>
+				<displayName count="other" draft="unconfirmed">francs suïssi</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">peso chilen</displayName>
+				<displayName count="other" draft="unconfirmed">pesi chilens</displayName>
+				<symbol draft="unconfirmed">$CL</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">yuan chinés (extracontinanetal)</displayName>
+				<displayName count="other" draft="unconfirmed">yuans chineses (extracontinanetals)</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName draft="unconfirmed">iuan chinés</displayName>
-				<displayName count="other" draft="unconfirmed">iuans chineses</displayName>
+				<displayName draft="unconfirmed">yuan chinés</displayName>
+				<displayName count="other" draft="unconfirmed">yuans chineses</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">peso colombian</displayName>
+				<displayName count="other" draft="unconfirmed">pesi colombians</displayName>
+				<symbol draft="unconfirmed">$CO</symbol>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">colon costarricense</displayName>
+				<displayName count="other" draft="unconfirmed">colons costarricenses</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">peso convertible cuban</displayName>
+				<displayName count="other" draft="unconfirmed">pesi convertibles cubans</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">peso cuban</displayName>
+				<displayName count="other" draft="unconfirmed">pesi cubans</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">escut de Cab Verd</displayName>
+				<displayName count="other" draft="unconfirmed">escuts de Cab Verd</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">corona checa</displayName>
+				<displayName count="other" draft="unconfirmed">corones cheques</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">franc yibutian</displayName>
+				<displayName count="other" draft="unconfirmed">francs yibutians</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">corona danesa</displayName>
+				<displayName count="other" draft="unconfirmed">corones daneses</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName draft="unconfirmed">pes dominican</displayName>
+				<displayName count="other" draft="unconfirmed">pesi dominicans</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">dinar argelin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars argelins</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">libra egipcia</displayName>
+				<displayName count="other" draft="unconfirmed">libres egipcies</displayName>
+				<symbol alt="narrow" draft="unconfirmed">£E</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">nakfa</displayName>
+				<displayName count="other" draft="unconfirmed">nakfes</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">bir</displayName>
+				<displayName count="other" draft="unconfirmed">bires</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">euro</displayName>
 				<displayName count="other" draft="unconfirmed">euros</displayName>
-				<symbol draft="unconfirmed">€</symbol>
-				<symbol alt="narrow" draft="unconfirmed">€</symbol>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">dòlar fiyian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars fiyians</displayName>
+				<symbol draft="unconfirmed">$FJ</symbol>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">libra malvinenca</displayName>
+				<displayName count="other" draft="unconfirmed">libres malvinenques</displayName>
+				<symbol draft="unconfirmed">£FK</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="unconfirmed">liura esterlina</displayName>
 				<displayName count="other" draft="unconfirmed">liuras esterlinas</displayName>
-				<symbol draft="unconfirmed">£</symbol>
+				<symbol draft="unconfirmed">£GB</symbol>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">lari</displayName>
+				<displayName count="other" draft="unconfirmed">laris</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">cedi</displayName>
+				<displayName count="other" draft="unconfirmed">cedis</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">libra gibraltarenca</displayName>
+				<displayName count="other" draft="unconfirmed">libres gibraltarenques</displayName>
+				<symbol draft="unconfirmed">£GI</symbol>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">dalasi</displayName>
+				<displayName count="other" draft="unconfirmed">dalasis</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">franc guinean</displayName>
+				<displayName count="other" draft="unconfirmed">francs guineans</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">quetzal gautemaltec</displayName>
+				<displayName count="other" draft="unconfirmed">quetzals gautemaltecs</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">dòlar guayanés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars guayanesi</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">dòlar hongkonés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars hongkoneses</displayName>
+				<symbol draft="unconfirmed">HKD</symbol>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">lempira hondurenh</displayName>
+				<displayName count="other" draft="unconfirmed">lempires hondurenhs</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">kuna</displayName>
+				<displayName count="other" draft="unconfirmed">kunes</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">gorde haitian</displayName>
+				<displayName count="other" draft="unconfirmed">gordes haitians</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">forinto húngar</displayName>
+				<displayName count="other" draft="unconfirmed">forintos húngars</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">ropia indonesia</displayName>
+				<displayName count="other" draft="unconfirmed">ropies indonesies</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">nau séquel israelí</displayName>
+				<displayName count="other" draft="unconfirmed">naus séquels israelís</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName draft="unconfirmed">ropia indiana</displayName>
 				<displayName count="other" draft="unconfirmed">ropias indianas</displayName>
 			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">dinar iraquí</displayName>
+				<displayName count="other" draft="unconfirmed">dinars iraquís</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">rial iraní</displayName>
+				<displayName count="other" draft="unconfirmed">rials iranís</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">corona islandesa</displayName>
+				<displayName count="other" draft="unconfirmed">corones islandeses</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">dòlar jamaican</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars jamaicans</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">dinar jordan</displayName>
+				<displayName count="other" draft="unconfirmed">dinars jordans</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">yen</displayName>
+				<displayName count="other" draft="unconfirmed">yens</displayName>
+				<symbol draft="unconfirmed">JPY</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">chelin kenian</displayName>
+				<displayName count="other" draft="unconfirmed">chelins kenians</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">sòm</displayName>
+				<displayName count="other" draft="unconfirmed">sòms</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">riel</displayName>
+				<displayName count="other" draft="unconfirmed">riels</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">franc comorens</displayName>
+				<displayName count="other" draft="unconfirmed">francs comorensi</displayName>
+				<symbol alt="narrow" draft="unconfirmed">FC</symbol>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">won nòrd-corean</displayName>
+				<displayName count="other" draft="unconfirmed">wons nòrd-coreans</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">won sud-corean</displayName>
+				<displayName count="other" draft="unconfirmed">wons sud-coreans</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">dinar kuwaitin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars kuwaitins</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">dòlar d’Illes Caiman</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars d’Illes Caiman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">tengue kazaji</displayName>
+				<displayName count="other" draft="unconfirmed">tengues kazajis</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">kip</displayName>
+				<displayName count="other" draft="unconfirmed">kips</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">libra libanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres libaneses</displayName>
+				<symbol draft="unconfirmed">£LB</symbol>
+				<symbol alt="narrow" draft="unconfirmed">£L</symbol>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">ropia esrilanquesa</displayName>
+				<displayName count="other" draft="unconfirmed">ropies esrilanqueses</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">dòlar liberian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars liberians</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">loti lesotenc</displayName>
+				<displayName count="other" draft="unconfirmed">lotis lesotensi</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">dinar libi</displayName>
+				<displayName count="other" draft="unconfirmed">dinars libis</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">dírham marroquin</displayName>
+				<displayName count="other" draft="unconfirmed">dírhams marroquins</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">leu moldau</displayName>
+				<displayName count="other" draft="unconfirmed">leus moldaus</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">ariari</displayName>
+				<displayName count="other" draft="unconfirmed">ariaris</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">dinar macedoni</displayName>
+				<displayName count="other" draft="unconfirmed">dinars macedonis</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">kiat</displayName>
+				<displayName count="other" draft="unconfirmed">kiats</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">tugrik</displayName>
+				<displayName count="other" draft="unconfirmed">tugriks</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">pataca de Macao</displayName>
+				<displayName count="other" draft="unconfirmed">pataques de Macao</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName draft="unconfirmed">uguiya</displayName>
+				<displayName count="other" draft="unconfirmed">uguiyes</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">ropia mauriciana</displayName>
+				<displayName count="other" draft="unconfirmed">ropies mauricianes</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">rufiya</displayName>
+				<displayName count="other" draft="unconfirmed">rufiyas</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">kuacha malauí</displayName>
+				<displayName count="other" draft="unconfirmed">kuaches malauies</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">peso mexican</displayName>
+				<displayName count="other" draft="unconfirmed">pesi mexicans</displayName>
+				<symbol draft="unconfirmed">$MX</symbol>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">ringit</displayName>
+				<displayName count="other" draft="unconfirmed">ringits</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="unconfirmed">metical</displayName>
+				<displayName count="other" draft="unconfirmed">meticals</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">dòlar namibi</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars namibis</displayName>
+				<symbol draft="unconfirmed">$NA</symbol>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">naira</displayName>
+				<displayName count="other" draft="unconfirmed">naires</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">còrdoba aur</displayName>
+				<displayName count="other" draft="unconfirmed">còrdobas aur</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">corona noruegua</displayName>
+				<displayName count="other" draft="unconfirmed">corones noruegues</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">ropia nepalí</displayName>
+				<displayName count="other" draft="unconfirmed">ropies nepalís</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">dòlar neozelandés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars neozelandeses</displayName>
+				<symbol draft="unconfirmed">$NZ</symbol>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">rial omaní</displayName>
+				<displayName count="other" draft="unconfirmed">rials omanís</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">balboa panamenh</displayName>
+				<displayName count="other" draft="unconfirmed">balboes panamenhs</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">sòl peruan</displayName>
+				<displayName count="other" draft="unconfirmed">sòls peruans</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">kina</displayName>
+				<displayName count="other" draft="unconfirmed">kinas</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">peso filipin</displayName>
+				<displayName count="other" draft="unconfirmed">pesi filipins</displayName>
+				<symbol draft="unconfirmed">PHP</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">ropia pakistaní</displayName>
+				<displayName count="other" draft="unconfirmed">ropies pakistanís</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">esloti</displayName>
+				<displayName count="other" draft="unconfirmed">eslotis</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">guaraní paraguayan</displayName>
+				<displayName count="other" draft="unconfirmed">guaranís paraguayans</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">rial catarí</displayName>
+				<displayName count="other" draft="unconfirmed">rials catarís</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="unconfirmed">leu ruman</displayName>
+				<displayName count="other" draft="unconfirmed">leus rumans</displayName>
+				<symbol alt="narrow" draft="unconfirmed">L</symbol>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">dinar serbi</displayName>
+				<displayName count="other" draft="unconfirmed">dinars serbis</displayName>
+			</currency>
 			<currency type="RUB">
 				<displayName draft="unconfirmed">roble rus</displayName>
 				<displayName count="other" draft="unconfirmed">robles russes</displayName>
 			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">franc ruandés</displayName>
+				<displayName count="other" draft="unconfirmed">francs ruandessi</displayName>
+				<symbol alt="narrow" draft="unconfirmed">FR</symbol>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">rial saudí</displayName>
+				<displayName count="other" draft="unconfirmed">rials saudís</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">dòlar salomonenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars salomonencs</displayName>
+				<symbol draft="unconfirmed">$SB</symbol>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">ropia seychellense</displayName>
+				<displayName count="other" draft="unconfirmed">ropies seychellenses</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">libra sudanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres sudaneses</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">corona sueca</displayName>
+				<displayName count="other" draft="unconfirmed">corones sueques</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">dòlar singapurense</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars singapurenses</displayName>
+				<symbol draft="unconfirmed">$SG</symbol>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">libra de Santa Elena</displayName>
+				<displayName count="other" draft="unconfirmed">libres de Santa Elena</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">leona</displayName>
+				<displayName count="other" draft="unconfirmed">leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">leona (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">leones (1964—2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">chelin somalí</displayName>
+				<displayName count="other" draft="unconfirmed">chelins somalís</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">dòlar surinamés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars surinamesi</displayName>
+				<symbol draft="unconfirmed">$SR</symbol>
+			</currency>
+			<currency type="SSP">
+				<displayName draft="unconfirmed">libra sud-sudanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres sud-sudaneses</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName draft="unconfirmed">dobra</displayName>
+				<displayName count="other" draft="unconfirmed">dobres</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">libra siria</displayName>
+				<displayName count="other" draft="unconfirmed">libres siries</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">lilangeni</displayName>
+				<displayName count="other" draft="unconfirmed">lilangenis</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">bat</displayName>
+				<displayName count="other" draft="unconfirmed">bats</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">somoni tayiko</displayName>
+				<displayName count="other" draft="unconfirmed">somonis tayikos</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">manat turcoman</displayName>
+				<displayName count="other" draft="unconfirmed">manats turcomans</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">dinar tunecin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars tunecins</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">paanga</displayName>
+				<displayName count="other" draft="unconfirmed">paangues</displayName>
+				<symbol alt="narrow" draft="unconfirmed">$T</symbol>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">lira turca</displayName>
+				<displayName count="other" draft="unconfirmed">lires turques</displayName>
+				<symbol alt="variant" draft="unconfirmed">LT</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="unconfirmed">dòlar de Trinidad e Tobago</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars de Trinidad e Tobago</displayName>
+				<symbol draft="unconfirmed">$TT</symbol>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">nau dòlar taiwanés</displayName>
+				<displayName count="other" draft="unconfirmed">naus dòlars taiwaneses</displayName>
+				<symbol draft="unconfirmed">TWD</symbol>
+				<symbol alt="narrow" draft="unconfirmed">NT$</symbol>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">chelin tanzan</displayName>
+				<displayName count="other" draft="unconfirmed">chelins tanzans</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">grivna</displayName>
+				<displayName count="other" draft="unconfirmed">grivnes</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">chelin ugandés</displayName>
+				<displayName count="other" draft="unconfirmed">chelins ugandessi</displayName>
+			</currency>
 			<currency type="USD">
 				<displayName draft="unconfirmed">dòlar american</displayName>
 				<displayName count="other" draft="unconfirmed">dòlars americans</displayName>
-				<symbol draft="unconfirmed">$ US</symbol>
+				<symbol draft="unconfirmed">$US</symbol>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">peso uruguayan</displayName>
+				<displayName count="other" draft="unconfirmed">pesi uruguayans</displayName>
+				<symbol draft="unconfirmed">$UY</symbol>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">sum</displayName>
+				<displayName count="other" draft="unconfirmed">sums</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName draft="unconfirmed">bolívar venezolan</displayName>
+				<displayName count="other" draft="unconfirmed">bolívars venezolans</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">dong</displayName>
+				<displayName count="other" draft="unconfirmed">dongs</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">vatu</displayName>
+				<displayName count="other" draft="unconfirmed">vatus</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">tala</displayName>
+				<displayName count="other" draft="unconfirmed">tales</displayName>
+				<symbol draft="unconfirmed">$WS</symbol>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="unconfirmed">franc CFA d’Africa central</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFA d’Africa central</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">dòlar del Caribe Occidental</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars del Caribe Occidental</displayName>
+				<symbol draft="unconfirmed">XCD</symbol>
+			</currency>
+			<currency type="XOF">
+				<displayName draft="unconfirmed">franc CFA d’Africa occidental</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFA d’Africa occidental</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="unconfirmed">franc CFP</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFP</displayName>
+				<symbol draft="unconfirmed">FCFP</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName draft="unconfirmed">Moneda desconeguda</displayName>
 				<displayName count="other" draft="unconfirmed">(moneda desconeguda)</displayName>
 			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">rial yemení</displayName>
+				<displayName count="other" draft="unconfirmed">rials yemenís</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">rand</displayName>
+				<displayName count="other" draft="unconfirmed">rands</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="unconfirmed">kuacha zambiana</displayName>
+				<displayName count="other" draft="unconfirmed">kuaches zambianes</displayName>
+				<symbol alt="narrow" draft="unconfirmed">Kw</symbol>
+			</currency>
 		</currencies>
-		<miscPatterns numberSystem="latn">
+		<miscPatterns numberSystem="adlm">
 			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
 		</miscPatterns>
+		<miscPatterns numberSystem="arab">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arabext">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="bali">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="beng">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="brah">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cakm">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cham">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="deva">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="fullwide">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gong">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gonm">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gujr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="guru">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="hanidec">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="java">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="kali">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="khmr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="knda">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lana">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lanatham">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="laoo">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="latn">
+			<pattern type="approximately" draft="unconfirmed">≈{0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lepc">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="limb">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mlym">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mong">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mtei">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymrshan">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="nkoo">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="olck">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="orya">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="osma">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="rohg">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="saur">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="shrd">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sora">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sund">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="takr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="talu">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tamldec">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="telu">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="thai">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tibt">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="vaii">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} jorns</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">Pren era {0}au a la dreta.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -1500,11 +3433,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p3">
 				<unitPrefixPattern draft="unconfirmed">quilo{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="other" draft="unconfirmed">{0} cairat</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="other" draft="unconfirmed">{0} cubic</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">G d’acceleracion</displayName>
@@ -1566,7 +3505,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} partidas per milions</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">de cent</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} de cent</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
@@ -1618,7 +3556,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} decennia</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">annadas</displayName>
 				<unitPattern count="other">{0} annadas</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per annada</perUnitPattern>
 			</unit>
@@ -1628,17 +3565,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} per mes</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName draft="unconfirmed">setm.</displayName>
 				<unitPattern count="other">{0} setmanas</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per setmana</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName draft="unconfirmed">jorns</displayName>
 				<unitPattern count="other">{0} jorns</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/j</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="unconfirmed">oras</displayName>
 				<unitPattern count="other">{0} oras</unitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -1658,7 +3591,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} miliampèrs</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName draft="unconfirmed">vòlts</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} vòlts</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
@@ -1696,10 +3628,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-dot-per-centimeter">
 				<displayName draft="unconfirmed">punts per centimètre</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punts per centimètre</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName draft="unconfirmed">punt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} punt</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName draft="unconfirmed">quilomètres</displayName>
@@ -1753,7 +3681,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} per quilogramas</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName draft="unconfirmed">gramas</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} gramas</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per gramas</perUnitPattern>
 			</unit>
@@ -1776,10 +3703,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-solar-mass">
 				<displayName draft="unconfirmed">massas de Solelh</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} massa de Solelh</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<displayName draft="unconfirmed">gran</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} gran</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName draft="unconfirmed">quilowatts</displayName>
@@ -1860,7 +3783,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} ectolitres</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName draft="unconfirmed">litres</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} litres</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per litre</perUnitPattern>
 			</unit>
@@ -1882,15 +3804,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName draft="unconfirmed">culhièr de cafè imperial</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} culh. cafè imp.</unitPattern>
-			</unit>
-			<unit type="volume-drop">
-				<displayName draft="unconfirmed">gota</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} gota</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<displayName draft="unconfirmed">pecic</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} pecic</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direccion cardinala</displayName>
@@ -1965,10 +3878,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">vòlts</displayName>
 			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="unconfirmed">ppcm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ppcm</unitPattern>
-			</unit>
 			<unit type="graphics-dot">
 				<displayName draft="unconfirmed">punt</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punt</unitPattern>
@@ -2016,19 +3925,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direccion</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">an.</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} an.</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName draft="unconfirmed">mes</displayName>
-			</unit>
-			<unit type="duration-week">
-				<displayName draft="unconfirmed">setm.</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} setm.</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">jorn</displayName>
@@ -2042,29 +3948,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">grama</displayName>
 			</unit>
-			<unit type="volume-liter">
-				<displayName draft="unconfirmed">litres</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} L</unitPattern>
-			</unit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">direccion</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="end" draft="unconfirmed">{0}, o {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} o {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} o {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="end" draft="unconfirmed">{0}, o {1}</listPatternPart>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="end" draft="unconfirmed">{0}, o {1}</listPatternPart>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -2075,14 +3984,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</posix>
 	<characterLabels>
 		<characterLabel type="activities" draft="unconfirmed">activitat</characterLabel>
-		<characterLabel type="animal" draft="unconfirmed">animal</characterLabel>
 		<characterLabel type="animals_nature" draft="unconfirmed">animal o natura</characterLabel>
 		<characterLabel type="body" draft="unconfirmed">còs</characterLabel>
-		<characterLabel type="emoji" draft="unconfirmed">emoji</characterLabel>
 		<characterLabel type="flag" draft="unconfirmed">bandièra</characterLabel>
 		<characterLabel type="flags" draft="unconfirmed">bandièras</characterLabel>
 		<characterLabel type="food_drink" draft="unconfirmed">beure e manjar</characterLabel>
-		<characterLabel type="format" draft="unconfirmed">format</characterLabel>
 		<characterLabel type="heart" draft="unconfirmed">còr</characterLabel>
 		<characterLabel type="male" draft="unconfirmed">òme</characterLabel>
 		<characterLabel type="nature" draft="unconfirmed">natura</characterLabel>

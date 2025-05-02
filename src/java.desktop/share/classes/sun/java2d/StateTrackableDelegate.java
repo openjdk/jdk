@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class StateTrackableDelegate implements StateTrackable {
      * If the specified {@code State} is
      * {@link State#UNTRACKABLE UNTRACKABLE} or
      * {@link State#IMMUTABLE IMMUTABLE}
-     * then the approprirate static instance
+     * then the appropriate static instance
      * {@link #UNTRACKABLE_DELEGATE} or {@link #IMMUTABLE_DELEGATE}
      * is returned.
      */

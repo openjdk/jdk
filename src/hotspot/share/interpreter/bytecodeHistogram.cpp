@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
@@ -34,7 +33,7 @@
 
 // Implementation of BytecodeCounter
 
-int   BytecodeCounter::_counter_value = 0;
+uintx BytecodeCounter::_counter_value = 0;
 jlong BytecodeCounter::_reset_time    = 0;
 
 
@@ -56,7 +55,7 @@ double BytecodeCounter::frequency() {
 
 void BytecodeCounter::print() {
   tty->print_cr(
-    "%d bytecodes executed in %.1fs (%.3fMHz)",
+    "%zu bytecodes executed in %.1fs (%.3fMHz)",
     counter_value(),
     elapsed_time(),
     frequency() / 1000000.0
@@ -130,14 +129,14 @@ void BytecodeHistogram::print(float cutoff) {
   while (i-- > 0) {
     HistoEntry* e = profile->at(i);
     int       abs = e->count();
-    float     rel = abs * 100.0F / tot;
+    float     rel = (float)abs * 100.0F / (float)tot;
     if (cutoff <= rel) {
       tty->print_cr("%10d  %7.2f%%    %02x    %s", abs, rel, e->index(), name_for(e->index()));
       abs_sum += abs;
     }
   }
   tty->print_cr("----------------------------------------------------------------------");
-  float rel_sum = abs_sum * 100.0F / tot;
+  float rel_sum = (float)abs_sum * 100.0F / (float)tot;
   tty->print_cr("%10d  %7.2f%%    (cutoff = %.2f%%)", abs_sum, rel_sum, cutoff);
   tty->cr();
 }
@@ -172,7 +171,7 @@ void BytecodePairHistogram::print(float cutoff) {
   while (i-- > 0) {
     HistoEntry* e = profile->at(i);
     int       abs = e->count();
-    float     rel = abs * 100.0F / tot;
+    float     rel = (float)abs * 100.0F / (float)tot;
     if (cutoff <= rel) {
       int   c1 = e->index() % number_of_codes;
       int   c2 = e->index() / number_of_codes;
@@ -181,7 +180,7 @@ void BytecodePairHistogram::print(float cutoff) {
     }
   }
   tty->print_cr("----------------------------------------------------------------------");
-  float rel_sum = abs_sum * 100.0F / tot;
+  float rel_sum = (float)abs_sum * 100.0F / (float)tot;
   tty->print_cr("%10d   %6.3f%%    (cutoff = %.3f%%)", abs_sum, rel_sum, cutoff);
   tty->cr();
 }

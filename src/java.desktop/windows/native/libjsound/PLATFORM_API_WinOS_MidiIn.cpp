@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ extern "C" {
 #define MIDIIN_CHECK_ERROR
 #endif
 
+#include <inttypes.h>
+
 /*
  * Callback from the MIDI device for all messages.
  */
@@ -55,8 +57,8 @@ void CALLBACK MIDI_IN_PutMessage( HMIDIIN hMidiIn, UINT wMsg, UINT_PTR dwInstanc
 
     MidiDeviceHandle* handle = (MidiDeviceHandle*) dwInstance;
 
-    TRACE3("> MIDI_IN_PutMessage, hMidiIn: %x, wMsg: %x, dwInstance: %x\n", hMidiIn, wMsg, dwInstance);
-    TRACE2("                      dwParam1: %x, dwParam2: %x\n", dwParam1, dwParam2);
+    TRACE3("> MIDI_IN_PutMessage, hMidiIn: 0x%" PRIxPTR ", wMsg: %x, dwInstance: 0x%" PRIxPTR "\n", (uintptr_t)hMidiIn, wMsg, (uintptr_t)dwInstance);
+    TRACE2("                      dwParam1: 0x%" PRIxPTR ", dwParam2: 0x%" PRIxPTR "\n", (uintptr_t)dwParam1, (uintptr_t)dwParam2);
 
     switch(wMsg) {
 
@@ -70,8 +72,8 @@ void CALLBACK MIDI_IN_PutMessage( HMIDIIN hMidiIn, UINT wMsg, UINT_PTR dwInstanc
 
     case MIM_MOREDATA:
     case MIM_DATA:
-        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=%x  data1=%x  data2=%x\n",
-               dwParam1 & 0xFF, (dwParam1 & 0xFF00)>>8, (dwParam1 & 0xFF0000)>>16);
+        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=%x data1=%x data2=%x\n",
+               (int)(dwParam1 & 0xFF), (int)((dwParam1 & 0xFF00)>>8), (int)((dwParam1 & 0xFF0000)>>16));
         if (handle!=NULL && handle->queue!=NULL && handle->platformData) {
             MIDI_QueueAddShort(handle->queue,
                                // queue stores packedMsg in big endian
@@ -165,7 +167,7 @@ protected:
     } static data;
 
     /* StartThread function */
-    static DWORD WINAPI __stdcall ThreadProc(void *param);
+    static DWORD WINAPI ThreadProc(void *param);
 };
 
 /* MidiIn_OpenHelper class implementation
@@ -195,7 +197,7 @@ MidiIn_OpenHelper::Data::~Data() {
     // - Windows will do during process shutdown
 }
 
-DWORD WINAPI __stdcall MidiIn_OpenHelper::ThreadProc(void *param) {
+DWORD WINAPI MidiIn_OpenHelper::ThreadProc(void *param) {
     while (1) {
         // wait for something to do
         ::WaitForSingleObject(data.doEvent, INFINITE);
@@ -301,7 +303,7 @@ INT32 prepareBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        MIDIHDR* hdr = &(sysex->header[i]);
+        MIDIHDR* hdr = &(sysex->headerInfo[i].header);
         midiInPrepareHeader((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));
         err = midiInAddBuffer((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));
     }
@@ -320,7 +322,7 @@ INT32 unprepareBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        err = midiInUnprepareHeader((HMIDIIN) handle->deviceHandle, &(sysex->header[i]), sizeof(MIDIHDR));
+        err = midiInUnprepareHeader((HMIDIIN) handle->deviceHandle, &(sysex->headerInfo[i].header), sizeof(MIDIHDR));
     }
     MIDIIN_CHECK_ERROR;
     return (INT32) err;
@@ -502,7 +504,7 @@ void MIDI_IN_ReleaseMessage(MidiDeviceHandle* handle, MidiMessage* msg) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     if (msg->type == LONG_MESSAGE && sysex) {
-        MIDIHDR* hdr = &(sysex->header[msg->data.l.index]);
+        MIDIHDR* hdr = &(sysex->headerInfo[msg->data.l.index].header);
         //fprintf(stdout, "ReleaseMessage index %d\n", msg->data.l.index); fflush(stdout);
         hdr->dwBytesRecorded = 0;
         midiInAddBuffer((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));

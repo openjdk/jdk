@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.tools.Diagnostic;
@@ -48,17 +46,13 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.util.Pair;
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Base class for template-driven TestNG javac tests that support on-the-fly
+ * Base class for template-driven JUnit javac tests that support on-the-fly
  * source file generation, compilation, classloading, execution, and separate
  * compilation.
  *
@@ -70,16 +64,15 @@ import static org.testng.Assert.fail;
  *
  * @author Brian Goetz
  */
-@Test
+@ExtendWith(ComboWatcher.class)
 public abstract class JavacTemplateTestBase {
-    private static final Set<String> suiteErrors = Collections.synchronizedSet(new HashSet<>());
     private static final AtomicInteger counter = new AtomicInteger();
     private static final File root = new File("gen");
     private static final File nullDir = new File("empty");
 
     protected final Map<String, Template> templates = new HashMap<>();
     protected final Diagnostics diags = new Diagnostics();
-    protected final List<Pair<String, String>> sourceFiles = new ArrayList<>();
+    protected final List<SourceFile> sourceFiles = new ArrayList<>();
     protected final List<String> compileOptions = new ArrayList<>();
     protected final List<File> classpaths = new ArrayList<>();
 
@@ -95,7 +88,7 @@ public abstract class JavacTemplateTestBase {
 
     /** Add a source file */
     protected void addSourceFile(String name, String template) {
-        sourceFiles.add(new Pair<>(name, template));
+        sourceFiles.add(new SourceFile(name, template));
     }
 
     /** Add a File to the class path to be used when loading classes; File values
@@ -130,45 +123,13 @@ public abstract class JavacTemplateTestBase {
     protected void resetClassPaths() { classpaths.clear(); }
 
     // Before each test method, reset everything
-    @BeforeMethod
+    @BeforeEach
     public void reset() {
         resetCompileOptions();
         resetDiagnostics();
         resetSourceFiles();
         resetTemplates();
         resetClassPaths();
-    }
-
-    // After each test method, if the test failed, capture source files and diagnostics and put them in the log
-    @AfterMethod
-    public void copyErrors(ITestResult result) {
-        if (!result.isSuccess()) {
-            suiteErrors.addAll(diags.errorKeys());
-
-            List<Object> list = new ArrayList<>();
-            Collections.addAll(list, result.getParameters());
-            list.add("Test case: " + getTestCaseDescription());
-            for (Pair<String, String> e : sourceFiles)
-                list.add("Source file " + e.fst + ": " + e.snd);
-            if (diags.errorsFound())
-                list.add("Compile diagnostics: " + diags.toString());
-            result.setParameters(list.toArray(new Object[list.size()]));
-        }
-    }
-
-    @AfterSuite
-    // After the suite is done, dump any errors to output
-    public void dumpErrors() {
-        if (!suiteErrors.isEmpty())
-            System.err.println("Errors found in test suite: " + suiteErrors);
-    }
-
-    /**
-     * Get a description of this test case; since test cases may be combinatorially
-     * generated, this should include all information needed to describe the test case
-     */
-    protected String getTestCaseDescription() {
-        return this.toString();
     }
 
     /** Assert that all previous calls to compile() succeeded */
@@ -258,9 +219,7 @@ public abstract class JavacTemplateTestBase {
     /** Compile all registered source files, optionally generating class files
      * and returning a File describing the directory to which they were written */
     protected File compile(boolean generate) throws IOException {
-        List<JavaFileObject> files = new ArrayList<>();
-        for (Pair<String, String> e : sourceFiles)
-            files.add(new FileAdapter(e.fst, e.snd));
+        var files = sourceFiles.stream().map(FileAdapter::new).toList();
         return compile(classpaths, files, generate);
     }
 
@@ -268,13 +227,11 @@ public abstract class JavacTemplateTestBase {
      * for finding required classfiles, optionally generating class files
      * and returning a File describing the directory to which they were written */
     protected File compile(List<File> classpaths, boolean generate) throws IOException {
-        List<JavaFileObject> files = new ArrayList<>();
-        for (Pair<String, String> e : sourceFiles)
-            files.add(new FileAdapter(e.fst, e.snd));
+        var files = sourceFiles.stream().map(FileAdapter::new).toList();
         return compile(classpaths, files, generate);
     }
 
-    private File compile(List<File> classpaths, List<JavaFileObject> files, boolean generate) throws IOException {
+    private File compile(List<File> classpaths, List<? extends JavaFileObject> files, boolean generate) throws IOException {
         JavaCompiler systemJavaCompiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = systemJavaCompiler.getStandardFileManager(null, null, null)) {
             if (classpaths.size() > 0)
@@ -327,9 +284,9 @@ public abstract class JavacTemplateTestBase {
     private class FileAdapter extends SimpleJavaFileObject {
         private final String templateString;
 
-        FileAdapter(String filename, String templateString) {
-            super(URI.create("myfo:/" + filename), Kind.SOURCE);
-            this.templateString = templateString;
+        FileAdapter(SourceFile file) {
+            super(URI.create("myfo:/" + file.name()), Kind.SOURCE);
+            this.templateString = file.template();
         }
 
         public CharSequence getCharContent(boolean ignoreEncodingErrors) {

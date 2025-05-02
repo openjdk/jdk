@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,11 +188,15 @@ public interface DocumentationTool extends Tool, OptionChecker {
 
         /**
          * Location to search for snippets.
+         *
+         * @since 18
          */
         SNIPPET_PATH;
 
+        @Override
         public String getName() { return name(); }
 
+        @Override
         public boolean isOutputLocation() {
             switch (this) {
                 case DOCUMENTATION_OUTPUT:

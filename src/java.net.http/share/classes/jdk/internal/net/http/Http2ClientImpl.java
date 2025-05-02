@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,26 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetSocketAddress;
-import java.net.URI;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
-import jdk.internal.net.http.common.Log;
+import java.util.concurrent.locks.ReentrantLock;
+
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.SettingsFrame;
+
+import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.MAX_CONCURRENT_STREAMS;
 import static jdk.internal.net.http.frame.SettingsFrame.MAX_FRAME_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_HEADER_LIST_SIZE;
 
 /**
  *  Http2 specific aspects of HttpClientImpl
@@ -57,8 +59,7 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
-    // only accessed from within synchronized blocks
-    private boolean stopping;
+    private volatile boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -67,8 +68,11 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    // only accessed from within synchronized blocks
+    // only accessed from within lock protected blocks
     private final Set<String> failures = new HashSet<>();
+
+    // used when dealing with connections in the pool
+    private final ReentrantLock connectionPoolLock = new ReentrantLock();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -95,18 +99,22 @@ class Http2ClientImpl {
      */
     CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req,
                                                         Exchange<?> exchange) {
-        URI uri = req.uri();
-        InetSocketAddress proxy = req.proxy();
-        String key = Http2Connection.keyFor(uri, proxy);
+        String key = Http2Connection.keyFor(req);
+        boolean pushEnabled = exchange.pushEnabled();
 
-        synchronized (this) {
+        connectionPoolLock.lock();
+        try {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
                 try {
-                    if (!connection.isOpen() || !connection.reserveStream(true)) {
+                    if (!connection.tryReserveForPoolCheckout()
+                            || !connection.reserveStream(true, pushEnabled)) {
                         if (debug.on())
-                            debug.log("removing found closed or closing connection: %s", connection);
-                        deleteConnection(connection);
+                            debug.log("removing connection from pool since it couldn't be" +
+                                    " reserved for use%s: %s",
+                                    pushEnabled ? " with server push enabled" : "",
+                                    connection);
+                        removeFromPool(connection);
                     } else {
                         // fast path if connection already exists
                         if (debug.on())
@@ -125,14 +133,17 @@ class Http2ClientImpl {
                 if (debug.on()) debug.log("not found in connection pool");
                 return MinimalFuture.completedFuture(null);
             }
+        } finally {
+            connectionPoolLock.unlock();
         }
         return Http2Connection
                 .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
-                    synchronized (Http2ClientImpl.this) {
+                    connectionPoolLock.lock();
+                    try {
                         if (conn != null) {
                             try {
-                                conn.reserveStream(true);
+                                conn.reserveStream(true, exchange.pushEnabled());
                             } catch (IOException e) {
                                 throw new UncheckedIOException(e); // shouldn't happen
                             }
@@ -142,6 +153,8 @@ class Http2ClientImpl {
                             if (cause instanceof Http2Connection.ALPNException)
                                 failures.add(key);
                         }
+                    } finally {
+                        connectionPoolLock.unlock();
                     }
                 });
     }
@@ -162,7 +175,8 @@ class Http2ClientImpl {
         }
 
         String key = c.key();
-        synchronized(this) {
+        connectionPoolLock.lock();
+        try {
             if (stopping) {
                 if (debug.on()) debug.log("stopping - closing connection: %s", c);
                 close(c);
@@ -175,25 +189,47 @@ class Http2ClientImpl {
             }
             Http2Connection c1 = connections.putIfAbsent(key, c);
             if (c1 != null) {
-                c.setFinalStream();
-                if (debug.on())
-                    debug.log("existing entry in connection pool for %s", key);
-                return false;
+                if (c.serverPushEnabled() && !c1.serverPushEnabled()) {
+                    c1.setFinalStream();
+                    connections.remove(key, c1);
+                    connections.put(key, c);
+                    if (debug.on()) {
+                        debug.log("Replacing %s with %s in connection pool", c1, c);
+                    }
+                    if (c1.shouldClose()) c1.close();
+                    return  true;
+                } else {
+                    c.setFinalStream();
+                    if (debug.on())
+                        debug.log("existing entry in connection pool for %s", key);
+                    return false;
+                }
             }
             if (debug.on())
                 debug.log("put in the connection pool: %s", c);
             return true;
+        } finally {
+            connectionPoolLock.unlock();
         }
     }
 
-    void deleteConnection(Http2Connection c) {
+    /**
+     * Removes the connection from the pool (if it was in the pool).
+     * This method doesn't close the connection.
+     *
+     * @param c the connection to remove from the pool
+     */
+    void removeFromPool(Http2Connection c) {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
-        synchronized (this) {
+        connectionPoolLock.lock();
+        try {
             if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
+        } finally {
+            connectionPoolLock.unlock();
         }
     }
 
@@ -202,13 +238,18 @@ class Http2ClientImpl {
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        synchronized (this) {stopping = true;}
+        connectionPoolLock.lock();
+        try {
+            stopping = true;
+        } finally {
+            connectionPoolLock.unlock();
+        }
         do {
-            connections.values().forEach(this::close);
+            connections.values().removeIf(this::close);
         } while (!connections.isEmpty());
     }
 
-    private void close(Http2Connection h2c) {
+    private boolean close(Http2Connection h2c) {
         // close all streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
         // send GOAWAY
@@ -217,6 +258,8 @@ class Http2ClientImpl {
         try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
         // double check and close any new streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
+        // Allows for use of removeIf in stop()
+        return true;
     }
 
     HttpClientImpl client() {
@@ -224,8 +267,8 @@ class Http2ClientImpl {
     }
 
     /** Returns the client settings as a base64 (url) encoded string */
-    String getSettingsString() {
-        SettingsFrame sf = getClientSettings();
+    String getSettingsString(boolean defaultServerPush) {
+        SettingsFrame sf = getClientSettings(defaultServerPush);
         byte[] settings = sf.toByteArray(); // without the header
         Base64.Encoder encoder = Base64.getUrlEncoder()
                                        .withoutPadding();
@@ -235,14 +278,7 @@ class Http2ClientImpl {
     private static final int K = 1024;
 
     private static int getParameter(String property, int min, int max, int defaultValue) {
-        int value =  Utils.getIntegerNetProperty(property, defaultValue);
-        // use default value if misconfigured
-        if (value < min || value > max) {
-            Log.logError("Property value for {0}={1} not in [{2}..{3}]: " +
-                    "using default={4}", property, value, min, max, defaultValue);
-            value = defaultValue;
-        }
-        return value;
+        return Utils.getIntegerNetProperty(property, min, max, defaultValue, true);
     }
 
     // used for the connection window, to have a connection window size
@@ -257,12 +293,27 @@ class Http2ClientImpl {
         // and the connection window size.
         int defaultValue = Math.max(streamWindow, K*K*32);
 
+        // The min value is the max between the streamWindow and
+        // the initial connection window size
+        int minValue = Math.max(INITIAL_CONNECTION_WINDOW_SIZE, streamWindow);
+
         return getParameter(
                 "jdk.httpclient.connectionWindowSize",
-                streamWindow, Integer.MAX_VALUE, defaultValue);
+                minValue, Integer.MAX_VALUE, defaultValue);
     }
 
-    SettingsFrame getClientSettings() {
+    /**
+     * This method is used to test whether pushes are globally
+     * disabled on all connections.
+     * @return true if pushes are globally disabled on all connections
+     */
+    boolean serverPushDisabled() {
+        return getParameter(
+                "jdk.httpclient.enablepush",
+                0, 1, 1) == 0;
+    }
+
+    SettingsFrame getClientSettings(boolean defaultServerPush) {
         SettingsFrame frame = new SettingsFrame();
         // default defined for HTTP/2 is 4 K, we use 16 K.
         frame.setParameter(HEADER_TABLE_SIZE, getParameter(
@@ -271,14 +322,15 @@ class Http2ClientImpl {
         // O: does not accept push streams. 1: accepts push streams.
         frame.setParameter(ENABLE_PUSH, getParameter(
                 "jdk.httpclient.enablepush",
-                0, 1, 1));
+                0, 1, defaultServerPush ? 1 : 0));
         // HTTP/2 recommends to set the number of concurrent streams
-        // no lower than 100. We use 100. 0 means no stream would be
-        // accepted. That would render the client to be non functional,
-        // so we won't let 0 be configured for our Http2ClientImpl.
+        // no lower than 100. We use 100, unless push promises are
+        // disabled.
+        int initialServerStreams = frame.getParameter(ENABLE_PUSH) == 0
+                ? 0 : 100;
         frame.setParameter(MAX_CONCURRENT_STREAMS, getParameter(
                 "jdk.httpclient.maxstreams",
-                1, Integer.MAX_VALUE, 100));
+                0, Integer.MAX_VALUE, initialServerStreams));
         // Maximum size is 2^31-1. Don't allow window size to be less
         // than the minimum frame size as this is likely to be a
         // configuration error. HTTP/2 specify a default of 64 * K -1,
@@ -291,6 +343,18 @@ class Http2ClientImpl {
         frame.setParameter(MAX_FRAME_SIZE, getParameter(
                 "jdk.httpclient.maxframesize",
                 16 * K, 16 * K * K -1, 16 * K));
+        // Maximum field section size we're prepared to accept
+        // This is the uncompressed name + value size + 32 per field line
+        int maxHeaderSize = getParameter(
+                "jdk.http.maxHeaderSize",
+                Integer.MIN_VALUE, Integer.MAX_VALUE, 384 * K);
+        // If the property is <= 0 the value is unlimited
+        if (maxHeaderSize <= 0) maxHeaderSize = -1;
+        frame.setParameter(MAX_HEADER_LIST_SIZE, maxHeaderSize);
         return frame;
+    }
+
+    public boolean stopping() {
+        return stopping;
     }
 }

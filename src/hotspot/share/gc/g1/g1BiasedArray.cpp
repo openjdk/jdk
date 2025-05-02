@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "memory/padded.inline.hpp"
 
 G1BiasedMappedArrayBase::G1BiasedMappedArrayBase() :
-  _alloc_base(NULL),
-  _base(NULL),
+  _alloc_base(nullptr),
+  _base(nullptr),
   _length(0),
-  _biased_base(NULL),
+  _biased_base(nullptr),
   _bias(0),
   _shift_by(0) { }
 
@@ -47,21 +46,21 @@ address G1BiasedMappedArrayBase::create_new_base_array(size_t length, size_t ele
 
 #ifndef PRODUCT
 void G1BiasedMappedArrayBase::verify_index(idx_t index) const {
-  guarantee(_base != NULL, "Array not initialized");
-  guarantee(index < length(), "Index out of bounds index: " SIZE_FORMAT " length: " SIZE_FORMAT, index, length());
+  guarantee(_base != nullptr, "Array not initialized");
+  guarantee(index < length(), "Index out of bounds index: %zu length: %zu", index, length());
 }
 
 void G1BiasedMappedArrayBase::verify_biased_index(idx_t biased_index) const {
-  guarantee(_biased_base != NULL, "Array not initialized");
+  guarantee(_biased_base != nullptr, "Array not initialized");
   guarantee(biased_index >= bias() && biased_index < (bias() + length()),
-            "Biased index out of bounds, index: " SIZE_FORMAT " bias: " SIZE_FORMAT " length: " SIZE_FORMAT,
+            "Biased index out of bounds, index: %zu bias: %zu length: %zu",
             biased_index, bias(), length());
 }
 
 void G1BiasedMappedArrayBase::verify_biased_index_inclusive_end(idx_t biased_index) const {
-  guarantee(_biased_base != NULL, "Array not initialized");
+  guarantee(_biased_base != nullptr, "Array not initialized");
   guarantee(biased_index >= bias() && biased_index <= (bias() + length()),
-            "Biased index out of inclusive bounds, index: " SIZE_FORMAT " bias: " SIZE_FORMAT " length: " SIZE_FORMAT,
+            "Biased index out of inclusive bounds, index: %zu bias: %zu length: %zu",
             biased_index, bias(), length());
 }
 

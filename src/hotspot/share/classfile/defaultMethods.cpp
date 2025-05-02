@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/symbolTable.hpp"
@@ -36,7 +36,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
@@ -865,29 +864,12 @@ void DefaultMethods::generate_default_methods(
   log_debug(defaultmethods)("Default method processing complete");
 }
 
-static int assemble_method_error(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message) {
-
-  Symbol* init = vmSymbols::object_initializer_name();
-  Symbol* sig = vmSymbols::string_void_signature();
-
-  BytecodeAssembler assem(buffer, cp);
-
-  assem._new(errorName);
-  assem.dup();
-  assem.load_string(message);
-  assem.invokespecial(errorName, init, sig);
-  assem.athrow();
-
-  return 3; // max stack size: [ exception, exception, string ]
-}
-
 static Method* new_method(
     BytecodeConstantPool* cp, BytecodeBuffer* bytecodes, Symbol* name,
     Symbol* sig, AccessFlags flags, int max_stack, int params,
     ConstMethod::MethodType mt, TRAPS) {
 
-  address code_start = 0;
+  address code_start = nullptr;
   int code_length = 0;
   InlineTableSizes sizes;
 
@@ -901,10 +883,12 @@ static Method* new_method(
                                mt, name, CHECK_NULL);
 
   m->set_constants(nullptr); // This will get filled in later
-  m->set_name_index(cp->utf8(name));
-  m->set_signature_index(cp->utf8(sig));
-  m->compute_from_signature(sig);
-  m->set_size_of_parameters(params);
+  u2 name_index = cp->utf8(name, CHECK_NULL);
+  m->set_name_index(name_index);
+  u2 sig_index = cp->utf8(sig, CHECK_NULL);
+  m->set_signature_index(sig_index);
+  m->constMethod()->compute_from_signature(sig, flags.is_static());
+  assert(m->size_of_parameters() == params, "should be computed above");
   m->set_max_stack(max_stack);
   m->set_max_locals(params);
   m->constMethod()->set_stackmap_data(nullptr);
@@ -954,9 +938,10 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
 
   GrowableArray<Method*> overpasses;
   GrowableArray<Method*> defaults;
-  BytecodeConstantPool bpool(klass->constants());
 
   BytecodeBuffer* buffer = nullptr; // Lazily create a reusable buffer
+  BytecodeConstantPool* bpool = nullptr;
+
   for (int i = 0; i < slots->length(); ++i) {
     EmptyVtableSlot* slot = slots->at(i);
 
@@ -989,11 +974,15 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
         } else {
           buffer->clear();
         }
-        int max_stack = assemble_method_error(&bpool, buffer,
-           method->get_exception_name(), method->get_exception_message());
+        // Lazily allocate bytecode constant pool also.
+        if (bpool == nullptr) {
+          bpool = new BytecodeConstantPool(klass->constants());
+        }
+        int max_stack = BytecodeAssembler::assemble_method_error(bpool, buffer,
+           method->get_exception_name(), method->get_exception_message(), CHECK);
         AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
-        Method* m = new_method(&bpool, buffer, slot->name(), slot->signature(),
+        Method* m = new_method(bpool, buffer, slot->name(), slot->signature(),
           flags, max_stack, slot->size_of_parameters(),
           ConstMethod::OVERPASS, CHECK);
         // We push to the methods list:
@@ -1010,7 +999,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
   log_debug(defaultmethods)("Created %d default  methods", defaults.length());
 
   if (overpasses.length() > 0) {
-    switchover_constant_pool(&bpool, klass, &overpasses, CHECK);
+    switchover_constant_pool(bpool, klass, &overpasses, CHECK);
     merge_in_new_methods(klass, &overpasses, CHECK);
   }
   if (defaults.length() > 0) {
@@ -1073,13 +1062,18 @@ static void merge_in_new_methods(InstanceKlass* klass,
   Array<int>* original_ordering = klass->method_ordering();
   Array<int>* merged_ordering = Universe::the_empty_int_array();
 
-  int new_size = klass->methods()->length() + new_methods->length();
+  int new_methods_length = klass->methods()->length() + new_methods->length();
+  if (new_methods_length > USHRT_MAX) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(),
+                "error methods for default method processing created too many methods");
+  }
+  u2 new_size = static_cast<u2>(new_methods_length);
 
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
       klass->class_loader_data(), new_size, nullptr, CHECK);
 
   // original_ordering might be empty if this class has no methods of its own
-  if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
+  if (JvmtiExport::can_maintain_original_method_order() || CDSConfig::is_dumping_archive()) {
     merged_ordering = MetadataFactory::new_array<int>(
         klass->class_loader_data(), new_size, CHECK);
   }
@@ -1091,7 +1085,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
   int orig_idx = 0;
   int new_idx = 0;
 
-  for (int i = 0; i < new_size; ++i) {
+  for (u2 i = 0; i < new_size; ++i) {
     Method* orig_method = nullptr;
     Method* new_method = nullptr;
     if (orig_idx < original_methods->length()) {

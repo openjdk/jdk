@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
 import com.sun.management.GcInfo;
-import sun.management.Util;
 
 /**
  * Helper class to build composite data.

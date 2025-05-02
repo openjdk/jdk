@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package jdk.jfr.internal.tool;
 import java.io.PrintStream;
 import java.util.Deque;
 import java.util.List;
+
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 final class Help extends Command {
 

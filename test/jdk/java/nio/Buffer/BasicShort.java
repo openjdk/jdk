@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@
 
 
 import java.nio.*;
+
+
+
 
 
 
@@ -537,18 +540,6 @@ public class BasicShort
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              ShortBuffer xb, ShortBuffer yb,
                              short x, short y) {
@@ -625,6 +616,60 @@ public class BasicShort
 
         absBulkPutArray(b);
         absBulkGet(b);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

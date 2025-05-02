@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package sun.net.www.protocol.http;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.Set;
 
 import sun.net.www.*;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class is used to parse the information in WWW-Authenticate: and Proxy-Authenticate:
@@ -90,14 +90,14 @@ public class AuthenticationHeader {
     // When set true, do not use Negotiate even if the response
     // headers suggest so.
     boolean dontUseNegotiate = false;
-    static String authPref=null;
+    private static final String authPref;
 
     public String toString() {
         return "AuthenticationHeader: prefer " + preferred_r;
     }
 
     static {
-        authPref = GetPropertyAction.privilegedGetProperty("http.auth.preference");
+        String pref = System.getProperty("http.auth.preference");
 
         // http.auth.preference can be set to SPNEGO or Kerberos.
         // In fact they means "Negotiate with SPNEGO" and "Negotiate with
@@ -105,12 +105,13 @@ public class AuthenticationHeader {
         // Negotiate. Read NegotiateAuthentication.java to see how they
         // were used later.
 
-        if (authPref != null) {
-            authPref = authPref.toLowerCase();
-            if(authPref.equals("spnego") || authPref.equals("kerberos")) {
-                authPref = "negotiate";
+        if (pref != null) {
+            pref = pref.toLowerCase(Locale.ROOT);
+            if (pref.equals("spnego") || pref.equals("kerberos")) {
+                pref = "negotiate";
             }
         }
+        authPref = pref;
     }
 
     String hdrname; // Name of the header to look for

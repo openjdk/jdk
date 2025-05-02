@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
  */
 package java.util.stream;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountedCompleter;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
+import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Factory for creating instances of {@code TerminalOp} that perform an
@@ -364,10 +367,13 @@ final class ForEachOps {
         private final PipelineHelper<T> helper;
         private Spliterator<S> spliterator;
         private final long targetSize;
-        private final ConcurrentHashMap<ForEachOrderedTask<S, T>, ForEachOrderedTask<S, T>> completionMap;
         private final Sink<T> action;
         private final ForEachOrderedTask<S, T> leftPredecessor;
         private Node<T> node;
+
+        private ForEachOrderedTask<S, T> next;
+        private static final VarHandle NEXT = MhUtil.findVarHandle(
+                MethodHandles.lookup(), "next", ForEachOrderedTask.class);
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,
@@ -376,8 +382,6 @@ final class ForEachOps {
             this.helper = helper;
             this.spliterator = spliterator;
             this.targetSize = AbstractTask.suggestTargetSize(spliterator.estimateSize());
-            // Size map to avoid concurrent re-sizes
-            this.completionMap = new ConcurrentHashMap<>(Math.max(16, AbstractTask.getLeafTarget() << 1));
             this.action = action;
             this.leftPredecessor = null;
         }
@@ -389,7 +393,6 @@ final class ForEachOps {
             this.helper = parent.helper;
             this.spliterator = spliterator;
             this.targetSize = parent.targetSize;
-            this.completionMap = parent.completionMap;
             this.action = parent.action;
             this.leftPredecessor = leftPredecessor;
         }
@@ -410,6 +413,10 @@ final class ForEachOps {
                 ForEachOrderedTask<S, T> rightChild =
                     new ForEachOrderedTask<>(task, rightSplit, leftChild);
 
+                // leftChild and rightChild were just created and not fork():ed
+                // yet so no need for a volatile write
+                leftChild.next = rightChild;
+
                 // Fork the parent task
                 // Completion of the left and right children "happens-before"
                 // completion of the parent
@@ -417,7 +424,6 @@ final class ForEachOps {
                 // Completion of the left child "happens-before" completion of
                 // the right child
                 rightChild.addToPendingCount(1);
-                task.completionMap.put(leftChild, rightChild);
 
                 // If task is not on the left spine
                 if (task.leftPredecessor != null) {
@@ -433,7 +439,7 @@ final class ForEachOps {
                     leftChild.addToPendingCount(1);
                     // Update association of left-predecessor to left-most
                     // leaf node of right subtree
-                    if (task.completionMap.replace(task.leftPredecessor, task, leftChild)) {
+                    if (NEXT.compareAndSet(task.leftPredecessor, task, leftChild)) {
                         // If replaced, adjust the pending count of the parent
                         // to complete when its children complete
                         task.addToPendingCount(-1);
@@ -499,7 +505,8 @@ final class ForEachOps {
             // "happens-before" completion of the associated left-most leaf task
             // of right subtree (if any, which can be this task's right sibling)
             //
-            ForEachOrderedTask<S, T> leftDescendant = completionMap.remove(this);
+            @SuppressWarnings("unchecked")
+            var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, null);
             if (leftDescendant != null)
                 leftDescendant.tryComplete();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_25)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -128,15 +128,16 @@ public class PrintingProcessor extends AbstractProcessor {
                 // Don't print out the constructor of an anonymous class
                 if (kind == CONSTRUCTOR &&
                     enclosing != null &&
-                    NestingKind.ANONYMOUS ==
+                    (NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
                     (new SimpleElementVisitor14<NestingKind, Void>() {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();
                         }
-                    }).visit(enclosing))
+                    }).visit(enclosing)) ) {
                     return this;
+                }
 
                 defaultAction(e, true);
                 printFormalTypeParameters(e, true);
@@ -154,14 +155,25 @@ public class PrintingProcessor extends AbstractProcessor {
                     break;
                 }
 
-                writer.print("(");
-                printParameters(e);
-                writer.print(")");
-                AnnotationValue defaultValue = e.getDefaultValue();
-                if (defaultValue != null)
-                    writer.print(" default " + defaultValue);
+                if (elementUtils.isCompactConstructor(e)) {
+                    // A record's compact constructor by definition
+                    // lacks source-explicit parameters and lacks a
+                    // throws clause.
+                    writer.print(" {} /* compact constructor */ ");
+                } else {
+                    writer.print("(");
+                    printParameters(e);
+                    writer.print(")");
 
-                printThrows(e);
+                    // Display any default values for an annotation
+                    // interface element
+                    AnnotationValue defaultValue = e.getDefaultValue();
+                    if (defaultValue != null)
+                        writer.print(" default " + defaultValue);
+
+                    printThrows(e);
+                }
+
                 writer.println(";");
             }
             return this;
@@ -174,6 +186,16 @@ public class PrintingProcessor extends AbstractProcessor {
             NestingKind nestingKind = e.getNestingKind();
 
             if (NestingKind.ANONYMOUS == nestingKind) {
+                // Print nothing for an anonymous class used for an
+                // enum constant body.
+                TypeMirror supertype = e.getSuperclass();
+                if (supertype.getKind() != TypeKind.NONE) {
+                    TypeElement superClass = (TypeElement)(((DeclaredType)supertype).asElement());
+                    if (superClass.getKind() == ENUM) {
+                        return this;
+                    }
+                }
+
                 // Print out an anonymous class in the style of a
                 // class instance creation expression rather than a
                 // class declaration.
@@ -297,7 +319,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT)
                 writer.print(e.getSimpleName());
             else {
-                writer.print(e.asType().toString() + " " + e.getSimpleName() );
+                writer.print(e.asType().toString() + " " + (e.getSimpleName().isEmpty() ? "_" : e.getSimpleName()));
                 Object constantValue  = e.getConstantValue();
                 if (constantValue != null) {
                     writer.print(" = ");
@@ -675,6 +697,12 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         private void printPermittedSubclasses(TypeElement e) {
+            if (e.getKind() == ENUM) {
+                // any permitted classes on an enum are anonymous
+                // classes for enum bodies, elide.
+                return;
+            }
+
             List<? extends TypeMirror> subtypes = e.getPermittedSubclasses();
             if (!subtypes.isEmpty()) { // could remove this check with more complicated joining call
                 writer.print(" permits ");

@@ -26,7 +26,6 @@
 #define CPU_ARM_INTERP_MASM_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -69,7 +68,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   inline void check_extended_sp(Register tmp) {}
   inline void check_no_cached_stack_top(Register tmp) {}
 
-
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_locals() {
@@ -83,25 +81,24 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Helpers for runtime call arguments/results
   void get_const(Register reg)                             { ldr(reg, Address(Rmethod, Method::const_offset())); }
   void get_constant_pool(Register reg)                     { get_const(reg); ldr(reg, Address(reg, ConstMethod::constants_offset())); }
-  void get_constant_pool_cache(Register reg)               { get_constant_pool(reg); ldr(reg, Address(reg, ConstantPool::cache_offset_in_bytes())); }
-  void get_cpool_and_tags(Register cpool, Register tags)   { get_constant_pool(cpool); ldr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes())); }
+  void get_constant_pool_cache(Register reg)               { get_constant_pool(reg); ldr(reg, Address(reg, ConstantPool::cache_offset())); }
+  void get_cpool_and_tags(Register cpool, Register tags)   { get_constant_pool(cpool); ldr(tags, Address(cpool, ConstantPool::tags_offset())); }
 
   // Sets reg. Blows Rtemp.
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
 
   // Sets index. Blows reg_tmp.
   void get_index_at_bcp(Register index, int bcp_offset, Register reg_tmp, size_t index_size = sizeof(u2));
-  // Sets cache, index.
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  // Sets cache. Blows reg_tmp.
-  void get_cache_entry_pointer_at_bcp(Register cache, Register reg_tmp, int bcp_offset, size_t index_size = sizeof(u2));
 
   // Load object from cpool->resolved_references(*bcp+1)
   void load_resolved_reference_at_index(Register result, Register tmp);
 
   // load cpool->resolved_klass_at(index); Rtemp is corrupted upon return
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
+
+  void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
@@ -200,10 +197,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Debugging
   void interp_verify_oop(Register reg, TosState state, const char* file, int line);    // only if +VerifyOops && state == atos
-
-  void verify_FPU(int stack_depth, TosState state = ftos) {
-    // No VFP state verification is required for ARM
-  }
 
   // Object locking
   void lock_object  (Register lock_reg);

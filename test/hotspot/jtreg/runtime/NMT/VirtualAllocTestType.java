@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocTestType
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.whitebox.WhiteBox;
 
 public class VirtualAllocTestType {
@@ -44,36 +42,120 @@ public class VirtualAllocTestType {
     OutputAnalyzer output;
     long commitSize = 128 * 1024;
     long reserveSize = 256 * 1024;
-    long addr;
+    long addr1, addr2;
 
-    String pid = Long.toString(ProcessTools.getProcessId());
-    ProcessBuilder pb = new ProcessBuilder();
+    String info = "start";
 
-    addr = wb.NMTReserveMemory(reserveSize);
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail"});
+    try {
+      // ------
+      // Reserve first mapping
+      addr1 = wb.NMTReserveMemory(reserveSize);
+      info = "reserve 1: addr1=" + addr1;
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=256KB, committed=0KB)");
-    output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved 256KB for Test");
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 256, 0);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
 
-    wb.NMTCommitMemory(addr, commitSize);
+      // ------
+      // Reserve second mapping
+      addr2 = wb.NMTReserveMemory(reserveSize);
+      info = "reserve 2: addr2=" + addr2;
 
+      // If the second mapping happens to be adjacent to the first mapping, reserve another mapping and release the second mapping; for
+      // this test, we want to see two disjunct mappings.
+      if (addr2 == addr1 + reserveSize) {
+        long tmp = wb.NMTReserveMemory(reserveSize);
+        wb.NMTReleaseMemory(addr2, reserveSize);
+        addr2 = tmp;
+      }
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=256KB, committed=128KB)");
-    output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed 128KB");
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 512, 0);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
 
-    wb.NMTUncommitMemory(addr, commitSize);
+      // ------
+      // Now commit the first mapping
+      wb.NMTCommitMemory(addr1, commitSize);
+      info = "commit 1";
 
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 512, 128);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=256KB, committed=0KB)");
-    output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed");
+      // ------
+      // Now commit the second mapping
+      wb.NMTCommitMemory(addr2, commitSize);
+      info = "commit 2";
 
-    wb.NMTReleaseMemory(addr, reserveSize);
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 512, 256);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + commitSize) + "\\] committed 128KB");
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("Test (reserved=");
-    output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved");
+      // ------
+      // Now uncommit the second mapping
+      wb.NMTUncommitMemory(addr2, commitSize);
+      info = "uncommit 2";
+
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 512, 128);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + commitSize) + "\\] committed 128KB");
+
+      // ------
+      // Now uncommit the first mapping
+      wb.NMTUncommitMemory(addr1, commitSize);
+      info = "uncommit 1";
+
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 512, 0);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + commitSize) + "\\] committed 128KB");
+
+      // ----------
+      // Release second mapping
+      wb.NMTReleaseMemory(addr2, reserveSize);
+      info = "release 2";
+
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 256, 0);
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + commitSize) + "\\] committed 128KB");
+
+      // ----------
+      // Release first mapping
+      wb.NMTReleaseMemory(addr1, reserveSize);
+      info = "release 1";
+
+      output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+      checkReservedCommittedSummary(output, 0, 0);
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr1) + " - 0x[0]*" + Long.toHexString(addr1 + commitSize) + "\\] committed 128KB");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + reserveSize) + "\\] reserved 256KB for Test");
+      output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr2) + " - 0x[0]*" + Long.toHexString(addr2 + commitSize) + "\\] committed 128KB");
+
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage() + " (" + info + ")");
+    }
+  }
+
+  static long peakKB = 0;
+
+  public static void checkReservedCommittedSummary(OutputAnalyzer output, long reservedKB, long committedKB) {
+    if (committedKB > peakKB) {
+      peakKB = committedKB;
+    }
+    NMTTestUtils.checkReservedCommittedSummary(output, reservedKB, committedKB, peakKB);
   }
 }

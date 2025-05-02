@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import java.util.stream.Collectors;
  */
 class TypePrinter extends Printer {
 
-    private static final String OBJECT = "Object";
+     //only used in erroneous/non-standard circumstances; OK to use a FQN:
+    private static final String OBJECT = "java.lang.Object";
 
     private final JavacMessages messages;
     private final Types types;

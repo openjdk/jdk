@@ -34,19 +34,29 @@ There are various ways how to set up and run a test within the `main()` method o
 The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.
 
 ### 2.1 Different Tests
-There are three kinds of tests depending on how much control is needed over the test invocation.
-#### Base Tests
-The simplest form of testing provides a single `@Test` annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide.
+There are two ways a test can be written, depending on how much control is needed over the test invocation.
 
-More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
+#### Normal Test
+The normal and simplest form of testing provides a single `@Test` annotated method which the framework invokes directly as part of the testing. The test method either has no arguments, or they must be specified with an `@Arguments` annotation.
 
-#### Checked Tests
-The base tests do not provide any way of verification by user code. A checked test enables this by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
+Arguments can be provided with `@Arguments(values = {...})` by providing well-specified inputs for each individual argument. Alternatively, a setup method can be chosen with `@Arguments(setup = "setupMethodName")`, which computes arguments and can also set fields.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
+More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [NormalTestExample](../../../testlibrary_tests/ir_framework/examples/NormalTestExample.java).
+
+##### Setup Method
+A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A `@Test` annotated method can additionally be annotated with `@Arguments(setup = "setupMethodName")` to define the dedicated `@Setup` method.
+
+More information on normal tests with `@Setup` methods together with a precise definition can be found in the Javadocs of [Setup](./Setup.java). Concrete examples on how to specify a setup method can be found in [SetupExample](../../../testlibrary_tests/ir_framework/examples/SetupExample.java).
+
+##### Check Method
+A `@Check(test = "checkMethodName")` annotated method is invoked directly after the `@Test` annotated method `checkMethodName()` is executed. The user can perform various checks, such as test method return value and field value verification.
+
+More information on check methods with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify check methods can be found in [CheckedTestExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
+
+Note: `@Setup` and `@Check` methods can only be specified for normal but not for custom run tests (see next section).
 
 #### Custom Run Tests
-Neither the base nor the checked tests provide any control over how a `@Test` annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to his/her needs.
+A custom run test gives full control over the invocation of the `@Test` annotated method to the user which includes argument and field setup as well as result and field value verification. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to their needs.
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
@@ -71,9 +81,29 @@ public void test() {
 }
 ```
 
+#### Vector IR Nodes
+For vector nodes, we not only check for the presence of the node, but also its type and size (number of elements in the vector). Every node has an associated type, for example `IRNode.LOAD_VECTOR_I` has type `int` and `IRNode.LOAD_VECTOR_F` has type `float`. The size can be explicitly specified as an additional argument. For example:
+
+```
+@IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE_16, "> 0"},
+    applyIf = {"MaxVectorSize", "=64"},
+    applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+static float[] test() {
+    float[] a = new float[1024*8];
+    for (int i = 0; i < a.length; i++) {
+        a[i]++;
+    }
+    return a;
+}
+```
+
+However, the size does not have to be specified. In most cases, one either wants to have vectorization at the maximal possible vector width, or no vectorization at all. Hence, for lower bound counts ('>' or '>=') and equal count comparisons with strictly positive count (e.g. "=2") the default size is `IRNode.VECTOR_SIZE_MAX`, and for upper bound counts ('<' or '<=' or '=0' or failOn) the default is `IRNode.VECTOR_SIZE_ANY`. On machines with 'canTrustVectorSize == false' (default Cascade Lake) the maximal vector width is not predictable currently (32 byte for SuperWord and 64 byte for VectorAPI). Hence, on such a machine we have to automatically weaken the IR rules. All lower bound counts are performed checking with `IRNode.VECTOR_SIZE_ANY`. Upper bound counts with no user specified size are performed with `IRNode.VECTOR_SIZE_ANY` but upper bound counts with a user specified size are not checked at all. Equal count comparisons with strictly positive count are also not checked at all. Details and reasoning can be found in [RawIRNode](./driver/irmatching/irrule/checkattribute/parsing/RawIRNode.java).
+
+More examples can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java). You can also find many examples in the Vector API and SuperWord tests, when searching for `IRNode.VECTOR_SIZE` or `IRNode.LOAD_VECTOR`.
+
 #### User-defined Regexes
 
-The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to [IRNode](./IRNode.java) for it instead together with a static regex mapping block.
+The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If a user-defined regex corresponds to a C2 IR node that is not yet supported, it is recommended to add a new placeholder string definition for the IR node to [IRNode](./IRNode.java), along with a corresponding static regex mapping block.
 
 #### Default Compile Phase
 When not specifying any compile phase with `phase` in [@IR](./IR.java) (or explicitly setting `CompilePhase.DEFAULT`), the framework will perform IR matching on a default compile phase which for most IR nodes is `CompilePhase.PRINT_IDEAL` (output of flag `-XX:+PrintIdeal`, the state of the machine independent ideal graph after applying optimizations). The default phase for each IR node is defined in the static regex mapping block below each IR node placeholder string in [IRNode](./IRNode.java).
@@ -85,7 +115,7 @@ The [@IR](./IR.java) annotation provides two kinds of checks:
  - `counts`: A list of one or more "IR node/user-defined regex - counter" pairs which specify how often each IR node/user-defined regex should be matched on the compilation output of each compile phase.
 
 #### Disable/Enable IR Rules based on VM Flags
-One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITE_LIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
+One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
 
 - `applyIf`: Only apply a rule if a flag has the specified value/range of values.
 - `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
@@ -94,8 +124,14 @@ One might also want to restrict the application of certain `@IR` rules depending
 - `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
 
 #### Disable/Enable IR Rules based on available CPU Features
-Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with
-the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+
+If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. It's worth noting that flags in `applyIf` are checked only if the CPU features in `applyIfCPUFeature` are matched when they are both specified. This avoids the VM flag being evaluated on hardware that does not support it. An example with both `applyIfCPUFeatureXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
+
+#### Disable/Enable IR Rules based on Platform
+`@IR` rules based on the platform can be specified using `applyIfPlatformXXX` in [@IR](./IR.java). A reference for using these attributes can be found in [TestPlatformChecks](../../../testlibrary_tests/ir_framework/tests/TestPlatformChecks.java) (internal framework test).
+
+Platform attributes are evaluated as a logical conjunction, and take precedence over VM Flag attributes. An example with both `applyIfPlatformXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
@@ -118,10 +154,19 @@ The framework allows the use of additional compiler control annotations for help
 - [@DontInline](./DontInline.java)
 - [@ForceInline](./ForceInline.java)
 - [@DontCompile](./DontCompile.java)
-- [@ForceCompile](./DontCompile.java)
+- [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
-### 2.5 Framework Debug and Stress Flags
+### 2.5 IR Tests with Privileged Classes
+To run tests in a privileged mode (e.g. when using `@Stable`, `@Contended`, `@ReservedStackAccess` etc.), one need to add the test classes to the boot classpath. This can easily be achieved by calling `TestFramework.addTestClassesToBootClassPath()` on the test framework object:
+```
+TestFramework testFramework = new TestFramework();
+testFramework
+        .addTestClassesToBootClassPath()
+        .start();
+```
+
+### 2.6 Framework Debug and Stress Flags
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
@@ -133,6 +178,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
+- `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before meassurement.
 - `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
 - `-DExcluceRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.

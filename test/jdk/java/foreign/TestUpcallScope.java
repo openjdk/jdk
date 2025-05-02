@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ * @run testng/othervm/native -Xcheck:jni -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestUpcallScope
  */
@@ -56,7 +54,7 @@ public class TestUpcallScope extends TestUpcallBase {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object>> argChecks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow(fName);
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             FunctionDescriptor descriptor = function(ret, paramTypes, fields);
             MethodHandle mh = downcallHandle(LINKER, addr, arena, descriptor);
             AtomicReference<Object[]> capturedArgs = new AtomicReference<>();

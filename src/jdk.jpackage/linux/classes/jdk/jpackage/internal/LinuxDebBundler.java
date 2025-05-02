@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
@@ -82,11 +86,15 @@ public class LinuxDebBundler extends LinuxPackageBundler {
             },
             (s, p) -> {
                 if (!DEB_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    throw new IllegalArgumentException(new ConfigException(
+                    try {
+                        throw new ConfigException(
                             MessageFormat.format(I18N.getString(
-                            "error.invalid-value-for-package-name"), s),
+                            "error.deb-invalid-value-for-package-name"), s),
                             I18N.getString(
-                            "error.invalid-value-for-package-name.advice")));
+                            "error.deb-invalid-value-for-package-name.advice"));
+                    } catch (ConfigException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
 
                 return s;
@@ -200,6 +208,24 @@ public class LinuxDebBundler extends LinuxPackageBundler {
             Map<String, ? super Object> params,
             LibProvidersLookup libProvidersLookup) {
 
+        libProvidersLookup.setPackageLookup(file -> {
+            Path realPath = file.toRealPath();
+
+            try {
+                // Try the real path first as it works better on newer Ubuntu versions
+                return findProvidingPackages(realPath);
+            } catch (IOException ex) {
+                // Try the default path if differ
+                if (!realPath.toString().equals(file.toString())) {
+                    return findProvidingPackages(file);
+                } else {
+                    throw ex;
+                }
+            }
+        });
+    }
+
+    private static Stream<String> findProvidingPackages(Path file) throws IOException {
         //
         // `dpkg -S` command does glob pattern lookup. If not the absolute path
         // to the file is specified it might return mltiple package names.
@@ -242,32 +268,30 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         // 4. Arch suffix should be stripped from accepted package names.
         //
 
-        libProvidersLookup.setPackageLookup(file -> {
-            Set<String> archPackages = new HashSet<>();
-            Set<String> otherPackages = new HashSet<>();
+        Set<String> archPackages = new HashSet<>();
+        Set<String> otherPackages = new HashSet<>();
 
-            Executor.of(TOOL_DPKG, "-S", file.toString())
-                    .saveOutput(true).executeExpectSuccess()
-                    .getOutput().forEach(line -> {
-                        Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);
-                        if (matcher.find()) {
-                            String name = matcher.group(1);
-                            if (name.endsWith(":" + DEB_ARCH)) {
-                                // Strip arch suffix
-                                name = name.substring(0,
-                                        name.length() - (DEB_ARCH.length() + 1));
-                                archPackages.add(name);
-                            } else {
-                                otherPackages.add(name);
-                            }
+        Executor.of(TOOL_DPKG, "-S", file.toString())
+                .saveOutput(true).executeExpectSuccess()
+                .getOutput().forEach(line -> {
+                    Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);
+                    if (matcher.find()) {
+                        String name = matcher.group(1);
+                        if (name.endsWith(":" + DEB_ARCH)) {
+                            // Strip arch suffix
+                            name = name.substring(0,
+                                    name.length() - (DEB_ARCH.length() + 1));
+                            archPackages.add(name);
+                        } else {
+                            otherPackages.add(name);
                         }
-                    });
+                    }
+                });
 
-            if (!archPackages.isEmpty()) {
-                return archPackages.stream();
-            }
-            return otherPackages.stream();
-        });
+        if (!archPackages.isEmpty()) {
+            return archPackages.stream();
+        }
+        return otherPackages.stream();
     }
 
     @Override
@@ -470,12 +494,20 @@ public class LinuxDebBundler extends LinuxPackageBundler {
 
     private Path buildDeb(Map<String, ? super Object> params,
             Path outdir) throws IOException {
+
+        PlatformPackage thePackage = createMetaPackage(params);
+
+        new ScriptRunner()
+              .setDirectory(thePackage.sourceRoot())
+              .setResourceCategoryId("resource.post-app-image-script")
+              .setScriptNameSuffix("post-image")
+              .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
+              .run(params);
+
         Path outFile = outdir.resolve(
                 FULL_PACKAGE_NAME.fetchFrom(params)+".deb");
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.outputting-to-location"), outFile.toAbsolutePath().toString()));
-
-        PlatformPackage thePackage = createMetaPackage(params);
 
         List<String> cmdline = new ArrayList<>();
         cmdline.addAll(List.of(TOOL_FAKEROOT, TOOL_DPKG_DEB));
@@ -508,7 +540,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
 
     @Override
     public boolean supported(boolean runtimeInstaller) {
-        return Platform.isLinux() && (new ToolValidator(TOOL_DPKG_DEB).validate() == null);
+        return OperatingSystem.isLinux() && (new ToolValidator(TOOL_DPKG_DEB).validate() == null);
     }
 
     @Override

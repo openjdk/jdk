@@ -23,6 +23,7 @@
  /*
  * @test
  * @bug 6357905
+ * @key printer
  * @summary  JobAttributes.getFromPage() and getToPage() always returns 1
  * @run main/manual JobAttrUpdateTest
  */

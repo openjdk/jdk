@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
+import jdk.jpackage.internal.model.ConfigException;
+
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
@@ -62,18 +63,18 @@ public class MacAppBundler extends AppImageBundler {
                     String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
                     String result = null;
                     if (APP_STORE.fetchFrom(params)) {
-                        result = MacBaseInstallerBundler.findKey(
+                        result = MacCertificate.findCertificateKey(
                             "3rd Party Mac Developer Application: ",
                             user, keychain);
                     }
                     // if either not signing for app store or couldn't find
                     if (result == null) {
-                        result = MacBaseInstallerBundler.findKey(
+                        result = MacCertificate.findCertificateKey(
                             "Developer ID Application: ", user, keychain);
                     }
 
                     if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result);
+                        MacCertificate certificate = new MacCertificate(result, keychain);
 
                         if (!certificate.isValid()) {
                             Log.error(MessageFormat.format(I18N.getString(
@@ -84,6 +85,13 @@ public class MacAppBundler extends AppImageBundler {
                     return result;
                 },
             (s, p) -> s);
+
+    public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
+            String.class,
+            params -> "",
+            null);
 
     public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX =
             new StandardBundlerParam<>(
@@ -127,27 +135,20 @@ public class MacAppBundler extends AppImageBundler {
         // reject explicitly set sign to true and no valid signature key
         if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
-            String signingIdentity =
-                    DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
-            if (signingIdentity == null) {
-                throw new ConfigException(
-                        I18N.getString("error.explicit-sign-no-cert"),
-                        I18N.getString("error.explicit-sign-no-cert.advice"));
+            // Validate DEVELOPER_ID_APP_SIGNING_KEY only if user provided
+            // SIGNING_KEY_USER.
+            if (!SIGNING_KEY_USER.getIsDefaultValue(params)) { // --mac-signing-key-user-name
+                String signingIdentity =
+                        DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+                if (signingIdentity == null) {
+                    throw new ConfigException(
+                            I18N.getString("error.explicit-sign-no-cert"),
+                            I18N.getString("error.explicit-sign-no-cert.advice"));
+                }
             }
 
-            // Signing will not work without Xcode with command line developer tools
-            try {
-                ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "--help");
-                Process p = pb.start();
-                int code = p.waitFor();
-                if (code != 0) {
-                    throw new ConfigException(
-                        I18N.getString("error.no.xcode.signing"),
-                        I18N.getString("error.no.xcode.signing.advice"));
-                }
-            } catch (IOException | InterruptedException ex) {
-                throw new ConfigException(ex);
-            }
+            // No need to validate --mac-app-image-sign-identity, since it is
+            // pass through option.
         }
     }
 }

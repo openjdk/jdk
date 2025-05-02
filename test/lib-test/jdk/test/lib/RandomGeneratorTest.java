@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class RandomGeneratorTest {
         jvmArgs.add(origFileName);
         int fileNameIndex = jvmArgs.size() - 1;
         String[] cmdLineArgs = jvmArgs.toArray(new String[jvmArgs.size()]);
-        ProcessTools.executeTestJvm(cmdLineArgs).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(cmdLineArgs).shouldHaveExitValue(0);
         String etalon = Utils.fileAsString(origFileName).trim();
         cmdLineArgs[fileNameIndex] = seedOpt.name();
         seedOpt.verify(etalon, cmdLineArgs);
@@ -143,7 +143,7 @@ public class RandomGeneratorTest {
             String output;
             OutputAnalyzer oa;
             try {
-                oa = ProcessTools.executeTestJvm(cmdLine);
+                oa = ProcessTools.executeTestJava(cmdLine);
             } catch (Throwable t) {
                 throw new Error("TESTBUG: Unexpedted exception during jvm execution.", t);
             }

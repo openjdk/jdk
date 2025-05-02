@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,132 +35,139 @@
 extern "C" {
 #endif
 
-jboolean JNICALL jfr_is_enabled();
+jlong JNICALL jfr_elapsed_counter(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_is_disabled();
+jboolean JNICALL jfr_create_jfr(JNIEnv* env, jclass jvm, jboolean simulate_failure);
 
-jboolean JNICALL jfr_is_started();
+jboolean JNICALL jfr_destroy_jfr(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_elapsed_counter(JNIEnv* env, jobject jvm);
+void JNICALL jfr_begin_recording(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_create_jfr(JNIEnv* env, jobject jvm, jboolean simulate_failure);
+jboolean JNICALL jfr_is_recording(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_destroy_jfr(JNIEnv* env, jobject jvm);
+void JNICALL jfr_end_recording(JNIEnv* env, jclass jvm);
 
-void JNICALL jfr_begin_recording(JNIEnv* env, jobject jvm);
+void JNICALL jfr_mark_chunk_final(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_is_recording(JNIEnv* env, jobject jvm);
+jboolean JNICALL jfr_emit_event(JNIEnv* env, jclass jvm, jlong eventTypeId, jlong timeStamp, jlong when);
 
-void JNICALL jfr_end_recording(JNIEnv* env, jobject jvm);
-
-void JNICALL jfr_mark_chunk_final(JNIEnv* env, jobject jvm);
-
-jboolean JNICALL jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventTypeId, jlong timeStamp, jlong when);
-
-jobject JNICALL jfr_get_all_event_classes(JNIEnv* env, jobject jvm);
+jobject JNICALL jfr_get_all_event_classes(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_class_id(JNIEnv* env, jclass jvm, jclass jc);
 
-jstring JNICALL jfr_get_pid(JNIEnv* env, jobject jvm);
+jstring JNICALL jfr_get_pid(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip);
+jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip, jlong stack_filter_id);
 
-jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jobject jvm);
+jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jclass jvm);
 
-void JNICALL jfr_subscribe_log_level(JNIEnv* env, jobject jvm, jobject log_tag, jint id);
+void JNICALL jfr_subscribe_log_level(JNIEnv* env, jclass jvm, jobject log_tag, jint id);
 
-void JNICALL jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message);
+void JNICALL jfr_log(JNIEnv* env, jclass jvm, jint tag_set, jint level, jstring message);
 
-void JNICALL jfr_log_event(JNIEnv* env, jobject jvm, jint level, jobjectArray lines, jboolean system);
+void JNICALL jfr_log_event(JNIEnv* env, jclass jvm, jint level, jobjectArray lines, jboolean system);
 
-void JNICALL jfr_retransform_classes(JNIEnv* env, jobject jvm, jobjectArray classes);
+void JNICALL jfr_retransform_classes(JNIEnv* env, jclass jvm, jobjectArray classes);
 
-void JNICALL jfr_set_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
+void JNICALL jfr_set_enabled(JNIEnv* env, jclass jvm, jlong event_type_id, jboolean enabled);
 
-void JNICALL jfr_set_file_notification(JNIEnv* env, jobject jvm, jlong delta);
+void JNICALL jfr_set_file_notification(JNIEnv* env, jclass jvm, jlong delta);
 
-void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count);
+void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jclass jvm, jlong count);
 
-void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jobject jvm, jlong size);
+void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jclass jvm, jlong size);
 
-void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis);
+void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, jlong type, jlong periodMillis);
 
-void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
+void JNICALL jfr_set_output(JNIEnv* env, jclass jvm, jstring path);
 
-void JNICALL jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth);
+void JNICALL jfr_set_stack_depth(JNIEnv* env, jclass jvm, jint depth);
 
-void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
+void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jclass jvm, jlong event_type_id, jboolean enabled);
 
-void JNICALL jfr_set_thread_buffer_size(JNIEnv* env, jobject jvm, jlong size);
+void JNICALL jfr_set_thread_buffer_size(JNIEnv* env, jclass jvm, jlong size);
 
-void JNICALL jfr_set_memory_size(JNIEnv* env, jobject jvm, jlong size);
+void JNICALL jfr_set_memory_size(JNIEnv* env, jclass jvm, jlong size);
 
-jboolean JNICALL jfr_set_threshold(JNIEnv* env, jobject jvm, jlong event_type_id, jlong thresholdTicks);
+jboolean JNICALL jfr_set_threshold(JNIEnv* env, jclass jvm, jlong event_type_id, jlong thresholdTicks);
 
-void JNICALL jfr_store_metadata_descriptor(JNIEnv* env, jobject jvm, jbyteArray descriptor);
+void JNICALL jfr_store_metadata_descriptor(JNIEnv* env, jclass jvm, jbyteArray descriptor);
 
-jlong JNICALL jfr_id_for_thread(JNIEnv* env, jobject jvm, jobject t);
+jlong JNICALL jfr_id_for_thread(JNIEnv* env, jclass jvm, jobject t);
 
-jboolean JNICALL jfr_allow_event_retransforms(JNIEnv* env, jobject jvm);
+jboolean JNICALL jfr_allow_event_retransforms(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_is_available(JNIEnv* env, jclass jvm);
 
-jdouble JNICALL jfr_time_conv_factor(JNIEnv* env, jobject jvm);
+jdouble JNICALL jfr_time_conv_factor(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_type_id(JNIEnv* env, jobject jvm, jclass jc);
+jlong JNICALL jfr_type_id(JNIEnv* env, jclass jvm, jclass jc);
 
-void JNICALL jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location);
+void JNICALL jfr_set_repository_location(JNIEnv* env, jclass jvm, jstring location);
 
-void JNICALL jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath);
+void JNICALL jfr_set_dump_path(JNIEnv* env, jclass jvm, jstring dumppath);
 
-jstring JNICALL jfr_get_dump_path(JNIEnv* env, jobject jvm);
+jstring JNICALL jfr_get_dump_path(JNIEnv* env, jclass jvm);
 
-jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass cls);
+jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass jvm);
 
-jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass cls);
+jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass cls, jobject writer, jint used_size, jint requested_size);
+void JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
 
-void JNICALL jfr_flush(JNIEnv* env, jobject jvm);
-void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
+jlong JNICALL jfr_commit(JNIEnv* env, jclass cls, jlong next_position);
+void JNICALL jfr_flush(JNIEnv* env, jclass jvm);
+void JNICALL jfr_abort(JNIEnv* env, jclass jvm, jstring errorMsg);
 
 jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong id, jstring string);
 
-void JNICALL jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject thread, jthrowable throwable);
+void JNICALL jfr_uncaught_exception(JNIEnv* env, jclass jvm, jobject thread, jthrowable throwable);
 
-void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, jboolean force);
+void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jboolean force);
 
-jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm);
+jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_type_id, jlong cutoff_ticks);
+jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
-jboolean JNICALL jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
+void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
-void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean, jboolean);
+void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean, jboolean);
 
-jboolean JNICALL jfr_should_rotate_disk(JNIEnv* env, jobject jvm);
+jboolean JNICALL jfr_should_rotate_disk(JNIEnv* env, jclass jvm);
 
-void JNICALL jfr_exclude_thread(JNIEnv* env, jobject jvm, jobject t);
+void JNICALL jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t);
 
-void JNICALL jfr_include_thread(JNIEnv* env, jobject jvm, jobject t);
+void JNICALL jfr_include_thread(JNIEnv* env, jclass jvm, jobject t);
 
-jboolean JNICALL jfr_is_thread_excluded(JNIEnv* env, jobject jvm, jobject t);
+jboolean JNICALL jfr_is_thread_excluded(JNIEnv* env, jclass jvm, jobject t);
 
-jlong JNICALL jfr_chunk_start_nanos(JNIEnv* env, jobject jvm);
+jlong JNICALL jfr_chunk_start_nanos(JNIEnv* env, jclass jvm);
 
-jobject JNICALL jfr_get_configuration(JNIEnv* env, jobject jvm, jobject clazz);
+jobject JNICALL jfr_get_configuration(JNIEnv* env, jclass jvm, jobject clazz);
 
-jboolean JNICALL jfr_set_configuration(JNIEnv* env, jobject jvm, jobject clazz, jobject configuration);
+jboolean JNICALL jfr_set_configuration(JNIEnv* env, jclass jvm, jobject clazz, jobject configuration);
 
-jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
+jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jclass jvm, jstring type);
 
-jboolean JNICALL jfr_is_class_excluded(JNIEnv* env, jobject jvm, jclass clazz);
+jboolean JNICALL jfr_is_class_excluded(JNIEnv* env, jclass jvm, jclass clazz);
 
-jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz);
+jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jclass jvm, jclass clazz);
 
-jboolean JNICALL jfr_is_containerized(JNIEnv* env, jobject jvm);
+jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_host_total_memory(JNIEnv* env, jobject jvm);
+jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
+
+jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
+
+void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
+
+jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
+
+void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
+
+jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
+
+jboolean JNICALL jfr_is_product(JNIEnv* env, jclass jvm);
 
 #ifdef __cplusplus
 }

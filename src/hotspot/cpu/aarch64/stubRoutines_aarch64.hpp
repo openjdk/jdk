@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,154 +34,71 @@ static bool    returns_to_call_stub(address return_pc)   {
   return return_pc == _call_stub_return_address;
 }
 
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
-  code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 45000           // simply increase if too small (assembler will crash if too small)
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 class aarch64 {
  friend class StubGenerator;
+#if INCLUDE_JVMCI
+  friend class JVMCIVMStructs;
+#endif
 
- private:
-  static address _get_previous_sp_entry;
+  // declare fields for arch-specific entries
 
-  static address _f2i_fixup;
-  static address _f2l_fixup;
-  static address _d2i_fixup;
-  static address _d2l_fixup;
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
 
-  static address _vector_iota_indices;
-  static address _float_sign_mask;
-  static address _float_sign_flip;
-  static address _double_sign_mask;
-  static address _double_sign_flip;
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
 
-  static address _zero_blocks;
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
 
-  static address _large_array_equals;
-  static address _compare_long_string_LL;
-  static address _compare_long_string_LU;
-  static address _compare_long_string_UL;
-  static address _compare_long_string_UU;
-  static address _string_indexof_linear_ll;
-  static address _string_indexof_linear_uu;
-  static address _string_indexof_linear_ul;
-  static address _large_byte_array_inflate;
-
-  static address _method_entry_barrier;
-
-  static address _spin_wait;
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
 
   static bool _completed;
 
  public:
 
-  static address _count_positives;
-  static address _count_positives_long;
+  // declare getters for arch-specific entries
 
-  static address get_previous_sp_entry()
-  {
-    return _get_previous_sp_entry;
-  }
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
 
-  static address f2i_fixup()
-  {
-    return _f2i_fixup;
-  }
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
-  static address f2l_fixup()
-  {
-    return _f2l_fixup;
-  }
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
 
-  static address d2i_fixup()
-  {
-    return _d2i_fixup;
-  }
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
 
-  static address d2l_fixup()
-  {
-    return _d2l_fixup;
-  }
+  static address large_arrays_hashcode(BasicType eltype) {
+    switch (eltype) {
+    case T_BOOLEAN:
+      return large_arrays_hashcode_boolean();
+    case T_BYTE:
+      return large_arrays_hashcode_byte();
+    case T_CHAR:
+      return large_arrays_hashcode_char();
+    case T_SHORT:
+      return large_arrays_hashcode_short();
+    case T_INT:
+      return large_arrays_hashcode_int();
+    default:
+      ShouldNotReachHere();
+    }
 
-  static address vector_iota_indices() {
-    return _vector_iota_indices;
-  }
-
-  static address float_sign_mask()
-  {
-    return _float_sign_mask;
-  }
-
-  static address float_sign_flip()
-  {
-    return _float_sign_flip;
-  }
-
-  static address double_sign_mask()
-  {
-    return _double_sign_mask;
-  }
-
-  static address double_sign_flip()
-  {
-    return _double_sign_flip;
-  }
-
-  static address zero_blocks() {
-    return _zero_blocks;
-  }
-
-  static address count_positives() {
-    return _count_positives;
-  }
-
-  static address count_positives_long() {
-      return _count_positives_long;
-  }
-
-  static address large_array_equals() {
-      return _large_array_equals;
-  }
-
-  static address compare_long_string_LL() {
-      return _compare_long_string_LL;
-  }
-
-  static address compare_long_string_LU() {
-      return _compare_long_string_LU;
-  }
-
-  static address compare_long_string_UL() {
-      return _compare_long_string_UL;
-  }
-
-  static address compare_long_string_UU() {
-      return _compare_long_string_UU;
-  }
-
-  static address string_indexof_linear_ul() {
-      return _string_indexof_linear_ul;
-  }
-
-  static address string_indexof_linear_ll() {
-      return _string_indexof_linear_ll;
-  }
-
-  static address string_indexof_linear_uu() {
-      return _string_indexof_linear_uu;
-  }
-
-  static address large_byte_array_inflate() {
-      return _large_byte_array_inflate;
-  }
-
-  static address method_entry_barrier() {
-    return _method_entry_barrier;
-  }
-
-  static address spin_wait() {
-    return _spin_wait;
+    return nullptr;
   }
 
   static bool complete() {
@@ -193,6 +110,8 @@ class aarch64 {
   }
 
 private:
+  static uint16_t  _kyberConsts[];
+  static uint32_t _dilithiumConsts[];
   static juint    _crc_table[];
   static jubyte   _adler_table[];
   // begin trigonometric tables block. See comments in .cpp file

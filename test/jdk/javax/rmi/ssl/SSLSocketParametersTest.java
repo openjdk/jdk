@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 5016500
+ * @library /test/lib/
  * @summary Test SslRmi[Client|Server]SocketFactory SSL socket parameters.
  * @run main/othervm SSLSocketParametersTest 1
  * @run main/othervm SSLSocketParametersTest 2
@@ -33,14 +34,15 @@
  * @run main/othervm SSLSocketParametersTest 6
  * @run main/othervm SSLSocketParametersTest 7
  */
+import jdk.test.lib.Asserts;
+
 import java.io.IOException;
 import java.io.File;
 import java.io.Serializable;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.lang.ref.Reference;
+import java.rmi.ConnectIOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import javax.net.ssl.SSLContext;
@@ -50,121 +52,30 @@ import javax.rmi.ssl.SslRMIServerSocketFactory;
 public class SSLSocketParametersTest implements Serializable {
 
     public interface Hello extends Remote {
-        public String sayHello() throws RemoteException;
+        String sayHello() throws RemoteException;
     }
 
-    public class HelloImpl extends UnicastRemoteObject implements Hello {
-
-        public HelloImpl(int port,
-                         RMIClientSocketFactory csf,
-                         RMIServerSocketFactory ssf)
-            throws RemoteException {
-            super(port, csf, ssf);
-        }
-
+    public class HelloImpl implements Hello {
         public String sayHello() {
             return "Hello World!";
         }
-
-        public Remote runServer() throws IOException {
-            System.out.println("Inside HelloImpl::runServer");
-            // Get a remote stub for this RMI object
-            //
-            Remote stub = toStub(this);
-            System.out.println("Stub = " + stub);
-            return stub;
-        }
     }
 
-    public class HelloClient {
-
-        public void runClient(Remote stub) throws IOException {
-            System.out.println("Inside HelloClient::runClient");
-            // "obj" is the identifier that we'll use to refer
-            // to the remote object that implements the "Hello"
-            // interface
-            Hello obj = (Hello) stub;
-            String message = obj.sayHello();
-            System.out.println(message);
-        }
-    }
-
-    public static class ClientFactory extends SslRMIClientSocketFactory {
-
-        public ClientFactory() {
-            super();
-        }
-
-        public Socket createSocket(String host, int port) throws IOException {
-            System.out.println("ClientFactory::Calling createSocket(" +
-                               host + "," + port + ")");
-            return super.createSocket(host, port);
-        }
-    }
-
-    public static class ServerFactory extends SslRMIServerSocketFactory {
-
-        public ServerFactory() {
-            super();
-        }
-
-        public ServerFactory(String[] ciphers,
-                             String[] protocols,
-                             boolean need) {
-            super(ciphers, protocols, need);
-        }
-
-        public ServerFactory(SSLContext context,
-                             String[] ciphers,
-                             String[] protocols,
-                             boolean need) {
-            super(context, ciphers, protocols, need);
-        }
-
-        public ServerSocket createServerSocket(int port) throws IOException {
-            System.out.println("ServerFactory::Calling createServerSocket(" +
-                               port + ")");
-            return super.createServerSocket(port);
-        }
-    }
-
-    public void testRmiCommunication(RMIServerSocketFactory serverFactory, boolean expectException) {
-
-        HelloImpl server = null;
+    public void testRmiCommunication(RMIServerSocketFactory serverSocketFactory) throws Exception {
+        HelloImpl server = new HelloImpl();
+        Hello stub = (Hello)UnicastRemoteObject.exportObject(server,
+                0, new SslRMIClientSocketFactory(), serverSocketFactory);
         try {
-            server = new HelloImpl(0,
-                                    new ClientFactory(),
-                                    serverFactory);
-            Remote stub = server.runServer();
-            HelloClient client = new HelloClient();
-            client.runClient(stub);
-            if (expectException) {
-                throw new RuntimeException("Test completed without throwing an expected exception.");
-            }
-
-        } catch (IOException exc) {
-            if (!expectException) {
-                throw new RuntimeException("An error occurred during test execution", exc);
-            } else {
-                System.out.println("Caught expected exception: " + exc);
-            }
-
+            String msg = stub.sayHello();
+            Asserts.assertEquals("Hello World!", msg);
+        } finally {
+            Reference.reachabilityFence(server);
         }
     }
 
-    private static void testServerFactory(String[] cipherSuites, String[] protocol, String expectedMessage) throws Exception {
-        try {
-            new ServerFactory(SSLContext.getDefault(),
+    private static void testSslServerSocketFactory(String[] cipherSuites, String[] protocol) throws Exception {
+        new SslRMIServerSocketFactory(SSLContext.getDefault(),
                     cipherSuites, protocol, false);
-            throw new RuntimeException(
-                    "The expected exception for "+ expectedMessage + " was not thrown.");
-        } catch (IllegalArgumentException exc) {
-            // expecting an exception with a specific message
-            // anything else is an error
-            if (!exc.getMessage().toLowerCase().contains(expectedMessage)) {
-                throw exc;
-            }
-        }
     }
 
     public void runTest(int testNumber) throws Exception {
@@ -172,34 +83,49 @@ public class SSLSocketParametersTest implements Serializable {
 
         switch (testNumber) {
             /* default constructor - default config */
-            case 1 -> testRmiCommunication(new ServerFactory(), false);
+            case 1 ->
+                testRmiCommunication(new SslRMIServerSocketFactory());
 
             /* non-default constructor - default config */
-            case 2 -> testRmiCommunication(new ServerFactory(null, null, false), false);
+            case 2 ->
+                testRmiCommunication(new SslRMIServerSocketFactory(null, null, false));
 
             /* needClientAuth=true */
-            case 3 -> testRmiCommunication(new ServerFactory(null, null, null, true), false);
+            case 3 ->
+                testRmiCommunication(new SslRMIServerSocketFactory(null, null, null, true));
 
             /* server side dummy_ciphersuite */
-            case 4 ->
-                testServerFactory(new String[]{"dummy_ciphersuite"}, null, "unsupported ciphersuite");
+            case 4 -> {
+                Exception exc = Asserts.assertThrows(IllegalArgumentException.class,
+                        () -> testSslServerSocketFactory(new String[]{"dummy_ciphersuite"}, null));
+                if (!exc.getMessage().toLowerCase().contains("unsupported ciphersuite")) {
+                    throw exc;
+                }
+            }
 
             /* server side dummy_protocol */
-            case 5 ->
-                testServerFactory(null, new String[]{"dummy_protocol"}, "unsupported protocol");
+            case 5 -> {
+                Exception thrown = Asserts.assertThrows(IllegalArgumentException.class,
+                        () -> testSslServerSocketFactory(null, new String[]{"dummy_protocol"}));
+                if (!thrown.getMessage().toLowerCase().contains("unsupported protocol")) {
+                    throw thrown;
+                }
+            }
 
             /* client side dummy_ciphersuite */
             case 6 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
                         "dummy_ciphersuite");
-                testRmiCommunication(new ServerFactory(), true);
+                Asserts.assertThrows(ConnectIOException.class,
+                        () -> testRmiCommunication(new SslRMIServerSocketFactory()));
             }
 
             /* client side dummy_protocol */
             case 7 -> {
                 System.setProperty("javax.rmi.ssl.client.enabledProtocols",
                         "dummy_protocol");
-                testRmiCommunication(new ServerFactory(), true);
+                Asserts.assertThrows(ConnectIOException.class,
+                        () -> testRmiCommunication(new SslRMIServerSocketFactory()));
             }
 
             default ->

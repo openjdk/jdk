@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,14 @@
 # questions.
 #
 
+################################################################################
+
+# The base module should be built with all warnings enabled. When a
+# new warning is added to javac, it can be temporarily added to the
+# disabled warnings list.
+#
+# DISABLED_WARNINGS_java +=
+
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 JAVAC_FLAGS += -XDstringConcat=inline
@@ -33,7 +41,10 @@ CLEAN += intrinsic.properties
 EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-EXCLUDES += java/lang/doc-files
+EXCLUDES += java/lang/doc-files \
+    java/lang/classfile/snippet-files \
+    java/lang/classfile/components/snippet-files \
+    java/lang/foreign/snippet-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
@@ -48,3 +59,5 @@ ifeq ($(call isTargetOs, windows), true)
       sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
       #
 endif
+
+################################################################################

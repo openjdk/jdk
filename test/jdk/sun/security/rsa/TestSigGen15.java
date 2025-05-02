@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,8 @@ public class TestSigGen15 {
     static boolean runTest(List<SigRecord> records) throws Exception {
         boolean success = true;
         //for (Provider provider : Security.getProviders()) {
-        Provider p = Security.getProvider("SunRsaSign");
+        Provider p = Security.getProvider(
+                System.getProperty("test.provider.name","SunRsaSign"));
         KeyFactory kf = KeyFactory.getInstance("RSA", p);
         for (SigRecord sr : records) {
             System.out.println("==Testing Record : " + sr + "==");

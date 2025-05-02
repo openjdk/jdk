@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,21 @@
 
 /*
  * @test
- * @bug 8167143
+ * @bug 8167143 8174269
  * @summary Test
- * Timezone parsing works for all locales for default providers prefernce
- * as well as when  prefernce list is [COMPAT, CLDR],
- * CLDR implict locales are correctly reflected,
+ * Timezone parsing works for all locales for default providers preference
+ * CLDR implicit locales are correctly reflected,
  * th_TH bundle is not wrongly cached in DateFormatSymbols,
  * correct candidate locale list is retrieved for
  * zh_Hant and zh_Hans and
- * Implict COMPAT Locales nn-NO, nb-NO are reflected in available locales
- * for all Providers for COMPAT.
+ * Implicit COMPAT Locales nn-NO, nb-NO are reflected in available locales
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  *          jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,CLDR Bug8167143 testTimeZone
- * @run main/othervm  Bug8167143 testTimeZone
+ * @run main Bug8167143 testTimeZone
  * @run main/othervm -Djava.locale.providers=CLDR Bug8167143 testCldr
- * @run main/othervm  Bug8167143 testCache
- * @run main/othervm  Bug8167143 testCandidateLocales
- * @run main/othervm  -Djava.locale.providers=COMPAT Bug8167143 testCompat
+ * @run main Bug8167143 testCache
+ * @run main Bug8167143 testCandidateLocales
  */
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -39,6 +38,9 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
   _bootstrap_compilation_request_handled = false;
   _methods_compiled = 0;
+  _ok_upcalls = 0;
+  _err_upcalls = 0;
+  _disabled = false;
   _global_compilation_ticks = 0;
   assert(_instance == nullptr, "only one instance allowed");
   _instance = this;
@@ -54,13 +56,15 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
   return _instance;
 }
 
+void compiler_stubs_init(bool in_compiler_thread);
+
 // Initialization
 void JVMCICompiler::initialize() {
   assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
-
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
   set_state(initialized);
 }
 
@@ -82,7 +86,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {
     methodHandle mh(THREAD, objectMethods->at(i));
-    if (!mh->is_native() && !mh->is_static() && !mh->is_initializer()) {
+    if (!mh->is_native() && !mh->is_static() && !mh->is_object_initializer() && !mh->is_static_initializer()) {
       ResourceMark rm;
       int hot_count = 10; // TODO: what's the appropriate value?
       CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, CompileTask::Reason_Bootstrap, CHECK);
@@ -116,6 +120,9 @@ void JVMCICompiler::bootstrap(TRAPS) {
 }
 
 bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
+  if (_disabled) {
+    return true;
+  }
   if (_bootstrapping) {
     // When bootstrapping, the JVMCI compiler can compile its own methods.
     return false;
@@ -192,6 +199,15 @@ void JVMCICompiler::print_timers() {
   _hosted_code_installs.print_on(tty, "       Install Code:   ");
 }
 
+bool JVMCICompiler::is_intrinsic_supported(const methodHandle& method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  JavaThread* thread = JavaThread::current();
+  JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
+  JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
+  return runtime->is_intrinsic_supported(&jvmciEnv, (jint) id);
+}
+
 void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {
   double time = _timer.seconds();
   st->print_cr("%s%7.3f s (installs: %d, CodeBlob total size: %d, CodeBlob code size: %d)",
@@ -207,6 +223,42 @@ void JVMCICompiler::CodeInstallStats::on_install(CodeBlob* cb) {
 void JVMCICompiler::inc_methods_compiled() {
   Atomic::inc(&_methods_compiled);
   Atomic::inc(&_global_compilation_ticks);
+}
+
+void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_state) {
+  if (error != nullptr) {
+
+    Atomic::inc(&_err_upcalls);
+    int ok = _ok_upcalls;
+    int err = _err_upcalls;
+    // If there have been at least 10 upcalls with an error
+    // and the number of error upcalls is 10% or more of the
+    // number of non-error upcalls, disable JVMCI compilation.
+    if (err > 10 && err * 10 > ok && !_disabled) {
+      _disabled = true;
+      int total = err + ok;
+      // Using stringStream instead of err_msg to avoid truncation
+      stringStream st;
+      st.print("JVMCI compiler disabled "
+               "after %d of %d upcalls had errors (Last error: \"%s\"). "
+               "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      const char* disable_msg = st.freeze();
+      log_warning(jit,compilation)("%s", disable_msg);
+      if (compile_state != nullptr) {
+        const char* disable_error = os::strdup(disable_msg);
+        if (disable_error != nullptr) {
+          compile_state->set_failure(true, disable_error, true);
+          JVMCI_event_1("%s", disable_error);
+          return;
+        } else {
+          // Leave failure reason as set by caller when strdup fails
+        }
+      }
+    }
+    JVMCI_event_1("JVMCI upcall had an error: %s", error);
+  } else {
+    Atomic::inc(&_ok_upcalls);
+  }
 }
 
 void JVMCICompiler::inc_global_compilation_ticks() {

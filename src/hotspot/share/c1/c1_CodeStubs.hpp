@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_C1_C1_CODESTUBS_HPP
 
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/nativeInst.hpp"
@@ -54,7 +54,7 @@ class CodeStub: public CompilationResourceObj {
   // code generation
   void assert_no_unbound_labels()                { assert(!_entry.is_unbound() && !_continuation.is_unbound(), "unbound label"); }
   virtual void emit_code(LIR_Assembler* e) = 0;
-  virtual CodeEmitInfo* info() const             { return NULL; }
+  virtual CodeEmitInfo* info() const             { return nullptr; }
   virtual bool is_exception_throw_stub() const   { return false; }
   virtual bool is_simple_exception_stub() const  { return false; }
   virtual int nr_immediate_oops_patched() const  { return 0; }
@@ -170,7 +170,7 @@ class RangeCheckStub: public CodeStub {
   // For ArrayIndexOutOfBoundsException.
   RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
     : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-    assert(info != NULL, "must have info");
+    assert(info != nullptr, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -178,7 +178,7 @@ class RangeCheckStub: public CodeStub {
   // For IndexOutOfBoundsException.
   RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
     : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-    assert(info != NULL, "must have info");
+    assert(info != nullptr, "must have info");
     _info = new CodeEmitInfo(info);
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -264,10 +264,10 @@ class NewInstanceStub: public CodeStub {
   LIR_Opr          _klass_reg;
   LIR_Opr          _result;
   CodeEmitInfo*    _info;
-  Runtime1::StubID _stub_id;
+  C1StubId         _stub_id;
 
  public:
-  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, Runtime1::StubID stub_id);
+  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -423,7 +423,7 @@ class PatchingStub: public CodeStub {
 
   PatchingStub(MacroAssembler* masm, PatchID id, int index = -1):
       _id(id)
-    , _info(NULL)
+    , _info(nullptr)
     , _index(index) {
     // force alignment of patch sites so we
     // can guarantee atomic writes to the patch site.
@@ -443,7 +443,7 @@ class PatchingStub: public CodeStub {
     _info = info;
     _obj = obj;
     masm->bind(_patch_site_continuation);
-    _bytes_to_copy = masm->pc() - pc_start();
+    _bytes_to_copy = pointer_delta_as_int(masm->pc(), pc_start());
     if (_id == PatchingStub::access_field_id) {
       // embed a fixed offset to handle long patches which need to be offset by a word.
       // the patching code will just add the field offset field to this offset so
@@ -515,11 +515,11 @@ public:
 class SimpleExceptionStub: public CodeStub {
  private:
   LIR_Opr          _obj;
-  Runtime1::StubID _stub;
+  C1StubId         _stub;
   CodeEmitInfo*    _info;
 
  public:
-  SimpleExceptionStub(Runtime1::StubID stub, LIR_Opr obj, CodeEmitInfo* info):
+  SimpleExceptionStub(C1StubId stub, LIR_Opr obj, CodeEmitInfo* info):
     _obj(obj), _stub(stub), _info(info) {
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -546,7 +546,7 @@ class SimpleExceptionStub: public CodeStub {
 
 class ArrayStoreExceptionStub: public SimpleExceptionStub {
  public:
-  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(Runtime1::throw_array_store_exception_id, obj, info) {}
+  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(C1StubId::throw_array_store_exception_id, obj, info) {}
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("ArrayStoreExceptionStub"); }
 #endif // PRODUCT

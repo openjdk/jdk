@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import java.io.IOException;
 import java.net.Authenticator.RequestorType;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.www.HeaderParser;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
-import sun.security.action.GetPropertyAction;
 
 /**
  * NegotiateAuthentication:
@@ -44,12 +44,8 @@ import sun.security.action.GetPropertyAction;
  * @since 1.6
  */
 
-class NegotiateAuthentication extends AuthenticationInfo {
+final class NegotiateAuthentication extends AuthenticationInfo {
 
-    @java.io.Serial
-    private static final long serialVersionUID = 100L;
-
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
     // These maps are used to manage the GSS availability for different
@@ -61,16 +57,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     static ThreadLocal <HashMap <String, Negotiator>> cache = null;
     private static final ReentrantLock negotiateLock = new ReentrantLock();
 
-    /* Whether cache is enabled for Negotiate/Kerberos */
-    private static final boolean cacheSPNEGO;
-    static {
-        String spnegoCacheProp =
-            GetPropertyAction.privilegedGetProperty("jdk.spnego.cache", "true");
-        cacheSPNEGO = Boolean.parseBoolean(spnegoCacheProp);
-    }
-
     // The HTTP Negotiate Helper
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Negotiator negotiator = null;
 
    /**
@@ -80,9 +67,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     public NegotiateAuthentication(HttpCallerInfo hci) {
         super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
-              hci.url,
-              "",
-              AuthenticatorKeys.getKey(hci.authenticator));
+              hci.url, "");
         this.hci = hci;
     }
 
@@ -112,7 +97,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
                 supported = new HashMap<>();
             }
             String hostname = hci.host;
-            hostname = hostname.toLowerCase();
+            hostname = hostname.toLowerCase(Locale.ROOT);
             if (supported.containsKey(hostname)) {
                 return supported.get(hostname);
             }
@@ -153,7 +138,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
 
     @Override
     protected boolean useAuthCache() {
-        return super.useAuthCache() && cacheSPNEGO;
+        return false;
     }
 
     /**
@@ -240,6 +225,22 @@ class NegotiateAuthentication extends AuthenticationInfo {
      */
     private byte[] nextToken(byte[] token) throws IOException {
         return negotiator.nextToken(token);
+    }
+
+    /**
+     * Releases any system resources and cryptographic information stored in
+     * the context object and invalidates the context.
+     */
+    @Override
+    public void disposeContext() {
+        if (negotiator != null) {
+            try {
+                negotiator.disposeContext();
+            } catch (IOException ioEx) {
+                //do not rethrow IOException
+            }
+            negotiator = null;
+        }
     }
 
     // MS will send a final WWW-Authenticate even if the status is already

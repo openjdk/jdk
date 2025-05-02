@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -39,12 +38,10 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4915524
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4915524
  * @run testng/othervm dom.Bug4915524
  * @summary Test Document.adoptNode() shall not throw Exception when the source document object is created from different implementation.
  */
 
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4915524 {
 
     String data = "<?xml version=\"1.0\" ?>" + "<!DOCTYPE root [" + "<!ELEMENT root ANY>" + "<!ATTLIST root attr1 ID #FIXED 'xxx'"

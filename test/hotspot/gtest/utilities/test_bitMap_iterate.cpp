@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
@@ -59,31 +58,81 @@ static void test_iterate_lambda(const BitMap& map,
   ASSERT_EQ(positions_index, positions_size);
 }
 
+static void test_reverse_iterate_lambda(const BitMap& map,
+                                        const idx_t* positions,
+                                        size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with lambda");
+  size_t positions_index = positions_size;
+  auto f = [&](idx_t i) {
+    test_iterate_step(map, i, positions, --positions_index, positions_size);
+  };
+  ASSERT_TRUE(map.reverse_iterate(f));
+  ASSERT_EQ(positions_index, 0u);
+}
+
+
+struct TestBitMapIterationData {
+  const BitMap& _map;
+  const idx_t* _positions;
+  size_t _positions_index;
+  size_t _positions_size;
+
+  TestBitMapIterationData(const BitMap& map,
+                          const idx_t* positions,
+                          size_t positions_index,
+                          size_t positions_size)
+    : _map(map),
+      _positions(positions),
+      _positions_index(positions_index),
+      _positions_size(positions_size)
+  {}
+
+  void test(idx_t index) const {
+    test_iterate_step(_map, index, _positions, _positions_index, _positions_size);
+  }
+};
+
 // Test closure returning bool.  Also tests lambda returning bool.
 static void test_iterate_closure(const BitMap& map,
                                  const idx_t* positions,
                                  size_t positions_size) {
   SCOPED_TRACE("iterate with BitMapClosure");
   struct Closure : public BitMapClosure {
-    const BitMap& _map;
-    const idx_t* _positions;
-    size_t _positions_index;
-    size_t _positions_size;
+    TestBitMapIterationData _data;
 
     Closure(const BitMap& map, const idx_t* positions, size_t positions_size)
-      : _map(map),
-        _positions(positions),
-        _positions_index(0),
-        _positions_size(positions_size)
+      : _data(map, positions, 0, positions_size)
     {}
 
     bool do_bit(idx_t i) override {
-      test_iterate_step(_map, i, _positions, _positions_index++, _positions_size);
+      _data.test(i);
+      _data._positions_index += 1;
       return true;
     }
   } closure{map, positions, positions_size};
   ASSERT_TRUE(map.iterate(&closure));
-  ASSERT_EQ(closure._positions_index, positions_size);
+  ASSERT_EQ(closure._data._positions_index, positions_size);
+}
+
+static void test_reverse_iterate_closure(const BitMap& map,
+                                         const idx_t* positions,
+                                         size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with BitMapClosure");
+  struct Closure : public BitMapClosure {
+    TestBitMapIterationData _data;
+
+    Closure(const BitMap& map, const idx_t* positions, size_t positions_size)
+      : _data(map, positions, positions_size, positions_size)
+    {}
+
+    bool do_bit(idx_t i) override {
+      _data._positions_index -= 1;
+      _data.test(i);
+      return true;
+    }
+  } closure{map, positions, positions_size};
+  ASSERT_TRUE(map.reverse_iterate(&closure));
+  ASSERT_EQ(closure._data._positions_index, 0u);
 }
 
 // Test closure returning void.  Also tests lambda returning bool.
@@ -92,24 +141,81 @@ static void test_iterate_non_closure(const BitMap& map,
                                      size_t positions_size) {
   SCOPED_TRACE("iterate with non-BitMapClosure");
   struct Closure {
-    const BitMap& _map;
-    const idx_t* _positions;
-    size_t _positions_index;
-    size_t _positions_size;
-
+    TestBitMapIterationData _data;
     Closure(const BitMap& map, const idx_t* positions, size_t positions_size)
-      : _map(map),
-        _positions(positions),
-        _positions_index(0),
-        _positions_size(positions_size)
+      : _data(map, positions, 0, positions_size)
     {}
 
     void do_bit(idx_t i) {
-      test_iterate_step(_map, i, _positions, _positions_index++, _positions_size);
+      _data.test(i);
+      _data._positions_index += 1;
     }
   } closure{map, positions, positions_size};
   ASSERT_TRUE(map.iterate(&closure));
-  ASSERT_EQ(closure._positions_index, positions_size);
+  ASSERT_EQ(closure._data._positions_index, positions_size);
+}
+
+static void test_reverse_iterate_non_closure(const BitMap& map,
+                                             const idx_t* positions,
+                                             size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with non-BitMapClosure");
+  struct Closure {
+    TestBitMapIterationData _data;
+    Closure(const BitMap& map, const idx_t* positions, size_t positions_size)
+      : _data(map, positions, positions_size, positions_size)
+    {}
+
+    void do_bit(idx_t i) {
+      _data._positions_index -= 1;
+      _data.test(i);
+    }
+  } closure{map, positions, positions_size};
+  ASSERT_TRUE(map.reverse_iterate(&closure));
+  ASSERT_EQ(closure._data._positions_index, 0u);
+}
+
+static void test_iterator(const BitMap& map,
+                          const idx_t* positions,
+                          size_t positions_size) {
+  SCOPED_TRACE("iterate with Iterator");
+  size_t positions_index = 0;
+  for (BitMap::Iterator it{map}; !it.is_empty(); it.step()) {
+    test_iterate_step(map, it.index(), positions, positions_index++, positions_size);
+  }
+  ASSERT_EQ(positions_index, positions_size);
+}
+
+static void test_reverse_iterator(const BitMap& map,
+                                  const idx_t* positions,
+                                  size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with Iterator");
+  size_t positions_index = positions_size;
+  for (BitMap::ReverseIterator it{map}; !it.is_empty(); it.step()) {
+    test_iterate_step(map, it.index(), positions, --positions_index, positions_size);
+  }
+  ASSERT_EQ(positions_index, 0u);
+}
+
+static void test_for_loop_iterator(const BitMap& map,
+                                   const idx_t* positions,
+                                   size_t positions_size) {
+  SCOPED_TRACE("iterate with range-based for loop");
+  size_t positions_index = 0;
+  for (idx_t index : BitMap::Iterator(map)) {
+    test_iterate_step(map, index, positions, positions_index++, positions_size);
+  }
+  ASSERT_EQ(positions_index, positions_size);
+}
+
+static void test_for_loop_reverse_iterator(const BitMap& map,
+                                           const idx_t* positions,
+                                           size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with range-based for loop");
+  size_t positions_index = positions_size;
+  for (idx_t index : BitMap::ReverseIterator(map)) {
+    test_iterate_step(map, index, positions, --positions_index, positions_size);
+  }
+  ASSERT_EQ(positions_index, 0u);
 }
 
 static void fill_iterate_map(BitMap& map,
@@ -125,9 +231,20 @@ static void test_iterate(BitMap& map,
                          const idx_t* positions,
                          size_t positions_size) {
   fill_iterate_map(map, positions, positions_size);
+
   test_iterate_lambda(map, positions, positions_size);
   test_iterate_closure(map, positions, positions_size);
   test_iterate_non_closure(map, positions, positions_size);
+
+  test_reverse_iterate_lambda(map, positions, positions_size);
+  test_reverse_iterate_closure(map, positions, positions_size);
+  test_reverse_iterate_non_closure(map, positions, positions_size);
+
+  test_iterator(map, positions, positions_size);
+  test_reverse_iterator(map, positions, positions_size);
+
+  test_for_loop_iterator(map, positions, positions_size);
+  test_for_loop_reverse_iterator(map, positions, positions_size);
 }
 
 TEST(BitMap, iterate_empty) {

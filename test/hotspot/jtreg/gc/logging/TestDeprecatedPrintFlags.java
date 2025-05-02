@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ import java.util.stream.Collectors;
 public class TestDeprecatedPrintFlags {
 
     public static void testPrintGC() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGC", DoGC.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintGC", DoGC.class.getName());
         output.shouldContain("-XX:+PrintGC is deprecated. Will use -Xlog:gc instead.");
         output.shouldNotContain("PrintGCDetails");
         output.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
@@ -52,8 +51,7 @@ public class TestDeprecatedPrintFlags {
     }
 
     public static void testPrintGCDetails() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGCDetails", DoGC.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintGCDetails", DoGC.class.getName());
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldNotContain("PrintGC is deprecated");
         output.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
@@ -63,8 +61,7 @@ public class TestDeprecatedPrintFlags {
 
     public static void testXloggc() throws Exception {
         String fileName = "gc-test.log";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xloggc:" + fileName, DoGC.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-Xloggc:" + fileName, DoGC.class.getName());
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");
         output.shouldNotContain("PrintGCDetails");
         output.shouldNotContain("PrintGC");
@@ -80,8 +77,7 @@ public class TestDeprecatedPrintFlags {
 
     public static void testXloggcWithPrintGCDetails() throws Exception {
         String fileName = "gc-test.log";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGCDetails", "-Xloggc:" + fileName, DoGC.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintGCDetails", "-Xloggc:" + fileName, DoGC.class.getName());
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");
         output.shouldNotContain("PrintGC is deprecated");

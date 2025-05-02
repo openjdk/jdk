@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.VariableTree;
@@ -119,6 +118,7 @@ public class Analyzer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Analyzer(Context context) {
         context.put(analyzerKey, this);
         types = Types.instance(context);
@@ -425,24 +425,18 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE &&
-                    !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
+            return !isImplicitlyTyped(tree.var);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
             JCEnhancedForLoop newTree = copier.copy(oldTree);
-            newTree.varOrRecordPattern = rewriteVarType((JCVariableDecl) oldTree.varOrRecordPattern);
+            newTree.var = rewriteVarType(oldTree.var);
             newTree.body = make.at(oldTree.body).Block(0, List.nil());
             return List.of(newTree);
         }
         @Override
         void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
-            processVar((JCVariableDecl) oldTree.varOrRecordPattern,
-                           (JCVariableDecl) newTree.varOrRecordPattern, hasErrors);
+            processVar(oldTree.var, newTree.var, hasErrors);
         }
     }
 
@@ -617,7 +611,6 @@ public class Analyzer {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void scan(JCTree tree) {
             if (tree != null) {
                 for (StatementAnalyzer<JCTree, JCTree> analyzer : analyzers) {
@@ -737,12 +730,12 @@ public class Analyzer {
          * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
          */
         Log.DeferredDiagnosticHandler diagHandler() {
-            return new Log.DeferredDiagnosticHandler(log, d -> {
+            return log.new DeferredDiagnosticHandler(d -> {
                 if (d.getType() == DiagnosticType.ERROR) {
                     erroneous = true;
                 }
                 return true;
-            });
+            }, false);
         }
     }
 

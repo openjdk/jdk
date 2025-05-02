@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 
 package jdk.internal.net.http;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
 import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
-import java.security.AccessControlContext;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
@@ -79,8 +79,6 @@ class MultiExchange<T> implements Cancelable {
     private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
     private final ConnectTimeoutTracker connectTimeout; // null if no timeout
-    @SuppressWarnings("removal")
-    final AccessControlContext acc;
     final HttpClientImpl client;
     final HttpResponse.BodyHandler<T> responseHandler;
     final HttpClientImpl.DelegatingExecutor executor;
@@ -90,8 +88,8 @@ class MultiExchange<T> implements Cancelable {
     Exchange<T> exchange; // the current exchange
     Exchange<T> previous;
     volatile Throwable retryCause;
-    volatile boolean expiredOnce;
-    volatile HttpResponse<T> response = null;
+    volatile boolean retriedOnce;
+    volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
     // for any reason
@@ -101,7 +99,7 @@ class MultiExchange<T> implements Cancelable {
     );
 
     private final List<HeaderFilter> filters;
-    ResponseTimerEvent responseTimerEvent;
+    volatile ResponseTimerEvent responseTimerEvent;
     volatile boolean cancelled;
     AtomicReference<CancellationException> interrupted = new AtomicReference<>();
     final PushGroup<T> pushGroup;
@@ -155,8 +153,7 @@ class MultiExchange<T> implements Cancelable {
                   HttpRequestImpl requestImpl,
                   HttpClientImpl client,
                   HttpResponse.BodyHandler<T> responseHandler,
-                  PushPromiseHandler<T> pushPromiseHandler,
-                  @SuppressWarnings("removal") AccessControlContext acc) {
+                  PushPromiseHandler<T> pushPromiseHandler) {
         this.previous = null;
         this.userRequest = userRequest;
         this.request = requestImpl;
@@ -164,15 +161,11 @@ class MultiExchange<T> implements Cancelable {
         this.previousreq = null;
         this.client = client;
         this.filters = client.filterChain();
-        this.acc = acc;
         this.executor = client.theExecutor();
         this.responseHandler = responseHandler;
 
         if (pushPromiseHandler != null) {
-            Executor ensureExecutedAsync = this.executor::ensureExecutedAsync;
-            Executor executor = acc == null
-                    ? ensureExecutedAsync
-                    : new PrivilegedExecutor(ensureExecutedAsync, acc);
+            Executor executor = this.executor::ensureExecutedAsync;
             this.pushGroup = new PushGroup<>(pushPromiseHandler, request, executor);
         } else {
             pushGroup = null;
@@ -211,12 +204,16 @@ class MultiExchange<T> implements Cancelable {
         return vers;
     }
 
-    private synchronized void setExchange(Exchange<T> exchange) {
-        if (this.exchange != null && exchange != this.exchange) {
-            this.exchange.released();
-            if (cancelled) exchange.cancel();
+    private void setExchange(Exchange<T> exchange) {
+        Exchange<T> previousExchange;
+        synchronized (this) {
+            previousExchange = this.exchange;
+            this.exchange = exchange;
         }
-        this.exchange = exchange;
+        if (previousExchange != null && exchange != previousExchange) {
+            previousExchange.released();
+        }
+        if (cancelled) exchange.cancel();
     }
 
     public Optional<Duration> remainingConnectTimeout() {
@@ -227,6 +224,7 @@ class MultiExchange<T> implements Cancelable {
     private void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
+            responseTimerEvent = null;
         }
     }
 
@@ -274,10 +272,18 @@ class MultiExchange<T> implements Cancelable {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         boolean cancelled = this.cancelled;
+        boolean firstCancel = false;
         if (!cancelled && mayInterruptIfRunning) {
             if (interrupted.get() == null) {
-                interrupted.compareAndSet(null,
+                firstCancel = interrupted.compareAndSet(null,
                         new CancellationException("Request cancelled"));
+            }
+            if (debug.on()) {
+                if (firstCancel) {
+                    debug.log("multi exchange recording: " + interrupted.get());
+                } else {
+                    debug.log("multi exchange recorded: " + interrupted.get());
+                }
             }
             this.cancelled = true;
             var exchange = getExchange();
@@ -285,12 +291,22 @@ class MultiExchange<T> implements Cancelable {
                 exchange.cancel();
             }
             return true;
+        } else {
+            if (cancelled) {
+                debug.log("multi exchange already cancelled: " + interrupted.get());
+            } else {
+                debug.log("multi exchange mayInterruptIfRunning=" + mayInterruptIfRunning);
+            }
         }
         return false;
     }
 
+    public <U> MinimalFuture<U> newMinimalFuture() {
+        return new MinimalFuture<>(new CancelableRef(this));
+    }
+
     public CompletableFuture<HttpResponse<T>> responseAsync(Executor executor) {
-        CompletableFuture<Void> start = new MinimalFuture<>(new CancelableRef(this));
+        CompletableFuture<Void> start = newMinimalFuture();
         CompletableFuture<HttpResponse<T>> cf = responseAsync0(start);
         start.completeAsync( () -> null, executor); // trigger execution
         return cf;
@@ -360,17 +376,30 @@ class MultiExchange<T> implements Cancelable {
                     }).exceptionallyCompose(this::whenCancelled);
     }
 
+    // returns a CancellationExcpetion that wraps the given cause
+    // if cancel(boolean) was called, the given cause otherwise
+    private Throwable wrapIfCancelled(Throwable cause) {
+        CancellationException interrupt = interrupted.get();
+        if (interrupt == null) return cause;
+
+        var cancel = new CancellationException(interrupt.getMessage());
+        // preserve the stack trace of the original exception to
+        // show where the call to cancel(boolean) came from
+        cancel.setStackTrace(interrupt.getStackTrace());
+        cancel.initCause(Utils.getCancelCause(cause));
+        return cancel;
+    }
+
+    // if the request failed because the multi exchange was cancelled,
+    // make sure the reported exception is wrapped in CancellationException
     private CompletableFuture<HttpResponse<T>> whenCancelled(Throwable t) {
-        CancellationException x = interrupted.get();
-        if (x != null) {
-            // make sure to fail with CancellationException if cancel(true)
-            // was called.
-            t = x.initCause(Utils.getCancelCause(t));
+        var x = wrapIfCancelled(t);
+        if (x instanceof CancellationException) {
             if (debug.on()) {
-                debug.log("MultiExchange interrupted with: " + t.getCause());
+                debug.log("MultiExchange interrupted with: " + x.getCause());
             }
         }
-        return MinimalFuture.failedFuture(t);
+        return MinimalFuture.failedFuture(x);
     }
 
     static class NullSubscription implements Flow.Subscription {
@@ -412,7 +441,9 @@ class MultiExchange<T> implements Cancelable {
                         try {
                             // 3. apply response filters
                             newrequest = responseFilters(response);
-                        } catch (IOException e) {
+                        } catch (Throwable t) {
+                            IOException e = t instanceof IOException io ? io : new IOException(t);
+                            exch.exchImpl.cancel(e);
                             return failedFuture(e);
                         }
                         // 4. check filter result and repeat or continue
@@ -422,6 +453,7 @@ class MultiExchange<T> implements Cancelable {
                             }
                             return completedFuture(response);
                         } else {
+                            cancelTimer();
                             this.response =
                                 new HttpResponseImpl<>(currentreq, response, this.response, null, exch);
                             Exchange<T> oldExch = exch;
@@ -432,8 +464,8 @@ class MultiExchange<T> implements Cancelable {
                             return exch.ignoreBody().handle((r,t) -> {
                                 previousreq = currentreq;
                                 currentreq = newrequest;
-                                expiredOnce = false;
-                                setExchange(new Exchange<>(currentreq, this, acc));
+                                retriedOnce = false;
+                                setExchange(new Exchange<>(currentreq, this));
                                 return responseAsyncImpl();
                             }).thenCompose(Function.identity());
                         } })
@@ -445,7 +477,7 @@ class MultiExchange<T> implements Cancelable {
                             return completedFuture(response);
                         }
                         // all exceptions thrown are handled here
-                        CompletableFuture<Response> errorCF = getExceptionalCF(ex);
+                        CompletableFuture<Response> errorCF = getExceptionalCF(ex, exch.exchImpl);
                         if (errorCF == null) {
                             return responseAsyncImpl();
                         } else {
@@ -517,34 +549,39 @@ class MultiExchange<T> implements Cancelable {
      * Takes a Throwable and returns a suitable CompletableFuture that is
      * completed exceptionally, or null.
      */
-    private CompletableFuture<Response> getExceptionalCF(Throwable t) {
+    private CompletableFuture<Response> getExceptionalCF(Throwable t, ExchangeImpl<?> exchImpl) {
         if ((t instanceof CompletionException) || (t instanceof ExecutionException)) {
             if (t.getCause() != null) {
                 t = t.getCause();
             }
         }
+        final boolean retryAsUnprocessed = exchImpl != null && exchImpl.isUnprocessedByPeer();
         if (cancelled && !requestCancelled() && t instanceof IOException) {
             if (!(t instanceof HttpTimeoutException)) {
                 t = toTimeoutException((IOException)t);
             }
-        } else if (retryOnFailure(t)) {
+        } else if (retryAsUnprocessed || retryOnFailure(t)) {
             Throwable cause = retryCause(t);
 
             if (!(t instanceof ConnectException)) {
                 // we may need to start a new connection, and if so
                 // we want to start with a fresh connect timeout again.
                 if (connectTimeout != null) connectTimeout.reset();
-                if (!canRetryRequest(currentreq)) {
-                    return failedFuture(cause); // fails with original cause
+                if (!retryAsUnprocessed && !canRetryRequest(currentreq)) {
+                    // a (peer) processed request which cannot be retried, fail with
+                    // the original cause
+                    return failedFuture(cause);
                 }
             } // ConnectException: retry, but don't reset the connectTimeout.
 
             // allow the retry mechanism to do its work
             retryCause = cause;
-            if (!expiredOnce) {
-                if (debug.on())
-                    debug.log(t.getClass().getSimpleName() + " (async): retrying...", t);
-                expiredOnce = true;
+            if (!retriedOnce) {
+                if (debug.on()) {
+                    debug.log(t.getClass().getSimpleName()
+                            + " (async): retrying " + currentreq + " due to: ", t);
+                }
+                retriedOnce = true;
                 // The connection was abruptly closed.
                 // We return null to retry the same request a second time.
                 // The request filters have already been applied to the
@@ -555,7 +592,7 @@ class MultiExchange<T> implements Cancelable {
             } else {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
-                            + " (async): already retried once.", t);
+                            + " (async): already retried once " + currentreq, t);
                 }
                 t = cause;
             }

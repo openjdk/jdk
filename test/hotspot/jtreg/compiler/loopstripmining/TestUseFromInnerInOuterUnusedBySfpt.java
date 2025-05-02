@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8295788
  * @summary C2 compilation hits "assert((mode == ControlAroundStripMined && use == sfpt) || !use->is_reachable_from_root()) failed: missed a node"
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestUseFromInnerInOuterUnusedBySfpt TestUseFromInnerInOuterUnusedBySfpt
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestUseFromInnerInOuterUnusedBySfpt::* TestUseFromInnerInOuterUnusedBySfpt
  *
  */
 

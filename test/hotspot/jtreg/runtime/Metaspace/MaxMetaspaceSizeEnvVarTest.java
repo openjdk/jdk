@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class MaxMetaspaceSizeEnvVarTest {
         test++;
 
         report("Test " + test + ": normal command-line flag");
-        pb = ProcessTools.createJavaProcessBuilder(flag, main, max);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(flag, main, max);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
@@ -96,7 +96,7 @@ public class MaxMetaspaceSizeEnvVarTest {
 
         for (String envVar :  envVars) {
             report("Test " + test + ": " + envVar + " env-var");
-            pb = ProcessTools.createJavaProcessBuilder(main, max);
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(main, max);
             pb.environment().put(envVar, flag);
             output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -112,7 +112,7 @@ public class MaxMetaspaceSizeEnvVarTest {
         PrintWriter pw = new PrintWriter(rcFile);
         pw.println(flagRaw);
         pw.close();
-        pb = ProcessTools.createJavaProcessBuilder(rcFileFlag, main, max);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(rcFileFlag, main, max);
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();

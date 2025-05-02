@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.StringJoiner;
 
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.TypeLibrary;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes event metadata, such as labels, descriptions and units.
@@ -114,7 +114,6 @@ public final class AnnotationElement {
     public AnnotationElement(Class<? extends Annotation> annotationType, Map<String, Object> values) {
         Objects.requireNonNull(annotationType, "annotationType");
         Objects.requireNonNull(values, "values");
-        Utils.checkRegisterPermission();
         // copy values to avoid modification after validation
         HashMap<String, Object> map = new HashMap<>(values);
         for (Map.Entry<String, Object> entry : map.entrySet()) {

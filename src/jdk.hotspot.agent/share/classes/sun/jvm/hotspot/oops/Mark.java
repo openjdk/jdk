@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ public class Mark extends VMObject {
     lockShift           = db.lookupLongConstant("markWord::lock_shift").longValue();
     ageShift            = db.lookupLongConstant("markWord::age_shift").longValue();
     hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
+    if (VM.getVM().isLP64()) {
+      klassShift          = db.lookupLongConstant("markWord::klass_shift").longValue();
+    }
     lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
     lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
     ageMask             = db.lookupLongConstant("markWord::age_mask").longValue();
@@ -82,6 +85,7 @@ public class Mark extends VMObject {
   private static long lockShift;
   private static long ageShift;
   private static long hashShift;
+  private static long klassShift;
 
   private static long lockMask;
   private static long lockMaskInPlace;
@@ -102,10 +106,9 @@ public class Mark extends VMObject {
 
   private static long maxAge;
 
-  /* Constants in markWord used by CMS. */
-  private static long cmsShift;
-  private static long cmsMask;
-  private static long sizeShift;
+  public static long getKlassShift() {
+    return klassShift;
+  }
 
   public Mark(Address addr) {
     super(addr);
@@ -161,6 +164,16 @@ public class Mark extends VMObject {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(hasMonitor(), "check");
     }
+    if (VM.getVM().getCommandLineFlag("UseObjectMonitorTable").getBool()) {
+      Iterator it = ObjectSynchronizer.objectMonitorIterator();
+      while (it != null && it.hasNext()) {
+        ObjectMonitor mon = (ObjectMonitor)it.next();
+        if (getAddress().equals(mon.object())) {
+          return mon;
+        }
+      }
+      return null;
+    }
     // Use xor instead of &~ to provide one extra tag-bit check.
     Address monAddr = valueAsAddress().xorWithMask(monitorValue);
     return new ObjectMonitor(monAddr);
@@ -186,6 +199,11 @@ public class Mark extends VMObject {
     return hash() == noHash;
   }
 
+  public Klass getKlass() {
+    assert(VM.getVM().isCompactObjectHeadersEnabled());
+    return (Klass)Metadata.instantiateWrapperFor(addr.getCompKlassAddressAt(0));
+  }
+
   // Debugging
   public void printOn(PrintStream tty) {
     if (isLocked()) {
@@ -202,5 +220,5 @@ public class Mark extends VMObject {
     }
   }
 
-  public long getSize() { return (long)(value() >> sizeShift); }
+  public long getSize() { return (long)value(); }
 }

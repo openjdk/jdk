@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -66,7 +65,7 @@ static void do_test_valid(T expected_value, const char* pattern) {
   ASSERT_TRUE(rc);
   ASSERT_EQ(value, expected_value);
   ASSERT_EQ(end, ss.base() + strlen(pattern));
-  ASSERT_EQ(strcmp(end, ":-)"), 0);
+  EXPECT_STREQ(end, ":-)");
 
   rc = parse_integer(ss.base(), &value);
   ASSERT_FALSE(rc);

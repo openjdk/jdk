@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class Gen extends JCTree.Visitor {
     private final TreeMaker make;
     private final Names names;
     private final Target target;
-    private final Name accessDollar;
+    private final String accessDollar;
     private final Types types;
     private final Lower lower;
     private final Annotate annotate;
@@ -97,6 +97,7 @@ public class Gen extends JCTree.Visitor {
      */
     final PoolWriter poolWriter;
 
+    @SuppressWarnings("this-escape")
     protected Gen(Context context) {
         context.put(genKey, this);
 
@@ -111,8 +112,7 @@ public class Gen extends JCTree.Visitor {
         concat = StringConcat.instance(context);
 
         methodType = new MethodType(null, null, null, syms.methodClass);
-        accessDollar = names.
-            fromString("access" + target.syntheticNameChar());
+        accessDollar = "access" + target.syntheticNameChar();
         lower = Lower.instance(context);
 
         Options options = Options.instance(context);
@@ -172,8 +172,8 @@ public class Gen extends JCTree.Visitor {
     Chain switchExpressionFalseChain;
     List<LocalItem> stackBeforeSwitchExpression;
     LocalItem switchResult;
-    Set<JCMethodInvocation> invocationsWithPatternMatchingCatch = Set.of();
-    ListBuffer<int[]> patternMatchingInvocationRanges;
+    PatternMatchingCatchConfiguration patternMatchingCatchConfiguration =
+            new PatternMatchingCatchConfiguration(Set.of(), null, null, null);
 
     /** Cache the symbol to reflect the qualifying type.
      *  key: corresponding type
@@ -340,9 +340,10 @@ public class Gen extends JCTree.Visitor {
     /** Does given name start with "access$" and end in an odd digit?
      */
     private boolean isOddAccessName(Name name) {
+        final String string = name.toString();
         return
-            name.startsWith(accessDollar) &&
-            (name.getByteAt(name.getByteLength() - 1) & 1) == 1;
+            string.startsWith(accessDollar) &&
+            (string.charAt(string.length() - 1) & 1) != 0;
     }
 
 /* ************************************************************************
@@ -540,44 +541,18 @@ public class Gen extends JCTree.Visitor {
         nerrs++;
     }
 
-    /** Insert instance initializer code into initial constructor.
+    /** Insert instance initializer code into constructors prior to the super() call.
      *  @param md        The tree potentially representing a
      *                   constructor's definition.
      *  @param initCode  The list of instance initializer statements.
      *  @param initTAs  Type annotations from the initializer expression.
      */
     void normalizeMethod(JCMethodDecl md, List<JCStatement> initCode, List<TypeCompound> initTAs) {
-        if (md.name == names.init && TreeInfo.isInitialConstructor(md)) {
-            // We are seeing a constructor that does not call another
-            // constructor of the same class.
-            List<JCStatement> stats = md.body.stats;
-            ListBuffer<JCStatement> newstats = new ListBuffer<>();
+        if (TreeInfo.isConstructor(md) && TreeInfo.hasConstructorCall(md, names._super)) {
+            // We are seeing a constructor that has a super() call.
+            // Find the super() invocation and append the given initializer code.
+            TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));
 
-            if (stats.nonEmpty()) {
-                // Copy initializers of synthetic variables generated in
-                // the translation of inner classes.
-                while (TreeInfo.isSyntheticInit(stats.head)) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-                // Copy superclass constructor call
-                newstats.append(stats.head);
-                stats = stats.tail;
-                // Copy remaining synthetic initializers.
-                while (stats.nonEmpty() &&
-                       TreeInfo.isSyntheticInit(stats.head)) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-                // Now insert the initializer code.
-                newstats.appendList(initCode);
-                // And copy all remaining statements.
-                while (stats.nonEmpty()) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-            }
-            md.body.stats = newstats.toList();
             if (md.body.endpos == Position.NOPOS)
                 md.body.endpos = TreeInfo.endPos(md.body.stats.last());
 
@@ -1099,29 +1074,48 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBlock(JCBlock tree) {
+        /* this method is heavily invoked, as expected, for deeply nested blocks, if blocks doesn't happen to have
+         * patterns there will be an unnecessary tax on memory consumption every time this method is executed, for this
+         * reason we have created helper methods and here at a higher level we just discriminate depending on the
+         * presence, or not, of patterns in a given block
+         */
         if (tree.patternMatchingCatch != null) {
-            Set<JCMethodInvocation> prevInvocationsWithPatternMatchingCatch = invocationsWithPatternMatchingCatch;
-            ListBuffer<int[]> prevRanges = patternMatchingInvocationRanges;
-            State startState = code.state.dup();
-            try {
-                invocationsWithPatternMatchingCatch = tree.patternMatchingCatch.calls2Handle();
-                patternMatchingInvocationRanges = new ListBuffer<>();
-                doVisitBlock(tree);
-            } finally {
-                Chain skipCatch = code.branch(goto_);
-                JCCatch handler = tree.patternMatchingCatch.handler();
-                code.entryPoint(startState, handler.param.sym.type);
-                genPatternMatchingCatch(handler, env, patternMatchingInvocationRanges.toList());
-                code.resolve(skipCatch);
-                invocationsWithPatternMatchingCatch = prevInvocationsWithPatternMatchingCatch;
-                patternMatchingInvocationRanges = prevRanges;
-            }
+            visitBlockWithPatterns(tree);
         } else {
-            doVisitBlock(tree);
+            internalVisitBlock(tree);
         }
     }
 
-    private void doVisitBlock(JCBlock tree) {
+    private void visitBlockWithPatterns(JCBlock tree) {
+        PatternMatchingCatchConfiguration prevConfiguration = patternMatchingCatchConfiguration;
+        try {
+            patternMatchingCatchConfiguration =
+                    new PatternMatchingCatchConfiguration(tree.patternMatchingCatch.calls2Handle(),
+                                                         new ListBuffer<int[]>(),
+                                                         tree.patternMatchingCatch.handler(),
+                                                         code.state.dup());
+            internalVisitBlock(tree);
+        } finally {
+            generatePatternMatchingCatch(env);
+            patternMatchingCatchConfiguration = prevConfiguration;
+        }
+    }
+
+    private void generatePatternMatchingCatch(Env<GenContext> env) {
+        if (patternMatchingCatchConfiguration.handler != null &&
+            !patternMatchingCatchConfiguration.ranges.isEmpty()) {
+            Chain skipCatch = code.branch(goto_);
+            JCCatch handler = patternMatchingCatchConfiguration.handler();
+            code.entryPoint(patternMatchingCatchConfiguration.startState(),
+                            handler.param.sym.type);
+            genPatternMatchingCatch(handler,
+                                    env,
+                                    patternMatchingCatchConfiguration.ranges.toList());
+            code.resolve(skipCatch);
+        }
+    }
+
+    private void internalVisitBlock(JCBlock tree) {
         int limit = code.nextreg;
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStats(tree.stats, localEnv);
@@ -1277,11 +1271,17 @@ public class Gen extends JCTree.Visitor {
     }
     //where:
         private boolean hasTry(JCSwitchExpression tree) {
-            boolean[] hasTry = new boolean[1];
-            new TreeScanner() {
+            class HasTryScanner extends TreeScanner {
+                private boolean hasTry;
+
                 @Override
                 public void visitTry(JCTry tree) {
-                    hasTry[0] = true;
+                    hasTry = true;
+                }
+
+                @Override
+                public void visitSynchronized(JCSynchronized tree) {
+                    hasTry = true;
                 }
 
                 @Override
@@ -1291,8 +1291,12 @@ public class Gen extends JCTree.Visitor {
                 @Override
                 public void visitLambda(JCLambda tree) {
                 }
-            }.scan(tree);
-            return hasTry[0];
+            };
+
+            HasTryScanner hasTryScanner = new HasTryScanner();
+
+            hasTryScanner.scan(tree);
+            return hasTryScanner.hasTry;
         }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
@@ -1442,6 +1446,11 @@ public class Gen extends JCTree.Visitor {
                     code.put4(caseidx, labels[i]);
                     code.put4(caseidx + 4, offsets[i]);
                 }
+            }
+
+            if (swtch instanceof JCSwitchExpression) {
+                 // Emit line position for the end of a switch expression
+                 code.statBegin(TreeInfo.endPos(swtch));
             }
         }
         code.endScopes(limit);
@@ -1927,12 +1936,26 @@ public class Gen extends JCTree.Visitor {
         if (!msym.isDynamic()) {
             code.statBegin(tree.pos);
         }
-        if (invocationsWithPatternMatchingCatch.contains(tree)) {
+        if (patternMatchingCatchConfiguration.invocations().contains(tree)) {
             int start = code.curCP();
             result = m.invoke();
-            patternMatchingInvocationRanges.add(new int[] {start, code.curCP()});
+            patternMatchingCatchConfiguration.ranges().add(new int[] {start, code.curCP()});
         } else {
-            result = m.invoke();
+            if (msym.isConstructor() && TreeInfo.isConstructorCall(tree)) {
+                //if this is a this(...) or super(...) call, there is a pending
+                //"uninitialized this" before this call. One catch handler cannot
+                //handle exceptions that may come from places with "uninitialized this"
+                //and (initialized) this, hence generate one set of handlers here
+                //for the "uninitialized this" case, and another set of handlers
+                //will be generated at the end of the method for the initialized this,
+                //if needed:
+                generatePatternMatchingCatch(env);
+                result = m.invoke();
+                patternMatchingCatchConfiguration =
+                        patternMatchingCatchConfiguration.restart(code.state.dup());
+            } else {
+                result = m.invoke();
+            }
         }
     }
 
@@ -2556,4 +2579,15 @@ public class Gen extends JCTree.Visitor {
         }
     }
 
+    record PatternMatchingCatchConfiguration(Set<JCMethodInvocation> invocations,
+                                            ListBuffer<int[]> ranges,
+                                            JCCatch handler,
+                                            State startState) {
+        public PatternMatchingCatchConfiguration restart(State newState) {
+            return new PatternMatchingCatchConfiguration(invocations(),
+                                                        new ListBuffer<int[]>(),
+                                                        handler(),
+                                                        newState);
+        }
+    }
 }

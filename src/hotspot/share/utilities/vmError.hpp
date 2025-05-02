@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,9 @@
 #ifndef SHARE_UTILITIES_VMERROR_HPP
 #define SHARE_UTILITIES_VMERROR_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class Decoder;
 class frame;
@@ -42,18 +44,18 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // nullptr if it's native thread
+  static Thread*     _thread;           // null if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
-  static void*       _siginfo;          // ExceptionRecord on Windows,
+  static const void* _siginfo;          // ExceptionRecord on Windows,
                                         // siginfo_t on Solaris/Linux
-  static void*       _context;          // ContextRecord on Windows,
+  static const void* _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
-  // records if VMError::print_native_stack was used to
+  // records if frame-based stack walking was used to
   // print the native stack instead of os::platform_print_native_stack
-  static bool        _print_native_stack_used;
+  static bool        _print_stack_from_frame_used;
 
   // additional info for VM internal errors
   static const char* _filename;
@@ -65,6 +67,9 @@ class VMError : public AllStatic {
   // used by fatal error handler
   static int         _current_step;
   static const char* _current_step_info;
+
+  // used for reattempt step logic
+  static const size_t _reattempt_required_stack_headroom;
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
@@ -88,6 +93,8 @@ class VMError : public AllStatic {
   static volatile jlong _step_start_time;
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
+  // Whether or not the last error reporting step did succeed.
+  static volatile bool _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)
@@ -103,11 +110,7 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  static const char* get_filename_only() {
-    char separator = os::file_separator()[0];
-    const char* p = strrchr(_filename, separator);
-    return p ? p+1 : _filename;
-  }
+  static const char* get_filename_only();
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
@@ -116,6 +119,9 @@ class VMError : public AllStatic {
   static bool should_submit_bug_report(unsigned int id) {
     return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
+
+  DEBUG_ONLY(static void reattempt_test_hit_stack_limit(outputStream* st));
+  static bool can_reattempt_step(const char* &stop_reason);
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
@@ -136,15 +142,9 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
 public:
-
-  // print_source_info: if true, we try to resolve the source information on platforms that support it
-  //  (useful but may slow down, timeout or misfunction in error situations)
-  // max_frames: if not -1, overrides StackPrintLimit
-  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 int max_frames, char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);
@@ -158,23 +158,28 @@ public:
   // main error reporting function
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 7)
-  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...);
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo,
+                             const void* context, const char* detail_fmt, ...);
+
+  [[noreturn]]
+  ATTRIBUTE_PRINTF(6, 7)
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, ...);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
-                             Thread* thread, address pc, void* siginfo, void* context,
+                             Thread* thread, address pc, const void* siginfo, const void* context,
                              const char* filename, int lineno, size_t size);
 
   [[noreturn]]
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
-                             void* siginfo, void* context);
+                             const void* siginfo, const void* context);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
-  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, va_list detail_args);
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, va_list detail_args);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
@@ -199,7 +204,7 @@ public:
   DEBUG_ONLY(static void controlled_crash(int how);)
 
   // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
-  static constexpr intptr_t segfault_address = AIX_ONLY(-1) NOT_AIX(1 * K);
+  static const intptr_t segfault_address;
 
   // Max value for the ErrorLogPrintCodeLimit flag.
   static const int max_error_log_print_code = 10;
@@ -212,5 +217,29 @@ public:
   // permissions.
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
+  static bool was_assert_poison_crash(const void* sigInfo);
 };
+
+class VMErrorCallback {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
+
+  // Link through all callbacks active on a thread
+  VMErrorCallback* _next;
+
+  // Called by VMError reporting
+  virtual void call(outputStream* st) = 0;
+
+public:
+  VMErrorCallback() : _next(nullptr) {}
+};
+
+class VMErrorCallbackMark : public StackObj {
+  Thread* _thread;
+
+public:
+  VMErrorCallbackMark(VMErrorCallback* callback);
+  ~VMErrorCallbackMark();
+};
+
 #endif // SHARE_UTILITIES_VMERROR_HPP

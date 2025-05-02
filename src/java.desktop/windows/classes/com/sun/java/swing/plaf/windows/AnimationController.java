@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.java.swing.plaf.windows;
-
-import java.security.AccessController;
-import sun.security.action.GetBooleanAction;
 
 import java.util.*;
 import java.beans.PropertyChangeListener;
@@ -65,11 +62,10 @@ import sun.awt.AppContext;
  *
  * @author Igor Kushnirskiy
  */
-class AnimationController implements ActionListener, PropertyChangeListener {
+final class AnimationController implements ActionListener, PropertyChangeListener {
 
-    @SuppressWarnings("removal")
     private static final boolean VISTA_ANIMATION_DISABLED =
-        AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
+                        Boolean.getBoolean("swing.disablevistaanimation");
 
 
     private static final Object ANIMATION_CONTROLLER_KEY =
@@ -257,6 +253,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void propertyChange(PropertyChangeEvent e) {
         if ("lookAndFeel" == e.getPropertyName()
             && ! (e.getNewValue() instanceof WindowsLookAndFeel) ) {
@@ -264,6 +261,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void actionPerformed(ActionEvent e) {
         java.util.List<JComponent> componentsToRemove = null;
         java.util.List<Part> partsToRemove = null;
@@ -323,7 +321,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class AnimationState {
+    private static final class AnimationState {
         private final State startState;
 
         //animation duration in nanoseconds
@@ -411,7 +409,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class PartUIClientPropertyKey
+    private static final class PartUIClientPropertyKey
           implements UIClientPropertyKey {
 
         private static final Map<Part, PartUIClientPropertyKey> map =
@@ -430,6 +428,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         private PartUIClientPropertyKey(Part part) {
             this.part  = part;
         }
+        @Override
         public String toString() {
             return part.toString();
         }

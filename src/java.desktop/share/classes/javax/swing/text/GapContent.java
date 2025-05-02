@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         if (sortIndex < marks.size()
             && (m = marks.elementAt(sortIndex)).index == index
             && (position = m.getPosition()) != null) {
-            //position references the correct StickyPostition
+            //position references the correct StickyPosition
         } else {
             position = new StickyPosition();
             m = new MarkData(index,position,queue);
@@ -784,7 +784,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             startIndex = 0;
         }
 
-        // Reset the location of the refenences.
+        // Reset the location of the references.
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
             UndoPosRef ref = (UndoPosRef) positions.elementAt(counter);
             ref.resetLocation(endOffset, g1);

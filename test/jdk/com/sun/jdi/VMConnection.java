@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,14 @@ class VMConnection {
     static public String getDebuggeeVMOptions() {
         String retVal = "";
 
-        // When we run under jtreg, test.classes contains the pathname of
-        // the dir in which the .class files will be placed.
-        String testClasses = System.getProperty("test.classes");
-        if (testClasses == null) {
+        // When we run under jtreg, test.class.path contains classpath
+        // with test and testlibrary compiled classes
+        String testClassPath = System.getProperty("test.class.path");
+
+        if (testClassPath == null) {
             return retVal;
         }
-        retVal += "-classpath " + testClasses;
+        retVal += "-classpath " + testClassPath;
 
         String vmOpts = System.getProperty("test.vm.opts");
         System.out.println("vmOpts: '" + vmOpts + "'");
@@ -122,16 +123,18 @@ class VMConnection {
         return arguments;
     }
 
-    VMConnection(String connectSpec, int traceFlags) {
+    VMConnection(String connectSpec, int traceFlags, boolean includeVThreads) {
         String nameString;
-        String argString;
+        String argString = "includevirtualthreads=" + (includeVThreads ? 'y' : 'n');
         int index = connectSpec.indexOf(':');
         if (index == -1) {
             nameString = connectSpec;
-            argString = "";
         } else {
             nameString = connectSpec.substring(0, index);
-            argString = connectSpec.substring(index + 1);
+            // Only append args if there are actually some args after the ':'
+            if (index < connectSpec.length() - 1) {
+                argString = argString + "," + connectSpec.substring(index + 1);
+            }
         }
 
         connector = findConnector(nameString);
@@ -319,15 +322,17 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             System.err.println("\n Unable to launch target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             System.err.println("\n Internal debugger error.");
+            throw new RuntimeException(icae);
         } catch (VMStartException vmse) {
             System.err.println(vmse.getMessage() + "\n");
             dumpFailedLaunchInfo(vmse.process());
             System.err.println("\n Target VM failed to initialize.");
+            throw new RuntimeException(vmse);
         }
-        return null; // Shuts up the compiler
     }
 
     /* attach to running target vm */
@@ -338,11 +343,12 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             System.err.println("\n Unable to attach to target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             System.err.println("\n Internal debugger error.");
+            throw new RuntimeException(icae);
         }
-        return null; // Shuts up the compiler
     }
 
     /* listen for connection from target vm */
@@ -357,10 +363,11 @@ class VMConnection {
         } catch (IOException ioe) {
             ioe.printStackTrace();
             System.err.println("\n Unable to attach to target VM.");
+            throw new RuntimeException(ioe);
         } catch (IllegalConnectorArgumentsException icae) {
             icae.printStackTrace();
             System.err.println("\n Internal debugger error.");
+            throw new RuntimeException(icae);
         }
-        return null; // Shuts up the compiler
     }
 }

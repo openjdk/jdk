@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,49 +29,55 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
-import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
-import jdk.jpackage.internal.OverridableResource.Source;
-import static jdk.jpackage.internal.OverridableResource.createResource;
+import jdk.jpackage.internal.util.XmlConsumer;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import jdk.internal.util.Architecture;
+import static jdk.jpackage.internal.OverridableResource.createResource;
+import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.util.XmlUtils;
 
 /**
  * Creates WiX fragment.
  */
 abstract class WixFragmentBuilder {
 
-    void setWixVersion(DottedVersion v) {
-        wixVersion = v;
+    final void setWixVersion(DottedVersion version, WixToolsetType type) {
+        Objects.requireNonNull(version);
+        Objects.requireNonNull(type);
+        wixVersion = version;
+        wixType = type;
     }
 
-    void setOutputFileName(String v) {
+    final void setOutputFileName(String v) {
         outputFileName = v;
+    }
+
+    final void setDefaultResourceName(String v) {
+        defaultResourceName = v;
     }
 
     void initFromParams(Map<String, ? super Object> params) {
         wixVariables = null;
         additionalResources = null;
         configRoot = CONFIG_ROOT.fetchFrom(params);
-        fragmentResource = createResource(outputFileName, params).setSourceOrder(
-                Source.ResourceDir);
+        fragmentResource = createResource(defaultResourceName, params).setPublicName(outputFileName);
     }
 
-    void logWixFeatures() {
-        if (wixVersion.compareTo("3.6") >= 0) {
-            Log.verbose(MessageFormat.format(I18N.getString(
-                    "message.use-wix36-features"), wixVersion));
-        }
+    List<String> getLoggableWixFeatures() {
+        return List.of();
     }
 
-    void configureWixPipeline(WixPipeline wixPipeline) {
+    void configureWixPipeline(WixPipeline.Builder wixPipeline) {
         wixPipeline.addSource(configRoot.resolve(outputFileName),
                 Optional.ofNullable(wixVariables).map(WixVariables::getValues).orElse(
                         null));
@@ -79,7 +85,10 @@ abstract class WixFragmentBuilder {
 
     void addFilesToConfigRoot() throws IOException {
         Path fragmentPath = configRoot.resolve(outputFileName);
-        if (fragmentResource.saveToFile(fragmentPath) == null) {
+        final var src = fragmentResource.saveToStream(null);
+        if (src == null) {
+            // There is no predefined resource for the fragment.
+            // The fragment should be built in the format matching the version of the WiX Toolkit.
             createWixSource(fragmentPath, xml -> {
                 for (var fragmentWriter : getFragmentWriters()) {
                     xml.writeStartElement("Fragment");
@@ -87,55 +96,92 @@ abstract class WixFragmentBuilder {
                     xml.writeEndElement();  // <Fragment>
                 }
             });
+        } else {
+            // Fragment is picked from the resource. May require conversion.
+            final var resourceGroup = new ResourceGroup(getWixType());
+            resourceGroup.addResource(fragmentResource, fragmentPath);
+            resourceGroup.saveResources();
         }
 
         if (additionalResources != null) {
-            for (var resource : additionalResources) {
-                resource.resource.saveToFile(configRoot.resolve(
-                        resource.saveAsName));
-            }
+            additionalResources.saveResources();
         }
     }
 
-    DottedVersion getWixVersion() {
+    final WixToolsetType getWixType() {
+        return wixType;
+    }
+
+    final DottedVersion getWixVersion() {
         return wixVersion;
     }
 
-    static boolean is64Bit() {
-        return !("x86".equals(System.getProperty("os.arch")));
+    protected static enum WixNamespace {
+        Default,
+        Util;
     }
 
-    protected Path getConfigRoot() {
+    final protected Map<WixNamespace, String> getWixNamespaces() {
+        switch (wixType) {
+            case Wix3 -> {
+                return Map.of(WixNamespace.Default,
+                        "http://schemas.microsoft.com/wix/2006/wi",
+                        WixNamespace.Util,
+                        "http://schemas.microsoft.com/wix/UtilExtension");
+            }
+            case Wix4 -> {
+                return Map.of(WixNamespace.Default,
+                        "http://wixtoolset.org/schemas/v4/wxs",
+                        WixNamespace.Util,
+                        "http://wixtoolset.org/schemas/v4/wxs/util");
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+
+        }
+    }
+
+    static boolean is64Bit() {
+        return Architecture.is64bit();
+    }
+
+    final protected Path getConfigRoot() {
         return configRoot;
     }
 
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
-    protected void defineWixVariable(String variableName) {
+    final protected void defineWixVariable(String variableName) {
         setWixVariable(variableName, "yes");
     }
 
-    protected void setWixVariable(String variableName, String variableValue) {
+    final protected void setWixVariable(String variableName, String variableValue) {
         if (wixVariables == null) {
             wixVariables = new WixVariables();
         }
         wixVariables.setWixVariable(variableName, variableValue);
     }
 
-    protected void addResource(OverridableResource resource, String saveAsName) {
+    final protected void addResource(OverridableResource resource, String saveAsName) {
         if (additionalResources == null) {
-            additionalResources = new ArrayList<>();
+            additionalResources = new ResourceGroup(getWixType());
         }
-        additionalResources.add(new ResourceWithName(resource, saveAsName));
+        additionalResources.addResource(resource, configRoot.resolve(saveAsName));
     }
 
-    static void createWixSource(Path file, XmlConsumer xmlConsumer)
-            throws IOException {
-        IOUtils.createXml(file, xml -> {
+    private void createWixSource(Path file, XmlConsumer xmlConsumer) throws IOException {
+        XmlUtils.createXml(file, xml -> {
             xml.writeStartElement("Wix");
-            xml.writeDefaultNamespace("http://schemas.microsoft.com/wix/2006/wi");
-            xml.writeNamespace("util",
-                    "http://schemas.microsoft.com/wix/UtilExtension");
+            for (var ns : getWixNamespaces().entrySet()) {
+                switch (ns.getKey()) {
+                    case Default ->
+                        xml.writeDefaultNamespace(ns.getValue());
+                    default ->
+                        xml.writeNamespace(ns.getKey().name().toLowerCase(), ns.
+                                getValue());
+                }
+            }
 
             xmlConsumer.accept((XMLStreamWriter) Proxy.newProxyInstance(
                     XMLStreamWriter.class.getClassLoader(), new Class<?>[]{
@@ -143,16 +189,6 @@ abstract class WixFragmentBuilder {
 
             xml.writeEndElement(); // <Wix>
         });
-    }
-
-    private static class ResourceWithName {
-
-        ResourceWithName(OverridableResource resource, String saveAsName) {
-            this.resource = resource;
-            this.saveAsName = saveAsName;
-        }
-        private final OverridableResource resource;
-        private final String saveAsName;
     }
 
     private static class WixPreprocessorEscaper implements InvocationHandler {
@@ -207,10 +243,12 @@ abstract class WixFragmentBuilder {
         private final XMLStreamWriter target;
     }
 
+    private WixToolsetType wixType;
     private DottedVersion wixVersion;
     private WixVariables wixVariables;
-    private List<ResourceWithName> additionalResources;
+    private ResourceGroup additionalResources;
     private OverridableResource fragmentResource;
+    private String defaultResourceName;
     private String outputFileName;
     private Path configRoot;
 }

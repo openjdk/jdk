@@ -33,12 +33,12 @@ class DefaultPollerProvider extends PollerProvider {
     DefaultPollerProvider() { }
 
     @Override
-    Poller readPoller() throws IOException {
+    Poller readPoller(boolean subPoller) throws IOException {
         return new PollsetPoller(true);
     }
 
     @Override
-    Poller writePoller() throws IOException {
+    Poller writePoller(boolean subPoller) throws IOException {
         return new PollsetPoller(false);
     }
 }

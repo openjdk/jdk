@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -572,6 +571,7 @@ void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS
       // Do not check loader constraints for overpass methods because overpass
       // methods are created by the jvm to throw exceptions.
       if (!target_method->is_overpass()) {
+        HandleMark hm(THREAD);
         // Override vtable entry if passes loader constraint check
         // if loader constraint checking requested
         // No need to visit his super, since he and his super
@@ -1117,9 +1117,9 @@ klassItable::klassItable(InstanceKlass* klass) {
       intptr_t* method_entry  = (intptr_t *)(((address)klass) + offset_entry->offset());
       intptr_t* end         = klass->end_of_itable();
 
-      _table_offset      = (intptr_t*)offset_entry - (intptr_t*)klass;
-      _size_offset_table = (method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size();
-      _size_method_table = (end - method_entry)                  / itableMethodEntry::size();
+      _table_offset      = int((intptr_t*)offset_entry - (intptr_t*)klass);
+      _size_offset_table = int((method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size());
+      _size_method_table = int((end - method_entry)                  / itableMethodEntry::size());
       assert(_table_offset >= 0 && _size_offset_table >= 0 && _size_method_table >= 0, "wrong computation");
       return;
     }
@@ -1229,9 +1229,10 @@ void klassItable::initialize_itable_and_check_constraints(TRAPS) {
 }
 
 inline bool interface_method_needs_itable_index(Method* m) {
-  if (m->is_static())           return false;   // e.g., Stream.empty
-  if (m->is_initializer())      return false;   // <init> or <clinit>
-  if (m->is_private())          return false;   // uses direct call
+  if (m->is_static())             return false; // e.g., Stream.empty
+  if (m->is_object_initializer()) return false; // <init>
+  if (m->is_static_initializer()) return false; // <clinit>
+  if (m->is_private())            return false; // uses direct call
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)
@@ -1441,7 +1442,7 @@ class InterfaceVisiterClosure : public StackObj {
 };
 
 // Visit all interfaces with at least one itable method
-void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
+static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
   // Handle array argument
   for(int i = 0; i < transitive_intf->length(); i++) {
     InstanceKlass* intf = transitive_intf->at(i);
@@ -1496,7 +1497,7 @@ class SetupItableClosure : public InterfaceVisiterClosure  {
   itableMethodEntry* method_entry() const { return _method_entry; }
 
   void doit(InstanceKlass* intf, int method_count) {
-    int offset = ((address)_method_entry) - _klass_begin;
+    int offset = int(((address)_method_entry) - _klass_begin);
     _offset_entry->initialize(intf, offset);
     _offset_entry++;
     _method_entry += method_count;

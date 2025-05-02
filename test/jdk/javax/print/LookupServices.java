@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4510477 6520186
+ * @key printer
  * @summary No crash with HP OfficeJet 600 installed.
  * @run main LookupServices
 */

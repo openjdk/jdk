@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,14 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -279,7 +285,7 @@ import java.util.Objects;
  * operations indicated by {@linkplain RoundingMode rounding modes}
  * are a proper superset of the IEEE 754 rounding-direction
  * attributes.
-
+ *
  * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
  * decimal arithmetic if a {@code MathContext} corresponding to an
  * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
@@ -292,13 +298,34 @@ import java.util.Objects;
  * such as dividing by zero, throw an {@code ArithmeticException} in
  * {@code BigDecimal} arithmetic.
  *
- * @see     BigInteger
- * @see     MathContext
- * @see     RoundingMode
- * @see     java.util.SortedMap
- * @see     java.util.SortedSet
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * <h2><a id=algorithmicComplexity>Algorithmic Complexity</a></h2>
+ *
+ * Operations on {@code BigDecimal} values have a range of algorithmic
+ * complexities; in general, those complexities are a function of both
+ * the size of the unscaled value as well as the size of the
+ * scale. For example, an {@linkplain BigDecimal#multiply(BigDecimal)
+ * exact multiply} of two {@code BigDecimal} values is subject to the
+ * same {@linkplain BigInteger##algorithmicComplexity complexity
+ * constraints} as {@code BigInteger} multiply of the unscaled
+ * values. In contrast, a {@code BigDecimal} value with a compact
+ * representation like {@code new BigDecimal(1E-1000000000)} has a
+ * {@link toPlainString} result with over one billion characters.
+ *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be as large as in
+ * proportion to the running time of the algorithm.
+ *
+ * <p>Users of {@code BigDecimal} concerned with bounding the running
+ * time or space of operations can screen out {@code BigDecimal}
+ * values with unscaled values or scales above a chosen magnitude.
+ *
+ * @see BigInteger
+ * @see MathContext
+ * @see RoundingMode
+ * @see java.util.SortedMap
+ * @see java.util.SortedSet
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw
@@ -307,6 +334,22 @@ import java.util.Objects;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    /*
+     * Let l = log_2(10).
+     * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
+     */
+    private static final double L = 3.321928094887362;
+
+    private static final int P_F = Float.PRECISION;  // 24
+    private static final int Q_MIN_F = Float.MIN_EXPONENT - (P_F - 1);  // -149
+    private static final int Q_MAX_F = Float.MAX_EXPONENT - (P_F - 1);  // 104
+
+    private static final int P_D = Double.PRECISION;  // 53
+    private static final int Q_MIN_D = (Double.MIN_EXPONENT - (P_D - 1));  // -1_074
+    private static final int Q_MAX_D = (Double.MAX_EXPONENT - (P_D - 1));  // 971
+
     /**
      * The unscaled value of this BigDecimal, as returned by {@link
      * #unscaledValue}.
@@ -2102,57 +2145,54 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  9
      */
     public BigDecimal sqrt(MathContext mc) {
-        int signum = signum();
-        if (signum == 1) {
-            /*
-             * The following code draws on the algorithm presented in
-             * "Properly Rounded Variable Precision Square Root," Hull and
-             * Abrham, ACM Transactions on Mathematical Software, Vol 11,
-             * No. 3, September 1985, Pages 229-237.
-             *
-             * The BigDecimal computational model differs from the one
-             * presented in the paper in several ways: first BigDecimal
-             * numbers aren't necessarily normalized, second many more
-             * rounding modes are supported, including UNNECESSARY, and
-             * exact results can be requested.
-             *
-             * The main steps of the algorithm below are as follows,
-             * first argument reduce the value to the numerical range
-             * [1, 10) using the following relations:
-             *
-             * x = y * 10 ^ exp
-             * sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even
-             * sqrt(x) = sqrt(y/10) * 10 ^((exp+1)/2) is exp is odd
-             *
-             * Then use Newton's iteration on the reduced value to compute
-             * the numerical digits of the desired result.
-             *
-             * Finally, scale back to the desired exponent range and
-             * perform any adjustment to get the preferred scale in the
-             * representation.
-             */
-
-            // The code below favors relative simplicity over checking
-            // for special cases that could run faster.
-
-            int preferredScale = this.scale()/2;
-            BigDecimal zeroWithFinalPreferredScale = valueOf(0L, preferredScale);
-
-            // First phase of numerical normalization, strip trailing
-            // zeros and check for even powers of 10.
-            BigDecimal stripped = this.stripTrailingZeros();
-            int strippedScale = stripped.scale();
-
-            // Numerically sqrt(10^2N) = 10^N
-            if (stripped.isPowerOfTen() &&
-                strippedScale % 2 == 0) {
-                BigDecimal result = valueOf(1L, strippedScale/2);
-                if (result.scale() != preferredScale) {
-                    // Adjust to requested precision and preferred
-                    // scale as appropriate.
-                    result = result.add(zeroWithFinalPreferredScale, mc);
-                }
+        final int signum = signum();
+        if (signum != 1) {
+            switch (signum) {
+            case -1 -> throw new ArithmeticException("Attempted square root of negative BigDecimal");
+            case 0 -> {
+                BigDecimal result = valueOf(0L, scale/2);
+                assert squareRootResultAssertions(result, mc);
                 return result;
+            }
+            default -> throw new AssertionError("Bad value from signum");
+            }
+        }
+        /*
+         * The main steps of the algorithm below are as follows,
+         * first argument reduce the value to an integer
+         * using the following relations:
+         *
+         * x = y * 10 ^ exp
+         * sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even
+         * sqrt(x) = sqrt(y*10) * 10^((exp-1)/2) is exp is odd
+         *
+         * Then use BigInteger.sqrt() on the reduced value to compute
+         * the numerical digits of the desired result.
+         *
+         * Finally, scale back to the desired exponent range and
+         * perform any adjustment to get the preferred scale in the
+         * representation.
+         */
+
+        // The code below favors relative simplicity over checking
+        // for special cases that could run faster.
+        final int preferredScale = this.scale/2;
+
+        BigDecimal result;
+        if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
+            // To avoid trailing zeros in the result, strip trailing zeros.
+            final BigDecimal stripped = this.stripTrailingZeros();
+            final int strippedScale = stripped.scale;
+
+            if ((strippedScale & 1) != 0) // 10*stripped.unscaledValue() can't be an exact square
+                throw new ArithmeticException("Computed square root not exact.");
+
+            // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
+            if (stripped.isPowerOfTen()) {
+                result = valueOf(1L, strippedScale >> 1);
+                // Adjust to requested precision and preferred
+                // scale as appropriate.
+                return result.adjustToPreferredScale(preferredScale, mc.precision);
             }
 
             // After stripTrailingZeros, the representation is normalized as
@@ -2160,189 +2200,122 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // unscaledValue * 10^(-scale)
             //
             // where unscaledValue is an integer with the minimum
-            // precision for the cohort of the numerical value. To
-            // allow binary floating-point hardware to be used to get
-            // approximately a 15 digit approximation to the square
-            // root, it is helpful to instead normalize this so that
-            // the significand portion is to right of the decimal
-            // point by roughly (scale() - precision() + 1).
+            // precision for the cohort of the numerical value and the scale is even.
+            BigInteger[] sqrtRem = stripped.unscaledValue().sqrtAndRemainder();
+            result = new BigDecimal(sqrtRem[0], strippedScale >> 1);
 
-            // Now the precision / scale adjustment
-            int scaleAdjust = 0;
-            int scale = stripped.scale() - stripped.precision() + 1;
-            if (scale % 2 == 0) {
-                scaleAdjust = scale;
-            } else {
-                scaleAdjust = scale - 1;
-            }
-
-            BigDecimal working = stripped.scaleByPowerOfTen(scaleAdjust);
-
-            assert  // Verify 0.1 <= working < 10
-                ONE_TENTH.compareTo(working) <= 0 && working.compareTo(TEN) < 0;
-
-            // Use good ole' Math.sqrt to get the initial guess for
-            // the Newton iteration, good to at least 15 decimal
-            // digits. This approach does incur the cost of a
-            //
-            // BigDecimal -> double -> BigDecimal
-            //
-            // conversion cycle, but it avoids the need for several
-            // Newton iterations in BigDecimal arithmetic to get the
-            // working answer to 15 digits of precision. If many fewer
-            // than 15 digits were needed, it might be faster to do
-            // the loop entirely in BigDecimal arithmetic.
-            //
-            // (A double value might have as many as 17 decimal
-            // digits of precision; it depends on the relative density
-            // of binary and decimal numbers at different regions of
-            // the number line.)
-            //
-            // (It would be possible to check for certain special
-            // cases to avoid doing any Newton iterations. For
-            // example, if the BigDecimal -> double conversion was
-            // known to be exact and the rounding mode had a
-            // low-enough precision, the post-Newton rounding logic
-            // could be applied directly.)
-
-            BigDecimal guess = new BigDecimal(Math.sqrt(working.doubleValue()));
-            int guessPrecision = 15;
-            int originalPrecision = mc.getPrecision();
-            int targetPrecision;
-
-            // If an exact value is requested, it must only need about
-            // half of the input digits to represent since multiplying
-            // an N digit number by itself yield a 2N-1 digit or 2N
-            // digit result.
-            if (originalPrecision == 0) {
-                targetPrecision = stripped.precision()/2 + 1;
-            } else {
-                /*
-                 * To avoid the need for post-Newton fix-up logic, in
-                 * the case of half-way rounding modes, double the
-                 * target precision so that the "2p + 2" property can
-                 * be relied on to accomplish the final rounding.
-                 */
-                switch (mc.getRoundingMode()) {
-                case HALF_UP:
-                case HALF_DOWN:
-                case HALF_EVEN:
-                    targetPrecision = 2 * originalPrecision;
-                    if (targetPrecision < 0) // Overflow
-                        targetPrecision = Integer.MAX_VALUE - 2;
-                    break;
-
-                default:
-                    targetPrecision = originalPrecision;
-                    break;
-                }
-            }
-
-            // When setting the precision to use inside the Newton
-            // iteration loop, take care to avoid the case where the
-            // precision of the input exceeds the requested precision
-            // and rounding the input value too soon.
-            BigDecimal approx = guess;
-            int workingPrecision = working.precision();
-            do {
-                int tmpPrecision = Math.max(Math.max(guessPrecision, targetPrecision + 2),
-                                           workingPrecision);
-                MathContext mcTmp = new MathContext(tmpPrecision, RoundingMode.HALF_EVEN);
-                // approx = 0.5 * (approx + fraction / approx)
-                approx = ONE_HALF.multiply(approx.add(working.divide(approx, mcTmp), mcTmp));
-                guessPrecision *= 2;
-            } while (guessPrecision < targetPrecision + 2);
-
-            BigDecimal result;
-            RoundingMode targetRm = mc.getRoundingMode();
-            if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
-                RoundingMode tmpRm =
-                    (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
-                MathContext mcTmp = new MathContext(targetPrecision, tmpRm);
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mcTmp);
-
-                // If result*result != this numerically, the square
-                // root isn't exact
-                if (this.subtract(result.square()).compareTo(ZERO) != 0) {
-                    throw new ArithmeticException("Computed square root not exact.");
-                }
-            } else {
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mc);
-
-                switch (targetRm) {
-                case DOWN:
-                case FLOOR:
-                    // Check if too big
-                    if (result.square().compareTo(this) > 0) {
-                        BigDecimal ulp = result.ulp();
-                        // Adjust increment down in case of 1.0 = 10^0
-                        // since the next smaller number is only 1/10
-                        // as far way as the next larger at exponent
-                        // boundaries. Test approx and *not* result to
-                        // avoid having to detect an arbitrary power
-                        // of ten.
-                        if (approx.compareTo(ONE) == 0) {
-                            ulp = ulp.multiply(ONE_TENTH);
-                        }
-                        result = result.subtract(ulp);
-                    }
-                    break;
-
-                case UP:
-                case CEILING:
-                    // Check if too small
-                    if (result.square().compareTo(this) < 0) {
-                        result = result.add(result.ulp());
-                    }
-                    break;
-
-                default:
-                    // No additional work, rely on "2p + 2" property
-                    // for correct rounding. Alternatively, could
-                    // instead run the Newton iteration to around p
-                    // digits and then do tests and fix-ups on the
-                    // rounded value. One possible set of tests and
-                    // fix-ups is given in the Hull and Abrham paper;
-                    // however, additional half-way cases can occur
-                    // for BigDecimal given the more varied
-                    // combinations of input and output precisions
-                    // supported.
-                    break;
-                }
-
-            }
+            // If result*result != this numerically or requires too high precision,
+            // the square root isn't exact
+            if (sqrtRem[1].signum != 0 || mc.precision != 0 && result.precision() > mc.precision)
+                throw new ArithmeticException("Computed square root not exact.");
 
             // Test numerical properties at full precision before any
             // scale adjustments.
             assert squareRootResultAssertions(result, mc);
-            if (result.scale() != preferredScale) {
-                // The preferred scale of an add is
-                // max(addend.scale(), augend.scale()). Therefore, if
-                // the scale of the result is first minimized using
-                // stripTrailingZeros(), adding a zero of the
-                // preferred scale rounding to the correct precision
-                // will perform the proper scale vs precision
-                // tradeoffs.
-                result = result.stripTrailingZeros().
-                    add(zeroWithFinalPreferredScale,
-                        new MathContext(originalPrecision, RoundingMode.UNNECESSARY));
-            }
-            return result;
-        } else {
-            BigDecimal result = null;
-            switch (signum) {
-            case -1:
-                throw new ArithmeticException("Attempted square root " +
-                                              "of negative BigDecimal");
-            case 0:
-                result = valueOf(0L, scale()/2);
-                assert squareRootResultAssertions(result, mc);
-                return result;
+            // Adjust to requested precision and preferred
+            // scale as appropriate.
+            return result.adjustToPreferredScale(preferredScale, mc.precision);
+        }
+        // To allow BigInteger.sqrt() to be used to get the square
+        // root, it is necessary to normalize the input so that
+        // its integer part is sufficient to get the square root
+        // with the desired precision.
 
-            default:
-                throw new AssertionError("Bad value from signum");
+        final boolean halfWay = isHalfWay(mc.roundingMode);
+        // To obtain a square root with N digits,
+        // the radicand must have at least 2*(N-1)+1 == 2*N-1 digits.
+        final long minWorkingPrec = ((mc.precision + (halfWay ? 1L : 0L)) << 1) - 1L;
+        // normScale is the number of digits to take from the fraction of the input
+        long normScale = minWorkingPrec - this.precision() + this.scale;
+        normScale += normScale & 1L; // the scale for normalizing must be even
+
+        final long workingScale = this.scale - normScale;
+        if (workingScale != (int) workingScale)
+            throw new ArithmeticException("Overflow");
+
+        BigDecimal working = new BigDecimal(this.intVal, this.intCompact, (int) workingScale, this.precision);
+        BigInteger workingInt = working.toBigInteger();
+
+        BigInteger sqrt;
+        long resultScale = normScale >> 1;
+        // Round sqrt with the specified settings
+        if (halfWay) { // half-way rounding
+            BigInteger workingSqrt = workingInt.sqrt();
+            // remove the one-tenth digit
+            BigInteger[] quotRem10 = workingSqrt.divideAndRemainder(BigInteger.TEN);
+            sqrt = quotRem10[0];
+            resultScale--;
+
+            boolean increment = false;
+            int digit = quotRem10[1].intValue();
+            if (digit > 5) {
+                increment = true;
+            } else if (digit == 5) {
+                if (mc.roundingMode == RoundingMode.HALF_UP
+                        || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
+                        // Check if remainder is non-zero
+                        || !workingInt.equals(workingSqrt.multiply(workingSqrt))
+                        || !working.isInteger()) {
+                    increment = true;
+                }
+            }
+
+            if (increment)
+                sqrt = sqrt.add(1L);
+        } else {
+            switch (mc.roundingMode) {
+            case DOWN, FLOOR -> sqrt = workingInt.sqrt(); // No need to round
+
+            case UP, CEILING -> {
+                BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
+                sqrt = sqrtRem[0];
+                // Check if remainder is non-zero
+                if (sqrtRem[1].signum != 0 || !working.isInteger())
+                    sqrt = sqrt.add(1L);
+            }
+
+            default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
             }
         }
+
+        result = new BigDecimal(sqrt, checkScale(sqrt, resultScale), mc); // mc ensures no increase of precision
+        // Test numerical properties at full precision before any
+        // scale adjustments.
+        assert squareRootResultAssertions(result, mc);
+        // Adjust to requested precision and preferred
+        // scale as appropriate.
+        if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
+            result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+
+        return result;
+    }
+
+    /**
+     * Assumes {@code (precision() <= maxPrecision || maxPrecision == 0) && this != 0}.
+     * @param preferredScale the scale to reach
+     * @param maxPrecision the largest precision the result can have.
+     *        {@code maxPrecision == 0} means that the result can have arbitrary precision.
+     * @return a BigDecimal numerically equivalent to {@code this}, whose precision
+     *         does not exceed {@code maxPrecision} and whose scale is the closest
+     *         to {@code preferredScale}.
+     */
+    private BigDecimal adjustToPreferredScale(int preferredScale, int maxPrecision) {
+        BigDecimal result = this;
+        if (result.scale > preferredScale) {
+            result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+        } else if (result.scale < preferredScale) {
+            int maxScale = maxPrecision == 0 ?
+                preferredScale : (int) Math.min(preferredScale, result.scale + (long) (maxPrecision - result.precision()));
+            result = result.setScale(maxScale);
+        }
+        return result;
+    }
+
+    private static boolean isHalfWay(RoundingMode m) {
+        return switch (m) {
+            case HALF_DOWN, HALF_UP, HALF_EVEN -> true;
+            case FLOOR, CEILING, DOWN, UP, UNNECESSARY -> false;
+        };
     }
 
     private BigDecimal square() {
@@ -3074,13 +3047,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since 1.5
      */
     public BigDecimal stripTrailingZeros() {
-        if (intCompact == 0 || (intVal != null && intVal.signum() == 0)) {
-            return BigDecimal.ZERO;
-        } else if (intCompact != INFLATED) {
-            return createAndStripZerosToMatchScale(intCompact, scale, Long.MIN_VALUE);
-        } else {
-            return createAndStripZerosToMatchScale(intVal, scale, Long.MIN_VALUE);
-        }
+        return intCompact == 0 || (intVal != null && intVal.signum() == 0)
+                ? BigDecimal.ZERO
+                : stripZerosToMatchScale(intVal, intCompact, scale, Long.MIN_VALUE);
     }
 
     // Comparison Operations
@@ -3468,21 +3437,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return "0";
             }
             int trailingZeros = checkScaleNonZero((-(long)scale));
-            StringBuilder buf;
-            if(intCompact!=INFLATED) {
-                buf = new StringBuilder(20+trailingZeros);
-                buf.append(intCompact);
-            } else {
-                String str = intVal.toString();
-                buf = new StringBuilder(str.length()+trailingZeros);
-                buf.append(str);
+            String str = intCompact != INFLATED
+                ? Long.toString(intCompact)
+                : intVal.toString();
+            int len = str.length() + trailingZeros;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
+            StringBuilder buf = new StringBuilder(len);
+            buf.append(str);
+            buf.repeat('0', trailingZeros);
             return buf.toString();
         }
-        String str ;
+        String str;
         if(intCompact!=INFLATED) {
             str = Long.toString(Math.abs(intCompact));
         } else {
@@ -3492,11 +3459,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /* Returns a digit.digit string */
-    private String getValueString(int signum, String intString, int scale) {
+    private static String getValueString(int signum, String intString, int scale) {
         /* Insert decimal point */
         StringBuilder buf;
         int insertionPoint = intString.length() - scale;
-        if (insertionPoint == 0) {  /* Point goes right before intVal */
+        if (insertionPoint == 0) {  /* Point goes just before intVal */
             return (signum<0 ? "-0." : "0.") + intString;
         } else if (insertionPoint > 0) { /* Point goes inside intVal */
             buf = new StringBuilder(intString);
@@ -3504,14 +3471,29 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (signum < 0)
                 buf.insert(0, '-');
         } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuilder(3-insertionPoint + intString.length());
-            buf.append(signum<0 ? "-0." : "0.");
-            for (int i=0; i<-insertionPoint; i++) {
-                buf.append('0');
+            int len = (signum < 0 ? 3 : 2) + scale;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
+            buf = new StringBuilder(len);
+            buf.append(signum<0 ? "-0." : "0.");
+            buf.repeat('0', -insertionPoint);  // insertionPoint != MIN_VALUE
             buf.append(intString);
         }
         return buf.toString();
+    }
+
+    /**
+     * @return {@code true} if and only if {@code this == this.toBigInteger()}
+     */
+    boolean isInteger() {
+        if (scale <= 0 || signum() == 0)
+            return true;
+
+        // Get an upper bound of precision() without using big powers of 10 (see bigDigitLength())
+        int digitLen = precision != 0 ? precision
+            : (intCompact != INFLATED ? precision() : (digitLengthLower(unscaledValue()) + 1));
+        return digitLen > scale && stripZerosToMatchScale(intVal, intCompact, scale, 0L).scale == 0;
     }
 
     /**
@@ -3596,7 +3578,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private boolean fractionOnly() {
         assert this.signum() != 0;
-        return (this.precision() - this.scale) <= 0;
+        return this.precision() <= this.scale;
     }
 
     /**
@@ -3624,8 +3606,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (fractionOnly())
             throw new ArithmeticException("Rounding necessary");
 
-        // If more than 19 digits in integer part it cannot possibly fit
-        if ((precision() - scale) > 19) // [OK for negative scale too]
+        /*
+         * If more than 19 digits in integer part it cannot possibly fit.
+         * Ensure that arithmetic does not overflow, so instead of
+         *      precision() - scale > 19
+         * prefer
+         *      precision() - 19 > scale
+         * since precision() > 0, so the lhs cannot overflow.
+         */
+        if (precision() - 19 > scale) // [OK for negative scale too]
             throw new java.lang.ArithmeticException("Overflow");
 
         // round to an integer, with Exception if decimal part non-0
@@ -3752,31 +3741,69 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
-    public float floatValue(){
-        if(intCompact != INFLATED) {
+    public float floatValue() {
+        /* For details, see the extensive comments in doubleValue(). */
+        if (intCompact != INFLATED) {
+            float v = intCompact;
             if (scale == 0) {
-                return (float)intCompact;
-            } else {
-                /*
-                 * If both intCompact and the scale can be exactly
-                 * represented as float values, perform a single float
-                 * multiply or divide to compute the (properly
-                 * rounded) result.
-                 */
-                if (Math.abs(intCompact) < 1L<<22 ) {
-                    // Don't have too guard against
-                    // Math.abs(MIN_VALUE) because of outer check
-                    // against INFLATED.
-                    if (scale > 0 && scale < FLOAT_10_POW.length) {
-                        return (float)intCompact / FLOAT_10_POW[scale];
-                    } else if (scale < 0 && scale > -FLOAT_10_POW.length) {
-                        return (float)intCompact * FLOAT_10_POW[-scale];
-                    }
+                return v;
+            }
+            /*
+             * The discussion for the double case also applies here. That is,
+             * the following test is precise for all long values except for
+             * Long.MAX_VALUE but the result is correct nevertheless.
+             */
+            if ((long) v == intCompact) {
+                if (0 < scale && scale < FLOAT_10_POW.length) {
+                    return v / FLOAT_10_POW[scale];
+                }
+                if (0 > scale && scale > -FLOAT_10_POW.length) {
+                    return v * FLOAT_10_POW[-scale];
                 }
             }
         }
-        // Somewhat inefficient, but guaranteed to work.
-        return Float.parseFloat(this.toString());
+        return fullFloatValue();
+    }
+
+    private float fullFloatValue() {
+        if (intCompact == 0) {
+            return 0.0f;
+        }
+        BigInteger w = unscaledValue().abs();
+        long qb = w.bitLength() - (long) Math.ceil(scale * L);
+        if (qb < Q_MIN_F - 2) {  // qb < -151
+            return signum() * 0.0f;
+        }
+        if (qb > Q_MAX_F + P_F + 1) {  // qb > 129
+            return signum() * Float.POSITIVE_INFINITY;
+        }
+        if (scale < 0) {
+            return signum() * w.multiply(bigTenToThe(-scale)).floatValue();
+        }
+        if (scale == 0) {
+            return signum() * w.floatValue();
+        }
+        int ql = (int) qb - (P_F + 3);
+        BigInteger pow10 = bigTenToThe(scale);
+        BigInteger m, n;
+        if (ql <= 0) {
+            m = w.shiftLeft(-ql);
+            n = pow10;
+        } else {
+            m = w;
+            n = pow10.shiftLeft(ql);
+        }
+        BigInteger[] qr = m.divideAndRemainder(n);
+        int i = qr[0].intValue();
+        int sb = qr[1].signum();
+        int dq = (Integer.SIZE - (P_F + 2)) - Integer.numberOfLeadingZeros(i);
+        int eq = (Q_MIN_F - 2) - ql;
+        if (dq >= eq) {
+            return signum() * Math.scalb((float) (i | sb), ql);
+        }
+        int mask = (1 << eq) - 1;
+        int j = i >> eq | (Integer.signum(i & mask)) | sb;
+        return signum() * Math.scalb((float) j, Q_MIN_F - 2);
     }
 
     /**
@@ -3797,31 +3824,257 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
-    public double doubleValue(){
-        if(intCompact != INFLATED) {
+    public double doubleValue() {
+        /*
+         * Attempt a fast path when the significand is compact and the
+         * scale is small enough.
+         */
+        if (intCompact != INFLATED) {
+            double v = intCompact;
             if (scale == 0) {
-                return (double)intCompact;
-            } else {
+                /* v is the result of a single rounding. */
+                return v;
+            }
+            /*
+             * The test (long) (double) l == l to check whether l is an exact
+             * double is always accurate, except for l = Long.MAX_VALUE.
+             * This special case is not an issue, though, as explained below.
+             */
+            if ((long) v == intCompact) {
                 /*
-                 * If both intCompact and the scale can be exactly
-                 * represented as double values, perform a single
-                 * double multiply or divide to compute the (properly
-                 * rounded) result.
+                 * If intCompact != Long.MAX_VALUE, v is exactly equal to it
+                 * and 10^|scale| is an exact double when 0 < |scale| <= 22.
+                 * Hence, the multiplication or division below are on exact
+                 * doubles, so the result is subject to a single rounding.
+                 *
+                 * If intCompact = Long.MAX_VALUE, v is not exactly equal to it.
+                 * Luckily, when 0 < |scale| <= 22, full precision computations
+                 * show that the end result as computed here is correct anyway,
+                 * despite being the outcome of 2 roundings.
                  */
-                if (Math.abs(intCompact) < 1L<<52 ) {
-                    // Don't have too guard against
-                    // Math.abs(MIN_VALUE) because of outer check
-                    // against INFLATED.
-                    if (scale > 0 && scale < DOUBLE_10_POW.length) {
-                        return (double)intCompact / DOUBLE_10_POW[scale];
-                    } else if (scale < 0 && scale > -DOUBLE_10_POW.length) {
-                        return (double)intCompact * DOUBLE_10_POW[-scale];
-                    }
+                if (0 < scale && scale < DOUBLE_10_POW.length) {
+                    return v / DOUBLE_10_POW[scale];
+                }
+                if (0 > scale && scale > -DOUBLE_10_POW.length) {
+                    return v * DOUBLE_10_POW[-scale];
                 }
             }
         }
-        // Somewhat inefficient, but guaranteed to work.
-        return Double.parseDouble(this.toString());
+        return fullDoubleValue();
+    }
+
+    private double fullDoubleValue() {
+        /*
+         * This method works on all instances but might throw or consume a lot
+         * of memory and cpu on huge scales or huge significands.
+         *
+         * It is expected that this computations might exhaust memory or consume
+         * an unreasonable amount of cpu when both the significand and the scale
+         * are huge and conjure to meet MIN < |this| < MAX, where MIN and MAX
+         * are approximately Double.MIN_VALUE and Double.MAX_VALUE, resp.
+         */
+        if (intCompact == 0) {
+            return 0.0;
+        }
+
+        /*
+         * Let
+         *      w = |unscaledValue()|
+         *      s = scale
+         *      bl = w.bitLength()
+         *      P = Double.PRECISION  // 53
+         *      Q_MIN = Double.MIN_EXPONENT - (P - 1)  // -1_074
+         *      Q_MAX = Double.MAX_EXPONENT - (P - 1)  // 971
+         * Thus
+         *      |this| = w 10^{-s}
+         *      Double.MIN_VALUE = 2^Q_MIN
+         *      Double.MAX_VALUE = (2^P - 1) 2^Q_MAX
+         * Here w > 0, so 2^{bl-1} <= w < 2^bl, hence
+         *      bl = floor(log_2(w)) + 1
+         *
+         * To determine the return value, it helps to define real beta
+         * and integer q meeting
+         *      w 10^{-s} = beta 2^q such that 2^{P+1} <= beta < 2^{P+2}
+         * Note that floor(log_2(beta)) = P + 1.
+         * The reason for having beta meet these inequalities rather than the
+         * more "natural" 2^{P-1} <= beta < 2^P will become clearer below.
+         * (They ensure that there's room for a "round" and a "sticky" bit.)
+         *
+         * Determining beta and q, however, requires costly computations.
+         * Instead, try to quickly determine integer bounds ql, qh such that
+         * ql <= q <= qh and with qh - ql as small as reasonably possible.
+         * They help to quickly filter out most values that do not round
+         * to a finite, non-zero double.
+         *
+         * To this end, let l = log_2(10). Then
+         *      log_2(w) - s l = log_2(w 10^{-s}) = log_2(beta) + q
+         * Mathematically, for any real x, y:
+         *      floor(x) + floor(y) <= floor(x + y) <= floor(x) + floor(y) + 1
+         *      floor(-x) = -ceil(x)
+         * Therefore, remembering that
+         *      floor(log_2(w)) = bl - 1 and floor(log_2(beta)) = P + 1
+         * the above leads to
+         *      bl - ceil(s l) - P - 2 <= q <= bl - ceil(s l) - P - 1
+         *
+         * However, ceil(s l) is still a purely mathematical quantity.
+         * To determine computable bounds for it, let L = roundTiesToEven(l)
+         * and let u = 2^{-P} (see the comment about constant L).
+         * Let * denote multiplication on doubles, which is subject to errors.
+         * Then, since all involved values are not subnormals, it follows that
+         * (see any textbook on numerical algorithms):
+         *      s * L = s l (1 + delta_1) (1 + delta_2) = s l (1 + theta)
+         * where |delta_i| <= u, |theta| <= 2u / (1 - 2u) < 4u = 2^{2-P}
+         * The delta_i account for the relative error of l and of *.
+         * Note that s (the int scale) converts exactly as double.
+         * Hence, as 3 < l < 4
+         *      |s * L - s l| = |s| l |theta| < 2^31 4 2^{2-P} = 2^{-18} < 1
+         * For reals x, y, |x - y| <= 1 entails |ceil(x) - ceil(y)| <= 1. Thus,
+         *      ceil(s * L) - 1 <= ceil(s l) <= ceil(s * L) + 1
+         *
+         * Using these inequalities implies
+         *      bl - ceil(s * L) - P - 3 <= q <= bl - ceil(s * L) - P
+         * finally leading to the definitions
+         *      qb = bl - ceil(s * L), ql = qb - P - 3, qh = qb - P
+         * meeting
+         *      ql <= q <= qh and qh - ql = 3, which is small enough.
+         * Note that qb doesn't always fit in an int.
+         *
+         * To filter out most values that round to 0 or infinity, define
+         *      ZCO = 1/2 2^Q_MIN = 2^{Q_MIN-1}    (zero cutoff)
+         *      ICO = (2^P - 1/2) 2^Q_MAX    (infinity cutoff)
+         * Return [+/-]0 iff |this| <= ZCO, [+/-]infinity iff |this| >= ICO.
+         *
+         * To play safely, whenever 2^{P+2} 2^qh <= ZCO then
+         *      |this| = beta 2^q < 2^{P+2} 2^qh <= ZCO
+         * Now, 2^{P+2} 2^qh <= ZCO means the same as P + 2 + qh < Q_MIN,
+         * leading to
+         *      if qb < Q_MIN - 2 then return [+/-]0
+         *
+         * Similarly, whenever 2^{P+1} 2^ql >= 2^P 2^Q_MAX then
+         *      |this| = beta 2^q >= 2^{P+1} 2^ql >= 2^P 2^Q_MAX > ICO
+         * Here, 2^{P+1} 2^ql >= 2^P 2^Q_MAX is equivalent to ql + 2 > Q_MAX,
+         * which entails
+         *      if qb > Q_MAX + P + 1 then return [+/-]infinity
+         *
+         * Observe that |s * L| <= 2^31 4 = 2^33, so
+         *      (long) ceil(s * L) = ceil(s * L)
+         * since all integers <= 2^P are exact doubles.
+         */
+        BigInteger w = unscaledValue().abs();
+        long qb = w.bitLength() - (long) Math.ceil(scale * L);
+        if (qb < Q_MIN_D - 2) {  // qb < -1_076
+            return signum() * 0.0;
+        }
+        if (qb > Q_MAX_D + P_D + 1) {  // qb > 1_025
+            /* If s <= -309 then qb >= 1_027, so these cases all end up here. */
+            return signum() * Double.POSITIVE_INFINITY;
+        }
+
+        /*
+         * There's still a small chance to return [+/-]0 or [+/-]infinity.
+         * But rather than chasing for specific cases, do the full computations.
+         * Here, Q_MIN - 2 <= qb <= Q_MAX + P + 1
+         */
+        if (scale < 0) {
+            /*
+             * Here -309 < s < 0, so w 10^{-s} is an integer: delegate to
+             * BigInteger.doubleValue() without further ado.
+             * Also, |this| < 10^309, so the integers involved are manageable.
+             */
+            return signum() * w.multiply(bigTenToThe(-scale)).doubleValue();
+        }
+        if (scale == 0) {
+            return signum() * w.doubleValue();
+        }
+
+        /*
+         * This last case has s > 0 and sometimes unmanageable large integers.
+         * It is expected that these computations might exhaust memory or
+         * consume an unreasonable amount of cpu when both w and s are huge.
+         *
+         * Assume a number eta >= 2^{P+1} and split it into i = floor(eta)
+         * and f = eta - i. Thus i >= 2^{P+1} and 0 <= f < 1.
+         * Define sb = 0 iff f = 0 and sb = 1 iff f > 0.
+         * Let j = i | sb (| denotes bitwise "or").
+         * j has at least P + 2 bits to accommodate P most significand bits
+         * (msb), 1 rounding bit rb just to the right of them and 1 "sticky" bit
+         * sb as its least significant bit, as depicted here:
+         * eta = | P msb | rb | ... | lsb | bits of fraction f...
+         * i   = | P msb | rb | ... | lsb |
+         * j   = | P msb | rb | ... | sb  |
+         * All the bits in eta, i and j to the left of lsb or sb are identical.
+         * It's not hard to see that
+         *      roundTiesToEven(eta) = roundTiesToEven(j)
+         *
+         * To apply the above, define
+         *      eta = (w/10^s) 2^{-ql}
+         * which meets
+         *      eta = (w/10^s) 2^{-q} 2^{q-ql} = beta 2^{q-ql} = beta 2^dq
+         * where dq = q - ql. Therefore, since ql <= q <= qh = ql + 3
+         *      2^{P+1} <= eta < 2^{P+2}    iff q = ql
+         *      2^{P+2} <= eta < 2^{P+3}    iff q = ql + 1
+         *      2^{P+3} <= eta < 2^{P+4}    iff q = ql + 2
+         *      2^{P+4} <= eta < 2^{P+5}    iff q = ql + 3
+         * There are no other cases. The same holds for i = floor(eta),
+         * which therefore fits in a long, as P + 5 < Long.SIZE:
+         *      2^{P+1} <= i < 2^{P+2}      iff q = ql
+         *      2^{P+2} <= i < 2^{P+3}      iff q = ql + 1
+         *      2^{P+3} <= i < 2^{P+4}      iff q = ql + 2
+         *      2^{P+4} <= i < 2^{P+5}      iff q = ql + 3
+         * This shows dq = bitLength(i) - (P + 2).
+         *
+         * Let integer m = w 2^{-ql} if ql <= 0, or m = w if ql > 0 and
+         * let integer n = 10^s if ql <= 0, or n = 10^s 2^ql if ql > 0.
+         * It follows that eta = m/n, i = m // n, (// is integer division)
+         * and f = (m \\ n) / n (\\ is binary "mod" (remainder)).
+         * Of course, f > 0 iff m \\ n > 0, hence sb = signum(m \\ n).
+         *
+         * If q >= Q_MIN - 2 then |this| is in the normal range or overflows.
+         * With eq = Q_MIN - 2 - ql the condition is the same as dq >= eq.
+         * Provided |this| = eta 2^ql does not overflow, it follows that
+         *      roundTiesToEven(|this|) = roundTiesToEven(eta) 2^ql
+         *          = roundTiesToEven(j) 2^ql = scalb((double) j, ql)
+         * If |this| overflows, however, so does scalb((double) j, ql). Thus,
+         * in either case
+         *      roundTiesToEven(|this|) = scalb((double) j, ql)
+         *
+         * When q < Q_MIN - 2, that is, when dq < eq, |this| is in the
+         * subnormal range. The integer j needs to be shortened to ensure that
+         * the precision is gradually shortened for the final significand.
+         *      |this| = eta 2^ql = (eta/2^eq) 2^{Q_MIN-2}
+         * Compare eta and i as depicted here
+         * eta = | msb | eq lsb | bits of fraction f...
+         * i   = | msb | eq lsb |
+         * where there are eq least significant bits in the right section.
+         * To obtain j in this case, shift i to the right by eq positions and
+         * thereafter "or" its least significant bit with signum(eq lsb) and
+         * with sb as defined above. This leads to
+         *      roundTiesToEven(|this|) = scalb((double) j, Q_MIN - 2)
+         */
+        int ql = (int) qb - (P_D + 3);  // narrowing qb to an int is safe
+        BigInteger pow10 = bigTenToThe(scale);
+        BigInteger m, n;
+        if (ql <= 0) {
+            m = w.shiftLeft(-ql);
+            n = pow10;
+        } else {
+            m = w;
+            n = pow10.shiftLeft(ql);
+        }
+
+        BigInteger[] qr = m.divideAndRemainder(n);
+        long i = qr[0].longValue();
+        int sb = qr[1].signum();
+        int dq = (Long.SIZE - (P_D + 2)) - Long.numberOfLeadingZeros(i);
+        int eq = (Q_MIN_D - 2) - ql;
+        if (dq >= eq) {
+            return signum() * Math.scalb((double) (i | sb), ql);
+        }
+
+        /* Subnormal */
+        long mask = (1L << eq) - 1;
+        long j = i >> eq | Long.signum(i & mask) | sb;
+        return signum() * Math.scalb((double) j, Q_MIN_D - 2);
     }
 
     /**
@@ -3862,103 +4115,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
-    // Private class to build a string representation for BigDecimal object. The
-    // StringBuilder field acts as a buffer to hold the temporary representation
-    // of BigDecimal. The cmpCharArray holds all the characters for the compact
-    // representation of BigDecimal (except for '-' sign' if it is negative) if
-    // its intCompact field is not INFLATED.
-    static class StringBuilderHelper {
-        final StringBuilder sb;    // Placeholder for BigDecimal string
-        final char[] cmpCharArray; // character array to place the intCompact
-
-        StringBuilderHelper() {
-            sb = new StringBuilder(32);
-            // All non negative longs can be made to fit into 19 character array.
-            cmpCharArray = new char[19];
-        }
-
-        // Accessors.
-        StringBuilder getStringBuilder() {
-            sb.setLength(0);
-            return sb;
-        }
-
-        char[] getCompactCharArray() {
-            return cmpCharArray;
-        }
-
-        /**
-         * Places characters representing the intCompact in {@code long} into
-         * cmpCharArray and returns the offset to the array where the
-         * representation starts.
-         *
-         * @param intCompact the number to put into the cmpCharArray.
-         * @return offset to the array where the representation starts.
-         * Note: intCompact must be greater or equal to zero.
-         */
-        int putIntCompact(long intCompact) {
-            assert intCompact >= 0;
-
-            long q;
-            int r;
-            // since we start from the least significant digit, charPos points to
-            // the last character in cmpCharArray.
-            int charPos = cmpCharArray.length;
-
-            // Get 2 digits/iteration using longs until quotient fits into an int
-            while (intCompact > Integer.MAX_VALUE) {
-                q = intCompact / 100;
-                r = (int)(intCompact - q * 100);
-                intCompact = q;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            // Get 2 digits/iteration using ints when i2 >= 100
-            int q2;
-            int i2 = (int)intCompact;
-            while (i2 >= 100) {
-                q2 = i2 / 100;
-                r  = i2 - q2 * 100;
-                i2 = q2;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            cmpCharArray[--charPos] = DIGIT_ONES[i2];
-            if (i2 >= 10)
-                cmpCharArray[--charPos] = DIGIT_TENS[i2];
-
-            return charPos;
-        }
-
-        static final char[] DIGIT_TENS = {
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        };
-
-        static final char[] DIGIT_ONES = {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        };
-    }
-
     /**
      * Lay out this {@code BigDecimal} into a {@code char[]} array.
      * The Java 1.2 equivalent to this was called {@code getValueString}.
@@ -3969,6 +4125,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         {@code BigDecimal}
      */
     private String layoutChars(boolean sci) {
+        long intCompact = this.intCompact;
+        int scale = this.scale;
         if (scale == 0)                      // zero scale is trivial
             return (intCompact != INFLATED) ?
                 Long.toString(intCompact):
@@ -3978,18 +4136,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // currency fast path
             int lowInt = (int)intCompact % 100;
             int highInt = (int)intCompact / 100;
-            return (Integer.toString(highInt) + '.' +
-                    StringBuilderHelper.DIGIT_TENS[lowInt] +
-                    StringBuilderHelper.DIGIT_ONES[lowInt]) ;
+            int highIntSize = DecimalDigits.stringSize(highInt);
+            byte[] buf = new byte[highIntSize + 3];
+            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+            buf[highIntSize] = '.';
+            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
+            try {
+                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            } catch (CharacterCodingException cce) {
+                throw new AssertionError(cce);
+            }
         }
 
-        StringBuilderHelper sbHelper = new StringBuilderHelper();
         char[] coeff;
         int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value
         if (intCompact != INFLATED) {
-            offset = sbHelper.putIntCompact(Math.abs(intCompact));
-            coeff  = sbHelper.getCompactCharArray();
+            // All non negative longs can be made to fit into 19 character array.
+            coeff = new char[19];
+            offset = DecimalDigits.getChars(Math.abs(intCompact), coeff.length, coeff);
         } else {
             offset = 0;
             coeff  = intVal.abs().toString().toCharArray();
@@ -3999,7 +4164,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // If E-notation is needed, length will be: +1 if negative, +1
         // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
         // Otherwise it could have +1 if negative, plus leading "0.00000"
-        StringBuilder buf = sbHelper.getStringBuilder();
+        StringBuilder buf = new StringBuilder(32);;
         if (signum() < 0)             // prefix '-' if negative
             buf.append('-');
         int coeffLen = coeff.length - offset;
@@ -4380,8 +4545,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          */
         if (b.signum == 0)
             return 1;
-        int r = (int)((((long)b.bitLength() + 1) * 646456993) >>> 31);
-        return b.compareMagnitude(bigTenToThe(r)) < 0? r : r+1;
+        int r = digitLengthLower(b);
+        return b.compareMagnitude(bigTenToThe(r)) < 0 ? r : r + 1;
+    }
+
+    /**
+     * @return an integer {@code r} such that {@code 10^(r-1) <= abs(b) < 10^(r+1)}.
+     */
+    private static int digitLengthLower(BigInteger b) {
+        return (int) (((b.abs().bitLength() + 1L) * 646456993L) >>> 31);
     }
 
     /**
@@ -4914,28 +5086,115 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
+     * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
+     */
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];
+
+    static {
+        BigInteger pow = FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
+        for (int i = 1; i < FIVE_TO_2_TO.length; i++)
+            FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
+    }
+
+    /**
+     * @param n a non-negative integer
+     * @return {@code 5^(2^n)}
+     */
+    private static BigInteger fiveToTwoToThe(int n) {
+        int i = Math.min(n, FIVE_TO_2_TO.length - 1);
+        BigInteger pow = FIVE_TO_2_TO[i];
+        for (; i < n; i++)
+            pow = pow.multiply(pow);
+
+        return pow;
+    }
+
+    private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
+
+    /**
      * Remove insignificant trailing zeros from this
      * {@code BigInteger} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
+     * Assumes {@code intVal != 0}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
+        // avoid overflow of scale - preferredScale
+        preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
+        int powsOf2 = intVal.getLowestSetBit();
+        // scale - preferredScale >= remainingZeros >= max{n : (intVal % 10^n) == 0 && n <= scale - preferredScale}
+        // a multiple of 10^n must be a multiple of 2^n
+        long remainingZeros = Math.min(scale - preferredScale, powsOf2);
+        if (remainingZeros <= 0L)
+            return valueOf(intVal, scale, 0);
+
+        final int sign = intVal.signum;
+        if (sign < 0)
+            intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
+
+        intVal = intVal.shiftRight(powsOf2); // remove powers of 2
+        // Let k = max{n : (intVal % 5^n) == 0}, m = max{n : 5^n <= intVal}, so m >= k.
+        // Let b = intVal.bitLength(). It can be shown that
+        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic),
+        // which entails m <= maxPowsOf5 <= m + 1, where maxPowsOf5 is as below.
+        // Hence, maxPowsOf5 >= k.
+        long maxPowsOf5 = Math.round(intVal.bitLength() * LOG_5_OF_2);
+        remainingZeros = Math.min(remainingZeros, maxPowsOf5);
+
         BigInteger[] qr; // quotient-remainder pair
-        while (intVal.compareMagnitude(BigInteger.TEN) >= 0
-               && scale > preferredScale) {
-            if (intVal.testBit(0))
-                break; // odd number cannot end in 0
-            qr = intVal.divideAndRemainder(BigInteger.TEN);
-            if (qr[1].signum() != 0)
-                break; // non-0 remainder
-            intVal = qr[0];
-            scale = checkScale(intVal,(long) scale - 1); // could Overflow
+        // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i).
+        // Let z = max{n >= 0 : ((intVal * 2^powsOf2) % 10^n) == 0 && n <= scale - preferredScale},
+        // then the condition min(scale - preferredScale, powsOf2) >= remainingZeros >= z
+        // and the values ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved invariants after each iteration.
+        // Note that if intVal % 5^(2^i) != 0, the loop condition will become false.
+        for (int i = 0; remainingZeros >= 1L << i; i++) {
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum != 0) { // non-0 remainder
+                remainingZeros = exp - 1;
+            } else {
+                intVal = qr[0];
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
+                remainingZeros -= exp;
+                powsOf2 -= exp;
+            }
         }
-        return valueOf(intVal, scale, 0);
+
+        // bitLength(remainingZeros) == min{n >= 0 : 5^(2^n) > 5^remainingZeros}
+        // so, while the loop condition is true,
+        // the invariant i == max{n : 5^(2^n) <= 5^remainingZeros},
+        // which is equivalent to i == bitLength(remainingZeros) - 1,
+        // is preserved at the beginning of each iteration.
+        // Note that the loop stops exactly when remainingZeros == 0.
+        // Using the same definition of z for the first loop, the invariants
+        // min(scale - preferredScale, powsOf2) >= remainingZeros >= z,
+        // ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved in this loop as well, so, when the loop ends,
+        // remainingZeros == 0 implies z == 0, hence (intVal * 2^powsOf2) and scale
+        // have the correct values to return.
+        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum != 0) { // non-0 remainder
+                remainingZeros = exp - 1;
+            } else {
+                intVal = qr[0];
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
+                remainingZeros -= exp;
+                powsOf2 -= exp;
+
+                if (remainingZeros < exp >> 1) // else i == bitLength(remainingZeros) already
+                    i = BigInteger.bitLengthForLong(remainingZeros);
+            }
+        }
+
+        intVal = intVal.shiftLeft(powsOf2); // restore remaining powers of 2
+        return valueOf(sign >= 0 ? intVal : intVal.negate(), scale, 0);
     }
 
     /**
@@ -4943,31 +5202,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code long} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
+     * Assumes {@code compactVal != 0 && compactVal != INFLATED}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
-        while (Math.abs(compactVal) >= 10L && scale > preferredScale) {
-            if ((compactVal & 1L) != 0L)
-                break; // odd number cannot end in 0
-            long r = compactVal % 10L;
-            if (r != 0L)
-                break; // non-0 remainder
-            compactVal /= 10;
-            scale = checkScale(compactVal, (long) scale - 1); // could Overflow
+        while (compactVal % 10L == 0L && scale > preferredScale) {
+            compactVal /= 10L;
+            scale = checkScale(compactVal, scale - 1L); // could Overflow
         }
         return valueOf(compactVal, scale);
     }
 
-    private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, int preferredScale) {
-        if(intCompact!=INFLATED) {
-            return createAndStripZerosToMatchScale(intCompact, scale, preferredScale);
-        } else {
-            return createAndStripZerosToMatchScale(intVal==null ? INFLATED_BIGINT : intVal,
-                                                   scale, preferredScale);
-        }
+    /**
+     * Assumes {@code intVal != 0 && intCompact != 0}.
+     */
+    private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
+        return intCompact != INFLATED
+            ? createAndStripZerosToMatchScale(intCompact, scale, preferredScale)
+            : createAndStripZerosToMatchScale(intVal == null ? INFLATED_BIGINT : intVal, scale, preferredScale);
     }
 
     /*
@@ -5374,18 +5629,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         tmp = (dividendHi << shift) | (dividendLo >>> 64 - shift);
         long u2 = tmp & LONG_MASK;
-        long q1, r_tmp;
-        if (v1 == 1) {
-            q1 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q1 = tmp / v1;
-            r_tmp = tmp - q1 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q1 = rq[1];
-            r_tmp = rq[0];
-        }
+        long q1 = Long.divideUnsigned(tmp, v1);
+        long r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q1 >= DIV_NUM_BASE || unsignedLongCompare(q1*v0, make64(r_tmp, u1))) {
             q1--;
@@ -5396,18 +5641,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         tmp = mulsub(u2,u1,v1,v0,q1);
         u1 = tmp & LONG_MASK;
-        long q0;
-        if (v1 == 1) {
-            q0 = tmp;
-            r_tmp = 0;
-        } else if (tmp >= 0) {
-            q0 = tmp / v1;
-            r_tmp = tmp - q0 * v1;
-        } else {
-            long[] rq = divRemNegativeLong(tmp, v1);
-            q0 = rq[1];
-            r_tmp = rq[0];
-        }
+        long q0 = Long.divideUnsigned(tmp, v1);
+        r_tmp = Long.remainderUnsigned(tmp, v1);
 
         while(q0 >= DIV_NUM_BASE || unsignedLongCompare(q0*v0,make64(r_tmp,u0))) {
             q0--;
@@ -5485,37 +5720,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
             return new BigDecimal(unscaledVal, INFLATED, scale, n+1);
         }
-    }
-
-    /**
-     * Calculate the quotient and remainder of dividing a negative long by
-     * another long.
-     *
-     * @param n the numerator; must be negative
-     * @param d the denominator; must not be unity
-     * @return a two-element {@code long} array with the remainder and quotient in
-     *         the initial and final elements, respectively
-     */
-    private static long[] divRemNegativeLong(long n, long d) {
-        assert n < 0 : "Non-negative numerator " + n;
-        assert d != 1 : "Unity denominator";
-
-        // Approximate the quotient and remainder
-        long q = (n >>> 1) / (d >>> 1);
-        long r = n - q * d;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += d;
-            q--;
-        }
-        while (r >= d) {
-            r -= d;
-            q++;
-        }
-
-        // n - q*d == r && 0 <= r < d, hence we're done.
-        return new long[] {r, q};
     }
 
     private static long make64(long hi, long lo) {

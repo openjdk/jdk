@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  *  @run compile -g HelloWorld.java
  *  @run build ClassesByName
  *
- *  @run driver ClassesByName HelloWorld
+ *  @run driver ClassesByName
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -52,7 +52,7 @@ public class ClassesByName extends TestScaffold {
     }
 
     protected void runTests() throws Exception {
-        startUp("ClassesByName");
+        startUp("HelloWorld");
 
         List all = vm().allClasses();
         for (Iterator it = all.iterator(); it.hasNext(); ) {

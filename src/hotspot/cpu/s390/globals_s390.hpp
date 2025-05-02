@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,9 @@
 
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.
 define_pd_global(bool,  TrapBasedNullChecks,         true);
-define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast.
+define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap nulls passed to check cast.
+
+define_pd_global(bool,  DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 define_pd_global(uintx, CodeCacheSegmentSize,        256);
 // This shall be at least 32 for proper branch target alignment.
@@ -78,7 +80,6 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
 
 #define ARCH_FLAGS(develop,                                                   \
                    product,                                                   \
-                   notproduct,                                                \
                    range,                                                     \
                    constraint)                                                \
                                                                               \
@@ -106,6 +107,11 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
   /* Seems to pay off with 2 pages already. */                                \
   product(size_t, MVCLEThreshold, +2*(4*K), DIAGNOSTIC,                       \
           "Threshold above which page-aligned MVCLE copy/init is used.")      \
+  /* special instructions */                                                  \
+  product(bool, SuperwordUseVX, false,                                        \
+          "Use Z15 Vector instructions for superword optimization.")          \
+  product(bool, UseSFPV, false, DIAGNOSTIC,                                   \
+          "Use SFPV Vector instructions for superword optimization.")         \
                                                                               \
   product(bool, PreferLAoverADD, false, DIAGNOSTIC,                           \
           "Use LA/LAY instructions over ADD instructions (z/Architecture).")  \

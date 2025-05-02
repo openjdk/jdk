@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 #include "ResourceEditor.h"
 #include "ErrorHandling.h"
+#include "FileUtils.h"
+#include "WinFileUtils.h"
 #include "IconSwap.h"
 #include "VersionInfo.h"
 #include "JniUtils.h"
@@ -56,16 +58,21 @@ extern "C" {
     /*
      * Class:     jdk_jpackage_internal_ExecutableRebrander
      * Method:    unlockResource
-     * Signature: (J;)V
+     * Signature: (J;)Z
      */
-    JNIEXPORT void JNICALL
+    JNIEXPORT jboolean JNICALL
         Java_jdk_jpackage_internal_ExecutableRebrander_unlockResource(
             JNIEnv *pEnv, jclass c, jlong jResourceLock) {
 
+        bool unlockFailed = false;
         JP_TRY;
         ResourceEditor::FileLock(
-                reinterpret_cast<HANDLE>(jResourceLock)).ownHandle(true);
+                reinterpret_cast<HANDLE>(jResourceLock))
+                        .ownHandle(true)
+                        .notifyUnlockFailed(&unlockFailed);
         JP_CATCH_ALL;
+
+        return unlockFailed ? JNI_FALSE : JNI_TRUE;
     }
 
     /*
@@ -155,6 +162,27 @@ extern "C" {
         JP_CATCH_ALL;
 
         return 1;
+    }
+
+    /*
+     * Class:     jdk_jpackage_internal_ShortPathUtils
+     * Method:    getShortPath
+     * Signature: (Ljava/lang/String;)Ljava/lang/String;
+     */
+    JNIEXPORT jstring JNICALL
+        Java_jdk_jpackage_internal_ShortPathUtils_getShortPath(
+            JNIEnv *pEnv, jclass c, jstring jLongPath) {
+
+        JP_TRY;
+
+        const std::wstring longPath = jni::toUnicodeString(pEnv, jLongPath);
+        std::wstring shortPath = FileUtils::toShortPath(longPath);
+
+        return jni::toJString(pEnv, shortPath);
+
+        JP_CATCH_ALL;
+
+        return NULL;
     }
 
 } // extern "C"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Compiler.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -32,6 +31,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allocation.hpp"
@@ -40,7 +40,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
-#include "sanitizers/leak.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -48,19 +47,19 @@
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
-void Compiler::init_c1_runtime() {
+bool Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Arena* arena = new (mtCompiler) Arena(mtCompiler);
-  // Ignore leaked arena, it is used by ValueType and Interval during initialization.
-  LSAN_IGNORE_OBJECT(arena);
-  Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
+  if (!Runtime1::initialize(buffer_blob)) {
+    return false;
+  }
   // initialize data structures
-  ValueType::initialize(arena);
+  ValueType::initialize();
   GraphBuilder::initialize();
   // note: to use more than one instance of LinearScan at a time this function call has to
   //       be moved somewhere outside of this constructor:
-  Interval::initialize(arena);
+  Interval::initialize();
+  return true;
 }
 
 
@@ -69,30 +68,29 @@ void Compiler::initialize() {
   BufferBlob* buffer_blob = init_buffer_blob();
 
   if (should_perform_init()) {
-    if (buffer_blob == NULL) {
+    if (buffer_blob == nullptr || !init_c1_runtime()) {
       // When we come here we are in state 'initializing'; entire C1 compilation
       // can be shut down.
       set_state(failed);
     } else {
-      init_c1_runtime();
       set_state(initialized);
     }
   }
 }
 
-int Compiler::code_buffer_size() {
+uint Compiler::code_buffer_size() {
   return Compilation::desired_max_code_buffer_size() + Compilation::desired_max_constant_size();
 }
 
 BufferBlob* Compiler::init_buffer_blob() {
   // Allocate buffer blob once at startup since allocation for each
   // compilation seems to be too expensive (at least on Intel win32).
-  assert (CompilerThread::current()->get_buffer_blob() == NULL, "Should initialize only once");
+  assert (CompilerThread::current()->get_buffer_blob() == nullptr, "Should initialize only once");
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
   BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
-  if (buffer_blob != NULL) {
+  if (buffer_blob != nullptr) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }
 
@@ -107,10 +105,12 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     // C1 does not support intrinsification of synchronized methods.
     return false;
   }
+  return Compiler::is_intrinsic_supported(id);
+}
 
+bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
-    if (!VM_Version::supports_cx8()) return false;
     break;
   case vmIntrinsics::_getAndAddInt:
     if (!VM_Version::supports_atomic_getadd4()) return false;
@@ -135,6 +135,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_onSpinWait:
     if (!VM_Version::supports_on_spin_wait()) return false;
     break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!VM_Version::supports_float16()) return false;
+    break;
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -153,8 +157,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isPrimitive:
-  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_scopedValueCache:
@@ -164,6 +166,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  #if defined(AMD64)
+  case vmIntrinsics::_dtanh:
+  #endif
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -219,7 +224,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#if defined(S390) || defined(PPC64) || defined(AARCH64)
+#if defined(S390) || defined(PPC64) || defined(AARCH64) || defined(AMD64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
@@ -232,6 +237,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_getObjectSize:
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV) || defined(PPC64)
+  case vmIntrinsics::_clone:
+#endif
     break;
   case vmIntrinsics::_blackhole:
     break;
@@ -244,7 +252,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  assert(buffer_blob != NULL, "Must exist");
+  assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
   {
     // We are nested here because we need for the destructor

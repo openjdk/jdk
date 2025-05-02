@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -160,7 +159,7 @@ void xmlStream::see_tag(const char* tag, bool push) {
   char* old_low  = _element_close_stack_low;
   char* push_ptr = old_ptr - (tag_len+1);
   if (push_ptr < old_low) {
-    int old_len = _element_close_stack_high - old_ptr;
+    int old_len = pointer_delta_as_int(_element_close_stack_high, old_ptr);
     int new_len = old_len * 2;
     if (new_len < 100)  new_len = 100;
     char* new_low  = NEW_C_HEAP_ARRAY(char, new_len, mtInternal);
@@ -357,11 +356,11 @@ void xmlStream::va_done(const char* format, va_list ap) {
   size_t kind_len;
   if (kind_end != nullptr) {
     kind_len = kind_end - kind;
-    int n = os::snprintf(buffer, sizeof(buffer), "%.*s_done", (int)kind_len, kind);
+    int n = os::snprintf(buffer, sizeof(buffer), "%.*s_done%s", (int)kind_len, kind, kind + kind_len);
     assert((size_t)n < sizeof(buffer), "Unexpected number of characters in string");
   } else {
     kind_len = format_len;
-    int n = os::snprintf(buffer, sizeof(buffer), "%s_done%s", kind, kind + kind_len);
+    int n = os::snprintf(buffer, sizeof(buffer), "%s_done", kind);
     assert((size_t)n < sizeof(buffer), "Unexpected number of characters in string");
   }
   // Output the trailing event with the timestamp.

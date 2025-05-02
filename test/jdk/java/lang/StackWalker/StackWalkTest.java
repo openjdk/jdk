@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,7 @@ import jdk.test.lib.RandomFactory;
  * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java
  * @run main/othervm StackWalkTest
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest
  * @run main/othervm StackWalkTest -random:50
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest -random:50
  * @author danielfuchs, bchristi
  * @key randomness
  */
@@ -55,11 +53,11 @@ public class StackWalkTest {
     private static final int MAX_RANDOM_DEPTH = 1000;
 
     static final Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
-            "jdk.internal.reflect.NativeMethodAccessorImpl",
-            "jdk.internal.reflect.DelegatingMethodAccessorImpl",
+            "jdk.internal.reflect.DirectMethodHandleAccessor",
             "java.lang.reflect.Method",
             "com.sun.javatest.regtest.MainWrapper$MainThread",
             "com.sun.javatest.regtest.agent.MainWrapper$MainThread",
+            "com.sun.javatest.regtest.agent.MainWrapper$MainTask",
             "java.lang.Thread"
     ));
     static final List<Class<?>> streamPipelines = Arrays.asList(

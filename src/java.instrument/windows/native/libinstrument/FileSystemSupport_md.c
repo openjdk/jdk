@@ -196,7 +196,7 @@ static char* normalizePath(const char* path, int len, int off) {
  * normalizer on the part of the pathname that requires normalization.
  * This way we iterate through the whole pathname string only once.
  */
-char* normalize(char* path) {
+char* normalize_path(char* path) {
     int n = (int)strlen(path);
     int i;
     int prev = 0;

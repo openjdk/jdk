@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test using single and multiple -XX:OnOutOfMemoryError=<cmd>
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestOnOutOfMemoryError
  * @bug 8078470 8177522
  */
@@ -46,12 +47,12 @@ public class TestOnOutOfMemoryError {
         // else this is the main test
         String msg1 = "Test1 Succeeded";
         String msg2 = "Test2 Succeeded";
-        ProcessBuilder pb_single = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb_single = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:OnOutOfMemoryError=echo " + msg1,
            TestOnOutOfMemoryError.class.getName(),
            "throwOOME");
 
-        ProcessBuilder pb_multiple = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb_multiple = ProcessTools.createLimitedTestJavaProcessBuilder(
            "-XX:OnOutOfMemoryError=echo " + msg1,
            "-XX:OnOutOfMemoryError=echo " + msg2,
            TestOnOutOfMemoryError.class.getName(),

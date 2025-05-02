@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,7 @@
 package javax.xml.validation;
 
 import com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory;
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -51,23 +44,9 @@ class SchemaFactoryFinder  {
     private static boolean debug = false;
 
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
-    /**
-     * <p>Cache properties for performance.</p>
-     */
-    private static final Properties cacheProps = new Properties();
-
-    /**
-     * <p>First time requires initialization overhead.</p>
-     */
-    private static volatile boolean firstTime = true;
 
     static {
-        // Use try/catch block to support applets
-        try {
-            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
-        } catch (Exception unused) {
-            debug = false;
-        }
+        debug = System.getProperty("jaxp.debug") != null;
     }
 
     /**
@@ -165,7 +144,7 @@ class SchemaFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = SecuritySupport.getSystemProperty(propertyName);
+            String r = System.getProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 sf = createInstance(r);
@@ -179,37 +158,12 @@ class SchemaFactoryFinder  {
             }
         }
 
-        String javah = SecuritySupport.getSystemProperty( "java.home" );
-        String configFile = javah + File.separator +
-        "conf" + File.separator + "jaxp.properties";
-
-
-        // try to read from $java.home/conf/jaxp.properties
-        try {
-            if(firstTime){
-                synchronized(cacheProps){
-                    if(firstTime){
-                        File f=new File( configFile );
-                        firstTime = false;
-                        if(SecuritySupport.doesFileExist(f)){
-                            debugPrintln(()->"Read properties file " + f);
-                            cacheProps.load(SecuritySupport.getFileInputStream(f));
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(propertyName);
-            debugPrintln(()->"found " + factoryClassName + " in $java.home/conf/jaxp.properties");
-
-            if (factoryClassName != null) {
-                sf = createInstance(factoryClassName);
-                if(sf != null){
-                    return sf;
-                }
-            }
-        } catch (Exception ex) {
-            if (debug) {
-                ex.printStackTrace();
+        // try to read from the configuration file
+        String factoryClassName = SecuritySupport.readConfig(propertyName);
+        if (factoryClassName != null) {
+            sf = createInstance(factoryClassName);
+            if(sf != null){
+                return sf;
             }
         }
 
@@ -239,19 +193,10 @@ class SchemaFactoryFinder  {
      * @param className Name of class to create.
      * @return Created class or <code>null</code>.
      */
-    @SuppressWarnings("removal")
     private Class<?> createClass(String className) {
         Class<?> clazz;
-        // make sure we have access to restricted packages
-        boolean internal = false;
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                internal = true;
-            }
-        }
-
         try {
-            if (classLoader != null && !internal) {
+            if (classLoader != null) {
                 clazz = Class.forName(className, false, classLoader);
             } else {
                 clazz = Class.forName(className);
@@ -296,8 +241,7 @@ class SchemaFactoryFinder  {
             }
             schemaFactory = (SchemaFactory) clazz.getConstructor().newInstance();
         } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
-            InstantiationException | InvocationTargetException | NoSuchMethodException |
-            SecurityException ex) {
+            InstantiationException | InvocationTargetException | NoSuchMethodException ex) {
             debugPrintln(()->"could not instantiate " + clazz.getName());
             if (debug) {
                     ex.printStackTrace();
@@ -306,18 +250,6 @@ class SchemaFactoryFinder  {
         }
 
         return schemaFactory;
-    }
-
-    // Call isSchemaLanguageSupported with initial context.
-    @SuppressWarnings("removal")
-    private boolean isSchemaLanguageSupportedBy(final SchemaFactory factory,
-            final String schemaLanguage,
-            AccessControlContext acc) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return factory.isSchemaLanguageSupported(schemaLanguage);
-            }
-        }, acc);
     }
 
     /**
@@ -329,26 +261,18 @@ class SchemaFactoryFinder  {
      *         if none is found.
      * @throws SchemaFactoryConfigurationError if a configuration error is found.
      */
-    @SuppressWarnings("removal")
     private SchemaFactory findServiceProvider(final String schemaLanguage) {
         assert schemaLanguage != null;
-        // store current context.
-        final AccessControlContext acc = AccessController.getContext();
         try {
-            return AccessController.doPrivileged(new PrivilegedAction<SchemaFactory>() {
-                public SchemaFactory run() {
-                    final ServiceLoader<SchemaFactory> loader =
-                            ServiceLoader.load(SERVICE_CLASS);
-                    for (SchemaFactory factory : loader) {
-                        // restore initial context to call
-                        // factory.isSchemaLanguageSupported
-                        if (isSchemaLanguageSupportedBy(factory, schemaLanguage, acc)) {
-                            return factory;
-                        }
-                    }
-                    return null; // no factory found.
+            final ServiceLoader<SchemaFactory> loader =
+                    ServiceLoader.load(SERVICE_CLASS);
+            for (SchemaFactory factory : loader) {
+                // factory.isSchemaLanguageSupported
+                if (factory.isSchemaLanguageSupported(schemaLanguage)) {
+                    return factory;
                 }
-            });
+            }
+            return null; // no factory found.
         } catch (ServiceConfigurationError error) {
             throw new SchemaFactoryConfigurationError(
                     "Provider for " + SERVICE_CLASS + " cannot be created", error);

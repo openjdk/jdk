@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
  * such as {@code 10:15:30+01:00}.
@@ -143,11 +145,11 @@ public final class OffsetTime
     private static final long serialVersionUID = 7264499704384272492L;
 
     /**
-     * The local date-time.
+     * @serial The local date-time.
      */
     private final LocalTime time;
     /**
-     * The offset from UTC/Greenwich.
+     * @serial The offset from UTC/Greenwich.
      */
     private final ZoneOffset offset;
 
@@ -1281,7 +1283,11 @@ public final class OffsetTime
      * use {@link ChronoField#NANO_OF_DAY} as a comparator.
      *
      * @param other  the other time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison of the UTC equivalent {@code other} instant,
+     *          if they are not equal, and if the UTC equivalent {@code other} instant is equal,
+     *          the comparison of this local time with {@code other} local time
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(OffsetTime other) {
@@ -1394,7 +1400,10 @@ public final class OffsetTime
      */
     @Override
     public String toString() {
-        return time.toString() + offset.toString();
+        var offsetStr = offset.toString();
+        var buf = new StringBuilder(18 + offsetStr.length());
+        DateTimeHelper.formatTo(buf, time);
+        return buf.append(offsetStr).toString();
     }
 
     //-----------------------------------------------------------------------

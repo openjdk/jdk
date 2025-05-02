@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8256421
  * @summary Interoperability tests with Harica CAs
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath HaricaCA OCSP
- * @run main/othervm -Djava.security.debug=certpath HaricaCA CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath HaricaCA OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath HaricaCA CRL
  */
 
 /*

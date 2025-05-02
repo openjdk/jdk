@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,45 +23,50 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Implementation of the platform-specific part of StubRoutines - for
-// a description of how to extend it, see the stubRoutines.hpp file.
-
-address StubRoutines::aarch64::_get_previous_sp_entry = NULL;
-
-address StubRoutines::aarch64::_f2i_fixup = NULL;
-address StubRoutines::aarch64::_f2l_fixup = NULL;
-address StubRoutines::aarch64::_d2i_fixup = NULL;
-address StubRoutines::aarch64::_d2l_fixup = NULL;
-address StubRoutines::aarch64::_vector_iota_indices = NULL;
-address StubRoutines::aarch64::_float_sign_mask = NULL;
-address StubRoutines::aarch64::_float_sign_flip = NULL;
-address StubRoutines::aarch64::_double_sign_mask = NULL;
-address StubRoutines::aarch64::_double_sign_flip = NULL;
-address StubRoutines::aarch64::_zero_blocks = NULL;
-address StubRoutines::aarch64::_count_positives = NULL;
-address StubRoutines::aarch64::_count_positives_long = NULL;
-address StubRoutines::aarch64::_large_array_equals = NULL;
-address StubRoutines::aarch64::_compare_long_string_LL = NULL;
-address StubRoutines::aarch64::_compare_long_string_UU = NULL;
-address StubRoutines::aarch64::_compare_long_string_LU = NULL;
-address StubRoutines::aarch64::_compare_long_string_UL = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_ll = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
-address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
-address StubRoutines::aarch64::_method_entry_barrier = NULL;
+// function used as default for spin_wait stub
 
 static void empty_spin_wait() { }
-address StubRoutines::aarch64::_spin_wait = CAST_FROM_FN_PTR(address, empty_spin_wait);
+
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
 
 bool StubRoutines::aarch64::_completed = false;
+
+ATTRIBUTE_ALIGNED(64) uint16_t StubRoutines::aarch64::_kyberConsts[] =
+{
+    // Because we sometimes load these in pairs, montQInvModR, kyber_q
+    // and kyberBarrettMultiplier should stay together and in this order.
+    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, // montQInvModR
+    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, // kyber_q
+    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, // kyberBarrettMultiplier
+    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, // toMont((kyber_n / 2)^-1 (mod kyber_q))
+    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549  // montRSquareModQ
+};
+
+ATTRIBUTE_ALIGNED(64) uint32_t StubRoutines::aarch64::_dilithiumConsts[] =
+{
+    58728449, 58728449, 58728449, 58728449, // montQInvModR
+    8380417, 8380417, 8380417, 8380417, // dilithium_q
+    16382, 16382, 16382, 16382, // toMont((dilithium_n)^-1 (mod dilithium_q))
+    2365951, 2365951, 2365951, 2365951, // montRSquareModQ
+    5373807, 5373807, 5373807, 5373807 // addend for modular reduce
+};
 
 /**
  *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h

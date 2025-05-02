@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -76,9 +77,10 @@ public class ActionHelper {
     public List<Long> getChildren(HtmlSection section, long pid) {
         String pidStr = "" + pid;
         ProcessBuilder pb = getChildren.prepareProcess(section, this, pidStr);
-        PrintWriter log = getChildren.getSection(section).getWriter();
+        HtmlSection childrenSection = getChildren.getSection(section);
+        PrintWriter log = childrenSection.getWriter();
         CharArrayWriter writer = new CharArrayWriter();
-        ExitCode code = run(log, writer, pb, getChildren.getParameters());
+        ExitCode code = run(childrenSection, log, writer, pb, getChildren.getParameters());
         Reader output = new CharArrayReader(writer.toCharArray());
 
         if (!ExitCode.OK.equals(code)) {
@@ -154,15 +156,15 @@ public class ActionHelper {
         }
     }
 
-    private ExitCode run(PrintWriter log, Writer out, ProcessBuilder pb,
-                    ActionParameters params) {
+    private ExitCode run(HtmlSection section, PrintWriter log, Writer out, ProcessBuilder pb,
+                         ActionParameters params) {
         char[] lineChars = new char[40];
         Arrays.fill(lineChars, '-');
         String line = new String(lineChars);
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.start();
 
-        log.printf("%s%n[%tF %<tT] %s timeout=%s%n%1$s%n", line, new Date(), pb.command(), params.timeout);
+        log.printf("%s%n[%tF %<tT] %s timeout=%s in %s%n%1$s%n", line, new Date(), pb.command(), params.timeout, pb.directory());
 
         Process process;
         KillerTask killer;
@@ -199,6 +201,19 @@ public class ActionHelper {
         log.printf("%s%n[%tF %<tT] exit code: %d time: %d ms%n%1$s%n",
                 line, new Date(), result.value,
                 TimeUnit.NANOSECONDS.toMillis(stopwatch.getElapsedTimeNs()));
+        // upon successful completion of the action, generate links to any successArtifacts
+        // that have been declared for this action
+        if (ExitCode.OK.equals(result) && params.successArtifacts != null) {
+            final StringTokenizer t = new StringTokenizer(params.successArtifacts, ",");
+            while (t.hasMoreTokens()) {
+                final String artifactPath = t.nextToken().trim();
+                if (artifactPath.isEmpty()) {
+                    continue;
+                }
+                // create a link to the artifact
+                section.createLink(artifactPath, artifactPath);
+            }
+        }
         return result;
     }
 
@@ -286,11 +301,21 @@ public class ActionHelper {
         }
         PrintWriter sectionWriter = section.getWriter();
         if (params.repeat > 1) {
+            // hold on to the original command and successArtifacts values which potentially
+            // contain the %iterCount token, since we need to replace it with different value
+            // on each iteration
+            String originalSuccessArtifacts = params.successArtifacts;
+            List<String> originalCommand = process.command();
             for (int i = 0, n = params.repeat; i < n; ++i) {
                 HtmlSection iteration = section.createChildren(
                         String.format("iteration_%d", i));
                 PrintWriter writer = iteration.getWriter();
-                ExitCode exitCode = run(writer, writer, process, params);
+                // use the original values with the token (if any)
+                params.successArtifacts = originalSuccessArtifacts;
+                process.command(originalCommand);
+                // replace the %iterCount token (if any)
+                prepareIteration(i, process, params);
+                ExitCode exitCode = run(section, writer, writer, process, params);
                 if (params.stopOnError && !ExitCode.OK.equals(exitCode)) {
                     sectionWriter.printf(
                             "ERROR: non zero exit code[%d] -- break.",
@@ -309,7 +334,26 @@ public class ActionHelper {
                 }
             }
         } else {
-            run(section.getWriter(), section.getWriter(), process, params);
+            prepareIteration(0, process, params);
+            run(section, section.getWriter(), section.getWriter(), process, params);
+        }
+    }
+
+    // replaces the occurrences of %iterCount from the process builder command/arguments
+    // and the action params' "successArtifacts" paths, with the iteration count
+    private void prepareIteration(int iterationCount, ProcessBuilder pb,
+                                  ActionParameters actionParams) {
+        List<String> command = new ArrayList<>();
+        for (String arg : pb.command()) {
+            arg = arg.replaceAll("%iterCount", String.valueOf(iterationCount)) ;
+            command.add(arg);
+        }
+        pb.command(command);
+
+        String successArtifacts = actionParams.successArtifacts;
+        if (successArtifacts != null) {
+            actionParams.successArtifacts = successArtifacts.replaceAll("%iterCount",
+                    String.valueOf(iterationCount));
         }
     }
 

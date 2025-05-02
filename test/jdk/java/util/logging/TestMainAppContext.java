@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.awt.SunToolkit;
  * @modules java.desktop/sun.awt
  *          java.logging
  * @build TestMainAppContext
- * @run main/othervm -Djava.security.manager=allow TestMainAppContext
+ * @run main/othervm TestMainAppContext
  * @author danielfuchs
  */
 public class TestMainAppContext {
@@ -46,8 +46,8 @@ public class TestMainAppContext {
             rootTG = rootTG.getParent();
         }
 
-        ThreadGroup tg = new ThreadGroup(rootTG, "FakeApplet");
-        final Thread t1 = new Thread(tg, "createNewAppContext") {
+        ThreadGroup tg = new ThreadGroup(rootTG, "main");
+        final Thread t1 = new Thread(tg, "child") {
             @Override
             public void run() {
                 try {
@@ -74,14 +74,11 @@ public class TestMainAppContext {
             }
 
         };
-
-        System.setSecurityManager(new SecurityManager());
         t2.start();
         t2.join();
         if (thrown != null) {
             throw new RuntimeException("Test failed: " + thrown, thrown);
         }
-
     }
 
 }

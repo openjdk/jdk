@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.invalid.case.label.combination
-// key: compiler.misc.feature.case.null
-// key: compiler.warn.preview.feature.use
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class InvalidCaseLabelCombination {
     private void doSwitch(Integer i) {

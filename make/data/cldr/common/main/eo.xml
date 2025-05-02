@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="eo"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">afara</language>
 			<language type="ab">abĥaza</language>
@@ -36,9 +31,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="arp" draft="unconfirmed">arapaha</language>
 			<language type="ars" draft="unconfirmed">araba naĝda</language>
 			<language type="as">asama</language>
-			<language type="ast" draft="unconfirmed">asturia</language>
+			<language type="ast" draft="unconfirmed">astura</language>
 			<language type="atj" draft="unconfirmed">atikameka</language>
 			<language type="av" draft="unconfirmed">avara</language>
+			<language type="awa" draft="unconfirmed">avadhia</language>
 			<language type="ay">ajmara</language>
 			<language type="az">azerbajĝana</language>
 			<language type="az" alt="short" draft="unconfirmed">azera</language>
@@ -47,17 +43,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bas" draft="unconfirmed">basaa</language>
 			<language type="be">belorusa</language>
 			<language type="bem" draft="unconfirmed">bemba</language>
+			<language type="bez" draft="unconfirmed">benaa</language>
 			<language type="bg">bulgara</language>
+			<language type="bgc" draft="unconfirmed">harjana</language>
 			<language type="bho" draft="unconfirmed">boĝpura</language>
 			<language type="bi">bislamo</language>
 			<language type="bin" draft="unconfirmed">edoa</language>
 			<language type="bla" draft="unconfirmed">siksika</language>
+			<language type="blo" draft="unconfirmed">aniia</language>
 			<language type="bm" draft="unconfirmed">bambara</language>
 			<language type="bn">bengala</language>
 			<language type="bo">tibeta</language>
 			<language type="br">bretona</language>
 			<language type="brx" draft="unconfirmed">bodoa</language>
-			<language type="bs" draft="contributed">bosnia</language>
+			<language type="bs" draft="contributed">bosna</language>
 			<language type="bug" draft="unconfirmed">buĝia</language>
 			<language type="byn" draft="unconfirmed">bilena</language>
 			<language type="ca">kataluna</language>
@@ -92,6 +91,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="da">dana</language>
 			<language type="dak" draft="unconfirmed">dakotaa</language>
 			<language type="dar" draft="unconfirmed">dargva</language>
+			<language type="dav" draft="unconfirmed">taitaa</language>
 			<language type="de">germana</language>
 			<language type="de_AT" draft="unconfirmed">germana aŭstra</language>
 			<language type="de_CH" draft="unconfirmed">germana svisa</language>
@@ -100,7 +100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="doi" draft="unconfirmed">dogra</language>
 			<language type="dsb" draft="unconfirmed">malsuprasoraba</language>
 			<language type="dua" draft="unconfirmed">dualaa</language>
-			<language type="dv">mahla</language>
+			<language type="dv" draft="contributed">maldiva</language>
 			<language type="dyo" draft="unconfirmed">djola</language>
 			<language type="dz">dzonko</language>
 			<language type="dzg" draft="unconfirmed">dazaa</language>
@@ -114,7 +114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_CA" draft="unconfirmed">angla kanada</language>
 			<language type="en_GB" draft="unconfirmed">angla brita</language>
 			<language type="en_US" draft="unconfirmed">angla usona</language>
-			<language type="eo">esperanto</language>
+			<language type="eo">Esperanto</language>
 			<language type="es">hispana</language>
 			<language type="es_419" draft="unconfirmed">hispana amerika</language>
 			<language type="es_ES" draft="unconfirmed">hispana eŭropa</language>
@@ -123,6 +123,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">eŭska</language>
 			<language type="ewo" draft="unconfirmed">eunda</language>
 			<language type="fa">persa</language>
+			<language type="fa_AF" draft="unconfirmed">daria</language>
 			<language type="ff" draft="unconfirmed">fula</language>
 			<language type="fi">finna</language>
 			<language type="fil" draft="contributed">filipina</language>
@@ -135,10 +136,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="frc" draft="unconfirmed">kaĵun-franca</language>
 			<language type="frr" draft="unconfirmed">nord-frisa</language>
 			<language type="fur" draft="unconfirmed">friula</language>
-			<language type="fy">frisa</language>
+			<language type="fy" draft="contributed">okcident-frisa</language>
 			<language type="ga">irlanda</language>
-			<language type="gaa" draft="unconfirmed">gaa</language>
-			<language type="gd">gaela</language>
+			<language type="gaa" draft="contributed">gaa</language>
+			<language type="gd" draft="contributed">skot-gaela</language>
 			<language type="gez" draft="unconfirmed">geeza</language>
 			<language type="gil" draft="unconfirmed">kiribata</language>
 			<language type="gl">galega</language>
@@ -165,11 +166,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hur" draft="unconfirmed">halkomelema</language>
 			<language type="hy">armena</language>
 			<language type="hz" draft="unconfirmed">herera</language>
-			<language type="ia">interlingvao</language>
+			<language type="ia" draft="contributed">Interlingvao</language>
 			<language type="iba" draft="unconfirmed">ibana</language>
 			<language type="ibb" draft="unconfirmed">ibibia</language>
 			<language type="id">indonezia</language>
-			<language type="ie">okcidentalo</language>
+			<language type="ie" draft="contributed">Interlingveo</language>
 			<language type="ig" draft="unconfirmed">igba</language>
 			<language type="ii" draft="unconfirmed">jia</language>
 			<language type="ik">eskima</language>
@@ -190,7 +191,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kam" draft="unconfirmed">kambaa</language>
 			<language type="kbd" draft="unconfirmed">kabarda</language>
 			<language type="kde" draft="unconfirmed">makonda</language>
-			<language type="kea" draft="unconfirmed">kaboverda kreolo</language>
+			<language type="kea" draft="unconfirmed">kaboverda kreola</language>
 			<language type="kfo" draft="unconfirmed">malinka (Koro)</language>
 			<language type="kgp" draft="unconfirmed">kainganga</language>
 			<language type="kha" draft="unconfirmed">kasia</language>
@@ -224,11 +225,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez" draft="unconfirmed">lezga</language>
 			<language type="lg" draft="unconfirmed">ganda</language>
 			<language type="li" draft="unconfirmed">limburga</language>
+			<language type="lij" draft="unconfirmed">ligura</language>
 			<language type="lil" draft="unconfirmed">lilueta</language>
 			<language type="lkt" draft="unconfirmed">lakota</language>
+			<language type="lmo" draft="unconfirmed">lombarda</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laŭa</language>
-			<language type="lou" draft="unconfirmed">luiziana kreolo</language>
+			<language type="lou" draft="unconfirmed">luiziana kreola</language>
 			<language type="loz" draft="unconfirmed">lozia</language>
 			<language type="lrc" draft="unconfirmed">nord-lura</language>
 			<language type="lt">litova</language>
@@ -246,7 +249,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mdf" draft="unconfirmed">mokŝa</language>
 			<language type="men" draft="unconfirmed">mendea</language>
 			<language type="mer" draft="unconfirmed">merua</language>
-			<language type="mfe" draft="unconfirmed">maŭrica kreolo</language>
+			<language type="mfe" draft="unconfirmed">maŭrica kreola</language>
 			<language type="mg">malagasa</language>
 			<language type="mgh" draft="unconfirmed">makua (Meetto)</language>
 			<language type="mh" draft="unconfirmed">marŝala</language>
@@ -263,6 +266,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mr">marata</language>
 			<language type="ms">malaja</language>
 			<language type="mt">malta</language>
+			<language type="mua" draft="unconfirmed">mundanga</language>
 			<language type="mul" draft="unconfirmed">pluraj lingvoj</language>
 			<language type="mus" draft="unconfirmed">krika</language>
 			<language type="mwl" draft="unconfirmed">miranda</language>
@@ -309,11 +313,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pis" draft="unconfirmed">piĵina</language>
 			<language type="pl">pola</language>
 			<language type="pqm" draft="unconfirmed">malesita-pasamakvodja</language>
-			<language type="ps">paŝtoa</language>
+			<language type="prg" draft="unconfirmed">prusa</language>
+			<language type="ps" draft="contributed">paŝtua</language>
 			<language type="pt">portugala</language>
-			<language type="pt_BR">brazilportugala</language>
-			<language type="pt_PT">eŭropportugala</language>
+			<language type="pt_BR" draft="contributed">portugala brazila</language>
+			<language type="pt_PT" draft="contributed">portugala eŭropa</language>
 			<language type="qu">keĉua</language>
+			<language type="raj" draft="unconfirmed">raĝastana</language>
 			<language type="rap" draft="unconfirmed">rapanuia</language>
 			<language type="rar" draft="unconfirmed">maoria kukinsula</language>
 			<language type="rhg" draft="unconfirmed">rohinĝa</language>
@@ -324,6 +330,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ru">rusa</language>
 			<language type="rup" draft="unconfirmed">arumana</language>
 			<language type="rw">ruanda</language>
+			<language type="rwk" draft="unconfirmed">rua</language>
 			<language type="sa">sanskrito</language>
 			<language type="sad" draft="unconfirmed">sandavea</language>
 			<language type="sah" draft="unconfirmed">jakuta</language>
@@ -361,6 +368,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw">svahila</language>
 			<language type="swb" draft="unconfirmed">maorea</language>
 			<language type="syr" draft="unconfirmed">siria</language>
+			<language type="szl" draft="unconfirmed">silezi-pola</language>
 			<language type="ta">tamila</language>
 			<language type="tce" draft="unconfirmed">sud-tuĉona</language>
 			<language type="te">telugua</language>
@@ -378,7 +386,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tlh" draft="contributed">klingona</language>
 			<language type="tli" draft="unconfirmed">tlingita</language>
 			<language type="tn">cvana</language>
-			<language type="to">tongaa</language>
+			<language type="to" draft="contributed">tongana</language>
 			<language type="tok" draft="unconfirmed">Tokipono</language>
 			<language type="tpi" draft="unconfirmed">Tokpisino</language>
 			<language type="tr">turka</language>
@@ -400,8 +408,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">uzbeka</language>
 			<language type="vai" draft="unconfirmed">vaja</language>
 			<language type="ve" draft="unconfirmed">vendaa</language>
+			<language type="vec" draft="unconfirmed">venecia</language>
 			<language type="vi">vjetnama</language>
-			<language type="vo">volapuko</language>
+			<language type="vmw" draft="unconfirmed">makua</language>
+			<language type="vo" draft="contributed">Volapuko</language>
 			<language type="vun" draft="unconfirmed">kivunja</language>
 			<language type="wa" draft="unconfirmed">valona</language>
 			<language type="wae" draft="unconfirmed">germana valza</language>
@@ -410,6 +420,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu" draft="unconfirmed">vua</language>
 			<language type="xal" draft="unconfirmed">kalmuka</language>
 			<language type="xh">ksosa</language>
+			<language type="xnr" draft="unconfirmed">kangra</language>
+			<language type="xog" draft="unconfirmed">soga</language>
 			<language type="yi">jida</language>
 			<language type="yo">joruba</language>
 			<language type="yrl" draft="unconfirmed">nengatua</language>
@@ -424,24 +436,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">ĉina tradicia</language>
 			<language type="zh_Hant" alt="long" draft="unconfirmed">ĉina normlingvo tradicia</language>
 			<language type="zu">zulua</language>
+			<language type="zun" draft="unconfirmed">zunjia</language>
 			<language type="zxx">nelingvaĵo</language>
 			<language type="zza" draft="unconfirmed">zazaa</language>
 		</languages>
 		<scripts>
 			<script type="Arab" draft="unconfirmed">araba</script>
+			<script type="Aran" draft="unconfirmed">nastalika</script>
+			<script type="Armn" draft="unconfirmed">armena</script>
+			<script type="Beng" draft="unconfirmed">bengala</script>
+			<script type="Bopo" draft="unconfirmed">bopomofo</script>
+			<script type="Brai" draft="unconfirmed">brajlo</script>
 			<script type="Cyrl" draft="unconfirmed">cirila</script>
+			<script type="Deva" draft="unconfirmed">nagario</script>
+			<script type="Ethi" draft="unconfirmed">etiopa</script>
+			<script type="Geor" draft="unconfirmed">kartvela</script>
+			<script type="Grek" draft="unconfirmed">greka</script>
+			<script type="Gujr" draft="unconfirmed">guĝarata</script>
+			<script type="Guru" draft="unconfirmed">gurmuka</script>
+			<script type="Hanb" draft="unconfirmed">ĉina kun bopomofo</script>
+			<script type="Hang" draft="unconfirmed">hangulo</script>
+			<script type="Hani" draft="unconfirmed">ĉina</script>
 			<script type="Hans" draft="unconfirmed">simpligita</script>
 			<script type="Hans" alt="stand-alone" draft="unconfirmed">simpligita ĉina</script>
 			<script type="Hant" draft="unconfirmed">tradicia</script>
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">tradicia ĉina</script>
+			<script type="Hebr" draft="unconfirmed">hebrea</script>
+			<script type="Hira" draft="unconfirmed">hiragana</script>
+			<script type="Hrkt" draft="unconfirmed">japanaj silabaroj</script>
+			<script type="Jamo" draft="unconfirmed">jamo</script>
 			<script type="Jpan" draft="unconfirmed">japana</script>
+			<script type="Kana" draft="unconfirmed">katakana</script>
+			<script type="Khmr" draft="unconfirmed">kmera</script>
+			<script type="Knda" draft="unconfirmed">kanara</script>
 			<script type="Kore" draft="unconfirmed">korea</script>
-			<script type="Latn" draft="unconfirmed">latina</script>
+			<script type="Laoo" draft="unconfirmed">laŭa</script>
+			<script type="Latn" draft="contributed">latina</script>
+			<script type="Mlym" draft="unconfirmed">malajalama</script>
+			<script type="Mymr" draft="unconfirmed">birma</script>
+			<script type="Orya" draft="unconfirmed">orija</script>
+			<script type="Sinh" draft="unconfirmed">sinhala</script>
+			<script type="Taml" draft="unconfirmed">tamila</script>
+			<script type="Telu" draft="unconfirmed">telugua</script>
+			<script type="Thaa" draft="unconfirmed">maldiva</script>
+			<script type="Thai" draft="unconfirmed">taja</script>
+			<script type="Tibt" draft="unconfirmed">tibeta</script>
+			<script type="Zmth" draft="unconfirmed">matematika notacio</script>
+			<script type="Zsye" draft="unconfirmed">emoĝioj</script>
+			<script type="Zsym" draft="unconfirmed">simboloj</script>
 			<script type="Zxxx" draft="unconfirmed">neskribata</script>
+			<script type="Zyyy" draft="unconfirmed">nedifinita</script>
 			<script type="Zzzz" draft="unconfirmed">nekonata skribsistemo</script>
 		</scripts>
 		<territories>
-			<territory type="001">Mondo</territory>
+			<territory type="001">mondo</territory>
 			<territory type="002" draft="unconfirmed">Afriko</territory>
 			<territory type="003" draft="unconfirmed">Nordameriko</territory>
 			<territory type="005" draft="unconfirmed">Sudameriko</territory>
@@ -476,7 +524,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AD">Andoro</territory>
 			<territory type="AE">Unuiĝintaj Arabaj Emirlandoj</territory>
 			<territory type="AF">Afganujo</territory>
-			<territory type="AG">Antigvo-Barbudo</territory>
+			<territory type="AG" draft="contributed">Antigvo kaj Barbudo</territory>
 			<territory type="AI">Angvilo</territory>
 			<territory type="AL">Albanujo</territory>
 			<territory type="AM">Armenujo</territory>
@@ -489,7 +537,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AW">Arubo</territory>
 			<territory type="AX" draft="unconfirmed">Alando</territory>
 			<territory type="AZ">Azerbajĝano</territory>
-			<territory type="BA">Bosnio-Hercegovino</territory>
+			<territory type="BA" draft="contributed">Bosnujo kaj Hercegovino</territory>
 			<territory type="BB">Barbado</territory>
 			<territory type="BD">Bangladeŝo</territory>
 			<territory type="BE">Belgujo</territory>
@@ -502,7 +550,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BM">Bermudoj</territory>
 			<territory type="BN">Brunejo</territory>
 			<territory type="BO">Bolivio</territory>
-			<territory type="BQ" draft="unconfirmed">Karibia Nederlando</territory>
+			<territory type="BQ" draft="unconfirmed">Kariba Nederlando</territory>
 			<territory type="BR">Brazilo</territory>
 			<territory type="BS">Bahamoj</territory>
 			<territory type="BT">Butano</territory>
@@ -515,7 +563,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CD" draft="unconfirmed">Kongo Kinŝasa</territory>
 			<territory type="CD" alt="variant" draft="unconfirmed">Demokratia Respubliko Kongo</territory>
 			<territory type="CF">Centr-Afrika Respubliko</territory>
-			<territory type="CG">Kongolo</territory>
+			<territory type="CG" draft="contributed">Kongo Brazavila</territory>
 			<territory type="CG" alt="variant" draft="unconfirmed">Respubliko Kongo</territory>
 			<territory type="CH">Svisujo</territory>
 			<territory type="CI">Ebur-Bordo</territory>
@@ -525,13 +573,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">Ĉinujo</territory>
 			<territory type="CO">Kolombio</territory>
 			<territory type="CP" draft="unconfirmed">Klipertono</territory>
+			<territory type="CQ" draft="unconfirmed">Sark</territory>
 			<territory type="CR">Kostariko</territory>
 			<territory type="CU">Kubo</territory>
-			<territory type="CV">Kabo-Verdo</territory>
+			<territory type="CV" draft="contributed">Kaboverdo</territory>
 			<territory type="CW" draft="unconfirmed">Kuracao</territory>
 			<territory type="CX" draft="unconfirmed">Kristnaskinsulo</territory>
 			<territory type="CY">Kipro</territory>
 			<territory type="CZ">Ĉeĥujo</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Ĉeĥa Respubliko</territory>
 			<territory type="DE">Germanujo</territory>
 			<territory type="DG" draft="unconfirmed">Diego Garcia</territory>
 			<territory type="DJ">Ĝibutio</territory>
@@ -542,7 +592,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EA" draft="unconfirmed">Ceŭto kaj Melilo</territory>
 			<territory type="EC">Ekvadoro</territory>
 			<territory type="EE">Estonujo</territory>
-			<territory type="EG">Egipto</territory>
+			<territory type="EG" draft="contributed">Egiptujo</territory>
 			<territory type="EH">Okcidenta Saharo</territory>
 			<territory type="ER">Eritreo</territory>
 			<territory type="ES">Hispanujo</territory>
@@ -587,7 +637,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israelo</territory>
 			<territory type="IM" draft="unconfirmed">Mankinsulo</territory>
 			<territory type="IN">Hindujo</territory>
-			<territory type="IO">Brita Hindoceana Teritorio</territory>
+			<territory type="IO" draft="provisional">Brita Hindoceana Teritorio</territory>
+			<territory type="IO" alt="chagos" draft="unconfirmed">Ĉagos-arĥipelago</territory>
 			<territory type="IQ">Irako</territory>
 			<territory type="IR">Irano</territory>
 			<territory type="IS">Islando</territory>
@@ -597,21 +648,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="JO">Jordanio</territory>
 			<territory type="JP">Japanujo</territory>
 			<territory type="KE">Kenjo</territory>
-			<territory type="KG">Kirgizistano</territory>
+			<territory type="KG" draft="contributed">Kirgizujo</territory>
 			<territory type="KH">Kamboĝo</territory>
 			<territory type="KI">Kiribato</territory>
 			<territory type="KM">Komoroj</territory>
-			<territory type="KN">Sent-Kristofo kaj Neviso</territory>
+			<territory type="KN" draft="contributed">Sankta Kristoforo kaj Neviso</territory>
 			<territory type="KP">Nord-Koreo</territory>
 			<territory type="KR">Sud-Koreo</territory>
 			<territory type="KW">Kuvajto</territory>
 			<territory type="KY">Kejmanoj</territory>
-			<territory type="KZ">Kazaĥstano</territory>
+			<territory type="KZ" draft="contributed">Kazaĥujo</territory>
 			<territory type="LA">Laoso</territory>
 			<territory type="LB">Libano</territory>
-			<territory type="LC">Sent-Lucio</territory>
+			<territory type="LC" draft="contributed">Sankta Lucio</territory>
 			<territory type="LI">Liĥtenŝtejno</territory>
-			<territory type="LK">Sri-Lanko</territory>
+			<territory type="LK" draft="contributed">Srilanko</territory>
 			<territory type="LR">Liberio</territory>
 			<territory type="LS">Lesoto</territory>
 			<territory type="LT">Litovujo</territory>
@@ -627,7 +678,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MH">Marŝaloj</territory>
 			<territory type="MK" draft="unconfirmed">Nord-Makedonujo</territory>
 			<territory type="ML">Malio</territory>
-			<territory type="MM">Mjanmao</territory>
+			<territory type="MM" draft="contributed">Birmo</territory>
 			<territory type="MN">Mongolujo</territory>
 			<territory type="MO" draft="unconfirmed">Makao</territory>
 			<territory type="MP">Nord-Marianoj</territory>
@@ -661,12 +712,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PH">Filipinoj</territory>
 			<territory type="PK">Pakistano</territory>
 			<territory type="PL">Pollando</territory>
-			<territory type="PM">Sent-Piero kaj Mikelono</territory>
+			<territory type="PM" draft="contributed">Sankta Piero kaj Mikelono</territory>
 			<territory type="PN">Pitkarna Insulo</territory>
-			<territory type="PR">Puerto-Riko</territory>
+			<territory type="PR" draft="contributed">Puertoriko</territory>
 			<territory type="PS" draft="unconfirmed">Palestino</territory>
 			<territory type="PT">Portugalujo</territory>
-			<territory type="PW">Belaŭo</territory>
+			<territory type="PW" draft="contributed">Palaŭo</territory>
 			<territory type="PY">Paragvajo</territory>
 			<territory type="QA">Kataro</territory>
 			<territory type="QO" draft="unconfirmed">malproksimaj insuletoj de Oceanio</territory>
@@ -675,23 +726,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RS" draft="unconfirmed">Serbujo</territory>
 			<territory type="RU">Rusujo</territory>
 			<territory type="RW">Ruando</territory>
-			<territory type="SA">Saŭda Arabujo</territory>
+			<territory type="SA" draft="contributed">Sauda Arabujo</territory>
 			<territory type="SB">Salomonoj</territory>
 			<territory type="SC">Sejŝeloj</territory>
 			<territory type="SD">Sudano</territory>
 			<territory type="SE">Svedujo</territory>
 			<territory type="SG">Singapuro</territory>
-			<territory type="SH">Sent-Heleno</territory>
+			<territory type="SH" draft="contributed">Sankta Heleno</territory>
 			<territory type="SI">Slovenujo</territory>
-			<territory type="SJ">Svalbardo kaj Jan-Majen-insulo</territory>
+			<territory type="SJ" draft="contributed">Svalbardo kaj Janmajeno</territory>
 			<territory type="SK">Slovakujo</territory>
-			<territory type="SL">Siera-Leono</territory>
-			<territory type="SM">San-Marino</territory>
+			<territory type="SL" draft="contributed">Sieraleono</territory>
+			<territory type="SM" draft="contributed">Sanmarino</territory>
 			<territory type="SN">Senegalo</territory>
 			<territory type="SO">Somalujo</territory>
 			<territory type="SR">Surinamo</territory>
 			<territory type="SS" draft="provisional">Sud-Sudano</territory>
-			<territory type="ST">Sao-Tomeo kaj Principeo</territory>
+			<territory type="ST" draft="contributed">Santomeo kaj Principeo</territory>
 			<territory type="SV">Salvadoro</territory>
 			<territory type="SX" draft="unconfirmed">Sint-Maarten</territory>
 			<territory type="SY">Sirio</territory>
@@ -700,7 +751,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TC" draft="unconfirmed">Turkoj kaj Kajkoj</territory>
 			<territory type="TD">Ĉado</territory>
 			<territory type="TF" draft="unconfirmed">Francaj Sudaj Teritorioj</territory>
-			<territory type="TG">Togolo</territory>
+			<territory type="TG" draft="contributed">Togolando</territory>
 			<territory type="TH">Tajlando</territory>
 			<territory type="TJ">Taĝikujo</territory>
 			<territory type="TK" draft="unconfirmed">Tokelao</territory>
@@ -709,11 +760,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TN">Tunizio</territory>
 			<territory type="TO">Tongo</territory>
 			<territory type="TR">Turkujo</territory>
+			<territory type="TR" alt="variant" draft="unconfirmed">Turkio</territory>
 			<territory type="TT">Trinidado kaj Tobago</territory>
 			<territory type="TV">Tuvalo</territory>
 			<territory type="TW">Tajvano</territory>
 			<territory type="TZ">Tanzanio</territory>
-			<territory type="UA">Ukrajno</territory>
+			<territory type="UA" draft="contributed">Ukrainujo</territory>
 			<territory type="UG">Ugando</territory>
 			<territory type="UM">Usonaj malgrandaj insuloj</territory>
 			<territory type="UN" draft="unconfirmed">Unuiĝintaj Nacioj</territory>
@@ -721,7 +773,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UY">Urugvajo</territory>
 			<territory type="UZ">Uzbekujo</territory>
 			<territory type="VA">Vatikano</territory>
-			<territory type="VC">Sent-Vincento kaj la Grenadinoj</territory>
+			<territory type="VC" draft="contributed">Sankta Vincento kaj Grenadinoj</territory>
 			<territory type="VE">Venezuelo</territory>
 			<territory type="VG">Britaj Virgulininsuloj</territory>
 			<territory type="VI">Usonaj Virgulininsuloj</territory>
@@ -739,21 +791,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Zimbabvo</territory>
 			<territory type="ZZ" draft="unconfirmed">nekonata regiono</territory>
 		</territories>
+		<variants>
+			<variant type="ARKAIKA" draft="unconfirmed">Arkaika</variant>
+			<variant type="HSISTEMO" draft="unconfirmed">h-sistemo</variant>
+			<variant type="XSISTEMO" draft="unconfirmed">x-sistemo</variant>
+		</variants>
+		<keys>
+			<key type="calendar" draft="unconfirmed">kalendaro</key>
+			<key type="cf" draft="unconfirmed">formo de valuto</key>
+			<key type="collation" draft="unconfirmed">ordigo</key>
+			<key type="currency" draft="unconfirmed">valuto</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">budhaisma kalendaro</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">ĉina kalendaro</type>
+			<type key="calendar" type="coptic" draft="unconfirmed">kopta kalendaro</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">korea kalendaro</type>
+			<type key="calendar" type="ethiopic" draft="unconfirmed">etiopa kalendaro</type>
 			<type key="calendar" type="gregorian" draft="unconfirmed">gregoria kalendaro</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">juda kalendaro</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">islama kalendaro</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">tabela islama kalendaro</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">islama kalendaro (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">kalendaro ISO-8601</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">japana kalendaro</type>
+			<type key="calendar" type="persian" draft="unconfirmed">persa kalendaro</type>
+			<type key="calendar" type="roc" draft="unconfirmed">kalendaro de Respubliko Ĉinujo</type>
+			<type key="collation" type="ducet" draft="unconfirmed">norma ordigo laŭ Unikodo</type>
+			<type key="collation" type="search" draft="unconfirmed">ĝeneral-uza serĉo</type>
 			<type key="collation" type="standard" draft="unconfirmed">norma ordigo</type>
 			<type key="numbers" type="latn" draft="unconfirmed">eŭropaj ciferoj</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="unconfirmed">metra</measurementSystemName>
-			<measurementSystemName type="UK" draft="unconfirmed">brita</measurementSystemName>
-			<measurementSystemName type="US" draft="unconfirmed">usona</measurementSystemName>
+			<measurementSystemName type="metric" draft="contributed">metra</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">brita</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">usona</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Lingvo: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Skribsistemo: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Regiono: {0}</codePattern>
+			<codePattern type="language" draft="contributed">Lingvo: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Skribsistemo: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Regiono: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -761,26 +838,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[q w x y]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ĉ D E F G Ĝ H Ĥ I J Ĵ K L M N O P R S Ŝ T U Ŭ V Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} /]</exemplarCharacters>
-		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
-		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
-		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
-		<moreInformation draft="unconfirmed">?</moreInformation>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} /]</exemplarCharacters>
+		<ellipsis type="word-final" draft="unconfirmed">{0}…</ellipsis>
+		<ellipsis type="word-initial" draft="unconfirmed">…{0}</ellipsis>
 	</characters>
-	<delimiters>
-		<quotationStart draft="unconfirmed">“</quotationStart>
-		<quotationEnd draft="unconfirmed">”</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">‘</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d-'a' 'de' MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
+							<pattern draft="contributed">EEEE, 'la' d-'a' 'de' MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -798,7 +866,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -852,7 +919,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ 'de' y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm B</greatestDifference>
@@ -901,30 +967,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="h">
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="unconfirmed">M – M</greatestDifference>
@@ -990,49 +1042,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">jan</month>
-							<month type="2">feb</month>
-							<month type="3">mar</month>
-							<month type="4">apr</month>
-							<month type="5">maj</month>
-							<month type="6">jun</month>
-							<month type="7">jul</month>
-							<month type="8">aŭg</month>
-							<month type="9">sep</month>
-							<month type="10">okt</month>
-							<month type="11">nov</month>
-							<month type="12">dec</month>
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mar</month>
+							<month type="4">Apr</month>
+							<month type="5">Maj</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Aŭg</month>
+							<month type="9">Sep</month>
+							<month type="10">Okt</month>
+							<month type="11">Nov</month>
+							<month type="12">Dec</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">januaro</month>
-							<month type="2">februaro</month>
-							<month type="3">marto</month>
-							<month type="4">aprilo</month>
-							<month type="5">majo</month>
-							<month type="6">junio</month>
-							<month type="7">julio</month>
-							<month type="8">aŭgusto</month>
-							<month type="9">septembro</month>
-							<month type="10">oktobro</month>
-							<month type="11">novembro</month>
-							<month type="12">decembro</month>
+							<month type="1">Januaro</month>
+							<month type="2">Februaro</month>
+							<month type="3">Marto</month>
+							<month type="4">Aprilo</month>
+							<month type="5">Majo</month>
+							<month type="6">Junio</month>
+							<month type="7">Julio</month>
+							<month type="8">Aŭgusto</month>
+							<month type="9">Septembro</month>
+							<month type="10">Oktobro</month>
+							<month type="11">Novembro</month>
+							<month type="12">Decembro</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">Jan</month>
-							<month type="2" draft="unconfirmed">Feb</month>
-							<month type="3" draft="unconfirmed">Mar</month>
-							<month type="4" draft="unconfirmed">Apr</month>
-							<month type="5" draft="unconfirmed">Maj</month>
-							<month type="6" draft="unconfirmed">Jun</month>
-							<month type="7" draft="unconfirmed">Jul</month>
-							<month type="8" draft="unconfirmed">Aŭg</month>
-							<month type="9" draft="unconfirmed">Sep</month>
-							<month type="10" draft="unconfirmed">Okt</month>
-							<month type="11" draft="unconfirmed">Nov</month>
-							<month type="12" draft="unconfirmed">Dec</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -1046,20 +1084,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">O</month>
 							<month type="11" draft="unconfirmed">N</month>
 							<month type="12" draft="unconfirmed">D</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">januaro</month>
-							<month type="2">februaro</month>
-							<month type="3">marto</month>
-							<month type="4">aprilo</month>
-							<month type="5">majo</month>
-							<month type="6">junio</month>
-							<month type="7">julio</month>
-							<month type="8">aŭgusto</month>
-							<month type="9">septembro</month>
-							<month type="10">oktobro</month>
-							<month type="11">novembro</month>
-							<month type="12">decembro</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1086,22 +1110,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">D</day>
-							<day type="mon" draft="unconfirmed">L</day>
-							<day type="tue" draft="unconfirmed">M</day>
-							<day type="wed" draft="unconfirmed">M</day>
-							<day type="thu" draft="unconfirmed">Ĵ</day>
-							<day type="fri" draft="unconfirmed">V</day>
-							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">dimanĉo</day>
-							<day type="mon">lundo</day>
-							<day type="tue">mardo</day>
-							<day type="wed">merkredo</day>
-							<day type="thu">ĵaŭdo</day>
-							<day type="fri">vendredo</day>
-							<day type="sat">sabato</day>
+							<day type="sun" draft="unconfirmed">d</day>
+							<day type="mon" draft="unconfirmed">l</day>
+							<day type="tue" draft="unconfirmed">m</day>
+							<day type="wed" draft="unconfirmed">m</day>
+							<day type="thu" draft="unconfirmed">ĵ</day>
+							<day type="fri" draft="unconfirmed">v</day>
+							<day type="sat" draft="unconfirmed">s</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1112,26 +1127,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="unconfirmed">2. jk.</quarter>
 							<quarter type="3" draft="unconfirmed">3. jk.</quarter>
 							<quarter type="4" draft="unconfirmed">4. jk.</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1-a jarkvarono</quarter>
-							<quarter type="2" draft="unconfirmed">2-a jarkvarono</quarter>
-							<quarter type="3" draft="unconfirmed">3-a jarkvarono</quarter>
-							<quarter type="4" draft="unconfirmed">4-a jarkvarono</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">1. jk.</quarter>
-							<quarter type="2" draft="unconfirmed">2. jk.</quarter>
-							<quarter type="3" draft="unconfirmed">3. jk.</quarter>
-							<quarter type="4" draft="unconfirmed">4. jk.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">1-a jarkvarono</quarter>
@@ -1151,10 +1146,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">atm</dayPeriod>
-							<dayPeriod type="pm">ptm</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="narrow">
@@ -1165,26 +1156,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">aK</era>
-						<era type="0" alt="variant" draft="unconfirmed">antaŭ Kristo</era>
-						<era type="1">pK</era>
-						<era type="1" alt="variant" draft="unconfirmed">post Kristo</era>
+						<era type="0" draft="contributed">antaŭ nia erao</era>
+						<era type="0" alt="variant" draft="contributed">antaŭ Kristo</era>
+						<era type="1" draft="contributed">de nia erao</era>
+						<era type="1" alt="variant" draft="contributed">post Kristo</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">aK</era>
-						<era type="1">pK</era>
+						<era type="0" draft="contributed">a.n.e.</era>
+						<era type="0" alt="variant" draft="contributed">a.K.</era>
+						<era type="1" draft="contributed">n.e.</era>
+						<era type="1" alt="variant" draft="contributed">p.K.</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">aK</era>
-						<era type="1">pK</era>
-						<era type="1" alt="variant" draft="unconfirmed">KE</era>
-					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d-'a' 'de' MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
+							<pattern draft="contributed">EEEE, 'la' d-'a' 'de' MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1209,26 +1196,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>H-'a' 'horo' 'kaj' m:ss zzzz</pattern>
+							<pattern draft="contributed">HH:mm:ss zzzz</pattern>
 							<datetimeSkeleton>Hmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm:ss</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1260,7 +1244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d" draft="unconfirmed">d</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="unconfirmed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
@@ -1273,10 +1256,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one" draft="unconfirmed">W-'a' 'semajno' 'de' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">W-'a' 'semajno' 'de' MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
@@ -1284,11 +1266,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="one" draft="unconfirmed">w-'a' 'semajno' 'de' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">w-'a' 'semajno' 'de' Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone" draft="unconfirmed">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1361,9 +1339,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
@@ -1507,19 +1482,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="month-narrow">
-				<relative type="-1" draft="unconfirmed">pasinta mon.</relative>
-				<relative type="0" draft="unconfirmed">nuna mon.</relative>
-				<relative type="1" draft="unconfirmed">venonta mon.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">post {0} mon.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">post {0} mon.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">semajno</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta semajno</relative>
@@ -1548,20 +1510,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod draft="unconfirmed">la semajno de {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<relative type="-1" draft="unconfirmed">pasinta sem.</relative>
-				<relative type="0" draft="unconfirmed">nuna sem.</relative>
-				<relative type="1" draft="unconfirmed">venonta sem.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">post {0} sem.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">post {0} sem.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
-				</relativeTime>
 				<relativePeriod draft="unconfirmed">sem. de {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
@@ -1724,14 +1674,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">pasinta ma.</relative>
 				<relative type="0" draft="unconfirmed">nuna ma.</relative>
 				<relative type="1" draft="unconfirmed">venonta ma.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">post {0} ma.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">post {0} ma.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1" draft="unconfirmed">pasinta merkredo</relative>
@@ -1763,14 +1705,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">pasinta me.</relative>
 				<relative type="0" draft="unconfirmed">nuna me.</relative>
 				<relative type="1" draft="unconfirmed">venonta me.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">post {0} me.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">post {0} me.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1" draft="unconfirmed">pasinta ĵaŭdo</relative>
@@ -1895,9 +1829,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">mateno / posttagmezo / vespero</displayName>
 			</field>
-			<field type="dayperiod-narrow">
-				<displayName draft="unconfirmed">tagotempo</displayName>
-			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">horo</displayName>
 				<relative type="0" draft="unconfirmed">nuna horo</relative>
@@ -1997,18 +1928,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">UTC{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">UTC</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">tempo de {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">somera tempo de {0}</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">norma tempo de {0}</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<gmtFormat draft="contributed">UTC{0}</gmtFormat>
+			<gmtZeroFormat draft="contributed">UTC</gmtZeroFormat>
+			<regionFormat draft="contributed">tempo de {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">somera tempo de {0}</regionFormat>
+			<regionFormat type="standard" draft="contributed">norma tempo de {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">universala tempo kunordigita</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="unconfirmed">nekonata urbo</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity draft="unconfirmed">Andoro</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">Dubajurbo</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">Kabulo</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
 				<exemplarCity draft="unconfirmed">Antigvo</exemplarCity>
@@ -2019,38 +1959,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Tirane">
 				<exemplarCity draft="unconfirmed">Tirano</exemplarCity>
 			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">Erevano</exemplarCity>
+			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity draft="unconfirmed">Luando</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">Showa</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
 				<exemplarCity draft="unconfirmed">Río Gallegos</exemplarCity>
 			</zone>
-			<zone type="America/Mendoza">
-				<exemplarCity draft="unconfirmed">Mendoza</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/San_Juan">
-				<exemplarCity draft="unconfirmed">San Juan</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity draft="unconfirmed">Ushuaia</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity draft="unconfirmed">La Rioja</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/San_Luis">
-				<exemplarCity draft="unconfirmed">San Luis</exemplarCity>
-			</zone>
-			<zone type="America/Catamarca">
-				<exemplarCity draft="unconfirmed">Catamarca</exemplarCity>
-			</zone>
 			<zone type="America/Argentina/Salta">
 				<exemplarCity draft="unconfirmed">Saltaurbo</exemplarCity>
 			</zone>
-			<zone type="America/Jujuy">
-				<exemplarCity draft="unconfirmed">San Salvador de Jujuy</exemplarCity>
-			</zone>
 			<zone type="America/Argentina/Tucuman">
-				<exemplarCity draft="unconfirmed">San Miguel de Tucumán</exemplarCity>
+				<exemplarCity draft="unconfirmed">Tucumán</exemplarCity>
 			</zone>
 			<zone type="America/Cordoba">
 				<exemplarCity draft="unconfirmed">Kordobo</exemplarCity>
@@ -2058,20 +1983,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Buenos_Aires">
 				<exemplarCity draft="unconfirmed">Bonaero</exemplarCity>
 			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity draft="unconfirmed">Pagopago</exemplarCity>
+			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity draft="unconfirmed">Vieno</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">Perto</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="unconfirmed">Darvino</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">Adelajdo</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">Melburno</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="unconfirmed">Hobarto</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Sidnejo</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="unconfirmed">Brisbano</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity draft="unconfirmed">Makvora insulo</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
 				<exemplarCity draft="unconfirmed">Arubo</exemplarCity>
 			</zone>
-			<zone type="Europe/Mariehamn">
-				<exemplarCity draft="unconfirmed">Mariehamn</exemplarCity>
-			</zone>
-			<zone type="Europe/Sarajevo">
-				<exemplarCity draft="unconfirmed">Sarajevo</exemplarCity>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">Bakuo</exemplarCity>
 			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity draft="unconfirmed">Barbado</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">Dako</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity draft="unconfirmed">Bruselo</exemplarCity>
@@ -2082,11 +2034,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Sofia">
 				<exemplarCity draft="unconfirmed">Sofio</exemplarCity>
 			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">Barejno</exemplarCity>
+			</zone>
 			<zone type="Africa/Bujumbura">
 				<exemplarCity draft="unconfirmed">Buĵumburo</exemplarCity>
 			</zone>
 			<zone type="Africa/Porto-Novo">
-				<exemplarCity draft="unconfirmed">Porto-Novo</exemplarCity>
+				<exemplarCity draft="unconfirmed">Portonovo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity draft="unconfirmed">Sankta Bartolomeo</exemplarCity>
@@ -2094,23 +2049,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity draft="unconfirmed">Bermudoj</exemplarCity>
 			</zone>
-			<zone type="America/La_Paz">
-				<exemplarCity draft="unconfirmed">La-Pazo</exemplarCity>
-			</zone>
-			<zone type="America/Kralendijk">
-				<exemplarCity draft="unconfirmed">Kralendijk</exemplarCity>
+			<zone type="Asia/Brunei">
+				<exemplarCity draft="unconfirmed">Brunejo</exemplarCity>
 			</zone>
 			<zone type="America/Eirunepe">
 				<exemplarCity draft="unconfirmed">Eirunepé</exemplarCity>
-			</zone>
-			<zone type="America/Rio_Branco">
-				<exemplarCity draft="unconfirmed">Rio Branco</exemplarCity>
-			</zone>
-			<zone type="America/Porto_Velho">
-				<exemplarCity draft="unconfirmed">Porto Velho</exemplarCity>
-			</zone>
-			<zone type="America/Boa_Vista">
-				<exemplarCity draft="unconfirmed">Boa Vista</exemplarCity>
 			</zone>
 			<zone type="America/Manaus">
 				<exemplarCity draft="unconfirmed">Manaŭso</exemplarCity>
@@ -2121,9 +2064,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Santarem">
 				<exemplarCity draft="unconfirmed">Santarém</exemplarCity>
 			</zone>
-			<zone type="America/Campo_Grande">
-				<exemplarCity draft="unconfirmed">Campo Grande</exemplarCity>
-			</zone>
 			<zone type="America/Belem">
 				<exemplarCity draft="unconfirmed">Belemo</exemplarCity>
 			</zone>
@@ -2131,10 +2071,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Araguaína</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
-				<exemplarCity draft="unconfirmed">San-Paŭlo</exemplarCity>
+				<exemplarCity draft="unconfirmed">Sanpaŭlo</exemplarCity>
 			</zone>
 			<zone type="America/Bahia">
-				<exemplarCity draft="unconfirmed">Bahia</exemplarCity>
+				<exemplarCity draft="unconfirmed">Bahio</exemplarCity>
 			</zone>
 			<zone type="America/Fortaleza">
 				<exemplarCity draft="unconfirmed">Fortalezo</exemplarCity>
@@ -2142,14 +2082,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Maceio">
 				<exemplarCity draft="unconfirmed">Maceió</exemplarCity>
 			</zone>
-			<zone type="America/Recife">
-				<exemplarCity draft="unconfirmed">Recife</exemplarCity>
-			</zone>
 			<zone type="America/Noronha">
 				<exemplarCity draft="unconfirmed">Fernando de Noronha</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity draft="unconfirmed">Nasaŭo</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">Timbuo</exemplarCity>
 			</zone>
 			<zone type="Africa/Gaborone">
 				<exemplarCity draft="unconfirmed">Gaborono</exemplarCity>
@@ -2160,71 +2100,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Belize">
 				<exemplarCity draft="unconfirmed">Belizo</exemplarCity>
 			</zone>
-			<zone type="America/Dawson">
-				<exemplarCity draft="unconfirmed">Dawson</exemplarCity>
-			</zone>
-			<zone type="America/Whitehorse">
-				<exemplarCity draft="unconfirmed">Whitehorse</exemplarCity>
-			</zone>
-			<zone type="America/Inuvik">
-				<exemplarCity draft="unconfirmed">Inuvik</exemplarCity>
-			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity draft="unconfirmed">Vankuvero</exemplarCity>
-			</zone>
-			<zone type="America/Fort_Nelson">
-				<exemplarCity draft="unconfirmed">Fort Nelson</exemplarCity>
-			</zone>
-			<zone type="America/Dawson_Creek">
-				<exemplarCity draft="unconfirmed">Dawson Creek</exemplarCity>
-			</zone>
-			<zone type="America/Creston">
-				<exemplarCity draft="unconfirmed">Creston</exemplarCity>
-			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity draft="unconfirmed">Yellowknife</exemplarCity>
 			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity draft="unconfirmed">Edmontono</exemplarCity>
 			</zone>
-			<zone type="America/Swift_Current">
-				<exemplarCity draft="unconfirmed">Swift Current</exemplarCity>
-			</zone>
 			<zone type="America/Cambridge_Bay">
-				<exemplarCity draft="unconfirmed">Cambridge Bay</exemplarCity>
-			</zone>
-			<zone type="America/Regina">
-				<exemplarCity draft="unconfirmed">Regina</exemplarCity>
+				<exemplarCity draft="unconfirmed">Kembriĝa Golfo</exemplarCity>
 			</zone>
 			<zone type="America/Winnipeg">
 				<exemplarCity draft="unconfirmed">Vinipego</exemplarCity>
 			</zone>
-			<zone type="America/Resolute">
-				<exemplarCity draft="unconfirmed">Resolute</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="unconfirmed">Rainy River</exemplarCity>
-			</zone>
-			<zone type="America/Rankin_Inlet">
-				<exemplarCity draft="unconfirmed">Rankin Inlet</exemplarCity>
-			</zone>
-			<zone type="America/Coral_Harbour">
-				<exemplarCity draft="unconfirmed">Atikokan</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity draft="unconfirmed">Thunder Bay</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity draft="unconfirmed">Nipigon</exemplarCity>
-			</zone>
-			<zone type="America/Toronto">
-				<exemplarCity draft="unconfirmed">Toronto</exemplarCity>
-			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity draft="unconfirmed">Ikaluito</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity draft="unconfirmed">Pangnirtung</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity draft="unconfirmed">Monktono</exemplarCity>
@@ -2232,17 +2121,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Halifax">
 				<exemplarCity draft="unconfirmed">Halifakso</exemplarCity>
 			</zone>
-			<zone type="America/Goose_Bay">
-				<exemplarCity draft="unconfirmed">Goose Bay</exemplarCity>
-			</zone>
-			<zone type="America/Glace_Bay">
-				<exemplarCity draft="unconfirmed">Glace Bay</exemplarCity>
-			</zone>
-			<zone type="America/Blanc-Sablon">
-				<exemplarCity draft="unconfirmed">Blanc-Sablon</exemplarCity>
-			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity draft="unconfirmed">St. John’s</exemplarCity>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="unconfirmed">Kokosinsuloj</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
 				<exemplarCity draft="unconfirmed">Kinŝaso</exemplarCity>
@@ -2262,17 +2142,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Abidjan">
 				<exemplarCity draft="unconfirmed">Abiĝano</exemplarCity>
 			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity draft="unconfirmed">Rarotongo</exemplarCity>
+			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity draft="unconfirmed">Paskinsulo</exemplarCity>
 			</zone>
-			<zone type="America/Punta_Arenas">
-				<exemplarCity draft="unconfirmed">Punta Arenas</exemplarCity>
-			</zone>
-			<zone type="America/Santiago">
-				<exemplarCity draft="unconfirmed">Santiago</exemplarCity>
-			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity draft="unconfirmed">Dualao</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">Urumĉio</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity draft="unconfirmed">Ŝanhajo</exemplarCity>
 			</zone>
 			<zone type="America/Bogota">
 				<exemplarCity draft="unconfirmed">Bogoto</exemplarCity>
@@ -2288,6 +2171,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Curacao">
 				<exemplarCity draft="unconfirmed">Kuracao</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="unconfirmed">Kristnaskinsulo</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">Nikozio</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity draft="unconfirmed">Prago</exemplarCity>
@@ -2316,9 +2205,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Galapagos">
 				<exemplarCity draft="unconfirmed">Galapagoj</exemplarCity>
 			</zone>
-			<zone type="America/Guayaquil">
-				<exemplarCity draft="unconfirmed">Guayaquil</exemplarCity>
-			</zone>
 			<zone type="Europe/Tallinn">
 				<exemplarCity draft="unconfirmed">Talino</exemplarCity>
 			</zone>
@@ -2341,13 +2227,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Madrido</exemplarCity>
 			</zone>
 			<zone type="Africa/Addis_Ababa">
-				<exemplarCity draft="unconfirmed">Adis-Abebo</exemplarCity>
+				<exemplarCity draft="unconfirmed">Adisabebo</exemplarCity>
 			</zone>
 			<zone type="Europe/Helsinki">
 				<exemplarCity draft="unconfirmed">Helsinko</exemplarCity>
 			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">Fiĝio</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Stanley">
 				<exemplarCity draft="unconfirmed">Stanlejo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="unconfirmed">Ĉuuk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="unconfirmed">Ponape</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity draft="unconfirmed">Ferooj</exemplarCity>
@@ -2359,10 +2254,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Librevilo</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">brita somera tempo</daylight>
+				</long>
 				<exemplarCity draft="unconfirmed">Londono</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
 				<exemplarCity draft="unconfirmed">Grenado</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">Tbiliso</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity draft="unconfirmed">Kajeno</exemplarCity>
@@ -2382,12 +2283,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Godthab">
 				<exemplarCity draft="unconfirmed">Nuko</exemplarCity>
 			</zone>
-			<zone type="America/Scoresbysund">
-				<exemplarCity draft="unconfirmed">Ittoqqortoormiit</exemplarCity>
-			</zone>
-			<zone type="America/Danmarkshavn">
-				<exemplarCity draft="unconfirmed">Danmarkshavn</exemplarCity>
-			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity draft="unconfirmed">Banjulo</exemplarCity>
 			</zone>
@@ -2396,9 +2291,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Guadeloupe">
 				<exemplarCity draft="unconfirmed">Gvadelupo</exemplarCity>
-			</zone>
-			<zone type="Africa/Malabo">
-				<exemplarCity draft="unconfirmed">Malabo</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity draft="unconfirmed">Ateno</exemplarCity>
@@ -2409,11 +2301,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guatemala">
 				<exemplarCity draft="unconfirmed">Gvatemalo</exemplarCity>
 			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">Gvamo</exemplarCity>
+			</zone>
 			<zone type="Africa/Bissau">
 				<exemplarCity draft="unconfirmed">Bisaŭo</exemplarCity>
 			</zone>
 			<zone type="America/Guyana">
 				<exemplarCity draft="unconfirmed">Gujano</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">Honkongo</exemplarCity>
 			</zone>
 			<zone type="America/Tegucigalpa">
 				<exemplarCity draft="unconfirmed">Tegucigalpo</exemplarCity>
@@ -2427,14 +2325,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Budapest">
 				<exemplarCity draft="unconfirmed">Budapeŝto</exemplarCity>
 			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="unconfirmed">Ĝakarto</exemplarCity>
+			</zone>
 			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">irlanda norma tempo</daylight>
+				</long>
 				<exemplarCity draft="unconfirmed">Dublino</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">Jerusalemo</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity draft="unconfirmed">Mankinsulo</exemplarCity>
 			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">Kolkato</exemplarCity>
+			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity draft="unconfirmed">Ĉagosoj</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">Bagdado</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">Teherano</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
 				<exemplarCity draft="unconfirmed">Rejkjaviko</exemplarCity>
@@ -2448,8 +2364,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Jamaica">
 				<exemplarCity draft="unconfirmed">Jamajko</exemplarCity>
 			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">Amano</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">Tokio</exemplarCity>
+			</zone>
 			<zone type="Africa/Nairobi">
 				<exemplarCity draft="unconfirmed">Najrobio</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">Biŝkeko</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">Pnompeno</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="unconfirmed">Taravo</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Komoroj</exemplarCity>
@@ -2457,14 +2388,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Kitts">
 				<exemplarCity draft="unconfirmed">Sankta Kristoforo</exemplarCity>
 			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="unconfirmed">Pjongjango</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">Seulo</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity draft="unconfirmed">Kuvajto</exemplarCity>
+			</zone>
 			<zone type="America/Cayman">
 				<exemplarCity draft="unconfirmed">Kajmanoj</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">Aktau</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="unconfirmed">Oralo</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="unconfirmed">Atirau</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">Aktobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="unconfirmed">Kostanaj</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">Kizilordo</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="unconfirmed">Almato</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">Vjentiano</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity draft="unconfirmed">Bejruto</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
 				<exemplarCity draft="unconfirmed">Sankta Lucio</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity draft="unconfirmed">Vaduzo</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity draft="unconfirmed">Kolombo</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
 				<exemplarCity draft="unconfirmed">Monrovio</exemplarCity>
@@ -2499,14 +2469,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Marigot">
 				<exemplarCity draft="unconfirmed">Marigoto</exemplarCity>
 			</zone>
-			<zone type="Indian/Antananarivo">
-				<exemplarCity draft="unconfirmed">Antananarivo</exemplarCity>
-			</zone>
 			<zone type="Europe/Skopje">
 				<exemplarCity draft="unconfirmed">Skopjo</exemplarCity>
 			</zone>
-			<zone type="Africa/Bamako">
-				<exemplarCity draft="unconfirmed">Bamako</exemplarCity>
+			<zone type="Asia/Rangoon">
+				<exemplarCity draft="unconfirmed">Ranguno</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity draft="unconfirmed">Ĥovd</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Ulanbatoro</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity draft="unconfirmed">Makao</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity draft="unconfirmed">Saipano</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
 				<exemplarCity draft="unconfirmed">Martiniko</exemplarCity>
@@ -2523,26 +2502,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Indian/Mauritius">
 				<exemplarCity draft="unconfirmed">Maŭricio</exemplarCity>
 			</zone>
-			<zone type="Africa/Blantyre">
-				<exemplarCity draft="unconfirmed">Blantyre</exemplarCity>
-			</zone>
-			<zone type="America/Tijuana">
-				<exemplarCity draft="unconfirmed">Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Hermosillo">
-				<exemplarCity draft="unconfirmed">Hermosillo</exemplarCity>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">Maldivoj</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity draft="unconfirmed">Mazatlán</exemplarCity>
-			</zone>
-			<zone type="America/Chihuahua">
-				<exemplarCity draft="unconfirmed">Chihuahua</exemplarCity>
-			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity draft="unconfirmed">Bahía de Banderas</exemplarCity>
-			</zone>
-			<zone type="America/Ojinaga">
-				<exemplarCity draft="unconfirmed">Ojinaga</exemplarCity>
 			</zone>
 			<zone type="America/Monterrey">
 				<exemplarCity draft="unconfirmed">Monterejo</exemplarCity>
@@ -2550,23 +2514,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Mexico_City">
 				<exemplarCity draft="unconfirmed">Meksikurbo</exemplarCity>
 			</zone>
-			<zone type="America/Matamoros">
-				<exemplarCity draft="unconfirmed">Matamoros</exemplarCity>
-			</zone>
 			<zone type="America/Merida">
 				<exemplarCity draft="unconfirmed">Merido</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity draft="unconfirmed">Kankuno</exemplarCity>
 			</zone>
-			<zone type="Africa/Maputo">
-				<exemplarCity draft="unconfirmed">Maputo</exemplarCity>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity draft="unconfirmed">Kualalumpuro</exemplarCity>
 			</zone>
 			<zone type="Africa/Windhoek">
 				<exemplarCity draft="unconfirmed">Vindhuko</exemplarCity>
 			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity draft="unconfirmed">Numeo</exemplarCity>
+			</zone>
 			<zone type="Africa/Niamey">
 				<exemplarCity draft="unconfirmed">Niamejo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity draft="unconfirmed">Norfolkinsulo</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
 				<exemplarCity draft="unconfirmed">Lagoso</exemplarCity>
@@ -2577,8 +2544,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Amsterdam">
 				<exemplarCity draft="unconfirmed">Amsterdamo</exemplarCity>
 			</zone>
-			<zone type="Europe/Oslo">
-				<exemplarCity draft="unconfirmed">Oslo</exemplarCity>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">Katmanduo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity draft="unconfirmed">Nauro</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity draft="unconfirmed">Niuo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="unconfirmed">Ĉathamo</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity draft="unconfirmed">Aŭklando</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">Maskato</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
 				<exemplarCity draft="unconfirmed">Panamo</exemplarCity>
@@ -2586,14 +2568,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Lima">
 				<exemplarCity draft="unconfirmed">Limo</exemplarCity>
 			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity draft="unconfirmed">Tahitio</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">Markizinsuloj</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">Manilo</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity draft="unconfirmed">Karaĉio</exemplarCity>
+			</zone>
 			<zone type="Europe/Warsaw">
 				<exemplarCity draft="unconfirmed">Varsovio</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
 				<exemplarCity draft="unconfirmed">Mikelono</exemplarCity>
 			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">Pitkarna Insulo</exemplarCity>
+			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity draft="unconfirmed">Puertoriko</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">Gazao</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity draft="unconfirmed">Hebrono</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
 				<exemplarCity draft="unconfirmed">Acoroj</exemplarCity>
@@ -2604,8 +2607,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Lisbon">
 				<exemplarCity draft="unconfirmed">Lisbono</exemplarCity>
 			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">Palaŭo</exemplarCity>
+			</zone>
 			<zone type="America/Asuncion">
 				<exemplarCity draft="unconfirmed">Asunciono</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">Kataro</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
 				<exemplarCity draft="unconfirmed">Reunio</exemplarCity>
@@ -2616,8 +2625,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Belgrade">
 				<exemplarCity draft="unconfirmed">Beogrado</exemplarCity>
 			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">Kaliningrado</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Moskvo</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">Volgogrado</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">Astraĥano</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">Uljanovsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Jekaterinburgo</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">Omsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">Novosibirsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity draft="unconfirmed">Novokuznecko</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">Krasnojarsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">Irkutsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">Ĉita</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">Jakutsko</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">Vladivostoko</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity draft="unconfirmed">Ĥandiga</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">Saĥaleno</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity draft="unconfirmed">Ustnero</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">Srednekolimsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">Kamĉatko</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">Anadir</exemplarCity>
+			</zone>
 			<zone type="Africa/Kigali">
 				<exemplarCity draft="unconfirmed">Kigalo</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">Riado</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
 				<exemplarCity draft="unconfirmed">Mahé</exemplarCity>
@@ -2627,6 +2699,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Stockholm">
 				<exemplarCity draft="unconfirmed">Stokholmo</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Singapuro</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity draft="unconfirmed">Sankta Heleno</exemplarCity>
@@ -2652,9 +2727,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Mogadishu">
 				<exemplarCity draft="unconfirmed">Mogadiŝo</exemplarCity>
 			</zone>
-			<zone type="America/Paramaribo">
-				<exemplarCity draft="unconfirmed">Paramaribo</exemplarCity>
-			</zone>
 			<zone type="Africa/Juba">
 				<exemplarCity draft="unconfirmed">Ĝubao</exemplarCity>
 			</zone>
@@ -2664,8 +2736,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/El_Salvador">
 				<exemplarCity draft="unconfirmed">Salvadoro</exemplarCity>
 			</zone>
-			<zone type="America/Lower_Princes">
-				<exemplarCity draft="unconfirmed">Lower Prince’s Quarter</exemplarCity>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">Damasko</exemplarCity>
 			</zone>
 			<zone type="Africa/Mbabane">
 				<exemplarCity draft="unconfirmed">Mbabano</exemplarCity>
@@ -2682,17 +2754,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Lome">
 				<exemplarCity draft="unconfirmed">Lomeo</exemplarCity>
 			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">Bankoko</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">Duŝanbeo</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity draft="unconfirmed">Dilo</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">Aŝĥabado</exemplarCity>
+			</zone>
 			<zone type="Africa/Tunis">
 				<exemplarCity draft="unconfirmed">Tunizo</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Istanbulo</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
 				<exemplarCity draft="unconfirmed">Portospeno</exemplarCity>
 			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity draft="unconfirmed">Funafutio</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity draft="unconfirmed">Tajpeo</exemplarCity>
+			</zone>
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity draft="unconfirmed">Daresalamo</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity draft="unconfirmed">Uĵhorodo</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity draft="unconfirmed">Kievo</exemplarCity>
@@ -2700,38 +2790,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Simferopolo</exemplarCity>
 			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Zaporiĵo</exemplarCity>
-			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity draft="unconfirmed">Kampalo</exemplarCity>
 			</zone>
-			<zone type="America/Adak">
-				<exemplarCity draft="unconfirmed">Adak</exemplarCity>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="unconfirmed">Midvejinsuloj</exemplarCity>
 			</zone>
-			<zone type="America/Nome">
-				<exemplarCity draft="unconfirmed">Nome</exemplarCity>
-			</zone>
-			<zone type="America/Anchorage">
-				<exemplarCity draft="unconfirmed">Anchorage</exemplarCity>
-			</zone>
-			<zone type="America/Yakutat">
-				<exemplarCity draft="unconfirmed">Yakutat</exemplarCity>
-			</zone>
-			<zone type="America/Sitka">
-				<exemplarCity draft="unconfirmed">Sitka</exemplarCity>
-			</zone>
-			<zone type="America/Juneau">
-				<exemplarCity draft="unconfirmed">Juneau</exemplarCity>
-			</zone>
-			<zone type="America/Metlakatla">
-				<exemplarCity draft="unconfirmed">Metlakatla</exemplarCity>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">Vejkinsulo</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
-				<exemplarCity draft="unconfirmed">Los-Anĝeleso</exemplarCity>
-			</zone>
-			<zone type="America/Boise">
-				<exemplarCity draft="unconfirmed">Boise</exemplarCity>
+				<exemplarCity draft="unconfirmed">Losanĝeleso</exemplarCity>
 			</zone>
 			<zone type="America/Phoenix">
 				<exemplarCity draft="unconfirmed">Fenikso</exemplarCity>
@@ -2750,9 +2819,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity draft="unconfirmed">Ĉikago</exemplarCity>
-			</zone>
-			<zone type="America/Menominee">
-				<exemplarCity draft="unconfirmed">Menominee</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
 				<exemplarCity draft="unconfirmed">Vincennes, Indianao</exemplarCity>
@@ -2775,9 +2841,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Indianapolis">
 				<exemplarCity draft="unconfirmed">Indianapolo, Indianao</exemplarCity>
 			</zone>
-			<zone type="America/Louisville">
-				<exemplarCity draft="unconfirmed">Louisville</exemplarCity>
-			</zone>
 			<zone type="America/Indiana/Vevay">
 				<exemplarCity draft="unconfirmed">Vevay, Indianao</exemplarCity>
 			</zone>
@@ -2790,8 +2853,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/New_York">
 				<exemplarCity draft="unconfirmed">Novjorko</exemplarCity>
 			</zone>
-			<zone type="America/Montevideo">
-				<exemplarCity draft="unconfirmed">Montevideo</exemplarCity>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">Samarkando</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="unconfirmed">Taŝkento</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
 				<exemplarCity draft="unconfirmed">Vatikano</exemplarCity>
@@ -2802,11 +2868,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Caracas">
 				<exemplarCity draft="unconfirmed">Karakaso</exemplarCity>
 			</zone>
-			<zone type="America/Tortola">
-				<exemplarCity draft="unconfirmed">Tortola</exemplarCity>
-			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity draft="unconfirmed">Sankta Tomaso</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">Hoĉimino</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">Valiso</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity draft="unconfirmed">Apio</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">Adeno</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity draft="unconfirmed">Majoto</exemplarCity>
@@ -2820,6 +2895,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity draft="unconfirmed">Harareo</exemplarCity>
 			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">afgana tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard draft="unconfirmed">centrafrika tempo</standard>
@@ -2884,6 +2964,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">pacifika nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">tempo: Apio</generic>
+					<standard draft="unconfirmed">Apio (norma tempo)</standard>
+					<daylight draft="unconfirmed">Apio (somera tempo)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Arabian">
 				<long>
 					<generic draft="unconfirmed">araba tempo</generic>
@@ -2903,6 +2990,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">okcident-argentina tempo</generic>
 					<standard draft="unconfirmed">okcident-argentina norma tempo</standard>
 					<daylight draft="unconfirmed">okcident-argentina somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">armena tempo</generic>
+					<standard draft="unconfirmed">armena norma tempo</standard>
+					<daylight draft="unconfirmed">armena somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
@@ -2940,11 +3034,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">okcidenta aŭstralia somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">azerbajĝana tempo</generic>
+					<standard draft="unconfirmed">azerbajĝana norma tempo</standard>
+					<daylight draft="unconfirmed">azerbajĝana somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic draft="unconfirmed">horzono Acoroj</generic>
+					<generic draft="unconfirmed">tempo: Acoroj</generic>
 					<standard draft="unconfirmed">Acoroj (norma tempo)</standard>
 					<daylight draft="unconfirmed">Acoroj (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">bangladeŝa tempo</generic>
+					<standard draft="unconfirmed">bangladeŝa norma tempo</standard>
+					<daylight draft="unconfirmed">bangladeŝa somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">butana tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
@@ -2959,11 +3072,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">brazilja somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">bruneja tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic draft="unconfirmed">kaboverda tempo</generic>
 					<standard draft="unconfirmed">kaboverda norma tempo</standard>
 					<daylight draft="unconfirmed">kaboverda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">ĉamora tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">ĉathama tempo</generic>
+					<standard draft="unconfirmed">ĉathama norma tempo</standard>
+					<daylight draft="unconfirmed">ĉathama somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -2980,6 +3110,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ĉina somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">kristnaskinsula tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">kokosinsula tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Colombia">
 				<long>
 					<generic draft="unconfirmed">kolombia tempo</generic>
@@ -2987,11 +3127,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">kolombia somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">kukinsula tempo</generic>
+					<standard draft="unconfirmed">kukinsula norma tempo</standard>
+					<daylight draft="unconfirmed">kukinsula somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic draft="unconfirmed">horzono Kubo</generic>
+					<generic draft="unconfirmed">tempo: Kubo</generic>
 					<standard draft="unconfirmed">Kubo (norma tempo)</standard>
 					<daylight draft="unconfirmed">Kubo (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">tempo: Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">tempo: Dumont d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">orient-timora tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -3039,14 +3201,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">falklanda somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">fiĝia tempo</generic>
+					<standard draft="unconfirmed">fiĝia norma tempo</standard>
+					<daylight draft="unconfirmed">fiĝia somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard draft="unconfirmed">horzono Franca Gviano</standard>
+					<standard draft="unconfirmed">tempo: Franca Gujano</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard draft="unconfirmed">horzono Francaj Sudaj Teritorioj</standard>
+					<standard draft="unconfirmed">tempo: Francaj Sudaj Teritorioj</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3054,9 +3223,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">galapaga tempo</standard>
 				</long>
 			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">tempo: Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">kartvela tempo</generic>
+					<standard draft="unconfirmed">kartvela norma tempo</standard>
+					<daylight draft="unconfirmed">kartvela somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">gilbertinsula tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">universala tempo kunordigita</standard>
+					<standard draft="contributed">universala tempo kunordigita</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3073,6 +3259,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">okcidenta gronlanda somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">arabgolfa norma tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">gujana tempo</standard>
@@ -3080,14 +3271,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic draft="unconfirmed">horzono Havajo-Aleutoj</generic>
+					<generic draft="unconfirmed">tempo: Havajo-Aleutoj</generic>
 					<standard draft="unconfirmed">Havajo-Aleutoj (norma tempo)</standard>
 					<daylight draft="unconfirmed">Havajo-Aleutoj (somera tempo)</daylight>
 				</long>
 			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">honkonga tempo</generic>
+					<standard draft="unconfirmed">honkonga norma tempo</standard>
+					<daylight draft="unconfirmed">honkonga somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">ĥovda tempo</generic>
+					<standard draft="unconfirmed">ĥovda norma tempo</standard>
+					<daylight draft="unconfirmed">ĥovda somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="India">
 				<long>
-					<standard draft="unconfirmed">barata tempo</standard>
+					<standard draft="unconfirmed">hinda norma tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -3102,17 +3307,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard draft="unconfirmed">centra indonezia tempo</standard>
+					<standard draft="unconfirmed">centr-indonezia tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard draft="unconfirmed">orienta indonezia tempo</standard>
+					<standard draft="unconfirmed">orient-indonezia tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
-					<standard draft="unconfirmed">okcidenta indonezia tempo</standard>
+					<standard draft="unconfirmed">okcident-indonezia tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">irana tempo</generic>
+					<standard draft="unconfirmed">irana norma tempo</standard>
+					<daylight draft="unconfirmed">irana somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">irkutska tempo</generic>
+					<standard draft="unconfirmed">irkutska norma tempo</standard>
+					<daylight draft="unconfirmed">irkutska somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
@@ -3129,11 +3348,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">japana somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard draft="unconfirmed">kazaĥa tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">orient-kazaĥa tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">okcident-kazaĥa tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Korea">
 				<long>
 					<generic draft="unconfirmed">korea tempo</generic>
 					<standard draft="unconfirmed">korea norma tempo</standard>
 					<daylight draft="unconfirmed">korea somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">tempo: Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">krasnojarska tempo</generic>
+					<standard draft="unconfirmed">krasnojarska norma tempo</standard>
+					<daylight draft="unconfirmed">krasnojarska somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">kirgiza tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">tempo: Liniaj Insuloj</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">tempo: Lord Howe</generic>
+					<standard draft="unconfirmed">Lord Howe (norma tempo)</standard>
+					<daylight draft="unconfirmed">Lord Howe (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">magadana tempo</generic>
+					<standard draft="unconfirmed">magadana norma tempo</standard>
+					<daylight draft="unconfirmed">magadana somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">malajzia tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">maldiva tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">markizinsula tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">marŝalinsula tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
@@ -3143,11 +3433,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">maŭricia somera tempo</daylight>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
+			<metazone type="Mawson">
 				<long>
-					<generic draft="unconfirmed">nordokcidenta meksika tempo</generic>
-					<standard draft="unconfirmed">nordokcidenta meksika norma tempo</standard>
-					<daylight draft="unconfirmed">nordokcidenta meksika somera tempo</daylight>
+					<standard draft="unconfirmed">tempo: Mawson</standard>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -3157,6 +3445,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">pacifika meksika somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">ulanbatora tempo</generic>
+					<standard draft="unconfirmed">ulanbatora norma tempo</standard>
+					<daylight draft="unconfirmed">ulanbatora somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Moscow">
 				<long>
 					<generic draft="unconfirmed">moskva tempo</generic>
@@ -3164,18 +3459,90 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">moskva somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">birma tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">naura tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">nepala tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">novkaledonia tempo</generic>
+					<standard draft="unconfirmed">novkaledonia norma tempo</standard>
+					<daylight draft="unconfirmed">novkaledonia somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">novzelanda tempo</generic>
+					<standard draft="unconfirmed">novzelanda norma tempo</standard>
+					<daylight draft="unconfirmed">novzelanda somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic draft="unconfirmed">horzono Novlando</generic>
+					<generic draft="unconfirmed">tempo: Novlando</generic>
 					<standard draft="unconfirmed">Novlando (norma tempo)</standard>
 					<daylight draft="unconfirmed">Novlando (somera tempo)</daylight>
 				</long>
 			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">niua tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">norfolkinsula tempo</generic>
+					<standard draft="unconfirmed">norfolkinsula norma tempo</standard>
+					<daylight draft="unconfirmed">norfolkinsula somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic draft="unconfirmed">horzono Fernando de Noronha</generic>
+					<generic draft="unconfirmed">tempo: Fernando de Noronha</generic>
 					<standard draft="unconfirmed">Fernando de Noronha (norma tempo)</standard>
 					<daylight draft="unconfirmed">Fernando de Noronha (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">novosibirska tempo</generic>
+					<standard draft="unconfirmed">novosibirska norma tempo</standard>
+					<daylight draft="unconfirmed">novosibirska somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">omska tempo</generic>
+					<standard draft="unconfirmed">omska norma tempo</standard>
+					<daylight draft="unconfirmed">omska somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">pakistana tempo</generic>
+					<standard draft="unconfirmed">pakistana norma tempo</standard>
+					<daylight draft="unconfirmed">pakistana somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">palaŭa tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">tempo: Papuo-Nov-Gvineo</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
@@ -3192,16 +3559,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">perua somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">filipina tempo</generic>
+					<standard draft="unconfirmed">filipina norma tempo</standard>
+					<daylight draft="unconfirmed">filipina somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">feniksinsula tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic draft="unconfirmed">horzono Sankta Piero kaj Mikelono</generic>
+					<generic draft="unconfirmed">tempo: Sankta Piero kaj Mikelono</generic>
 					<standard draft="unconfirmed">Sankta Piero kaj Mikelono (norma tempo)</standard>
 					<daylight draft="unconfirmed">Sankta Piero kaj Mikelono (somera tempo)</daylight>
 				</long>
 			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">pitkarninsula tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">tempo: Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">pjongjanga tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard draft="unconfirmed">horzono Reunio</standard>
+					<standard draft="unconfirmed">tempo: Reunio</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">tempo: Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">saĥalena tempo</generic>
+					<standard draft="unconfirmed">saĥalena norma tempo</standard>
+					<daylight draft="unconfirmed">saĥalena somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">samoa tempo</generic>
+					<standard draft="unconfirmed">samoa norma tempo</standard>
+					<daylight draft="unconfirmed">samoa somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3209,14 +3622,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">sejŝela tempo</standard>
 				</long>
 			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">singapura norma tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">tempo: Salomonoj</standard>
+				</long>
+			</metazone>
 			<metazone type="South_Georgia">
 				<long>
-					<standard draft="unconfirmed">horzono Sud-Georgio</standard>
+					<standard draft="unconfirmed">tempo: Sud-Georgio</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
 				<long>
 					<standard draft="unconfirmed">surinama tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">tempo: Showa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">tahitia tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">tajpea tempo</generic>
+					<standard draft="unconfirmed">tajpea norma tempo</standard>
+					<daylight draft="unconfirmed">tajpea somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">taĝika tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">tokelaa tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">tonga tempo</generic>
+					<standard draft="unconfirmed">tonga norma tempo</standard>
+					<daylight draft="unconfirmed">tonga somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">tempo: Ĉuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">turkmena tempo</generic>
+					<standard draft="unconfirmed">turkmena norma tempo</standard>
+					<daylight draft="unconfirmed">turkmena somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">tuvala tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Uruguay">
@@ -3226,9 +3700,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">urugvaja somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">uzbeka tempo</generic>
+					<standard draft="unconfirmed">uzbeka norma tempo</standard>
+					<daylight draft="unconfirmed">uzbeka somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">vanuatua tempo</generic>
+					<standard draft="unconfirmed">vanuatua norma tempo</standard>
+					<daylight draft="unconfirmed">vanuatua somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Venezuela">
 				<long>
 					<standard draft="unconfirmed">venezuela tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">vladivostoka tempo</generic>
+					<standard draft="unconfirmed">vladivostoka norma tempo</standard>
+					<daylight draft="unconfirmed">vladivostoka somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">volgograda tempo</generic>
+					<standard draft="unconfirmed">volgograda norma tempo</standard>
+					<daylight draft="unconfirmed">volgograda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">tempo: Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">vejkinsula tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">tempo: Valiso kaj Futuno</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">jakutska tempo</generic>
+					<standard draft="unconfirmed">jakutska norma tempo</standard>
+					<daylight draft="unconfirmed">jakutska somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">jekaterinburga tempo</generic>
+					<standard draft="unconfirmed">jekaterinburga norma tempo</standard>
+					<daylight draft="unconfirmed">jekaterinburga somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -3239,217 +3770,839 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="unconfirmed">latn</native>
-		</otherNumberingSystems>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">−</minusSign>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
+			<approximatelySign draft="unconfirmed">≈</approximatelySign>
+			<superscriptingExponent draft="unconfirmed">⋅</superscriptingExponent>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
+			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
+					<pattern type="1000" count="one" draft="unconfirmed">0 mil</pattern>
+					<pattern type="1000" count="other" draft="unconfirmed">0 mil</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">00 mil</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00 mil</pattern>
+					<pattern type="100000" count="one" draft="unconfirmed">000 mil</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000 mil</pattern>
+					<pattern type="1000000" count="one" draft="unconfirmed">0 miliono</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0 milionoj</pattern>
+					<pattern type="10000000" count="one" draft="unconfirmed">00 miliono</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00 milionoj</pattern>
+					<pattern type="100000000" count="one" draft="unconfirmed">000 miliono</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000 milionoj</pattern>
+					<pattern type="1000000000" count="one" draft="unconfirmed">0 miliardo</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0 miliardoj</pattern>
+					<pattern type="10000000000" count="one" draft="unconfirmed">00 miliardo</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00 miliardoj</pattern>
+					<pattern type="100000000000" count="one" draft="unconfirmed">000 miliardo</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000 miliardoj</pattern>
+					<pattern type="1000000000000" count="one" draft="unconfirmed">0 duiliono</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0 duilionoj</pattern>
+					<pattern type="10000000000000" count="one" draft="unconfirmed">00 duiliono</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00 duilionoj</pattern>
+					<pattern type="100000000000000" count="one" draft="unconfirmed">000 duiliono</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000 duilionoj</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="unconfirmed">0k</pattern>
+					<pattern type="1000" count="other" draft="unconfirmed">0k</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">00k</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00k</pattern>
+					<pattern type="100000" count="one" draft="unconfirmed">000k</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000k</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="unconfirmed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength type="short">
+			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤ 0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤ 00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤ 000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤ 0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤ 00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤ 000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤ 0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤ 00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤ 000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤ 0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤ 00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤ 000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
+					<pattern draft="contributed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">dirhamo de Unuiĝintaj Arabaj Emirlandoj</displayName>
+				<displayName count="one" draft="unconfirmed">UAE-dirhamo</displayName>
+				<displayName count="other" draft="unconfirmed">UAE-dirhamoj</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">afgana afganio</displayName>
+				<displayName count="one" draft="unconfirmed">afgana afganio</displayName>
+				<displayName count="other" draft="unconfirmed">afganaj afganioj</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">albana leko</displayName>
+				<displayName count="one" draft="unconfirmed">albana leko</displayName>
+				<displayName count="other" draft="unconfirmed">albanaj lekoj</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">armena dramo</displayName>
+				<displayName count="one" draft="unconfirmed">armena dramo</displayName>
+				<displayName count="other" draft="unconfirmed">armenaj dramoj</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">nederlandantila guldeno</displayName>
+				<displayName count="one" draft="unconfirmed">nederlandantila guldeno</displayName>
+				<displayName count="other" draft="unconfirmed">nederlandantilaj guldenoj</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">angola kvanzo</displayName>
+				<displayName count="one" draft="unconfirmed">angola kvanzo</displayName>
+				<displayName count="other" draft="unconfirmed">angolaj kvanzoj</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">argentina peso</displayName>
+				<displayName count="one" draft="unconfirmed">argentina peso</displayName>
+				<displayName count="other" draft="unconfirmed">argentinaj pesoj</displayName>
+			</currency>
 			<currency type="AUD">
-				<displayName draft="unconfirmed">Aŭstralia dolaro</displayName>
+				<displayName draft="unconfirmed">aŭstralia dolaro</displayName>
 				<displayName count="one" draft="unconfirmed">aŭstralia dolaro</displayName>
 				<displayName count="other" draft="unconfirmed">aŭstraliaj dolaroj</displayName>
-				<symbol draft="unconfirmed">AU$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+				<symbol draft="unconfirmed">AUD</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">aruba guldeno</displayName>
+				<displayName count="one" draft="unconfirmed">aruba guldeno</displayName>
+				<displayName count="other" draft="unconfirmed">arubaj guldenoj</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">azerbajĝana manato</displayName>
+				<displayName count="one" draft="unconfirmed">azerbajĝana manato</displayName>
+				<displayName count="other" draft="unconfirmed">azerbajĝanaj manatoj</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">konvertebla marko de Bosnujo kaj Hercegovino</displayName>
+				<displayName count="one" draft="unconfirmed">konvertebla marko</displayName>
+				<displayName count="other" draft="unconfirmed">konverteblaj markoj</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">barbada dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">barbada dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">barbadaj dolaroj</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">bangladeŝa tako</displayName>
+				<displayName count="one" draft="unconfirmed">bangladeŝa tako</displayName>
+				<displayName count="other" draft="unconfirmed">bangladeŝaj takoj</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">bulgara levo</displayName>
+				<displayName count="one" draft="unconfirmed">bulgara levo</displayName>
+				<displayName count="other" draft="unconfirmed">bulgaraj levoj</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">barejna dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">barejna dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">barejnaj dinaroj</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">burunda franko</displayName>
+				<displayName count="one" draft="unconfirmed">burunda franko</displayName>
+				<displayName count="other" draft="unconfirmed">burundaj frankoj</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">bermuda dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">bermuda dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">bermudaj dolaroj</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">bruneja dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">bruneja dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">brunejaj dolaroj</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">bolivia bolivjano</displayName>
+				<displayName count="one" draft="unconfirmed">bolivia bolivjano</displayName>
+				<displayName count="other" draft="unconfirmed">boliviaj bolivjanoj</displayName>
 			</currency>
 			<currency type="BRL">
-				<displayName draft="unconfirmed">Brazila realo</displayName>
+				<displayName draft="unconfirmed">brazila realo</displayName>
 				<displayName count="one" draft="unconfirmed">brazila realo</displayName>
 				<displayName count="other" draft="unconfirmed">brazilaj realoj</displayName>
-				<symbol draft="unconfirmed">R$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">R$</symbol>
+				<symbol draft="unconfirmed">BRL</symbol>
+			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">bahama dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">bahama dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">bahamaj dolaroj</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">butana ngultrumo</displayName>
+				<displayName count="one" draft="unconfirmed">butana ngultrumo</displayName>
+				<displayName count="other" draft="unconfirmed">butanaj ngultrumoj</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">bocvana pulao</displayName>
+				<displayName count="one" draft="unconfirmed">bocvana pulao</displayName>
+				<displayName count="other" draft="unconfirmed">bocvanaj pulaoj</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">belorusa rublo</displayName>
+				<displayName count="one" draft="unconfirmed">belorusa rublo</displayName>
+				<displayName count="other" draft="unconfirmed">belorusaj rubloj</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">beliza dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">beliza dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">belizaj dolaroj</displayName>
 			</currency>
 			<currency type="CAD">
-				<displayName draft="unconfirmed">Kanada dolaro</displayName>
+				<displayName draft="unconfirmed">kanada dolaro</displayName>
 				<displayName count="one" draft="unconfirmed">kanada dolaro</displayName>
 				<displayName count="other" draft="unconfirmed">kanadaj dolaroj</displayName>
-				<symbol draft="unconfirmed">CA$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+				<symbol draft="unconfirmed">CAD</symbol>
+			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">konga franko</displayName>
+				<displayName count="one" draft="unconfirmed">konga franko</displayName>
+				<displayName count="other" draft="unconfirmed">kongaj frankoj</displayName>
 			</currency>
 			<currency type="CHF">
-				<displayName draft="unconfirmed">Svisa franko</displayName>
+				<displayName draft="unconfirmed">svisa franko</displayName>
 				<displayName count="one" draft="unconfirmed">svisa franko</displayName>
 				<displayName count="other" draft="unconfirmed">svisaj frankoj</displayName>
-				<symbol draft="unconfirmed">CHF</symbol>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">ĉilia peso</displayName>
+				<displayName count="one" draft="unconfirmed">ĉilia peso</displayName>
+				<displayName count="other" draft="unconfirmed">ĉiliaj pesoj</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">ĉina juano (eksterlanda uzo)</displayName>
+				<displayName count="one" draft="unconfirmed">ĉina juano (eksterlande)</displayName>
+				<displayName count="other" draft="unconfirmed">ĉinaj juanoj (eksterlande)</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName draft="unconfirmed">Ĉina juano</displayName>
+				<displayName draft="unconfirmed">ĉinaj juanoj</displayName>
 				<displayName count="one" draft="unconfirmed">ĉina juano</displayName>
 				<displayName count="other" draft="unconfirmed">ĉinaj juanoj</displayName>
-				<symbol draft="unconfirmed">CN¥</symbol>
-				<symbol alt="narrow" draft="unconfirmed">¥</symbol>
+				<symbol draft="unconfirmed">CNY</symbol>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">kolombia peso</displayName>
+				<displayName count="one" draft="unconfirmed">kolombia peso</displayName>
+				<displayName count="other" draft="unconfirmed">kolombiaj pesoj</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">kostarika kolumbo</displayName>
+				<displayName count="one" draft="unconfirmed">kostarika kolumbo</displayName>
+				<displayName count="other" draft="unconfirmed">kostarikaj kolumboj</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">konvertebla kuba peso</displayName>
+				<displayName count="one" draft="unconfirmed">konvertebla kuba peso</displayName>
+				<displayName count="other" draft="unconfirmed">konverteblaj kubaj pesoj</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">kuba peso</displayName>
+				<displayName count="one" draft="unconfirmed">kuba peso</displayName>
+				<displayName count="other" draft="unconfirmed">kubaj pesoj</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">kaboverda eskudo</displayName>
+				<displayName count="one" draft="unconfirmed">kaboverda eskudo</displayName>
+				<displayName count="other" draft="unconfirmed">kaboverdaj eskudoj</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">ĉeĥa krono</displayName>
+				<displayName count="one" draft="unconfirmed">ĉeĥa krono</displayName>
+				<displayName count="other" draft="unconfirmed">ĉeĥaj kronoj</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">ĝibutia franko</displayName>
+				<displayName count="one" draft="unconfirmed">ĝibutia franko</displayName>
+				<displayName count="other" draft="unconfirmed">ĝibutiaj frankoj</displayName>
 			</currency>
 			<currency type="DKK">
-				<displayName draft="unconfirmed">Dana krono</displayName>
+				<displayName draft="unconfirmed">dana krono</displayName>
 				<displayName count="one" draft="unconfirmed">dana krono</displayName>
 				<displayName count="other" draft="unconfirmed">danaj kronoj</displayName>
-				<symbol draft="unconfirmed">DKK</symbol>
+			</currency>
+			<currency type="DOP">
+				<displayName draft="unconfirmed">dominika peso</displayName>
+				<displayName count="one" draft="unconfirmed">dominika peso</displayName>
+				<displayName count="other" draft="unconfirmed">dominikaj pesoj</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">alĝeria dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">alĝeria dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">alĝeriaj dinaroj</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">egipta pundo</displayName>
+				<displayName count="one" draft="unconfirmed">egipta pundo</displayName>
+				<displayName count="other" draft="unconfirmed">egiptaj pundoj</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">eritrea nakfo</displayName>
+				<displayName count="one" draft="unconfirmed">eritrea nakfo</displayName>
+				<displayName count="other" draft="unconfirmed">eritreaj nakfoj</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">etiopa birro</displayName>
+				<displayName count="one" draft="unconfirmed">etiopa birro</displayName>
+				<displayName count="other" draft="unconfirmed">etiopaj birroj</displayName>
 			</currency>
 			<currency type="EUR">
-				<displayName draft="unconfirmed">Eŭro</displayName>
+				<displayName draft="unconfirmed">eŭro</displayName>
 				<displayName count="one" draft="unconfirmed">eŭro</displayName>
 				<displayName count="other" draft="unconfirmed">eŭroj</displayName>
-				<symbol draft="unconfirmed">€</symbol>
-				<symbol alt="narrow" draft="unconfirmed">€</symbol>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">fiĝia dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">fiĝia dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">fiĝiaj dolaroj</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">falklanda pundo</displayName>
+				<displayName count="one" draft="unconfirmed">falklanda pundo</displayName>
+				<displayName count="other" draft="unconfirmed">falklandaj pundoj</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName draft="unconfirmed">Brita pundo</displayName>
+				<displayName draft="unconfirmed">brita pundo</displayName>
 				<displayName count="one" draft="unconfirmed">brita pundo</displayName>
 				<displayName count="other" draft="unconfirmed">britaj pundoj</displayName>
-				<symbol draft="unconfirmed">£</symbol>
-				<symbol alt="narrow" draft="unconfirmed">£</symbol>
+				<symbol draft="unconfirmed">GBP</symbol>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">kartvela lario</displayName>
+				<displayName count="one" draft="unconfirmed">kartvela lario</displayName>
+				<displayName count="other" draft="unconfirmed">kartvelaj larioj</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">ganaa cedio</displayName>
+				<displayName count="one" draft="unconfirmed">ganaa cedio</displayName>
+				<displayName count="other" draft="unconfirmed">ganaaj cedioj</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">ĝibraltara pundo</displayName>
+				<displayName count="one" draft="unconfirmed">ĝibraltara pundo</displayName>
+				<displayName count="other" draft="unconfirmed">ĝibraltaraj pundoj</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">gambia dalasio</displayName>
+				<displayName count="one" draft="unconfirmed">gambia dalasio</displayName>
+				<displayName count="other" draft="unconfirmed">gambiaj dalasioj</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">gvinea franko</displayName>
+				<displayName count="one" draft="unconfirmed">gvinea franko</displayName>
+				<displayName count="other" draft="unconfirmed">gvineaj frankoj</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">gvatemala kecalo</displayName>
+				<displayName count="one" draft="unconfirmed">gvatemala kecalo</displayName>
+				<displayName count="other" draft="unconfirmed">gvatemalaj kecaloj</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">gujana dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">gujana dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">gujanaj dolaroj</displayName>
 			</currency>
 			<currency type="HKD">
-				<displayName draft="unconfirmed">Honkonga dolaro</displayName>
+				<displayName draft="unconfirmed">honkonga dolaro</displayName>
 				<displayName count="one" draft="unconfirmed">honkonga dolaro</displayName>
 				<displayName count="other" draft="unconfirmed">honkongaj dolaroj</displayName>
-				<symbol draft="unconfirmed">HK$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+				<symbol draft="unconfirmed">HKD</symbol>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">hondura lempiro</displayName>
+				<displayName count="one" draft="unconfirmed">hondura lempiro</displayName>
+				<displayName count="other" draft="unconfirmed">honduraj lempiroj</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">kroata kunao</displayName>
+				<displayName count="one" draft="unconfirmed">kroata kunao</displayName>
+				<displayName count="other" draft="unconfirmed">kroataj kunaoj</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">haitia gurdo</displayName>
+				<displayName count="one" draft="unconfirmed">haitia gurdo</displayName>
+				<displayName count="other" draft="unconfirmed">haitiaj gurdoj</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">hungara forinto</displayName>
+				<displayName count="one" draft="unconfirmed">hungara forinto</displayName>
+				<displayName count="other" draft="unconfirmed">hungaraj forintoj</displayName>
 			</currency>
 			<currency type="IDR">
-				<displayName draft="unconfirmed">Indonezia rupio</displayName>
-				<displayName count="one" draft="unconfirmed">Indonezia rupio</displayName>
-				<displayName count="other" draft="unconfirmed">Indoneziaj rupioj</displayName>
-				<symbol draft="unconfirmed">IDR</symbol>
+				<displayName draft="unconfirmed">indonezia rupio</displayName>
+				<displayName count="one" draft="unconfirmed">indonezia rupio</displayName>
+				<displayName count="other" draft="unconfirmed">indoneziaj rupioj</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">israela nova siklo</displayName>
+				<displayName count="one" draft="unconfirmed">israela nova siklo</displayName>
+				<displayName count="other" draft="unconfirmed">israelaj novaj sikloj</displayName>
+				<symbol draft="unconfirmed">ILS</symbol>
 			</currency>
 			<currency type="INR">
-				<displayName draft="unconfirmed">Barata rupio</displayName>
-				<displayName count="one" draft="unconfirmed">barata rupio</displayName>
-				<displayName count="other" draft="unconfirmed">barataj rupioj</displayName>
-				<symbol draft="unconfirmed">₹</symbol>
-				<symbol alt="narrow" draft="unconfirmed">₹</symbol>
+				<displayName draft="unconfirmed">hinda rupio</displayName>
+				<displayName count="one" draft="unconfirmed">hinda rupio</displayName>
+				<displayName count="other" draft="unconfirmed">hindaj rupioj</displayName>
+				<symbol draft="unconfirmed">INR</symbol>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">iraka dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">iraka dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">irakaj dinaroj</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">irana rialo</displayName>
+				<displayName count="one" draft="unconfirmed">irana rialo</displayName>
+				<displayName count="other" draft="unconfirmed">iranaj rialoj</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">islanda krono</displayName>
+				<displayName count="one" draft="unconfirmed">islanda krono</displayName>
+				<displayName count="other" draft="unconfirmed">islandaj kronoj</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">jamajka dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">jamajka dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">jamajkaj dolaroj</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">jordania dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">jordania dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">jordaniaj dinaroj</displayName>
 			</currency>
 			<currency type="JPY">
-				<displayName draft="unconfirmed">Japana eno</displayName>
+				<displayName draft="unconfirmed">japana eno</displayName>
 				<displayName count="one" draft="unconfirmed">japana eno</displayName>
 				<displayName count="other" draft="unconfirmed">japanaj enoj</displayName>
-				<symbol draft="unconfirmed">JP¥</symbol>
-				<symbol alt="narrow" draft="unconfirmed">¥</symbol>
+				<symbol draft="unconfirmed">JPY</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">kenja ŝilingo</displayName>
+				<displayName count="one" draft="unconfirmed">kenja ŝilingo</displayName>
+				<displayName count="other" draft="unconfirmed">kenjaj ŝilingoj</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">kirgiza somo</displayName>
+				<displayName count="one" draft="unconfirmed">kirgiza somo</displayName>
+				<displayName count="other" draft="unconfirmed">kirgizaj somoj</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">kamboĝa rielo</displayName>
+				<displayName count="one" draft="unconfirmed">kamboĝa rielo</displayName>
+				<displayName count="other" draft="unconfirmed">kamboĝaj rieloj</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">komora franko</displayName>
+				<displayName count="one" draft="unconfirmed">komora franko</displayName>
+				<displayName count="other" draft="unconfirmed">komoraj frankoj</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">nordkorea vono</displayName>
+				<displayName count="one" draft="unconfirmed">nordkorea vono</displayName>
+				<displayName count="other" draft="unconfirmed">nordkoreaj vonoj</displayName>
 			</currency>
 			<currency type="KRW">
-				<displayName draft="unconfirmed">Sud-korea ŭono</displayName>
-				<displayName count="one" draft="unconfirmed">sud-korea ŭono</displayName>
-				<displayName count="other" draft="unconfirmed">sud-koreaj ŭonoj</displayName>
-				<symbol draft="unconfirmed">₩</symbol>
-				<symbol alt="narrow" draft="unconfirmed">₩</symbol>
+				<displayName draft="unconfirmed">sudkorea vono</displayName>
+				<displayName count="one" draft="unconfirmed">sudkorea vono</displayName>
+				<displayName count="other" draft="unconfirmed">sudkoreaj vonoj</displayName>
+				<symbol draft="unconfirmed">KRW</symbol>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">kuvajta dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">kuvajta dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">kuvajtaj dinaroj</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">kajmana dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">kajmana dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">kajmanaj dolaroj</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">kazaĥa tengo</displayName>
+				<displayName count="one" draft="unconfirmed">kazaĥa tengo</displayName>
+				<displayName count="other" draft="unconfirmed">kazaĥaj tengoj</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">laosa kipo</displayName>
+				<displayName count="one" draft="unconfirmed">laosa kipo</displayName>
+				<displayName count="other" draft="unconfirmed">laosaj kipoj</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">libana liro</displayName>
+				<displayName count="one" draft="unconfirmed">libana liro</displayName>
+				<displayName count="other" draft="unconfirmed">libanaj liroj</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">srilanka rupio</displayName>
+				<displayName count="one" draft="unconfirmed">srilanka rupio</displayName>
+				<displayName count="other" draft="unconfirmed">srilankaj rupioj</displayName>
+				<symbol alt="narrow" draft="unconfirmed">₨</symbol>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">liberia dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">liberia dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">liberiaj dolaroj</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">lesota lotio</displayName>
+				<displayName count="one" draft="unconfirmed">lesota lotio</displayName>
+				<displayName count="other" draft="unconfirmed">lesotaj lotioj</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">libia dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">libia dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">libiaj dinaroj</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">maroka dirhamo</displayName>
+				<displayName count="one" draft="unconfirmed">maroka dirhamo</displayName>
+				<displayName count="other" draft="unconfirmed">marokaj dirhamoj</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">moldava leo</displayName>
+				<displayName count="one" draft="unconfirmed">moldava leo</displayName>
+				<displayName count="other" draft="unconfirmed">moldavaj leoj</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">madagaskara ariaro</displayName>
+				<displayName count="one" draft="unconfirmed">madagaskara ariaro</displayName>
+				<displayName count="other" draft="unconfirmed">madagaskaraj ariaroj</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">makedona denaro</displayName>
+				<displayName count="one" draft="unconfirmed">makedona denaro</displayName>
+				<displayName count="other" draft="unconfirmed">makedonaj denaroj</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">birma kjato</displayName>
+				<displayName count="one" draft="unconfirmed">birma kjato</displayName>
+				<displayName count="other" draft="unconfirmed">birmaj kjatoj</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">mongola tugriko</displayName>
+				<displayName count="one" draft="unconfirmed">mongola tugriko</displayName>
+				<displayName count="other" draft="unconfirmed">mongolaj tugrikoj</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">makaa patako</displayName>
+				<displayName count="one" draft="unconfirmed">makaa patako</displayName>
+				<displayName count="other" draft="unconfirmed">makaaj patakoj</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName draft="unconfirmed">maŭritania uguijao</displayName>
+				<displayName count="one" draft="unconfirmed">maŭritania uguijao</displayName>
+				<displayName count="other" draft="unconfirmed">maŭritaniaj uguijaoj</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">maŭricia rupio</displayName>
+				<displayName count="one" draft="unconfirmed">maŭricia rupio</displayName>
+				<displayName count="other" draft="unconfirmed">maŭriciaj rupioj</displayName>
+				<symbol alt="narrow" draft="unconfirmed">₨</symbol>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">maldiva rufijao</displayName>
+				<displayName count="one" draft="unconfirmed">maldiva rufijao</displayName>
+				<displayName count="other" draft="unconfirmed">maldivaj rufijaoj</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">malavia kvaĉo</displayName>
+				<displayName count="one" draft="unconfirmed">malavia kvaĉo</displayName>
+				<displayName count="other" draft="unconfirmed">malaviaj kvaĉoj</displayName>
 			</currency>
 			<currency type="MXN">
-				<displayName draft="unconfirmed">Meksika peso</displayName>
+				<displayName draft="unconfirmed">meksika peso</displayName>
 				<displayName count="one" draft="unconfirmed">meksika peso</displayName>
 				<displayName count="other" draft="unconfirmed">meksikaj pesoj</displayName>
-				<symbol draft="unconfirmed">MX$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+				<symbol draft="unconfirmed">MXN</symbol>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">malajzia ringito</displayName>
+				<displayName count="one" draft="unconfirmed">malajzia ringito</displayName>
+				<displayName count="other" draft="unconfirmed">malajziaj ringitoj</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="unconfirmed">mozambika metikalo</displayName>
+				<displayName count="one" draft="unconfirmed">mozambika metikalo</displayName>
+				<displayName count="other" draft="unconfirmed">mozambikaj metikaloj</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">namibia dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">namibia dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">namibiaj dolaroj</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">niĝeria najro</displayName>
+				<displayName count="one" draft="unconfirmed">niĝeria najro</displayName>
+				<displayName count="other" draft="unconfirmed">niĝeriaj najroj</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">nikaragva kordovo</displayName>
+				<displayName count="one" draft="unconfirmed">nikaragva kordovo</displayName>
+				<displayName count="other" draft="unconfirmed">nikaragvaj kordovoj</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName draft="unconfirmed">Norvega krono</displayName>
+				<displayName draft="unconfirmed">norvega krono</displayName>
 				<displayName count="one" draft="unconfirmed">norvega krono</displayName>
 				<displayName count="other" draft="unconfirmed">norvegaj kronoj</displayName>
-				<symbol draft="unconfirmed">NOK</symbol>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">nepala rupio</displayName>
+				<displayName count="one" draft="unconfirmed">nepala rupio</displayName>
+				<displayName count="other" draft="unconfirmed">nepalaj rupioj</displayName>
+				<symbol alt="narrow" draft="unconfirmed">₨</symbol>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">novzelanda dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">novzelanda dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">novzelandaj dolaroj</displayName>
+				<symbol draft="unconfirmed">NZD</symbol>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">omana rialo</displayName>
+				<displayName count="one" draft="unconfirmed">omana rialo</displayName>
+				<displayName count="other" draft="unconfirmed">omanaj rialoj</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">panama balboo</displayName>
+				<displayName count="one" draft="unconfirmed">panama balboo</displayName>
+				<displayName count="other" draft="unconfirmed">panamaj balbooj</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">perua suno</displayName>
+				<displayName count="one" draft="unconfirmed">perua suno</displayName>
+				<displayName count="other" draft="unconfirmed">peruaj sunoj</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">papuonovgvinea kinao</displayName>
+				<displayName count="one" draft="unconfirmed">papuonovgvinea kinao</displayName>
+				<displayName count="other" draft="unconfirmed">papuonovgvineaj kinaoj</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">filipina peso</displayName>
+				<displayName count="one" draft="unconfirmed">filipina peso</displayName>
+				<displayName count="other" draft="unconfirmed">filipinaj pesoj</displayName>
+				<symbol draft="unconfirmed">PHP</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">pakistana rupio</displayName>
+				<displayName count="one" draft="unconfirmed">pakistana rupio</displayName>
+				<displayName count="other" draft="unconfirmed">pakistanaj rupioj</displayName>
+				<symbol alt="narrow" draft="unconfirmed">₨</symbol>
 			</currency>
 			<currency type="PLN">
-				<displayName draft="unconfirmed">Pola zloto</displayName>
+				<displayName draft="unconfirmed">pola zloto</displayName>
 				<displayName count="one" draft="unconfirmed">pola zloto</displayName>
 				<displayName count="other" draft="unconfirmed">polaj zlotoj</displayName>
-				<symbol draft="unconfirmed">PLN</symbol>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">paragvaja gvaranio</displayName>
+				<displayName count="one" draft="unconfirmed">paragvaja gvaranio</displayName>
+				<displayName count="other" draft="unconfirmed">paragvajaj gvaranioj</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">katara rialo</displayName>
+				<displayName count="one" draft="unconfirmed">katara rialo</displayName>
+				<displayName count="other" draft="unconfirmed">kataraj rialoj</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="unconfirmed">rumana leo</displayName>
+				<displayName count="one" draft="unconfirmed">rumana leo</displayName>
+				<displayName count="other" draft="unconfirmed">rumanaj leoj</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">serba dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">serba dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">serbaj dinaroj</displayName>
 			</currency>
 			<currency type="RUB">
-				<displayName draft="unconfirmed">Rusa rublo</displayName>
+				<displayName draft="unconfirmed">rusa rublo</displayName>
 				<displayName count="one" draft="unconfirmed">rusa rublo</displayName>
 				<displayName count="other" draft="unconfirmed">rusaj rubloj</displayName>
-				<symbol draft="unconfirmed">RUB</symbol>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">ruanda franko</displayName>
+				<displayName count="one" draft="unconfirmed">ruanda franko</displayName>
+				<displayName count="other" draft="unconfirmed">ruandaj frankoj</displayName>
 			</currency>
 			<currency type="SAR">
-				<displayName draft="unconfirmed">Sauda rialo</displayName>
+				<displayName draft="unconfirmed">sauda rialo</displayName>
 				<displayName count="one" draft="unconfirmed">sauda rialo</displayName>
 				<displayName count="other" draft="unconfirmed">saudaj rialoj</displayName>
-				<symbol draft="unconfirmed">SAR</symbol>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">salomona dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">salomona dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">salomonaj dolaroj</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">sejŝela rupio</displayName>
+				<displayName count="one" draft="unconfirmed">sejŝela rupio</displayName>
+				<displayName count="other" draft="unconfirmed">sejŝelaj rupioj</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">sudana pundo</displayName>
+				<displayName count="one" draft="unconfirmed">sudana pundo</displayName>
+				<displayName count="other" draft="unconfirmed">sudanaj pundoj</displayName>
 			</currency>
 			<currency type="SEK">
-				<displayName draft="unconfirmed">Sveda krono</displayName>
+				<displayName draft="unconfirmed">sveda krono</displayName>
 				<displayName count="one" draft="unconfirmed">sveda krono</displayName>
 				<displayName count="other" draft="unconfirmed">svedaj kronoj</displayName>
-				<symbol draft="unconfirmed">SEK</symbol>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">singapura dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">singapura dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">singapuraj dolaroj</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">sankthelena pundo</displayName>
+				<displayName count="one" draft="unconfirmed">sankthelena pundo</displayName>
+				<displayName count="other" draft="unconfirmed">sankthelenaj pundoj</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">sieraleona leono</displayName>
+				<displayName count="one" draft="unconfirmed">sieraleona leono</displayName>
+				<displayName count="other" draft="unconfirmed">sieraleonaj leonoj</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">sieraleona leono (1964–2022)</displayName>
+				<displayName count="one" draft="unconfirmed">sieraleona leono (1964–2022)</displayName>
+				<displayName count="other" draft="unconfirmed">sieraleonaj leonoj (1964–2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">somala ŝilingo</displayName>
+				<displayName count="one" draft="unconfirmed">somala ŝilingo</displayName>
+				<displayName count="other" draft="unconfirmed">somalaj ŝilingoj</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">surinama dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">surinama dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">surinamaj dolaroj</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName draft="unconfirmed">sudsudana pundo</displayName>
+				<displayName count="one" draft="unconfirmed">sudsudana pundo</displayName>
+				<displayName count="other" draft="unconfirmed">sudsudanaj pundoj</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName draft="unconfirmed">santomea dobro</displayName>
+				<displayName count="one" draft="unconfirmed">santomea dobro</displayName>
+				<displayName count="other" draft="unconfirmed">santomeaj dobroj</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">siria pundo</displayName>
+				<displayName count="one" draft="unconfirmed">siria pundo</displayName>
+				<displayName count="other" draft="unconfirmed">siriaj pundoj</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">svazilanda liliagenio</displayName>
+				<displayName count="one" draft="unconfirmed">svazia lilangenio</displayName>
+				<displayName count="other" draft="unconfirmed">svaziaj lilangenioj</displayName>
 			</currency>
 			<currency type="THB">
-				<displayName draft="unconfirmed">Taja bahto</displayName>
+				<displayName draft="unconfirmed">taja bahto</displayName>
 				<displayName count="one" draft="unconfirmed">taja bahto</displayName>
 				<displayName count="other" draft="unconfirmed">tajaj bahtoj</displayName>
-				<symbol draft="unconfirmed">฿</symbol>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">taĝika somonio</displayName>
+				<displayName count="one" draft="unconfirmed">taĝika somonio</displayName>
+				<displayName count="other" draft="unconfirmed">taĝikaj somonioj</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">turkmena manato</displayName>
+				<displayName count="one" draft="unconfirmed">turkmena manato</displayName>
+				<displayName count="other" draft="unconfirmed">turkmenaj manatoj</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">tunizia dinaro</displayName>
+				<displayName count="one" draft="unconfirmed">tunizia dinaro</displayName>
+				<displayName count="other" draft="unconfirmed">tuniziaj dinaroj</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">tonga paangao</displayName>
+				<displayName count="one" draft="unconfirmed">tonga paangao</displayName>
+				<displayName count="other" draft="unconfirmed">tongaj paangaoj</displayName>
 			</currency>
 			<currency type="TRY">
-				<displayName draft="unconfirmed">Turka liro</displayName>
+				<displayName draft="unconfirmed">turka liro</displayName>
 				<displayName count="one" draft="unconfirmed">turka liro</displayName>
 				<displayName count="other" draft="unconfirmed">turkaj liroj</displayName>
-				<symbol draft="unconfirmed">₺</symbol>
-				<symbol alt="narrow" draft="unconfirmed">₺</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="unconfirmed">trinidada dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">trinidada dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">trinidadaj dolaroj</displayName>
 			</currency>
 			<currency type="TWD">
-				<displayName draft="unconfirmed">Nova tajvana dolaro</displayName>
-				<displayName count="one" draft="unconfirmed">nova tajvana dolaro</displayName>
-				<displayName count="other" draft="unconfirmed">novaj tajvanaj dolaroj</displayName>
-				<symbol draft="unconfirmed">NT$</symbol>
+				<displayName draft="unconfirmed">tajvana nova dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">tajvana nova dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">tajvanaj novaj dolaroj</displayName>
+				<symbol draft="unconfirmed">TWD</symbol>
 				<symbol alt="narrow" draft="unconfirmed">NT$</symbol>
 			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">tanzania ŝilingo</displayName>
+				<displayName count="one" draft="unconfirmed">tanzania ŝilingo</displayName>
+				<displayName count="other" draft="unconfirmed">tanzaniaj ŝilingoj</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">ukraina hrivno</displayName>
+				<displayName count="one" draft="unconfirmed">ukraina hrivno</displayName>
+				<displayName count="other" draft="unconfirmed">ukrainaj hrivnoj</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">uganda ŝilingo</displayName>
+				<displayName count="one" draft="unconfirmed">uganda ŝilingo</displayName>
+				<displayName count="other" draft="unconfirmed">ugandaj ŝilingoj</displayName>
+			</currency>
 			<currency type="USD">
-				<displayName draft="unconfirmed">Usona dolaro</displayName>
+				<displayName draft="unconfirmed">usona dolaro</displayName>
 				<displayName count="one" draft="unconfirmed">usona dolaro</displayName>
 				<displayName count="other" draft="unconfirmed">usonaj dolaroj</displayName>
-				<symbol draft="unconfirmed">US$</symbol>
-				<symbol alt="narrow" draft="unconfirmed">$</symbol>
+				<symbol draft="unconfirmed">USD</symbol>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">urugvaja peso</displayName>
+				<displayName count="one" draft="unconfirmed">urugvaja peso</displayName>
+				<displayName count="other" draft="unconfirmed">urugvajaj pesoj</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">uzbeka somo</displayName>
+				<displayName count="one" draft="unconfirmed">uzbeka somo</displayName>
+				<displayName count="other" draft="unconfirmed">uzbekaj somoj</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName draft="unconfirmed">venezuela bolivaro</displayName>
+				<displayName count="one" draft="unconfirmed">venezuela bolivaro</displayName>
+				<displayName count="other" draft="unconfirmed">venezuelaj bolivaroj</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">vjetnama dongo</displayName>
+				<displayName count="one" draft="unconfirmed">vjetnama dongo</displayName>
+				<displayName count="other" draft="unconfirmed">vjetnamaj dongoj</displayName>
+				<symbol draft="unconfirmed">VND</symbol>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">vanuatua vatuo</displayName>
+				<displayName count="one" draft="unconfirmed">vanuatua vatuo</displayName>
+				<displayName count="other" draft="unconfirmed">vanuatuaj vatuoj</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">samoa talao</displayName>
+				<displayName count="one" draft="unconfirmed">samoa talao</displayName>
+				<displayName count="other" draft="unconfirmed">samoaj talaoj</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="unconfirmed">ekvatorafrika franko</displayName>
+				<displayName count="one" draft="unconfirmed">ekvatorafrika franko</displayName>
+				<displayName count="other" draft="unconfirmed">ekvatorafrikaj frankoj</displayName>
+				<symbol draft="unconfirmed">XAF</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName draft="unconfirmed">arĝento</displayName>
@@ -3460,33 +4613,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="XBB">
 				<displayName draft="unconfirmed">eŭropa monunuo</displayName>
 			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">orientkariba dolaro</displayName>
+				<displayName count="one" draft="unconfirmed">orientkariba dolaro</displayName>
+				<displayName count="other" draft="unconfirmed">orientkaribaj dolaroj</displayName>
+				<symbol draft="unconfirmed">XCD</symbol>
+			</currency>
 			<currency type="XFO">
 				<displayName draft="unconfirmed">franca ora franko</displayName>
 			</currency>
+			<currency type="XOF">
+				<displayName draft="unconfirmed">okcidentafrika franko</displayName>
+				<displayName count="one" draft="unconfirmed">okcidentafrika franko</displayName>
+				<displayName count="other" draft="unconfirmed">okcidentafrikaj frankoj</displayName>
+				<symbol draft="unconfirmed">XOF</symbol>
+			</currency>
 			<currency type="XPD">
 				<displayName draft="unconfirmed">paladio</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="unconfirmed">pacifika franko</displayName>
+				<displayName count="one" draft="unconfirmed">pacifika franko</displayName>
+				<displayName count="other" draft="unconfirmed">pacifikaj frankoj</displayName>
+				<symbol draft="unconfirmed">XPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName draft="unconfirmed">plateno</displayName>
 			</currency>
 			<currency type="XXX">
-				<displayName draft="unconfirmed">Nekonata valuto</displayName>
-				<displayName count="one" draft="unconfirmed">nekonata monunuo</displayName>
-				<displayName count="other" draft="unconfirmed">nekonataj monunuoj</displayName>
+				<displayName draft="unconfirmed">nekonata monunuo</displayName>
+				<displayName count="one" draft="unconfirmed">(nekunata monunuo)</displayName>
+				<displayName count="other" draft="unconfirmed">(nekonata monunuo)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">jemena rialo</displayName>
+				<displayName count="one" draft="unconfirmed">jemena rialo</displayName>
+				<displayName count="other" draft="unconfirmed">jemenaj rialoj</displayName>
 			</currency>
 			<currency type="ZAR">
-				<displayName draft="unconfirmed">Sud-afrika rando</displayName>
-				<displayName count="one" draft="unconfirmed">sud-afrika rando</displayName>
-				<displayName count="other" draft="unconfirmed">sud-afrikaj randoj</displayName>
-				<symbol draft="unconfirmed">ZAR</symbol>
+				<displayName draft="unconfirmed">sudafrika rando</displayName>
+				<displayName count="one" draft="unconfirmed">sudafrika rando</displayName>
+				<displayName count="other" draft="unconfirmed">sudafrikaj randoj</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="unconfirmed">zambia kvaĉo</displayName>
+				<displayName count="one" draft="unconfirmed">zambia kvaĉo</displayName>
+				<displayName count="other" draft="unconfirmed">zambiaj kvaĉoj</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+			<pattern type="approximately" draft="unconfirmed">≈{0}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="unconfirmed">{0} tago</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} tagoj</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">Turniĝu al {0}-a dekstro.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">po {0} por {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0} oble {1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="area-square-kilometer">
 				<displayName draft="unconfirmed">kvadrataj kilometroj</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} kvadrata kilometro</unitPattern>
@@ -3582,10 +4773,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} bito</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} bitoj</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">jarcentoj</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jarcento</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jarcentoj</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">jardekoj</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jardeko</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jardekoj</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">jaroj</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} jaro</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} jaroj</unitPattern>
+				<perUnitPattern draft="unconfirmed">po {0} por jaro</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">monatoj</displayName>
@@ -3739,32 +4941,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} litro</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} litroj</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">noktoj</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} nokto</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} noktoj</unitPattern>
+				<perUnitPattern draft="unconfirmed">po {0} por nokto</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">direkto</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} oriente</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} norde</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} sude</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} okcidente</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="area-square-kilometer">
-				<displayName draft="unconfirmed">km²</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} km²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km²</unitPattern>
-			</unit>
 			<unit type="area-hectare">
 				<displayName draft="unconfirmed">ha</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} ha</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} ha</unitPattern>
 			</unit>
-			<unit type="area-square-meter">
-				<displayName draft="unconfirmed">m²</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} m²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m²</unitPattern>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">jarcent.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jarcent.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jarcent.</unitPattern>
 			</unit>
-			<unit type="area-square-centimeter">
-				<displayName draft="unconfirmed">cm²</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} cm²</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">jardek.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jardek.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jardek.</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">jaro</displayName>
+				<displayName draft="unconfirmed">j.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} j.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} j.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/j.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">monato</displayName>
@@ -3801,78 +5010,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} ms.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ms.</unitPattern>
 			</unit>
-			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">km</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} km</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km</unitPattern>
-			</unit>
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">m</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} m</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<displayName draft="unconfirmed">dm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} dm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">cm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} cm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">mm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} mm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">μm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} μm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<displayName draft="unconfirmed">nm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} nm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<displayName draft="unconfirmed">pm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} pm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pm</unitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<displayName draft="unconfirmed">pc</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} pc</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName draft="unconfirmed">lj</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} lj</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} lj</unitPattern>
 			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName draft="unconfirmed">au</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} au</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} au</unitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<displayName draft="unconfirmed">kg</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} kg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
-			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">g</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} g</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<displayName draft="unconfirmed">km/h</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} km/h</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} km/h</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">°C</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} °C</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} °C</unitPattern>
 			</unit>
@@ -3881,36 +5030,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} L</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} L</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">nokt.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} nokt.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} nokt.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/nokto</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">direkto</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} W</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="angle-degree">
-				<unitPattern count="one" draft="unconfirmed">{0}°</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
-			</unit>
 			<unit type="area-square-kilometer">
-				<displayName draft="unconfirmed">km²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName draft="unconfirmed">ha</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}ha</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName draft="unconfirmed">m²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m²</unitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName draft="unconfirmed">cm²</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cm²</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cm²</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">jc.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jc.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jc.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">jd.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} jd.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} jd.</unitPattern>
+			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">j.</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}j.</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}j.</unitPattern>
+				<displayName draft="unconfirmed">a</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} a</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} a</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/a</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">t.</displayName>
@@ -3921,7 +5086,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">h.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}h.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}h.</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/h.</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">m.</displayName>
@@ -3932,7 +5096,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">s.</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}s.</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}s.</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/s.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="unconfirmed">ms.</displayName>
@@ -3940,102 +5103,114 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0}ms.</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">km</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName draft="unconfirmed">m</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}m</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}m</unitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="unconfirmed">dm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}dm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">cm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}cm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}cm</unitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">mm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}mm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">μm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}μm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName draft="unconfirmed">nm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}nm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="unconfirmed">pm</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="unconfirmed">pc</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}pc</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="unconfirmed">lj</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}lj</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}lj</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName draft="unconfirmed">au</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}au</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}au</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName draft="unconfirmed">kg</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}kg</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName draft="unconfirmed">g</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}g</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}g</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName draft="unconfirmed">km/h</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}km/h</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}km/h</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">°C</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}°C</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName draft="unconfirmed">L</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}L</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}L</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">n.</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} n.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} n.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/n.</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">direkto</displayName>
+			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} kaj {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} kaj {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} aŭ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} k {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} k {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

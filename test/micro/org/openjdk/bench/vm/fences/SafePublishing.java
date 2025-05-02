@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -32,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xmx128m"})
+@Fork(value = 3, jvmArgs = {"-XX:+UseParallelGC", "-Xmx128m"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)

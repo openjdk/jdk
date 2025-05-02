@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,44 +30,21 @@
  * @test
  * @bug 6728126
  * @summary Parsing Extensions in Client Hello message is done in a wrong way
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates
  * @run main/othervm EmptyExtensionData
  */
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.security.*;
 import java.nio.*;
 
 import jdk.test.lib.security.SecurityUtils;
 
-public class EmptyExtensionData {
+public class EmptyExtensionData extends SSLContextTemplate {
 
     private static boolean debug = false;
 
-    private static String pathToStores = "../../../../javax/net/ssl/etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
-
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-    private static void checkDone(SSLEngine ssle) throws Exception {
-        if (!ssle.isInboundDone()) {
-            throw new Exception("isInboundDone isn't done");
-        }
-        if (!ssle.isOutboundDone()) {
-            throw new Exception("isOutboundDone isn't done");
-        }
-    }
-
-    private static void runTest(SSLEngine ssle) throws Exception {
+    private void runTest(SSLEngine ssle) throws Exception {
         // a client hello message with an empty extension data
         byte[] msg_clihello = {
                 (byte)0x16, (byte)0x03, (byte)0x01, (byte)0x00,
@@ -138,7 +115,7 @@ public class EmptyExtensionData {
      * If the result indicates that we have outstanding tasks to do,
      * go ahead and run them in this thread.
      */
-    private static void runDelegatedTasks(SSLEngineResult result,
+    private void runDelegatedTasks(SSLEngineResult result,
             SSLEngine engine) throws Exception {
 
         if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
@@ -159,45 +136,16 @@ public class EmptyExtensionData {
     public static void main(String args[]) throws Exception {
         // Re-enable TLSv1 since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+        new EmptyExtensionData().run();
+    }
 
-        SSLEngine ssle = createSSLEngine(keyFilename, trustFilename);
+    private void run() throws Exception {
+        SSLEngine ssle = createServerSSLContext().createSSLEngine();
+        ssle.setUseClientMode(false);
         runTest(ssle);
 
         System.out.println("Test Passed.");
     }
-
-    /*
-     * Create an initialized SSLContext to use for this test.
-     */
-    static private SSLEngine createSSLEngine(String keyFile, String trustFile)
-            throws Exception {
-
-        SSLEngine ssle;
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
-
-        ks.load(new FileInputStream(keyFile), passphrase);
-        ts.load(new FileInputStream(trustFile), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        ssle = sslCtx.createSSLEngine();
-        ssle.setUseClientMode(false);
-
-        return ssle;
-    }
-
 
     private static void log(String str) {
         if (debug) {

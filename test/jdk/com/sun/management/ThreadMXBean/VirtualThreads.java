@@ -25,7 +25,6 @@
  * @test id=default
  * @bug 8284161 8303242
  * @summary Test com.sun.management.ThreadMXBean with virtual threads
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm VirtualThreads
  */
@@ -33,7 +32,6 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
  */
@@ -116,7 +114,11 @@ public class VirtualThreads {
             long tid1 = vthread.threadId();
             long[] tids = new long[] { tid0, tid1 };
             long[] allocated = bean.getThreadAllocatedBytes(tids);
-            assertTrue(allocated[0] >= 0L);
+            if (Thread.currentThread().isVirtual()) {
+                assertEquals(-1L, allocated[0]);
+            } else {
+                assertTrue(allocated[0] >= 0L);
+            }
             assertEquals(-1L, allocated[1]);
         } finally {
             LockSupport.unpark(vthread);
@@ -138,7 +140,11 @@ public class VirtualThreads {
             long tid1 = vthread.threadId();
             long[] tids = new long[] { tid0, tid1 };
             long[] cpuTimes = bean.getThreadCpuTime(tids);
-            assertTrue(cpuTimes[0] >= 0L);
+            if (Thread.currentThread().isVirtual()) {
+                assertEquals(-1L, cpuTimes[0]);
+            } else {
+                assertTrue(cpuTimes[0] >= 0L);
+            }
             assertEquals(-1L, cpuTimes[1]);
         } finally {
             LockSupport.unpark(vthread);
@@ -160,7 +166,11 @@ public class VirtualThreads {
             long tid1 = vthread.threadId();
             long[] tids = new long[] { tid0, tid1 };
             long[] userTimes = bean.getThreadUserTime(tids);
-            assertTrue(userTimes[0] >= 0L);
+            if (Thread.currentThread().isVirtual()) {
+                assertEquals(-1L, userTimes[0]);
+            } else {
+                assertTrue(userTimes[0] >= 0L);
+            }
             assertEquals(-1L, userTimes[1]);
         } finally {
             LockSupport.unpark(vthread);

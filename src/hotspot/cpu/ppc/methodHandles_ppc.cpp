@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
@@ -84,16 +83,16 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj_reg, FILE_AND_LINE);
-  __ cmpdi(CCR0, obj_reg, 0);
-  __ beq(CCR0, L_bad);
+  __ cmpdi(CR0, obj_reg, 0);
+  __ beq(CR0, L_bad);
   __ load_klass(temp_reg, obj_reg);
   __ load_const_optimized(temp2_reg, (address) klass_addr);
   __ ld(temp2_reg, 0, temp2_reg);
-  __ cmpd(CCR0, temp_reg, temp2_reg);
-  __ beq(CCR0, L_ok);
+  __ cmpd(CR0, temp_reg, temp2_reg);
+  __ beq(CR0, L_ok);
   __ ld(temp_reg, klass->super_check_offset(), temp_reg);
-  __ cmpd(CCR0, temp_reg, temp2_reg);
-  __ beq(CCR0, L_ok);
+  __ cmpd(CR0, temp_reg, temp2_reg);
+  __ beq(CR0, L_ok);
   __ BIND(L_bad);
   __ stop(error_message);
   __ BIND(L_ok);
@@ -108,8 +107,8 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   // assert(sizeof(u4) == sizeof(java.lang.invoke.MemberName.flags), "");
   __ srwi( temp, temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT);
   __ andi(temp, temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
-  __ cmpwi(CCR1, temp, ref_kind);
-  __ beq(CCR1, L);
+  __ cmpwi(CR1, temp, ref_kind);
+  __ beq(CR1, L);
   { char* buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
     jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
     if (ref_kind == JVM_REF_invokeVirtual ||
@@ -136,11 +135,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
     __ lwz(temp, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
-    __ cmplwi(CCR0, temp, 0);
-    __ beq(CCR0, run_compiled_code);
+    __ cmplwi(CR0, temp, 0);
+    __ beq(CR0, run_compiled_code);
     // Null method test is replicated below in compiled case.
-    __ cmplwi(CCR0, R19_method, 0);
-    __ beq(CCR0, L_no_such_method);
+    __ cmplwi(CR0, R19_method, 0);
+    __ beq(CR0, L_no_such_method);
     __ ld(target, in_bytes(Method::interpreter_entry_offset()), R19_method);
     __ mtctr(target);
     __ bctr();
@@ -148,8 +147,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   }
 
   // Compiled case, either static or fall-through from runtime conditional
-  __ cmplwi(CCR0, R19_method, 0);
-  __ beq(CCR0, L_no_such_method);
+  __ cmplwi(CR0, R19_method, 0);
+  __ beq(CR0, L_no_such_method);
 
   const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
                                                      Method::from_interpreted_offset();
@@ -158,8 +157,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ bctr();
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != NULL, "not yet generated!");
-  __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
+  assert(SharedRuntime::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
+  __ load_const_optimized(target, SharedRuntime::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
 }
@@ -201,8 +200,8 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
     // assert(sizeof(u2) == sizeof(ConstMethod::_size_of_parameters), "");
     Label L;
     __ ld(temp2, __ argument_offset(temp2, temp2, 0), R15_esp);
-    __ cmpd(CCR1, temp2, recv);
-    __ beq(CCR1, L);
+    __ cmpd(CR1, temp2, recv);
+    __ beq(CR1, L);
     __ stop("receiver not on stack");
     __ BIND(L);
   }
@@ -224,14 +223,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   Register R15_argbase   = R15_esp; // parameter (preserved)
@@ -247,10 +246,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ load_sized_value(R30_tmp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
+    __ load_sized_value(R30_tmp1, in_bytes(Method::intrinsic_id_offset()), R19_method,
                         sizeof(u2), /*is_signed*/ false);
-    __ cmpwi(CCR1, R30_tmp1, (int) iid);
-    __ beq(CCR1, L);
+    __ cmpwi(CR1, R30_tmp1, (int) iid);
+    __ beq(CR1, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {
       // could do this for all kinds, but would explode assembly code size
@@ -308,7 +307,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
 void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
   BLOCK_COMMENT("jump_to_native_invoker {");
-  __ stop("Should not reach here");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ ld(temp_target, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes()), nep_reg);
+  __ mtctr(temp_target);
+  __ bctr();
   BLOCK_COMMENT("} jump_to_native_invoker");
 }
 
@@ -419,8 +425,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       if (VerifyMethodHandles) {
         Label L_index_ok;
-        __ cmpdi(CCR1, temp2_index, 0);
-        __ bge(CCR1, L_index_ok);
+        __ cmpdi(CR1, temp2_index, 0);
+        __ bge(CR1, L_index_ok);
         __ stop("no virtual index");
         __ BIND(L_index_ok);
       }
@@ -451,8 +457,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ ld(vtable_index, NONZERO(java_lang_invoke_MemberName::vmindex_offset()), member_reg);
       if (VerifyMethodHandles) {
         Label L_index_ok;
-        __ cmpdi(CCR1, vtable_index, 0);
-        __ bge(CCR1, L_index_ok);
+        __ cmpdi(CR1, vtable_index, 0);
+        __ bge(CR1, L_index_ok);
         __ stop("invalid vtable index for MH.invokeInterface");
         __ BIND(L_index_ok);
       }
@@ -482,7 +488,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ BIND(L_incompatible_class_change_error);
-      __ load_const_optimized(temp1, StubRoutines::throw_IncompatibleClassChangeError_entry());
+      __ load_const_optimized(temp1, SharedRuntime::throw_IncompatibleClassChangeError_entry());
       __ mtctr(temp1);
       __ bctr();
     }
@@ -495,8 +501,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* entry_sp,
                               intptr_t* saved_regs) {
 
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
@@ -506,11 +512,11 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int abi_offset = frame::abi_reg_args_size / 8;
+    const int abi_offset = frame::native_abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
-      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
+      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, native_abi_reg_args_size)).
       ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
         ls.cr();
@@ -574,7 +580,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   const Register tmp = R11; // Will be preserved.
   const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
-  __ save_LR_CR(tmp); // save in old frame
+  __ save_LR(tmp); // save in old frame
 
   __ mr(R5_ARG3, R1_SP);     // saved_sp
   __ push_frame_reg_args(nbytes_save, tmp);
@@ -585,7 +591,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
 
   __ pop_frame();
-  __ restore_LR_CR(tmp);
+  __ restore_LR(tmp);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   BLOCK_COMMENT("} trace_method_handle");

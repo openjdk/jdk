@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,6 @@ public class MemOptionsTest {
         // positive("Initial young generation size at 32-bit range", "-Xmx5G", "-XX:NewSize=4G");
         // positive("Initial young generation size outside 32-bit range", "-Xmx5G", "-XX:NewSize=4G");
 
-        // positive("Initial old generation size within 32-bit range", "-Xmx3G", "-XX:OldSize=2G");
-        // positive("Initial old generation size at 32-bit range", "-Xmx5G", "-XX:OldSize=4G");
-        // positive("Initial old generation size outside 32-bit range", "-Xmx5G", "-XX:OldSize=4G");
-
         if (!failed.isEmpty()) {
             throw new AssertionError(String.format("%d cases failed : %s", failed.size(), failed));
         }
@@ -93,7 +89,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() != 0) {
             output.reportDiagnosticSummary();
@@ -106,7 +102,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() == 0) {
             output.reportDiagnosticSummary();

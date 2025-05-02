@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
+* Copyright (c) 2021, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -34,19 +33,19 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(64) juint ADLER32_ASCALE_TABLE[] = {
+ATTRIBUTE_ALIGNED(64) static const juint ADLER32_ASCALE_TABLE[] = {
     0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
     0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL,
     0x00000008UL, 0x00000009UL, 0x0000000AUL, 0x0000000BUL,
     0x0000000CUL, 0x0000000DUL, 0x0000000EUL, 0x0000000FUL
 };
 
-ATTRIBUTE_ALIGNED(32) juint ADLER32_SHUF0_TABLE[] = {
+ATTRIBUTE_ALIGNED(32) static const juint ADLER32_SHUF0_TABLE[] = {
     0xFFFFFF00UL, 0xFFFFFF01UL, 0xFFFFFF02UL, 0xFFFFFF03UL,
     0xFFFFFF04UL, 0xFFFFFF05UL, 0xFFFFFF06UL, 0xFFFFFF07UL
 };
 
-ATTRIBUTE_ALIGNED(32) juint ADLER32_SHUF1_TABLE[] = {
+ATTRIBUTE_ALIGNED(32) static const juint ADLER32_SHUF1_TABLE[] = {
     0xFFFFFF08UL, 0xFFFFFF09UL, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
     0xFFFFFF0CUL, 0xFFFFFF0DUL, 0xFFFFFF0EUL, 0xFFFFFF0FUL
 };
@@ -67,7 +66,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+  StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   // Choose an appropriate LIMIT for inner loop based on the granularity
@@ -330,6 +330,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ movq(r13, xtmp4);
   __ movq(r12, xtmp3);
 
+  __ vzeroupper();
   __ leave();
   __ ret(0);
 

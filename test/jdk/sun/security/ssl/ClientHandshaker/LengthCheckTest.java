@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8044860
  * @summary Vectors and fixed length fields should be verified
  *          for allowed sizes.
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates
  * @modules java.base/sun.security.ssl
  * @run main/othervm LengthCheckTest
  * @key randomness
@@ -70,7 +70,6 @@
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
 import java.security.*;
 import java.nio.*;
 import java.util.List;
@@ -79,7 +78,7 @@ import java.util.Iterator;
 
 import jdk.test.lib.security.SecurityUtils;
 
-public class LengthCheckTest {
+public class LengthCheckTest extends SSLEngineTemplate {
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -98,40 +97,8 @@ public class LengthCheckTest {
     private static final boolean debug = false;
     private static final boolean dumpBufs = true;
 
-    private final SSLContext sslc;
-
-    private SSLEngine clientEngine;     // client Engine
-    private ByteBuffer clientOut;       // write side of clientEngine
-    private ByteBuffer clientIn;        // read side of clientEngine
-
-    private SSLEngine serverEngine;     // server Engine
-    private ByteBuffer serverOut;       // write side of serverEngine
-    private ByteBuffer serverIn;        // read side of serverEngine
 
     private HandshakeTest handshakeTest;
-
-    /*
-     * For data transport, this example uses local ByteBuffers.  This
-     * isn't really useful, but the purpose of this example is to show
-     * SSLEngine concepts, not how to do network transport.
-     */
-    private ByteBuffer cTOs;            // "reliable" transport client->server
-    private ByteBuffer sTOc;            // "reliable" transport server->client
-
-    /*
-     * The following is to set up the keystores.
-     */
-    private static final String pathToStores = "../../../../javax/net/ssl/etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
-    private static final String passwd = "passphrase";
-
-    private static final String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
 
     // Define a few basic TLS record and message types we might need
     private static final int TLS_RECTYPE_CCS = 0x14;
@@ -176,20 +143,20 @@ public class LengthCheckTest {
             // Send Client Hello
             clientResult = clientEngine.wrap(clientOut, cTOs);
             log("client wrap: ", clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(clientEngine);
             cTOs.flip();
             dumpByteBuffer("CLIENT-TO-SERVER", cTOs);
 
             // Server consumes Client Hello
             serverResult = serverEngine.unwrap(cTOs, serverIn);
             log("server unwrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            runDelegatedTasks(serverEngine);
             cTOs.compact();
 
             // Server generates ServerHello/Cert/Done record
             serverResult = serverEngine.wrap(serverOut, sTOc);
             log("server wrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            runDelegatedTasks(serverEngine);
             sTOc.flip();
 
             // Intercept the ServerHello messages and instead send
@@ -220,19 +187,19 @@ public class LengthCheckTest {
                         gotException = true;
                     }
                     log("client unwrap: ", clientResult);
-                    runDelegatedTasks(clientResult, clientEngine);
+                    runDelegatedTasks(clientEngine);
                 }
             } else {
                 dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
                 log("client unwrap: ", clientResult);
-                runDelegatedTasks(clientResult, clientEngine);
+                runDelegatedTasks(clientEngine);
             }
             sTOc.compact();
 
             // The Client should now send a TLS Alert
             clientResult = clientEngine.wrap(clientOut, cTOs);
             log("client wrap: ", clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(clientEngine);
             cTOs.flip();
             dumpByteBuffer("CLIENT-TO-SERVER", cTOs);
 
@@ -264,7 +231,7 @@ public class LengthCheckTest {
             // Server consumes Client Hello
             serverResult = serverEngine.unwrap(evilClientHello, serverIn);
             log("server unwrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            runDelegatedTasks(serverEngine);
             evilClientHello.compact();
 
             // Under normal circumstances this should be a ServerHello
@@ -273,7 +240,7 @@ public class LengthCheckTest {
             try {
                 serverResult = serverEngine.wrap(serverOut, sTOc);
                 log("server wrap: ", serverResult);
-                runDelegatedTasks(serverResult, serverEngine);
+                runDelegatedTasks(serverEngine);
             } catch (SSLProtocolException ssle) {
                 log("Received expected SSLProtocolException: " + ssle);
                 gotException = true;
@@ -282,7 +249,7 @@ public class LengthCheckTest {
             // We expect to see the server generate an alert here
             serverResult = serverEngine.wrap(serverOut, sTOc);
             log("server wrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            runDelegatedTasks(serverEngine);
             sTOc.flip();
             dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
 
@@ -303,8 +270,8 @@ public class LengthCheckTest {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        // Re-enable TLSv1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+        // Re-enable TLSv1 and TLS_RSA_* since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
         List<LengthCheckTest> ccsTests = new ArrayList<>();
 
@@ -326,26 +293,7 @@ public class LengthCheckTest {
      * Create an initialized SSLContext to use for these tests.
      */
     public LengthCheckTest(String testName) throws Exception {
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
-
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        sslc = sslCtx;
+        super();
 
         switch (testName) {
             case "ServSendLongID":
@@ -378,10 +326,8 @@ public class LengthCheckTest {
      * sections of code.
      */
     private void runTest() throws Exception {
-        boolean dataDone = false;
-
-        createSSLEngines();
-        createBuffers();
+        configureSSLEngine();
+//        createBuffers();
 
         handshakeTest.execTest();
     }
@@ -390,19 +336,17 @@ public class LengthCheckTest {
      * Using the SSLContext created during object creation,
      * create/configure the SSLEngines we'll use for this test.
      */
-    private void createSSLEngines() throws Exception {
+    private void configureSSLEngine() throws Exception {
         /*
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.  Also, require SSL client authentication.
          */
-        serverEngine = sslc.createSSLEngine();
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(false);
 
         /*
          * Similar to above, but using client mode instead.
          */
-        clientEngine = sslc.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
 
         // In order to make a test that will be backwards compatible
@@ -411,84 +355,6 @@ public class LengthCheckTest {
         clientEngine.setEnabledProtocols(new String[]{"TLSv1"});
         clientEngine.setEnabledCipherSuites(
                 new String[]{"TLS_RSA_WITH_AES_128_CBC_SHA"});
-    }
-
-    /*
-     * Create and size the buffers appropriately.
-     */
-    private void createBuffers() {
-
-        /*
-         * We'll assume the buffer sizes are the same
-         * between client and server.
-         */
-        SSLSession session = clientEngine.getSession();
-        int appBufferMax = session.getApplicationBufferSize();
-        int netBufferMax = session.getPacketBufferSize();
-
-        /*
-         * We'll make the input buffers a bit bigger than the max needed
-         * size, so that unwrap()s following a successful data transfer
-         * won't generate BUFFER_OVERFLOWS.
-         *
-         * We'll use a mix of direct and indirect ByteBuffers for
-         * tutorial purposes only.  In reality, only use direct
-         * ByteBuffers when they give a clear performance enhancement.
-         */
-        clientIn = ByteBuffer.allocate(appBufferMax + 50);
-        serverIn = ByteBuffer.allocate(appBufferMax + 50);
-
-        cTOs = ByteBuffer.allocateDirect(netBufferMax);
-        sTOc = ByteBuffer.allocateDirect(netBufferMax);
-
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
-    }
-
-    /*
-     * If the result indicates that we have outstanding tasks to do,
-     * go ahead and run them in this thread.
-     */
-    private static void runDelegatedTasks(SSLEngineResult result,
-            SSLEngine engine) throws Exception {
-
-        if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
-            Runnable runnable;
-            while ((runnable = engine.getDelegatedTask()) != null) {
-                log("\trunning delegated task...");
-                runnable.run();
-            }
-            HandshakeStatus hsStatus = engine.getHandshakeStatus();
-            if (hsStatus == HandshakeStatus.NEED_TASK) {
-                throw new Exception(
-                    "handshake shouldn't need additional tasks");
-            }
-            log("\tnew HandshakeStatus: " + hsStatus);
-        }
-    }
-
-    private static boolean isEngineClosed(SSLEngine engine) {
-        return (engine.isOutboundDone() && engine.isInboundDone());
-    }
-
-    /*
-     * Simple check to make sure everything came across as expected.
-     */
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("\tData transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
     }
 
     /*

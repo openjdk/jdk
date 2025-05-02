@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @library /java/text/testlib
  * @summary test Vietnamese Collation
  * @modules jdk.localedata
+ * @run junit VietnameseTest
  */
 
 /*
@@ -44,12 +45,12 @@
 import java.util.Locale;
 import java.text.Collator;
 
-// Quick dummy program for printing out test results
-public class VietnameseTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new VietnameseTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+// Quick dummy program for printing out test results
+public class VietnameseTest {
 
     private final static String testPS[] = {
         "a",
@@ -346,17 +347,19 @@ public class VietnameseTest extends CollatorTest {
         "Z"
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY, testPS, testPT, testPR);
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY, testPS, testPT, testPR);
     }
 
+    @Test
     public void TestTertiary() {
         int testLength = testT.length;
 
         myCollation.setStrength(Collator.TERTIARY);
         for (int i = 0; i < testLength - 1; i++) {
             for (int j = i+1; j < testLength; j++) {
-                doTest(myCollation, testT[i], testT[j], -1);
+                TestUtils.doCollatorTest(myCollation, testT[i], testT[j], -1);
             }
         }
     }

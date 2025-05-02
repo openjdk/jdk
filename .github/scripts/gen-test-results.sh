@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 # questions.
 #
 
+# Import common utils
+. .github/scripts/report-utils.sh
+
 GITHUB_STEP_SUMMARY="$1"
 
 test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
@@ -44,8 +47,8 @@ for test in $failures $errors; do
   base_path="$(echo "$test" | tr '#' '_')"
   report_file="$report_dir/$base_path.jtr"
   hs_err_files=$(ls $report_dir/$base_path/hs_err*.log 2> /dev/null || true)
+  replay_files=$(ls $report_dir/$base_path/replay*.log 2> /dev/null || true)
   echo "####  <a id="$anchor">$test"
-
   echo '<details><summary>View test results</summary>'
   echo ''
   echo '```'
@@ -73,20 +76,22 @@ for test in $failures $errors; do
     echo ''
   fi
 
+  if [[ "$replay_files" != "" ]]; then
+    echo '<details><summary>View HotSpot replay file</summary>'
+    echo ''
+    for replay in $replay_files; do
+      echo '```'
+      echo "$replay:"
+      echo ''
+      cat "$replay"
+      echo '```'
+    done
+
+    echo '</details>'
+    echo ''
+  fi
 done >> $GITHUB_STEP_SUMMARY
 
-# With many failures, the summary can easily exceed 1024 kB, the limit set by Github
-# Trim it down if so.
-summary_size=$(wc -c < $GITHUB_STEP_SUMMARY)
-if [[ $summary_size -gt 1000000 ]]; then
-  # Trim to below 1024 kB, and cut off after the last detail group
-  head -c 1000000 $GITHUB_STEP_SUMMARY | tac | sed -n -e '/<\/details>/,$ p' | tac > $GITHUB_STEP_SUMMARY.tmp
-  mv $GITHUB_STEP_SUMMARY.tmp $GITHUB_STEP_SUMMARY
-  (
-    echo ''
-    echo ':x: **WARNING: Summary is too large and has been truncated.**'
-    echo ''
-  )  >> $GITHUB_STEP_SUMMARY
-fi
-
 echo ':arrow_right: To see the entire test log, click the job in the list to the left.'  >> $GITHUB_STEP_SUMMARY
+
+truncate_summary

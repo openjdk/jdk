@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,23 @@
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
+#include "opto/output.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/tuple.hpp"
 
 #ifndef SHARE_OPTO_C2_CODESTUBS_HPP
 #define SHARE_OPTO_C2_CODESTUBS_HPP
+
+template <class... Ts>
+class C2GeneralStub;
 
 class C2CodeStub : public ArenaObj {
 private:
   Label _entry;
   Label _continuation;
 
+  void add_to_stub_list();
 protected:
   C2CodeStub() :
     _entry(),
@@ -47,6 +54,10 @@ public:
 
   virtual void emit(C2_MacroAssembler& masm) = 0;
   virtual int max_size() const = 0;
+
+  template <class... Ts>
+  static C2GeneralStub<Ts...>* make(const Ts&... data, int max_size,
+                                    void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&));
 };
 
 class C2CodeStubList {
@@ -57,7 +68,7 @@ public:
   C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  void emit(CodeBuffer& cb);
+  void emit(C2_MacroAssembler& masm);
 };
 
 class C2SafepointPollStub : public C2CodeStub {
@@ -85,5 +96,74 @@ public:
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
 };
+
+class C2FastUnlockLightweightStub : public C2CodeStub {
+private:
+  Register _obj;
+  Register _mark;
+  Register _t;
+  Register _thread;
+  Label _slow_path;
+  Label _push_and_slow_path;
+  Label _unlocked_continuation;
+public:
+  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
+    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+  Label& slow_path() { return _slow_path; }
+  Label& push_and_slow_path() { return _push_and_slow_path; }
+  Label& unlocked_continuation() { return _unlocked_continuation; }
+  Label& slow_path_continuation() { return continuation(); }
+};
+
+//-----------------------------C2GeneralStub-----------------------------------
+// A generalized stub that can be used to implement an arbitrary stub in a
+// type-safe manner. An example:
+//
+// Register dst; XMMRegister src;
+// // The lambda defining how the code is emitted in the stub
+// auto slowpath = [](C2_MacroAssembler& masm, C2GeneralStub<Register, XMMRegister>& stub) {
+//   // Access the saved data in a type safe manner
+//   Register dst = stub.get<0>();
+//   XMMRegister src = stub.get<1>();
+//   masm.bind(stub.entry());
+//   ...
+//   masm.jump(stub.continuation());
+// }
+// // Create a stub with 2 data fields being dst and src, a max size of 4 bytes
+// // and predefined emission function
+// auto stub = C2CodeStub::make<Register, XMMRegister>(dst, src, 4, slowpath);
+// __ jump_conditional(stub->entry());
+// ...
+// __ bind(stub->continuation());
+//
+template <class... Ts>
+class C2GeneralStub : public C2CodeStub {
+private:
+  Tuple<Ts...> _data;
+  int _max_size;
+  void (*_emit)(C2_MacroAssembler&, C2GeneralStub&);
+
+  constexpr C2GeneralStub(const Ts&... data, int max_size,
+                          void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&))
+    : _data(data...), _max_size(max_size), _emit(emit) {}
+
+  friend C2CodeStub;
+public:
+  template <std::size_t I>
+  constexpr const auto& data() const { return _data.template get<I>(); }
+
+  int max_size() const { return _max_size; }
+  void emit(C2_MacroAssembler& masm) { _emit(masm, *this); }
+};
+
+template <class... Ts>
+C2GeneralStub<Ts...>* C2CodeStub::make(const Ts&... data, int max_size,
+                                       void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&)) {
+  auto stub = new (Compile::current()->comp_arena()) C2GeneralStub<Ts...>(data..., max_size, emit);
+  stub->add_to_stub_list();
+  return stub;
+}
 
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP

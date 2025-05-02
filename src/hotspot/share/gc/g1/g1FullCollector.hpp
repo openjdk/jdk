@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class G1FullGCMarker;
 class G1FullGCScope;
 class G1FullGCCompactionPoint;
 class GCMemoryManager;
-class HeapRegion;
+class G1HeapRegion;
 class ReferenceProcessor;
 
 // Subject-to-discovery closure for reference processing during Full GC. During
@@ -53,7 +53,7 @@ class ReferenceProcessor;
 class G1FullGCSubjectToDiscoveryClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop p) {
-    assert(p != NULL, "must be");
+    assert(p != nullptr, "must be");
     return true;
   }
 };
@@ -76,15 +76,18 @@ class G1FullCollector : StackObj {
   G1FullGCScope             _scope;
   uint                      _num_workers;
   bool                      _has_compaction_targets;
+  bool                      _has_humongous;
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
   OopQueueSet               _oop_queue_set;
   ObjArrayTaskQueueSet      _array_queue_set;
   PreservedMarksSet         _preserved_marks_set;
   G1FullGCCompactionPoint   _serial_compaction_point;
+  G1FullGCCompactionPoint   _humongous_compaction_point;
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
   G1RegionMarkStats*        _live_stats;
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _humongous_compaction_regions;
 
   static uint calc_active_workers();
 
@@ -97,7 +100,6 @@ class G1FullCollector : StackObj {
 
 public:
   G1FullCollector(G1CollectedHeap* heap,
-                  bool explicit_gc,
                   bool clear_soft_refs,
                   bool do_maximal_compaction,
                   G1FullGCTracer* tracer);
@@ -115,6 +117,7 @@ public:
   ObjArrayTaskQueueSet*    array_queue_set() { return &_array_queue_set; }
   PreservedMarksSet*       preserved_mark_set() { return &_preserved_marks_set; }
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
+  G1FullGCCompactionPoint* humongous_compaction_point() { return &_humongous_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
   size_t live_words(uint region_index) const {
@@ -122,11 +125,10 @@ public:
     return _live_stats[region_index]._live_words;
   }
 
-  void before_marking_update_attribute_table(HeapRegion* hr);
+  void before_marking_update_attribute_table(G1HeapRegion* hr);
 
   inline bool is_compacting(oop obj) const;
   inline bool is_skip_compacting(uint region_index) const;
-  inline bool is_skip_marking(oop obj) const;
 
   // Are we (potentially) going to compact into this region?
   inline bool is_compaction_target(uint region_index) const;
@@ -134,14 +136,21 @@ public:
   inline void set_free(uint region_idx);
   inline bool is_free(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
+  inline void update_from_skip_compacting_to_compacting(uint region_idx);
 
-  inline void set_compaction_top(HeapRegion* r, HeapWord* value);
-  inline HeapWord* compaction_top(HeapRegion* r) const;
+  inline void set_compaction_top(G1HeapRegion* r, HeapWord* value);
+  inline HeapWord* compaction_top(G1HeapRegion* r) const;
 
   inline void set_has_compaction_targets();
   inline bool has_compaction_targets() const;
 
+  inline void add_humongous_region(G1HeapRegion* hr);
+  inline GrowableArrayCHeap<G1HeapRegion*, mtGC>& humongous_compaction_regions();
+
   uint truncate_parallel_cps();
+
+  inline void set_has_humongous();
+  inline bool has_humongous();
 
 private:
   void phase1_mark_live_objects();
@@ -150,6 +159,7 @@ private:
   void phase2a_determine_worklists();
   bool phase2b_forward_oops();
   void phase2c_prepare_serial_compaction();
+  void phase2d_prepare_humongous_compaction();
 
   void phase3_adjust_pointers();
   void phase4_do_compaction();

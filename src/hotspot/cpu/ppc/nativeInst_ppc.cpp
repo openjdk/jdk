@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,7 +44,7 @@
 bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
   if (!Assembler::is_illtrap(addr)) return false;
   CodeBlob* cb = CodeCache::find_blob(addr);
-  if (cb == NULL || !cb->is_nmethod()) return false;
+  if (cb == nullptr || !cb->is_nmethod()) return false;
   nmethod *nm = (nmethod *)cb;
   // This method is not_entrant iff the illtrap instruction is
   // located at the verified entry point.
@@ -56,7 +55,7 @@ bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
 void NativeInstruction::verify() {
   // Make sure code pattern is actually an instruction address.
   address addr = addr_at(0);
-  if (addr == 0 || ((intptr_t)addr & 3) != 0) {
+  if (addr == nullptr || ((intptr_t)addr & 3) != 0) {
     fatal("not an instruction address");
   }
 }
@@ -92,10 +91,10 @@ address NativeCall::destination() const {
 // Used in the runtime linkage of calls; see class CompiledIC.
 //
 // Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
+// during code generation, where no lock is needed.
 void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
@@ -115,7 +114,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
     // does not provide this information. The branch will be patched
     // later during a final fixup, when all necessary information is
     // available.
-    if (trampoline_stub_addr == 0)
+    if (trampoline_stub_addr == nullptr)
       return;
 
     // Patch the constant in the call's trampoline stub.
@@ -133,12 +132,12 @@ address NativeCall::get_trampoline() {
   address call_addr = addr_at(0);
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != NULL, "Could not find the containing code blob");
+  assert(code != nullptr, "Could not find the containing code blob");
 
   // There are no relocations available when the code gets relocated
   // because of CodeBuffer expansion.
   if (code->relocation_size() == 0)
-    return NULL;
+    return nullptr;
 
   address bl_destination = Assembler::bxx_destination(call_addr);
   if (code->contains(bl_destination) &&
@@ -178,7 +177,7 @@ void NativeFarCall::verify() {
 address NativeMovConstReg::next_instruction_address() const {
 #ifdef ASSERT
   CodeBlob* nm = CodeCache::find_blob(instruction_address());
-  assert(nm != NULL, "Could not find code blob");
+  assert(nm != nullptr, "Could not find code blob");
   assert(!MacroAssembler::is_set_narrow_oop(addr_at(0), nm->content_begin()), "Should not patch narrow oop here");
 #endif
 
@@ -197,7 +196,7 @@ intptr_t NativeMovConstReg::data() const {
   }
 
   CodeBlob* cb = CodeCache::find_blob(addr);
-  assert(cb != NULL, "Could not find code blob");
+  assert(cb != nullptr, "Could not find code blob");
   if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = MacroAssembler::get_narrow_oop(addr, cb->content_begin());
     // We can reach here during GC with 'no' pointing to new object location
@@ -205,28 +204,30 @@ intptr_t NativeMovConstReg::data() const {
     // Therefore we use raw decoding.
     if (CompressedOops::is_null(no)) return 0;
     return cast_from_oop<intptr_t>(CompressedOops::decode_raw(no));
-  } else {
-    assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
-
+  } else if (MacroAssembler::is_load_const_from_method_toc_at(addr)) {
     address ctable = cb->content_begin();
     int offset = MacroAssembler::get_offset_of_load_const_from_method_toc_at(addr);
     return *(intptr_t *)(ctable + offset);
+  } else {
+    assert(MacroAssembler::is_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord),
+           "must be calculate_address_from_global_toc");
+    return (intptr_t) MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord);
   }
 }
 
 address NativeMovConstReg::set_data_plain(intptr_t data, CodeBlob *cb) {
   address addr         = instruction_address();
-  address next_address = NULL;
+  address next_address = nullptr;
   if (!cb) cb = CodeCache::find_blob(addr);
 
-  if (cb != NULL && MacroAssembler::is_load_const_from_method_toc_at(addr)) {
+  if (cb != nullptr && MacroAssembler::is_load_const_from_method_toc_at(addr)) {
     // A load from the method's TOC (ctable).
     assert(cb->is_nmethod(), "must be nmethod");
     const address ctable = cb->content_begin();
     const int toc_offset = MacroAssembler::get_offset_of_load_const_from_method_toc_at(addr);
     *(intptr_t *)(ctable + toc_offset) = data;
     next_address = addr + BytesPerInstWord;
-  } else if (cb != NULL &&
+  } else if (cb != nullptr &&
              MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) {
     // A calculation relative to the global TOC.
     if (MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, cb->content_begin()) !=
@@ -235,7 +236,7 @@ address NativeMovConstReg::set_data_plain(intptr_t data, CodeBlob *cb) {
       const address inst1_addr =
         MacroAssembler::patch_calculate_address_from_global_toc_at(inst2_addr, cb->content_begin(),
                                                                    (address)data);
-      assert(inst1_addr != NULL && inst1_addr < inst2_addr, "first instruction must be found");
+      assert(inst1_addr != nullptr && inst1_addr < inst2_addr, "first instruction must be found");
       const int range = inst2_addr - inst1_addr + BytesPerInstWord;
       ICache::ppc64_flush_icache_bytes(inst1_addr, range);
     }
@@ -272,12 +273,12 @@ void NativeMovConstReg::set_data(intptr_t data) {
   // Also store the value into an oop_Relocation cell, if any.
   if (cb && cb->is_nmethod()) {
     RelocIterator iter((nmethod *) cb, instruction_address(), next_address);
-    oop* oop_addr = NULL;
-    Metadata** metadata_addr = NULL;
+    oop* oop_addr = nullptr;
+    Metadata** metadata_addr = nullptr;
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
         oop_Relocation *r = iter.oop_reloc();
-        if (oop_addr == NULL) {
+        if (oop_addr == nullptr) {
           oop_addr = r->oop_addr();
           *oop_addr = cast_to_oop(data);
         } else {
@@ -286,7 +287,7 @@ void NativeMovConstReg::set_data(intptr_t data) {
       }
       if (iter.type() == relocInfo::metadata_type) {
         metadata_Relocation *r = iter.metadata_reloc();
-        if (metadata_addr == NULL) {
+        if (metadata_addr == nullptr) {
           metadata_addr = r->metadata_addr();
           *metadata_addr = (Metadata*)data;
         } else {
@@ -297,16 +298,16 @@ void NativeMovConstReg::set_data(intptr_t data) {
   }
 }
 
-void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL */) {
+void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = nullptr */) {
   address   inst2_addr = addr_at(0);
   CodeBlob* cb = (code) ? code : CodeCache::find_blob(instruction_address());
-  assert(cb != NULL, "Could not find code blob");
+  assert(cb != nullptr, "Could not find code blob");
   if (MacroAssembler::get_narrow_oop(inst2_addr, cb->content_begin()) == data) {
     return;
   }
   const address inst1_addr =
     MacroAssembler::patch_set_narrow_oop(inst2_addr, cb->content_begin(), data);
-  assert(inst1_addr != NULL && inst1_addr < inst2_addr, "first instruction must be found");
+  assert(inst1_addr != nullptr && inst1_addr < inst2_addr, "first instruction must be found");
   const int range = inst2_addr - inst1_addr + BytesPerInstWord;
   ICache::ppc64_flush_icache_bytes(inst1_addr, range);
 }
@@ -319,8 +320,8 @@ void NativeMovConstReg::verify() {
   if (! MacroAssembler::is_load_const_at(addr) &&
       ! MacroAssembler::is_load_const_from_method_toc_at(addr)) {
     CodeBlob* cb = CodeCache::find_blob(addr);
-    if (! (cb != NULL && MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) &&
-        ! (cb != NULL && MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) &&
+    if (! (cb != nullptr && MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) &&
+        ! (cb != nullptr && MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) &&
         ! MacroAssembler::is_bl(*((int*) addr))) {
       tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr));
       // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
@@ -407,7 +408,7 @@ address NativeCallTrampolineStub::encoded_destination_addr() const {
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   CodeBlob* cb = nm ? nm : CodeCache::find_blob(addr_at(0));
-  assert(cb != NULL, "Could not find code blob");
+  assert(cb != nullptr, "Could not find code blob");
   address ctable = cb->content_begin();
 
   return *(address*)(ctable + destination_toc_offset());
@@ -419,7 +420,7 @@ int NativeCallTrampolineStub::destination_toc_offset() const {
 
 void NativeCallTrampolineStub::set_destination(address new_destination) {
   CodeBlob* cb = CodeCache::find_blob(addr_at(0));
-  assert(cb != NULL, "Could not find code blob");
+  assert(cb != nullptr, "Could not find code blob");
   address ctable = cb->content_begin();
 
   *(address*)(ctable + destination_toc_offset()) = new_destination;
@@ -429,8 +430,29 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  int32_t i2, i1;
+  assert(is_aligned(cb_offset, 4), "cb offset alignment does not match instruction alignment");
+  assert(!decode(i1, i2), "already patched");
+
+  cb_offset = cb_offset >> 2;
+  if (((oopmap_slot & ppc_oopmap_slot_mask) != oopmap_slot) || ((cb_offset & ppc_cb_offset_mask) != cb_offset)) {
+    return false;  // cannot encode
+  }
+  const uint32_t data = oopmap_slot << ppc_cb_offset_bits | cb_offset;
+  const uint32_t lo_data = data & ppc_data_lo_mask;
+  const uint32_t hi_data = data >> ppc_data_lo_bits;
+  const uint32_t nineth_bit = 1 << (31 - 9);
+  uint32_t instr = Assembler::CMPLI_OPCODE | hi_data << ppc_data_hi_shift | nineth_bit | lo_data;
+  *(uint32_t*)addr_at(0) = instr;
+
+  int32_t oopmap_slot_dec, cb_offset_dec;
+  assert(is_post_call_nop(), "pcn not recognized");
+  assert(decode(oopmap_slot_dec, cb_offset_dec), "encoding failed");
+  assert(oopmap_slot == oopmap_slot_dec, "oopmap slot encoding is wrong");
+  assert((cb_offset << 2) == cb_offset_dec, "cb offset encoding is wrong");
+
+  return true;  // encoding succeeded
 }
 
 void NativeDeoptInstruction::verify() {
@@ -439,7 +461,7 @@ void NativeDeoptInstruction::verify() {
 bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   if (!Assembler::is_illtrap(code_pos)) return false;
   CodeBlob* cb = CodeCache::find_blob(code_pos);
-  if (cb == NULL || !cb->is_compiled()) return false;
+  if (cb == nullptr || !cb->is_nmethod()) return false;
   nmethod *nm = (nmethod *)cb;
   // see NativeInstruction::is_sigill_not_entrant_at()
   return nm->verified_entry_point() != code_pos;

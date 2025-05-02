@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.nio.channels.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.channels.spi.*;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -64,10 +61,7 @@ class PipeImpl
     private final SourceChannelImpl source;
     private final SinkChannelImpl sink;
 
-    private static class Initializer
-        implements PrivilegedExceptionAction<Void>
-    {
-
+    private static class Initializer {
         private final SelectorProvider sp;
         private final boolean preferUnixDomain;
         private IOException ioe;
@@ -79,13 +73,12 @@ class PipeImpl
             this.preferUnixDomain = preferUnixDomain;
         }
 
-        @Override
-        public Void run() throws IOException {
+        public void init() throws IOException {
             LoopbackConnector connector = new LoopbackConnector();
             connector.run();
             if (ioe instanceof ClosedByInterruptException) {
                 ioe = null;
-                Thread connThread = new Thread(connector) {
+                Thread connThread = new Thread(connector, "LoopbackConnector") {
                     @Override
                     public void interrupt() {}
                 };
@@ -101,8 +94,6 @@ class PipeImpl
 
             if (ioe != null)
                 throw new IOException("Unable to establish loopback connection", ioe);
-
-            return null;
         }
 
         private class LoopbackConnector implements Runnable {
@@ -129,14 +120,7 @@ class PipeImpl
                         }
 
                         // Establish connection (assume connection is eagerly accepted)
-                        if (sa instanceof InetSocketAddress
-                                && Thread.currentThread().isVirtual()) {
-                            // workaround "lost event" issue on older releases of Windows
-                            sc1 = SocketChannel.open();
-                            sc1.socket().connect(sa, 10_000);
-                        } else {
-                            sc1 = SocketChannel.open(sa);
-                        }
+                        sc1 = SocketChannel.open(sa);
                         RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
                         do {
                             sc1.write(secret);
@@ -197,17 +181,12 @@ class PipeImpl
      *
      * @param buffering if false set TCP_NODELAY on TCP sockets
      */
-    @SuppressWarnings("removal")
     PipeImpl(SelectorProvider sp, boolean preferAfUnix, boolean buffering) throws IOException {
         Initializer initializer = new Initializer(sp, preferAfUnix);
-        try {
-            AccessController.doPrivileged(initializer);
-            SinkChannelImpl sink = initializer.sink;
-            if (sink.isNetSocket() && !buffering) {
-                sink.setOption(StandardSocketOptions.TCP_NODELAY, true);
-            }
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
+        initializer.init();
+        SinkChannelImpl sink = initializer.sink;
+        if (sink.isNetSocket() && !buffering) {
+            sink.setOption(StandardSocketOptions.TCP_NODELAY, true);
         }
         this.source = initializer.source;
         this.sink = initializer.sink;

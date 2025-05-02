@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -39,22 +38,10 @@ ClassLoaderHierarchyDCmd::ClassLoaderHierarchyDCmd(outputStream* output, bool he
   : DCmdWithParser(output, heap),
    _show_classes("show-classes", "Print loaded classes.", "BOOLEAN", false, "false"),
   _verbose("verbose", "Print detailed information.", "BOOLEAN", false, "false"),
-  _fold("fold", "Show loaders of the same name and class as one.", "BOOLEAN", true, "true") {
+  _fold("fold", "Show loaders of the same name and class as one.", "BOOLEAN", false, "true") {
   _dcmdparser.add_dcmd_option(&_show_classes);
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_fold);
-}
-
-
-int ClassLoaderHierarchyDCmd::num_arguments() {
-  ResourceMark rm;
-  ClassLoaderHierarchyDCmd* dcmd = new ClassLoaderHierarchyDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 // Helper class for drawing the branches to the left of a node.

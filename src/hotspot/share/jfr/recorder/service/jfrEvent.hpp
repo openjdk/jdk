@@ -114,14 +114,6 @@ class JfrEvent {
     return JfrEventSetting::has_stacktrace(T::eventId);
   }
 
-  static bool is_large() {
-    return JfrEventSetting::is_large(T::eventId);
-  }
-
-  static void set_large() {
-    JfrEventSetting::set_large(T::eventId);
-  }
-
   static JfrEventId id() {
     return T::eventId;
   }
@@ -246,6 +238,14 @@ class JfrEvent {
     // Payload.
     static_cast<T*>(this)->writeData(writer);
     return writer.end_event_write(large_size) > 0;
+  }
+
+  static bool is_large() {
+    return JfrEventSetting::is_large(T::eventId);
+  }
+
+  static void set_large() {
+    JfrEventSetting::set_large(T::eventId);
   }
 
 #ifdef ASSERT

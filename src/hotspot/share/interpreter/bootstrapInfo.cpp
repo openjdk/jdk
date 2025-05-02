@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -34,8 +33,10 @@
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -55,7 +56,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
+  assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->constant_pool_index() == bss_index, "invalid bootstrap specifier index");
 }
 
 // If there is evidence this call site was already linked, set the
@@ -63,16 +64,17 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 // Return true if either action is taken, else false.
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
-  ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-  if (!cpce->is_f1_null()) {
-    methodHandle method(     THREAD, cpce->f1_as_method());
-    Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
+  // Check if method is not null
+  ResolvedIndyEntry* indy_entry = _pool->resolved_indy_entry_at(_indy_index);
+  if (indy_entry->method() != nullptr) {
+    methodHandle method(THREAD, indy_entry->method());
+    Handle appendix(THREAD, _pool->resolved_reference_from_indy(_indy_index));
     result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
-  } else if (cpce->indy_resolution_failed()) {
-    int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-    ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
+  } else if (indy_entry->resolution_failed()) {
+    int encoded_index = ResolutionErrorTable::encode_indy_index(_indy_index);
+    ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;
   } else {
     return false;
@@ -210,12 +212,11 @@ void BootstrapInfo::resolve_args(TRAPS) {
 bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
   assert(HAS_PENDING_EXCEPTION, "");
   assert(_indy_index != -1, "");
-  ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-  int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-  bool recorded_res_status = cpce->save_and_throw_indy_exc(_pool, _bss_index,
-                                                           encoded_index,
-                                                           pool()->tag_at(_bss_index),
-                                                           CHECK_false);
+  assert(_indy_index >= 0, "Indy index must be decoded by now");
+  bool recorded_res_status = _pool->cache()->save_and_throw_indy_exc(_pool, _bss_index,
+                                                                     _indy_index,
+                                                                     pool()->tag_at(_bss_index),
+                                                                     CHECK_false);
   return recorded_res_status;
 }
 
@@ -229,10 +230,11 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   char what[20];
   st = st ? st : tty;
 
-  if (_indy_index != -1)
-    os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
-  else
+  if (_indy_index > -1) {
+    os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
+  } else {
     os::snprintf_checked(what, sizeof(what), "condy");
+  }
   bool have_msg = (msg != nullptr && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
-
 
 /**
  * A scanning visitor of program elements with default behavior
@@ -162,20 +161,21 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
      */
+    @Override
     public R visitPackage(PackageElement e, P p) {
         return scan(e.getEnclosedElements(), p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      * Note that type parameters are <em>not</em> scanned by this
@@ -183,25 +183,27 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      * {@linkplain TypeElement#getEnclosedElements enclosed elements
      * of a type}.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
      */
+    @Override
     public R visitType(TypeElement e, P p) {
         return scan(e.getEnclosedElements(), p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements, unless the
      * element is a {@code RESOURCE_VARIABLE} in which case {@code
      * visitUnknown} is called.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
      */
+    @Override
     public R visitVariable(VariableElement e, P p) {
         if (e.getKind() != ElementKind.RESOURCE_VARIABLE)
             return scan(e.getEnclosedElements(), p);
@@ -210,30 +212,48 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the parameters.
      * Note that type parameters are <em>not</em> scanned by this
      * implementation.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
      */
+    @Override
     public R visitExecutable(ExecutableElement e, P p) {
         return scan(e.getParameters(), p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
      * @return the result of scanning
      */
+    @Override
     public R visitTypeParameter(TypeParameterElement e, P p) {
         return scan(e.getEnclosedElements(), p);
+    }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation calls {@code visitUnknown(e, p)}.
+     *
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return the result of scanning
+     *
+     * @since 14
+     */
+    @Override
+    public R visitRecordComponent(RecordComponentElement e, P p) {
+        return visitUnknown(e, p);
     }
 }

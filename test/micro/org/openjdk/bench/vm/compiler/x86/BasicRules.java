@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.util.Random;
+
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
-@Fork(value = 3, jvmArgsAppend = "-XX:-UseSuperWord")
+@State(Scope.Thread)
+@Fork(value = 3, jvmArgs = "-XX:-UseSuperWord")
 @Warmup(time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(time = 1, timeUnit = TimeUnit.SECONDS)
 public class BasicRules {
@@ -37,6 +39,16 @@ public class BasicRules {
     static final long[] LONG_ARRAY = new long[1024];
     static final int INT_IMM = 100;
     static final long LONG_IMM = 100;
+
+    @Setup(Level.Iteration)
+    public void setup() {
+        Random random = new Random(1000);
+
+        for (int i = 0; i < 1024; i++) {
+            INT_ARRAY[i] = random.nextInt();
+            LONG_ARRAY[i] = random.nextLong();
+        }
+    }
 
     @Benchmark
     public void andL_rReg_imm255(Blackhole bh) {
@@ -123,6 +135,13 @@ public class BasicRules {
     public void subL_rReg_imm(Blackhole bh) {
         for (int i = 0; i < LONG_ARRAY.length; i++) {
             bh.consume(LONG_ARRAY[i] - LONG_IMM);
+        }
+    }
+
+    @Benchmark
+    public void cmovL_imm_01(Blackhole bh) {
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] > 0 ? 1L : 0L);
         }
     }
 }

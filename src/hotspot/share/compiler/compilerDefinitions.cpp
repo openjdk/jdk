@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -512,15 +512,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
     FLAG_SET_CMDLINE(BackgroundCompilation, false);
   }
 
-#ifdef COMPILER2
-  if (PostLoopMultiversioning && !RangeCheckElimination) {
-    if (!FLAG_IS_DEFAULT(PostLoopMultiversioning)) {
-      warning("PostLoopMultiversioning disabled because RangeCheckElimination is disabled.");
-    }
-    FLAG_SET_CMDLINE(PostLoopMultiversioning, false);
-  }
-#endif // COMPILER2
-
   if (CompilerConfig::is_interpreter_only()) {
     if (UseCompiler) {
       if (!FLAG_IS_DEFAULT(UseCompiler)) {
@@ -545,7 +536,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
       FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
-    if (EnableJVMCI) {
+    if (EnableJVMCI || UseJVMCICompiler) {
       if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
         warning("JVMCI Compiler disabled due to -Xint.");
       }
@@ -569,11 +560,6 @@ void CompilerConfig::ergo_initialize() {
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
-#if defined(_WINDOWS) && !defined(_LP64)
-      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-      }
-#endif
       if (NeverActAsServerClassMachine) {
         set_client_emulation_mode_flags();
       }
@@ -614,6 +600,7 @@ void CompilerConfig::ergo_initialize() {
     IncrementalInline = false;
     IncrementalInlineMH = false;
     IncrementalInlineVirtual = false;
+    StressIncrementalInlining = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {
@@ -636,4 +623,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-

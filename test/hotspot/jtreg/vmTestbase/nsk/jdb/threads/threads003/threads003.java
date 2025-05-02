@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.threads.threads003.threads003a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.threads.threads003.threads003
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -65,14 +65,10 @@ import java.util.*;
 public class threads003 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new threads003().runTest(argv, out);
+        new threads003().runTest(argv);
     }
 
     static final String PACKAGE_NAME     = "nsk.jdb.threads.threads003";
@@ -90,7 +86,7 @@ public class threads003 extends JdbTest {
         int count;
         Vector v;
         String[] threads;
-        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
         if (!vthreadMode) {
             // This test is only meant to be run in vthread mode.

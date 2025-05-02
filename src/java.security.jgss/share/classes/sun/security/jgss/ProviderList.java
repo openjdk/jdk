@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Objects;
+
 import sun.security.jgss.spi.*;
 import sun.security.jgss.wrapper.NativeGSSFactory;
 import sun.security.jgss.wrapper.SunNativeProvider;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class stores the list of providers that this
@@ -100,8 +101,7 @@ public final class ProviderList {
          * with a valid OID value
          */
         Oid defOid = null;
-        String defaultOidStr = GetPropertyAction
-                .privilegedGetProperty("sun.security.jgss.mechanism");
+        String defaultOidStr = System.getProperty("sun.security.jgss.mechanism");
         if (defaultOidStr != null) {
             defOid = GSSUtil.createOid(defaultOidStr);
         }
@@ -133,7 +133,7 @@ public final class ProviderList {
                 addProviderAtEnd(prov, null);
             } catch (GSSException ge) {
                 // Move on to the next provider
-                if (GSSUtil.DEBUG) {
+                if (GSSUtil.DEBUG != null) {
                     GSSUtil.debug("Error in adding provider " +
                             prov.getName() + ": " + ge);
                 }
@@ -418,7 +418,7 @@ public final class ProviderList {
                     retVal = true;
                 } catch (GSSException e) {
                     // Skip to next property
-                    if (GSSUtil.DEBUG) {
+                    if (GSSUtil.DEBUG != null) {
                         GSSUtil.debug("Ignore the invalid property " +
                                 prop + " from provider " + p.getName());
                     }
@@ -448,6 +448,7 @@ public final class ProviderList {
             this.oid = oid;
         }
 
+        @Override
         public boolean equals(Object other) {
             if (this == other) {
                 return true;
@@ -457,26 +458,13 @@ public final class ProviderList {
                 return false;
             }
 
-            if (this.p.getName().equals(that.p.getName())) {
-                if (this.oid != null && that.oid != null) {
-                    return this.oid.equals(that.oid);
-                } else {
-                    return (this.oid == null && that.oid == null);
-                }
-            }
-
-            return false;
+            return this.p.getName().equals(that.p.getName())
+                    && Objects.equals(this.oid, that.oid);
         }
 
+        @Override
         public int hashCode() {
-            int result = 17;
-
-            result = 37 * result + p.getName().hashCode();
-            if (oid != null) {
-                result = 37 * result + oid.hashCode();
-            }
-
-            return result;
+            return Objects.hash(p.getName(), oid);
         }
 
         /**

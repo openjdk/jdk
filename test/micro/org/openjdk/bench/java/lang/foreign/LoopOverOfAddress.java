@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -35,7 +36,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.SegmentScope;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED" })
 public class LoopOverOfAddress extends JavaLayouts {
 
     static final int ITERATIONS = 1_000_000;
@@ -61,7 +61,8 @@ public class LoopOverOfAddress extends JavaLayouts {
     public long segment_loop_addr_size() {
         long res = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            res += MemorySegment.ofAddress(i, i % 100).address();
+            res += MemorySegment.ofAddress(i)
+                    .reinterpret(i % 100).address();
         }
         return res;
     }
@@ -70,7 +71,8 @@ public class LoopOverOfAddress extends JavaLayouts {
     public long segment_loop_addr_size_session() {
         long res = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            res += MemorySegment.ofAddress(i, i % 100, SegmentScope.global()).address();
+            res += MemorySegment.ofAddress(i)
+                    .reinterpret(i % 100, Arena.global(), null).address();
         }
         return res;
     }

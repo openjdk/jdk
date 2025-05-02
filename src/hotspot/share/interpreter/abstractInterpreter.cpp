@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -36,7 +35,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
@@ -74,7 +73,9 @@ void AbstractInterpreter::print() {
     tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
     tty->cr();
   }
+  _should_print_instructions = PrintInterpreter;
   _code->print();
+  _should_print_instructions = false;
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();
 }
@@ -87,11 +88,11 @@ StubQueue* AbstractInterpreter::_code                                       = nu
 bool       AbstractInterpreter::_notice_safepoints                          = false;
 address    AbstractInterpreter::_rethrow_exception_entry                    = nullptr;
 
-address    AbstractInterpreter::_native_entry_begin                         = nullptr;
-address    AbstractInterpreter::_native_entry_end                           = nullptr;
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
+
+bool       AbstractInterpreter::_should_print_instructions = false;
 
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
@@ -129,17 +130,14 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       // Use optimized stub code for CRC32C methods.
       case vmIntrinsics::_updateBytesCRC32C: return java_util_zip_CRC32C_updateBytes;
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
-      case vmIntrinsics::_intBitsToFloat:    return java_lang_Float_intBitsToFloat;
-      case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
-      case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
-      case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
-#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+      case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
+      case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
-#endif
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
@@ -148,10 +146,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
-      case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt;
+      case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
-        if (RegisterFinalizersAtInit && m->code_size() == 1) {
+        if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
           // finalizer registration so create a normal frame.
           return zerolocals;
@@ -195,7 +193,46 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
   return zerolocals;
 }
 
-void AbstractInterpreter::set_entry_for_kind(AbstractInterpreter::MethodKind kind, address entry) {
+vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
+  switch (kind) {
+  case java_lang_math_sin         : return vmIntrinsics::_dsin;
+  case java_lang_math_cos         : return vmIntrinsics::_dcos;
+  case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
+  case java_lang_math_abs         : return vmIntrinsics::_dabs;
+  case java_lang_math_log         : return vmIntrinsics::_dlog;
+  case java_lang_math_log10       : return vmIntrinsics::_dlog10;
+  case java_lang_math_sqrt        : return vmIntrinsics::_dsqrt;
+  case java_lang_math_sqrt_strict : return vmIntrinsics::_dsqrt_strict;
+  case java_lang_math_pow         : return vmIntrinsics::_dpow;
+  case java_lang_math_exp         : return vmIntrinsics::_dexp;
+  case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
+  case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
+  case java_lang_ref_reference_get: return vmIntrinsics::_Reference_get;
+  case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
+  case java_util_zip_CRC32_updateBytes
+                                  : return vmIntrinsics::_updateBytesCRC32;
+  case java_util_zip_CRC32_updateByteBuffer
+                                  : return vmIntrinsics::_updateByteBufferCRC32;
+  case java_util_zip_CRC32C_updateBytes
+                                  : return vmIntrinsics::_updateBytesCRC32C;
+  case java_util_zip_CRC32C_updateDirectByteBuffer
+                                  : return vmIntrinsics::_updateDirectByteBufferCRC32C;
+  case java_lang_Thread_currentThread
+                                  : return vmIntrinsics::_currentThread;
+  case java_lang_Float_float16ToFloat
+                                  : return vmIntrinsics::_float16ToFloat;
+  case java_lang_Float_floatToFloat16
+                                  : return vmIntrinsics::_floatToFloat16;
+
+  default:
+    fatal("unexpected method intrinsic kind: %d", kind);
+    break;
+  }
+  return vmIntrinsics::_none;
+}
+
+void AbstractInterpreter::set_entry_for_kind(MethodKind kind, address entry) {
   assert(kind >= method_handle_invoke_FIRST &&
          kind <= method_handle_invoke_LAST, "late initialization only for MH entry points");
   assert(_entry_table[kind] == _entry_table[abstract], "previous value must be AME entry");
@@ -218,7 +255,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u4(code);
-        return cpool->invokedynamic_cp_cache_entry_at(method_index)->is_f1_null();
+        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through
@@ -228,7 +265,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
           return false; // might have been reached
         }
         assert(!invoke_bc.has_index_u4(code), "sanity");
-        int method_index = invoke_bc.get_index_u2_cpcache(code);
+        int method_index = invoke_bc.get_index_u2(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
         return (resolved_method == nullptr);
@@ -265,17 +302,25 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
-    case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
+    case java_lang_math_pow     : tty->print("java_lang_math_pow"     ); break;
+    case java_lang_math_exp     : tty->print("java_lang_math_exp"     ); break;
     case java_lang_math_fmaD    : tty->print("java_lang_math_fmaD"    ); break;
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
+    case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
+    case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;
     case java_util_zip_CRC32C_updateBytes     : tty->print("java_util_zip_CRC32C_updateBytes"); break;
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
+    case java_lang_ref_reference_get          : tty->print("java_lang_ref_reference_get"); break;
+    case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
+    case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
+    case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:
       if (kind >= method_handle_invoke_FIRST &&
           kind <= method_handle_invoke_LAST) {
@@ -325,7 +370,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
-        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->cache()->resolved_method_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }
@@ -339,7 +384,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->resolved_indy_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }

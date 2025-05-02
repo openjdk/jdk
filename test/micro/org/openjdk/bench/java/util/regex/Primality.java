@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 @Fork(1)
 @Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class Primality {
     /** Number to be primality tested. */
     @Param({"16", "17", /* "256", "257", */ "4096", "4099"})

@@ -26,8 +26,8 @@
 #define SHARE_GC_SHARED_GCHEAPSUMMARY_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
+#include "memory/metaspaceStats.hpp"
 
 class VirtualSpaceSummary : public StackObj {
   HeapWord* _start;
@@ -122,11 +122,11 @@ class G1HeapSummary : public GCHeapSummary {
  public:
    G1HeapSummary(VirtualSpaceSummary& heap_space, size_t heap_used, size_t edenUsed, size_t edenCapacity, size_t survivorUsed, size_t oldGenUsed, uint numberOfRegions) :
       GCHeapSummary(heap_space, heap_used), _edenUsed(edenUsed), _edenCapacity(edenCapacity), _survivorUsed(survivorUsed), _oldGenUsed(oldGenUsed), _numberOfRegions(numberOfRegions) { }
-   const size_t edenUsed() const { return _edenUsed; }
-   const size_t edenCapacity() const { return _edenCapacity; }
-   const size_t survivorUsed() const { return _survivorUsed; }
-   const size_t oldGenUsed() const { return _oldGenUsed; }
-   const uint   numberOfRegions() const { return _numberOfRegions; }
+   size_t edenUsed() const { return _edenUsed; }
+   size_t edenCapacity() const { return _edenCapacity; }
+   size_t survivorUsed() const { return _survivorUsed; }
+   size_t oldGenUsed() const { return _oldGenUsed; }
+   uint   numberOfRegions() const { return _numberOfRegions; }
 
    virtual void accept(GCHeapSummaryVisitor* visitor) const {
      visitor->visit(this);

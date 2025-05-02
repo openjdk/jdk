@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class ClassFileParserBug {
     public static void main(String args[]) throws Throwable {
 
         System.out.println("Regression test for bug 8040018");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("LambdaMath");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("LambdaMath");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Bad length on BootstrapMethods");
         output.shouldHaveExitValue(1);

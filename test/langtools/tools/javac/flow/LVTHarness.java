@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */
@@ -54,19 +53,10 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.ConstantPool.UnexpectedEntry;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import static javax.tools.StandardLocation.*;
-import static com.sun.tools.classfile.LocalVariableTable_attribute.Entry;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
 public class LVTHarness {
@@ -79,10 +69,10 @@ public class LVTHarness {
     public static void main(String[] args) throws Exception {
         try {
             String testDir = System.getProperty("test.src");
-            fm.setLocation(SOURCE_PATH, Arrays.asList(new File(testDir, "tests")));
+            fm.setLocation(SOURCE_PATH, List.of(new File(testDir, "tests")));
 
             // Make sure classes are written to scratch dir.
-            fm.setLocation(CLASS_OUTPUT, Arrays.asList(new File(".")));
+            fm.setLocation(CLASS_OUTPUT, List.of(new File(".")));
 
             for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(SOURCE), true)) {
                 new LVTHarness(jfo).check();
@@ -129,31 +119,27 @@ public class LVTHarness {
         }
     }
 
-    void checkClassFile(File file)
-            throws IOException, ConstantPoolException, InvalidDescriptor {
-        ClassFile classFile = ClassFile.read(file);
-        ConstantPool constantPool = classFile.constant_pool;
+    void checkClassFile(File file) throws IOException {
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
 
         //lets get all the methods in the class file.
-        for (Method method : classFile.methods) {
+        for (MethodModel method : classFile.methods()) {
             for (ElementKey elementKey: aliveRangeMap.keySet()) {
-                String methodDesc = method.getName(constantPool) +
-                        method.descriptor.getParameterTypes(constantPool).replace(" ", "");
+                String methodDesc = method.methodName().stringValue() +
+                        parse(method.methodTypeSymbol().descriptorString()).replace(" ", "");
                 if (methodDesc.equals(elementKey.elem.toString())) {
-                    checkMethod(constantPool, method, aliveRangeMap.get(elementKey));
+                    checkMethod(method, aliveRangeMap.get(elementKey));
                     seenAliveRanges.add(elementKey);
                 }
             }
         }
     }
 
-    void checkMethod(ConstantPool constantPool, Method method, AliveRanges ranges)
-            throws InvalidIndex, UnexpectedEntry, ConstantPoolException {
-        Code_attribute code = (Code_attribute) method.attributes.get(Attribute.Code);
-        LocalVariableTable_attribute lvt =
-            (LocalVariableTable_attribute) (code.attributes.get(Attribute.LocalVariableTable));
+    void checkMethod(MethodModel method, AliveRanges ranges) {
+        CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.localVariableTable()).orElseThrow();
         List<String> infoFromRanges = convertToStringList(ranges);
-        List<String> infoFromLVT = convertToStringList(constantPool, lvt);
+        List<String> infoFromLVT = convertToStringList(lvt);
 
         // infoFromRanges most be contained in infoFromLVT
         int i = 0;
@@ -170,7 +156,7 @@ public class LVTHarness {
         }
 
         if (i < infoFromRanges.size()) {
-            error(infoFromLVT, infoFromRanges, method.getName(constantPool).toString());
+            error(infoFromLVT, infoFromRanges, method.methodName().stringValue());
         }
     }
 
@@ -186,12 +172,11 @@ public class LVTHarness {
         return result;
     }
 
-    List<String> convertToStringList(ConstantPool constantPool,
-            LocalVariableTable_attribute lvt) throws InvalidIndex, UnexpectedEntry {
+    List<String> convertToStringList(LocalVariableTableAttribute lvt) {
         List<String> result = new ArrayList<>();
-        for (Entry entry : lvt.local_variable_table) {
-            String str = formatLocalVariableData(constantPool.getUTF8Value(entry.name_index),
-                    entry.start_pc, entry.length);
+        for (LocalVariableInfo entry : lvt.localVariables()) {
+            String str = formatLocalVariableData(entry.name().stringValue(),
+                    entry.startPc(), entry.length());
             result.add(str);
         }
         Collections.sort(result);
@@ -290,6 +275,58 @@ public class LVTHarness {
         public String toString() {
             return "Key{" + key + "}";
         }
+    }
+
+    private String parse(String desc) {
+        int end = desc.indexOf(")");
+        if (end == -1)
+            throw new AssertionError();
+        end ++;
+        int p = 0;
+        StringBuilder sb = new StringBuilder();
+        int dims = 0;
+
+        while (p < end) {
+            String type;
+            switch (desc.charAt(p++)) {
+                case '(' -> {
+                    sb.append('(');
+                    continue;
+                }
+                case ')' -> {
+                    sb.append(')');
+                    continue;
+                }
+                case '[' -> {
+                    dims++;
+                    continue;
+                }
+                case 'B' -> type = "byte";
+                case 'C' -> type = "char";
+                case 'D' -> type = "double";
+                case 'F' -> type = "float";
+                case 'I' -> type = "int";
+                case 'J' -> type = "long";
+                case 'L' -> {
+                    int sep = desc.indexOf(';', p);
+                    if (sep == -1)
+                        throw new AssertionError();
+                    type = desc.substring(p, sep).replace('/', '.');
+                    p = sep + 1;
+                }
+                case 'S' -> type = "short";
+                case 'Z' -> type = "boolean";
+                case 'V' -> type = "void";
+                default -> throw new AssertionError();
+            }
+
+            if (sb.length() > 1 && sb.charAt(0) == '(')
+                sb.append(", ");
+            sb.append(type);
+            for ( ; dims > 0; dims-- )
+                sb.append("[]");
+        }
+        return sb.toString();
     }
 
 }

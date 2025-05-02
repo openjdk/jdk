@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 package com.sun.tools.javac.tree;
 
+import javax.lang.model.util.Elements.DocCommentKind;
+
+import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ErroneousTree;
+
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DCTree.DCDocComment;
 
 /**
  * A table giving the doc comment, if any, for any tree node.
@@ -39,29 +42,34 @@ import com.sun.tools.javac.tree.DCTree.DCDocComment;
  */
 public interface DocCommentTable {
     /**
-     * Check if a tree node has a corresponding doc comment.
+     * Checks if a tree node has a corresponding doc comment.
      */
     boolean hasComment(JCTree tree);
 
     /**
-     * Get the Comment token containing the doc comment, if any, for a tree node.
+     * Returns the Comment token containing the doc comment, if any, for a tree node.
      */
     Comment getComment(JCTree tree);
 
     /**
-     * Get the plain text of the doc comment, if any, for a tree node.
+     * Returns the kind of the doc comment, if any, for a tree node.
+     */
+    DocCommentKind getCommentKind(JCTree tree);
+
+    /**
+     * Returns the plain text of the doc comment, if any, for a tree node.
      */
     String getCommentText(JCTree tree);
 
     /**
-     * Get the parsed form of the doc comment as a DocTree. If any errors
+     * Returns the parsed form of the doc comment as a DocTree. If any errors
      * are detected during parsing, they will be reported via
-     * {@link ErroneousTree ErroneousTree} nodes within the resulting tree.
+     * {@link ErroneousTree} nodes within the resulting tree.
      */
-    DCDocComment getCommentTree(JCTree tree);
+    DocCommentTree getCommentTree(JCTree tree);
 
     /**
-     * Set the Comment to be associated with a tree node.
+     * Sets the Comment to be associated with a tree node.
      */
     void putComment(JCTree tree, Comment c);
 }

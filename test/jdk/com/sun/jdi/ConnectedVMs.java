@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * VirtualMachineManager.connectedVirtualMachines()
  * @author Robert Field
  *
+ * @library /test/lib
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g InstTarg.java
  * @run driver ConnectedVMs Kill
@@ -39,6 +40,8 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import java.util.List;
+
+import jdk.test.lib.Platform;
 
 public class ConnectedVMs extends TestScaffold {
     static int failCount = 0;;
@@ -62,6 +65,27 @@ public class ConnectedVMs extends TestScaffold {
         System.out.println("create " + passName);
     }
 
+    @Override
+    protected boolean allowedExitValue(int exitValue) {
+        if (passName.equals("Kill")) {
+            // 143 is SIGTERM, which we expect to get when doing a Process.destroy(),
+            // unless we are on Windows, which will exit with a 1. However, sometimes
+            // there is a race and the main thread exits before SIGTERM can force
+            // an exit(143), so we need to allow exitValue 0 also.
+            if (!Platform.isWindows()) {
+                return exitValue == 143 || exitValue == 0;
+            } else {
+                return exitValue == 1 || exitValue == 0;
+            }
+        } else if (passName.equals("exit()")) {
+            // This version of the test does an exit(1), so that's what we expect.
+            // But similar to the SIGTERM race issue, the exit(1) might not happen
+            // before the main thread exits, so we need to expect 0 also.
+            return exitValue == 1 || exitValue == 0;
+        }
+        return super.allowedExitValue(exitValue);
+    }
+
     void vms(int expected) {
         List vms = Bootstrap.virtualMachineManager().
             connectedVirtualMachines();
@@ -76,9 +100,9 @@ public class ConnectedVMs extends TestScaffold {
     protected void runTests() throws Exception {
         System.out.println("Testing " + passName);
         vms(0);
-        startToMain("InstTarg");
-        ThreadReference thread = waitForVMStart();
-        StepEvent stepEvent = stepIntoLine(thread);
+        BreakpointEvent bp = startToMain("InstTarg");
+        waitForVMStart();
+        StepEvent stepEvent = stepIntoLine(bp.thread());
         vms(1);
 
         // pick a way to die based on the input arg.

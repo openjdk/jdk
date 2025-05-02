@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import com.sun.beans.finder.ClassFinder;
 import com.sun.beans.finder.ConstructorFinder;
 import com.sun.beans.finder.MethodFinder;
 import sun.reflect.misc.MethodUtil;
-
-import static sun.reflect.misc.ReflectUtil.checkPackageAccess;
 
 /**
  * A {@code Statement} object represents a primitive statement
@@ -69,8 +63,6 @@ public class Statement {
         }
     };
 
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
     private final Object target;
     private final String methodName;
     private final Object[] arguments;
@@ -166,8 +158,6 @@ public class Statement {
      * @throws NullPointerException if the value of the {@code target} or
      *                              {@code methodName} property is {@code null}
      * @throws NoSuchMethodException if a matching method is not found
-     * @throws SecurityException if a security manager exists and
-     *                           it denies the method invocation
      * @throws Exception that is thrown by the invoked method
      *
      * @see java.lang.reflect.Method
@@ -176,28 +166,7 @@ public class Statement {
         invoke();
     }
 
-    @SuppressWarnings("removal")
     Object invoke() throws Exception {
-        AccessControlContext acc = this.acc;
-        if ((acc == null) && (System.getSecurityManager() != null)) {
-            throw new SecurityException("AccessControlContext is not set");
-        }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Object>() {
-                        public Object run() throws Exception {
-                            return invokeInternal();
-                        }
-                    },
-                    acc
-            );
-        }
-        catch (PrivilegedActionException exception) {
-            throw exception.getException();
-        }
-    }
-
-    private Object invokeInternal() throws Exception {
         Object target = getTarget();
         String methodName = getMethodName();
 
@@ -218,13 +187,8 @@ public class Statement {
                 // Class.forName(String className) won't load classes outside
                 // of core from a class inside core. Special
                 // case this method.
-                // checkPackageAccess(name) will be called by ClassFinder
                 return ClassFinder.resolveClass(name, this.loader);
             }
-            // The 3 args Class.forName(String className, boolean, classloader)
-            // requires getClassLoader permission, but we will be stricter and
-            // will require access to the package as well.
-            checkPackageAccess(name);
         }
         Class<?>[] argClasses = new Class<?>[arguments.length];
         for(int i = 0; i < arguments.length; i++) {
@@ -234,7 +198,7 @@ public class Statement {
         AccessibleObject m = null;
         if (target instanceof Class) {
             /*
-            For class methods, simluate the effect of a meta class
+            For class methods, simulate the effect of a meta class
             by taking the union of the static methods of the
             actual class, with the instance methods of "Class.class"
             and the overloaded "newInstance" methods defined by the
@@ -281,7 +245,7 @@ public class Statement {
         else {
             /*
             This special casing of arrays is not necessary, but makes files
-            involving arrays much shorter and simplifies the archiving infrastrcure.
+            involving arrays much shorter and simplifies the archiving infrastructure.
             The Array.set() method introduces an unusual idea - that of a static method
             changing the state of an instance. Normally statements with side
             effects on objects are instance methods of the objects themselves

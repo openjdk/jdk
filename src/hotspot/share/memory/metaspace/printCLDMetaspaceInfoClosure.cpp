@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -106,7 +105,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
   // Optionally, print
   if (_do_print) {
-    _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
+    _out->print("%4zu: ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
     // or    "CLD for <hidden>, loaded by [<loader name>,] instance of <loader class name>"

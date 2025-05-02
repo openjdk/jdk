@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ public class DeferredAttr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected DeferredAttr(Context context) {
         context.put(deferredAttrKey, this);
         annotate = Annotate.instance(context);
@@ -221,15 +222,10 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null, TypeMetadata.EMPTY);
+            super(null, List.nil());
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
-        }
-
-        @Override
-        public DeferredType cloneWithMetadata(TypeMetadata md) {
-            throw new AssertionError("Cannot add metadata to a deferred type");
         }
 
         @Override
@@ -551,7 +547,7 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             DeferredAttrDiagHandler(Log log, JCTree newTree) {
-                super(log, d -> {
+                log.super(d -> {
                     PosScanner posScanner = new PosScanner(d.getDiagnosticPosition());
                     posScanner.scan(newTree);
                     return posScanner.found;
@@ -1093,7 +1089,10 @@ public class DeferredAttr extends JCTree.Visitor {
             boolean isLambdaOrMemberRef =
                     dt.tree.hasTag(REFERENCE) || dt.tree.hasTag(LAMBDA);
             boolean needsRecoveryType =
-                    pt == null || (isLambdaOrMemberRef && !types.isFunctionalInterface(pt));
+                    pt == null ||
+                            ((dt instanceof ArgumentAttr.ArgumentType<?> at) &&
+                            at.speculativeTypes.values().stream().allMatch(type -> type.hasTag(ERROR))) ||
+                            (isLambdaOrMemberRef && !types.isFunctionalInterface(pt));
             Type ptRecovery = needsRecoveryType ? Type.recoveryType: pt;
             dt.check(attr.new RecoveryInfo(deferredAttrContext, ptRecovery) {
                 @Override

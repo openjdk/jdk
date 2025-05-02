@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ public:
   virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
   virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
 
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) {
+    return Node::Ideal(phase, can_reshape);
+  }
+
   // Polymorphic factory method:
   static ConNode* make(const Type *t);
 };
@@ -70,15 +74,16 @@ public:
 // Simple pointer constants
 class ConPNode : public ConNode {
 public:
-  ConPNode( const TypePtr *t ) : ConNode(t) {}
+  ConPNode(const TypePtr *t) : ConNode(t) {}
   virtual int Opcode() const;
 
   // Factory methods:
   static ConPNode* make(address con) {
-    if (con == NULL)
-      return new ConPNode( TypePtr::NULL_PTR ) ;
-    else
-      return new ConPNode( TypeRawPtr::make(con) );
+    if (con == nullptr) {
+      return new ConPNode(TypePtr::NULL_PTR);
+    } else {
+      return new ConPNode(TypeRawPtr::make(con));
+    }
   }
 };
 
@@ -112,6 +117,19 @@ public:
     return new ConLNode( TypeLong::make(con) );
   }
 
+};
+
+//------------------------------ConHNode---------------------------------------
+// Simple half float constants
+class ConHNode : public ConNode {
+public:
+  ConHNode(const TypeH* t) : ConNode(t) {}
+  virtual int Opcode() const;
+
+  // Factory method:
+  static ConHNode* make(float con) {
+    return new ConHNode(TypeH::make(con));
+  }
 };
 
 //------------------------------ConFNode---------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.io.IOError;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -46,6 +44,36 @@ class WindowsLinkSupport {
     }
 
     /**
+     * Creates a symbolic link, retyring if not privileged
+     */
+    static void createSymbolicLink(String link, String target, int flags)
+        throws WindowsException
+    {
+        try {
+            CreateSymbolicLink(link, target, flags);
+        } catch (WindowsException x) {
+            // Retry if the privilege to create symbolic links is not held
+            if (x.lastError() == ERROR_PRIVILEGE_NOT_HELD) {
+                flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                try {
+                    CreateSymbolicLink(link, target, flags);
+                    return;
+                } catch (WindowsException y) {
+                    // Throw an exception if and only if it is not due to symbolic link creation
+                    // privilege not being held (ERROR_PRIVILEGE_NOT_HELD) nor the
+                    // SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE flag not being recognized
+                    // (ERROR_INVALID_PARAMETER). The latter will occur for Windows builds
+                    // older than 14972.
+                    int lastError = y.lastError();
+                    if (lastError != ERROR_PRIVILEGE_NOT_HELD && lastError != ERROR_INVALID_PARAMETER)
+                        throw y;
+                }
+            }
+            throw x;
+        }
+    }
+
+    /**
      * Returns the target of a symbolic link
      */
     static String readLink(WindowsPath path) throws IOException {
@@ -56,7 +84,7 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(path);
         }
         try {
-            return readLinkImpl(handle);
+            return readLinkImpl(path, handle);
         } finally {
             CloseHandle(handle);
         }
@@ -90,7 +118,6 @@ class WindowsLinkSupport {
      * Returns the final path of a given path as a String. This should be used
      * prior to calling Win32 system calls that do not follow links.
      */
-    @SuppressWarnings("removal")
     static String getFinalPath(WindowsPath input, boolean followLinks)
         throws IOException
     {
@@ -134,12 +161,7 @@ class WindowsLinkSupport {
             if (parent == null) {
                 // no parent so use parent of absolute path
                 final WindowsPath t = target;
-                target = AccessController
-                    .doPrivileged(new PrivilegedAction<WindowsPath>() {
-                        @Override
-                        public WindowsPath run() {
-                            return t.toAbsolutePath();
-                        }});
+                target = t.toAbsolutePath();
                 parent = target.getParent();
             }
             target = parent.resolve(link);
@@ -267,16 +289,18 @@ class WindowsLinkSupport {
      * Returns target of a symbolic link given the handle of an open file
      * (that should be a link).
      */
-    private static String readLinkImpl(long handle) throws IOException {
+    private static String readLinkImpl(WindowsPath path, long handle)
+        throws IOException
+    {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
         try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             try {
                 DeviceIoControlGetReparsePoint(handle, buffer.address(), size);
             } catch (WindowsException x) {
-                // FIXME: exception doesn't have file name
+                String pathname = path.getPathForExceptionMessage();
                 if (x.lastError() == ERROR_NOT_A_REPARSE_POINT)
-                    throw new NotLinkException(null, null, x.errorString());
-                x.rethrowAsIOException((String)null);
+                    throw new NotLinkException(pathname, null, x.errorString());
+                x.rethrowAsIOException(pathname + ": " + x.errorString());
             }
 
             /*
@@ -312,8 +336,8 @@ class WindowsLinkSupport {
 
             int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
             if (tag != IO_REPARSE_TAG_SYMLINK) {
-                // FIXME: exception doesn't have file name
-                throw new NotLinkException(null, null, "Reparse point is not a symbolic link");
+                String pathname = path.getPathForExceptionMessage();
+                throw new NotLinkException(pathname, null, "Reparse point is not a symbolic link");
             }
 
             // get offset and length of target

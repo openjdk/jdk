@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,6 @@ public class TestMinAndInitialSurvivorRatioFlags {
         testSurvivorRatio(-1, 15, 3, options, true);
         testSurvivorRatio(-1, 15, 3, options, false);
         testSurvivorRatio(-1, 10, 10, options, true);
-        testSurvivorRatio(-1, 3, 15, options, true);
-        testSurvivorRatio(-1, 3, 15, options, false);
     }
 
     /**
@@ -102,8 +100,7 @@ public class TestMinAndInitialSurvivorRatioFlags {
                 Boolean.toString(useAdaptiveSizePolicy)
         );
         vmOptions.removeIf((String p) -> p.isEmpty());
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
     }
 

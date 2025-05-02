@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,67 +21,48 @@
  * questions.
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class UpcallTestHelper extends NativeTestHelper {
-    public record Output(List<String> stdout, List<String> stderr) {
-        private static void assertContains(List<String> lines, String shouldInclude) {
-            assertTrue(lines.stream().anyMatch(line -> line.contains(shouldInclude)),
-                "Did not find '" + shouldInclude + "' in stderr");
-        }
 
-        public void assertStdErrContains(String shouldInclude) {
-            assertContains(stderr, shouldInclude);
-        }
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+        return runInNewProcess(target, useSpec, List.of(), List.of(programArgs));
     }
 
-    public Output runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, List<String> vmArgs, List<String> programArgs) throws IOException, InterruptedException {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
-            Paths.get(Utils.TEST_JDK)
-                    .resolve("bin")
-                    .resolve("java")
-                    .toAbsolutePath()
-                    .toString(),
-            "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
-            "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,
-            "-cp", Utils.TEST_CLASS_PATH,
-            target.getName()
+            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec
         ));
-        command.addAll(Arrays.asList(programArgs));
-        Process process = new ProcessBuilder()
-            .command(command)
-            .start();
+        command.addAll(vmArgs);
+        command.add(target.getName());
+        command.addAll(programArgs);
 
-        int result = process.waitFor();
-        assertNotEquals(result, 0);
-
-        List<String> outLines = linesFromStream(process.getInputStream());
-        outLines.forEach(System.out::println);
-        List<String> errLines = linesFromStream(process.getErrorStream());
-        errLines.forEach(System.err::println);
-
-        return new Output(outLines, errLines);
-    }
-
-    private static List<String> linesFromStream(InputStream stream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            return reader.lines().toList();
+        try {
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
+            // note that it's important to use ProcessTools.startProcess here since this makes sure output streams of the
+            // fork don't fill up, which could make the process stall while writing to stdout/stderr
+            Process process = ProcessTools.startProcess(target.getName(), pb, null, null, 1L, TimeUnit.MINUTES);
+            OutputAnalyzer output = new OutputAnalyzer(process);
+            output.outputTo(System.out);
+            output.errorTo(System.err);
+            return output;
+        } catch (TimeoutException e) {
+            fail("Timeout while waiting for forked process");
+            return null;
         }
     }
 }

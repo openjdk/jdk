@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,17 @@ class InterpreterRuntime: AllStatic {
   static void    throw_pending_exception(JavaThread* current);
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);
- private:
+
+  // Used by AOTConstantPoolResolver
+  static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
+                              methodHandle& m, constantPoolHandle& pool, bool initialize_holder, TRAPS);
+  static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
+                                 constantPoolHandle& pool, TRAPS);
+  static void cds_resolve_invokehandle(int raw_index,
+                                       constantPoolHandle& pool, TRAPS);
+  static void cds_resolve_invokedynamic(int raw_index,
+                                        constantPoolHandle& pool, TRAPS);
+private:
   // Statics & fields
   static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);
 
@@ -100,9 +110,13 @@ class InterpreterRuntime: AllStatic {
   static void resolve_invokehandle (JavaThread* current);
   static void resolve_invokedynamic(JavaThread* current);
 
+  static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                           methodHandle& resolved_method,
+                                           constantPoolHandle& pool, int method_index);
  public:
   // Synchronization
   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);
+  static void    monitorenter_obj(JavaThread* current, oopDesc* obj);
   static void    monitorexit (BasicObjectLock* elem);
 
   static void    throw_illegal_monitor_state_exception(JavaThread* current);
@@ -119,9 +133,9 @@ class InterpreterRuntime: AllStatic {
 
   // Debugger support
   static void post_field_access(JavaThread* current, oopDesc* obj,
-    ConstantPoolCacheEntry *cp_entry);
+    ResolvedFieldEntry* entry);
   static void post_field_modification(JavaThread* current, oopDesc* obj,
-    ConstantPoolCacheEntry *cp_entry, jvalue *value);
+    ResolvedFieldEntry* entry, jvalue *value);
   static void post_method_entry(JavaThread* current);
   static void post_method_exit (JavaThread* current);
   static int  interpreter_contains(address pc);
@@ -178,7 +192,6 @@ class SignatureHandlerLibrary: public AllStatic {
 
  public:
   static void add(const methodHandle& method);
-  static void add(uint64_t fingerprint, address handler);
 };
 
 #endif // SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP

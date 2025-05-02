@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2663,10 +2663,19 @@ public final class TextLayout implements Cloneable {
      */
     public Shape getOutline(AffineTransform tx) {
         ensureCache();
-        Shape result = textLine.getOutline(tx);
+        Shape result = textLine.getOutline();
         LayoutPathImpl lp = textLine.getLayoutPath();
         if (lp != null) {
             result = lp.mapShape(result);
+        }
+        if (tx != null) {
+            if (result instanceof GeneralPath gp) {
+                // transform in place
+                gp.transform(tx);
+            } else {
+                // create a transformed copy
+                result = tx.createTransformedShape(result);
+            }
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,8 @@ class JvmtiVTMSTransitionDisabler {
   static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
   static volatile bool _SR_mode;                         // there is an active suspender or resumer
-  static volatile int _VTMS_transition_count;            // current number of VTMS transitions
+  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
+  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTransitionDisabler protocol is enabled permanently
 
   bool _is_SR;                                           // is suspender or resumer
   jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
@@ -94,13 +95,39 @@ class JvmtiVTMSTransitionDisabler {
   void VTMS_transition_enable_for_all();
 
  public:
+  static bool _VTMS_notify_jvmti_events;                 // enable notifications from VirtualThread about VTMS events
+  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
+  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
+
+  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+
+  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
+
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
   JvmtiVTMSTransitionDisabler(jthread thread);
   ~JvmtiVTMSTransitionDisabler();
 
+  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
+
   static void start_VTMS_transition(jthread vthread, bool is_mount);
   static void finish_VTMS_transition(jthread vthread, bool is_mount);
+
+  static void VTMS_vthread_start(jobject vthread);
+  static void VTMS_vthread_end(jobject vthread);
+
+  static void VTMS_vthread_mount(jobject vthread, bool hide);
+  static void VTMS_vthread_unmount(jobject vthread, bool hide);
+
+  static void VTMS_mount_begin(jobject vthread);
+  static void VTMS_mount_end(jobject vthread);
+
+  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
+  static void VTMS_unmount_end(jobject vthread);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -163,6 +190,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   bool              _pending_interp_only_mode;
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
+  bool              _top_frame_is_exiting;
   int               _hide_level;
 
  public:
@@ -210,6 +238,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
+  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+
  public:
   ~JvmtiThreadState();
 
@@ -229,6 +259,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static void periodic_clean_up();
 
+  // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
+  static bool seen_interp_only_mode() {
+    return _seen_interp_only_mode;
+  }
+
   void add_env(JvmtiEnvBase *env);
 
   // The pending_interp_only_mode is set when the interp_only_mode is triggered.
@@ -245,6 +280,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static void unbind_from(JvmtiThreadState* state, JavaThread* thread);
   static void bind_to(JvmtiThreadState* state, JavaThread* thread);
+  static void process_pending_interp_only(JavaThread* current);
 
   // access to the linked list of all JVMTI thread states
   static JvmtiThreadState *first() {
@@ -321,6 +357,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void clr_pending_step_for_earlyret() { _pending_step_for_earlyret = false; }
   bool is_pending_step_for_earlyret()  { return _pending_step_for_earlyret;  }
   void process_pending_step_for_earlyret();
+
+  // For synchronization between NotifyFramePop and FramePop posting code.
+  void set_top_frame_is_exiting() { _top_frame_is_exiting = true;  }
+  void clr_top_frame_is_exiting() { _top_frame_is_exiting = false; }
+  bool top_frame_is_exiting()     { return _top_frame_is_exiting;  }
 
   // Setter and getter method is used to send redefined class info
   // when class file load hook event is posted.
@@ -444,9 +485,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Callers are responsible to call recompute_thread_filtered() to update event bits
+  // if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = nullptr);
   // retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Calls recompute_thread_filtered() to update event bits if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for(JavaThread *thread, Handle thread_handle = Handle());
 
   // JVMTI ForceEarlyReturn support
@@ -485,8 +529,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   static ByteSize earlyret_oop_offset()   { return byte_offset_of(JvmtiThreadState, _earlyret_oop); }
   static ByteSize earlyret_value_offset() { return byte_offset_of(JvmtiThreadState, _earlyret_value); }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN; // GC support
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN; // GC support
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
 
 public:
   void set_should_post_on_exceptions(bool val);

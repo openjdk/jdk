@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/osInfo.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <new>
 
-class nmethod;
 class CodeBlob;
-class CompiledMethod;
 class Metadata;
 class NativeMovConstReg;
+class nmethod;
 
 // Types in this file:
 //    relocInfo
@@ -129,12 +129,7 @@ class NativeMovConstReg;
 //   Value:  an oop, or else the address (handle) of an oop
 //   Instruction types: memory (load), set (load address)
 //   Data:  []       an oop stored in 4 bytes of instruction
-//          [n]      n is the index of an oop in the CodeBlob's oop pool
-//          [[N]n l] and l is a byte offset to be applied to the oop
-//          [Nn Ll]  both index and offset may be 32 bits if necessary
-//   Here is a special hack, used only by the old compiler:
-//          [[N]n 00] the value is the __address__ of the nth oop in the pool
-//   (Note that the offset allows optimal references to class variables.)
+//          [[N]n]   the index of an oop in the CodeBlob's oop pool
 //
 // relocInfo::internal_word_type -- an address within the same CodeBlob
 // relocInfo::section_word_type -- same, but can refer to another section
@@ -275,6 +270,7 @@ class relocInfo {
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
     entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
+    barrier_type            = 18, // GC barrier data
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -284,7 +280,7 @@ class relocInfo {
   static const enum class RawBitsToken {} RAW_BITS{};
 
   relocInfo(relocType type, RawBitsToken, int bits)
-    : _value((type << nontype_width) + bits) { }
+    : _value(checked_cast<unsigned short>((type << nontype_width) + bits)) { }
 
   static relocType check_relocType(relocType type) NOT_DEBUG({ return type; });
 
@@ -316,10 +312,11 @@ class relocInfo {
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
     visitor(entry_guard) \
+    visitor(barrier) \
 
 
  public:
-  enum {
+  enum : unsigned short{
     value_width             = sizeof(unsigned short) * BitsPerByte,
     type_width              = 5,   // == log2(type_mask+1)
     nontype_width           = value_width - type_width,
@@ -338,11 +335,11 @@ class relocInfo {
                                   return (_value & offset_mask)*offset_unit; }
 
  protected:
-  const short* data()     const { assert(is_datalen(), "must have data");
-                                  return (const short*)(this + 1); }
-  int          datalen()  const { assert(is_datalen(), "must have data");
+  const short* data()       const { assert(is_datalen(), "must have data");
+                                    return (const short*)(this + 1); }
+  unsigned short datalen()  const { assert(is_datalen(), "must have data");
                                   return (_value & datalen_mask); }
-  int         immediate() const { assert(is_immediate(), "must have immed");
+  unsigned short immediate() const { assert(is_immediate(), "must have immed");
                                   return (_value & datalen_mask); }
  public:
   static int addr_unit()        { return offset_unit; }
@@ -412,8 +409,8 @@ class relocInfo {
   // As it happens, the bytes within the shorts are ordered natively,
   // but the shorts within the word are ordered big-endian.
   // This is an arbitrary choice, made this way mainly to ease debugging.
-  static int data0_from_int(jint x)         { return x >> value_width; }
-  static int data1_from_int(jint x)         { return (short)x; }
+  static short data0_from_int(jint x)         { return (short)(x >> value_width); }
+  static short data1_from_int(jint x)         { return (short)x; }
   static jint jint_from_data(short* data) {
     return (data[0] << value_width) + (unsigned short)data[1];
   }
@@ -454,6 +451,8 @@ class relocInfo {
     length_limit       = 1 + 1 + (3*BytesPerWord/BytesPerShort) + 1,
     have_format        = format_width > 0
   };
+
+  static const char* type_name(relocInfo::relocType t);
 };
 
 #define FORWARD_DECLARE_EACH_CLASS(name)              \
@@ -513,9 +512,6 @@ class RelocationHolder {
   Relocation* reloc() const { return (Relocation*)_relocbuf; }
   inline relocInfo::relocType type() const;
 
-  // Add a constant offset to a relocation.  Helper for class Address.
-  RelocationHolder plus(int offset) const;
-
   // Return a holder containing a relocation of type Reloc, constructed using args.
   template<typename Reloc, typename... Args>
   static RelocationHolder construct(const Args&... args) {
@@ -568,7 +564,7 @@ class RelocIterator : public StackObj {
   address         _limit;   // stop producing relocations after this _addr
   relocInfo*      _current; // the current relocation information
   relocInfo*      _end;     // end marker; we're done iterating when _current == _end
-  CompiledMethod* _code;    // compiled method containing _addr
+  nmethod*        _code;    // compiled method containing _addr
   address         _addr;    // instruction to which the relocation applies
   short           _databuf; // spare buffer for compressed data
   short*          _data;    // pointer to the relocation's data
@@ -580,7 +576,7 @@ class RelocIterator : public StackObj {
 
   void set_has_current(bool b) {
     _datalen = !b ? -1 : 0;
-    debug_only(_data = nullptr);
+    DEBUG_ONLY(_data = nullptr);
   }
   void set_current(relocInfo& ri) {
     _current = &ri;
@@ -598,14 +594,15 @@ class RelocIterator : public StackObj {
 
   void initialize_misc();
 
-  void initialize(CompiledMethod* nm, address begin, address limit);
+  void initialize(nmethod* nm, address begin, address limit);
 
   RelocIterator() { initialize_misc(); }
 
  public:
   // constructor
-  RelocIterator(CompiledMethod* nm, address begin = nullptr, address limit = nullptr);
+  RelocIterator(nmethod* nm, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
+  RelocIterator(CodeBlob* cb);
 
   // get next reloc info, return !eos
   bool next() {
@@ -637,18 +634,18 @@ class RelocIterator : public StackObj {
   relocType    type()         const { return current()->type(); }
   int          format()       const { return (relocInfo::have_format) ? current()->format() : 0; }
   address      addr()         const { return _addr; }
-  CompiledMethod*     code()  const { return _code; }
+  nmethod*     code()         const { return _code; }
   short*       data()         const { return _data; }
   int          datalen()      const { return _datalen; }
   bool     has_current()      const { return _datalen >= 0; }
   bool   addr_in_const()      const;
 
   address section_start(int n) const {
-    assert(_section_start[n], "must be initialized");
+    assert(_section_start[n], "section %d must be initialized", n);
     return _section_start[n];
   }
   address section_end(int n) const {
-    assert(_section_end[n], "must be initialized");
+    assert(_section_end[n], "section %d must be initialized", n);
     return _section_end[n];
   }
 
@@ -664,11 +661,9 @@ class RelocIterator : public StackObj {
   // generic relocation accessor; switches on type to call the above
   Relocation* reloc();
 
-#ifndef PRODUCT
  public:
-  void print();
-  void print_current();
-#endif
+  void print_on(outputStream* st);
+  void print_current_on(outputStream* st);
 };
 
 
@@ -678,6 +673,7 @@ class RelocIterator : public StackObj {
 
 class Relocation {
   friend class RelocIterator;
+  friend class AOTCodeReader;
 
  private:
   // When a relocation has been created by a RelocIterator,
@@ -733,13 +729,13 @@ class Relocation {
   // Most relocation records are quite simple, containing at most two ints.
 
   static bool is_short(jint x) { return x == (short)x; }
-  static short* add_short(short* p, int x)  { *p++ = x; return p; }
+  static short* add_short(short* p, short x)  { *p++ = x; return p; }
   static short* add_jint (short* p, jint x) {
     *p++ = relocInfo::data0_from_int(x); *p++ = relocInfo::data1_from_int(x);
     return p;
   }
   static short* add_var_int(short* p, jint x) {   // add a variable-width int
-    if (is_short(x))  p = add_short(p, x);
+    if (is_short(x))  p = add_short(p, (short)x);
     else              p = add_jint (p, x);
     return p;
   }
@@ -761,7 +757,7 @@ class Relocation {
       // no halfwords needed to store zeroes
     } else if (is_short(x0) && is_short(x1)) {
       // 1-2 halfwords needed to store shorts
-      p = add_short(p, x0); if (x1!=0) p = add_short(p, x1);
+      p = add_short(p, (short)x0); if (x1!=0) p = add_short(p, (short)x1);
     } else {
       // 3-4 halfwords needed to store jints
       p = add_jint(p, x0);             p = add_var_int(p, x1);
@@ -786,8 +782,8 @@ class Relocation {
   void       const_set_data_value    (address x);
   void       const_verify_data_value (address x);
   // platform-dependent utilities for decoding and patching instructions
-  void       pd_set_data_value       (address x, intptr_t off, bool verify_only = false); // a set or mem-ref
-  void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
+  void       pd_set_data_value       (address x, bool verify_only = false); // a set or mem-ref
+  void       pd_verify_data_value    (address x) { pd_set_data_value(x, true); }
   address    pd_call_destination     (address orig_addr = nullptr);
   void       pd_set_call_destination (address x);
 
@@ -799,7 +795,7 @@ class Relocation {
 
   // these convert from byte offsets, to scaled offsets, to addresses
   static jint scaled_offset(address x, address base) {
-    int byte_offset = x - base;
+    int byte_offset = checked_cast<int>(x - base);
     int offset = -byte_offset / relocInfo::addr_unit();
     assert(address_from_scaled_offset(offset, base) == x, "just checkin'");
     return offset;
@@ -824,12 +820,11 @@ class Relocation {
  public:
   // accessors which only make sense for a bound Relocation
   address         addr()            const { return binding()->addr(); }
-  CompiledMethod* code()            const { return binding()->code(); }
+  nmethod*        code()            const { return binding()->code(); }
   bool            addr_in_const()   const { return binding()->addr_in_const(); }
  protected:
   short*   data()         const { return binding()->data(); }
   int      datalen()      const { return binding()->datalen(); }
-  int      format()       const { return binding()->format(); }
 
  public:
   // Make a filler relocation.
@@ -840,6 +835,8 @@ class Relocation {
   // RelocationHolder depends on the destructor for all relocation types being
   // trivial, so this must not be virtual (and hence non-trivial).
   ~Relocation() = default;
+
+  int      format()       const { return binding()->format(); }
 
   relocInfo::relocType type()              const { return _rtype; }
 
@@ -858,7 +855,7 @@ class Relocation {
   // all relocations are able to reassert their values
   virtual void set_value(address x);
 
-  virtual bool clear_inline_cache()              { return true; }
+  virtual void clear_inline_cache() {}
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
@@ -892,41 +889,28 @@ relocInfo::relocType RelocationHolder::type() const {
 // A DataRelocation always points at a memory or load-constant instruction..
 // It is absolute on most machines, and the constant is split on RISCs.
 // The specific subtypes are oop, external_word, and internal_word.
-// By convention, the "value" does not include a separately reckoned "offset".
 class DataRelocation : public Relocation {
  public:
   DataRelocation(relocInfo::relocType type) : Relocation(type) {}
 
-  bool          is_data() override             { return true; }
+  bool    is_data() override { return true; }
 
-  // both target and offset must be computed somehow from relocation data
-  virtual int    offset()                      { return 0; }
-  address         value() override             = 0;
-  void        set_value(address x) override    { set_value(x, offset()); }
-  void        set_value(address x, intptr_t o) {
-    if (addr_in_const())
+  // target must be computed somehow from relocation data
+  address value() override = 0;
+  void    set_value(address x) override {
+    if (addr_in_const()) {
       const_set_data_value(x);
-    else
-      pd_set_data_value(x, o);
+    } else {
+      pd_set_data_value(x);
+    }
   }
-  void        verify_value(address x) {
-    if (addr_in_const())
+  void    verify_value(address x) {
+    if (addr_in_const()) {
       const_verify_data_value(x);
-    else
-      pd_verify_data_value(x, offset());
+    } else {
+      pd_verify_data_value(x);
+    }
   }
-
-  // The "o" (displacement) argument is relevant only to split relocations
-  // on RISC machines.  In some CPUs (SPARC), the set-hi and set-lo ins'ns
-  // can encode more than 32 bits between them.  This allows compilers to
-  // share set-hi instructions between addresses that differ by a small
-  // offset (e.g., different static variables in the same class).
-  // On such machines, the "x" argument to set_value on all set-lo
-  // instructions must be the same as the "x" argument for the
-  // corresponding set-hi instructions.  The "o" arguments for the
-  // set-hi instructions are ignored, and must not affect the high-half
-  // immediate constant.  The "o" arguments for the set-lo instructions are
-  // added into the low-half immediate constant, and must not overflow it.
 };
 
 class post_call_nop_Relocation : public Relocation {
@@ -973,40 +957,36 @@ class CallRelocation : public Relocation {
 
 class oop_Relocation : public DataRelocation {
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an oop in the CodeBlob's oop pool
-  static RelocationHolder spec(int oop_index, int offset = 0) {
+  // an oop in the CodeBlob's oop pool; encoded as [n] or [Nn]
+  static RelocationHolder spec(int oop_index) {
     assert(oop_index > 0, "must be a pool-resident oop");
-    return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
+    return RelocationHolder::construct<oop_Relocation>(oop_index);
   }
-  // an oop in the instruction stream
+  // an oop in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     // If no immediate oops are generated, we can skip some walks over nmethods.
     // Assert that they don't get generated accidentally!
     assert(relocInfo::mustIterateImmediateOopsInCode(),
            "Must return true so we will search for oops as roots etc. in the code.");
     const int oop_index = 0;
-    const int offset    = 0;    // if you want an offset, use the oop pool
-    return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
+    return RelocationHolder::construct<oop_Relocation>(oop_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _oop_index;                  // if > 0, index into CodeBlob::oop_at
-  jint _offset;                     // byte offset to apply to the oop itself
 
-  oop_Relocation(int oop_index, int offset)
-    : DataRelocation(relocInfo::oop_type), _oop_index(oop_index), _offset(offset) { }
+  oop_Relocation(int oop_index)
+    : DataRelocation(relocInfo::oop_type), _oop_index(oop_index) { }
 
   friend class RelocationHolder;
   oop_Relocation() : DataRelocation(relocInfo::oop_type) {}
 
  public:
   int oop_index() { return _oop_index; }
-  int offset() override { return _offset; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // oop_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
@@ -1028,27 +1008,24 @@ class oop_Relocation : public DataRelocation {
 class metadata_Relocation : public DataRelocation {
 
  public:
-  // encode in one of these formats:  [] [n] [n l] [Nn l] [Nn Ll]
-  // an metadata in the CodeBlob's metadata pool
-  static RelocationHolder spec(int metadata_index, int offset = 0) {
+  // an metadata in the CodeBlob's metadata pool; encoded as [n] or [Nn]
+  static RelocationHolder spec(int metadata_index) {
     assert(metadata_index > 0, "must be a pool-resident metadata");
-    return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
+    return RelocationHolder::construct<metadata_Relocation>(metadata_index);
   }
-  // an metadata in the instruction stream
+  // an metadata in the instruction stream; encoded as []
   static RelocationHolder spec_for_immediate() {
     const int metadata_index = 0;
-    const int offset    = 0;    // if you want an offset, use the metadata pool
-    return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
+    return RelocationHolder::construct<metadata_Relocation>(metadata_index);
   }
 
   void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _metadata_index;            // if > 0, index into nmethod::metadata_at
-  jint _offset;                     // byte offset to apply to the metadata itself
 
-  metadata_Relocation(int metadata_index, int offset)
-    : DataRelocation(relocInfo::metadata_type), _metadata_index(metadata_index), _offset(offset) { }
+  metadata_Relocation(int metadata_index)
+    : DataRelocation(relocInfo::metadata_type), _metadata_index(metadata_index) { }
 
   friend class RelocationHolder;
   metadata_Relocation() : DataRelocation(relocInfo::metadata_type) { }
@@ -1060,9 +1037,8 @@ class metadata_Relocation : public DataRelocation {
 
  public:
   int metadata_index() { return _metadata_index; }
-  int offset() override { return _offset; }
 
-  // data is packed in "2_ints" format:  [i o] or [Ii Oo]
+  // metadata_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
@@ -1075,6 +1051,26 @@ class metadata_Relocation : public DataRelocation {
   Metadata**   metadata_addr();                  // addr or &pool[jint_data]
   Metadata*    metadata_value();                 // *metadata_addr
   // Note:  metadata_value transparently converts Universe::non_metadata_word to nullptr.
+};
+
+
+class barrier_Relocation : public Relocation {
+
+ public:
+  // The uninitialized value used before the relocation has been patched.
+  // Code assumes that the unpatched value is zero.
+  static const int16_t unpatched = 0;
+
+  static RelocationHolder spec() {
+    return RelocationHolder::construct<barrier_Relocation>();
+  }
+
+  void copy_into(RelocationHolder& holder) const override;
+
+ private:
+  friend class RelocIterator;
+  friend class RelocationHolder;
+  barrier_Relocation() : Relocation(relocInfo::barrier_type) { }
 };
 
 
@@ -1117,7 +1113,7 @@ class virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 };
 
 
@@ -1146,7 +1142,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1178,7 +1174,7 @@ class static_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1203,7 +1199,7 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
 
  public:
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   address static_call() { return _static_call; }
 
@@ -1264,6 +1260,11 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
 // in the code, it can patch it to jump to the trampoline where is
 // sufficient space for a far branch. Needed on PPC.
 class trampoline_stub_Relocation : public Relocation {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  void pd_fix_owner_after_move();
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+#endif
+
  public:
   static RelocationHolder spec(address static_call) {
     return RelocationHolder::construct<trampoline_stub_Relocation>(static_call);
@@ -1378,6 +1379,8 @@ class internal_word_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+  void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
+
   address  target();        // if _target==nullptr, fetch addr from code stream
   int      section()        { return _section;   }
   address  value() override { return target();   }
@@ -1439,7 +1442,7 @@ APPLY_TO_RELOCATIONS(EACH_CASE);
 #undef EACH_CASE_AUX
 #undef EACH_CASE
 
-inline RelocIterator::RelocIterator(CompiledMethod* nm, address begin, address limit) {
+inline RelocIterator::RelocIterator(nmethod* nm, address begin, address limit) {
   initialize(nm, begin, limit);
 }
 

@@ -76,7 +76,7 @@ public:
   ~LockFreeStack() { assert(empty(), "stack not empty"); }
 
   // Atomically removes the top object from this stack and returns a
-  // pointer to that object, or nullptr if this stack is empty. Acts as a
+  // pointer to that object, or null if this stack is empty. Acts as a
   // full memory barrier. Subject to ABA behavior; callers must ensure
   // usage is safe.
   T* pop() {
@@ -97,7 +97,7 @@ public:
     return result;
   }
 
-  // Atomically exchange the list of elements with nullptr, returning the old
+  // Atomically exchange the list of elements with null, returning the old
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {

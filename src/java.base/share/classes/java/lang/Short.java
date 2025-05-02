@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -38,8 +39,9 @@ import static java.lang.constant.ConstantDescs.CD_short;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
- * The {@code Short} class wraps a value of primitive type {@code
- * short} in an object.  An object of type {@code Short} contains a
+ * The {@code Short} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code short}. An object of type {@code Short} contains a
  * single field whose type is {@code short}.
  *
  * <p>In addition, this class provides several methods for converting
@@ -77,8 +79,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * The {@code Class} instance representing the primitive type
      * {@code short}.
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Short>    TYPE = (Class<Short>) Class.getPrimitiveClass("short");
+    public static final Class<Short> TYPE = Class.getPrimitiveClass("short");
 
     /**
      * Returns a new {@code String} object representing the
@@ -231,9 +232,10 @@ public final class Short extends Number implements Comparable<Short>, Constable 
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_short, intValue()));
     }
 
-    private static class ShortCache {
+    private static final class ShortCache {
         private ShortCache() {}
 
+        @Stable
         static final Short[] cache;
         static Short[] archivedCache;
 
@@ -242,7 +244,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(ShortCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
+            if (archivedCache == null) {
                 Short[] c = new Short[size];
                 short value = -128;
                 for(int i = 0; i < size; i++) {
@@ -251,6 +253,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
                 archivedCache = c;
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 
@@ -349,7 +352,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@link #valueOf(short)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Short(short value) {
         this.value = value;
     }
@@ -372,7 +375,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@code short} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Short} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Short(String s) throws NumberFormatException {
         this.value = parseShort(s, 10);
     }
@@ -480,8 +483,8 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *                  {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Short) {
-            return value == ((Short)obj).shortValue();
+        if (obj instanceof Short s) {
+            return value == s.shortValue();
         }
         return false;
     }

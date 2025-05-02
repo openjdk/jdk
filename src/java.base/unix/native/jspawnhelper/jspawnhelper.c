@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  * questions.
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -49,6 +51,10 @@ extern int errno;
 #define ERR_PIPE 2
 #define ERR_ARGS 3
 
+#ifndef VERSION_STRING
+#error VERSION_STRING must be defined
+#endif
+
 void error (int fd, int err) {
     if (write (fd, &err, sizeof(err)) != sizeof(err)) {
         /* Not sure what to do here. I have no one to speak to. */
@@ -58,10 +64,12 @@ void error (int fd, int err) {
 }
 
 void shutItDown() {
+    fprintf(stdout, "jspawnhelper version %s\n", VERSION_STRING);
     fprintf(stdout, "This command is not for general use and should ");
     fprintf(stdout, "only be run as the result of a call to\n");
     fprintf(stdout, "ProcessBuilder.start() or Runtime.exec() in a java ");
     fprintf(stdout, "application\n");
+    fflush(stdout);
     _exit(1);
 }
 
@@ -83,11 +91,15 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
         error (fdout, ERR_PIPE);
     }
 
-    if (readFully (fdin, c, sizeof(*c)) == -1) {
+#ifdef DEBUG
+    jtregSimulateCrash(0, 5);
+#endif
+
+    if (readFully (fdin, c, sizeof(*c)) != sizeof(*c)) {
         error (fdout, ERR_PIPE);
     }
 
-    if (readFully (fdin, &sp, sizeof(sp)) == -1) {
+    if (readFully (fdin, &sp, sizeof(sp)) != sizeof(sp)) {
         error (fdout, ERR_PIPE);
     }
 
@@ -96,7 +108,7 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
     ALLOC(buf, bufsize);
 
-    if (readFully (fdin, buf, bufsize) == -1) {
+    if (readFully (fdin, buf, bufsize) != bufsize) {
         error (fdout, ERR_PIPE);
     }
 
@@ -131,16 +143,33 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 int main(int argc, char *argv[]) {
     ChildStuff c;
     struct stat buf;
-    /* argv[0] contains the fd number to read all the child info */
-    int r, fdin, fdout;
+    /* argv[1] contains the fd number to read all the child info */
+    int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
-    r = sscanf (argv[argc-1], "%d:%d", &fdin, &fdout);
-    if (r == 2 && fcntl(fdin, F_GETFD) != -1) {
-        fstat(fdin, &buf);
-        if (!S_ISFIFO(buf.st_mode))
+#ifdef DEBUG
+    jtregSimulateCrash(0, 4);
+#endif
+
+    if (argc != 3) {
+        fprintf(stdout, "Incorrect number of arguments: %d\n", argc);
+        shutItDown();
+    }
+
+    if (strcmp(argv[1], VERSION_STRING) != 0) {
+        fprintf(stdout, "Incorrect Java version: %s\n", argv[1]);
+        shutItDown();
+    }
+
+    r = sscanf (argv[2], "%d:%d:%d", &fdinr, &fdinw, &fdout);
+    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
+        fstat(fdinr, &buf);
+        if (!S_ISFIFO(buf.st_mode)) {
+            fprintf(stdout, "Incorrect input pipe\n");
             shutItDown();
+        }
     } else {
+        fprintf(stdout, "Incorrect FD array data: %s\n", argv[2]);
         shutItDown();
     }
 
@@ -148,7 +177,18 @@ int main(int argc, char *argv[]) {
     sigemptyset(&unblock_signals);
     sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
 
-    initChildStuff (fdin, fdout, &c);
+    // Close the writing end of the pipe we use for reading from the parent.
+    // We have to do this before we start reading from the parent to avoid
+    // blocking in the case the parent exits before we finished reading from it.
+    close(fdinw); // Deliberately ignore errors (see https://lwn.net/Articles/576478/).
+    initChildStuff (fdinr, fdout, &c);
+    // Now set the file descriptor for the pipe's writing end to -1
+    // for the case that somebody tries to close it again.
+    assert(c.childenv[1] == fdinw);
+    c.childenv[1] = -1;
+    // The file descriptor for reporting errors back to our parent we got on the command
+    // line should be the same like the one in the ChildStuff struct we've just read.
+    assert(c.fail[1] == fdout);
 
     childProcess (&c);
     return 0; /* NOT REACHED */

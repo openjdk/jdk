@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,6 @@ public abstract class CompilerWhiteBoxTest {
     /** Value of {@code -XX:BackgroundCompilation} */
     protected static final boolean BACKGROUND_COMPILATION
             = Boolean.valueOf(getVMOption("BackgroundCompilation", "true"));
-    protected static final boolean USE_COUNTER_DECAY
-            = Boolean.valueOf(getVMOption("UseCounterDecay", "true"));
     /** Value of {@code -XX:TieredCompilation} */
     protected static final boolean TIERED_COMPILATION
             = Boolean.valueOf(getVMOption("TieredCompilation", "false"));
@@ -367,9 +365,6 @@ public abstract class CompilerWhiteBoxTest {
      * @see #compile(int)
      */
     protected final int compile() throws Exception {
-        if (USE_COUNTER_DECAY) {
-            throw new Exception("Tests using compile method must turn off counter decay for reliability");
-        }
         if (testCase.isOsr()) {
             return compile(1);
         } else {

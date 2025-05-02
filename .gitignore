@@ -18,3 +18,8 @@ NashornProfile.txt
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
+/compile_commands.json
+/.cache
+/.gdbinit
+/.lldbinit
+**/core.[0-9]*

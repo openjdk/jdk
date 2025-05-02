@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class TestNewSizeFlags {
             long heapSize, long maxHeapSize,
             long expectedNewSize, long expectedMaxNewSize,
             LinkedList<String> options, boolean failureExpected) throws Exception {
-        OutputAnalyzer analyzer = startVM(options, newSize, maxNewSize, heapSize, maxHeapSize, expectedNewSize, expectedMaxNewSize);
+        OutputAnalyzer analyzer = executeLimitedTestJava(options, newSize, maxNewSize, heapSize, maxHeapSize, expectedNewSize, expectedMaxNewSize);
 
         if (failureExpected) {
             analyzer.shouldHaveExitValue(1);
@@ -144,7 +144,7 @@ public class TestNewSizeFlags {
         }
     }
 
-    private static OutputAnalyzer startVM(LinkedList<String> options,
+    private static OutputAnalyzer executeLimitedTestJava(LinkedList<String> options,
             long newSize, long maxNewSize,
             long heapSize, long maxHeapSize,
             long expectedNewSize, long expectedMaxNewSize) throws Exception, IOException {
@@ -157,7 +157,6 @@ public class TestNewSizeFlags {
                 (maxNewSize >= 0 ? "-XX:MaxNewSize=" + maxNewSize : ""),
                 "-Xmx" + maxHeapSize,
                 "-Xms" + heapSize,
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:-UseLargePages",
                 NewSizeVerifier.class.getName(),
                 Long.toString(expectedNewSize),
@@ -166,9 +165,7 @@ public class TestNewSizeFlags {
                 Long.toString(maxHeapSize)
         );
         vmOptions.removeIf(String::isEmpty);
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-        return analyzer;
+        return GCArguments.executeLimitedTestJava(vmOptions);
     }
 
     /**

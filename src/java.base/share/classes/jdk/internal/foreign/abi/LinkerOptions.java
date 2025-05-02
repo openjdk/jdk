@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@ package jdk.internal.foreign.abi;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.StructLayout;
-import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 public class LinkerOptions {
@@ -45,14 +44,23 @@ public class LinkerOptions {
     }
 
     public static LinkerOptions forDowncall(FunctionDescriptor desc, Linker.Option... options) {
-        Map<Class<?>, LinkerOptionImpl> optionMap = new HashMap<>();
+        return forShared(LinkerOptionImpl::validateForDowncall, desc, options);
+    }
+
+    public static LinkerOptions forUpcall(FunctionDescriptor desc, Linker.Option[] options) {
+        return forShared(LinkerOptionImpl::validateForUpcall, desc, options);
+    }
+
+    private static LinkerOptions forShared(BiConsumer<LinkerOptionImpl, FunctionDescriptor> validator,
+                                           FunctionDescriptor desc, Linker.Option... options) {
+       Map<Class<?>, LinkerOptionImpl> optionMap = new HashMap<>();
 
         for (Linker.Option option : options) {
             if (optionMap.containsKey(option.getClass())) {
                 throw new IllegalArgumentException("Duplicate option: " + option);
             }
             LinkerOptionImpl opImpl = (LinkerOptionImpl) option;
-            opImpl.validateForDowncall(desc);
+            validator.accept(opImpl, desc);
             optionMap.put(option.getClass(), opImpl);
         }
 
@@ -73,17 +81,31 @@ public class LinkerOptions {
     }
 
     public boolean hasCapturedCallState() {
-        return getOption(CaptureCallStateImpl.class) != null;
+        return getOption(CaptureCallState.class) != null;
     }
 
     public Stream<CapturableState> capturedCallState() {
-        CaptureCallStateImpl stl = getOption(CaptureCallStateImpl.class);
+        CaptureCallState stl = getOption(CaptureCallState.class);
         return stl == null ? Stream.empty() : stl.saved().stream();
     }
 
     public boolean isVariadicFunction() {
         FirstVariadicArg fva = getOption(FirstVariadicArg.class);
         return fva != null;
+    }
+
+    public int firstVariadicArgIndex() {
+        return getOption(FirstVariadicArg.class).index();
+    }
+
+    public boolean isCritical() {
+        Critical c = getOption(Critical.class);
+        return c != null;
+    }
+
+    public boolean allowsHeapAccess() {
+        Critical c = getOption(Critical.class);
+        return c != null && c.allowHeapAccess();
     }
 
     @Override
@@ -99,10 +121,13 @@ public class LinkerOptions {
     }
 
     public sealed interface LinkerOptionImpl extends Linker.Option
-                                             permits FirstVariadicArg,
-                                                     CaptureCallStateImpl {
+            permits CaptureCallState, FirstVariadicArg, Critical {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
+        }
+
+        default void validateForUpcall(FunctionDescriptor descriptor) {
+            throw new IllegalArgumentException("Not supported for upcall: " + this);
         }
     }
 
@@ -113,24 +138,61 @@ public class LinkerOptions {
                 throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
+
+        @Override
+        public int hashCode() {
+            return index;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof FirstVariadicArg that && index == that.index;
+        }
     }
 
-    public record CaptureCallStateImpl(Set<CapturableState> saved) implements LinkerOptionImpl, Linker.Option.CaptureCallState {
-
+    public record CaptureCallState(int compact) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
 
+        public Set<CapturableState> saved() {
+            var set = EnumSet.noneOf(CapturableState.class);
+            int mask = compact;
+            int i = 0;
+            while (mask != 0) {
+                if ((mask & 1) == 1) {
+                    set.add(CapturableState.BY_ORDINAL.get(i));
+                }
+                mask >>= 1;
+                i++;
+            }
+            return set;
+        }
+
+
         @Override
-        public StructLayout layout() {
-            return MemoryLayout.structLayout(
-                saved.stream()
-                      .sorted(Comparator.comparingInt(CapturableState::ordinal))
-                      .map(CapturableState::layout)
-                      .toArray(MemoryLayout[]::new)
-            );
+        public boolean equals(Object obj) {
+            return obj instanceof CaptureCallState that && compact == that.compact;
+        }
+
+        @Override
+        public int hashCode() {
+            return compact;
         }
     }
 
+    public enum Critical implements LinkerOptionImpl {
+        ALLOW_HEAP,
+        DONT_ALLOW_HEAP;
+
+        public boolean allowHeapAccess() {
+            return ordinal() == 0; // this == ALLOW_HEAP
+        }
+
+        @Override
+        public void validateForDowncall(FunctionDescriptor descriptor) {
+            // always allowed
+        }
+    }
 }

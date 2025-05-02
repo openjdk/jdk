@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -178,7 +177,6 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   }
 
 #if defined(_LP64) && !defined(ZERO)
-  _stack_arg_slots = align_up(_stack_arg_slots, 2);
 #ifdef ASSERT
   int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
   assert(_stack_arg_slots == dbg_stack_arg_slots, "fingerprinter: %d full: %d", _stack_arg_slots, dbg_stack_arg_slots);
@@ -235,14 +233,17 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
   case T_BYTE:
   case T_SHORT:
   case T_INT:
-#if defined(PPC64) || defined(S390)
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
+#if defined(PPC64) || defined(S390)
       _stack_arg_slots += 1;
+#else
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
+      _stack_arg_slots += 1;
+#endif // defined(PPC64) || defined(S390)
     }
     break;
-#endif // defined(PPC64) || defined(S390)
   case T_LONG:
   case T_OBJECT:
   case T_ARRAY:
@@ -250,26 +251,27 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
-      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
-      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
       _stack_arg_slots += 2;
     }
     break;
   case T_FLOAT:
-#if defined(PPC64) || defined(S390)
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
+#if defined(PPC64) || defined(S390)
       _stack_arg_slots += 1;
+#else
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
+      _stack_arg_slots += 1;
+#endif // defined(PPC64) || defined(S390)
     }
     break;
-#endif // defined(PPC64) || defined(S390)
   case T_DOUBLE:
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
-      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
-      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
       _stack_arg_slots += 2;
     }
     break;
@@ -334,7 +336,7 @@ inline int SignatureStream::scan_type(BasicType type) {
   switch (type) {
   case T_OBJECT:
     tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-    return (tem == nullptr ? limit : tem + 1 - base);
+    return (tem == nullptr ? limit : pointer_delta_as_int(tem + 1, base));
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
@@ -346,7 +348,7 @@ inline int SignatureStream::scan_type(BasicType type) {
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-      return (tem == nullptr ? limit : tem + 1 - base);
+      return (tem == nullptr ? limit : pointer_delta_as_int(tem + 1, base));
     }
     // Skipping over a single character for a primitive type.
     assert(is_java_primitive(decode_signature_char(base[end])), "only primitives expected");
@@ -498,8 +500,7 @@ Symbol* SignatureStream::find_symbol() {
   return name;
 }
 
-Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
-                                 FailureMode failure_mode, TRAPS) {
+Klass* SignatureStream::as_klass(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return nullptr;
   }
@@ -508,11 +509,11 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   if (failure_mode == ReturnNull) {
     // Note:  SD::resolve_or_null returns null for most failure modes,
     // but not all.  Circularity errors, invalid PDs, etc., throw.
-    k = SystemDictionary::resolve_or_null(name, class_loader, protection_domain, CHECK_NULL);
+    k = SystemDictionary::resolve_or_null(name, class_loader, CHECK_NULL);
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.
@@ -522,18 +523,17 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
     // The test here allows for an additional mode CNFException
     // if callers need to request the reflective error instead.
     bool throw_error = (failure_mode == NCDFError);
-    k = SystemDictionary::resolve_or_fail(name, class_loader, protection_domain, throw_error, CHECK_NULL);
+    k = SystemDictionary::resolve_or_fail(name, class_loader, throw_error, CHECK_NULL);
   }
 
   return k;
 }
 
-oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
-                                    FailureMode failure_mode, TRAPS) {
+oop SignatureStream::as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return Universe::java_mirror(type());
   }
-  Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
+  Klass* klass = as_klass(class_loader, failure_mode, CHECK_NULL);
   if (klass == nullptr) {
     return nullptr;
   }
@@ -548,10 +548,8 @@ void SignatureStream::skip_to_return_type() {
 
 ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature,
                                                    Handle class_loader,
-                                                   Handle protection_domain,
                                                    bool is_method)
-  : SignatureStream(signature, is_method),
-    _class_loader(class_loader), _protection_domain(protection_domain)
+  : SignatureStream(signature, is_method), _class_loader(class_loader)
 {
   initialize_load_origin(nullptr);
 }
@@ -573,7 +571,6 @@ void ResolvingSignatureStream::cache_handles() {
   assert(_load_origin != nullptr, "");
   JavaThread* current = JavaThread::current();
   _class_loader = Handle(current, _load_origin->class_loader());
-  _protection_domain = Handle(current, _load_origin->protection_domain());
 }
 
 #ifdef ASSERT

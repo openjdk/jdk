@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.awt.*;
  *
  * <p>While <code>CompositeView</code>
  * does not impose a layout policy on its child <code>View</code>s,
- * it does allow for inseting the child <code>View</code>s
+ * it does allow for insetting the child <code>View</code>s
  * it will contain.  The insets can be set by either
  * {@link #setInsets} or {@link #setParagraphInsets}.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeUtils.hpp"
 #include "jfr/leakprofiler/sampling/objectSample.hpp"
@@ -43,60 +42,60 @@ bool EdgeStore::is_empty() const {
 }
 
 void EdgeStore::on_link(EdgeEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(entry->id() == 0, "invariant");
   entry->set_id(++_edge_id_counter);
 }
 
 bool EdgeStore::on_equals(uintptr_t hash, const EdgeEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   assert(entry->hash() == hash, "invariant");
   return true;
 }
 
 void EdgeStore::on_unlink(EdgeEntry* entry) {
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   // nothing
 }
 
 #ifdef ASSERT
 bool EdgeStore::contains(UnifiedOopRef reference) const {
-  return get(reference) != NULL;
+  return get(reference) != nullptr;
 }
 #endif
 
 StoredEdge* EdgeStore::get(UnifiedOopRef reference) const {
   assert(!reference.is_null(), "invariant");
   EdgeEntry* const entry = _edges->lookup_only(reference.addr<uintptr_t>());
-  return entry != NULL ? entry->literal_addr() : NULL;
+  return entry != nullptr ? entry->literal_addr() : nullptr;
 }
 
 StoredEdge* EdgeStore::put(UnifiedOopRef reference) {
   assert(!reference.is_null(), "invariant");
-  const StoredEdge e(NULL, reference);
-  assert(NULL == _edges->lookup_only(reference.addr<uintptr_t>()), "invariant");
+  const StoredEdge e(nullptr, reference);
+  assert(nullptr == _edges->lookup_only(reference.addr<uintptr_t>()), "invariant");
   EdgeEntry& entry = _edges->put(reference.addr<uintptr_t>(), e);
   return entry.literal_addr();
 }
 
 traceid EdgeStore::get_id(const Edge* edge) const {
-  assert(edge != NULL, "invariant");
+  assert(edge != nullptr, "invariant");
   EdgeEntry* const entry = _edges->lookup_only(edge->reference().addr<uintptr_t>());
-  assert(entry != NULL, "invariant");
+  assert(entry != nullptr, "invariant");
   return entry->id();
 }
 
 traceid EdgeStore::gc_root_id(const Edge* edge) const {
-  assert(edge != NULL, "invariant");
+  assert(edge != nullptr, "invariant");
   const traceid gc_root_id = static_cast<const StoredEdge*>(edge)->gc_root_id();
   if (gc_root_id != 0) {
     return gc_root_id;
   }
   // not cached
-  assert(edge != NULL, "invariant");
+  assert(edge != nullptr, "invariant");
   const Edge* const root = EdgeUtils::root(*edge);
-  assert(root != NULL, "invariant");
-  assert(root->parent() == NULL, "invariant");
+  assert(root != nullptr, "invariant");
+  assert(root->parent() == nullptr, "invariant");
   return get_id(root);
 }
 
@@ -105,15 +104,15 @@ static const Edge* get_skip_ancestor(const Edge** current, size_t distance_to_ro
   assert(*skip_length == 0, "invariant");
   *skip_length = distance_to_root - (EdgeUtils::root_context - 1);
   const Edge* const target = EdgeUtils::ancestor(**current, *skip_length);
-  assert(target != NULL, "invariant");
+  assert(target != nullptr, "invariant");
   assert(target->distance_to_root() + 1 == EdgeUtils::root_context, "invariant");
   return target;
 }
 
 bool EdgeStore::put_skip_edge(StoredEdge** previous, const Edge** current, size_t distance_to_root) {
-  assert(*previous != NULL, "invariant");
-  assert((*previous)->parent() == NULL, "invariant");
-  assert(*current != NULL, "invariant");
+  assert(*previous != nullptr, "invariant");
+  assert((*previous)->parent() == nullptr, "invariant");
+  assert(*current != nullptr, "invariant");
   assert((*current)->distance_to_root() == distance_to_root, "invariant");
 
   if (distance_to_root < EdgeUtils::root_context) {
@@ -123,20 +122,20 @@ bool EdgeStore::put_skip_edge(StoredEdge** previous, const Edge** current, size_
 
   size_t skip_length = 0;
   const Edge* const skip_ancestor = get_skip_ancestor(current, distance_to_root, &skip_length);
-  assert(skip_ancestor != NULL, "invariant");
+  assert(skip_ancestor != nullptr, "invariant");
   (*previous)->set_skip_length(skip_length);
 
   // lookup target
   StoredEdge* stored_target = get(skip_ancestor->reference());
-  if (stored_target != NULL) {
+  if (stored_target != nullptr) {
     (*previous)->set_parent(stored_target);
     // linked to existing, complete
     return true;
   }
 
-  assert(stored_target == NULL, "invariant");
+  assert(stored_target == nullptr, "invariant");
   stored_target = put(skip_ancestor->reference());
-  assert(stored_target != NULL, "invariant");
+  assert(stored_target != nullptr, "invariant");
   (*previous)->set_parent(stored_target);
   *previous = stored_target;
   *current = skip_ancestor->parent();
@@ -144,18 +143,18 @@ bool EdgeStore::put_skip_edge(StoredEdge** previous, const Edge** current, size_
 }
 
 static void link_edge(const StoredEdge* current_stored, StoredEdge** previous) {
-  assert(current_stored != NULL, "invariant");
-  assert(*previous != NULL, "invariant");
-  assert((*previous)->parent() == NULL, "invariant");
+  assert(current_stored != nullptr, "invariant");
+  assert(*previous != nullptr, "invariant");
+  assert((*previous)->parent() == nullptr, "invariant");
   (*previous)->set_parent(current_stored);
 }
 
 static const StoredEdge* find_closest_skip_edge(const StoredEdge* edge, size_t* distance) {
-  assert(edge != NULL, "invariant");
-  assert(distance != NULL, "invariant");
+  assert(edge != nullptr, "invariant");
+  assert(distance != nullptr, "invariant");
   const StoredEdge* current = edge;
   *distance = 1;
-  while (current != NULL && !current->is_skip_edge()) {
+  while (current != nullptr && !current->is_skip_edge()) {
     ++(*distance);
     current = current->parent();
   }
@@ -163,11 +162,11 @@ static const StoredEdge* find_closest_skip_edge(const StoredEdge* edge, size_t* 
 }
 
 void EdgeStore::link_with_existing_chain(const StoredEdge* current_stored, StoredEdge** previous, size_t previous_length) {
-  assert(current_stored != NULL, "invariant");
-  assert((*previous)->parent() == NULL, "invariant");
+  assert(current_stored != nullptr, "invariant");
+  assert((*previous)->parent() == nullptr, "invariant");
   size_t distance_to_skip_edge; // including the skip edge itself
   const StoredEdge* const closest_skip_edge = find_closest_skip_edge(current_stored, &distance_to_skip_edge);
-  if (closest_skip_edge == NULL) {
+  if (closest_skip_edge == nullptr) {
     // no found skip edge implies root
     if (distance_to_skip_edge + previous_length <= EdgeUtils::max_ref_chain_depth) {
       link_edge(current_stored, previous);
@@ -188,33 +187,33 @@ void EdgeStore::link_with_existing_chain(const StoredEdge* current_stored, Store
 }
 
 StoredEdge* EdgeStore::link_new_edge(StoredEdge** previous, const Edge** current) {
-  assert(*previous != NULL, "invariant");
-  assert((*previous)->parent() == NULL, "invariant");
-  assert(*current != NULL, "invariant");
+  assert(*previous != nullptr, "invariant");
+  assert((*previous)->parent() == nullptr, "invariant");
+  assert(*current != nullptr, "invariant");
   assert(!contains((*current)->reference()), "invariant");
   StoredEdge* const stored_edge = put((*current)->reference());
-  assert(stored_edge != NULL, "invariant");
+  assert(stored_edge != nullptr, "invariant");
   link_edge(stored_edge, previous);
   return stored_edge;
 }
 
 bool EdgeStore::put_edges(StoredEdge** previous, const Edge** current, size_t limit) {
-  assert(*previous != NULL, "invariant");
-  assert(*current != NULL, "invariant");
+  assert(*previous != nullptr, "invariant");
+  assert(*current != nullptr, "invariant");
   size_t depth = 1;
-  while (*current != NULL && depth < limit) {
+  while (*current != nullptr && depth < limit) {
     StoredEdge* stored_edge = get((*current)->reference());
-    if (stored_edge != NULL) {
+    if (stored_edge != nullptr) {
       link_with_existing_chain(stored_edge, previous, depth);
       return true;
     }
     stored_edge = link_new_edge(previous, current);
-    assert((*previous)->parent() != NULL, "invariant");
+    assert((*previous)->parent() != nullptr, "invariant");
     *previous = stored_edge;
     *current = (*current)->parent();
     ++depth;
   }
-  return NULL == *current;
+  return nullptr == *current;
 }
 
 static GrowableArray<const StoredEdge*>* _leak_context_edges = nullptr;
@@ -222,7 +221,7 @@ static GrowableArray<const StoredEdge*>* _leak_context_edges = nullptr;
 EdgeStore::EdgeStore() : _edges(new EdgeHashTable(this)) {}
 
 EdgeStore::~EdgeStore() {
-  assert(_edges != NULL, "invariant");
+  assert(_edges != nullptr, "invariant");
   delete _edges;
   delete _leak_context_edges;
   _leak_context_edges = nullptr;
@@ -265,7 +264,7 @@ const StoredEdge* EdgeStore::get(const ObjectSample* sample) const {
 static constexpr const int max_idx =  right_n_bits(32 - markWord::lock_bits);
 
 static void store_idx_precondition(oop sample_object, int idx) {
-  assert(sample_object != NULL, "invariant");
+  assert(sample_object != nullptr, "invariant");
   assert(sample_object->mark().is_marked(), "invariant");
   assert(idx > 0, "invariant");
   assert(idx <= max_idx, "invariant");
@@ -298,7 +297,7 @@ static void associate_with_candidate(const StoredEdge* leak_context_edge) {
 }
 
 StoredEdge* EdgeStore::associate_leak_context_with_candidate(const Edge* edge) {
-  assert(edge != NULL, "invariant");
+  assert(edge != nullptr, "invariant");
   assert(!contains(edge->reference()), "invariant");
   StoredEdge* const leak_context_edge = put(edge->reference());
   associate_with_candidate(leak_context_edge);
@@ -315,11 +314,11 @@ StoredEdge* EdgeStore::associate_leak_context_with_candidate(const Edge* edge) {
  * The leak context edge is the edge adjacent to the leak candidate object, always an edge in the edge store.
  */
 void EdgeStore::put_chain(const Edge* chain, size_t length) {
-  assert(chain != NULL, "invariant");
+  assert(chain != nullptr, "invariant");
   assert(chain->distance_to_root() + 1 == length, "invariant");
   StoredEdge* const leak_context_edge = associate_leak_context_with_candidate(chain);
-  assert(leak_context_edge != NULL, "invariant");
-  assert(leak_context_edge->parent() == NULL, "invariant");
+  assert(leak_context_edge != nullptr, "invariant");
+  assert(leak_context_edge->parent() == nullptr, "invariant");
 
   if (1 == length) {
     store_gc_root_id_in_leak_context_edge(leak_context_edge, leak_context_edge);
@@ -327,13 +326,13 @@ void EdgeStore::put_chain(const Edge* chain, size_t length) {
   }
 
   const Edge* current = chain->parent();
-  assert(current != NULL, "invariant");
+  assert(current != nullptr, "invariant");
   StoredEdge* previous = leak_context_edge;
 
   // a leak context is the sequence of (limited) edges reachable from the leak candidate
   if (put_edges(&previous, &current, EdgeUtils::leak_context)) {
     // complete
-    assert(previous != NULL, "invariant");
+    assert(previous != nullptr, "invariant");
     put_chain_epilogue(leak_context_edge, EdgeUtils::root(*previous));
     return;
   }
@@ -345,9 +344,9 @@ void EdgeStore::put_chain(const Edge* chain, size_t length) {
   // connecting the leak context sequence with the root context sequence
   if (put_skip_edge(&previous, &current, distance_to_root)) {
     // complete
-    assert(previous != NULL, "invariant");
+    assert(previous != nullptr, "invariant");
     assert(previous->is_skip_edge(), "invariant");
-    assert(previous->parent() != NULL, "invariant");
+    assert(previous->parent() != nullptr, "invariant");
     put_chain_epilogue(leak_context_edge, EdgeUtils::root(*previous->parent()));
     return;
   }
@@ -356,13 +355,13 @@ void EdgeStore::put_chain(const Edge* chain, size_t length) {
 
   // a root context is the sequence of (limited) edges reachable from the root
   put_edges(&previous, &current, EdgeUtils::root_context);
-  assert(previous != NULL, "invariant");
+  assert(previous != nullptr, "invariant");
   put_chain_epilogue(leak_context_edge, EdgeUtils::root(*previous));
 }
 
 void EdgeStore::put_chain_epilogue(StoredEdge* leak_context_edge, const Edge* root) const {
-  assert(leak_context_edge != NULL, "invariant");
-  assert(root != NULL, "invariant");
+  assert(leak_context_edge != nullptr, "invariant");
+  assert(root != nullptr, "invariant");
   store_gc_root_id_in_leak_context_edge(leak_context_edge, root);
   assert(leak_context_edge->distance_to_root() + 1 <= EdgeUtils::max_ref_chain_depth, "invariant");
 }
@@ -370,10 +369,10 @@ void EdgeStore::put_chain_epilogue(StoredEdge* leak_context_edge, const Edge* ro
 // To avoid another traversal to resolve the root edge id later,
 // cache it in the immediate leak context edge for fast retrieval.
 void EdgeStore::store_gc_root_id_in_leak_context_edge(StoredEdge* leak_context_edge, const Edge* root) const {
-  assert(leak_context_edge != NULL, "invariant");
+  assert(leak_context_edge != nullptr, "invariant");
   assert(leak_context_edge->gc_root_id() == 0, "invariant");
-  assert(root != NULL, "invariant");
-  assert(root->parent() == NULL, "invariant");
+  assert(root != nullptr, "invariant");
+  assert(root->parent() == nullptr, "invariant");
   assert(root->distance_to_root() == 0, "invariant");
   const StoredEdge* const stored_root = static_cast<const StoredEdge*>(root);
   traceid root_id = stored_root->gc_root_id();

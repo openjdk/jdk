@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,40 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubDeclarations.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
-// points are defined in the platform-specific inner class.
+// points are defined in the platform-specific inner class. Most
+// routines have a single (main) entry point. However, a few routines
+// do provide alternative entry points.
+//
+// Stub routines whose entries are advertised via class StubRoutines
+// are generated in batches at well-defined stages during JVM init:
+// initial stubs, continuation stubs, compiler stubs, final stubs.
+// Each batch is embedded in a single, associated blob (an instance of
+// BufferBlob) i.e. the blob to entry relationship is 1-m.
+//
+// Note that this constrasts with the much smaller number of stub
+// routines generated via classes SharedRuntime, c1_Runtime1 and
+// OptoRuntime. The latter routines are also generated at well-defined
+// points during JVM init. However, each stub routine has its own
+// unique blob (various subclasses of RuntimeBlob) i.e. the blob to
+// entry relationship is 1-1. The difference arises because
+// SharedRuntime routines may need to be relocatable or advertise
+// properties such as a frame size via their blob.
+//
+// Staging of stub routine generation is needed in order to manage
+// init dependencies between 1) stubs and other stubs or 2) stubs and
+// other runtime components. For example, some exception throw stubs
+// need to be generated before compiler stubs (such as the
+// deoptimization stub) so that the latter can invoke the thrwo rotine
+// in bail-out code. Likewise, stubs that access objects (such as the
+// object array copy stub) need to be created after initialization of
+// some GC constants and generation of the GC barrier stubs they might
+// need to invoke.
 //
 // Class scheme:
 //
@@ -48,8 +77,7 @@
 //           |                                  |
 //           |                                  |
 //    stubRoutines.cpp                   stubRoutines_<arch>.cpp
-//    stubRoutines_<os_family>.cpp       stubGenerator_<arch>.cpp
-//    stubRoutines_<os_arch>.cpp
+//                                       stubGenerator_<arch>.cpp
 //
 // Note 1: The important thing is a clean decoupling between stub
 //         entry points (interfacing to the whole vm; i.e., 1-to-n
@@ -74,18 +102,20 @@
 // 3. add a public accessor function to the instance variable
 // 4. implement the corresponding generator function in the platform-dependent
 //    stubGenerator_<arch>.cpp file and call the function in generate_all() of that file
+// 5. ensure the entry is generated in the right blob to satisfy initialization
+//    dependencies between it and other stubs or runtime components.
 
-class UnsafeCopyMemory : public CHeapObj<mtCode> {
+class UnsafeMemoryAccess : public CHeapObj<mtCode> {
  private:
   address _start_pc;
   address _end_pc;
   address _error_exit_pc;
  public:
   static address           _common_exit_stub_pc;
-  static UnsafeCopyMemory* _table;
+  static UnsafeMemoryAccess* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
+  UnsafeMemoryAccess() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -96,9 +126,9 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static void    set_common_exit_stub_pc(address pc) { _common_exit_stub_pc = pc; }
   static address common_exit_stub_pc()               { return _common_exit_stub_pc; }
 
-  static UnsafeCopyMemory* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
-    guarantee(_table_length < _table_max_length, "Incorrect UnsafeCopyMemory::_table_max_length");
-    UnsafeCopyMemory* entry = &_table[_table_length];
+  static UnsafeMemoryAccess* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
+    guarantee(_table_length < _table_max_length, "Incorrect UnsafeMemoryAccess::_table_max_length");
+    UnsafeMemoryAccess* entry = &_table[_table_length];
     entry->set_start_pc(start_pc);
     entry->set_end_pc(end_pc);
     entry->set_error_exit_pc(error_exit_pc);
@@ -112,185 +142,149 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static void    create_table(int max_size);
 };
 
-class UnsafeCopyMemoryMark : public StackObj {
+class UnsafeMemoryAccessMark : public StackObj {
  private:
-  UnsafeCopyMemory*  _ucm_entry;
+  UnsafeMemoryAccess*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
-  ~UnsafeCopyMemoryMark();
+  UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
+  ~UnsafeMemoryAccessMark();
 };
+
+// declare stubgen blob id enum
+
+#define BLOB_ENUM_DECLARE(blob_name) \
+  STUB_ID_NAME(blob_name),
+
+enum StubGenBlobId : int {
+  NO_BLOBID = -1,
+  STUBGEN_BLOBS_DO(BLOB_ENUM_DECLARE)
+  NUM_BLOBIDS
+};
+
+#undef BLOB_ENUM_DECLARE
+
+// declare blob local stub id enums
+
+#define BLOB_LOCAL_ENUM_START(blob_name)        \
+  enum StubGenStubId_ ## blob_name {            \
+    NO_STUBID_ ## blob_name = -1,
+
+#define BLOB_LOCAL_ENUM_END(blob_name)   \
+    NUM_STUBIDS_ ## blob_name            \
+  };
+
+#define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
+  blob_name ## _ ## stub_name ## _id,
+
+STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE)
+
+#undef BLOB_LOCAL_ENUM_START
+#undef BLOB_LOCAL_ENUM_END
+#undef BLOB_LOCAL_STUB_ENUM_DECLARE
+
+// declare global stub id enum
+
+#define STUB_ENUM_DECLARE(blob_name, stub_name) \
+  STUB_ID_NAME(stub_name) ,
+
+enum StubGenStubId : int {
+  NO_STUBID = -1,
+  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE)
+  NUM_STUBIDS
+};
+
+#undef STUB_ENUM_DECLARE
 
 class StubRoutines: AllStatic {
 
- public:
+public:
   // Dependencies
   friend class StubGenerator;
+  friend class VMStructs;
+#if INCLUDE_JVMCI
+  friend class JVMCIVMStructs;
+#endif
 
 #include CPU_HEADER(stubRoutines)
 
-  static jint    _verify_oop_count;
-  static address _verify_oop_subroutine_entry;
+// declare blob and stub name storage and associated lookup methods
 
-  static address _call_stub_return_address;                // the return PC, when returning to a call stub
-  static address _call_stub_entry;
-  static address _forward_exception_entry;
-  static address _catch_exception_entry;
-  static address _throw_AbstractMethodError_entry;
-  static address _throw_IncompatibleClassChangeError_entry;
-  static address _throw_NullPointerException_at_call_entry;
-  static address _throw_StackOverflowError_entry;
-  static address _throw_delayed_StackOverflowError_entry;
+private:
+  static bool _inited_names;
+  static const char* _blob_names[StubGenBlobId::NUM_BLOBIDS];
+  static const char* _stub_names[StubGenStubId::NUM_STUBIDS];
 
-  static address _atomic_xchg_entry;
-  static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_long_entry;
-  static address _atomic_add_entry;
-  static address _fence_entry;
+public:
+  static bool init_names();
+  static const char* get_blob_name(StubGenBlobId id);
+  static const char* get_stub_name(StubGenStubId id);
 
-  static BufferBlob* _code1;                               // code buffer for initial routines
-  static BufferBlob* _code2;
-  static BufferBlob* _code3;                               // code buffer for all other routines
+// declare blob fields
 
-  // Leaf routines which implement arraycopy and their addresses
-  // arraycopy operands aligned on element type boundary
-  static address _jbyte_arraycopy;
-  static address _jshort_arraycopy;
-  static address _jint_arraycopy;
-  static address _jlong_arraycopy;
-  static address _oop_arraycopy, _oop_arraycopy_uninit;
-  static address _jbyte_disjoint_arraycopy;
-  static address _jshort_disjoint_arraycopy;
-  static address _jint_disjoint_arraycopy;
-  static address _jlong_disjoint_arraycopy;
-  static address _oop_disjoint_arraycopy, _oop_disjoint_arraycopy_uninit;
+#define DECLARE_BLOB_FIELD(blob_name) \
+  static BufferBlob* STUBGEN_BLOB_FIELD_NAME(blob_name);
 
-  // arraycopy operands aligned on zero'th element boundary
-  // These are identical to the ones aligned aligned on an
-  // element type boundary, except that they assume that both
-  // source and destination are HeapWord aligned.
-  static address _arrayof_jbyte_arraycopy;
-  static address _arrayof_jshort_arraycopy;
-  static address _arrayof_jint_arraycopy;
-  static address _arrayof_jlong_arraycopy;
-  static address _arrayof_oop_arraycopy, _arrayof_oop_arraycopy_uninit;
-  static address _arrayof_jbyte_disjoint_arraycopy;
-  static address _arrayof_jshort_disjoint_arraycopy;
-  static address _arrayof_jint_disjoint_arraycopy;
-  static address _arrayof_jlong_disjoint_arraycopy;
-  static address _arrayof_oop_disjoint_arraycopy, _arrayof_oop_disjoint_arraycopy_uninit;
+private:
+  STUBGEN_BLOBS_DO(DECLARE_BLOB_FIELD);
 
-  // cache line writeback
-  static address _data_cache_writeback;
-  static address _data_cache_writeback_sync;
+#undef DECLARE_BLOB_FIELD
 
-  // these are recommended but optional:
-  static address _checkcast_arraycopy, _checkcast_arraycopy_uninit;
-  static address _unsafe_arraycopy;
-  static address _generic_arraycopy;
+// declare fields to store entry addresses
 
-  static address _jbyte_fill;
-  static address _jshort_fill;
-  static address _jint_fill;
-  static address _arrayof_jbyte_fill;
-  static address _arrayof_jshort_fill;
-  static address _arrayof_jint_fill;
+#define DECLARE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name);
 
-  static address _aescrypt_encryptBlock;
-  static address _aescrypt_decryptBlock;
-  static address _cipherBlockChaining_encryptAESCrypt;
-  static address _cipherBlockChaining_decryptAESCrypt;
-  static address _electronicCodeBook_encryptAESCrypt;
-  static address _electronicCodeBook_decryptAESCrypt;
-  static address _counterMode_AESCrypt;
-  static address _galoisCounterMode_AESCrypt;
-  static address _ghash_processBlocks;
-  static address _chacha20Block;
-  static address _base64_encodeBlock;
-  static address _base64_decodeBlock;
-  static address _poly1305_processBlocks;
+#define DECLARE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name)
 
-  static address _md5_implCompress;
-  static address _md5_implCompressMB;
-  static address _sha1_implCompress;
-  static address _sha1_implCompressMB;
-  static address _sha256_implCompress;
-  static address _sha256_implCompressMB;
-  static address _sha512_implCompress;
-  static address _sha512_implCompressMB;
-  static address _sha3_implCompress;
-  static address _sha3_implCompressMB;
+#define DECLARE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  static address STUB_FIELD_NAME(field_name)[count];
 
-  static address _updateBytesCRC32;
-  static address _crc_table_adr;
+private:
+  STUBGEN_ENTRIES_DO(DECLARE_ENTRY_FIELD, DECLARE_ENTRY_FIELD_INIT, DECLARE_ENTRY_FIELD_ARRAY);
 
-  static address _crc32c_table_addr;
-  static address _updateBytesCRC32C;
-  static address _updateBytesAdler32;
+#undef DECLARE_ENTRY_FIELD_ARRAY
+#undef DECLARE_ENTRY_FIELD_INIT
+#undef DECLARE_ENTRY_FIELD
 
-  static address _multiplyToLen;
-  static address _squareToLen;
-  static address _mulAdd;
-  static address _montgomeryMultiply;
-  static address _montgomerySquare;
-  static address _bigIntegerRightShiftWorker;
-  static address _bigIntegerLeftShiftWorker;
+// declare getters and setters for entry addresses
 
-  static address _vectorizedMismatch;
+#define DEFINE_ENTRY_GETTER(blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name); } \
 
-  static address _dexp;
-  static address _dlog;
-  static address _dlog10;
-  static address _dpow;
-  static address _dsin;
-  static address _dcos;
-  static address _dlibm_sin_cos_huge;
-  static address _dlibm_reduce_pi04l;
-  static address _dlibm_tan_cot_huge;
-  static address _dtan;
+#define DEFINE_ENTRY_GETTER_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ENTRY_GETTER(blob_name, stub_name, field_name, getter_name)
 
-  static address _cont_thaw;
-  static address _cont_returnBarrier;
-  static address _cont_returnBarrierExc;
+#define DEFINE_ENTRY_GETTER_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  static address getter_name(int idx) {                                 \
+    assert(idx < count, "out of bounds");                               \
+    return STUB_FIELD_NAME(field_name)[idx];                            \
+  }                                                                     \
 
-  JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
-  JFR_ONLY(static address _jfr_write_checkpoint;)
+public:
+  STUBGEN_ENTRIES_DO(DEFINE_ENTRY_GETTER, DEFINE_ENTRY_GETTER_INIT, DEFINE_ENTRY_GETTER_ARRAY);
 
-  // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+#undef DEFINE_ENTRY_GETTER_ARRAY
+#undef DEFINE_ENTRY_GETTER_INIT
+#undef DEFINE_ENTRY_GETTER
 
- public:
-  // Initialization/Testing
-  static void    initialize1();                            // must happen before universe::genesis
-  static void    initialize2();                            // must happen after  universe::genesis
-  static void    initializeContinuationStubs();            // must happen after  universe::genesis
+public:
 
-  static bool is_stub_code(address addr)                   { return contains(addr); }
+#define DECLARE_BLOB_INIT_METHOD(blob_name)     \
+  static void initialize_ ## blob_name ## _stubs();
 
-  static bool contains(address addr) {
-    return
-      (_code1 != nullptr && _code1->blob_contains(addr)) ||
-      (_code2 != nullptr && _code2->blob_contains(addr)) ;
-  }
+  STUBGEN_BLOBS_DO(DECLARE_BLOB_INIT_METHOD)
 
-  static RuntimeBlob* code1() { return _code1; }
-  static RuntimeBlob* code2() { return _code2; }
-  static RuntimeBlob* code3() { return _code3; }
+#undef DECLARE_BLOB_INIT_METHOD
 
-  // Debugging
-  static jint    verify_oop_count()                        { return _verify_oop_count; }
-  static jint*   verify_oop_count_addr()                   { return &_verify_oop_count; }
-  // a subroutine for debugging the GC
-  static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
-
-  static address catch_exception_entry()                   { return _catch_exception_entry; }
+public:
 
   // Calls to Java
   typedef void (*CallStub)(
     address   link,
     intptr_t* result,
-    BasicType result_type,
+    int       result_type, /* BasicType on 4 bytes */
     Method* method,
     address   entry_point,
     intptr_t* parameters,
@@ -298,57 +292,72 @@ class StubRoutines: AllStatic {
     TRAPS
   );
 
+  static jint    _verify_oop_count;
+
+public:
+  // this is used by x86_64 to expose string index stubs to the opto
+  // library as a target to a call planted before back end lowering.
+  // all other arches plant the call to the stub during back end
+  // lowering and use arch-specific entries. we really need to
+  // rationalise this at some point.
+
+  static address _string_indexof_array[4];
+
+  /* special case: stub employs array of entries */
+
+  static bool is_stub_code(address addr)                   { return contains(addr); }
+
+  // generate code to implement method contains
+
+#define CHECK_ADDRESS_IN_BLOB(blob_name) \
+  blob = STUBGEN_BLOB_FIELD_NAME(blob_name); \
+  if (blob != nullptr && blob->blob_contains(addr)) { return true; }
+
+  static bool contains(address addr) {
+    BufferBlob *blob;
+    STUBGEN_BLOBS_DO(CHECK_ADDRESS_IN_BLOB)
+    return false;
+  }
+#undef CHECK_ADDRESS_IN_BLOB
+// define getters for stub code blobs
+
+#define DEFINE_BLOB_GETTER(blob_name) \
+  static RuntimeBlob* blob_name ## _stubs_code() { return _ ## blob_name ## _stubs_code; }
+
+  STUBGEN_BLOBS_DO(DEFINE_BLOB_GETTER);
+
+#undef DEFINE_BLOB_GETTER
+
+#ifdef ASSERT
+  // provide a translation from stub id to its associated blob id
+  static StubGenBlobId stub_to_blob(StubGenStubId stubId);
+#endif
+
+  // Debugging
+  static jint    verify_oop_count()                        { return _verify_oop_count; }
+  static jint*   verify_oop_count_addr()                   { return &_verify_oop_count; }
+  // a subroutine for debugging the GC
+  static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
+
   static CallStub call_stub()                              { return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
-
-  // Exceptions
-  static address forward_exception_entry()                 { return _forward_exception_entry; }
-  // Implicit exceptions
-  static address throw_AbstractMethodError_entry()         { return _throw_AbstractMethodError_entry; }
-  static address throw_IncompatibleClassChangeError_entry(){ return _throw_IncompatibleClassChangeError_entry; }
-  static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
-  static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
-  static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
-
-  static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
-  static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address fence_entry()                             { return _fence_entry; }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 
-  static address jbyte_arraycopy()  { return _jbyte_arraycopy; }
-  static address jshort_arraycopy() { return _jshort_arraycopy; }
-  static address jint_arraycopy()   { return _jint_arraycopy; }
-  static address jlong_arraycopy()  { return _jlong_arraycopy; }
   static address oop_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _oop_arraycopy_uninit : _oop_arraycopy;
   }
-  static address jbyte_disjoint_arraycopy()  { return _jbyte_disjoint_arraycopy; }
-  static address jshort_disjoint_arraycopy() { return _jshort_disjoint_arraycopy; }
-  static address jint_disjoint_arraycopy()   { return _jint_disjoint_arraycopy; }
-  static address jlong_disjoint_arraycopy()  { return _jlong_disjoint_arraycopy; }
+
   static address oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ?  _oop_disjoint_arraycopy_uninit : _oop_disjoint_arraycopy;
   }
 
-  static address arrayof_jbyte_arraycopy()  { return _arrayof_jbyte_arraycopy; }
-  static address arrayof_jshort_arraycopy() { return _arrayof_jshort_arraycopy; }
-  static address arrayof_jint_arraycopy()   { return _arrayof_jint_arraycopy; }
-  static address arrayof_jlong_arraycopy()  { return _arrayof_jlong_arraycopy; }
   static address arrayof_oop_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_arraycopy_uninit : _arrayof_oop_arraycopy;
   }
 
-  static address arrayof_jbyte_disjoint_arraycopy()  { return _arrayof_jbyte_disjoint_arraycopy; }
-  static address arrayof_jshort_disjoint_arraycopy() { return _arrayof_jshort_disjoint_arraycopy; }
-  static address arrayof_jint_disjoint_arraycopy()   { return _arrayof_jint_disjoint_arraycopy; }
-  static address arrayof_jlong_disjoint_arraycopy()  { return _arrayof_jlong_disjoint_arraycopy; }
   static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
-  static address data_cache_writeback()              { return _data_cache_writeback; }
-  static address data_cache_writeback_sync()         { return _data_cache_writeback_sync; }
 
   typedef void (*DataCacheWritebackStub)(void *);
   static DataCacheWritebackStub DataCacheWriteback_stub()         { return CAST_TO_FN_PTR(DataCacheWritebackStub,  _data_cache_writeback); }
@@ -358,83 +367,30 @@ class StubRoutines: AllStatic {
   static address checkcast_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
   }
-  static address unsafe_arraycopy()     { return _unsafe_arraycopy; }
 
   typedef void (*UnsafeArrayCopyStub)(const void* src, void* dst, size_t count);
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
-  static address generic_arraycopy()   { return _generic_arraycopy; }
+  typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
+  static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
-  static address jbyte_fill()          { return _jbyte_fill; }
-  static address jshort_fill()         { return _jshort_fill; }
-  static address jint_fill()           { return _jint_fill; }
-  static address arrayof_jbyte_fill()  { return _arrayof_jbyte_fill; }
-  static address arrayof_jshort_fill() { return _arrayof_jshort_fill; }
-  static address arrayof_jint_fill()   { return _arrayof_jint_fill; }
-
-  static address aescrypt_encryptBlock()                { return _aescrypt_encryptBlock; }
-  static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
-  static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
-  static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
-  static address electronicCodeBook_encryptAESCrypt()   { return _electronicCodeBook_encryptAESCrypt; }
-  static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
-  static address poly1305_processBlocks()               { return _poly1305_processBlocks; }
-  static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
-  static address ghash_processBlocks()   { return _ghash_processBlocks; }
-  static address chacha20Block()         { return _chacha20Block; }
-  static address base64_encodeBlock()    { return _base64_encodeBlock; }
-  static address base64_decodeBlock()    { return _base64_decodeBlock; }
-  static address md5_implCompress()      { return _md5_implCompress; }
-  static address md5_implCompressMB()    { return _md5_implCompressMB; }
-  static address sha1_implCompress()     { return _sha1_implCompress; }
-  static address sha1_implCompressMB()   { return _sha1_implCompressMB; }
-  static address sha256_implCompress()   { return _sha256_implCompress; }
-  static address sha256_implCompressMB() { return _sha256_implCompressMB; }
-  static address sha512_implCompress()   { return _sha512_implCompress; }
-  static address sha512_implCompressMB() { return _sha512_implCompressMB; }
-  static address sha3_implCompress()     { return _sha3_implCompress; }
-  static address sha3_implCompressMB()   { return _sha3_implCompressMB; }
-
-  static address updateBytesCRC32()    { return _updateBytesCRC32; }
-  static address crc_table_addr()      { return _crc_table_adr; }
-
-  static address crc32c_table_addr()   { return _crc32c_table_addr; }
-  static address updateBytesCRC32C()   { return _updateBytesCRC32C; }
-  static address updateBytesAdler32()  { return _updateBytesAdler32; }
-
-  static address multiplyToLen()       { return _multiplyToLen; }
-  static address squareToLen()         { return _squareToLen; }
-  static address mulAdd()              { return _mulAdd; }
-  static address montgomeryMultiply()  { return _montgomeryMultiply; }
-  static address montgomerySquare()    { return _montgomerySquare; }
-  static address bigIntegerRightShift() { return _bigIntegerRightShiftWorker; }
-  static address bigIntegerLeftShift()  { return _bigIntegerLeftShiftWorker; }
-  static address galoisCounterMode_AESCrypt()   { return _galoisCounterMode_AESCrypt; }
-
-  static address vectorizedMismatch()  { return _vectorizedMismatch; }
-
-  static address dexp()                { return _dexp; }
-  static address dlog()                { return _dlog; }
-  static address dlog10()              { return _dlog10; }
-  static address dpow()                { return _dpow; }
-  static address dsin()                { return _dsin; }
-  static address dcos()                { return _dcos; }
-  static address dlibm_reduce_pi04l()  { return _dlibm_reduce_pi04l; }
-  static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
-  static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
-  static address dtan()                { return _dtan; }
-
-  static address cont_thaw()           { return _cont_thaw; }
-  static address cont_returnBarrier()  { return _cont_returnBarrier; }
-  static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
-
-  JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
+  static jshort f2hf(jfloat x) {
+    assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
+    typedef jshort (*f2hf_stub_t)(jfloat x);
+    return ((f2hf_stub_t)_f2hf)(x);
+  }
+  static jfloat hf2f(jshort x) {
+    assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
+    typedef jfloat (*hf2f_stub_t)(jshort x);
+    return ((hf2f_stub_t)_hf2f)(x);
+  }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
-  //
-  // Default versions of the above arraycopy functions for platforms which do
-  // not have specialized versions
+  // Default versions of some of the arraycopy functions for platforms
+  // which do not have specialized versions
   //
   static void jbyte_copy     (jbyte*  src, jbyte*  dest, size_t count);
   static void jshort_copy    (jshort* src, jshort* dest, size_t count);
@@ -449,6 +405,7 @@ class StubRoutines: AllStatic {
   static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
+
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,16 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main/othervm --enable-preview MatchExceptionTest
+ * @run main MatchExceptionTest
  */
 
 import java.nio.file.Path;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.util.Arrays;
 
 import toolbox.JavacTask;
@@ -50,7 +49,7 @@ public class MatchExceptionTest extends TestRunner {
     private static final String TEST_METHOD = "test";
 
     ToolBox tb;
-    ClassFile cf;
+    ClassModel cf;
 
     public MatchExceptionTest() {
         super(System.err);
@@ -90,11 +89,10 @@ public class MatchExceptionTest extends TestRunner {
             }
         }
         Setup[] variants = new Setup[] {
-            new Setup(false, "-source", "20"),
-            new Setup(false, "-source", JAVA_VERSION),
-            new Setup(true, "-source", JAVA_VERSION, "--enable-preview"),
+            new Setup(false, "--release", "20"),
+            new Setup(true),
         };
-        record Source(String source, boolean needsPreview) {}
+        record Source(String source, boolean needs21) {}
         Source[] sources = new Source[] {
             new Source(codeStatement, true),
             new Source(codeExpression, false),
@@ -102,8 +100,8 @@ public class MatchExceptionTest extends TestRunner {
         Path curPath = Path.of(".");
         for (Source source : sources) {
             for (Setup variant : variants) {
-                if (source.needsPreview &&
-                    !Arrays.asList(variant.options).contains("--enable-preview")) {
+                if (source.needs21 &&
+                    !Arrays.asList(variant.options).contains("21")) {
                     continue;
                 }
                 new JavacTask(tb)
@@ -112,15 +110,14 @@ public class MatchExceptionTest extends TestRunner {
                         .outdir(curPath)
                         .run();
 
-                cf = ClassFile.read(curPath.resolve("Test.class"));
+                cf = ClassFile.of().parse(curPath.resolve("Test.class"));
                 boolean incompatibleClassChangeErrror = false;
                 boolean matchException = false;
-                for (CPInfo entry : cf.constant_pool.entries()) {
-                    if (entry.getTag() == ConstantPool.CONSTANT_Class) {
-                        CONSTANT_Class_info clazz = (CONSTANT_Class_info) entry;
-                        incompatibleClassChangeErrror |=
-                                "java/lang/IncompatibleClassChangeError".equals(clazz.getName());
-                        matchException |= "java/lang/MatchException".equals(clazz.getName());
+                for (PoolEntry pe : cf.constantPool()) {
+                    if (pe instanceof ClassEntry clazz) {
+                        incompatibleClassChangeErrror |= clazz.name().equalsString(
+                                "java/lang/IncompatibleClassChangeError");
+                        matchException |= clazz.name().equalsString("java/lang/MatchException");
                     }
                 }
                 if (variant.hasMatchException) {

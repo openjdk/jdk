@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/zipLibrary.hpp"
 
 // The VM class loader.
 #include <sys/stat.h>
@@ -56,8 +58,6 @@ public:
 
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
-  // Is this entry created from the "Class-path" attribute from a JAR Manifest?
-  virtual bool from_class_path_attr() const { return false; }
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const { return nullptr; }
   virtual void close_jimage() {}
@@ -84,30 +84,16 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
 
-// Type definitions for zip file and zip file entry
-typedef void* jzfile;
-typedef struct {
-  char *name;                   /* entry name */
-  jlong time;                   /* modification time */
-  jlong size;                   /* size of uncompressed data */
-  jlong csize;                  /* size of compressed data (zero if uncompressed) */
-  jint crc;                     /* crc of uncompressed data */
-  char *comment;                /* optional zip file comment */
-  jbyte *extra;                 /* optional extra data */
-  jlong pos;                    /* position of LOC header (if negative) or data */
-} jzentry;
-
 class ClassPathZipEntry: public ClassPathEntry {
  private:
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
-  bool _from_class_path_attr; // From the "Class-path" attribute of a jar file
  public:
   bool is_jar_file() const { return true;  }
-  bool from_class_path_attr() const { return _from_class_path_attr; }
   const char* name() const { return _zip_name; }
-  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
+  ClassPathZipEntry(jzfile* zip, const char* zip_name);
   virtual ~ClassPathZipEntry();
+  bool has_entry(JavaThread* current, const char* name);
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
@@ -151,6 +137,7 @@ public:
 class ClassLoader: AllStatic {
  public:
   enum ClassLoaderType {
+    OTHER = 0,
     BOOT_LOADER = 1,      /* boot loader */
     PLATFORM_LOADER  = 2, /* PlatformClassLoader */
     APP_LOADER  = 3       /* AppClassLoader */
@@ -168,7 +155,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
   static PerfCounter* _perf_class_link_selftime;
-  static PerfCounter* _perf_sys_class_lookup_time;
   static PerfCounter* _perf_shared_classload_time;
   static PerfCounter* _perf_sys_classload_time;
   static PerfCounter* _perf_app_classload_time;
@@ -179,8 +165,25 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_define_appclass_selftime;
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
+  static PerfCounter* _perf_ik_link_methods_time;
+  static PerfCounter* _perf_method_adapters_time;
+  static PerfCounter* _perf_ik_link_methods_count;
+  static PerfCounter* _perf_method_adapters_count;
+
+  static PerfCounter* _perf_resolve_indy_time;
+  static PerfCounter* _perf_resolve_invokehandle_time;
+  static PerfCounter* _perf_resolve_mh_time;
+  static PerfCounter* _perf_resolve_mt_time;
+
+  static PerfCounter* _perf_resolve_indy_count;
+  static PerfCounter* _perf_resolve_invokehandle_count;
+  static PerfCounter* _perf_resolve_mh_count;
+  static PerfCounter* _perf_resolve_mt_count;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
+
+  // Count the time taken to hash the scondary superclass arrays.
+  static PerfCounter* _perf_secondary_hash_time;
 
   // The boot class path consists of 3 ordered pieces:
   //  1. the module/path pairs specified to --patch-module
@@ -215,25 +218,7 @@ class ClassLoader: AllStatic {
   // Last entry in linked list of appended ClassPathEntry instances
   static ClassPathEntry* volatile _last_append_entry;
 
-  // Info used by CDS
-  CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
-  CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
-  CDS_ONLY(static ClassPathEntry* _module_path_entries;)
-  CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(JavaThread* current, const char* class_path);)
-  CDS_ONLY(static void setup_module_search_path(JavaThread* current, const char* path);)
-  static void add_to_app_classpath_entries(JavaThread* current,
-                                           const char* path,
-                                           ClassPathEntry* entry,
-                                           bool check_for_duplicates);
-  CDS_ONLY(static void add_to_module_path_entries(const char* path,
-                                           ClassPathEntry* entry);)
-
-  // cache the zip library handle
-  static void* _zip_handle;
  public:
-  CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
-  CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
   static bool has_bootclasspath_append() { return first_append_entry() != nullptr; }
 
@@ -249,21 +234,13 @@ class ClassLoader: AllStatic {
 
   static void* dll_lookup(void* lib, const char* name, const char* path);
   static void load_java_library();
-  static void load_zip_library();
   static void load_jimage_library();
 
- private:
-  static int  _libzip_loaded; // used to sync loading zip.
-  static void release_load_zip_library();
-
  public:
-  static inline void load_zip_library_if_needed();
-  static void* zip_library_handle() { return _zip_handle; }
+  static void* zip_library_handle();
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
-                                                 const char *path, const struct stat* st,
-                                                 bool is_boot_append,
-                                                 bool from_class_path_attr);
+                                                 const char *path, const struct stat* st);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
@@ -273,10 +250,7 @@ class ClassLoader: AllStatic {
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(JavaThread* current,
-                                           const char *path,
-                                           bool check_for_duplicates,
-                                           bool is_boot_append,
-                                           bool from_class_path_attr);
+                                           const char *path);
   static void print_bootclasspath();
 
   // Timing
@@ -290,8 +264,10 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
-  static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
+  static PerfCounter* perf_secondary_hash_time() {
+    return _perf_secondary_hash_time;
+  }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }
   static PerfCounter* perf_app_classload_selftime()   { return _perf_app_classload_selftime; }
@@ -301,6 +277,23 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
+
+  static PerfCounter* perf_ik_link_methods_time() { return _perf_ik_link_methods_time; }
+  static PerfCounter* perf_method_adapters_time() { return _perf_method_adapters_time; }
+  static PerfCounter* perf_ik_link_methods_count() { return _perf_ik_link_methods_count; }
+  static PerfCounter* perf_method_adapters_count() { return _perf_method_adapters_count; }
+
+  static PerfCounter* perf_resolve_invokedynamic_time() { return _perf_resolve_indy_time; }
+  static PerfCounter* perf_resolve_invokehandle_time() { return _perf_resolve_invokehandle_time; }
+  static PerfCounter* perf_resolve_method_handle_time() { return _perf_resolve_mh_time; }
+  static PerfCounter* perf_resolve_method_type_time() { return _perf_resolve_mt_time; }
+
+  static PerfCounter* perf_resolve_invokedynamic_count() { return _perf_resolve_indy_count; }
+  static PerfCounter* perf_resolve_invokehandle_count() { return _perf_resolve_invokehandle_count; }
+  static PerfCounter* perf_resolve_method_handle_count() { return _perf_resolve_mh_count; }
+  static PerfCounter* perf_resolve_method_type_count() { return _perf_resolve_mt_count; }
+
+  static void print_counters(outputStream *st);
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
@@ -315,14 +308,14 @@ class ClassLoader: AllStatic {
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(JavaThread* current, Symbol* module_name);
 
-  // Attempt load of individual class from either the patched or exploded modules build lists
+  // Search the module list for the class file stream based on the file name and java package
   static ClassFileStream* search_module_entries(JavaThread* current,
                                                 const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                const char* const class_name,
+                                                PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                 const char* const file_name);
 
   // Load individual .class file
-  static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
+  static InstanceKlass* load_class(Symbol* class_name, PackageEntry* pkg_entry, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.
@@ -341,8 +334,6 @@ class ClassLoader: AllStatic {
   // Initialization
   static void initialize(TRAPS);
   static void classLoader_init2(JavaThread* current);
-  CDS_ONLY(static void initialize_shared_path(JavaThread* current);)
-  CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
 
@@ -351,25 +342,10 @@ class ClassLoader: AllStatic {
   static bool is_in_patch_mod_entries(Symbol* module_name);
 
 #if INCLUDE_CDS
-  // Sharing dump and restore
-
-  // Helper function used by CDS code to get the number of boot classpath
-  // entries during shared classpath setup time.
-  static int num_boot_classpath_entries();
-
-  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e);
-
-  // Helper function used by CDS code to get the number of app classpath
-  // entries during shared classpath setup time.
-  static int num_app_classpath_entries();
-
-  // Helper function used by CDS code to get the number of module path
-  // entries during shared classpath setup time.
-  static int num_module_path_entries();
-  static void  exit_with_path_failure(const char* error, const char* message);
-  static char* skip_uri_protocol(char* source);
+  static char* uri_to_path(const char* uri);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
 #endif
 
   static char* lookup_vm_options();
@@ -396,7 +372,7 @@ class ClassLoader: AllStatic {
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);
 
   // creates a class path zip entry (returns null if JAR file cannot be opened)
-  static ClassPathZipEntry* create_class_path_zip_entry(const char *apath, bool is_boot_append);
+  static ClassPathZipEntry* create_class_path_zip_entry(const char *path);
 
   static bool string_ends_with(const char* str, const char* str_to_find);
 

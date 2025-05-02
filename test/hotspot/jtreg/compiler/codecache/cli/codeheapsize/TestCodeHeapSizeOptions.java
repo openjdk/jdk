@@ -26,6 +26,7 @@
  * @key randomness
  * @bug 8015774
  * @summary Verify processing of options related to code heaps sizing.
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler

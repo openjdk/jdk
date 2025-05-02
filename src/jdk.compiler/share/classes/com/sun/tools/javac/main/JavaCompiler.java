@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -41,6 +41,7 @@ import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
@@ -84,7 +85,10 @@ import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
@@ -93,9 +97,11 @@ import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
+import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static javax.tools.StandardLocation.ANNOTATION_PROCESSOR_PATH;
 
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -296,6 +302,10 @@ public class JavaCompiler {
      */
     protected Flow flow;
 
+    /** The warning analyzer.
+     */
+    protected WarningAnalyzer warningAnalyzer;
+
     /** The modules visitor
      */
     protected Modules modules;
@@ -371,6 +381,7 @@ public class JavaCompiler {
 
     /** Construct a new compiler using a shared context.
      */
+    @SuppressWarnings("this-escape")
     public JavaCompiler(Context context) {
         this.context = context;
         context.put(compilerKey, this);
@@ -408,6 +419,7 @@ public class JavaCompiler {
         chk = Check.instance(context);
         gen = Gen.instance(context);
         flow = Flow.instance(context);
+        warningAnalyzer = WarningAnalyzer.instance(context);
         transTypes = TransTypes.instance(context);
         lower = Lower.instance(context);
         annotate = Annotate.instance(context);
@@ -900,18 +912,11 @@ public class JavaCompiler {
             taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
         }
 
-        if (processors != null && processors.iterator().hasNext())
-            explicitAnnotationProcessingRequested = true;
         // as a JavaCompiler can only be used once, throw an exception if
         // it has been used before.
         if (hasBeenUsed)
             checkReusable();
         hasBeenUsed = true;
-
-        // forcibly set the equivalent of -Xlint:-options, so that no further
-        // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
 
         start_msec = now();
 
@@ -947,20 +952,20 @@ public class JavaCompiler {
             if (!CompileState.ATTR.isAfter(shouldStopPolicyIfNoError)) {
                 switch (compilePolicy) {
                 case SIMPLE:
-                    generate(desugar(flow(attribute(todo))));
+                    generate(desugar(warn(flow(attribute(todo)))));
                     break;
 
                 case BY_FILE: {
                         Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
                         while (!q.isEmpty() && !shouldStop(CompileState.ATTR)) {
-                            generate(desugar(flow(attribute(q.remove()))));
+                            generate(desugar(warn(flow(attribute(q.remove())))));
                         }
                     }
                     break;
 
                 case BY_TODO:
                     while (!todo.isEmpty())
-                        generate(desugar(flow(attribute(todo.remove()))));
+                        generate(desugar(warn(flow(attribute(todo.remove())))));
                     break;
 
                 default:
@@ -970,6 +975,10 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
+
+            // In case an Abort was thrown before processAnnotations could be called,
+            // we could have deferred diagnostics that haven't been reported.
+            reportDeferredDiagnosticAndClearHandler();
         } finally {
             if (verbose) {
                 elapsed_msec = elapsed(start_msec);
@@ -1121,14 +1130,19 @@ public class JavaCompiler {
     public void initProcessAnnotations(Iterable<? extends Processor> processors,
                                        Collection<? extends JavaFileObject> initialFiles,
                                        Collection<String> initialClassNames) {
-        // Process annotations if processing is not disabled and there
-        // is at least one Processor available.
+        if (processors != null && processors.iterator().hasNext())
+            explicitAnnotationProcessingRequested = true;
+
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
             procEnvImpl = JavacProcessingEnvironment.instance(context);
             procEnvImpl.setProcessors(processors);
-            processAnnotations = procEnvImpl.atLeastOneProcessor();
+
+            // Process annotations if processing is requested and there
+            // is at least one Processor available.
+            processAnnotations = procEnvImpl.atLeastOneProcessor() &&
+                explicitAnnotationProcessingRequested();
 
             if (processAnnotations) {
                 options.put("parameters", "parameters");
@@ -1137,11 +1151,11 @@ public class JavaCompiler {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
-            } else { // free resources
-                procEnvImpl.close();
             }
+        } else { // free resources
+            procEnvImpl.close();
         }
     }
 
@@ -1168,8 +1182,7 @@ public class JavaCompiler {
             // or other errors during enter which cannot be fixed by running
             // any annotation processors.
             if (processAnnotations) {
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
+                reportDeferredDiagnosticAndClearHandler();
                 return ;
             }
         }
@@ -1205,8 +1218,7 @@ public class JavaCompiler {
                  // processing
                 if (!explicitAnnotationProcessingRequested()) {
                     log.error(Errors.ProcNoExplicitAnnotationProcessingRequested(classnames));
-                    deferredDiagnosticHandler.reportDeferredDiagnostics();
-                    log.popDiagnosticHandler(deferredDiagnosticHandler);
+                    reportDeferredDiagnosticAndClearHandler();
                     return ; // TODO: Will this halt compilation?
                 } else {
                     boolean errors = false;
@@ -1240,8 +1252,7 @@ public class JavaCompiler {
                         }
                     }
                     if (errors) {
-                        deferredDiagnosticHandler.reportDeferredDiagnostics();
-                        log.popDiagnosticHandler(deferredDiagnosticHandler);
+                        reportDeferredDiagnosticAndClearHandler();
                         return ;
                     }
                 }
@@ -1258,10 +1269,7 @@ public class JavaCompiler {
             }
         } catch (CompletionFailure ex) {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
-            if (deferredDiagnosticHandler != null) {
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
-            }
+            reportDeferredDiagnosticAndClearHandler();
         }
     }
 
@@ -1278,16 +1286,20 @@ public class JavaCompiler {
     boolean explicitAnnotationProcessingRequested() {
         return
             explicitAnnotationProcessingRequested ||
-            explicitAnnotationProcessingRequested(options);
+            explicitAnnotationProcessingRequested(options, fileManager);
     }
 
-    static boolean explicitAnnotationProcessingRequested(Options options) {
+    static boolean explicitAnnotationProcessingRequested(Options options, JavaFileManager fileManager) {
         return
             options.isSet(PROCESSOR) ||
             options.isSet(PROCESSOR_PATH) ||
             options.isSet(PROCESSOR_MODULE_PATH) ||
             options.isSet(PROC, "only") ||
-            options.isSet(XPRINT);
+            options.isSet(PROC, "full") ||
+            options.isSet(A) ||
+            options.isSet(XPRINT) ||
+            fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH);
+        // Skipping -XprintRounds and -XprintProcessorInfo
     }
 
     public void setDeferredDiagnosticHandler(Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
@@ -1413,6 +1425,56 @@ public class JavaCompiler {
         }
     }
 
+    /**
+     * Check for various things to warn about.
+     *
+     * @return the list of attributed parse trees
+     */
+    public Queue<Env<AttrContext>> warn(Queue<Env<AttrContext>> envs) {
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
+        for (Env<AttrContext> env: envs) {
+            warn(env, results);
+        }
+        return stopIfError(CompileState.WARN, results);
+    }
+
+    /**
+     * Check for various things to warn about in an attributed parse tree.
+     */
+    public Queue<Env<AttrContext>> warn(Env<AttrContext> env) {
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
+        warn(env, results);
+        return stopIfError(CompileState.WARN, results);
+    }
+
+    /**
+     * Check for various things to warn about in an attributed parse tree.
+     */
+    protected void warn(Env<AttrContext> env, Queue<Env<AttrContext>> results) {
+        if (compileStates.isDone(env, CompileState.WARN)) {
+            results.add(env);
+            return;
+        }
+
+        if (shouldStop(CompileState.WARN))
+            return;
+
+        if (verboseCompilePolicy)
+            printNote("[warn " + env.enclClass.sym + "]");
+        JavaFileObject prev = log.useSource(
+                                            env.enclClass.sym.sourcefile != null ?
+                                            env.enclClass.sym.sourcefile :
+                                            env.toplevel.sourcefile);
+        try {
+            warningAnalyzer.analyzeTree(env);
+            compileStates.put(env, CompileState.WARN);
+            results.add(env);
+        }
+        finally {
+            log.useSource(prev);
+        }
+    }
+
     private TaskEvent newAnalyzeTaskEvent(Env<AttrContext> env) {
         JCCompilationUnit toplevel = env.toplevel;
         ClassSymbol sym;
@@ -1470,6 +1532,10 @@ public class JavaCompiler {
             results.addAll(desugaredEnvs.get(env));
             return;
         }
+
+        // Ensure the file has reached the WARN state
+        if (!compileStates.isDone(env, CompileState.WARN))
+            warn(env);
 
         /**
          * Ensure that superclasses of C are desugared before C itself. This is
@@ -1529,14 +1595,16 @@ public class JavaCompiler {
                 super.visitBindingPattern(tree);
             }
             @Override
+            public void visitTypeTest(JCInstanceOf tree) {
+                if (tree.pattern.type.isPrimitive()) {
+                    hasPatterns = true;
+                }
+                super.visitTypeTest(tree);
+            }
+            @Override
             public void visitRecordPattern(JCRecordPattern that) {
                 hasPatterns = true;
                 super.visitRecordPattern(that);
-            }
-            @Override
-            public void visitParenthesizedPattern(JCTree.JCParenthesizedPattern tree) {
-                hasPatterns = true;
-                super.visitParenthesizedPattern(tree);
             }
             @Override
             public void visitSwitch(JCSwitch tree) {
@@ -1552,8 +1620,8 @@ public class JavaCompiler {
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);
         for (Env<AttrContext> dep: scanner.dependencies) {
-        if (!compileStates.isDone(dep, CompileState.FLOW))
-            desugaredEnvs.put(dep, desugar(flow(attribute(dep))));
+        if (!compileStates.isDone(dep, CompileState.WARN))
+            desugaredEnvs.put(dep, desugar(warn(flow(attribute(dep)))));
         }
 
         //We need to check for error another time as more classes might
@@ -1602,14 +1670,6 @@ public class JavaCompiler {
 
             compileStates.put(env, CompileState.TRANSPATTERNS);
 
-            if (scanner.hasLambdas) {
-                if (shouldStop(CompileState.UNLAMBDA))
-                    return;
-
-                env.tree = LambdaToMethod.instance(context).translateTopLevelClass(env, env.tree, localMake);
-                compileStates.put(env, CompileState.UNLAMBDA);
-            }
-
             if (shouldStop(CompileState.LOWER))
                 return;
 
@@ -1630,6 +1690,16 @@ public class JavaCompiler {
 
             if (shouldStop(CompileState.LOWER))
                 return;
+
+            if (scanner.hasLambdas) {
+                if (shouldStop(CompileState.UNLAMBDA))
+                    return;
+
+                for (JCTree def : cdefs) {
+                    LambdaToMethod.instance(context).translateTopLevelClass(env, def, localMake);
+                }
+                compileStates.put(env, CompileState.UNLAMBDA);
+            }
 
             //generate code for each class
             for (List<JCTree> l = cdefs; l.nonEmpty(); l = l.tail) {
@@ -1813,7 +1883,7 @@ public class JavaCompiler {
 
     private Name parseAndGetName(JavaFileObject fo,
                                  Function<JCTree.JCCompilationUnit, Name> tree2Name) {
-        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        DiagnosticHandler dh = log.new DiscardDiagnosticHandler();
         JavaFileObject prevSource = log.useSource(fo);
         try {
             JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);
@@ -1823,6 +1893,18 @@ public class JavaCompiler {
         } finally {
             log.popDiagnosticHandler(dh);
             log.useSource(prevSource);
+        }
+    }
+
+    public void reportDeferredDiagnosticAndClearHandler() {
+        if (deferredDiagnosticHandler != null) {
+            ToIntFunction<JCDiagnostic> diagValue =
+                    d -> d.isFlagSet(RECOVERABLE) ? 1 : 0;
+            Comparator<JCDiagnostic> compareDiags =
+                    (d1, d2) -> diagValue.applyAsInt(d1) - diagValue.applyAsInt(d2);
+            deferredDiagnosticHandler.reportDeferredDiagnostics(compareDiags);
+            log.popDiagnosticHandler(deferredDiagnosticHandler);
+            deferredDiagnosticHandler = null;
         }
     }
 

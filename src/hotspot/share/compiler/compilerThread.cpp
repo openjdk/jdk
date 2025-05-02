@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/javaThread.inline.hpp"
 
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
-                               : JavaThread(&CompilerThread::thread_entry) {
+  : JavaThread(&CompilerThread::thread_entry, 0, mtCompiler) {
   _env   = nullptr;
   _log   = nullptr;
   _task  = nullptr;
   _queue = queue;
   _counters = counters;
   _buffer_blob = nullptr;
+  _can_call_java = false;
   _compiler = nullptr;
-
-  // Compiler uses resource area for compilation, let's bias it to mtCompiler
-  resource_area()->bias_to(mtCompiler);
+  _arena_stat = nullptr;
 
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;
@@ -51,6 +49,17 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
+  // arenastat should have been deleted at the end of the compilation
+  assert(_arena_stat == nullptr, "Should be null");
+}
+
+void CompilerThread::set_compiler(AbstractCompiler* c) {
+  /*
+   * Compiler threads need to make Java upcalls to the jargraal compiler.
+   * Java upcalls are also needed by the InterpreterRuntime when using jargraal.
+   */
+  _can_call_java = c != nullptr && c->is_jvmci() JVMCI_ONLY(&& !UseJVMCINativeLibrary);
+  _compiler = c;
 }
 
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
@@ -58,6 +67,7 @@ void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   CompileBroker::compiler_thread_loop();
 }
 
-bool CompilerThread::can_call_java() const {
-  return _compiler != nullptr && _compiler->is_jvmci();
+// Hide native compiler threads from external view.
+bool CompilerThread::is_hidden_from_external_view() const {
+  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }

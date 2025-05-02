@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8027066
  * @summary Tests that the same array can be encoded twice
- * @run main/othervm -Djava.security.manager=allow Test8027066
+ * @run main/othervm Test8027066
  * @author Anton Nashatyrev
  */
 public class Test8027066 extends AbstractTest<String[][]> {
     public static void main(String[] args) {
-        new Test8027066().test(true);
+        new Test8027066().test();
     }
 
     @Override

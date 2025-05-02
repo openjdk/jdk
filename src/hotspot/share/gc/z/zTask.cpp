@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,18 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
 
-ZTask::Task::Task(ZTask* task, const char* name) :
-    WorkerTask(name),
+ZTask::Task::Task(ZTask* task, const char* name)
+  : WorkerTask(name),
     _task(task) {}
 
 void ZTask::Task::work(uint worker_id) {
-  ZThread::set_worker_id(worker_id);
   _task->work();
-  ZThread::clear_worker_id();
 }
 
-ZTask::ZTask(const char* name) :
-    _worker_task(this, name) {}
+ZTask::ZTask(const char* name)
+  : _worker_task(this, name) {}
 
 const char* ZTask::name() const {
   return _worker_task.name();
@@ -45,3 +41,8 @@ const char* ZTask::name() const {
 WorkerTask* ZTask::worker_task() {
   return &_worker_task;
 }
+
+ZRestartableTask::ZRestartableTask(const char* name)
+  : ZTask(name) {}
+
+void ZRestartableTask::resize_workers(uint nworkers) {}

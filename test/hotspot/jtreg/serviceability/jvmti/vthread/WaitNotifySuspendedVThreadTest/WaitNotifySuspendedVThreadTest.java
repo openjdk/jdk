@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,14 @@
 /*
  * @test
  *
- * @summary Test verifies set/get TLS data and verifies it's consistency.
- * Test set TLS with thread name which it belongs to and verify this information when getting test.
- *  -- cbThreadStart
- *  -- by AgentThread
- *
- * Test doesn't verify that TLS is not NULL because for some threads TLS is not initialized initially.
- * TODO:
- *  -- verify that TLS is not NULL (not possible to do with jvmti, ThreadStart might be called too late)
- *  -- add more events where TLS is set *first time*, it is needed to test lazily jvmtThreadState init
- *  -- set/get TLS from other JavaThreads (not from agent and current thread)
- *  -- set/get for suspened (blocked?) threads
- *  -- split test to "sanity" and "stress" version
- *  -- update properties to run jvmti stress tests non-concurrently?
- *
+ * @summary Test verifies that JVMTI raw monitor wait/notify works for
+ * suspended virtual thread.
  *
  * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} WaitNotifySuspendedVThreadTest.java
+ * @compile WaitNotifySuspendedVThreadTest.java
  * @run main/othervm/native
- *     --enable-preview
- *     -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *     -Djdk.virtualThreadScheduler.maxPoolSize=1
  *     -agentlib:WaitNotifySuspendedVThread WaitNotifySuspendedVThreadTest
  */
 
@@ -65,8 +52,6 @@ public class WaitNotifySuspendedVThreadTest {
         WaitNotifySuspendedVThreadTask.setBreakpoint();
         WaitNotifySuspendedVThreadTask task = new WaitNotifySuspendedVThreadTask();
         Thread t = Thread.ofVirtual().start(task);
-
-        Thread.sleep(1000);
         WaitNotifySuspendedVThreadTask.notifyRawMonitors(t);
         t.join();
     }

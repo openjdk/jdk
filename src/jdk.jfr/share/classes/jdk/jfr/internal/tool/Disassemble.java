@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ import java.util.Deque;
 import java.util.List;
 
 import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 final class Disassemble extends Command {
 
@@ -164,7 +165,7 @@ final class Disassemble extends Command {
     }
 
     private List<Long> findChunkSizes(Path p) throws IOException {
-        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {
+        try (RecordingInput input = new RecordingInput(p.toFile())) {
             List<Long> sizes = new ArrayList<>();
             ChunkHeader ch = new ChunkHeader(input);
             sizes.add(ch.getSize());
@@ -179,7 +180,7 @@ final class Disassemble extends Command {
     private List<Long> combineChunkSizes(List<Long> sizes, int maxChunks, long maxSize) {
         List<Long> reduced = new ArrayList<Long>();
         int chunks = 1;
-        long fileSize = sizes.get(0);
+        long fileSize = sizes.getFirst();
         for (int i = 1; i < sizes.size(); i++) {
             long size = sizes.get(i);
             if (fileSize + size > maxSize || chunks == maxChunks) {
@@ -221,9 +222,9 @@ final class Disassemble extends Command {
                 Path p = directory.resolve(formattedFilename);
                 File splittedFile = p.toFile();
                 println("Writing " + splittedFile + " ... " + bytes.length);
-                FileOutputStream fos = new FileOutputStream(splittedFile);
-                fos.write(bytes);
-                fos.close();
+                try (var fos = new FileOutputStream(splittedFile)) {
+                    fos.write(bytes);
+                }
             }
         } catch (IOException ioe) {
             throw new UserDataException("i/o error writing file " + file);

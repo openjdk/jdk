@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8013827 8011950 8017212 8025128
+ * @modules java.base/jdk.internal.util
  * @summary Check whether File.createTempFile can handle special parameters
  * @author Dan Xu
  */
@@ -32,12 +33,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
+import jdk.internal.util.StaticProperty;
 
 public class SpecialTempFile {
-
+    //
+    // If exceptionExpected == null, then any IOException thrown by
+    // File.createTempFile is ignored.
+    //
     private static void test(String name, String[] prefix, String[] suffix,
-                             boolean exceptionExpected) throws IOException
+                             Boolean exceptionExpected) throws IOException
     {
         if (prefix == null || suffix == null
             || prefix.length != suffix.length)
@@ -48,7 +55,7 @@ public class SpecialTempFile {
         final String exceptionMsg = "Unable to create temporary file";
         String[] dirs = { null, "." };
 
-        Path testPath = Paths.get(System.getProperty("test.dir", "."));
+        Path testPath = Path.of(System.getProperty("test.dir", "."));
         for (int i = 0; i < prefix.length; i++) {
             boolean exceptionThrown = false;
             File f = null;
@@ -64,19 +71,21 @@ public class SpecialTempFile {
                     f = File.createTempFile(prefix[i], suffix[i],
                         tempDir.toFile());
                 } catch (IOException e) {
-                    if (exceptionExpected) {
-                        if (e.getMessage().startsWith(exceptionMsg))
-                            exceptionThrown = true;
-                        else
-                            System.out.println("Wrong error message:" +
-                                               e.getMessage());
-                    } else {
-                        throw e;
+                    if (exceptionExpected != null) {
+                        if (exceptionExpected) {
+                            if (e.getMessage().startsWith(exceptionMsg))
+                                exceptionThrown = true;
+                            else
+                                System.out.println("Wrong error message:" +
+                                                   e.getMessage());
+                        } else {
+                            throw e;
+                        }
+
+                        if (exceptionExpected && (!exceptionThrown || f != null))
+                            throw new RuntimeException("IOException expected");
                     }
                 }
-
-                if (exceptionExpected && (!exceptionThrown || f != null))
-                    throw new RuntimeException("IOException is expected");
             }
         }
     }
@@ -99,12 +108,18 @@ public class SpecialTempFile {
         test("SlashedName", slashPre, slashSuf, true);
 
         // Windows tests
-        if (!System.getProperty("os.name").startsWith("Windows"))
+        if (!OperatingSystem.isWindows())
             return;
 
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        test("ReservedName", resvPre, resvSuf, true);
+
+        System.out.println("OS name:    " + StaticProperty.osName() + "\n" +
+                           "OS version: " + OSVersion.current());
+
+        // Here the test is for whether File.createTempFile hangs, so whether
+        // an exception is thrown is ignored: expectedException == null
+        test("ReservedName", resvPre, resvSuf, null);
     }
 }

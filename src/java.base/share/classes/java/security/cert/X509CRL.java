@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ import java.util.Set;
  * }
  * }</pre>
  *
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -127,6 +130,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * @return true iff the encoded forms of the two CRLs
      * match, false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
@@ -145,19 +149,15 @@ public abstract class X509CRL extends CRL implements X509Extension {
     }
 
     /**
-     * Returns a hashcode value for this CRL from its
-     * encoded form.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this CRL from its
+     * encoded form}
      */
+    @Override
     public int hashCode() {
         int retval = 0;
         try {
             byte[] crlData = X509CRLImpl.getEncodedInternal(this);
-            for (int i = 1; i < crlData.length; i++) {
-                 retval += crlData[i] * i;
-            }
-            return retval;
+            return Arrays.hashCode(crlData);
         } catch (CRLException e) {
             return retval;
         }
@@ -460,6 +460,11 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc3279
+     *      RFC 3279: Algorithms and Identifiers for the Internet X.509
+     *              Public Key Infrastructure Certificate and Certificate
+     *              Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 

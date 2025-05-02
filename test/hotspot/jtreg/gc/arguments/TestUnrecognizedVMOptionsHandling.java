@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,34 +40,30 @@ public class TestUnrecognizedVMOptionsHandling {
 
   public static void main(String args[]) throws Exception {
     // The first two JAVA processes are expected to fail, but with a correct VM option suggestion
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    OutputAnalyzer outputWithError = GCArguments.executeLimitedTestJava(
       "-XX:+UseDynamicNumberOfGcThreads",
       "-version"
       );
-    OutputAnalyzer outputWithError = new OutputAnalyzer(pb.start());
     outputWithError.shouldContain("Did you mean '(+/-)UseDynamicNumberOfGCThreads'?");
     if (outputWithError.getExitValue() == 0) {
       throw new RuntimeException("Not expected to get exit value 0");
     }
 
-    pb = GCArguments.createJavaProcessBuilder(
+    outputWithError = GCArguments.executeLimitedTestJava(
       "-XX:MaxiumHeapSize=500m",
       "-version"
       );
-    outputWithError = new OutputAnalyzer(pb.start());
     outputWithError.shouldContain("Did you mean 'MaxHeapSize=<value>'?");
     if (outputWithError.getExitValue() == 0) {
       throw new RuntimeException("Not expected to get exit value 0");
     }
 
     // The last JAVA process should run successfully for the purpose of sanity check
-    pb = GCArguments.createJavaProcessBuilder(
+    OutputAnalyzer outputWithNoError = GCArguments.executeLimitedTestJava(
       "-XX:+UseDynamicNumberOfGCThreads",
       "-version"
       );
-    OutputAnalyzer outputWithNoError = new OutputAnalyzer(pb.start());
     outputWithNoError.shouldNotContain("Did you mean '(+/-)UseDynamicNumberOfGCThreads'?");
     outputWithNoError.shouldHaveExitValue(0);
   }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,18 @@ import static sun.nio.ch.EPoll.*;
  */
 
 class EPollPoller extends Poller {
-    private static final int MAX_EVENTS_TO_POLL = 512;
     private static final int ENOENT = 2;
 
     private final int epfd;
     private final int event;
+    private final int maxEvents;
     private final long address;
 
-    EPollPoller(boolean read) throws IOException {
-        super(read);
+    EPollPoller(boolean subPoller, boolean read) throws IOException {
         this.epfd = EPoll.create();
         this.event = (read) ? EPOLLIN : EPOLLOUT;
-        this.address = EPoll.allocatePollArray(MAX_EVENTS_TO_POLL);
+        this.maxEvents = (subPoller) ? 64 : 512;
+        this.address = EPoll.allocatePollArray(maxEvents);
     }
 
     @Override
@@ -62,13 +62,16 @@ class EPollPoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fdVal) {
-        EPoll.ctl(epfd, EPOLL_CTL_DEL, fdVal, 0);
+    void implDeregister(int fdVal, boolean polled) {
+        // event is disabled if already polled
+        if (!polled) {
+            EPoll.ctl(epfd, EPOLL_CTL_DEL, fdVal, 0);
+        }
     }
 
     @Override
     int poll(int timeout) throws IOException {
-        int n = EPoll.wait(epfd, address, MAX_EVENTS_TO_POLL, timeout);
+        int n = EPoll.wait(epfd, address, maxEvents, timeout);
         int i = 0;
         while (i < n) {
             long eventAddress = EPoll.getEvent(address, i);

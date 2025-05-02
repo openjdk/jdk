@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @enablePreview
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Short64VectorLoadStoreTests
  *
@@ -32,7 +34,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorMask;
@@ -54,7 +56,7 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withBitAlignment(8);
+    static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withByteAlignment(1);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
@@ -249,7 +251,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ShortVector fromArray(short[] a, int i) {
-        return ShortVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ShortVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -269,7 +272,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ShortVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return ShortVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ShortVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline
@@ -479,8 +483,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "shortByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<short[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Short.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Short.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Short.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -508,8 +512,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "shortByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<short[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Short.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Short.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Short.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -572,8 +576,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "shortByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<short[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Short.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Short.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Short.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -603,8 +607,8 @@ public class Short64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "shortByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<short[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Short.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Short.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Short.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromValues(SPECIES, mask);
 

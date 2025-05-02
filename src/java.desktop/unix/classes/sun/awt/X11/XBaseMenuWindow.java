@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1177,7 +1177,7 @@ public abstract class XBaseMenuWindow extends XWindow {
                   selectItem(getPrevSelectableItem(), true);
               } else {
                   //hide leaf moving focus to its parent
-                  //(equvivalent of pressing ESC)
+                  //(equivalent of pressing ESC)
                   XBaseMenuWindow pwnd = cwnd.getParentMenuWindow();
                   //Fix for 6272952: PIT: Pressing LEFT ARROW on a popup menu throws NullPointerException, XToolkit
                   if (pwnd != null) {

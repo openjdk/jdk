@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/callnode.hpp"
@@ -44,8 +43,8 @@
 // live-out sets.  This separate compilation is done in the outer loop below.
 PhaseLive::PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, bool keep_deltas)
   : Phase(LIVE),
-  _live(0),
-  _livein(0),
+  _live(nullptr),
+  _livein(nullptr),
   _cfg(cfg),
   _names(names),
   _arena(arena),
@@ -54,7 +53,6 @@ PhaseLive::PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, b
 
 void PhaseLive::compute(uint maxlrg) {
   _maxlrg   = maxlrg;
-  _worklist = new (_arena) Block_List();
 
   // Init the sparse live arrays.  This data is live on exit from here!
   // The _live info is the live-out info.
@@ -86,7 +84,9 @@ void PhaseLive::compute(uint maxlrg) {
   _deltas = NEW_RESOURCE_ARRAY(IndexSet*,_cfg.number_of_blocks());
   memset(_deltas, 0, sizeof(IndexSet*)* _cfg.number_of_blocks());
 
-  _free_IndexSet = NULL;
+  _free_IndexSet = nullptr;
+
+  Block_List worklist;
 
   // Blocks having done pass-1
   VectorSet first_pass;
@@ -135,13 +135,13 @@ void PhaseLive::compute(uint maxlrg) {
     // Push these live-in things to predecessors
     for (uint l = 1; l < block->num_preds(); l++) {
       Block* p = _cfg.get_block_for_node(block->pred(l));
-      add_liveout(p, use, first_pass);
+      add_liveout(worklist, p, use, first_pass);
 
       // PhiNode uses go in the live-out set of prior blocks.
       for (uint k = i; k > 0; k--) {
         Node *phi = block->get_node(k - 1);
         if (l < phi->req()) {
-          add_liveout(p, _names.at(phi->in(l)->_idx), first_pass);
+          add_liveout(worklist, p, _names.at(phi->in(l)->_idx), first_pass);
         }
       }
     }
@@ -149,15 +149,15 @@ void PhaseLive::compute(uint maxlrg) {
     first_pass.set(block->_pre_order);
 
     // Inner loop: blocks that picked up new live-out values to be propagated
-    while (_worklist->size()) {
-      Block* block = _worklist->pop();
+    while (worklist.size() != 0) {
+      Block* block = worklist.pop();
       IndexSet *delta = getset(block);
       assert(delta->count(), "missing delta set");
 
       // Add new-live-in to predecessors live-out sets
       for (uint l = 1; l < block->num_preds(); l++) {
         Block* predecessor = _cfg.get_block_for_node(block->pred(l));
-        add_liveout(predecessor, delta, first_pass);
+        add_liveout(worklist, predecessor, delta, first_pass);
       }
 
       freeset(block);
@@ -176,7 +176,7 @@ void PhaseLive::compute(uint maxlrg) {
     }
   }
   IndexSet *free = _free_IndexSet;
-  while (free != NULL) {
+  while (free != nullptr) {
     IndexSet *temp = free;
     free = free->next();
     temp->clear();
@@ -223,12 +223,12 @@ void PhaseLive::freeset(Block *p) {
   }
   f->set_next(_free_IndexSet);
   _free_IndexSet = f;           // Drop onto free list
-  _deltas[p->_pre_order-1] = NULL;
+  _deltas[p->_pre_order-1] = nullptr;
 }
 
 // Add a live-out value to a given blocks live-out set.  If it is new, then
 // also add it to the delta set and stick the block on the worklist.
-void PhaseLive::add_liveout(Block *p, uint r, VectorSet &first_pass) {
+void PhaseLive::add_liveout(Block_List& worklist, Block* p, uint r, VectorSet& first_pass) {
   IndexSet *live = &_live[p->_pre_order-1];
   if (live->insert(r)) {        // If actually inserted...
     // We extended the live-out set.  See if the value is generated locally.
@@ -236,7 +236,7 @@ void PhaseLive::add_liveout(Block *p, uint r, VectorSet &first_pass) {
     if (!_defs[p->_pre_order-1].member(r)) {
       if (!_deltas[p->_pre_order-1] && // Not on worklist?
           first_pass.test(p->_pre_order)) {
-        _worklist->push(p);     // Actually go on worklist if already 1st pass
+        worklist.push(p);     // Actually go on worklist if already 1st pass
       }
       getset(p)->insert(r);
     }
@@ -244,7 +244,7 @@ void PhaseLive::add_liveout(Block *p, uint r, VectorSet &first_pass) {
 }
 
 // Add a vector of live-out values to a given blocks live-out set.
-void PhaseLive::add_liveout(Block *p, IndexSet *lo, VectorSet &first_pass) {
+void PhaseLive::add_liveout(Block_List& worklist, Block* p, IndexSet* lo, VectorSet& first_pass) {
   IndexSet *live = &_live[p->_pre_order-1];
   IndexSet *defs = &_defs[p->_pre_order-1];
   IndexSet *on_worklist = _deltas[p->_pre_order-1];
@@ -265,7 +265,7 @@ void PhaseLive::add_liveout(Block *p, IndexSet *lo, VectorSet &first_pass) {
     _deltas[p->_pre_order-1] = delta; // Flag as on worklist now
     if (!on_worklist &&         // Not on worklist?
         first_pass.test(p->_pre_order)) {
-      _worklist->push(p);       // Actually go on worklist if already 1st pass
+      worklist.push(p);       // Actually go on worklist if already 1st pass
     }
   } else {                      // Nothing there; just free it
     delta->set_next(_free_IndexSet);
@@ -276,7 +276,7 @@ void PhaseLive::add_liveout(Block *p, IndexSet *lo, VectorSet &first_pass) {
 // Add a vector of live-in values to a given blocks live-in set.
 void PhaseLive::add_livein(Block *p, IndexSet *lo) {
   IndexSet *livein = &_livein[p->_pre_order-1];
-  if (!livein->is_empty()) {
+  if (!lo->is_empty()) {
     IndexSetIterator elements(lo);
     uint r;
     while ((r = elements.next()) != 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,15 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 jrawMonitorID monitor;
 jrawMonitorID monitor_completed;
 
 jvmtiEnv *jvmti_env;
 
+// Accessed using 'monitor' monitor.
+bool is_breakpoint_reached = JNI_FALSE;
 
 static void
 set_breakpoint(JNIEnv *jni, jclass klass, const char *mname) {
@@ -37,13 +39,11 @@ set_breakpoint(JNIEnv *jni, jclass klass, const char *mname) {
   jmethodID method = find_method(jvmti_env, jni, klass, mname);
   jvmtiError err;
 
-  if (method == NULL) {
+  if (method == nullptr) {
     jni->FatalError("Error in set_breakpoint: not found method");
   }
   err = jvmti_env->SetBreakpoint(method, location);
   check_jvmti_status(jni, err, "set_or_clear_breakpoint: error in JVMTI SetBreakpoint");
-
-
 }
 
 extern "C" {
@@ -56,20 +56,29 @@ Java_WaitNotifySuspendedVThreadTask_setBreakpoint(JNIEnv *jni, jclass klass) {
   set_breakpoint(jni, klass, "methBreakpoint");
 
   // Enable Breakpoint events globally
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
   LOG("setBreakpoint: finished\n");
-
 }
 
 JNIEXPORT void JNICALL
 Java_WaitNotifySuspendedVThreadTask_notifyRawMonitors(JNIEnv *jni, jclass klass, jthread thread) {
+
+  // Wait until virtual thread reach breakpoint and lock 'montior' monitor
+  bool is_breakpoint_reached_local = JNI_FALSE;
+  while (!is_breakpoint_reached_local) {
+    RawMonitorLocker rml(jvmti_env, jni, monitor);
+    is_breakpoint_reached_local = is_breakpoint_reached;
+  }
+
   LOG("Main thread: suspending virtual and carrier threads\n");
 
   check_jvmti_status(jni, jvmti_env->SuspendThread(thread), "SuspendThread thread");
   jthread cthread = get_carrier_thread(jvmti_env, jni, thread);
   check_jvmti_status(jni, jvmti_env->SuspendThread(cthread), "SuspendThread thread");
+
+  RawMonitorLocker completed(jvmti_env, jni, monitor_completed);
 
   {
     RawMonitorLocker rml(jvmti_env, jni, monitor);
@@ -77,8 +86,6 @@ Java_WaitNotifySuspendedVThreadTask_notifyRawMonitors(JNIEnv *jni, jclass klass,
     LOG("Main thread: calling monitor.notifyAll()\n");
     rml.notify_all();
   }
-
-  RawMonitorLocker completed(jvmti_env, jni, monitor_completed);
 
   LOG("Main thread: resuming virtual thread\n");
   check_jvmti_status(jni, jvmti_env->ResumeThread(thread), "ResumeThread thread");
@@ -104,6 +111,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
     fatal(jni, "Error in breakpoint");
     return;
   }
+
   char* tname = get_thread_name(jvmti, jni, thread);
   const char* virt = jni->IsVirtualThread(thread) ? "virtual" : "carrier";
 
@@ -111,6 +119,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
     RawMonitorLocker rml(jvmti, jni, monitor);
 
     LOG("Breakpoint: before monitor.wait(): %s in %s thread\n", mname, virt);
+    is_breakpoint_reached = JNI_TRUE;
     rml.wait();
     LOG("Breakpoint: after monitor.wait(): %s in %s thread\n", mname, virt);
   }
@@ -128,7 +137,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv * jvmti = NULL;
+  jvmtiEnv * jvmti = nullptr;
 
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
@@ -136,7 +145,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }

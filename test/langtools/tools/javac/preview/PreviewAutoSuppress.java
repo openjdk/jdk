@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main PreviewAutoSuppress
  */
-import com.sun.tools.classfile.ClassFile;
+import java.lang.classfile.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;
@@ -191,8 +190,8 @@ public class PreviewAutoSuppress extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("Use.java:5:13: compiler.warn.is.preview: preview.api.Outer",
-                        "Use.java:7:35: compiler.warn.is.preview: preview.api.Outer",
+                List.of("Use.java:7:35: compiler.warn.is.preview: preview.api.Outer",
+                        "Use.java:5:13: compiler.warn.is.preview: preview.api.Outer",
                         "2 warnings");
 
         if (!log.equals(expected))
@@ -206,11 +205,11 @@ public class PreviewAutoSuppress extends TestRunner {
 
     private void checkPreviewClassfile(Path p, boolean preview) throws Exception {
         try (InputStream in = Files.newInputStream(p)) {
-            ClassFile cf = ClassFile.read(in);
-            if (preview && cf.minor_version != 65535) {
-                throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
-            } else if (!preview && cf.minor_version != 0) {
-                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            if (preview && cf.minorVersion() != 65535) {
+                throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
+            } else if (!preview && cf.minorVersion() != 0) {
+                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
             }
         }
     }

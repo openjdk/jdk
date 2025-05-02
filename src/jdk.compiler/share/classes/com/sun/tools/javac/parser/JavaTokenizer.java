@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
 import java.nio.CharBuffer;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static com.sun.tools.javac.parser.Tokens.*;
 import static com.sun.tools.javac.util.LayoutCharacters.EOI;
@@ -62,17 +63,22 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * Sentinel for non-value.
      */
-    private int NOT_FOUND = -1;
+    private static final int NOT_FOUND = -1;
 
     /**
      * The source language setting. Copied from scanner factory.
      */
-    private Source source;
+    private final Source source;
 
     /**
      * The preview language setting. Copied from scanner factory.
      */
-    private Preview preview;
+    private final Preview preview;
+
+    /**
+     * Whether "///" comments are recognized as documentation comments.
+     */
+    protected final boolean enableLineDocComments;
 
     /**
      * The log to be used for error reporting. Copied from scanner factory.
@@ -88,6 +94,16 @@ public class JavaTokenizer extends UnicodeReader {
      * The names factory. Copied from scanner factory.
      */
     private final Names names;
+
+    /**
+     * Origin scanner factory.
+     */
+    protected final ScannerFactory fac;
+
+    /**
+     * Buffer for building literals, used by nextToken().
+     */
+    protected final StringBuilder sb;
 
     /**
      * The token kind, set by nextToken().
@@ -120,21 +136,11 @@ public class JavaTokenizer extends UnicodeReader {
     protected boolean hasEscapeSequences;
 
     /**
-     * Buffer for building literals, used by nextToken().
-     */
-    protected StringBuilder sb;
-
-    /**
-     * Origin scanner factory.
-     */
-    protected ScannerFactory fac;
-
-    /**
      * The set of lint options currently in effect. It is initialized
      * from the context, and then is set/reset as needed by Attr as it
      * visits all the various parts of the trees during attribution.
      */
-    protected Lint lint;
+    protected final Lint lint;
 
     /**
      * Construct a Java token scanner from the input character buffer.
@@ -149,9 +155,9 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * Construct a Java token scanner from the input character array.
      *
-     * @param fac     the factory which created this Scanner
-     * @param array   the input character array.
-     * @param length  The length of the meaningful content in the array.
+     * @param fac      factory which created this Scanner
+     * @param array    input character array
+     * @param length   length of the meaningful content in the array
      */
     protected JavaTokenizer(ScannerFactory fac, char[] array, int length) {
         super(fac, array, length);
@@ -161,6 +167,7 @@ public class JavaTokenizer extends UnicodeReader {
         this.tokens = fac.tokens;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.enableLineDocComments = fac.enableLineDocComments;
         this.lint = fac.lint;
         this.sb = new StringBuilder(256);
     }
@@ -212,15 +219,14 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Report an error at the given position using the provided arguments.
+     * Report a warning at the given position using the provided arguments.
      *
-     * @param lc     lint category.
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
-    protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
+    protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(lc, dp, key);
+        log.warning(dp, key);
     }
 
     /**
@@ -308,15 +314,6 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Test if the current character is a line terminator.
-     *
-     * @return true if current character is a line terminator.
-     */
-    private boolean isEOLN() {
-        return isOneOf('\n', '\r');
-    }
-
-    /**
      * Skip and process a line terminator sequence.
      */
     private void skipLineTerminator() {
@@ -328,18 +325,26 @@ public class JavaTokenizer extends UnicodeReader {
 
     /**
      * Processes the current character and places in the literal buffer. If the current
-     * character is a backslash then the next character is validated as a proper
-     * escape character. Conversion of escape sequences takes place at end of nextToken().
+     * character is a backslash then the next character is assumed to be a proper
+     * escape character. Actual conversion of escape sequences takes place
+     * during at the end of readToken.
      *
-     * @param pos position of the first character in literal.
+     * @param pos       position of the first character in literal.
+     * @param isString  true if is a string literal
      */
-    private void scanLitChar(int pos) {
+    private void scanLitChar(int pos, boolean isString) {
+        int backslash = position();
         if (acceptThenPut('\\')) {
             hasEscapeSequences = true;
-
             switch (get()) {
-                case '0': case '1': case '2': case '3':
-                case '4': case '5': case '6': case '7':
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
                     char leadch = get();
                     putThenNext();
 
@@ -394,10 +399,10 @@ public class JavaTokenizer extends UnicodeReader {
      * @param pos  position of the first character in literal.
      */
     private void scanString(int pos) {
-        // Assume the best.
-        tk = Tokens.TokenKind.STRINGLITERAL;
         // Track the end of first line for error recovery.
         int firstEOLN = NOT_FOUND;
+        tk = TokenKind.STRINGLITERAL;
+
         // Check for text block delimiter.
         isTextBlock = accept("\"\"\"");
 
@@ -433,7 +438,7 @@ public class JavaTokenizer extends UnicodeReader {
                     }
                 } else {
                     // Add character to string buffer.
-                    scanLitChar(pos);
+                    scanLitChar(pos, true);
                 }
             }
         } else {
@@ -452,13 +457,14 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
                 } else {
                     // Add character to string buffer.
-                    scanLitChar(pos);
+                    scanLitChar(pos, true);
                 }
             }
         }
 
         // String ended without close delimiter sequence.
-        lexError(pos, isTextBlock ? Errors.UnclosedTextBlock : Errors.UnclosedStrLit);
+        lexError(pos, isTextBlock ? Errors.UnclosedTextBlock
+                                  : Errors.UnclosedStrLit);
 
         if (firstEOLN  != NOT_FOUND) {
             // Reset recovery position to point after text block open delimiter sequence.
@@ -611,8 +617,9 @@ public class JavaTokenizer extends UnicodeReader {
     private void scanNumber(int pos, int radix) {
         // for octal, allow base-10 digit in case it's a float literal
         this.radix = radix;
-        int digitRadix = (radix == 8 ? 10 : radix);
-        int firstDigit = digit(pos, Math.max(10, digitRadix));
+        boolean permitFloatingPoint = radix == 8 || radix == 10;
+        int digitRadix = Math.max(10, radix);
+        int firstDigit = digit(pos, digitRadix);
         boolean seendigit = firstDigit >= 0;
         boolean seenValidDigit = firstDigit >= 0 && firstDigit < digitRadix;
 
@@ -624,10 +631,10 @@ public class JavaTokenizer extends UnicodeReader {
             scanHexFractionAndSuffix(pos, seendigit);
         } else if (seendigit && radix == 16 && isOneOf('p', 'P')) {
             scanHexExponentAndSuffix(pos);
-        } else if (digitRadix == 10 && is('.')) {
+        } else if (permitFloatingPoint && is('.')) {
             putThenNext();
             scanFractionAndSuffix(pos);
-        } else if (digitRadix == 10 && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
+        } else if (permitFloatingPoint && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
             scanFractionAndSuffix(pos);
         } else {
             if (!seenValidDigit) {
@@ -639,13 +646,6 @@ public class JavaTokenizer extends UnicodeReader {
                     lexError(pos, Errors.InvalidHexNumber);
                     break;
                 }
-            }
-            // If it is not a floating point literal,
-            // the octal number should be rescanned correctly.
-            if (radix == 8) {
-                sb.setLength(0);
-                reset(pos);
-                scanDigits(pos, 8);
             }
 
             if (acceptOneOf('l', 'L')) {
@@ -922,10 +922,22 @@ public class JavaTokenizer extends UnicodeReader {
                     next();
 
                     if (accept('/')) { // (Spec. 3.7)
-                        skipToEOLN();
+                        if (enableLineDocComments && accept('/')) { // JavaDoc line comment
+                            int endPos;
+                            do {
+                                skipToEOLN();
+                                endPos = position();
+                                skipLineTerminator();
+                                skipWhitespace();
+                             } while (accept("///"));
 
-                        if (isAvailable()) {
-                            comments = appendComment(comments, processComment(pos, position(), CommentStyle.LINE));
+                            comments = appendComment(comments, processComment(pos, endPos, CommentStyle.JAVADOC_LINE));
+                        } else {
+                            skipToEOLN();
+
+                            if (isAvailable()) {
+                                comments = appendComment(comments, processComment(pos, position(), CommentStyle.LINE));
+                            }
                         }
                         break;
                     } else if (accept('*')) { // (Spec. 3.7)
@@ -933,7 +945,7 @@ public class JavaTokenizer extends UnicodeReader {
                         CommentStyle style;
 
                         if (accept('*')) {
-                            style = CommentStyle.JAVADOC;
+                            style = CommentStyle.JAVADOC_BLOCK;
 
                             if (is('/')) {
                                 isEmpty = true;
@@ -980,20 +992,26 @@ public class JavaTokenizer extends UnicodeReader {
                             lexError(pos, Errors.IllegalLineEndInCharLit);
                         }
 
-                        scanLitChar(pos);
+                        scanLitChar(pos, false);
 
-                        if (accept('\'')) {
+                        if (tk == TokenKind.ERROR) {
+                            while (isAvailable() && !is('\'')) {
+                                if (is('\\')) {
+                                    next();
+                                }
+                                next();
+                            }
+                            accept('\'');
+                        } else if (accept('\'')) {
                             tk = TokenKind.CHARLITERAL;
                         } else {
                             lexError(pos, Errors.UnclosedCharLit);
                         }
                     }
                     break loop;
-
                 case '\"': // (Spec. 3.10)
                     scanString(pos);
                     break loop;
-
                 default:
                     if (isSpecial(get())) {
                         scanOperator();
@@ -1026,8 +1044,8 @@ public class JavaTokenizer extends UnicodeReader {
                                 arg = String.format("\\u%04x\\u%04x", (int) hi, (int) lo);
                             } else {
                                 char ch = get();
-                                arg = (32 < ch && ch < 127) ? String.format("%s", ch) :
-                                                              String.format("\\u%04x", (int) ch);
+                                arg = (32 < ch && ch < 127) ? String.valueOf(ch) :
+                                                              "\\u%04x".formatted((int) ch);
                             }
 
                             lexError(pos, Errors.IllegalChar(arg));
@@ -1055,12 +1073,12 @@ public class JavaTokenizer extends UnicodeReader {
                         Set<TextBlockSupport.WhitespaceChecks> checks =
                                 TextBlockSupport.checkWhitespace(string);
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.InconsistentWhiteSpaceIndentation);
+                            lexWarning(pos,
+                                    LintWarnings.InconsistentWhiteSpaceIndentation);
                         }
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.TrailingWhiteSpaceWillBeRemoved);
+                            lexWarning(pos,
+                                    LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                         }
                     }
                     // Remove incidental indentation.
@@ -1094,7 +1112,7 @@ public class JavaTokenizer extends UnicodeReader {
             if (scannerDebug) {
                     System.out.println("nextToken(" + pos
                                        + "," + endPos + ")=|" +
-                                       new String(getRawCharacters(pos, endPos))
+                                       getRawString(pos, endPos)
                                        + "|");
             }
         }
@@ -1146,13 +1164,11 @@ public class JavaTokenizer extends UnicodeReader {
         if (scannerDebug) {
             System.out.println("processComment(" + pos
                                 + "," + endPos + "," + style + ")=|"
-                                + new String(getRawCharacters(pos, endPos))
+                                + getRawString(pos, endPos)
                                 + "|");
         }
 
-        char[] buf = getRawCharacters(pos, endPos);
-
-        return new BasicComment(style, fac, buf, pos);
+        return new BasicComment(style,this, pos, endPos);
     }
 
     /**
@@ -1167,8 +1183,8 @@ public class JavaTokenizer extends UnicodeReader {
     protected void processWhiteSpace(int pos, int endPos) {
         if (scannerDebug) {
             System.out.println("processWhitespace(" + pos
-                                + "," + endPos + ")=|" +
-                                new String(getRawCharacters(pos, endPos))
+                                + "," + endPos + ")=|"
+                                + getRawString(pos, endPos)
                                 + "|");
         }
     }
@@ -1182,8 +1198,8 @@ public class JavaTokenizer extends UnicodeReader {
     protected void processLineTerminator(int pos, int endPos) {
         if (scannerDebug) {
             System.out.println("processTerminator(" + pos
-                                + "," + endPos + ")=|" +
-                                new String(getRawCharacters(pos, endPos))
+                                + "," + endPos + ")=|"
+                                + getRawString(pos, endPos)
                                 + "|");
         }
     }
@@ -1206,11 +1222,10 @@ public class JavaTokenizer extends UnicodeReader {
     protected static class BasicComment extends PositionTrackingReader implements Comment {
         /**
          * Style of comment
-         *   LINE starting with //
-         *   BLOCK starting with /*
-         *   JAVADOC starting with /**
          */
-        CommentStyle cs;
+        final CommentStyle cs;
+
+        DiagnosticPosition pos;
 
         /**
          * true if comment contains @deprecated at beginning of a line.
@@ -1225,14 +1240,20 @@ public class JavaTokenizer extends UnicodeReader {
         /**
          * Constructor.
          *
-         * @param cs      comment style
-         * @param sf      Scan factory.
-         * @param array   Array containing contents of source.
-         * @param offset  Position offset in original source buffer.
+         * @param cs     comment style
+         * @param reader existing reader
+         * @param pos    start of meaningful content in buffer.
+         * @param endPos end of meaningful content in buffer.
          */
-        protected BasicComment(CommentStyle cs, ScannerFactory sf, char[] array, int offset) {
-            super(sf, array, offset);
+        protected BasicComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
+            super(reader, pos, endPos);
             this.cs = cs;
+            this.pos = new SimpleDiagnosticPosition(pos) {
+                @Override
+                public int getEndPosition(EndPosTable endPosTable) {
+                    return endPos;
+                }
+            };
         }
 
         /**
@@ -1245,10 +1266,28 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
+         * Return a version of this comment with incidental whitespace removed,
+         * or this comment if the operation is not supported.
+         *
+         * @return comment with removed whitespace or this comment
+         */
+        public Comment stripIndent() {
+            return this;
+        }
+
+        /**
+         * Return the diagnostic position of this comment.
+         *
+         * @return diagnostic position
+         */
+        public DiagnosticPosition getPos() {
+            return pos;
+        }
+
+        /**
          * Return buffer position in original buffer mapped from buffer position in comment.
          *
-         * @param pos  buffer position in comment.
-         *
+         * @param pos buffer position in comment.
          * @return buffer position in original buffer.
          */
         public int getSourcePos(int pos) {
@@ -1257,11 +1296,8 @@ public class JavaTokenizer extends UnicodeReader {
 
         /**
          * Return style of comment.
-         *   LINE starting with //
-         *   BLOCK starting with /*
-         *   JAVADOC starting with /**
          *
-         * @return
+         * @return style of comment.
          */
         public CommentStyle getStyle() {
             return cs;
@@ -1273,76 +1309,169 @@ public class JavaTokenizer extends UnicodeReader {
          * @return true if comment contains @deprecated.
          */
         public boolean isDeprecated() {
-            if (!scanned && cs == CommentStyle.JAVADOC) {
+            if (!scanned) {
                 scanDocComment();
             }
-
             return deprecatedFlag;
         }
 
         /**
-         * Scan JAVADOC comment for details.
+         * Remove closing star(s) slash from comment.
+         *
+         * @param line line reader
+         *
+         * @return new line reader if detected otherwise original line reader.
+         */
+        UnicodeReader trimEndOfComment(UnicodeReader line) {
+            int pos = line.position();
+            boolean allWhitespace = true;
+
+            while (line.isAvailable()) {
+                int endPos = line.position();
+
+                if (line.skip('*') != 0 && line.is('/')) {
+                    return line.lineReader(allWhitespace ? endPos : pos, endPos);
+                } else {
+                    allWhitespace = allWhitespace && line.isWhitespace();
+                    line.next();
+                }
+            }
+
+            line.reset(pos);
+
+            return line;
+        }
+
+        /**
+         * Trim the first part of the JavaDoc block comment.
+         *
+         * @param line line reader
+         *
+         * @return modified line reader
+         */
+        UnicodeReader trimJavadocComment(UnicodeReader line) {
+            line = trimEndOfComment(line);
+            int pos = line.position();
+            line.skipWhitespace();
+
+            if (!line.isAvailable()) {
+                return line;
+            }
+
+            if (line.skip('*') == 0) {
+                line.reset(pos);
+            }
+
+            return line;
+        }
+
+        /**
+         * Determine how much indent to remove from a JavaDoc line comment.
+         *
+         * @return minimum indent to remove
+         */
+        int getJavadocLineCommentIndent() {
+            int result = Integer.MAX_VALUE;
+            UnicodeReader fullReader = lineReader(position(), position() + length());
+
+            while (fullReader.isAvailable()) {
+                UnicodeReader line = fullReader.lineReader();
+                line.skipWhitespace();
+                line.accept("///");
+                int pos = line.position();
+                line.skipWhitespace();
+
+                if (line.isAvailable()) {
+                    result = Integer.min(result, line.position() - pos);
+                }
+            }
+
+            return result == Integer.MAX_VALUE ? 0 : result;
+        }
+
+        /**
+         * Trim the first part of a JavaDoc line comment.
+         *
+         * @param indent how much indentation to remove
+         * @param line line reader
+         *
+         * @return modified line reader
+         */
+        UnicodeReader trimJavadocLineComment(UnicodeReader line, int indent) {
+            line.skipWhitespace();
+            line.accept("///");
+
+            for (int i = 0; line.isAvailable() && i < indent; i++) {
+                line.next();
+            }
+
+            return line;
+        }
+
+        /**
+         * Put the line into the buffer.
+         *
+         * @param line line reader
+         */
+        protected void putLine(UnicodeReader line) {
+            // ignore, overridden in subclass
+        }
+
+        /**
+         * Scan document comment for content.
          */
         protected void scanDocComment() {
-            try {
-                boolean deprecatedPrefix = false;
-                accept("/**");
-
-                forEachLine:
-                while (isAvailable()) {
-                    // Skip optional WhiteSpace at beginning of line
-                    skipWhitespace();
-
-                    // Skip optional consecutive Stars
-                    while (accept('*')) {
-                        if (is('/')) {
-                            return;
-                        }
-                    }
-
-                    // Skip optional WhiteSpace after Stars
-                    skipWhitespace();
-
-                    // At beginning of line in the JavaDoc sense.
-                    deprecatedPrefix = deprecatedFlag || accept("@deprecated");
-
-                    if (deprecatedPrefix && isAvailable()) {
-                        if (Character.isWhitespace(get())) {
-                            deprecatedFlag = true;
-                        } else if (accept('*')) {
-                            if (is('/')) {
-                                deprecatedFlag = true;
-                                return;
-                            }
-                        }
-                    }
-
-                    // Skip rest of line
-                    while (isAvailable()) {
-                        switch (get()) {
-                            case '*':
-                                next();
-
-                                if (is('/')) {
-                                    return;
-                                }
-
-                                break;
-                            case '\r': // (Spec 3.4)
-                            case '\n': // (Spec 3.4)
-                                accept('\r');
-                                accept('\n');
-                                continue forEachLine;
-
-                            default:
-                                next();
-                                break;
-                        }
-                    } // rest of line
-                } // forEachLine
-                return;
-            } finally {
+            if (!scanned) {
+                deprecatedFlag = false;
                 scanned = true;
+                CommentStyle style;
+                int indent = 0;
+                int start = position();
+
+                if (accept("/**")) {
+                    style = CommentStyle.JAVADOC_BLOCK;
+                    if (skip('*') != 0 && is('/')) {
+                        return ;
+                    }
+
+                    skipWhitespace();
+
+                    if (isEOLN()) {
+                        accept('\r');
+                        accept('\n');
+                    }
+                } else if (accept("///")) {
+                    style = CommentStyle.JAVADOC_LINE;
+                    reset(start);
+                    indent = getJavadocLineCommentIndent();
+                } else {
+                    return;
+                }
+
+                while (isAvailable()) {
+                    UnicodeReader line = lineReader();
+                    line = (style == CommentStyle.JAVADOC_LINE)
+                            ? trimJavadocLineComment(line, indent)
+                            : trimJavadocComment(line);
+
+                    if (cs == CommentStyle.JAVADOC_BLOCK) {
+                        // If standalone @deprecated tag
+                        int pos = line.position();
+                        line.skipWhitespace();
+
+                        if (line.accept("@deprecated") &&
+                                (!line.isAvailable() ||
+                                        line.isWhitespace() ||
+                                        line.isEOLN() ||
+                                        line.get() == EOI)) {
+                            deprecatedFlag = true;
+                        }
+
+                        line.reset(pos);
+                    }
+
+                    putLine(line);
+                }
             }
         }
     }

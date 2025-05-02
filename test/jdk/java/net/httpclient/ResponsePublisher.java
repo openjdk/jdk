@@ -36,6 +36,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.internal.net.http.common.OperationTrackers;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -99,6 +100,16 @@ public class ResponsePublisher implements HttpServerAdapters {
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = Executors.newCachedThreadPool();
+
+    static final long start = System.nanoTime();
+
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
 
     interface BHS extends Supplier<BodyHandler<Publisher<List<ByteBuffer>>>> {
         static BHS of(BHS impl, String name) {
@@ -216,6 +227,12 @@ public class ResponsePublisher implements HttpServerAdapters {
             // Get the final result and compare it with the expected body
             String body = ofString.getBody().toCompletableFuture().get();
             assertEquals(body, "");
+            // ensure client closes before next iteration
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                clientCleanup(tracker);
+            }
         }
     }
 
@@ -239,6 +256,12 @@ public class ResponsePublisher implements HttpServerAdapters {
             // Get the final result and compare it with the expected body
             String body = ofString.getBody().toCompletableFuture().get();
             assertEquals(body, "");
+            // ensure client closes before next iteration
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                clientCleanup(tracker);
+            }
         }
     }
 
@@ -265,6 +288,12 @@ public class ResponsePublisher implements HttpServerAdapters {
                             });
             // Get the final result and compare it with the expected body
             assertEquals(result.get(), "");
+            // ensure client closes before next iteration
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                clientCleanup(tracker);
+            }
         }
     }
 
@@ -288,6 +317,12 @@ public class ResponsePublisher implements HttpServerAdapters {
             // Get the final result and compare it with the expected body
             String body = ofString.getBody().toCompletableFuture().get();
             assertEquals(body, WITH_BODY);
+            // ensure client closes before next iteration
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                clientCleanup(tracker);
+            }
         }
     }
 
@@ -314,6 +349,12 @@ public class ResponsePublisher implements HttpServerAdapters {
             // Get the final result and compare it with the expected body
             String body = result.get();
             assertEquals(body, WITH_BODY);
+            // ensure client closes before next iteration
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                clientCleanup(tracker);
+            }
         }
     }
 
@@ -449,6 +490,23 @@ public class ResponsePublisher implements HttpServerAdapters {
                 throw fail;
             }
         }
+    }
+
+    // Wait for the client to be garbage collected.
+    // we use the ReferenceTracker API rather than HttpClient::close here,
+    // because we want to get some diagnosis if a client doesn't release
+    // its resources and terminates as expected
+    // By using the ReferenceTracker, we will get some diagnosis about what
+    // is keeping the client alive if it doesn't get GC'ed within the
+    // expected time frame.
+    public void clientCleanup(OperationTrackers.Tracker tracker){
+        System.gc();
+        System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+        System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+        var error = TRACKER.check(tracker, 10000);
+        if (error != null) throw error;
+        System.out.println(now() + "client shutdown normally: " + tracker.getName());
+        System.err.println(now() + "client shutdown normally: " + tracker.getName());
     }
 
     static final String WITH_BODY = "Lorem ipsum dolor sit amet, consectetur" +

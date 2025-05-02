@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,10 @@ import java.awt.peer.ContainerPeer;
 import java.awt.peer.FileDialogPeer;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.security.AccessController;
 import java.util.List;
 
 import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetBooleanAction;
 
 class CFileDialog implements FileDialogPeer {
 
@@ -65,12 +63,8 @@ class CFileDialog implements FileDialogPeer {
         @Override
         public void run() {
             try {
-                @SuppressWarnings("removal")
-                boolean navigateApps = !AccessController.doPrivileged(
-                        new GetBooleanAction("apple.awt.use-file-dialog-packages"));
-                @SuppressWarnings("removal")
-                boolean chooseDirectories = AccessController.doPrivileged(
-                        new GetBooleanAction("apple.awt.fileDialogForDirectories"));
+                boolean navigateApps = !Boolean.getBoolean("apple.awt.use-file-dialog-packages");
+                boolean chooseDirectories = Boolean.getBoolean("apple.awt.fileDialogForDirectories");
 
                 int dialogMode = target.getMode();
                 String title = target.getTitle();
@@ -196,7 +190,9 @@ class CFileDialog implements FileDialogPeer {
     }
 
     @Override
-    public void repositionSecurityWarning() {
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+            GraphicsConfiguration gc) {
+        return gc;
     }
 
     @Override

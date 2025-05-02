@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.javac.tree;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /** A subclass of Tree.Visitor, this class defines
  *  a general tree scanner pattern. Translation proceeds recursively in
@@ -82,6 +83,11 @@ public class TreeScanner extends Visitor {
     public void visitExports(JCExports tree) {
         scan(tree.qualid);
         scan(tree.moduleNames);
+    }
+
+    @Override
+    public void visitModuleImport(JCModuleImport tree) {
+        scan(tree.module);
     }
 
     @Override
@@ -162,7 +168,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        scan(tree.varOrRecordPattern);
+        scan(tree.var);
         scan(tree.expr);
         scan(tree.body);
     }
@@ -178,6 +184,7 @@ public class TreeScanner extends Visitor {
 
     public void visitCase(JCCase tree) {
         scan(tree.labels);
+        scan(tree.guard);
         scan(tree.stats);
     }
 
@@ -266,8 +273,8 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitLambda(JCLambda tree) {
-        scan(tree.body);
         scan(tree.params);
+        scan(tree.body);
     }
 
     public void visitParens(JCParens tree) {
@@ -319,12 +326,10 @@ public class TreeScanner extends Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         scan(tree.pat);
-        scan(tree.guard);
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        scan(tree.pattern);
+    public void visitAnyPattern(JCAnyPattern that) {
     }
 
     @Override

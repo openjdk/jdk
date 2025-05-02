@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.LogLevel;
@@ -34,7 +35,6 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Options;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 
 /**
  * JFR.configure - invoked from native
@@ -51,9 +51,9 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param globalBufferCount number of global buffers
      * @param globalBufferSize size of global buffers
      * @param threadBufferSize size of thread buffer for events
+     * @param memorySize Size of in memory buffer
      * @param maxChunkSize threshold at which a new chunk is created in the disk repository
-     * @param sampleThreads if thread sampling should be enabled
-     *
+     * @param preserveRepository if files in the repository should be deleted on exit.
      * @return result
 
      * @throws DCmdException
@@ -69,7 +69,8 @@ final class DCmdConfigure extends AbstractDCmd {
             Long globalBufferSize,
             Long threadBufferSize,
             Long memorySize,
-            Long maxChunkSize
+            Long maxChunkSize,
+            Boolean preserveRepository
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -80,14 +81,15 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
-                    ", maxchunksize=" + maxChunkSize);
+                    ", maxchunksize=" + maxChunkSize +
+                    ", preserveRepository=" + preserveRepository);
         }
 
 
         boolean updated = false;
         if (repositoryPath != null) {
             try {
-                SafePath s = new SafePath(repositoryPath);
+                Path s = Path.of(repositoryPath);
                 if (FlightRecorder.isInitialized()) {
                     PrivateAccess.getInstance().getPlatformRecorder().migrate(s);
                 } else {
@@ -103,9 +105,17 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
+        if (preserveRepository != null) {
+            Options.setPreserveRepository(preserveRepository.booleanValue());
+            if (verbose) {
+                printPreserveRepository();
+            }
+            updated = true;
+        }
+
         if (dumpPath != null)  {
             try {
-                Options.setDumpPath(new SafePath(dumpPath));
+                Options.setDumpPath(Path.of(dumpPath));
             } catch (IOException e) {
                 throw new DCmdException("Could not set " + dumpPath + " to emergency dump path. " + e.getMessage(), e);
             }
@@ -176,6 +186,7 @@ final class DCmdConfigure extends AbstractDCmd {
         if (!updated) {
             println("Current configuration:");
             println();
+            printPreserveRepository();
             printRepositoryPath();
             printDumpPath();
             printStackDepth();
@@ -192,6 +203,10 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Repository path: ");
         printPath(Repository.getRepository().getRepositoryPath());
         println();
+    }
+
+    private void printPreserveRepository() {
+        println("Preserve repository: " + Options.getPreserveRepository());
     }
 
     private void printDumpPath() {
@@ -233,7 +248,7 @@ final class DCmdConfigure extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
         throw new InternalError("Should not reach here!");
     }
 

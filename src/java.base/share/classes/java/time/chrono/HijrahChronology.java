@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,14 @@ package java.time.chrono;
 
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -88,6 +84,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import jdk.internal.util.StaticProperty;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -291,10 +288,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         AbstractChronology.registerChrono(INSTANCE, "islamic");
 
         // custom config chronologies
-        @SuppressWarnings("removal")
-        String javaHome = AccessController.doPrivileged((PrivilegedAction<String>)
-                        () -> System.getProperty("java.home"));
-        CONF_PATH = Path.of(javaHome, "conf", "chronology");
+        CONF_PATH = Path.of(StaticProperty.javaHome(), "conf", "chronology");
         registerCustomChrono();
     }
 
@@ -824,19 +818,9 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      */
     private static Properties readConfigProperties(final String chronologyId, final String calendarType) throws Exception {
         String resourceName = RESOURCE_PREFIX + chronologyId + "_" + calendarType + RESOURCE_SUFFIX;
-        PrivilegedAction<InputStream> getResourceAction =  calendarType.equals("islamic-umalqura") ?
-            () -> HijrahChronology.class.getResourceAsStream(resourceName) :
-            () -> {
-                try {
-                    return Files.newInputStream(CONF_PATH.resolve(resourceName),
-                            StandardOpenOption.READ);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            };
-        FilePermission perm1 = new FilePermission("<<ALL FILES>>", "read");
-        RuntimePermission perm2 = new RuntimePermission("accessSystemModules");
-        try (@SuppressWarnings("removal") InputStream is = AccessController.doPrivileged(getResourceAction, null, perm1, perm2)) {
+        try (InputStream is = calendarType.equals("islamic-umalqura")
+                ? HijrahChronology.class.getResourceAsStream(resourceName)
+                : Files.newInputStream(CONF_PATH.resolve(resourceName), StandardOpenOption.READ)) {
             if (is == null) {
                 throw new RuntimeException("Hijrah calendar resource not found: " + resourceName);
             }
@@ -1031,38 +1015,32 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      * Look for Hijrah chronology variant properties files in
      * <JAVA_HOME>/conf/chronology directory. Then register its chronology, if any.
      */
-    @SuppressWarnings("removal")
     private static void registerCustomChrono() {
-        AccessController.doPrivileged(
-            (PrivilegedAction<Void>)() -> {
-                if (Files.isDirectory(CONF_PATH)) {
-                    try (Stream<Path> stream = Files.list(CONF_PATH)) {
-                        stream.map(p -> p.getFileName().toString())
-                            .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
-                            .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
-                            .forEach(idtype -> {
-                                int delimiterPos = idtype.indexOf('_');
-                                // '_' should be somewhere in the middle of idtype
-                                if (delimiterPos > 1 && delimiterPos < idtype.length() - 1) {
-                                    AbstractChronology.registerChrono(
-                                        new HijrahChronology(
-                                                idtype.substring(0, delimiterPos),
-                                                idtype.substring(delimiterPos + 1)));
-                                } else {
-                                    PlatformLogger.getLogger("java.time.chrono")
-                                            .warning("Hijrah custom config init failed." +
-                                                    "'<id>_<type>' name convention not followed: " + idtype);
-                                }
-                            });
-                    } catch (IOException e) {
-                        PlatformLogger.getLogger("java.time.chrono")
-                                .warning("Hijrah custom config init failed.", e);
-                    }
-                }
-                return null;
-            },
-            null,
-            new FilePermission("<<ALL FILES>>", "read"));
+
+        if (Files.isDirectory(CONF_PATH)) {
+            try (Stream<Path> stream = Files.list(CONF_PATH)) {
+                stream.map(p -> p.getFileName().toString())
+                    .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
+                    .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
+                    .forEach(idtype -> {
+                        int delimiterPos = idtype.indexOf('_');
+                        // '_' should be somewhere in the middle of idtype
+                        if (delimiterPos > 1 && delimiterPos < idtype.length() - 1) {
+                            AbstractChronology.registerChrono(
+                                new HijrahChronology(
+                                        idtype.substring(0, delimiterPos),
+                                        idtype.substring(delimiterPos + 1)));
+                        } else {
+                            PlatformLogger.getLogger("java.time.chrono")
+                                    .warning("Hijrah custom config init failed." +
+                                            "'<id>_<type>' name convention not followed: " + idtype);
+                        }
+                    });
+            } catch (IOException e) {
+                PlatformLogger.getLogger("java.time.chrono")
+                        .warning("Hijrah custom config init failed.", e);
+            }
+        }
     }
 
     //-----------------------------------------------------------------------

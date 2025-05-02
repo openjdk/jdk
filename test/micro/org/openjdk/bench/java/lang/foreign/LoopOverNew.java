@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -38,7 +34,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -51,7 +47,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(value = 3, jvmArgs = { "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class LoopOverNew extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -60,8 +56,8 @@ public class LoopOverNew extends JavaLayouts {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final MemoryLayout ALLOC_LAYOUT = MemoryLayout.sequenceLayout(ELEM_SIZE, JAVA_INT);
-    final Arena arena = Arena.openConfined();
-    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(ALLOC_LAYOUT, arena.scope()));
+    final Arena arena = Arena.ofConfined();
+    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(arena.allocate(ALLOC_LAYOUT));
 
     @TearDown
     public void tearDown() throws Throwable {
@@ -79,7 +75,7 @@ public class LoopOverNew extends JavaLayouts {
 
     @Benchmark
     public void segment_loop_confined() {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
                 VH_INT.set(segment, (long) i, i);
@@ -89,7 +85,7 @@ public class LoopOverNew extends JavaLayouts {
 
     @Benchmark
     public void segment_loop_shared() {
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofShared()) {
             MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
                 VH_INT.set(segment, (long) i, i);
@@ -135,7 +131,8 @@ public class LoopOverNew extends JavaLayouts {
     @Benchmark
     public void segment_loop_implicit() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
+        Arena scope = Arena.ofAuto();
+        MemorySegment segment = scope.allocate(ALLOC_SIZE, 4);
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_INT.set(segment, (long) i, i);
         }

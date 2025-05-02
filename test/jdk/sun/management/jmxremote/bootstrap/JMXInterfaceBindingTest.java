@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
  * @modules java.management.rmi
  *
  * @build JMXAgentInterfaceBinding
- * @run main/timeout=60 JMXInterfaceBindingTest
+ * @run main JMXInterfaceBindingTest
  */
 public class JMXInterfaceBindingTest {
 
@@ -52,7 +52,7 @@ public class JMXInterfaceBindingTest {
     public static final int JMX_PORT_RANGE_UPPER = 9200;
     public static final int JMX_PORT_RANGE_LOWER_SSL = 9201; // 9200 might be RMI Port
     public static final int JMX_PORT_RANGE_UPPER_SSL = 9300;
-    private static final int MAX_RETRY_ATTEMTS = 10;
+    private static final int MAX_RETRY_ATTEMPTS = 10;
     public static final String READY_MSG = "MainThread: Ready for connections";
     public static final String TEST_CLASS = JMXAgentInterfaceBinding.class.getSimpleName();
     public static final String KEYSTORE_LOC = System.getProperty("test.src", ".") +
@@ -65,7 +65,6 @@ public class JMXInterfaceBindingTest {
                                                 "ssl" +
                                                 File.separator +
                                                 "truststore";
-    public static final String TEST_CLASSPATH = System.getProperty("test.classes", ".");
 
     public void run(List<InetAddress> addrs) {
         System.out.println("DEBUG: Running tests with plain sockets.");
@@ -160,7 +159,7 @@ public class JMXInterfaceBindingTest {
                     System.err.println("Retrying the test for " + name);
                 }
                 needRetry = runTest();
-            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMTS));
+            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMPTS));
 
             if (testFailed) {
                 int exitValue = output.getExitValue();
@@ -198,8 +197,6 @@ public class JMXInterfaceBindingTest {
                             " == (%s,%d,%d)", address, jmxPort, rmiPort);
             System.out.println(msg);
             List<String> args = new ArrayList<>();
-            args.add("-classpath");
-            args.add(TEST_CLASSPATH);
             args.add("-Dcom.sun.management.jmxremote.host=" + address);
             args.add("-Dcom.sun.management.jmxremote.port=" + jmxPort);
             args.add("-Dcom.sun.management.jmxremote.rmi.port=" + rmiPort);
@@ -221,7 +218,7 @@ public class JMXInterfaceBindingTest {
             args.add(Boolean.toString(useSSL));
 
             try {
-                ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[]{}));
+                ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(args.toArray(new String[]{}));
                 System.out.println(ProcessTools.getCommandLine(builder));
                 Process process = builder.start();
                 output = new OutputAnalyzer(process);

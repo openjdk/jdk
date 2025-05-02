@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,42 +50,8 @@ public abstract class AccessibilityProvider {
 
     /**
      * Initializes a new accessibility provider.
-     *
-     * @throws SecurityException If a security manager has been installed and it
-     *         denies {@link RuntimePermission} {@code "accessibilityProvider"}
      */
     protected AccessibilityProvider() {
-        // Use a permission check when calling a private constructor to check
-        // that the proper security permission has been granted before the
-        // {@code Object} superclass is called. If an exception is thrown before
-        // the {@code Object} superclass is constructed a finalizer in a
-        // subclass of this class will not be run. This protects against a
-        // finalizer vulnerability.
-        this(checkPermission());
-    }
-
-    /**
-     * Allows to check a permission before the {@code Object} is called.
-     *
-     * @param  ignore unused stub to call a {@link #checkPermission()}}
-     */
-    private AccessibilityProvider(Void ignore) { }
-
-    /**
-     * If this code is running with a security manager and if the permission
-     * {@code "accessibilityProvider"} has not been granted
-     * {@code SecurityException} will be thrown.
-     *
-     * @return {@code null} if {@code SecurityException} was not thrown
-     * @throws SecurityException If a security manager has been installed and it
-     *         denies {@link RuntimePermission} {@code "accessibilityProvider"}
-     */
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("accessibilityProvider"));
-        return null;
     }
 
     /**

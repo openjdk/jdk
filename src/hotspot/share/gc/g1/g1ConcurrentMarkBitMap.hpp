@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
-class HeapRegion;
 
 // Closure for iteration over bitmaps
 class G1CMBitMapClosure {
@@ -51,7 +50,7 @@ public:
 class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
   G1CMBitMap* _bm;
 public:
-  G1CMBitMapMappingChangedListener() : _bm(NULL) {}
+  G1CMBitMapMappingChangedListener() : _bm(nullptr) {}
 
   void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
 

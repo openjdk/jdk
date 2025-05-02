@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 @Fork(2)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class Exponential {
     /** Run length of non-matching consecutive whitespace chars. */
     @Param({"16", "128", "1024"})

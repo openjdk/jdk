@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -100,7 +99,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
+void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
 
   if (ObjectCountEventSender::should_send_event()) {
@@ -109,7 +108,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
-      hi.populate_table(&cit, is_alive_cl);
+      hi.populate_table(&cit, is_alive_cl, workers);
       ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }

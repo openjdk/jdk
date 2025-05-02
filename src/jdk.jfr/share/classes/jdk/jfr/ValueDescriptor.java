@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 import jdk.jfr.internal.AnnotationConstruct;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes the event fields and annotation elements.
@@ -97,10 +97,6 @@ public final class ValueDescriptor {
      * @param name the name, not {@code null}
      *
      * @throws IllegalArgumentException if the name is not a valid Java identifier
-     *
-     * @throws SecurityException if a security manager is present and the caller
-     *         doesn't have {@code FlightRecorderPermission("registerEvent")}
-     *
      */
     public ValueDescriptor(Class<?> type, String name) {
         this(type, name, Collections.<AnnotationElement> emptyList());
@@ -136,9 +132,6 @@ public final class ValueDescriptor {
      *        {@code null}
      *
      * @throws IllegalArgumentException if the name is not a valid Java identifier
-     *
-     * @throws SecurityException if a security manager is present and the caller
-     *         doesn't have {@code FlightRecorderPermission("registerEvent")}
      */
     public ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations) {
         this(type, name, List.copyOf(annotations), false);
@@ -149,7 +142,6 @@ public final class ValueDescriptor {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(annotations, "annotations");
-        Utils.checkRegisterPermission();
         if (!allowArray) {
             if (type.isArray()) {
                 throw new IllegalArgumentException("Array types are not allowed");
@@ -250,7 +242,7 @@ public final class ValueDescriptor {
      */
     public String getTypeName() {
         if (type.isSimpleType()) {
-            return type.getFields().get(0).getTypeName();
+            return type.getFields().getFirst().getTypeName();
         }
         return type.getName();
     }

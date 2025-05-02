@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
@@ -46,13 +45,14 @@ WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, obj);
 }
 
-void WeakHandle::release(OopStorage* storage) const {
+void WeakHandle::release(OopStorage* storage) {
   // Only release if the pointer to the object has been created.
   if (_obj != nullptr) {
     // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
     // WeakHandle before it is cleared by GC.
     NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, nullptr);
     storage->release(_obj);
+    _obj = nullptr;
   }
 }
 

@@ -48,6 +48,8 @@ protected:
   decoder_status  _decoder_status;
 
 public:
+  AbstractDecoder(decoder_status status) : _decoder_status(status) {}
+
   virtual ~AbstractDecoder() {}
 
   // decode an pc address to corresponding function name and an offset from the beginning of
@@ -84,9 +86,7 @@ public:
 // Do nothing decoder
 class NullDecoder : public AbstractDecoder {
 public:
-  NullDecoder() {
-    _decoder_status = not_available;
-  }
+  NullDecoder() : AbstractDecoder(not_available) {}
 
   virtual ~NullDecoder() {};
 

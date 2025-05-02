@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,115 +21,179 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zList.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zPhysicalMemory.inline.hpp"
-#include "gc/z/zVirtualMemory.inline.hpp"
+#include "gc/z/zPageAge.hpp"
+#include "gc/z/zRememberedSet.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-ZPage::ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
-    ZPage(type_from_size(vmem.size()), vmem, pmem) {}
-
-ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
-    _type(type),
-    _numa_id((uint8_t)-1),
-    _seqnum(0),
+ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPartitionTracker* multi_partition_tracker, uint32_t partition_id)
+  : _type(type),
+    _generation_id(/* set in reset */),
+    _age(/* set in reset */),
+    _seqnum(/* set in reset */),
+    _seqnum_other(/* set in reset */),
+    _single_partition_id(partition_id),
     _virtual(vmem),
-    _top(start()),
+    _top(to_zoffset_end(start())),
     _livemap(object_max_count()),
-    _last_used(0),
-    _physical(pmem),
-    _node() {
-  assert_initialized();
-}
-
-ZPage::~ZPage() {}
-
-void ZPage::assert_initialized() const {
+    _remembered_set(),
+    _multi_partition_tracker(multi_partition_tracker) {
   assert(!_virtual.is_null(), "Should not be null");
-  assert(!_physical.is_null(), "Should not be null");
-  assert(_virtual.size() == _physical.size(), "Virtual/Physical size mismatch");
-  assert((_type == ZPageTypeSmall && size() == ZPageSizeSmall) ||
-         (_type == ZPageTypeMedium && size() == ZPageSizeMedium) ||
-         (_type == ZPageTypeLarge && is_aligned(size(), ZGranuleSize)),
+  assert((_type == ZPageType::small && size() == ZPageSizeSmall) ||
+         (_type == ZPageType::medium && size() == ZPageSizeMedium) ||
+         (_type == ZPageType::large && is_aligned(size(), ZGranuleSize)),
          "Page type/size mismatch");
+  reset(age);
+
+  if (is_old()) {
+    remset_alloc();
+  }
 }
 
-void ZPage::reset() {
-  _seqnum = ZGlobalSeqNum;
-  _top = start();
-  _livemap.reset();
-  _last_used = 0;
-}
+ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, uint32_t partition_id)
+  : ZPage(type, age, vmem, nullptr /* multi_partition_tracker */, partition_id) {}
 
-void ZPage::reset_for_in_place_relocation() {
-  _seqnum = ZGlobalSeqNum;
-  _top = start();
-}
+ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPartitionTracker* multi_partition_tracker)
+  : ZPage(type, age, vmem, multi_partition_tracker, -1u /* partition_id */) {}
 
-ZPage* ZPage::retype(uint8_t type) {
-  assert(_type != type, "Invalid retype");
-  _type = type;
-  _livemap.resize(object_max_count());
-  return this;
-}
+ZPage* ZPage::clone_for_promotion() const {
+  assert(_age != ZPageAge::old, "must be used for promotion");
+  // Only copy type and memory layouts, and also update _top. Let the rest be
+  // lazily reconstructed when needed.
+  ZPage* const page = new ZPage(_type, ZPageAge::old, _virtual, _multi_partition_tracker, _single_partition_id);
+  page->_top = _top;
 
-ZPage* ZPage::split(size_t size) {
-  return split(type_from_size(size), size);
-}
-
-ZPage* ZPage::split(uint8_t type, size_t size) {
-  assert(_virtual.size() > size, "Invalid split");
-
-  // Resize this page, keep _numa_id, _seqnum, and _last_used
-  const ZVirtualMemory vmem = _virtual.split(size);
-  const ZPhysicalMemory pmem = _physical.split(size);
-  _type = type_from_size(_virtual.size());
-  _top = start();
-  _livemap.resize(object_max_count());
-
-  // Create new page, inherit _seqnum and _last_used
-  ZPage* const page = new ZPage(type, vmem, pmem);
-  page->_seqnum = _seqnum;
-  page->_last_used = _last_used;
   return page;
 }
 
-ZPage* ZPage::split_committed() {
-  // Split any committed part of this page into a separate page,
-  // leaving this page with only uncommitted physical memory.
-  const ZPhysicalMemory pmem = _physical.split_committed();
-  if (pmem.is_null()) {
-    // Nothing committed
-    return NULL;
-  }
-
-  assert(!_physical.is_null(), "Should not be null");
-
-  // Resize this page
-  const ZVirtualMemory vmem = _virtual.split(pmem.size());
-  _type = type_from_size(_virtual.size());
-  _top = start();
-  _livemap.resize(object_max_count());
-
-  // Create new page
-  return new ZPage(vmem, pmem);
+ZGeneration* ZPage::generation() {
+  return ZGeneration::generation(_generation_id);
 }
 
-void ZPage::print_on(outputStream* out) const {
-  out->print_cr(" %-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s%s",
-                type_to_string(), start(), top(), end(),
+const ZGeneration* ZPage::generation() const {
+  return ZGeneration::generation(_generation_id);
+}
+
+void ZPage::reset_seqnum() {
+  Atomic::store(&_seqnum, generation()->seqnum());
+  Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+}
+
+void ZPage::remset_alloc() {
+  // Remsets should only be allocated/initialized once and only for old pages.
+  assert(!_remembered_set.is_initialized(), "Should not be initialized");
+  assert(is_old(), "Only old pages need a remset");
+
+  _remembered_set.initialize(size());
+}
+
+ZPage* ZPage::reset(ZPageAge age) {
+  _age = age;
+
+  _generation_id = age == ZPageAge::old
+      ? ZGenerationId::old
+      : ZGenerationId::young;
+
+  reset_seqnum();
+
+  return this;
+}
+
+void ZPage::reset_livemap() {
+  _livemap.reset();
+}
+
+void ZPage::reset_top_for_allocation() {
+  _top = to_zoffset_end(start());
+}
+
+class ZFindBaseOopClosure : public ObjectClosure {
+private:
+  volatile zpointer* _p;
+  oop _result;
+
+public:
+  ZFindBaseOopClosure(volatile zpointer* p)
+    : _p(p),
+      _result(nullptr) {}
+
+  virtual void do_object(oop obj) {
+    const uintptr_t p_int = reinterpret_cast<uintptr_t>(_p);
+    const uintptr_t base_int = cast_from_oop<uintptr_t>(obj);
+    const uintptr_t end_int = base_int + wordSize * obj->size();
+    if (p_int >= base_int && p_int < end_int) {
+      _result = obj;
+    }
+  }
+
+  oop result() const { return _result; }
+};
+
+bool ZPage::is_remset_cleared_current() const {
+  return _remembered_set.is_cleared_current();
+}
+
+bool ZPage::is_remset_cleared_previous() const {
+  return _remembered_set.is_cleared_previous();
+}
+
+void ZPage::verify_remset_cleared_current() const {
+  if (ZVerifyRemembered && !is_remset_cleared_current()) {
+    fatal_msg(" current remset bits should be cleared");
+  }
+}
+
+void ZPage::verify_remset_cleared_previous() const {
+  if (ZVerifyRemembered && !is_remset_cleared_previous()) {
+    fatal_msg(" previous remset bits should be cleared");
+  }
+}
+
+void ZPage::clear_remset_previous() {
+  _remembered_set.clear_previous();
+}
+
+void ZPage::swap_remset_bitmaps() {
+  _remembered_set.swap_remset_bitmaps();
+}
+
+void* ZPage::remset_current() {
+  return _remembered_set.current();
+}
+
+void ZPage::print_on_msg(outputStream* st, const char* msg) const {
+  st->print_cr("%-6s  " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " %s/%-4u %s%s%s%s",
+                type_to_string(), untype(start()), untype(top()), untype(end()),
+                is_young() ? "Y" : "O",
+                seqnum(),
+                is_relocatable() ? " Relocatable" : "",
                 is_allocating()  ? " Allocating"  : "",
-                is_relocatable() ? " Relocatable" : "");
+                is_allocating() && msg != nullptr ? " " : "",
+                msg != nullptr ? msg : "");
+}
+
+void ZPage::print_on(outputStream* st) const {
+  print_on_msg(st, nullptr);
 }
 
 void ZPage::print() const {
   print_on(tty);
 }
 
-void ZPage::verify_live(uint32_t live_objects, size_t live_bytes) const {
+void ZPage::verify_live(uint32_t live_objects, size_t live_bytes, bool in_place) const {
+  if (!in_place) {
+    // In-place relocation has changed the page to allocating
+    assert_zpage_mark_state();
+  }
   guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
   guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes");
+}
+
+void ZPage::fatal_msg(const char* msg) const {
+  stringStream ss;
+  print_on_msg(&ss, msg);
+  fatal("%s", ss.base());
 }

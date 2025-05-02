@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.ssl;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
@@ -38,7 +37,6 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,7 +48,6 @@ import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLPermission;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
@@ -132,7 +129,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private final List<SNIServerName>    requestedServerNames;
 
     // Counter used to create unique nonces in NewSessionTicket
-    private BigInteger ticketNonceCounter = BigInteger.ONE;
+    private byte ticketNonceCounter = 1;
+
+    // This boolean is true when a new set of NewSessionTickets are needed after
+    // the initial ones sent after the handshake.
+    boolean updateNST = false;
 
     // The endpoint identification algorithm used to check certificates
     // in this session.
@@ -193,10 +194,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = id;
         this.host = hc.conContext.transport.getPeerHost();
         this.port = hc.conContext.transport.getPeerPort();
-        this.localSupportedSignAlgs = hc.localSupportedSignAlgs == null ?
+        this.localSupportedSignAlgs = hc.localSupportedCertSignAlgs == null ?
                 Collections.emptySet() :
                 Collections.unmodifiableCollection(
-                        new ArrayList<>(hc.localSupportedSignAlgs));
+                        new ArrayList<>(hc.localSupportedCertSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
         this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
@@ -277,6 +278,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 1 byte > Number of requestedServerNames entries
      *   < 1 byte > ServerName length
      *   < length in bytes > ServerName
+     * < 4 bytes > maximumPacketSize
+     * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
      * < 2 byte > status response length
      *   < 2 byte > status response entry length
@@ -302,8 +305,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
-     * < 4 bytes > maximumPacketSize
-     * < 4 bytes > negotiatedMaxFragSize
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -492,7 +493,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // Length of pre-shared key algorithm  (one byte)
                 i = buf.get();
                 b = new byte[i];
-                buf.get(b, 0 , i);
+                buf.get(b, 0, i);
                 String alg = new String(b);
                 // Get length of encoding
                 i = Short.toUnsignedInt(buf.getShort());
@@ -501,8 +502,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 buf.get(b);
                 this.preSharedKey = new SecretKeySpec(b, alg);
                 // Get identity len
-                this.pskIdentity = new byte[buf.get()];
-                buf.get(pskIdentity);
+                i = buf.get();
+                if (i > 0) {
+                    this.pskIdentity = new byte[buf.get()];
+                    buf.get(pskIdentity);
+                } else {
+                    this.pskIdentity = null;
+                }
                 break;
             default:
                 throw new SSLException("Failed local certs of session.");
@@ -715,14 +721,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.pskIdentity = pskIdentity;
     }
 
-    BigInteger incrTicketNonceCounter() {
-        BigInteger result = ticketNonceCounter;
-        ticketNonceCounter = ticketNonceCounter.add(BigInteger.ONE);
-        return result;
+    byte[] incrTicketNonceCounter() {
+        return new byte[] {ticketNonceCounter++};
     }
 
     boolean isPSKable() {
-        return (ticketNonceCounter.compareTo(BigInteger.ZERO) > 0);
+        return (ticketNonceCounter > 0);
     }
 
     /**
@@ -779,6 +783,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     byte[] getPskIdentity() {
         return pskIdentity;
+    }
+
+    public boolean isPSK() {
+        return (pskIdentity != null && pskIdentity.length > 0);
     }
 
     void setPeerCertificates(X509Certificate[] peer) {
@@ -903,24 +911,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * are currently valid in this process.  For client sessions,
      * this returns null.
      */
-    @SuppressWarnings("removal")
     @Override
     public SSLSessionContext getSessionContext() {
-        /*
-         * An interim security policy until we can do something
-         * more specific in 1.2. Only allow trusted code (code which
-         * can set system properties) to get an
-         * SSLSessionContext. This is to limit the ability of code to
-         * look up specific sessions or enumerate over them. Otherwise,
-         * code can only get session objects from successful SSL
-         * connections which implies that they must have had permission
-         * to make the network connection in the first place.
-         */
-        SecurityManager sm;
-        if ((sm = System.getSecurityManager()) != null) {
-            sm.checkPermission(new SSLPermission("getSSLSessionContext"));
-        }
-
         return context;
     }
 
@@ -985,7 +977,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Returns the hashcode for this session
+     * {@return the hashcode for this session}
      */
     @Override
     public int hashCode() {
@@ -1002,12 +994,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             return true;
         }
 
-        if (obj instanceof SSLSessionImpl sess) {
-            return (sessionId != null) && (sessionId.equals(
-                        sess.getSessionId()));
-        }
-
-        return false;
+        return obj instanceof SSLSessionImpl other
+                && sessionId != null
+                && sessionId.equals(other.getSessionId());
     }
 
 
@@ -1229,11 +1218,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
      * Table of application-specific session data indexed by an application
-     * key and the calling security context. This is important since
-     * sessions can be shared across different protection domains.
+     * key.
      */
-    private final ConcurrentHashMap<SecureKey, Object> boundValues;
-    boolean updateNST;
+    private final ConcurrentHashMap<String, Object> boundValues;
 
     /**
      * Assigns a session value.  Session change events are given if
@@ -1245,8 +1232,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("arguments can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        Object oldValue = boundValues.put(secureKey, value);
+        Object oldValue = boundValues.put(key, value);
 
         if (oldValue instanceof SSLSessionBindingListener) {
             SSLSessionBindingEvent e;
@@ -1274,8 +1260,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("argument can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        return boundValues.get(secureKey);
+        return boundValues.get(key);
     }
 
 
@@ -1289,8 +1274,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("argument can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        Object value = boundValues.remove(secureKey);
+        Object value = boundValues.remove(key);
 
         if (value instanceof SSLSessionBindingListener) {
             SSLSessionBindingEvent e;
@@ -1309,26 +1293,18 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public String[] getValueNames() {
-        ArrayList<Object> v = new ArrayList<>();
-        Object securityCtx = SecureKey.getCurrentSecurityContext();
-        for (SecureKey key : boundValues.keySet()) {
-            if (securityCtx.equals(key.getSecurityContext())) {
-                v.add(key.getAppKey());
-            }
-        }
-
-        return v.toArray(new String[0]);
+        return boundValues.keySet().toArray(new String[0]);
     }
 
     /**
      * Use large packet sizes now or follow RFC 2246 packet sizes (2^14)
      * until changed.
-     *
+     * <P>
      * In the TLS specification (section 6.2.1, RFC2246), it is not
      * recommended that the plaintext has more than 2^14 bytes.
      * However, some TLS implementations violate the specification.
      * This is a workaround for interoperability with these stacks.
-     *
+     * <P>
      * Application could accept large fragments up to 2^15 bytes by
      * setting the system property jsse.SSLEngine.acceptLargeFragments
      * to "true".
@@ -1341,7 +1317,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Expand the buffer size of both SSL/TLS network packet and
      * application data.
      */
-    protected void expandBufferSizes() {
+    void expandBufferSizes() {
         sessionLock.lock();
         try {
             acceptLargeFragments = true;
@@ -1514,51 +1490,5 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public String toString() {
         return "Session(" + creationTime + "|" + getCipherSuite() + ")";
-    }
-}
-
-/**
- * This "struct" class serves as a Hash Key that combines an
- * application-specific key and a security context.
- */
-class SecureKey {
-    private static final Object     nullObject = new Object();
-    private final Object            appKey;
-    private final Object            securityCtx;
-
-    static Object getCurrentSecurityContext() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        Object context = null;
-
-        if (sm != null)
-            context = sm.getSecurityContext();
-        if (context == null)
-            context = nullObject;
-        return context;
-    }
-
-    SecureKey(Object key) {
-        this.appKey = key;
-        this.securityCtx = getCurrentSecurityContext();
-    }
-
-    Object getAppKey() {
-        return appKey;
-    }
-
-    Object getSecurityContext() {
-        return securityCtx;
-    }
-
-    @Override
-    public int hashCode() {
-        return appKey.hashCode() ^ securityCtx.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof SecureKey && ((SecureKey)o).appKey.equals(appKey)
-                        && ((SecureKey)o).securityCtx.equals(securityCtx);
     }
 }

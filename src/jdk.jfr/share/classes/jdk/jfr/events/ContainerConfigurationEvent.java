@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, DataDog. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.jfr.internal.Type;
 @Label("Container Configuration")
 @Category({"Operating System"})
 @Description("A set of container specific attributes")
-public final class ContainerConfigurationEvent extends AbstractJDKEvent {
+public final class ContainerConfigurationEvent extends AbstractPeriodicEvent {
     @Label("Container Type")
     @Description("Container type information")
     public String containerType;
@@ -80,4 +80,9 @@ public final class ContainerConfigurationEvent extends AbstractJDKEvent {
     @Description("Total memory of the host running the container")
     @DataAmount
     public long hostTotalMemory;
+
+    @Label("Container Host Total Swap Memory")
+    @Description("Total swap memory of the host running the container")
+    @DataAmount
+    public long hostTotalSwapMemory;
 }

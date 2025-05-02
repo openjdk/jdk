@@ -1,0 +1,14 @@
+EnumSwitchQualifiedErrors.java:36:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnumSwitchQualifiedErrors.E2, EnumSwitchQualifiedErrors.I)
+EnumSwitchQualifiedErrors.java:43:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnumSwitchQualifiedErrors.E2, EnumSwitchQualifiedErrors.E1)
+EnumSwitchQualifiedErrors.java:49:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnumSwitchQualifiedErrors.E1, java.lang.Number)
+EnumSwitchQualifiedErrors.java:50:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnumSwitchQualifiedErrors.E2, java.lang.Number)
+EnumSwitchQualifiedErrors.java:56:18: compiler.err.enum.label.must.be.enum.constant
+EnumSwitchQualifiedErrors.java:57:18: compiler.err.enum.label.must.be.enum.constant
+EnumSwitchQualifiedErrors.java:58:18: compiler.err.enum.label.must.be.enum.constant
+EnumSwitchQualifiedErrors.java:65:18: compiler.err.pattern.or.enum.req
+EnumSwitchQualifiedErrors.java:66:18: compiler.err.pattern.or.enum.req
+EnumSwitchQualifiedErrors.java:67:18: compiler.err.pattern.expected
+EnumSwitchQualifiedErrors.java:75:18: compiler.err.duplicate.case.label
+EnumSwitchQualifiedErrors.java:83:18: compiler.err.duplicate.case.label
+EnumSwitchQualifiedErrors.java:91:18: compiler.err.duplicate.case.label
+13 errors

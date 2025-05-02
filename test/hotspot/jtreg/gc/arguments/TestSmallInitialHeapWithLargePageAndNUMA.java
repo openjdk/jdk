@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ package gc.arguments;
  * @modules java.management/sun.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseHugeTLBFS -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestSmallInitialHeapWithLargePageAndNUMA
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestSmallInitialHeapWithLargePageAndNUMA
 */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -60,15 +60,13 @@ public class TestSmallInitialHeapWithLargePageAndNUMA {
     long initHeap = heapAlignment;
     long maxHeap = heapAlignment * 2;
 
-    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(
+    OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(
         "-XX:+UseParallelGC",
         "-Xms" + String.valueOf(initHeap),
         "-Xmx" + String.valueOf(maxHeap),
         "-XX:+UseNUMA",
-        "-XX:+UseHugeTLBFS",
         "-XX:+PrintFlagsFinal",
         "-version");
-    OutputAnalyzer analyzer = new OutputAnalyzer(pb_enabled.start());
 
     if (largePageOrNumaEnabled(analyzer)) {
       // We reach here, if both NUMA and HugeTLB are supported.

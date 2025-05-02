@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,14 +240,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file,
                                                Set<? extends OpenOption> options,
@@ -259,7 +251,7 @@ public abstract class AsynchronousFileChannel
         return provider.newAsynchronousFileChannel(file, options, executor, attrs);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
+    @SuppressWarnings("rawtypes") // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
@@ -268,10 +260,10 @@ public abstract class AsynchronousFileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     ch.{@link #open(Path,Set,ExecutorService,FileAttribute[])
-     *       open}(file, opts, null, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,ExecutorService,FileAttribute[])" :
+     *     ch.open(file, opts, null, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a {@code Set} containing the options specified to
      * this method.
      *
@@ -301,14 +293,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException
@@ -499,9 +483,10 @@ public abstract class AsynchronousFileChannel
      *
      * <p> An invocation of this method of the form {@code ch.lock(att,handler)}
      * behaves in exactly the same way as the invocation
-     * <pre>
-     *     ch.{@link #lock(long,long,boolean,Object,CompletionHandler) lock}(0L, Long.MAX_VALUE, false, att, handler)
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean,Object,CompletionHandler)" :
+     *     ch.lock(0L, Long.MAX_VALUE, false, att, handler)
+     * }
      *
      * @param   <A>
      *          The type of the attachment
@@ -572,9 +557,10 @@ public abstract class AsynchronousFileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     ch.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false)
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     ch.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  a {@code Future} object representing the pending result
      *
@@ -648,8 +634,10 @@ public abstract class AsynchronousFileChannel
      * <p> An invocation of this method of the form {@code ch.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     ch.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     ch.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired

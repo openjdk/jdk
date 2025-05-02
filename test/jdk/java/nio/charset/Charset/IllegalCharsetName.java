@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,71 @@
  */
 
 /* @test
- * @bug 6330020 8184665
+ * @bug 4786884 6330020 8184665
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
+ * @run junit IllegalCharsetName
  */
 
-import java.nio.charset.*;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.IllegalCharsetNameException;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class IllegalCharsetName {
-    public static void main(String[] args) throws Exception {
-        String[] illegalNames = {
-            ".",
-            "_",
-            ":",
-            "-",
-            ".name",
-            "_name",
-            ":name",
-            "-name",
-            "name*name",
-            "name?name"
-        };
-        for (int i = 0; i < illegalNames.length; i++) {
-            try {
-                Charset.forName(illegalNames[i]);
-                throw new Exception("Charset.forName(): No exception thrown");
-            } catch (IllegalCharsetNameException x) { //expected
-            }
 
-            try {
-                Charset.isSupported(illegalNames[i]);
-                throw new Exception("Charset.isSupported(): No exception thrown");
-            } catch (IllegalCharsetNameException x) { //expected
-            }
+    // Charset.forName and Charset.isSupported should throw an
+    // IllegalCharsetNameException when passed an illegal name
+    @ParameterizedTest
+    @MethodSource("illegalNames")
+    public void illegalCharsetsTest(String name) {
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(name));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(name));
+    }
+
+    // Charset.forName, Charset.isSupported, and the Charset constructor should
+    // throw an IllegalCharsetNameException when passed an empty name
+    @Test
+    public void emptyCharsetsTest() {
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(""));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(""));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> new Charset("", new String[]{}) {
+                    @Override
+                    public boolean contains(Charset cs) {
+                        return false;
+                    }
+
+                    @Override
+                    public CharsetDecoder newDecoder() {
+                        return null;
+                    }
+
+                    @Override
+                    public CharsetEncoder newEncoder() {
+                        return null;
+                    }
+                });
+    }
+
+    // Standard charsets may bypass alias checking during startup, test that
+    // they're all well-behaved as a sanity test
+    @Test
+    public void aliasTest() {
+        for (Charset cs : Charset.availableCharsets().values()) {
+            checkAliases(cs);
         }
-
-        // Standard charsets may bypass alias checking during startup, test that
-        // they're all well-behaved as a sanity test
-        checkAliases(StandardCharsets.ISO_8859_1);
-        checkAliases(StandardCharsets.US_ASCII);
-        checkAliases(StandardCharsets.UTF_8);
     }
 
     private static void checkAliases(Charset cs) {
@@ -69,5 +94,20 @@ public class IllegalCharsetName {
             Charset.forName(alias);
             Charset.isSupported(alias);
         }
+    }
+
+    static Stream<String> illegalNames() {
+        return Stream.of(
+                ".",
+                "_",
+                ":",
+                "-",
+                ".name",
+                "_name",
+                ":name",
+                "-name",
+                "name*name",
+                "name?name"
+        );
     }
 }

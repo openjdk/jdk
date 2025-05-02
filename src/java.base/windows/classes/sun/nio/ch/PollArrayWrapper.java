@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class PollArrayWrapper {
     @Native private static final short FD_OFFSET     = 0; // fd offset in pollfd
     @Native private static final short EVENT_OFFSET  = 4; // events offset in pollfd
 
-    static short SIZE_POLLFD = 8; // sizeof pollfd struct
+    static final short SIZE_POLLFD = 8; // sizeof pollfd struct
 
     private int size; // Size of the pollArray
 

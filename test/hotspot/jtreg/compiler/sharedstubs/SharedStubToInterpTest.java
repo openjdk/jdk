@@ -23,21 +23,29 @@
  */
 
 /**
- * @test SharedStubToInterpTest
- * @summary Checks that stubs to the interpreter can be shared for static or final method.
+ * @test id=C1
  * @bug 8280481
+ * @summary Checks that stubs to the interpreter can be shared for static or final method.
  * @library /test/lib
+ * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
+ * @requires vm.debug
+ * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:TieredStopAtLevel=1
  *
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @test id=C2
+ * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
+ * @requires vm.debug
+ * @requires !vm.graal.enabled
+ * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:-TieredCompilation
  *
- * @run driver compiler.sharedstubs.SharedStubToInterpTest
  */
 
 package compiler.sharedstubs;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -50,6 +58,7 @@ public class SharedStubToInterpTest {
         command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
+        command.add("-XX:+PrintRelocations");
         command.add("-XX:CompileCommand=compileonly," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=print," + testClassName + "::" + "test");
@@ -59,7 +68,7 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -71,59 +80,20 @@ public class SharedStubToInterpTest {
     }
 
     public static void main(String[] args) throws Exception {
-        List<String> compilers = java.util.Arrays.asList("-XX:-TieredCompilation" /* C2 */,
-            "-XX:TieredStopAtLevel=1" /* C1 */);
-        List<String> tests = java.util.Arrays.asList("StaticMethodTest",
-            "FinalClassTest", "FinalMethodTest");
-        for (String compiler : compilers) {
-            for (String test : tests) {
-                runTest(compiler, test);
-            }
+        String[] methods = new String[] { "StaticMethodTest", "FinalClassTest", "FinalMethodTest"};
+        for (String methodName : methods) {
+            runTest(args[0], methodName);
         }
-    }
-
-    private static String skipTo(Iterator<String> iter, String substring) {
-        while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains(substring)) {
-                return nextLine;
-            }
-        }
-        return null;
     }
 
     private static void checkOutput(OutputAnalyzer output) {
-        Iterator<String> iter = output.asLines().listIterator();
-
-        String match = skipTo(iter, "Compiled method");
-        while (match != null && !match.contains("Test::test")) {
-            match = skipTo(iter, "Compiled method");
-        }
-        if (match == null) {
-            throw new RuntimeException("Missing compiler output for the method 'test'");
-        }
-
-        while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains("{static_stub}")) {
-                // Static stubs must be created at the end of the Stub section.
-                throw new RuntimeException("Found {static_stub} before Deopt Handler Code");
-            } else if (nextLine.contains("{runtime_call DeoptimizationBlob}")) {
-                // Shared static stubs are put after Deopt Handler Code.
-                break;
-            }
-        }
-
-        int foundStaticStubs = 0;
-        while (iter.hasNext()) {
-            if (iter.next().contains("{static_stub}")) {
-                foundStaticStubs += 1;
-            }
-        }
-
-        final int expectedStaticStubs = 2;
-        if (foundStaticStubs != expectedStaticStubs) {
-            throw new RuntimeException("Found static stubs: " + foundStaticStubs + "; Expected static stubs: " + expectedStaticStubs);
+        List<String> addrs = Pattern.compile("\\(static_stub\\) addr=(\\w+) .*\\[static_call=")
+            .matcher(output.getStdout())
+            .results()
+            .map(m -> m.group(1))
+            .toList();
+        if (addrs.stream().distinct().count() >= addrs.size()) {
+            throw new RuntimeException("No static stubs reused: distinct " + addrs.stream().distinct().count() + ", in total " + addrs.size());
         }
     }
 

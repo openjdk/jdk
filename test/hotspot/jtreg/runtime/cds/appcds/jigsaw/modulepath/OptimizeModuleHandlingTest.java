@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled & vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver OptimizeModuleHandlingTest
  * @summary test module path changes for optimization of
@@ -64,8 +64,8 @@ public class OptimizeModuleHandlingTest {
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
-    private static String OPTIMIZE_ENABLED = "optimized module handling: enabled";
-    private static String OPTIMIZE_DISABLED = "optimized module handling: disabled";
+    private static String OPTIMIZE_ENABLED = "] optimized module handling: enabled";
+    private static String OPTIMIZE_DISABLED = "] optimized module handling: disabled";
     private static String MAIN_FROM_JAR = "class,load.*com.bars.Main.*[.]jar";
     private static String MAIN_FROM_CDS = "class,load.*com.bars.Main.*shared objects file";
     private static String TEST_FROM_JAR = "class,load.*com.foos.Test.*[.]jar";
@@ -154,14 +154,14 @@ public class OptimizeModuleHandlingTest {
 
         // Following 5 - 10 test with CDS on
         tty("5. run with CDS on, with module path");
-        String prefix[] = {"-Djava.class.path=", "-Xlog:cds", "-Xlog:class+load"};
+        String prefix[] = {"-Djava.class.path=", "-Xlog:cds,class+load,class+path=info"};
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  libsDir.toString(), // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(OPTIMIZE_DISABLED)
+                out.shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(OPTIMIZE_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
@@ -174,8 +174,8 @@ public class OptimizeModuleHandlingTest {
                 out.shouldContain(CLASS_FOUND_MESSAGE)
                    .shouldMatch(MAIN_FROM_CDS)
                    .shouldMatch(TEST_FROM_CDS)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED);
+                   .shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(OPTIMIZE_DISABLED);
             });
         tty("7. run with CDS on, with jar on path");
         TestCommon.run("-Xlog:cds",
@@ -231,7 +231,6 @@ public class OptimizeModuleHandlingTest {
                        MAIN_CLASS)
             .assertAbnormalExit(out -> {
                 out.shouldNotContain(CLASS_FOUND_MESSAGE)
-                   .shouldContain(OPTIMIZE_DISABLED)           // mapping info
                    .shouldContain("shared class paths mismatch");
             });
     }
@@ -306,7 +305,7 @@ public class OptimizeModuleHandlingTest {
                    .shouldNotContain(OPTIMIZE_ENABLED)
                    .shouldNotContain(OPTIMIZE_DISABLED);
             });
-        tty("10. run with CDS on,  with main/test jars on classpath also with -Xbootclasspath/a:  should not pass");
+        tty("10. run with CDS on,  with main/test jars on classpath also with -Xbootclasspath/a:  should pass");
         TestCommon.run("-Xlog:cds",
                        "-cp", mainJar.toString() + PATH_SEPARATOR + testJar.toString(),
                        "-Xbootclasspath/a:", ".",
@@ -314,9 +313,57 @@ public class OptimizeModuleHandlingTest {
             .assertAbnormalExit(out -> {
                 out.shouldNotContain(CLASS_FOUND_MESSAGE)
                    .shouldNotContain(CLASS_NOT_FOUND_MESSAGE)
-                   .shouldContain(OPTIMIZE_DISABLED)
                    .shouldNotContain(OPTIMIZE_ENABLED)
                    .shouldContain(MAP_FAILED);
             });
+
+        // Dump an archive with -Xbootclasspath/a
+        output = TestCommon.createArchive(
+                                testJar.toString(),
+                                appClasses,
+                                "-Xbootclasspath/a:" + mainJar.toString());
+        TestCommon.checkDump(output);
+        tty("11. run with CDS on,  with test jar on classpath and with main jar on -Xbootclasspath/a:  should pass");
+        TestCommon.run("-Xlog:cds",
+                       "-cp", testJar.toString(),
+                       "-Xbootclasspath/a:" + mainJar.toString(),
+                       MAIN_CLASS)
+            .assertNormalExit(out -> {
+                out.shouldNotContain(CLASS_FOUND_MESSAGE)
+                   .shouldNotContain(CLASS_NOT_FOUND_MESSAGE)
+                   .shouldContain(OPTIMIZE_ENABLED);
+            });
+        tty("12. run with CDS on,  with main jar on classpath and with test jar on -Xbootclasspath/a:  should not pass due to class paths mismatch");
+        TestCommon.run("-Xlog:cds",
+                       "-cp", mainJar.toString(),
+                       "-Xbootclasspath/a:" + testJar.toString(),
+                       MAIN_CLASS)
+            .assertAbnormalExit(out -> {
+                out.shouldNotContain(CLASS_FOUND_MESSAGE)
+                   .shouldNotContain(CLASS_NOT_FOUND_MESSAGE)
+                   .shouldNotContain(OPTIMIZE_ENABLED)
+                   .shouldContain(MAP_FAILED);
+            });
+
+        // Skip the following test for dynamic CDS archive because the current
+        // dynamic dump test utililty does not support empty -cp with a classlist.
+        // (see createArchive(CDSOptions opts) in TestCommon.java)
+        if (!CDSTestUtils.isDynamicArchive()) {
+            // Dump an archive with only -Xbootclasspath/a
+            output = TestCommon.createArchive(
+                                    null,
+                                    appClasses,
+                                    "-Xbootclasspath/a:" + mainJar.toString());
+            TestCommon.checkDump(output);
+            tty("13. run with CDS on,  with the same -Xbootclasspath/a as dump time and adding a -cp with test.jar:  should pass");
+            TestCommon.run("-Xlog:cds,class+load",
+                           "-cp", testJar.toString(),
+                           "-Xbootclasspath/a:" + mainJar.toString(),
+                           MAIN_CLASS)
+                .assertNormalExit(out -> {
+                    out.shouldMatch(MAIN_FROM_CDS)
+                       .shouldContain(OPTIMIZE_ENABLED);
+            });
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.io.Serializable;
 
 /**
  * {@code Format} is an abstract base class for formatting locale-sensitive
- * information such as dates, messages, and numbers.
+ * information such as dates, messages, numbers, and lists.
  *
  * <p>
  * {@code Format} defines the programming interface for formatting
@@ -61,9 +61,9 @@ import java.io.Serializable;
  * <h2>Subclassing</h2>
  *
  * <p>
- * The Java Platform provides three specialized subclasses of {@code Format}--
- * {@code DateFormat}, {@code MessageFormat}, and
- * {@code NumberFormat}--for formatting dates, messages, and numbers,
+ * The Java Platform provides specialized subclasses of {@code Format}--
+ * {@code DateFormat}, {@code MessageFormat}, {@code NumberFormat}, and
+ * {@code ListFormat}--for formatting dates, messages, numbers, and lists
  * respectively.
  * <p>
  * Concrete subclasses must implement three methods:
@@ -106,6 +106,9 @@ import java.io.Serializable;
  * </pre>
  * </blockquote>
  *
+ * <p> Subclasses may also consider implementing leniency when parsing.
+ * The definition of leniency should be delegated to the subclass.
+ *
  * <p>
  * And finally subclasses may define a set of constants to identify the various
  * fields in the formatted output. These constants are used to create a FieldPosition
@@ -128,6 +131,7 @@ import java.io.Serializable;
  * @see          java.text.NumberFormat
  * @see          java.text.DateFormat
  * @see          java.text.MessageFormat
+ * @see          java.text.ListFormat
  * @author       Mark Davis
  * @since 1.1
  */
@@ -144,19 +148,24 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Formats an object to produce a string. This is equivalent to
+     * Formats an object to produce a string.
+     *
+     * @implSpec This method returns a string that would be equal to the string returned by
      * <blockquote>
      * {@link #format(Object, StringBuffer, FieldPosition) format}<code>(obj,
      *         new StringBuffer(), new FieldPosition(0)).toString();</code>
      * </blockquote>
-     *
      * @param obj    The object to format
      * @return       Formatted string.
      * @throws    IllegalArgumentException if the Format cannot format the given
      *            object
      */
     public final String format (Object obj) {
-        return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(obj, StringBufFactory.of(), new FieldPosition(0)).toString();
+        } else {
+            return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        }
     }
 
     /**
@@ -181,6 +190,12 @@ public abstract class Format implements Serializable, Cloneable {
                     StringBuffer toAppendTo,
                     FieldPosition pos);
 
+    StringBuf format(Object obj,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Formats an Object producing an {@code AttributedCharacterIterator}.
      * You can use the returned {@code AttributedCharacterIterator}
@@ -192,11 +207,11 @@ public abstract class Format implements Serializable, Cloneable {
      * to define what the legal values are for each attribute in the
      * {@code AttributedCharacterIterator}, but typically the attribute
      * key is also used as the attribute value.
-     * <p>The default implementation creates an
-     * {@code AttributedCharacterIterator} with no attributes. Subclasses
-     * that support fields should override this and create an
-     * {@code AttributedCharacterIterator} with meaningful attributes.
      *
+     * @apiNote Subclasses that support fields should override this and create an
+     * {@code AttributedCharacterIterator} with meaningful attributes.
+     * @implSpec The default implementation creates an
+     * {@code AttributedCharacterIterator} with no attributes.
      * @throws    NullPointerException if obj is null.
      * @throws    IllegalArgumentException when the Format cannot format the
      *            given object.
@@ -209,37 +224,36 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Parses text from a string to produce an object.
+     * Parses text from the given string to produce an object.
      * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
+     * This method attempts to parse text starting at the index given by
+     * {@code pos}. If parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
      * object is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
      * If an error occurs, then the index of {@code pos} is not
      * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
+     * the character where the error occurred, and {@code null} is returned.
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
      * @return An {@code Object} parsed from the string. In case of
-     *         error, returns null.
-     * @throws NullPointerException if {@code source} or {@code pos} is null.
+     *         error, returns {@code null}.
+     * @throws NullPointerException if {@code source} or {@code pos} is
+     *         {@code null}.
      */
     public abstract Object parseObject (String source, ParsePosition pos);
 
     /**
      * Parses text from the beginning of the given string to produce an object.
-     * The method may not use the entire text of the given string.
+     * This method may not use the entire text of the given string.
      *
-     * @param source A {@code String} whose beginning should be parsed.
+     * @param source A {@code String}, to be parsed from the beginning.
      * @return An {@code Object} parsed from the string.
-     * @throws    ParseException if the beginning of the specified string
-     *            cannot be parsed.
-     * @throws NullPointerException if {@code source} is null.
+     * @throws ParseException if parsing fails
+     * @throws NullPointerException if {@code source} is {@code null}.
      */
     public Object parseObject(String source) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
@@ -391,7 +405,7 @@ public abstract class Format implements Serializable, Cloneable {
          *        NOT modify it.
          */
         public void formatted(Format.Field attr, Object value, int start,
-                              int end, StringBuffer buffer);
+                              int end, StringBuf buffer);
 
         /**
          * Notified when a particular region of the String is formatted.
@@ -405,6 +419,38 @@ public abstract class Format implements Serializable, Cloneable {
          *        NOT modify it.
          */
         public void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, StringBuffer buffer);
+                              int start, int end, StringBuf buffer);
+    }
+
+    /**
+     * StringBuf is the minimal common interface of {@code StringBuffer} and {@code StringBuilder}.
+     * It is used by the various {@code Format} implementations as the internal string buffer.
+     */
+    sealed interface StringBuf
+            permits StringBufFactory.StringBufferImpl, StringBufFactory.StringBuilderImpl {
+
+        int length();
+
+        String substring(int start, int end);
+
+        String substring(int start);
+
+        StringBuf append(char c);
+
+        StringBuf append(String str);
+
+        StringBuf append(int i);
+
+        StringBuf append(char[] str, int offset, int len);
+
+        StringBuf append(CharSequence s, int start, int end);
+
+        StringBuf append(StringBuffer sb);
+
+        boolean isProxyStringBuilder();
+
+        StringBuffer asStringBuffer();
+
+        StringBuilder asStringBuilder();
     }
 }

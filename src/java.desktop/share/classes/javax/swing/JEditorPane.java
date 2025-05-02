@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,6 @@ import javax.swing.text.WrappedPlainView;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
-
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * A text component to edit various kinds of content.
@@ -619,35 +617,37 @@ public class JEditorPane extends JTextComponent {
         String charset = (String) getClientProperty("charset");
         try(Reader r = (charset != null) ? new InputStreamReader(in, charset) :
                 new InputStreamReader(in)) {
-            kit.read(r, doc, 0);
-        } catch (BadLocationException e) {
-            throw new IOException(e.getMessage());
-        } catch (ChangedCharSetException changedCharSetException) {
-            String charSetSpec = changedCharSetException.getCharSetSpec();
-            if (changedCharSetException.keyEqualsCharSet()) {
-                putClientProperty("charset", charSetSpec);
-            } else {
-                setCharsetFromContentTypeParameters(charSetSpec);
-            }
             try {
-                in.reset();
-            } catch (IOException exception) {
-                //mark was invalidated
-                in.close();
-                URL url = (URL)doc.getProperty(Document.StreamDescriptionProperty);
-                if (url != null) {
-                    URLConnection conn = url.openConnection();
-                    in = conn.getInputStream();
+                kit.read(r, doc, 0);
+            } catch (BadLocationException e) {
+                throw new IOException(e.getMessage());
+            } catch (ChangedCharSetException changedCharSetException) {
+                String charSetSpec = changedCharSetException.getCharSetSpec();
+                if (changedCharSetException.keyEqualsCharSet()) {
+                    putClientProperty("charset", charSetSpec);
                 } else {
-                    //there is nothing we can do to recover stream
-                    throw changedCharSetException;
+                    setCharsetFromContentTypeParameters(charSetSpec);
                 }
+                try {
+                    in.reset();
+                } catch (IOException exception) {
+                    //mark was invalidated
+                    in.close();
+                    URL url = (URL)doc.getProperty(Document.StreamDescriptionProperty);
+                    if (url != null) {
+                        URLConnection conn = url.openConnection();
+                        in = conn.getInputStream();
+                    } else {
+                        //there is nothing we can do to recover stream
+                        throw changedCharSetException;
+                    }
+                }
+                try {
+                    doc.remove(0, doc.getLength());
+                } catch (BadLocationException e) {}
+                doc.putProperty("IgnoreCharsetDirective", Boolean.valueOf(true));
+                read(in, doc);
             }
-            try {
-                doc.remove(0, doc.getLength());
-            } catch (BadLocationException e) {}
-            doc.putProperty("IgnoreCharsetDirective", Boolean.valueOf(true));
-            read(in, doc);
         }
     }
 
@@ -1227,7 +1227,7 @@ public class JEditorPane extends JTextComponent {
      */
     @SuppressWarnings("deprecation")
     public static EditorKit createEditorKitForContentType(String type) {
-        Hashtable<String, EditorKit> kitRegistry = getKitRegisty();
+        Hashtable<String, EditorKit> kitRegistry = getKitRegistry();
         EditorKit k = kitRegistry.get(type);
         if (k == null) {
             // try to dynamically load the support
@@ -1236,7 +1236,6 @@ public class JEditorPane extends JTextComponent {
             try {
                 Class<?> c;
                 if (loader != null) {
-                    ReflectUtil.checkPackageAccess(classname);
                     c = loader.loadClass(classname);
                 } else {
                     // Will only happen if developer has invoked
@@ -1294,7 +1293,7 @@ public class JEditorPane extends JTextComponent {
         } else {
             getKitLoaderRegistry().remove(type);
         }
-        getKitRegisty().remove(type);
+        getKitRegistry().remove(type);
     }
 
     /**
@@ -1326,7 +1325,7 @@ public class JEditorPane extends JTextComponent {
         return tmp;
     }
 
-    private static Hashtable<String, EditorKit> getKitRegisty() {
+    private static Hashtable<String, EditorKit> getKitRegistry() {
         @SuppressWarnings("unchecked")
         Hashtable<String, EditorKit> ht =
             (Hashtable)SwingUtilities.appContextGet(kitRegistryKey);
@@ -1615,6 +1614,8 @@ public class JEditorPane extends JTextComponent {
      * it set the client {@link #putClientProperty property} with this name
      * to <code>Boolean.TRUE</code>.
      *
+     * @spec https://www.w3.org/TR/CSS22
+     *      Cascading Style Sheets Level 2 Revision 2 (CSS 2.2) Specification
      * @since 1.5
      */
     public static final String W3C_LENGTH_UNITS = "JEditorPane.w3cLengthUnits";

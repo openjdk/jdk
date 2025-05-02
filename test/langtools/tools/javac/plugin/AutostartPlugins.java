@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *           jdk.compiler/com.sun.tools.javac.main
  *           jdk.jlink
  *  @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask
- *  @run main AutostartPlugins
+ *  @run main/othervm AutostartPlugins
  */
 
 import java.io.IOException;

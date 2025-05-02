@@ -85,7 +85,7 @@ size_t NonblockingQueue<T, next_ptr>::length() const {
 
 // An append operation atomically exchanges the new tail with the queue tail.
 // It then sets the "next" value of the old tail to the head of the list being
-// appended. If the old tail is nullptr then the queue was empty, then the
+// appended. If the old tail is null then the queue was empty, then the
 // head of the list being appended is instead stored in the queue head.
 //
 // This means there is a period between the exchange and the old tail update
@@ -107,8 +107,8 @@ void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
   set_next(last, end_marker());
   T* old_tail = Atomic::xchg(&_tail, &last);
   if (old_tail == nullptr) {
-    // If old_tail is nullptr then the queue was empty, and _head must also be
-    // nullptr.  The correctness of this assertion depends on try_pop clearing
+    // If old_tail is null then the queue was empty, and _head must also be
+    // null. The correctness of this assertion depends on try_pop clearing
     // first _head then _tail when taking the last entry.
     assert(Atomic::load(&_head) == nullptr, "invariant");
     // Fall through to common update of _head.
@@ -126,7 +126,7 @@ void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
     return;
   } else {
     // A concurrent try_pop has claimed old_tail, so it is no longer in the
-    // list.  The queue was logically empty.  _head is either nullptr or
+    // list. The queue was logically empty.  _head is either null or
     // old_tail, depending on how far try_pop operations have progressed.
     DEBUG_ONLY(T* old_head = Atomic::load(&_head);)
     assert((old_head == nullptr) || (old_head == old_tail), "invariant");
@@ -152,7 +152,7 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
     // [Clause 1]
     // There are several cases for next_node.
     // (1) next_node is the extension of the queue's list.
-    // (2) next_node is nullptr, because a competing try_pop took old_head.
+    // (2) next_node is null, because a competing try_pop took old_head.
     // (3) next_node is the extension of some unrelated list, because a
     // competing try_pop took old_head and put it in some other list.
     //
@@ -171,7 +171,7 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
       // The cmpxchg to advance the list succeeded, but a concurrent try_pop
       // has already claimed old_head (see [Clause 2] - old_head was the last
       // entry in the list) by nulling old_head's next field.  The advance set
-      // _head to nullptr, "helping" the competing try_pop.  _head will remain
+      // _head to null, "helping" the competing try_pop.  _head will remain
       // nullptr until a subsequent push/append.  This is a lost race, and we
       // report it as such for consistency, though we could report the queue
       // was empty.  We don't attempt to further help [Clause 2] by also
@@ -191,7 +191,7 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
   } else if (is_end(Atomic::cmpxchg(next_ptr(*old_head), next_node, (T*)nullptr))) {
     // [Clause 2]
     // Old_head was the last entry and we've claimed it by setting its next
-    // value to nullptr.  However, this leaves the queue in disarray.  Fix up
+    // value to null.  However, this leaves the queue in disarray.  Fix up
     // the queue, possibly in conjunction with other concurrent operations.
     // Any further try_pops will consider the queue empty until a
     // push/append completes by installing a new head.
@@ -200,12 +200,12 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
     // dealing with _head first gives a stronger invariant in append, and is
     // also consistent with [Clause 1b].
 
-    // Attempt to change the queue head from old_head to nullptr.  Failure of
+    // Attempt to change the queue head from old_head to null.  Failure of
     // the cmpxchg indicates a concurrent operation updated _head first.  That
     // could be either a push/append or a try_pop in [Clause 1b].
     Atomic::cmpxchg(&_head, old_head, (T*)nullptr);
 
-    // Attempt to change the queue tail from old_head to nullptr.  Failure of
+    // Attempt to change the queue tail from old_head to null.  Failure of
     // the cmpxchg indicates that a concurrent push/append updated _tail first.
     // That operation will eventually recognize the old tail (our old_head) is
     // no longer in the list and update _head from the list being appended.

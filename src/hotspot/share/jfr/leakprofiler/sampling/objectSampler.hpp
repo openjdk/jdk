@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   void add(HeapWord* object, size_t size, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread);
   void scavenge();
   void remove_dead(ObjectSample* sample);
+  void push_span(ObjectSample* sample, size_t span);
 
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);
@@ -85,6 +86,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   ObjectSample* last() const;
   const ObjectSample* last_resolved() const;
   void set_last_resolved(const ObjectSample* sample);
+  static bool has_unresolved_entry();
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP

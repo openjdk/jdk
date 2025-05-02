@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class ValueConversions {
         return caches;
     }
 
-    /// Converting references to values.
+    //--- Converting references to values.
 
     // There are several levels of this unboxing conversions:
     //   no conversions:  exactly Integer.valueOf, etc.
@@ -76,8 +76,8 @@ public class ValueConversions {
         return x;
     }
     static int unboxInteger(Object x, boolean cast) {
-        if (x instanceof Integer)
-            return (Integer) x;
+        if (x instanceof Integer i)
+            return i;
         return primitiveConversion(Wrapper.INT, x, cast).intValue();
     }
 
@@ -85,8 +85,8 @@ public class ValueConversions {
         return x;
     }
     static byte unboxByte(Object x, boolean cast) {
-        if (x instanceof Byte)
-            return (Byte) x;
+        if (x instanceof Byte b)
+            return b;
         return primitiveConversion(Wrapper.BYTE, x, cast).byteValue();
     }
 
@@ -94,8 +94,8 @@ public class ValueConversions {
         return x;
     }
     static short unboxShort(Object x, boolean cast) {
-        if (x instanceof Short)
-            return (Short) x;
+        if (x instanceof Short s)
+            return s;
         return primitiveConversion(Wrapper.SHORT, x, cast).shortValue();
     }
 
@@ -103,8 +103,8 @@ public class ValueConversions {
         return x;
     }
     static boolean unboxBoolean(Object x, boolean cast) {
-        if (x instanceof Boolean)
-            return (Boolean) x;
+        if (x instanceof Boolean b)
+            return b;
         return (primitiveConversion(Wrapper.BOOLEAN, x, cast).intValue() & 1) != 0;
     }
 
@@ -112,8 +112,8 @@ public class ValueConversions {
         return x;
     }
     static char unboxCharacter(Object x, boolean cast) {
-        if (x instanceof Character)
-            return (Character) x;
+        if (x instanceof Character c)
+            return c;
         return (char) primitiveConversion(Wrapper.CHAR, x, cast).intValue();
     }
 
@@ -121,8 +121,8 @@ public class ValueConversions {
         return x;
     }
     static long unboxLong(Object x, boolean cast) {
-        if (x instanceof Long)
-            return (Long) x;
+        if (x instanceof Long l)
+            return l;
         return primitiveConversion(Wrapper.LONG, x, cast).longValue();
     }
 
@@ -130,8 +130,8 @@ public class ValueConversions {
         return x;
     }
     static float unboxFloat(Object x, boolean cast) {
-        if (x instanceof Float)
-            return (Float) x;
+        if (x instanceof Float f)
+            return f;
         return primitiveConversion(Wrapper.FLOAT, x, cast).floatValue();
     }
 
@@ -139,8 +139,8 @@ public class ValueConversions {
         return x;
     }
     static double unboxDouble(Object x, boolean cast) {
-        if (x instanceof Double)
-            return (Double) x;
+        if (x instanceof Double d)
+            return d;
         return primitiveConversion(Wrapper.DOUBLE, x, cast).doubleValue();
     }
 
@@ -222,7 +222,7 @@ public class ValueConversions {
 
     private static final Integer ZERO_INT = 0, ONE_INT = 1;
 
-    /// Primitive conversions
+    //--- Primitive conversions
     /**
      * Produce a Number which represents the given value {@code x}
      * according to the primitive type of the given wrapper {@code wrap}.
@@ -236,12 +236,12 @@ public class ValueConversions {
             if (!cast)  return null;
             return ZERO_INT;
         }
-        if (x instanceof Number) {
-            res = (Number) x;
-        } else if (x instanceof Boolean) {
-            res = ((boolean)x ? ONE_INT : ZERO_INT);
-        } else if (x instanceof Character) {
-            res = (int)(char)x;
+        if (x instanceof Number n) {
+            res = n;
+        } else if (x instanceof Boolean b) {
+            res = b ? ONE_INT : ZERO_INT;
+        } else if (x instanceof Character c) {
+            res = (int) c;
         } else {
             // this will fail with the required ClassCastException:
             res = (Number) x;
@@ -259,22 +259,22 @@ public class ValueConversions {
      * Byte, Short, Character, or Integer.
      */
     public static int widenSubword(Object x) {
-        if (x instanceof Integer)
-            return (int) x;
-        else if (x instanceof Boolean)
-            return fromBoolean((boolean) x);
-        else if (x instanceof Character)
-            return (char) x;
-        else if (x instanceof Short)
-            return (short) x;
-        else if (x instanceof Byte)
-            return (byte) x;
+        if (x instanceof Integer i)
+            return i;
+        else if (x instanceof Boolean b)
+            return fromBoolean(b);
+        else if (x instanceof Character c)
+            return c;
+        else if (x instanceof Short s)
+            return s;
+        else if (x instanceof Byte b)
+            return b;
         else
             // Fail with a ClassCastException.
             return (int) x;
     }
 
-    /// Converting primitives to references
+    //--- Converting primitives to references
 
     static Integer boxInteger(int x) {
         return x;
@@ -336,7 +336,7 @@ public class ValueConversions {
         throw new IllegalArgumentException("cannot find box adapter for " + wrap);
     }
 
-    /// Constant functions
+    //--- Constant functions
 
     static void ignore(Object x) {
         // no value to return; this is an unbox of null
@@ -360,7 +360,7 @@ public class ValueConversions {
     }
 
 
-    /// Primitive conversions.
+    //--- Primitive conversions.
     // These are supported directly by the JVM, usually by a single instruction.
     // In the case of narrowing to a subword, there may be a pair of instructions.
     // In the case of booleans, there may be a helper routine to manage a 1-bit value.

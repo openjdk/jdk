@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * The <code>HttpClient</code> that should be notified when the chunked stream has
      * completed.
      */
-    private HttpClient hc;
+    private final HttpClient hc;
 
     /**
      * The <code>MessageHeader</code> that is populated with any optional trailer
      * that appear after the last chunk.
      */
-    private MessageHeader responses;
+    private final MessageHeader responses;
 
     /**
      * The size, in bytes, of the chunk that is currently being read.

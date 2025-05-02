@@ -25,7 +25,7 @@
   @test
   @bug 4398231
   @summary  Confirm that the print dialog returns false when cancelled.
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual PrintDialogCancel
 */
 
@@ -42,9 +42,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.print.*;
-
-// This test is a "main" test as applets would need Runtime permission
-// "queuePrintJob".
 
 public class PrintDialogCancel {
 

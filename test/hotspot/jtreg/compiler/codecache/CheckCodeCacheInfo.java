@@ -28,9 +28,7 @@
  * @library /test/lib
  * @requires vm.debug
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   compiler.codecache.CheckCodeCacheInfo
+ * @run driver compiler.codecache.CheckCodeCacheInfo
  */
 
 package compiler.codecache;
@@ -58,9 +56,14 @@ public class CheckCodeCacheInfo {
                        + pair
                        + "Non-nmethod blobs:\\n"
                        + " #\\d+ runtime = " + entry
+                       + " #\\d+ upcall = " + entry
                        + " #\\d+ uncommon trap = " + entry
                        + " #\\d+ deoptimization = " + entry
+                       + " #\\d+ exception = " + entry
+                       + " #\\d+ safepoint = " + entry
                        + " #\\d+ adapter = " + entry
+                       + " #\\d+ mh_adapter = " + entry
+                       + " #\\d+ vtable = " + entry
                        + " #\\d+ buffer blob = " + entry
                        + " #\\d+ other = " + entry;
     }
@@ -68,9 +71,9 @@ public class CheckCodeCacheInfo {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintCodeCache",
-                                                   "-XX:+Verbose",
-                                                   "-version");
+        pb = ProcessTools.createTestJavaProcessBuilder("-XX:+PrintCodeCache",
+                                                       "-XX:+Verbose",
+                                                       "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         out.stdoutShouldMatch(VERBOSE_REGEXP);

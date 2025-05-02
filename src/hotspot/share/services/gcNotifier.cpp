@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -122,7 +121,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
     if (u.max_size() == 0 && u.used() > 0) {
       // If max size == 0, this pool is a survivor space.
       // Set max size = -1 since the pools will be swapped after GC.
-      MemoryUsage usage(u.init_size(), u.used(), u.committed(), (size_t)-1);
+      MemoryUsage usage(u.init_size(), u.used(), u.committed(), MemoryUsage::undefined_size());
       after_usage = MemoryService::create_MemoryUsage_obj(usage, CHECK_NH);
     } else {
         after_usage = MemoryService::create_MemoryUsage_obj(u, CHECK_NH);

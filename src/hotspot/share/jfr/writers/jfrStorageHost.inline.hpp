@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ inline void StorageHost<Adapter, AP>::bind() {
     assert(is_valid(), "invariant");
     return;
   }
-  this->set_start_pos(NULL);
-  this->set_current_pos((const u1*)NULL);
-  this->set_end_pos(NULL);
+  this->set_start_pos(nullptr);
+  this->set_current_pos((const u1*)nullptr);
+  this->set_end_pos(nullptr);
 }
 
 template <typename Adapter, typename AP>
@@ -53,12 +53,12 @@ inline void StorageHost<Adapter, AP>::hard_reset() {
 
 template <typename Adapter, typename AP>
 inline void StorageHost<Adapter, AP>::cancel() {
-  this->set_end_pos(NULL);
+  this->set_end_pos(nullptr);
 }
 
 template <typename Adapter, typename AP>
 inline bool StorageHost<Adapter, AP>::is_backed() {
-  return _adapter.storage() != NULL;
+  return _adapter.storage() != nullptr;
 }
 
 template <typename Adapter, typename AP>
@@ -106,7 +106,7 @@ inline StorageHost<Adapter, AP>::StorageHost(Thread* thread) : Position<AP>(), _
 
 template <typename Adapter, typename AP>
 inline bool StorageHost<Adapter, AP>::is_valid() const {
-  return this->end_pos() != NULL;
+  return this->end_pos() != nullptr;
 }
 
 template <typename Adapter, typename AP>

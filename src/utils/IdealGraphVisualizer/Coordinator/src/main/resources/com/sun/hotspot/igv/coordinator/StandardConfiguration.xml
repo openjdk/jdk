@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE Configuration PUBLIC "-//NetBeans IDE//DTD toolbar//EN" "http://www.netbeans.org/dtds/toolbar.dtd">
+<!DOCTYPE Configuration PUBLIC "-//NetBeans IDE//DTD toolbar//EN" "https://www.netbeans.org/dtds/toolbar.dtd">
 <Configuration>
     <Row>
         <Toolbar name="Edit" position="1" visible="false"/>

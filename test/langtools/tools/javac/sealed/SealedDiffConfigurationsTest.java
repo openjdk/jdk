@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  */
 
 /*
- * @test 8247352 8293348
+ * @test 8247352 8293348 8349512
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main SealedDiffConfigurationsTest
  */
@@ -42,7 +41,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolException;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;
@@ -50,8 +52,6 @@ import toolbox.ToolBox;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;
-
-import static com.sun.tools.classfile.ConstantPool.*;
 
 public class SealedDiffConfigurationsTest extends TestRunner {
     ToolBox tb;
@@ -129,30 +129,32 @@ public class SealedDiffConfigurationsTest extends TestRunner {
     }
 
     private void checkSealedClassFile(Path out, String cfName, List<String> expectedSubTypeNames) throws ConstantPoolException, Exception {
-        ClassFile sealedCF = ClassFile.read(out.resolve(cfName));
-        Assert.check((sealedCF.access_flags.flags & Flags.FINAL) == 0, String.format("class at file %s must not be final", cfName));
-        PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute)sealedCF.attributes.get("PermittedSubclasses");
-        Assert.check(permittedSubclasses.subtypes.length == expectedSubTypeNames.size());
+        ClassModel sealedCF = ClassFile.of().parse(out.resolve(cfName));
+        Assert.check((sealedCF.flags().flagsMask() & ClassFile.ACC_FINAL) == 0, String.format("class at file %s must not be final", cfName));
+        PermittedSubclassesAttribute permittedSubclasses = sealedCF.findAttribute(Attributes.permittedSubclasses()).orElseThrow();
+        Assert.check(permittedSubclasses.permittedSubclasses().size() == expectedSubTypeNames.size(),
+                String.format("%s != %s",
+                        permittedSubclasses.permittedSubclasses(),
+                        expectedSubTypeNames));
         List<String> subtypeNames = new ArrayList<>();
-        IntStream.of(permittedSubclasses.subtypes).forEach(i -> {
+        permittedSubclasses.permittedSubclasses().forEach(i -> {
             try {
-                subtypeNames.add(((CONSTANT_Class_info)sealedCF.constant_pool.get(i)).getName());
+                subtypeNames.add(i.name().stringValue());
             } catch (ConstantPoolException ex) {
             }
         });
-        subtypeNames.sort((s1, s2) -> s1.compareTo(s2));
         for (int i = 0; i < expectedSubTypeNames.size(); i++) {
             Assert.check(expectedSubTypeNames.get(0).equals(subtypeNames.get(0)));
         }
     }
 
     private void checkSubtypeClassFile(Path out, String cfName, String superClassName, boolean shouldBeFinal) throws Exception {
-        ClassFile subCF1 = ClassFile.read(out.resolve(cfName));
+        ClassModel subCF1 = ClassFile.of().parse(out.resolve(cfName));
         if (shouldBeFinal) {
-            Assert.check((subCF1.access_flags.flags & Flags.FINAL) != 0, String.format("class at file %s must be final", cfName));
+            Assert.check((subCF1.flags().flagsMask() & ClassFile.ACC_FINAL) != 0, String.format("class at file %s must be final", cfName));
         }
-        Assert.checkNull((PermittedSubclasses_attribute)subCF1.attributes.get("PermittedSubclasses"));
-        Assert.check(((CONSTANT_Class_info)subCF1.constant_pool.get(subCF1.super_class)).getName().equals(superClassName));
+        Assert.checkNull(subCF1.findAttribute(Attributes.permittedSubclasses()).orElse(null));
+        Assert.check(subCF1.superclass().orElseThrow().name().equalsString(superClassName));
     }
 
     @Test
@@ -692,5 +694,68 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .files(src.resolve("Main.java"))
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testClientSwapsPermittedSubclassesOrder(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path foo = src.resolve("Foo.java");
+        Path fooUser = src.resolve("FooUser.java");
+
+        tb.writeFile(foo,
+                """
+                public sealed interface Foo {
+                    record R1() implements Foo {}
+                    record R2() implements Foo {}
+                }
+                """);
+
+        tb.writeFile(fooUser,
+                """
+                public class FooUser {
+                    // see that the order of arguments differ from the order of subclasses of Foo in the source above
+                    // we need to check that the order of permitted subclasses of Foo in the class file corresponds to the
+                    // original order in the source code
+                    public void blah(Foo.R2 a, Foo.R1 b) {}
+                }
+                """);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .outdir(out)
+                .files(fooUser, foo)
+                .run();
+        checkSealedClassFile(out, "Foo.class", List.of("Foo$R1", "Foo$R2"));
+    }
+
+    @Test
+    public void testDuplicatePermittedSubclassesDoclint(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path foo = src.resolve("Foo.java");
+
+        tb.writeFile(foo,
+                """
+                public class Foo {
+                  private enum E {
+                    INSTANCE {
+                      /** foo {@link E} */
+                      void f() {}
+                    };
+                    void f() {}
+                  }
+                }
+                """);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .options("-Xdoclint:html,syntax")
+                .outdir(out)
+                .files(foo)
+                .run();
+        checkSealedClassFile(out, "Foo$E.class", List.of("Foo$E$1"));
     }
 }

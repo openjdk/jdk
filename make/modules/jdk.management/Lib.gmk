@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,33 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
+################################################################################
+## Build libmanagement_ext
 ################################################################################
 
 ifeq ($(call isTargetOs, windows), true)
   # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
   # a binary that is compatible with windows versions older than 7/2008R2.
   # See MSDN documentation for GetProcessMemoryInfo for more information.
-  LIBMANAGEMENT_EXT_CFLAGS += -DPSAPI_VERSION=1
-endif
-
-LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux), true)
-  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
-  endif
+  LIBMANAGEMENT_EXT_CFLAGS := -DPSAPI_VERSION=1
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
-    OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_aix := -lperfstat,\
-    LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    OPTIMIZATION := HIGH, \
+    DISABLED_WARNINGS_gcc_DiagnosticCommandImpl.c := unused-variable, \
+    DISABLED_WARNINGS_clang_DiagnosticCommandImpl.c := unused-variable, \
+    DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
+    CFLAGS := $(LIBMANAGEMENT_EXT_CFLAGS), \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
+    LIBS_aix := -lperfstat, \
+    LIBS_windows := advapi32.lib psapi.lib, \
 ))
 
-$(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
-
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
+
+################################################################################

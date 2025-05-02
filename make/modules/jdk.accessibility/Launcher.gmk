@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,26 @@
 # questions.
 #
 
+################################################################################
+
 include LauncherCommon.gmk
 
 ifeq ($(call isTargetOs, windows), true)
-
   ACCESSIBILITY_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
-  TOOLS_CFLAGS := $(addprefix -I, \
-      $(ACCESSIBILITY_SRCDIR)/include/bridge \
-      $(ACCESSIBILITY_SRCDIR)/common \
-      $(ACCESSIBILITY_SRCDIR)/toolscommon)
 
   ##############################################################################
-  # jabswitch
+  # Build jabswitch
+  ##############################################################################
 
   $(eval $(call SetupJdkExecutable, BUILD_JABSWITCH, \
       NAME := jabswitch, \
-      SRC := $(ACCESSIBILITY_SRCDIR)/jabswitch, \
-      INCLUDE_FILES := jabswitch.cpp, \
-      CFLAGS := $(filter-out -Zc:wchar_t-, $(CFLAGS_JDKEXE)) -Zc:wchar_t \
-          -analyze- -Od -Gd -D_WINDOWS \
-          -D_UNICODE -DUNICODE -RTC1 -EHsc, \
+      CXXFLAGS_FILTER_OUT := -Zc:wchar_t-, \
+      CXXFLAGS := -Zc:wchar_t -analyze- -Od -Gd -D_WINDOWS -D_UNICODE \
+          -DUNICODE -RTC1 -EHsc, \
       DISABLED_WARNINGS_microsoft_jabswitch.cpp := 4267 4996, \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
-      LIBS := advapi32.lib version.lib user32.lib, \
-      VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+      LIBS_windows := advapi32.lib user32.lib version.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
       MANIFEST := $(ACCESSIBILITY_SRCDIR)/jabswitch/jabswitch.manifest, \
       MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
   ))
@@ -54,57 +50,46 @@ ifeq ($(call isTargetOs, windows), true)
   TARGETS += $(BUILD_JABSWITCH)
 
   ##############################################################################
-  # jaccessinspector
+  # Build jaccessinspector
+  ##############################################################################
 
-  define SetupInspector
-  # Parameter 1 File name suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSINSPECTOR, \
+      NAME := jaccessinspector, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
+  ))
 
-    $$(eval $$(call SetupJdkExecutable, BUILD_JACCESSINSPECTOR$1, \
-      NAME := jaccessinspector$1, \
-      SRC := $(ACCESSIBILITY_SRCDIR)/jaccessinspector $(ACCESSIBILITY_SRCDIR)/common \
-          $(ACCESSIBILITY_SRCDIR)/toolscommon $(ACCESSIBILITY_SRCDIR)/bridge, \
-      CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) -stack:655360, \
-      LIBS := advapi32.lib user32.lib, \
-      VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
-    ))
-
-    TARGETS += $$(BUILD_JACCESSINSPECTOR$1)
-
-  endef
+  TARGETS += $(BUILD_JACCESSINSPECTOR)
 
   ##############################################################################
-  # jaccesswalker
+  # Build jaccesswalker
+  ##############################################################################
 
-  define SetupWalker
-  # Parameter 1 File name suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSWALKER, \
+      NAME := jaccesswalker, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
+  ))
 
-    $$(eval $$(call SetupJdkExecutable, BUILD_JACCESSWALKER$1, \
-      NAME := jaccesswalker$1, \
-      SRC := $(ACCESSIBILITY_SRCDIR)/jaccesswalker $(ACCESSIBILITY_SRCDIR)/common \
-          $(ACCESSIBILITY_SRCDIR)/toolscommon $(ACCESSIBILITY_SRCDIR)/bridge, \
-      CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) -stack:655360, \
-      LIBS := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
-      VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
-   ))
-
-    TARGETS += $$(BUILD_JACCESSWALKER$1)
-
-  endef
-
-  ifeq ($(call isTargetCpuBits, 32), true)
-    $(eval $(call SetupInspector,-32,32))
-    $(eval $(call SetupWalker,-32,32))
-    $(eval $(call SetupInspector,,LEGACY))
-    $(eval $(call SetupWalker,,LEGACY))
-  else
-    $(eval $(call SetupInspector,,64))
-    $(eval $(call SetupWalker,,64))
-  endif
-
+  TARGETS += $(BUILD_JACCESSWALKER)
 endif
 
 ################################################################################

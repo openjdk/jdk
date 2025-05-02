@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +42,25 @@
  *      TestJNIGlobalRefs
  */
 
+/* @test id=generational-verify
+ * @summary Test JNI Global Refs with Shenandoah
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestJNIGlobalRefs
+ */
+
+/* @test id=generational
+ * @summary Test JNI Global Refs with Shenandoah
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      TestJNIGlobalRefs
+ */
+
 import java.util.Arrays;
 import java.util.Random;
 
@@ -49,7 +69,7 @@ public class TestJNIGlobalRefs {
         System.loadLibrary("TestJNIGlobalRefs");
     }
 
-    private static final int TIME_MSEC = 120000;
+    private static final long TIME_NSEC = 120L * 1_000_000_000L;
     private static final int ARRAY_SIZE = 10000;
 
     private static native void makeGlobalRef(Object o);
@@ -60,13 +80,13 @@ public class TestJNIGlobalRefs {
     public static void main(String[] args) throws Throwable {
         seedGlobalRef();
         seedWeakGlobalRef();
-        long start = System.currentTimeMillis();
-        long current = start;
-        while (current - start < TIME_MSEC) {
+        long startNanos = System.nanoTime();
+        long currentNanos = startNanos;
+        while (currentNanos - startNanos < TIME_NSEC) {
             testGlobal();
             testWeakGlobal();
             Thread.sleep(1);
-            current = System.currentTimeMillis();
+            currentNanos = System.nanoTime();
         }
     }
 

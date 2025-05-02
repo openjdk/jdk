@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ import sun.awt.AppContext;
  *
  * @author Jeff Dinkins
  */
-public class WindowsCheckBoxUI extends WindowsRadioButtonUI
+public final class WindowsCheckBoxUI extends WindowsRadioButtonUI
 {
-    // NOTE: MetalCheckBoxUI inherts from MetalRadioButtonUI instead
+    // NOTE: WindowsCheckBoxUI inherits from WindowsRadioButtonUI instead
     // of BasicCheckBoxUI because we want to pick up all the
-    // painting changes made in MetalRadioButtonUI.
+    // painting changes made in WindowsRadioButtonUI.
 
     private static final Object WINDOWS_CHECK_BOX_UI_KEY = new Object();
 
@@ -64,6 +64,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     }
 
 
+    @Override
     public String getPropertyPrefix() {
         return propertyPrefix;
     }
@@ -71,6 +72,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     // ********************************
     //          Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -79,6 +81,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
         }
     }
 
+    @Override
     public void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;

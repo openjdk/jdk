@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PostProcessor;
@@ -51,7 +53,7 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
 
 
     private String javaExecutableName() {
-        if (targetPlatform.os() == Platform.OperatingSystem.WINDOWS) {
+        if (targetPlatform.os() == OperatingSystem.WINDOWS) {
             return "java.exe";
         } else {
             return "java";
@@ -100,7 +102,9 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (Files.exists(classListPath)) {
             generateCDSArchive(image,false);
 
-            if (targetPlatform.is64Bit()) {
+            // The targetPlatform is the same as the runtimePlatform.
+            // For a 64-bit platform, generate the non-compressed oop CDS archive
+            if (Architecture.is64bit()) {
                 generateCDSArchive(image,true);
             }
             System.out.println("Created CDS archive successfully");

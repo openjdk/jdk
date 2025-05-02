@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -34,6 +33,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 # define __ _masm->
@@ -50,7 +50,7 @@ void TemplateInterpreter::initialize_stub() {
   // 270+ interpreter codelets are generated and each of them is aligned to HeapWordSize,
   // plus their code section is aligned to CodeEntryAlignement. So we need additional size due to alignment.
   int max_aligned_codelets = 280;
-  int max_aligned_bytes = max_aligned_codelets * (HeapWordSize + CodeEntryAlignment);
+  int max_aligned_bytes = checked_cast<int>(max_aligned_codelets * (HeapWordSize + CodeEntryAlignment));
   _code = new StubQueue(new InterpreterCodeletInterface, code_size + max_aligned_bytes, nullptr,
                         "Interpreter");
 }
@@ -211,6 +211,7 @@ address    TemplateInterpreter::_throw_ClassCastException_entry             = nu
 address    TemplateInterpreter::_throw_NullPointerException_entry           = nullptr;
 address    TemplateInterpreter::_throw_StackOverflowError_entry             = nullptr;
 address    TemplateInterpreter::_throw_exception_entry                      = nullptr;
+address    TemplateInterpreter::_cont_resume_interpreter_adapter            = nullptr;
 
 #ifndef PRODUCT
 EntryPoint TemplateInterpreter::_trace_code;
@@ -243,6 +244,7 @@ address* TemplateInterpreter::invoke_return_entry_table_for(Bytecodes::Code code
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokehandle:
+  case Bytecodes::_fast_invokevfinal:
     return Interpreter::invoke_return_entry_table();
   case Bytecodes::_invokeinterface:
     return Interpreter::invokeinterface_return_entry_table();

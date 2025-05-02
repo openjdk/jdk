@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import jdk.test.lib.RandomFactory;
 import static java.lang.String.format;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -124,6 +126,49 @@ public class TransferTo {
         // tests writing beyond target EOF (must extend output stream)
         checkTransferredContents(inputStreamProvider,
                 outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
+    }
+
+    /*
+     * Special case: Assert subsequent input stream is read when preceding stream already was MAX_VALUE long.
+     * Note: Not testing actual content as it requires multiple GBs of memory and long time.
+     */
+    @Test
+    public void testHugeStream() throws Exception {
+        InputStream is1 = repeat(0, Long.MAX_VALUE);
+        InputStream is2 = repeat(0, 1);
+        assertNotEquals(is1.available(), 0);
+        assertNotEquals(is2.available(), 0);
+        SequenceInputStream sis = new SequenceInputStream(is1, is2);
+        OutputStream nos = OutputStream.nullOutputStream();
+        sis.transferTo(nos);
+        assertEquals(is1.available(), 0);
+        assertEquals(is2.available(), 0);
+    }
+
+    /*
+     * Produces an input stream that returns b count times.
+     * Builds a dysfunctional mock that solely implements
+     * available() and transferTo() particually,
+     * but fails with any other operation.
+     */
+    private static InputStream repeat(int b, long count) {
+        return new InputStream() {
+            private long pos;
+            @Override
+            public int available() throws IOException {
+                return (int) Math.min(count - pos, Integer.MAX_VALUE);
+            }
+            @Override
+            public int read() throws IOException {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long transferTo(OutputStream os) throws IOException {
+                // skipping actual writing to os to spare time
+                pos += count;
+                return count;
+            }
+        };
     }
 
     /*

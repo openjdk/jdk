@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,21 +37,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 /**
  * java.lang.Process subclass in the UNIX environment.
@@ -92,65 +86,39 @@ final class ProcessImpl extends Process {
         VFORK
     }
 
-    private static enum Platform {
-
-        LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
-
-        BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
-
-        AIX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK);
-
-        final LaunchMechanism defaultLaunchMechanism;
-        final Set<LaunchMechanism> validLaunchMechanisms;
-
-        Platform(LaunchMechanism ... launchMechanisms) {
-            this.defaultLaunchMechanism = launchMechanisms[0];
-            this.validLaunchMechanisms =
-                EnumSet.copyOf(Arrays.asList(launchMechanisms));
+    /**
+     * {@return the default or requested launch mechanism}
+     * @throws Error if the requested launch mechanism is not found or valid
+     */
+    private static LaunchMechanism launchMechanism() {
+        String s = System.getProperty("jdk.lang.Process.launchMechanism");
+        if (s == null) {
+            return LaunchMechanism.POSIX_SPAWN;
         }
 
-        @SuppressWarnings("removal")
-        LaunchMechanism launchMechanism() {
-            return AccessController.doPrivileged(
-                (PrivilegedAction<LaunchMechanism>) () -> {
-                    String s = System.getProperty(
-                        "jdk.lang.Process.launchMechanism");
-                    LaunchMechanism lm;
-                    if (s == null) {
-                        lm = defaultLaunchMechanism;
-                        s = lm.name().toLowerCase(Locale.ROOT);
-                    } else {
-                        try {
-                            lm = LaunchMechanism.valueOf(
-                                s.toUpperCase(Locale.ROOT));
-                        } catch (IllegalArgumentException e) {
-                            lm = null;
-                        }
+        try {
+            // Should be value of a LaunchMechanism enum
+            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
+            switch (OperatingSystem.current()) {
+                case LINUX:
+                    return lm;      // All options are valid for Linux
+                case AIX:
+                case MACOS:
+                    if (lm != LaunchMechanism.VFORK) {
+                        return lm; // All but VFORK are valid
                     }
-                    if (lm == null || !validLaunchMechanisms.contains(lm)) {
-                        throw new Error(
-                            s + " is not a supported " +
-                            "process launch mechanism on this platform."
-                        );
-                    }
-                    return lm;
-                }
-            );
+                    break;
+                case WINDOWS:
+                    // fall through to throw to Error
+            }
+        } catch (IllegalArgumentException e) {
         }
 
-        static Platform get() {
-            String osName = GetPropertyAction.privilegedGetProperty("os.name");
-
-            if (osName.equals("Linux")) { return LINUX; }
-            if (osName.contains("OS X")) { return BSD; }
-            if (osName.equals("AIX")) { return AIX; }
-
-            throw new Error(osName + " is not a supported OS platform.");
-        }
+        throw new Error(s + " is not a supported " +
+            "process launch mechanism on this platform: " + OperatingSystem.current());
     }
 
-    private static final Platform platform = Platform.get();
-    private static final LaunchMechanism launchMechanism = platform.launchMechanism();
+    private static final LaunchMechanism launchMechanism = launchMechanism();
     private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
 
     private static byte[] toCString(String s) {
@@ -310,7 +278,6 @@ final class ProcessImpl extends Process {
                                    boolean redirectErrorStream)
         throws IOException;
 
-    @SuppressWarnings("removal")
     private ProcessImpl(final byte[] prog,
                 final byte[] argBlock, final int argc,
                 final byte[] envBlock, final int envc,
@@ -330,14 +297,7 @@ final class ProcessImpl extends Process {
                           redirectErrorStream);
         processHandle = ProcessHandleImpl.getInternal(pid);
 
-        try {
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                initStreams(fds, forceNullOutputStream);
-                return null;
-            });
-        } catch (PrivilegedActionException ex) {
-            throw (IOException) ex.getCause();
-        }
+        initStreams(fds, forceNullOutputStream);
     }
 
     static FileDescriptor newFileDescriptor(int fd) {
@@ -354,9 +314,9 @@ final class ProcessImpl extends Process {
      * @throws IOException
      */
     void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
-        switch (platform) {
+        switch (OperatingSystem.current()) {
             case LINUX:
-            case BSD:
+            case MACOS:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
@@ -428,7 +388,9 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default:
+                throw new AssertionError("Unsupported platform: " +
+                    OperatingSystem.current());
         }
     }
 
@@ -484,9 +446,9 @@ final class ProcessImpl extends Process {
     }
 
     private void destroy(boolean force) {
-        switch (platform) {
+        switch (OperatingSystem.current()) {
             case LINUX:
-            case BSD:
+            case MACOS:
             case AIX:
                 // There is a risk that pid will be recycled, causing us to
                 // kill the wrong process!  So we only terminate processes
@@ -506,7 +468,7 @@ final class ProcessImpl extends Process {
                 try { stderr.close(); } catch (IOException ignored) {}
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default: throw new AssertionError("Unsupported platform: " + OperatingSystem.current());
         }
     }
 
@@ -533,11 +495,6 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         return processHandle;
     }
 
@@ -652,7 +609,7 @@ final class ProcessImpl extends Process {
      */
     private static class ProcessPipeOutputStream extends BufferedOutputStream {
         ProcessPipeOutputStream(int fd) {
-            super(new FileOutputStream(newFileDescriptor(fd)));
+            super(new PipeOutputStream(newFileDescriptor(fd)));
         }
 
         /** Called by the process reaper thread when the process exits. */

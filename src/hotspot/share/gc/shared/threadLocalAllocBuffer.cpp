@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -164,7 +163,7 @@ void ThreadLocalAllocBuffer::resize() {
   size_t aligned_new_size = align_object_size(new_size);
 
   log_trace(gc, tlab)("TLAB new size: thread: " PTR_FORMAT " [id: %2d]"
-                      " refills %d  alloc: %8.6f desired_size: " SIZE_FORMAT " -> " SIZE_FORMAT,
+                      " refills %d  alloc: %8.6f desired_size: %zu -> %zu",
                       p2i(thread()), thread()->osthread()->thread_id(),
                       _target_refills, _allocation_fraction.average(), desired_size(), aligned_new_size);
 
@@ -213,9 +212,11 @@ void ThreadLocalAllocBuffer::initialize() {
   set_desired_size(initial_desired_size());
 
   size_t capacity = Universe::heap()->tlab_capacity(thread()) / HeapWordSize;
-  // Keep alloc_frac as float and not double to avoid the double to float conversion
-  float alloc_frac = desired_size() * target_refills() / (float) capacity;
-  _allocation_fraction.sample(alloc_frac);
+  if (capacity > 0) {
+    // Keep alloc_frac as float and not double to avoid the double to float conversion
+    float alloc_frac = desired_size() * target_refills() / (float)capacity;
+    _allocation_fraction.sample(alloc_frac);
+  }
 
   set_refill_waste_limit(initial_refill_waste_limit());
 
@@ -261,7 +262,7 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   guarantee(Thread::current()->is_Java_thread(), "tlab initialization thread not Java thread");
   Thread::current()->tlab().initialize();
 
-  log_develop_trace(gc, tlab)("TLAB min: " SIZE_FORMAT " initial: " SIZE_FORMAT " max: " SIZE_FORMAT,
+  log_develop_trace(gc, tlab)("TLAB min: %zu initial: %zu max: %zu",
                                min_size(), Thread::current()->tlab().initial_desired_size(), max_size());
 }
 
@@ -297,8 +298,8 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   double waste_percent = percent_of(waste, _allocated_size);
   size_t tlab_used  = Universe::heap()->tlab_used(thrd);
   log.trace("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
-            " desired_size: " SIZE_FORMAT "KB"
-            " slow allocs: %d  refill waste: " SIZE_FORMAT "B"
+            " desired_size: %zuKB"
+            " slow allocs: %d  refill waste: %zuB"
             " alloc:%8.5f %8.0fKB refills: %d waste %4.1f%% gc: %dB"
             " slow: %dB",
             tag, p2i(thrd), thrd->osthread()->thread_id(),
@@ -449,8 +450,8 @@ void ThreadLocalAllocStats::publish() {
   const double waste_percent = percent_of(waste, _total_allocations);
   log_debug(gc, tlab)("TLAB totals: thrds: %d  refills: %d max: %d"
                       " slow allocs: %d max %d waste: %4.1f%%"
-                      " gc: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"
-                      " slow: " SIZE_FORMAT "B max: " SIZE_FORMAT "B",
+                      " gc: %zuB max: %zuB"
+                      " slow: %zuB max: %zuB",
                       _allocating_threads, _total_refills, _max_refills,
                       _total_slow_allocations, _max_slow_allocations, waste_percent,
                       _total_gc_waste * HeapWordSize, _max_gc_waste * HeapWordSize,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -35,7 +35,7 @@ int C2SafepointPollStub::max_size() const {
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -54,7 +54,7 @@ int C2EntryBarrierStub::max_size() const {
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+  __ lea(rscratch1, RuntimeAddress(StubRoutines::method_entry_barrier()));
   __ blr(rscratch1);
   __ b(continuation());
 

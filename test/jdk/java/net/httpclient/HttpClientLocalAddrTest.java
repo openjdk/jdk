@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.Assert;
@@ -33,22 +30,23 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
+import java.io.Closeable;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
@@ -56,7 +54,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
- * @bug 8209137
+ * @bug 8209137 8316031
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
@@ -66,12 +64,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      -Dsun.net.httpserver.idleInterval=50000
- *      HttpClientLocalAddrTest
- *
- * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
- *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
- *      -Djdk.internal.httpclient.debug=true
- *      -Dsun.net.httpserver.idleInterval=50000
+ *      -Djdk.tracePinnedThreads=full
  *      HttpClientLocalAddrTest
  *
  */
@@ -86,6 +79,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     private static URI http2URI;
     private static HttpServerAdapters.HttpTestServer https2_Server;
     private static URI https2URI;
+    private static final AtomicInteger IDS = new AtomicInteger();
 
     // start various HTTP/HTTPS servers that will be invoked against in the tests
     @BeforeClass
@@ -178,20 +172,20 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
     @DataProvider(name = "params")
     private Object[][] paramsProvider() throws Exception {
-        final List<Object[]> testMethodParams = new ArrayList();
+        final List<Object[]> testMethodParams = new ArrayList<>();
         final URI[] requestURIs = new URI[]{httpURI, httpsURI, http2URI, https2URI};
         final Predicate<URI> requiresSSLContext = (uri) -> uri.getScheme().equals("https");
         for (var requestURI : requestURIs) {
             final var configureClientSSL = requiresSSLContext.test(requestURI);
             // no localAddr set
             testMethodParams.add(new Object[]{
-                    newBuilder(configureClientSSL).build(),
+                    newBuilder(configureClientSSL).provider(),
                     requestURI,
                     null
             });
             // null localAddr set
             testMethodParams.add(new Object[]{
-                    newBuilder(configureClientSSL).localAddress(null).build(),
+                    newBuilder(configureClientSSL).localAddress(null).provider(),
                     requestURI,
                     null
             });
@@ -200,7 +194,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
             testMethodParams.add(new Object[]{
                     newBuilder(configureClientSSL)
                             .localAddress(loopbackAddr)
-                            .build(),
+                            .provider(),
                     requestURI,
                     loopbackAddr
             });
@@ -211,7 +205,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
                 testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
                                 .localAddress(localAddr)
-                                .build(),
+                                .provider(),
                         requestURI,
                         localAddr
                 });
@@ -222,7 +216,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
                 testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
                                 .localAddress(localAddr)
-                                .build(),
+                                .provider(),
                         requestURI,
                         localAddr
                 });
@@ -231,7 +225,92 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         return testMethodParams.stream().toArray(Object[][]::new);
     }
 
-    private static HttpClient.Builder newBuilder(boolean configureClientSSL) {
+    // An object that holds a client and that can be closed
+    // Used when closing the client might require closing additional
+    // resources, such as an executor
+    sealed interface ClientCloseable extends Closeable {
+
+        HttpClient client();
+
+        @Override
+        void close();
+
+        // a reusable client that does nothing when close() is called,
+        // so that the underlying client can be reused
+        record ReusableClient(HttpClient client) implements ClientCloseable {
+            // do not close the client so that it can be reused
+            @Override
+            public void close() { }
+        }
+
+        // a client configured with an executor, that closes both the client
+        // and the executor when close() is called
+        record ClientWithExecutor(HttpClient client, ExecutorService service)
+                implements ClientCloseable {
+            // close both the client and executor
+            @Override
+            public void close() {
+                client.close();
+                service.close();
+            }
+        }
+
+        static ReusableClient reusable(HttpClient client) {
+            return new ReusableClient(client);
+        }
+
+        static ClientWithExecutor withExecutor(HttpClient client, ExecutorService service) {
+            return new ClientWithExecutor(client, service);
+        }
+    }
+
+    // A supplier of ClientCloseable
+    sealed interface ClientProvider extends Supplier<ClientCloseable> {
+
+        ClientCloseable get();
+
+        // a ClientProvider that returns reusable clients wrapping the given clieny
+        record ReusableClientProvider(HttpClient client) implements ClientProvider {
+            @Override
+            public ClientCloseable get() {
+                return ClientCloseable.reusable(client);
+            }
+        }
+
+        // A ClientProvider that builds a new ClientWithExecutor for every call to get()
+        record ClientBuilder(HttpClient.Builder builder) implements ClientProvider {
+            ClientCloseable build() {
+                int id = IDS.getAndIncrement();
+                ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                        .name("HttpClient-" + id + "-Worker", 0).factory());
+                builder.executor(virtualExecutor);
+                return ClientCloseable.withExecutor(builder.build(), virtualExecutor);
+            }
+
+            public ClientBuilder localAddress(InetAddress localAddress) {
+                builder.localAddress(localAddress);
+                return this;
+            }
+
+            public ClientProvider provider() { return this; }
+
+            @Override
+            public ClientCloseable get() { return build(); }
+        }
+
+        static ReusableClientProvider reusable(HttpClient client) {
+            return new ReusableClientProvider(client);
+        }
+
+        static ClientBuilder builder(HttpClient.Builder builder) {
+            return new ClientBuilder(builder);
+        }
+    }
+
+
+
+
+    private static ClientProvider.ClientBuilder newBuilder(boolean configureClientSSL) {
         var builder = HttpClient.newBuilder();
         // don't let proxies interfere with the client addresses received on the
         // HTTP request, by the server side handler used in this test.
@@ -239,7 +318,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         if (configureClientSSL) {
             builder.sslContext(sslContext);
         }
-        return builder;
+        return ClientProvider.builder(builder);
     }
 
     /**
@@ -249,17 +328,20 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
      * {@code client}
      */
     @Test(dataProvider = "params")
-    public void testSend(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
-        System.out.println("Testing using a HTTP client " + client.version() + " with local address " + localAddress
-                + " against request URI " + requestURI);
-        // GET request
-        var req = HttpRequest.newBuilder(requestURI).build();
-        var resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
-        Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
-        // verify the address only if a specific one was set on the client
-        if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getAddress(),
-                    "Unexpected client address seen by the server handler");
+    public void testSend(ClientProvider clientProvider, URI requestURI, InetAddress localAddress) throws Exception {
+        try (var c = clientProvider.get()) {
+            HttpClient client = c.client();
+            System.out.println("Testing using a HTTP client " + client.version() + " with local address " + localAddress
+                    + " against request URI " + requestURI);
+            // GET request
+            var req = HttpRequest.newBuilder(requestURI).build();
+            var resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
+            // verify the address only if a specific one was set on the client
+            if (localAddress != null && !localAddress.isAnyLocalAddress()) {
+                Assert.assertEquals(resp.body(), localAddress.getAddress(),
+                        "Unexpected client address seen by the server handler");
+            }
         }
     }
 
@@ -270,34 +352,42 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
      * {@code client}
      */
     @Test(dataProvider = "params")
-    public void testSendAsync(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
-        System.out.println("Testing using a HTTP client " + client.version() + " with local address " + localAddress
-                + " against request URI " + requestURI);
-        // GET request
-        var req = HttpRequest.newBuilder(requestURI).build();
-        var cf = client.sendAsync(req,
-                HttpResponse.BodyHandlers.ofByteArray());
-        var resp = cf.get();
-        Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
-        // verify the address only if a specific one was set on the client
-        if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getAddress(),
-                    "Unexpected client address seen by the server handler");
+    public void testSendAsync(ClientProvider clientProvider, URI requestURI, InetAddress localAddress) throws Exception {
+        try (var c = clientProvider.get()) {
+            HttpClient client = c.client();
+            System.out.println("Testing using a HTTP client " + client.version()
+                    + " with local address " + localAddress
+                    + " against request URI " + requestURI);
+            // GET request
+            var req = HttpRequest.newBuilder(requestURI).build();
+            var cf = client.sendAsync(req,
+                    HttpResponse.BodyHandlers.ofByteArray());
+            var resp = cf.get();
+            Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
+            // verify the address only if a specific one was set on the client
+            if (localAddress != null && !localAddress.isAnyLocalAddress()) {
+                Assert.assertEquals(resp.body(), localAddress.getAddress(),
+                        "Unexpected client address seen by the server handler");
+            }
         }
     }
 
     /**
-     * Invokes the {@link #testSend(HttpClient)} and {@link #testSendAsync(HttpClient)}
+     * Invokes the {@link #testSend} and {@link #testSendAsync}
      * tests, concurrently in multiple threads to verify that the correct local address
      * is used when multiple concurrent threads are involved in sending requests from
      * the {@code client}
      */
     @Test(dataProvider = "params")
-    public void testMultiSendRequests(HttpClient client, URI requestURI, InetAddress localAddress) throws Exception {
+    public void testMultiSendRequests(ClientProvider clientProvider,
+                                      URI requestURI,
+                                      InetAddress localAddress) throws Exception {
         int numThreads = 4;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
         List<Future<Void>> taskResults = new ArrayList<>();
-        try {
+        try (var c = clientProvider.get()) {
+            // prevents testSend/testSendAsync from closing the client
+            ClientProvider client = ClientProvider.reusable(c.client());
             for (int i = 0; i < numThreads; i++) {
                 final var currentIdx = i;
                 var f = executor.submit(new Callable<Void>() {
@@ -323,4 +413,3 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         }
     }
 }
-

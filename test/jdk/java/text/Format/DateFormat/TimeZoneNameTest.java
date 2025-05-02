@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,42 @@
 
 /**
  * @test
- * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577
+ * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577 8174269
  * @summary test time zone display names in en_US locale
- * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI TimeZoneNameTest
+ * @run junit TimeZoneNameTest
  */
 
 import java.util.*;
 import java.text.*;
 
-public class TimeZoneNameTest extends IntlTest
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class TimeZoneNameTest
 {
+
+    // Change JVM default Locale
+    @BeforeAll
+    static void initAll() {
+        Locale.setDefault(Locale.US);
+    }
+
     static final String[] data = {
         // Added to verify the fix for 4836940
-        "N", "Antarctica/Rothera", "ROTT", "Rothera Time", "ROTT", "Rothera Time",
-        "N", "Asia/Tehran", "IRST", "Iran Standard Time", "IRDT", "Iran Daylight Time",
-        "N", "Iran", "IRST", "Iran Standard Time", "IRDT", "Iran Daylight Time",
+        "N", "Antarctica/Rothera", "GMT-03:00", "Rothera Time", "GMT-03:00", "Rothera Time",
+        "N", "Asia/Tehran", "GMT+03:30", "Iran Standard Time", "GMT+04:30", "Iran Daylight Time",
+        "N", "Iran", "GMT+03:30", "Iran Standard Time", "GMT+04:30", "Iran Daylight Time",
 
         // Added to verify the fix for 4851113
         "N", "America/Rankin_Inlet", "CST", "Central Standard Time", "CDT", "Central Daylight Time",
-        "N", "Asia/Samarkand", "UZT", "Uzbekistan Time", "UZT", "Uzbekistan Time",
-        "N", "Asia/Tashkent", "UZT", "Uzbekistan Time", "UZT", "Uzbekistan Time",
-        "N", "Atlantic/Jan_Mayen", "CET", "Central European Time", "CEST", "Central European Summer Time",
-        "N", "Europe/Oslo", "CET", "Central European Time", "CEST", "Central European Summer Time",
+        "N", "Asia/Samarkand", "GMT+05:00", "Uzbekistan Standard Time", "GMT+05:00", "Uzbekistan Standard Time",
+        "N", "Asia/Tashkent", "GMT+05:00", "Uzbekistan Standard Time", "GMT+05:00", "Uzbekistan Standard Time",
+        "N", "Atlantic/Jan_Mayen", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
+        "N", "Europe/Oslo", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
 
-        "N", "Pacific/Honolulu", "HST", "Hawaii Standard Time", "HST", "Hawaii Standard Time",
+        "N", "Pacific/Honolulu", "HST", "Hawaii-Aleutian Standard Time", "HST", "Hawaii-Aleutian Standard Time",
         "N", "America/Los_Angeles", "PST", "Pacific Standard Time", "PDT", "Pacific Daylight Time",
         "N", "US/Pacific", "PST", "Pacific Standard Time", "PDT", "Pacific Daylight Time",
         "N", "America/Phoenix", "MST", "Mountain Standard Time", "MST", "Mountain Standard Time",
@@ -57,54 +68,44 @@ public class TimeZoneNameTest extends IntlTest
         "N", "America/Montreal", "EST", "Eastern Standard Time", "EDT", "Eastern Daylight Time",
         "N", "America/Toronto", "EST", "Eastern Standard Time", "EDT", "Eastern Daylight Time",
         "N", "America/New_York", "EST", "Eastern Standard Time", "EDT", "Eastern Daylight Time",
-        "S", "America/Manaus", "AMT", "Amazon Time", "AMT", "Amazon Time",
-        "S", "America/Campo_Grande", "AMT", "Amazon Time", "AMST", "Amazon Summer Time",
-        "S", "America/Bahia", "BRT", "Brasilia Time", "BRST", "Brasilia Summer Time",
+        "S", "America/Manaus", "GMT-04:00", "Amazon Standard Time", "GMT-04:00", "Amazon Standard Time",
+        "S", "America/Campo_Grande", "GMT-04:00", "Amazon Standard Time", "GMT-03:00", "Amazon Summer Time",
+        "S", "America/Bahia", "GMT-03:00", "Brasilia Standard Time", "GMT-02:00", "Brasilia Summer Time",
         "N", "America/Halifax", "AST", "Atlantic Standard Time", "ADT", "Atlantic Daylight Time",
         "N", "GMT", "GMT", "Greenwich Mean Time", "GMT", "Greenwich Mean Time",
         "N", "Europe/London", "GMT", "Greenwich Mean Time", "BST", "British Summer Time",
-        "N", "Europe/Paris", "CET", "Central European Time", "CEST", "Central European Summer Time",
-        "N", "WET", "WET", "Western European Time", "WEST", "Western European Summer Time",
-        "N", "Europe/Berlin", "CET", "Central European Time", "CEST", "Central European Summer Time",
+        "N", "Europe/Paris", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
+        "N", "WET", "WET", "Western European Standard Time", "WEST", "Western European Summer Time",
+        "N", "Europe/Berlin", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
         "N", "Asia/Jerusalem", "IST", "Israel Standard Time", "IDT", "Israel Daylight Time",
-        "N", "Europe/Helsinki", "EET", "Eastern European Time", "EEST", "Eastern European Summer Time",
-        "N", "Africa/Cairo", "EET", "Eastern European Time", "EEST", "Eastern European Summer Time",
-        "N", "Europe/Moscow", "MSK", "Moscow Standard Time", "MSD", "Moscow Daylight Time",
-        "N", "Asia/Omsk", "OMST", "Omsk Time", "OMSST", "Omsk Summer Time",
+        "N", "Europe/Helsinki", "EET", "Eastern European Standard Time", "EEST", "Eastern European Summer Time",
+        "N", "Africa/Cairo", "EET", "Eastern European Standard Time", "EEST", "Eastern European Summer Time",
+        "N", "Europe/Moscow", "MSK", "Moscow Standard Time", "MSK", "Moscow Summer Time",
+        "N", "Asia/Omsk", "GMT+06:00", "Omsk Standard Time", "GMT+07:00", "Omsk Summer Time",
         "N", "Asia/Shanghai", "CST", "China Standard Time", "CST", "China Standard Time",
         "N", "Asia/Tokyo", "JST", "Japan Standard Time", "JST", "Japan Standard Time",
         "N", "Japan", "JST", "Japan Standard Time", "JST", "Japan Standard Time",
-        "N", "Asia/Seoul", "KST", "Korea Standard Time", "KST", "Korea Standard Time",
-        "N", "ROK", "KST", "Korea Standard Time", "KST", "Korea Standard Time",
-        "S", "Australia/Darwin", "ACST", "Australian Central Standard Time (Northern Territory)",
-                                 "ACST", "Australian Central Standard Time (Northern Territory)",
-        "S", "Australia/Adelaide", "ACST", "Australian Central Standard Time (South Australia)",
-                                   "ACDT", "Australian Central Daylight Time (South Australia)",
-        "S", "Australia/Broken_Hill", "ACST", "Australian Central Standard Time (South Australia/New South Wales)",
-                                      "ACDT", "Australian Central Daylight Time (South Australia/New South Wales)",
-        "S", "Australia/Hobart", "AEST", "Australian Eastern Standard Time (Tasmania)",
-                                 "AEDT", "Australian Eastern Daylight Time (Tasmania)",
-        "S", "Australia/Brisbane", "AEST", "Australian Eastern Standard Time (Queensland)",
-                                   "AEST", "Australian Eastern Standard Time (Queensland)",
-        "S", "Australia/Sydney", "AEST", "Australian Eastern Standard Time (New South Wales)",
-                                 "AEDT", "Australian Eastern Daylight Time (New South Wales)",
+        "N", "Asia/Seoul", "KST", "Korean Standard Time", "KST", "Korean Standard Time",
+        "N", "ROK", "KST", "Korean Standard Time", "KST", "Korean Standard Time",
+        "S", "Australia/Darwin", "ACST", "Australian Central Standard Time",
+                                 "ACST", "Australian Central Standard Time",
+        "S", "Australia/Adelaide", "ACST", "Australian Central Standard Time",
+                                   "ACDT", "Australian Central Daylight Time",
+        "S", "Australia/Broken_Hill", "ACST", "Australian Central Standard Time",
+                                      "ACDT", "Australian Central Daylight Time",
+        "S", "Australia/Hobart", "AEST", "Australian Eastern Standard Time",
+                                 "AEDT", "Australian Eastern Daylight Time",
+        "S", "Australia/Brisbane", "AEST", "Australian Eastern Standard Time",
+                                   "AEST", "Australian Eastern Standard Time",
+        "S", "Australia/Sydney", "AEST", "Australian Eastern Standard Time",
+                                 "AEDT", "Australian Eastern Daylight Time",
         "N", "Pacific/Guam", "ChST", "Chamorro Standard Time",
                              "ChST", "Chamorro Standard Time",
         "N", "Pacific/Saipan", "ChST", "Chamorro Standard Time",
                                "ChST", "Chamorro Standard Time",
     };
 
-    public static void main(String[] args) throws Exception {
-        Locale reservedLocale = Locale.getDefault();
-        try {
-            Locale.setDefault(Locale.US);
-            new TimeZoneNameTest().run(args);
-        } finally {
-            // restore the reserved locale
-            Locale.setDefault(reservedLocale);
-        }
-    }
-
+    @Test
     public void Test4112924() {
         SimpleDateFormat lfmt = new SimpleDateFormat("zzzz");
         SimpleDateFormat sfmt = new SimpleDateFormat("z");
@@ -129,23 +130,23 @@ public class TimeZoneNameTest extends IntlTest
             lfmt.setTimeZone(tz);
             sfmt.setTimeZone(tz);
 
-            logln(tz.getID() + ": " + sfmt.format(sol1.getTime()) + ", " + lfmt.format(sol1.getTime()));
-            logln(tz.getID() + ": " + sfmt.format(sol2.getTime()) + ", " + lfmt.format(sol2.getTime()));
+            System.out.println(tz.getID() + ": " + sfmt.format(sol1.getTime()) + ", " + lfmt.format(sol1.getTime()));
+            System.out.println(tz.getID() + ": " + sfmt.format(sol2.getTime()) + ", " + lfmt.format(sol2.getTime()));
             String s = sfmt.format(sol1.getTime());
             if (!data[i].equals(s)) {
-                errln(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = lfmt.format(sol1.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = sfmt.format(sol2.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong short name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
             s = lfmt.format(sol2.getTime());
             if (!data[++i].equals(s)) {
-                errln(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
+                fail(tz.getID() + ": wrong long name: \"" + s + "\" (expected \"" + data[i] + "\")");
             }
         }
     }

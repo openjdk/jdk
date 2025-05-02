@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/arena.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -94,15 +93,15 @@ TEST_VM(Arena, realloc_same_size) {
   ASSERT_RANGE_IS_MARKED(p2, 0x200);
 }
 
-// Test behavior for Afree(NULL) and Arealloc(NULL, x)
+// Test behavior for Afree(nullptr) and Arealloc(nullptr, x)
 TEST_VM(Arena, free_null) {
   Arena ar(mtTest);
-  ar.Afree(NULL, 10); // should just be ignored
+  ar.Afree(nullptr, 10); // should just be ignored
 }
 
 TEST_VM(Arena, realloc_null) {
   Arena ar(mtTest);
-  void* p = ar.Arealloc(NULL, 0, 20); // equivalent to Amalloc(20)
+  void* p = ar.Arealloc(nullptr, 0, 20); // equivalent to Amalloc(20)
   ASSERT_AMALLOC(ar, p);
 }
 
@@ -238,7 +237,7 @@ TEST_VM(Arena, random_allocs) {
   for (int i = 0; i < num_allocs; i ++) {
     size_t size = os::random() % (avg_alloc_size * 2); // Note: size==0 is okay; we want to test that too
     size_t alignment = 0;
-    void* p = NULL;
+    void* p = nullptr;
     if (os::random() % 2) { // randomly switch between Amalloc and AmallocWords
       p = ar.Amalloc(size);
       alignment = BytesPerLong;
@@ -249,7 +248,7 @@ TEST_VM(Arena, random_allocs) {
       p = ar.AmallocWords(size);
       alignment = BytesPerWord;
     }
-    LOG(("[%d]: " PTR_FORMAT ", size " SIZE_FORMAT ", aligned " SIZE_FORMAT,
+    LOG(("[%d]: " PTR_FORMAT ", size %zu, aligned %zu",
          i, p2i(p), size, alignment));
     ASSERT_NOT_NULL(p);
     ASSERT_ALIGN(p, alignment);
@@ -280,7 +279,7 @@ TEST_VM(Arena, random_allocs) {
       ASSERT_NULL(p2);
     }
     ptrs[i] = p2; sizes[i] = new_size;
-    LOG(("[%d]: realloc " PTR_FORMAT ", size " SIZE_FORMAT ", aligned " SIZE_FORMAT,
+    LOG(("[%d]: realloc " PTR_FORMAT ", size %zu, aligned %zu",
          i, p2i(p2), new_size, alignments[i]));
   }
 
@@ -297,7 +296,7 @@ TEST_VM(Arena, random_allocs) {
       ar.Afree(ptrs[i], sizes[i]);
       // In debug builds the freed space should be filled the space with badResourceValue
       DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(ptrs[i], sizes[i], badResourceValue));
-      ptrs[i] = NULL;
+      ptrs[i] = nullptr;
     }
   }
 
@@ -329,7 +328,7 @@ TEST_VM(Arena, mixed_alignment_allocation) {
 TEST_VM(Arena, Arena_with_crooked_initial_size) {
   // Test that an arena with a crooked, not 64-bit aligned initial size
   // works
-  Arena ar(mtTest, 4097);
+  Arena ar(mtTest, Arena::Tag::tag_other, 4097);
   void* p1 = ar.AmallocWords(BytesPerWord);
   void* p2 = ar.Amalloc(BytesPerLong);
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));
@@ -342,7 +341,7 @@ TEST_VM(Arena, Arena_grows_large_unaligned) {
   // (only possible on 32-bit when allocating with word alignment).
   // Then we alloc some more. If Arena::grow() does not correctly align, on 32-bit
   // something should assert at some point.
-  Arena ar(mtTest, 100); // first chunk is small
+  Arena ar(mtTest, Arena::Tag::tag_other, 100); // first chunk is small
   void* p = ar.AmallocWords(Chunk::size + BytesPerWord); // if Arena::grow() misaligns, this asserts
   // some more allocations for good measure
   for (int i = 0; i < 100; i ++) {
@@ -372,13 +371,13 @@ TEST_VM(Arena, different_chunk_sizes) {
   for (int i = 0; i < 1000; i ++) {
     // Unfortunately, Arenas cannot be newed,
     // so we are left with awkwardly placing a few on the stack.
-    Arena ar0(mtTest, random_arena_chunk_size());
-    Arena ar1(mtTest, random_arena_chunk_size());
-    Arena ar2(mtTest, random_arena_chunk_size());
-    Arena ar3(mtTest, random_arena_chunk_size());
-    Arena ar4(mtTest, random_arena_chunk_size());
-    Arena ar5(mtTest, random_arena_chunk_size());
-    Arena ar6(mtTest, random_arena_chunk_size());
-    Arena ar7(mtTest, random_arena_chunk_size());
+    Arena ar0(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar1(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar2(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar3(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar4(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar5(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar6(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar7(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
   }
 }

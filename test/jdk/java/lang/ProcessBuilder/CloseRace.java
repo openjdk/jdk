@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,24 @@
  */
 
 /**
- * @test
- * @bug 8024521
+ * @test id=Default
+ * @bug 8024521 8315721
  * @summary Closing ProcessPipeInputStream at the time the process exits is racy
  *          and leads to data corruption. Run this test manually (as
  *          an ordinary java program) with  -Xmx8M  to repro bug 8024521.
+ * @requires vm.gc != "Z"
+ * @comment Don't allow -Xcomp, it disturbs the timing
+ * @requires (vm.compMode != "Xcomp")
  * @run main/othervm -Xmx8M -Dtest.duration=2 CloseRace
+ */
+
+/**
+ * @test id=Z
+ * @comment Turn up heap size to lower amount of GCs
+ * @requires vm.gc.Z
+ * @comment Don't allow -Xcomp, it disturbs the timing
+ * @requires (vm.compMode != "Xcomp")
+ * @run main/othervm -XX:+UseZGC -Xmx32M -Dtest.duration=2 CloseRace
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,20 @@ import static gc.testlibrary.Allocation.blackHole;
  * @summary This short test check RFE 6186200 changes. One thread locked
  * @summary completely in JNI CS, while other is trying to allocate memory
  * @summary provoking GC. OOM means FAIL, deadlock means PASS.
+ *
+ * @comment This test assumes that no allocation happens during the sleep loop,
+ *          which is something that we can't guarantee. With ZGC we see test
+ *          timeouts because the main thread allocates and waits for the GC,
+ *          which waits for the CSLocker, which waits for the main thread.
+ * @requires vm.gc != "Z"
+ *
  * @run main/native/othervm -Xmx256m gc.cslocker.TestCSLocker
  */
 
 public class TestCSLocker extends Thread
 {
-    static int timeout = 5000;
+    static int timeoutMillis = 5000;
     public static void main(String args[]) throws Exception {
-        long startTime = System.currentTimeMillis();
-
         // start garbage producer thread
         GarbageProducer garbageProducer = new GarbageProducer(1000000, 10);
         garbageProducer.start();
@@ -48,12 +53,13 @@ public class TestCSLocker extends Thread
         // start CS locker thread
         CSLocker csLocker = new CSLocker();
         csLocker.start();
+        // After the CSLocker thread has started, any operation such as an allocation,
+        // which could rely on the GC to make progress, will cause a deadlock that will
+        // make the test time out. That includes printing. Please don't use any such
+        // code until unlock() is called below.
 
         // check timeout to success deadlocking
-        while(System.currentTimeMillis() < startTime + timeout) {
-            System.out.println("sleeping...");
-            sleep(1000);
-        }
+        sleep(timeoutMillis);
 
         csLocker.unlock();
         garbageProducer.interrupt();

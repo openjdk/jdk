@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpHeaderParser {
+public final class HttpHeaderParser {
     private static final char CR = '\r';
     private static final char LF = '\n';
     private static final char HT = '\t';

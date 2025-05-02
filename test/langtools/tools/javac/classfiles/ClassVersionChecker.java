@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 7157626 8001112 8188870 8173382 8193290 8205619 8245586 8257453
+ * @bug 7157626 8001112 8188870 8173382 8193290 8205619 8245586 8257453 8306586 8330184
+ *      8342983
  * @summary Test major version for all legal combinations for -source and -target
  * @author sgoel
  *
@@ -55,7 +56,12 @@ public class ClassVersionChecker {
         EIGHTEEN("18", 62),
         NINETEEN("19", 63),
         TWENTY("20", 64),
-        TWENTY_ONE("21", 65);
+        TWENTY_ONE("21", 65),
+        TWENTY_TWO("22", 66),
+        TWENTY_THREE("23", 67),
+        TWENTY_FOUR("24", 68),
+        TWENTY_FIVE("25", 69),
+        ; // Reduce code churn when appending new constants
 
         private Version(String release, int classFileVer) {
             this.release = release;

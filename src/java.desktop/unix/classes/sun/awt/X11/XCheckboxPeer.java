@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     private int getCheckboxSize(FontMetrics fm) {
-        // the motif way of sizing is a bit inscutible, but this
+        // the motif way of sizing is a bit inscrutable, but this
         // is a fair approximation
         return (fm.getHeight() * 76 / 100) - 1;
     }
@@ -362,12 +362,15 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
             if (armed | selected) {
                 //Paint the check
+                AffineTransform af = g2.getTransform();
+                double scaleX = af.getScaleX();
+                double scaleY = af.getScaleY();
 
                 // FIXME: is this the right color?
                 g2.setColor(getPeerForeground());
 
-                AffineTransform af = g2.getTransform();
-                g2.setTransform(AffineTransform.getTranslateInstance(rx,ry));
+                g2.setTransform(AffineTransform.getTranslateInstance(rx * scaleX, ry * scaleY));
+                g2.scale(scaleX, scaleY);
                 g2.fill(myCheckMark);
                 g2.setTransform(af);
             }

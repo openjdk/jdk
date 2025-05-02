@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=240 -Xmx8g
+ * @run main/othervm/timeout=300 -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xint
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
@@ -301,6 +301,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase {
 
+    private static final boolean COMPACT_HEADERS = Platform.is64bit() && WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompactObjectHeaders");
     static final Boolean COMPRESSED_OOPS = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedOops");
     static final long REF_SIZE = (COMPRESSED_OOPS == null || COMPRESSED_OOPS == true) ? 4 : 8;
 
@@ -312,6 +313,9 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     // These should overflow 4G size boundary
     static final int LARGE_INT_ARRAY_SIZE = 1024*1024*1024 + 1024;
     static final int LARGE_OBJ_ARRAY_SIZE = (4096/(int)REF_SIZE)*1024*1024 + 1024;
+
+    static final boolean CCP = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedClassPointers");
+    static final int ARRAY_HEADER_SIZE = CCP ? 16 : (Platform.is64bit() ? 20 : 16);
 
     final String mode;
 
@@ -371,15 +375,25 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
         return (v + a - 1) / a * a;
     }
 
+    private static long expectedSmallObjSize() {
+        long size;
+        if (!Platform.is64bit() || COMPACT_HEADERS) {
+            size = 8;
+        } else {
+            size = 16;
+        }
+        return roundUp(size, OBJ_ALIGN);
+    }
+
     private void testSize_newObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object()));
         }
     }
 
     private void testSize_localObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         Object o = new Object();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(o));
@@ -389,14 +403,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object staticO = new Object();
 
     private void testSize_fieldObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(staticO));
         }
     }
 
     private void testSize_newSmallIntArray() {
-        long expected = roundUp(4L*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(4L*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new int[SMALL_ARRAY_SIZE]));
         }
@@ -404,7 +418,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localSmallIntArray() {
         int[] arr = new int[SMALL_ARRAY_SIZE];
-        long expected = roundUp(4L*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(4L*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
@@ -413,14 +427,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static int[] smallArr = new int[SMALL_ARRAY_SIZE];
 
     private void testSize_fieldSmallIntArray() {
-        long expected = roundUp(4L*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(4L*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(smallArr));
         }
     }
 
     private void testSize_newSmallObjArray() {
-        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object[SMALL_ARRAY_SIZE]));
         }
@@ -428,7 +442,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localSmallObjArray() {
         Object[] arr = new Object[SMALL_ARRAY_SIZE];
-        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
@@ -437,7 +451,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object[] smallObjArr = new Object[SMALL_ARRAY_SIZE];
 
     private void testSize_fieldSmallObjArray() {
-        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(REF_SIZE*SMALL_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(smallObjArr));
         }
@@ -445,7 +459,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localLargeIntArray() {
         int[] arr = new int[LARGE_INT_ARRAY_SIZE];
-        long expected = roundUp(4L*LARGE_INT_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(4L*LARGE_INT_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
@@ -453,7 +467,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localLargeObjArray() {
         Object[] arr = new Object[LARGE_OBJ_ARRAY_SIZE];
-        long expected = roundUp(REF_SIZE*LARGE_OBJ_ARRAY_SIZE + 16, OBJ_ALIGN);
+        long expected = roundUp(REF_SIZE*LARGE_OBJ_ARRAY_SIZE + ARRAY_HEADER_SIZE, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }

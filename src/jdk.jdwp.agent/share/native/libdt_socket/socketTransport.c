@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,11 +220,7 @@ handshake(int fd, jlong timeout) {
     if (strncmp(b, hello, received) != 0) {
         char msg[80+2*16];
         b[received] = '\0';
-        /*
-         * We should really use snprintf here but it's not available on Windows.
-         * We can't use jio_snprintf without linking the transport against the VM.
-         */
-        sprintf(msg, "handshake failed - received >%s< - expected >%s<", b, hello);
+        snprintf(msg, sizeof(msg), "handshake failed - received >%s< - expected >%s<", b, hello);
         setLastError(0, msg);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
@@ -399,18 +395,14 @@ parseAddress(const char *address, struct addrinfo **result) {
     return getAddrInfo(address, hostnameLen, port, &hints, result);
 }
 
-/*
- * Input is sockaddr just because all clients have it.
- */
-static void convertIPv4ToIPv6(const struct sockaddr *addr4, struct in6_addr *addr6) {
+static void convertIPv4ToIPv6(const struct in_addr *addr4, struct in6_addr *addr6) {
     // Implement in a platform-independent way.
     // Spec requires in_addr has s_addr member, in6_addr has s6_addr[16] member.
-    struct in_addr *a4 = &(((struct sockaddr_in*)addr4)->sin_addr);
     memset(addr6, 0, sizeof(*addr6));   // for safety
 
     // Mapped address contains 80 zero bits, then 16 "1" bits, then IPv4 address (4 bytes).
     addr6->s6_addr[10] = addr6->s6_addr[11] = 0xFF;
-    memcpy(&(addr6->s6_addr[12]), &(a4->s_addr), 4);
+    memcpy(&(addr6->s6_addr[12]), &(addr4->s_addr), 4);
 }
 
 /*
@@ -419,37 +411,19 @@ static void convertIPv4ToIPv6(const struct sockaddr *addr4, struct in6_addr *add
  */
 static jdwpTransportError
 parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
-    struct addrinfo hints;
-    struct addrinfo *addrInfo = NULL;
-    jdwpTransportError err;
-
-    /*
-     * To parse both IPv4 and IPv6 need to specify AF_UNSPEC family
-     * (with AF_INET6 IPv4 addresses are not parsed even with AI_V4MAPPED and AI_ALL flags).
-     */
-    memset (&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;            // IPv6 or mapped IPv4
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_NUMERICHOST;        // only numeric addresses, no resolution
-
-    err = getAddrInfo(buffer, strlen(buffer), NULL, &hints, &addrInfo);
-
-    if (err != JDWPTRANSPORT_ERROR_NONE) {
-        return err;
-    }
-
-    if (addrInfo->ai_family == AF_INET6) {
-        memcpy(result, &(((struct sockaddr_in6 *)(addrInfo->ai_addr))->sin6_addr), sizeof(*result));
+    struct in_addr addr;
+    struct in6_addr addr6;
+    if (inet_pton(AF_INET6, buffer, &addr6) == 1) {
         *isIPv4 = 0;
-    } else {    // IPv4 address - convert to mapped IPv6
-        struct in6_addr addr6;
-        convertIPv4ToIPv6(addrInfo->ai_addr, &addr6);
-        memcpy(result, &addr6, sizeof(*result));
+    } else if (inet_pton(AF_INET, buffer, &addr) == 1) {
+        // IPv4 address - convert to mapped IPv6
+        convertIPv4ToIPv6(&addr, &addr6);
         *isIPv4 = 1;
+    } else {
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
-    dbgsysFreeAddrInfo(addrInfo);
+    memcpy(result, &addr6, sizeof(*result));
 
     return JDWPTRANSPORT_ERROR_NONE;
 }
@@ -607,7 +581,8 @@ isPeerAllowed(struct sockaddr_storage *peer) {
     int i;
     // _peers contains IPv6 subnet and mask (IPv4 is converted to mapped IPv6)
     if (peer->ss_family == AF_INET) {
-        convertIPv4ToIPv6((struct sockaddr *)peer, &tmp);
+        struct in_addr *addr4 = &(((struct sockaddr_in*)peer)->sin_addr);
+        convertIPv4ToIPv6(addr4, &tmp);
         addr6 = &tmp;
     } else {
         addr6 = &(((struct sockaddr_in6 *)peer)->sin6_addr);
@@ -690,7 +665,7 @@ static jdwpTransportError startListening(struct addrinfo *ai, int *socket, char*
         }
 
         portNum = getPort((struct sockaddr *)&addr);
-        sprintf(buf, "%d", portNum);
+        snprintf(buf, sizeof(buf), "%d", portNum);
         *actualAddress = (*callback->alloc)((int)strlen(buf) + 1);
         if (*actualAddress == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
@@ -731,35 +706,32 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         return err;
     }
 
-    // Try to find bind address of preferred address family first.
-    for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-        if (ai->ai_family == preferredAddressFamily) {
-            listenAddr = ai;
-            break;
+    // Try to find bind address of preferred address family first (if java.net.preferIPv6Addresses != "system").
+    if (preferredAddressFamily != AF_UNSPEC) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if (ai->ai_family == preferredAddressFamily) {
+                listenAddr = ai;
+                break;
+            }
         }
     }
 
     if (listenAddr == NULL) {
-        // No address of preferred address family found, grab the fist one.
+        // No address of preferred address family found, grab the first one.
         listenAddr = &(addrInfo[0]);
-    }
-
-    if (listenAddr == NULL) {
-        dbgsysFreeAddrInfo(addrInfo);
-        RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
     }
 
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
     // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
     // connections only. Make sure that IN6ADDR_ANY is preferred over
-    // mapped INADDR_ANY if preferredAddressFamily is AF_INET6 or not set.
+    // mapped INADDR_ANY if preferIPv4Stack is false.
 
-    if (preferredAddressFamily != AF_INET) {
+    if (!allowOnlyIPv4) {
         inet_pton(AF_INET6, "::ffff:0.0.0.0", &mappedAny);
 
         if (isEqualIPv6Addr(listenAddr, mappedAny)) {
             for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-                if (isEqualIPv6Addr(listenAddr, in6addr_any)) {
+                if (isEqualIPv6Addr(ai, in6addr_any)) {
                     listenAddr = ai;
                     break;
                 }
@@ -858,7 +830,7 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
                 int err2 = getnameinfo((struct sockaddr *)&clientAddr, clientAddrLen,
                                        addrStr, sizeof(addrStr), NULL, 0,
                                        NI_NUMERICHOST);
-                sprintf(ebuf, "ERROR: Peer not allowed to connect: %s\n",
+                snprintf(ebuf, sizeof(ebuf), "ERROR: Peer not allowed to connect: %s\n",
                         (err2 != 0) ? "<bad address>" : addrStr);
                 dbgsysSocketClose(socketFD);
                 socketFD = -1;
@@ -976,8 +948,10 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         return err;
     }
 
-    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (pass = 0; pass < 2 && socketFD < 0; pass++) {
+    // 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest;
+    // if java.net.preferIPv6Addresses == "system", only 2nd pass is needed
+    pass = preferredAddressFamily != AF_UNSPEC ? 0 : 1;
+    for (; pass < 2 && socketFD < 0; pass++) {
         for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
@@ -1314,6 +1288,43 @@ static int readBooleanSysProp(int *result, int trueValue, int falseValue,
     return JNI_OK;
 }
 
+/*
+ * Reads java.net.preferIPv6Addresses system value, sets preferredAddressFamily to
+ *  - AF_INET6 if the property is "true";
+ *  - AF_INET if the property is "false".
+ *  - AF_UNSPEC if the property is "system".
+ * Doesn't change preferredAddressFamily if the property is not set or failed to read.
+ */
+static int readPreferIPv6Addresses(JNIEnv* jniEnv,
+    jclass sysClass, jmethodID getPropMethod, const char *propName)
+{
+    jstring value;
+    jstring name = (*jniEnv)->NewStringUTF(jniEnv, propName);
+
+    if (name == NULL) {
+        return JNI_ERR;
+    }
+    value = (jstring)(*jniEnv)->CallStaticObjectMethod(jniEnv, sysClass, getPropMethod, name);
+    if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+        return JNI_ERR;
+    }
+    if (value != NULL) {
+        const char *theValue = (*jniEnv)->GetStringUTFChars(jniEnv, value, NULL);
+        if (theValue == NULL) {
+            return JNI_ERR;
+        }
+        if (strcmp(theValue, "true") == 0) {
+            preferredAddressFamily = AF_INET6;
+        } else if (strcmp(theValue, "false") == 0) {
+            preferredAddressFamily = AF_INET;
+        } else if (strcmp(theValue, "system") == 0) {
+            preferredAddressFamily = AF_UNSPEC;
+        }
+        (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
+    }
+    return JNI_OK;
+}
+
 JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
@@ -1333,6 +1344,10 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
     initialized = JNI_TRUE;
     jvm = vm;
     callback = cbTablePtr;
+
+    if (dbgsysPlatformInit() != 0) {
+      return JNI_ERR;
+    }
 
     /* initialize interface table */
     interface.GetCapabilities = &socketTransport_getCapabilities;
@@ -1371,7 +1386,7 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
         }
         readBooleanSysProp(&allowOnlyIPv4, 1, 0,
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv4Stack");
-        readBooleanSysProp(&preferredAddressFamily, AF_INET6, AF_INET,
+        readPreferIPv6Addresses(
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv6Addresses");
     } while (0);
 

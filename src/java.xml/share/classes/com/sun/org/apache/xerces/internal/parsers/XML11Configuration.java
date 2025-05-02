@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,6 +70,8 @@ import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents.
@@ -78,7 +80,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Neil Graham, IBM
  * @author Michael Glavassevich, IBM
  *
- * @LastModified: May 2021
+ * @LastModified: Apr 2025
  */
 public class XML11Configuration extends ParserConfigurationSettings
     implements XMLPullParserConfiguration, XML11Configurable {
@@ -432,7 +434,7 @@ public class XML11Configuration extends ParserConfigurationSettings
 
     /** Default constructor. */
     public XML11Configuration() {
-        this(null, null, null);
+        this(null, null, null, null, null);
     } // <init>()
 
     /**
@@ -441,7 +443,7 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param symbolTable The symbol table to use.
      */
     public XML11Configuration(SymbolTable symbolTable) {
-        this(symbolTable, null, null);
+        this(symbolTable, null, null, null, null);
     } // <init>(SymbolTable)
 
     /**
@@ -456,7 +458,7 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param grammarPool The grammar pool to use.
      */
     public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool) {
-        this(symbolTable, grammarPool, null);
+        this(symbolTable, grammarPool, null, null, null);
     } // <init>(SymbolTable,XMLGrammarPool)
 
     /**
@@ -471,10 +473,14 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    public XML11Configuration(
-        SymbolTable symbolTable,
-        XMLGrammarPool grammarPool,
-        XMLComponentManager parentSettings) {
+    public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
+            XMLComponentManager parentSettings) {
+        this(symbolTable, grammarPool, parentSettings, null, null);
+    }
+
+    public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
+            XMLComponentManager parentSettings, XMLSecurityPropertyManager securityPropertyMgr,
+            XMLSecurityManager securityManager) {
 
         super(parentSettings);
 
@@ -592,7 +598,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             fProperties.put(XMLGRAMMAR_POOL, fGrammarPool);
         }
 
-        fEntityManager = new XMLEntityManager();
+        fEntityManager = new XMLEntityManager(securityPropertyMgr, securityManager);
         fProperties.put(ENTITY_MANAGER, fEntityManager);
         addCommonComponent(fEntityManager);
 
@@ -638,11 +644,6 @@ public class XML11Configuration extends ParserConfigurationSettings
         } catch (XNIException e) {
             // do nothing
             // REVISIT: What is the right thing to do? -Ac
-        }
-
-        // Initialize Catalog features
-        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-            fProperties.put(f.getPropertyName(), null);
         }
 
         setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);

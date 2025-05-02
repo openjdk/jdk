@@ -1,0 +1,7 @@
+RecordExtern.java:15:17: compiler.warn.ineffectual.externalizable.method.record: writeExternal
+RecordExtern.java:20:17: compiler.warn.ineffectual.externalizable.method.record: readExternal
+RecordExtern.java:39:46: compiler.warn.ineffectual.serial.field.record
+RecordExtern.java:42:18: compiler.warn.ineffectual.serial.method.record: writeObject
+RecordExtern.java:52:18: compiler.warn.ineffectual.serial.method.record: readObject
+RecordExtern.java:58:18: compiler.warn.ineffectual.serial.method.record: readObjectNoData
+6 warnings

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -39,13 +38,16 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
-  assert(i >= Max(), "must be an overflow");
-  debug_only(_limit = i+1);
+  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
+  if (i < Max()) {
+    return; // No need to grow
+  }
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
     _blocks = (Block**)_arena->Amalloc( _size * sizeof(Block*) );
-    _blocks[0] = NULL;
+    _blocks[0] = nullptr;
   }
   uint old = _size;
   _size = next_power_of_2(i);
@@ -178,10 +180,11 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock()) {
     end_idx--;
   }
 
@@ -313,7 +316,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
     st->print("in( ");
     for (uint i=1; i<num_preds(); i++) {
       Node *s = pred(i);
-      if (cfg != NULL) {
+      if (cfg != nullptr) {
         Block *p = cfg->get_block_for_node(s);
         p->dump_pred(cfg, p, st);
       } else {
@@ -332,7 +335,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
   const Block *bhead = this;    // Head of self-loop
   Node *bh = bhead->head();
 
-  if ((cfg != NULL) && bh->is_Loop() && !head()->is_Root()) {
+  if ((cfg != nullptr) && bh->is_Loop() && !head()->is_Root()) {
     LoopNode *loop = bh->as_Loop();
     const Block *bx = cfg->get_block_for_node(loop->in(LoopNode::LoopBackControl));
     while (bx->is_connector()) {
@@ -359,7 +362,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
 }
 
 void Block::dump() const {
-  dump(NULL);
+  dump(nullptr);
 }
 
 void Block::dump(const PhaseCFG* cfg) const {
@@ -374,12 +377,13 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
-, _regalloc(NULL)
+, _regalloc(nullptr)
 , _scheduling_for_pressure(false)
 , _matcher(matcher)
 , _node_to_block_mapping(arena)
-, _node_latency(NULL)
+, _node_latency(nullptr)
 #ifndef PRODUCT
 , _trace_opto_pipelining(C->directive()->TraceOptoPipeliningOption)
 #endif
@@ -391,10 +395,13 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   // I'll need a few machine-specific GotoNodes.  Make an Ideal GotoNode,
   // then Match it into a machine-specific Node.  Then clone the machine
   // Node on demand.
-  Node *x = new GotoNode(NULL);
+  Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != NULL, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
+  if (C->failing()) {
+    return;
+  }
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
@@ -427,7 +434,7 @@ uint PhaseCFG::build_cfg() {
     const Node *x = proj->is_block_proj();
     // Does the block end with a proper block-ending Node?  One of Return,
     // If or Goto? (This check should be done for visited nodes also).
-    if (x == NULL) {                    // Does not end right...
+    if (x == nullptr) {                    // Does not end right...
       Node *g = _goto->clone(); // Force it to end in a Goto
       g->set_req(0, proj);
       np->set_req(idx, g);
@@ -622,8 +629,8 @@ static bool no_flip_branch(Block *b) {
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   int end_idx = b->end_idx();
   NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
-  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
-  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out());
   assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
   assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
 
@@ -661,7 +668,7 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
 // Helper function to move block bx to the slot following b_index. Return
 // true if the move is successful, otherwise false
 bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
-  if (bx == NULL) return false;
+  if (bx == nullptr) return false;
 
   // Return false if bx is already scheduled.
   uint bx_index = bx->_pre_order;
@@ -848,7 +855,7 @@ void PhaseCFG::fixup_flow() {
     }
     assert(block->is_Empty() != Block::completely_empty, "Empty blocks should be connectors");
 
-    Block* bnext = (i < number_of_blocks() - 1) ? get_block(i + 1) : NULL;
+    Block* bnext = (i < number_of_blocks() - 1) ? get_block(i + 1) : nullptr;
     Block* bs0 = block->non_connector_successor(0);
 
     // Check for multi-way branches where I cannot negate the test to
@@ -1204,7 +1211,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
         uint index = b->find_node(n);
         // Insert new nodes into block and map them in nodes->blocks array
         // and remember last node in n2.
-        Node *n2 = NULL;
+        Node *n2 = nullptr;
         for (int k = 0; k < new_nodes.length(); ++k) {
           n2 = new_nodes.at(k);
           b->insert_node(n2, ++index);
@@ -1233,7 +1240,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
             assert(remove.at(k)->is_Proj() && (remove.at(k)->in(0)->is_MachBranch()), "");
           }
         }
-        // If anything has been inserted (n2 != NULL), continue after last node inserted.
+        // If anything has been inserted (n2 != nullptr), continue after last node inserted.
         // This does not always work. Some postalloc expands don't insert any nodes, if they
         // do optimizations (e.g., max(x,x)). In this case we decrement j accordingly.
         j = n2 ? b->find_node(n2) : j;
@@ -1292,7 +1299,7 @@ void PhaseCFG::dump( ) const {
 void PhaseCFG::dump_headers() {
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
-    if (block != NULL) {
+    if (block != nullptr) {
       block->dump_head(this);
     }
   }
@@ -1312,7 +1319,7 @@ void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) con
       break;
     }
     home_or_ancestor = home_or_ancestor->parent();
-  } while (home_or_ancestor != NULL);
+  } while (home_or_ancestor != nullptr);
   assert(found, "block b is not in n's home loop or an ancestor of it");
 }
 
@@ -1348,6 +1355,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -1365,7 +1375,7 @@ void PhaseCFG::verify() const {
           // when CreateEx node is moved in build_ifg_physical().
           if (def_block == block && !(block->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
-              !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {
+              !(n->jvms() != nullptr && n->jvms()->is_monitor_use(k))) {
             bool is_loop = false;
             if (n->is_Phi()) {
               for (uint l = 1; l < def->req(); l++) {
@@ -1389,7 +1399,7 @@ void PhaseCFG::verify() const {
         assert(j >= 1, "a projection cannot be the first instruction in a block");
         Node* pred = block->get_node(j - 1);
         Node* parent = n->in(0);
-        assert(parent != NULL, "projections must have a parent");
+        assert(parent != nullptr, "projections must have a parent");
         assert(pred == parent || (pred->is_Proj() && pred->in(0) == parent),
                "projections must follow their parents or other sibling projections");
       }
@@ -1417,7 +1427,7 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
@@ -1483,7 +1493,7 @@ void UnionFind::Union( uint idx1, uint idx2 ) {
 #ifndef PRODUCT
 void Trace::dump( ) const {
   tty->print_cr("Trace (freq %f)", first_block()->_freq);
-  for (Block *b = first_block(); b != NULL; b = next(b)) {
+  for (Block *b = first_block(); b != nullptr; b = next(b)) {
     tty->print("  B%d", b->_pre_order);
     if (b->head()->is_Loop()) {
       tty->print(" (L%d)", b->compute_loop_alignment());
@@ -1561,7 +1571,7 @@ extern "C" int trace_frequency_order(const void *p0, const void *p1) {
 void PhaseBlockLayout::find_edges() {
   // Walk the blocks, creating edges and Traces
   uint i;
-  Trace *tr = NULL;
+  Trace *tr = nullptr;
   for (i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* b = _cfg.get_block(i);
     tr = new Trace(b, next, prev);
@@ -1590,7 +1600,7 @@ void PhaseBlockLayout::find_edges() {
       assert(n == _cfg.get_block(i), "expecting next block");
       tr->append(n);
       uf->map(n->_pre_order, tr->id());
-      traces[n->_pre_order] = NULL;
+      traces[n->_pre_order] = nullptr;
       nfallthru = b->num_fall_throughs();
       b = n;
     }
@@ -1603,7 +1613,8 @@ void PhaseBlockLayout::find_edges() {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
           int from_pct = (int) ((100 * freq) / b->_freq);
-          int to_pct = (int) ((100 * freq) / target->_freq);
+          float f_to_pct = (100 * freq) / target->_freq;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }
@@ -1616,7 +1627,7 @@ void PhaseBlockLayout::find_edges() {
     assert(b->is_connector(), "connector blocks at the end");
     tr->append(b);
     uf->map(b->_pre_order, tr->id());
-    traces[b->_pre_order] = NULL;
+    traces[b->_pre_order] = nullptr;
   }
 }
 
@@ -1642,7 +1653,7 @@ void PhaseBlockLayout::union_traces(Trace* updated_trace, Trace* old_trace) {
   // Union the lower with the higher and remove the pointer
   // to the higher.
   uf->Union(lo_id, hi_id);
-  traces[hi_id] = NULL;
+  traces[hi_id] = nullptr;
 }
 
 // Append traces together via the most frequently executed edges
@@ -1764,21 +1775,20 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
 
 // Order the sequence of the traces in some desirable way
 void PhaseBlockLayout::reorder_traces(int count) {
-  ResourceArea *area = Thread::current()->resource_area();
-  Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
+  Trace** new_traces = NEW_RESOURCE_ARRAY(Trace*, count);
   Block_List worklist;
   int new_count = 0;
 
   // Compact the traces.
   for (int i = 0; i < count; i++) {
-    Trace *tr = traces[i];
-    if (tr != NULL) {
+    Trace* tr = traces[i];
+    if (tr != nullptr) {
       new_traces[new_count++] = tr;
     }
   }
 
   // The entry block should be first on the new trace list.
-  Trace *tr = trace(_cfg.get_root_block());
+  Trace* tr = trace(_cfg.get_root_block());
   assert(tr == new_traces[0], "entry trace misplaced");
 
   // Sort the new trace list by frequency
@@ -1787,10 +1797,10 @@ void PhaseBlockLayout::reorder_traces(int count) {
   // Collect all blocks from existing Traces
   _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
-    Trace *tr = new_traces[i];
-    if (tr != NULL) {
+    Trace* tr = new_traces[i];
+    if (tr != nullptr) {
       // push blocks onto the CFG list
-      for (Block* b = tr->first_block(); b != NULL; b = tr->next(b)) {
+      for (Block* b = tr->first_block(); b != nullptr; b = tr->next(b)) {
         _cfg.add_block(b);
       }
     }
@@ -1802,16 +1812,15 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
 : Phase(BlockLayout)
 , _cfg(cfg) {
   ResourceMark rm;
-  ResourceArea *area = Thread::current()->resource_area();
 
   // List of traces
   int size = _cfg.number_of_blocks() + 1;
-  traces = NEW_ARENA_ARRAY(area, Trace *, size);
+  traces = NEW_RESOURCE_ARRAY(Trace*, size);
   memset(traces, 0, size*sizeof(Trace*));
-  next = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(next,   0, size*sizeof(Block *));
-  prev = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(prev  , 0, size*sizeof(Block *));
+  next = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(next,   0, size*sizeof(Block*));
+  prev = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(prev  , 0, size*sizeof(Block*));
 
   // List of edges
   edges = new GrowableArray<CFGEdge*>;
@@ -1855,13 +1864,13 @@ bool Trace::backedge(CFGEdge *e) {
       // Find the last block in the trace that has a conditional
       // branch.
       Block *b;
-      for (b = last_block(); b != NULL; b = prev(b)) {
+      for (b = last_block(); b != nullptr; b = prev(b)) {
         if (b->num_fall_throughs() == 2) {
           break;
         }
       }
 
-      if (b != last_block() && b != NULL) {
+      if (b != last_block() && b != nullptr) {
         loop_rotated = true;
 
         // Rotate the loop by doing two-part linked-list surgery.
@@ -1873,7 +1882,7 @@ bool Trace::backedge(CFGEdge *e) {
     // Backbranch to the top of a trace
     // Scroll forward through the trace from the targ_block. If we find
     // a loop head before another loop top, use the loop head alignment.
-    for (Block *b = targ_block; b != NULL; b = next(b)) {
+    for (Block *b = targ_block; b != nullptr; b = next(b)) {
       if (b->has_loop_alignment()) {
         break;
       }

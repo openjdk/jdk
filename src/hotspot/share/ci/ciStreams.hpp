@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ private:
   Bytecodes::Code _raw_bc;         // Current bytecode, raw form
 
   void reset( address base, unsigned int size ) {
-    _bc_start =_was_wide = 0;
+    _bc_start = _was_wide = nullptr;
     _start = _pc = base; _end = base + size;
   }
 
@@ -110,9 +110,9 @@ public:
   }
 
   address cur_bcp() const       { return _bc_start; }  // Returns bcp to current instruction
-  int next_bci() const          { return _pc - _start; }
-  int cur_bci() const           { return _bc_start - _start; }
-  int instruction_size() const  { return _pc - _bc_start; }
+  int next_bci() const          { return pointer_delta_as_int(_pc, _start); }
+  int cur_bci() const           { return pointer_delta_as_int(_bc_start, _start); }
+  int instruction_size() const  { return pointer_delta_as_int(_pc, _bc_start); }
 
   Bytecodes::Code cur_bc() const{ return check_java(_bc); }
   Bytecodes::Code cur_bc_raw() const { return check_defined(_raw_bc); }
@@ -159,11 +159,6 @@ public:
   // Get 2-byte index (byte swapping depending on which bytecode)
   int get_index_u2(bool is_wide = false) const {
     return bytecode().get_index_u2(cur_bc_raw(), is_wide);
-  }
-
-  // Get 2-byte index in native byte order.  (Rewriter::rewrite makes these.)
-  int get_index_u2_cpcache() const {
-    return bytecode().get_index_u2_cpcache(cur_bc_raw());
   }
 
   // Get 4-byte index, for invokedynamic.
@@ -229,7 +224,7 @@ public:
   // object (ciConstant.as_object()->is_loaded() == false).
   ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
-  BasicType   get_basic_type_for_constant_at(int index) const;
+  BasicType   get_basic_type_for_constant_at(int cp_index) const;
 
   constantTag get_raw_pool_tag_at(int index) const;
 

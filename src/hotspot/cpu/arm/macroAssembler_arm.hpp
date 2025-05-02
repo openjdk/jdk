@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,7 @@ public:
   inline bool ignore_non_patchable_relocations() { return true; }
 
   void align(int modulus);
+  void align(int modulus, int target);
 
   // Support for VM calls
   //
@@ -256,8 +257,8 @@ public:
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  void get_vm_result(Register oop_result, Register tmp);
-  void get_vm_result_2(Register metadata_result, Register tmp);
+  void get_vm_result_oop(Register oop_result, Register tmp);
+  void get_vm_result_metadata(Register metadata_result, Register tmp);
 
   // Always sets/resets sp, which default to SP if (last_sp == noreg)
   // Optionally sets/resets fp (use noreg to avoid setting it)
@@ -853,7 +854,6 @@ public:
     // klass oop manipulations if compressed
 
   void load_klass(Register dst_klass, Register src_oop, AsmCondition cond = al);
-  void load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond = al);
 
   void store_klass(Register src_klass, Register dst_oop);
 
@@ -1010,6 +1010,24 @@ public:
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
 
+  // Attempt to lightweight-lock an object
+  // Registers:
+  //  - obj: the object to be locked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+
+  // Attempt to lightweight-unlock an object
+  // Registers:
+  //  - obj: the object to be unlocked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+
 #ifndef PRODUCT
   // Preserves flags and all registers.
   // On SMP the updated value might not be visible to external observers without a synchronization barrier
@@ -1018,7 +1036,7 @@ public:
 
   // unconditional non-atomic increment
   void inc_counter(address counter_addr, Register tmpreg1, Register tmpreg2);
-  void inc_counter(int* counter_addr, Register tmpreg1, Register tmpreg2) {
+  void inc_counter(uint* counter_addr, Register tmpreg1, Register tmpreg2) {
     inc_counter((address) counter_addr, tmpreg1, tmpreg2);
   }
 
@@ -1060,6 +1078,9 @@ public:
   void safepoint_poll(Register tmp1, Label& slow_path);
   void get_polling_page(Register dest);
   void read_polling_page(Register dest, relocInfo::relocType rtype);
+
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 };
 
 

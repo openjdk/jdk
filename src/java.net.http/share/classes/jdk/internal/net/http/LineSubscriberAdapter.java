@@ -473,4 +473,3 @@ public final class LineSubscriberAdapter<S extends Subscriber<? super String>,R>
         }
     }
 }
-

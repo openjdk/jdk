@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,22 +33,15 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ByteArray;
-import sun.reflect.misc.ReflectUtil;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
 
 /**
  * An ObjectInputStream deserializes primitive data and objects previously
@@ -242,6 +235,7 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
@@ -260,21 +254,6 @@ public class ObjectInputStream
     /** marker for unshared objects in internal handle table */
     private static final Object unsharedMarker = new Object();
 
-    /**
-     * immutable table mapping primitive type names to corresponding
-     * class objects
-     */
-    private static final Map<String, Class<?>> primClasses =
-        Map.of("boolean", boolean.class,
-               "byte", byte.class,
-               "char", char.class,
-               "short", short.class,
-               "int", int.class,
-               "long", long.class,
-               "float", float.class,
-               "double", double.class,
-               "void", void.class);
-
     private static class Caches {
         /** cache of subclass security audit results */
         static final ClassValue<Boolean> subclassAudits =
@@ -290,8 +269,8 @@ public class ObjectInputStream
          * have been read.
          * See {@link #setObjectInputFilter(ObjectInputFilter)}
          */
-        static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
-                .privilegedGetProperty("jdk.serialSetFilterAfterRead");
+        static final boolean SET_FILTER_AFTER_READ =
+                Boolean.getBoolean("jdk.serialSetFilterAfterRead");
 
         /**
          * Property to control {@link GetField#get(String, Object)} conversion of
@@ -299,8 +278,8 @@ public class ObjectInputStream
          * {@link GetField#get(String, Object)} returns null otherwise
          * throwing {@link ClassNotFoundException}.
          */
-        private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
-                .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL =
+                Boolean.getBoolean("jdk.serialGetFieldCnfeReturnsNull");
 
         /**
          * Property to override the implementation limit on the number
@@ -308,8 +287,8 @@ public class ObjectInputStream
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.clamp(GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
+        static final int PROXY_INTERFACE_LIMIT =
+                Math.clamp(Integer.getInteger("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
     }
 
     /*
@@ -386,17 +365,9 @@ public class ObjectInputStream
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
-     * <p>If a security manager is installed, this constructor will check for
-     * the "enableSubclassImplementation" SerializablePermission when invoked
-     * directly or indirectly by the constructor of a subclass which overrides
-     * the ObjectInputStream.readFields or ObjectInputStream.readUnshared
-     * methods.
-     *
      * @param   in input stream to read from
      * @throws  StreamCorruptedException if the stream header is incorrect
      * @throws  IOException if an I/O error occurs while reading stream header
-     * @throws  SecurityException if untrusted subclass illegally overrides
-     *          security-sensitive methods
      * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
      *          fails due to invalid serial filter or serial filter factory properties.
      * @throws  NullPointerException if {@code in} is {@code null}
@@ -404,8 +375,8 @@ public class ObjectInputStream
      * @see     ObjectInputStream#readFields()
      * @see     ObjectOutputStream#ObjectOutputStream(OutputStream)
      */
+    @SuppressWarnings("this-escape")
     public ObjectInputStream(InputStream in) throws IOException {
-        verifySubclass();
         bin = new BlockDataInputStream(in);
         handles = new HandleTable(10);
         vlist = new ValidationList();
@@ -430,26 +401,11 @@ public class ObjectInputStream
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
-     * <p>If there is a security manager installed, this method first calls the
-     * security manager's {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubclassImplementation")}
-     * permission to ensure it's ok to enable subclassing.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling
-     *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
      * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
      *      fails due to invalid serial filter or serial filter factory properties.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected ObjectInputStream() throws IOException, SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
+    protected ObjectInputStream() throws IOException {
         bin = null;
         handles = null;
         vlist = null;
@@ -609,12 +565,6 @@ public class ObjectInputStream
      * <p>The deserialization filter, when not {@code null}, is invoked for
      * each object (regular or class) read to reconstruct the root object.
      * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
-     *
-     * <p>ObjectInputStream subclasses which override this method can only be
-     * constructed in security contexts possessing the
-     * "enableSubclassImplementation" SerializablePermission; any attempt to
-     * instantiate such a subclass without this permission will cause a
-     * SecurityException to be thrown.
      *
      * @return  reference to deserialized object
      * @throws  ClassNotFoundException if class of an object to deserialize
@@ -802,7 +752,7 @@ public class ObjectInputStream
         try {
             return Class.forName(name, false, latestUserDefinedLoader());
         } catch (ClassNotFoundException ex) {
-            Class<?> cl = primClasses.get(name);
+            Class<?> cl = Class.forPrimitiveName(name);
             if (cl != null) {
                 return cl;
             } else {
@@ -934,35 +884,13 @@ public class ObjectInputStream
      * enabled, the {@link #resolveObject} method is called for every object being
      * deserialized.
      *
-     * <p>If object replacement is currently not enabled, and
-     * {@code enable} is true, and there is a security manager installed,
-     * this method first calls the security manager's
-     * {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubstitution")} permission to
-     * ensure that the caller is permitted to enable the stream to do replacement
-     * of objects read from the stream.
-     *
      * @param   enable true for enabling use of {@code resolveObject} for
      *          every object being deserialized
      * @return  the previous setting before this method was invoked
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling the stream
-     *          to do replacement of objects read from the stream.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected boolean enableResolveObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableResolveObject(boolean enable) {
         if (enable == enableResolve) {
             return enable;
-        }
-        if (enable) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SUBSTITUTION_PERMISSION);
-            }
         }
         enableResolve = enable;
         return !enableResolve;
@@ -1352,8 +1280,6 @@ public class ObjectInputStream
      * is increased before reading an object.
      *
      * @param filter the filter, may be null
-     * @throws SecurityException if there is security manager and the
-     *       {@code SerializablePermission("serialFilter")} is not granted
      * @throws IllegalStateException if an object has been read,
      *       if the filter factory returns {@code null} when the
      *       {@linkplain #getObjectInputFilter() current filter} is non-null, or
@@ -1361,11 +1287,6 @@ public class ObjectInputStream
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
-        }
         if (totalObjectRefs > 0 && !Caches.SET_FILTER_AFTER_READ) {
             throw new IllegalStateException(
                     "filter can not be set after an object has been read");
@@ -1450,16 +1371,16 @@ public class ObjectInputStream
      * @param arrayLength the array length
      * @throws NullPointerException if arrayType is null
      * @throws IllegalArgumentException if arrayType isn't actually an array type
-     * @throws NegativeArraySizeException if arrayLength is negative
+     * @throws StreamCorruptedException if arrayLength is negative
      * @throws InvalidClassException if the filter rejects creation
      */
-    private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
+    private void checkArray(Class<?> arrayType, int arrayLength) throws ObjectStreamException {
         if (! arrayType.isArray()) {
             throw new IllegalArgumentException("not an array type");
         }
 
         if (arrayLength < 0) {
-            throw new NegativeArraySizeException();
+            throw new StreamCorruptedException("Array length is negative");
         }
 
         filterCheck(arrayType, arrayLength);
@@ -1624,57 +1545,28 @@ public class ObjectInputStream
     }
 
     /**
-     * Verifies that this (possibly subclass) instance can be constructed
-     * without violating security constraints: the subclass must not override
-     * security-sensitive non-final methods, or else the
-     * "enableSubclassImplementation" SerializablePermission is checked.
-     */
-    private void verifySubclass() {
-        Class<?> cl = getClass();
-        if (cl == ObjectInputStream.class) {
-            return;
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        boolean result = Caches.subclassAudits.get(cl);
-        if (!result) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
-    }
-
-    /**
      * Performs reflective checks on given subclass to verify that it doesn't
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
-    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    for (Class<?> cl = subcl;
-                         cl != ObjectInputStream.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod(
-                                "readUnshared", (Class[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            cl.getDeclaredMethod("readFields", (Class[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.TRUE;
-                }
+        for (Class<?> cl = subcl;
+             cl != ObjectInputStream.class;
+             cl = cl.getSuperclass())
+        {
+            try {
+                cl.getDeclaredMethod(
+                    "readUnshared", (Class[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
             }
-        );
+            try {
+                cl.getDeclaredMethod("readFields", (Class[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
+            }
+        }
+        return Boolean.TRUE;
     }
 
     /**
@@ -1935,12 +1827,6 @@ public class ObjectInputStream
         };
     }
 
-    private boolean isCustomSubclass() {
-        // Return true if this class is a custom subclass of ObjectInputStream
-        return getClass().getClassLoader()
-                    != ObjectInputStream.class.getClassLoader();
-    }
-
     /**
      * Reads in and returns class descriptor for a dynamic proxy class.  Sets
      * passHandle to proxy class descriptor's assigned handle.  If proxy class
@@ -1986,12 +1872,6 @@ public class ObjectInputStream
             } else if (!Proxy.isProxyClass(cl)) {
                 throw new InvalidClassException("Not a proxy");
             } else {
-                // ReflectUtil.checkProxyPackageAccess makes a test
-                // equivalent to isCustomSubclass so there's no need
-                // to condition this call to isCustomSubclass == true here.
-                ReflectUtil.checkProxyPackageAccess(
-                        getClass().getClassLoader(),
-                        cl.getInterfaces());
                 // Filter the interfaces
                 for (Class<?> clazz : cl.getInterfaces()) {
                     filterCheck(clazz, -1);
@@ -2001,9 +1881,8 @@ public class ObjectInputStream
             resolveEx = ex;
         } catch (IllegalAccessError aie) {
             throw new InvalidClassException(aie.getMessage(), aie);
-        } catch (OutOfMemoryError memerr) {
-            throw new InvalidObjectException("Proxy interface limit exceeded: " +
-                                             Arrays.toString(ifaces), memerr);
+        } catch (OutOfMemoryError oome) {
+            throw genInvalidObjectException(oome, ifaces);
         }
 
         // Call filterCheck on the class before reading anything else
@@ -2015,9 +1894,8 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
-        } catch (OutOfMemoryError memerr) {
-            throw new InvalidObjectException("Proxy interface limit exceeded: " +
-                                             Arrays.toString(ifaces), memerr);
+        } catch (OutOfMemoryError oome) {
+            throw genInvalidObjectException(oome, ifaces);
         } finally {
             depth--;
         }
@@ -2025,6 +1903,14 @@ public class ObjectInputStream
         handles.finish(descHandle);
         passHandle = descHandle;
         return desc;
+    }
+
+    // Generate an InvalidObjectException for an OutOfMemoryError
+    // Use String.concat() to avoid string formatting invoke dynamic
+    private static InvalidObjectException genInvalidObjectException(OutOfMemoryError oome,
+                                                                    String[] ifaces) {
+        return new InvalidObjectException("Proxy interface limit exceeded: "
+                .concat(Arrays.toString(ifaces)), oome);
     }
 
     /**
@@ -2055,12 +1941,9 @@ public class ObjectInputStream
         Class<?> cl = null;
         ClassNotFoundException resolveEx = null;
         bin.setBlockDataMode(true);
-        final boolean checksRequired = isCustomSubclass();
         try {
             if ((cl = resolveClass(readDesc)) == null) {
                 resolveEx = new ClassNotFoundException("null class");
-            } else if (checksRequired) {
-                ReflectUtil.checkPackageAccess(cl);
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
@@ -2137,7 +2020,9 @@ public class ObjectInputStream
 
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
-
+        if (len < 0) {
+            throw new StreamCorruptedException("Array length is negative");
+        }
         filterCheck(desc.forClass(), len);
 
         Object array = null;
@@ -2361,7 +2246,13 @@ public class ObjectInputStream
          */
     }
 
-    /** Reads a record. */
+    /**
+     * Reads and returns a record.
+     * If an exception is marked for any of the fields, the dependency
+     * mechanism marks the record as having an exception.
+     * Null is returned from readRecord and later the exception is thrown at
+     * the exit of {@link #readObject(Class)}.
+     **/
     private Object readRecord(ObjectStreamClass desc) throws IOException {
         ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
         if (slots.length != 1) {
@@ -2374,6 +2265,9 @@ public class ObjectInputStream
         }
 
         FieldValues fieldValues = new FieldValues(desc, true);
+        if (handles.lookupException(passHandle) != null) {
+            return null;     // slot marked with exception, don't create record
+        }
 
         // get canonical record constructor adapted to take two arguments:
         // - byte[] primValues
@@ -2467,8 +2361,11 @@ public class ObjectInputStream
                     if (slotValues != null) {
                         slotValues[i] = values;
                     } else if (obj != null) {
-                        values.defaultCheckFieldValues(obj);
-                        values.defaultSetFieldValues(obj);
+                        if (handles.lookupException(passHandle) == null) {
+                            // passHandle NOT marked with an exception; set field values
+                            values.defaultCheckFieldValues(obj);
+                            values.defaultSetFieldValues(obj);
+                        }
                     }
                 }
 
@@ -2487,7 +2384,8 @@ public class ObjectInputStream
             }
         }
 
-        if (obj != null && slotValues != null) {
+        if (obj != null && slotValues != null && handles.lookupException(passHandle) == null) {
+            // passHandle NOT marked with an exception
             // Check that the non-primitive types are assignable for all slots
             // before assigning.
             for (int i = 0; i < slots.length; i++) {
@@ -2733,16 +2631,11 @@ public class ObjectInputStream
             final ObjectInputValidation obj;
             final int priority;
             Callback next;
-            @SuppressWarnings("removal")
-            final AccessControlContext acc;
 
-            Callback(ObjectInputValidation obj, int priority, Callback next,
-                @SuppressWarnings("removal") AccessControlContext acc)
-            {
+            Callback(ObjectInputValidation obj, int priority, Callback next) {
                 this.obj = obj;
                 this.priority = priority;
                 this.next = next;
-                this.acc = acc;
             }
         }
 
@@ -2771,12 +2664,10 @@ public class ObjectInputStream
                 prev = cur;
                 cur = cur.next;
             }
-            @SuppressWarnings("removal")
-            AccessControlContext acc = AccessController.getContext();
             if (prev != null) {
-                prev.next = new Callback(obj, priority, cur, acc);
+                prev.next = new Callback(obj, priority, cur);
             } else {
-                list = new Callback(obj, priority, list, acc);
+                list = new Callback(obj, priority, list);
             }
         }
 
@@ -2787,23 +2678,15 @@ public class ObjectInputStream
          * throws an InvalidObjectException, the callback process is terminated
          * and the exception propagated upwards.
          */
-        @SuppressWarnings("removal")
         void doCallbacks() throws InvalidObjectException {
             try {
                 while (list != null) {
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>()
-                    {
-                        public Void run() throws InvalidObjectException {
-                            list.obj.validateObject();
-                            return null;
-                        }
-                    }, list.acc);
+                    list.obj.validateObject();
                     list = list.next;
                 }
-            } catch (PrivilegedActionException ex) {
+            } catch (InvalidObjectException ex) {
                 list = null;
-                throw (InvalidObjectException) ex.getException();
+                throw ex;
             }
         }
 
@@ -3000,6 +2883,8 @@ public class ObjectInputStream
         private static final int CHAR_BUF_SIZE = 256;
         /** readBlockHeader() return value indicating header read may block */
         private static final int HEADER_BLOCKED = -2;
+        /** access to internal methods to count ASCII and inflate latin1/ASCII bytes to char */
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         /** buffer for reading general/block data */
         private final byte[] buf = new byte[MAX_BLOCK_SIZE];
@@ -3676,8 +3561,32 @@ public class ObjectInputStream
          * utflen bytes.
          */
         private String readUTFBody(long utflen) throws IOException {
+            if (!blkmode) {
+                end = pos = 0;
+            }
+
             StringBuilder sbuf;
             if (utflen > 0 && utflen < Integer.MAX_VALUE) {
+                // Scan for leading ASCII chars
+                int avail = end - pos;
+                int ascii = JLA.countPositives(buf, pos, Math.min(avail, (int)utflen));
+                if (ascii == utflen) {
+                    // Complete match, consume the buf[pos ... pos + ascii] range and return.
+                    // Modified UTF-8 and ISO-8859-1 are both ASCII-compatible encodings bytes
+                    // thus we can treat the range as ISO-8859-1 and avoid a redundant scan
+                    // in the String constructor
+                    String utf = new String(buf, pos, ascii, StandardCharsets.ISO_8859_1);
+                    pos += ascii;
+                    return utf;
+                }
+                // Avoid allocating a StringBuilder if there's enough data in buf and
+                // cbuf is large enough
+                if (avail >= utflen && utflen <= CHAR_BUF_SIZE) {
+                    JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
+                    pos += ascii;
+                    int cbufPos = readUTFSpan(ascii, utflen - ascii);
+                    return new String(cbuf, 0, cbufPos);
+                }
                 // a reasonable initial capacity based on the UTF length
                 int initialCapacity = Math.min((int)utflen, 0xFFFF);
                 sbuf = new StringBuilder(initialCapacity);
@@ -3685,14 +3594,14 @@ public class ObjectInputStream
                 sbuf = new StringBuilder();
             }
 
-            if (!blkmode) {
-                end = pos = 0;
-            }
-
             while (utflen > 0) {
                 int avail = end - pos;
                 if (avail >= 3 || (long) avail == utflen) {
-                    utflen -= readUTFSpan(sbuf, utflen);
+                    int cbufPos = readUTFSpan(0, utflen);
+                    // pos has advanced: adjust utflen by the difference in
+                    // available bytes
+                    utflen -= avail - (end - pos);
+                    sbuf.append(cbuf, 0, cbufPos);
                 } else {
                     if (blkmode) {
                         // near block boundary, read one byte at a time
@@ -3714,18 +3623,17 @@ public class ObjectInputStream
 
         /**
          * Reads span of UTF-encoded characters out of internal buffer
-         * (starting at offset pos and ending at or before offset end),
-         * consuming no more than utflen bytes.  Appends read characters to
-         * sbuf.  Returns the number of bytes consumed.
+         * (starting at offset pos), consuming no more than utflen bytes.
+         * Appends read characters to cbuf. Returns the current position
+         * in cbuf.
          */
-        private long readUTFSpan(StringBuilder sbuf, long utflen)
+        private int readUTFSpan(int cpos, long utflen)
             throws IOException
         {
-            int cpos = 0;
             int start = pos;
             int avail = Math.min(end - pos, CHAR_BUF_SIZE);
             // stop short of last char unless all of utf bytes in buffer
-            int stop = pos + ((utflen > avail) ? avail - 2 : (int) utflen);
+            int stop = start + ((utflen > avail) ? avail - 2 : (int) utflen);
             boolean outOfBounds = false;
 
             try {
@@ -3770,9 +3678,7 @@ public class ObjectInputStream
                     throw new UTFDataFormatException();
                 }
             }
-
-            sbuf.append(cbuf, 0, cpos);
-            return pos - start;
+            return cpos;
         }
 
         /**
@@ -3826,8 +3732,7 @@ public class ObjectInputStream
         }
 
         /**
-         * Returns the number of bytes read from the input stream.
-         * @return the number of bytes read from the input stream
+         * {@return the number of bytes read from the input stream}
          */
         long getBytesRead() {
             return in.getBytesRead();

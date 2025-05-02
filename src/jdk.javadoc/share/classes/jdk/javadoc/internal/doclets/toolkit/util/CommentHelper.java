@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,13 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
@@ -186,6 +188,12 @@ public class CommentHelper {
         Utils utils = configuration.utils;
         if (e == null) {
             return null;
+        } else if (utils.isTypeParameterElement(e)) {
+            // Return the enclosing member for type parameters of generic methods or constructors.
+            Element encl = e.getEnclosingElement();
+            if (utils.isExecutableElement(encl)) {
+                return encl;
+            }
         }
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
@@ -318,6 +326,11 @@ public class CommentHelper {
         }
 
         @Override
+        public R visitInheritDoc(InheritDocTree node, Void p) {
+            return visit(node.getSupertype(), p);
+        }
+
+        @Override
         public R visitLink(LinkTree node, Void p) {
             return visit(node.getReference(), null);
         }
@@ -423,6 +436,12 @@ public class CommentHelper {
             }
 
             @Override
+            public List<? extends DocTree> visitRawText(RawTextTree node, Void p) {
+                // not ideal, but better than returning an empty list
+                return asList(node.getContent());
+            }
+
+            @Override
             public List<? extends DocTree> visitReturn(ReturnTree node, Void p) {
                 return node.getDescription();
             }
@@ -487,31 +506,36 @@ public class CommentHelper {
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (dcTree == null && element instanceof ExecutableElement ee) {
-            return getInheritedDocTreePath(dtree, ee);
+        if (dcTree == null) {
+            // Element does not have a doc comment.
+            return getInheritedDocTreePath(dtree);
         }
-        if (path == null || dcTree == null || dtree == null) {
+        if (path == null || dtree == null) {
             return null;
         }
         DocTreePath dtPath = DocTreePath.getPath(path, dcTree, dtree);
-        if (dtPath == null && element instanceof ExecutableElement ee) {
-            // The overriding element has a doc tree, but it doesn't contain what we're looking for.
-            return getInheritedDocTreePath(dtree, ee);
-        }
-        return dtPath;
+        // Doc tree isn't in current element's comment, it must be inherited.
+        return dtPath == null ? getInheritedDocTreePath(dtree) : dtPath;
     }
 
-    private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
+    private DocTreePath getInheritedDocTreePath(DocTree dtree) {
         Utils utils = configuration.utils;
-        var docFinder = utils.docFinder();
-        Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
-                (m -> {
-                    Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
-                    return Result.fromOptional(optional);
-                })).toOptional();
-        return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
-                ? null
-                : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);
+        if (element instanceof ExecutableElement ee) {
+            var docFinder = utils.docFinder();
+            Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
+                    (m -> {
+                        Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
+                        return Result.fromOptional(optional);
+                    })).toOptional();
+            return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
+                    ? null
+                    : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);
+        } else if (element instanceof TypeElement te
+                && te.getEnclosingElement() instanceof TypeElement enclType) {
+            // Block tags can be inherited from enclosing types.
+            return utils.getCommentHelper(enclType).getDocTreePath(dtree);
+        }
+        return null;
     }
 
     /**

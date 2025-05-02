@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -31,41 +31,35 @@ import java.util.Optional;
 
 public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> implements PaddingLayout {
 
-    private PaddingLayoutImpl(long bitSize) {
-        this(bitSize, 1, Optional.empty());
+    private PaddingLayoutImpl(long byteSize) {
+        this(byteSize, 1, Optional.empty());
     }
 
-    private PaddingLayoutImpl(long bitSize, long bitAlignment, Optional<String> name) {
-        super(bitSize, bitAlignment, name);
+    private PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
+        super(byteSize, byteAlignment, name);
     }
 
     @Override
     public String toString() {
-        return decorateLayoutString("x" + bitSize());
+        return decorateLayoutString("x" + byteSize());
     }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        if (!(other instanceof PaddingLayoutImpl p)) {
-            return false;
-        }
-        return bitSize() == p.bitSize();
+        return this == other ||
+                other instanceof PaddingLayoutImpl otherPadding &&
+                super.equals(other) &&
+                byteSize() == otherPadding.byteSize();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), bitSize());
+        return Objects.hash(super.hashCode(), byteSize());
     }
 
     @Override
-    PaddingLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new PaddingLayoutImpl(bitSize(), bitAlignment, name);
+    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new PaddingLayoutImpl(byteSize(), byteAlignment, name);
     }
 
     @Override
@@ -73,8 +67,8 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
         return true;
     }
 
-    public static PaddingLayout of(long bitSize) {
-        return new PaddingLayoutImpl(bitSize);
+    public static PaddingLayout of(long byteSize) {
+        return new PaddingLayoutImpl(byteSize);
     }
 
 }

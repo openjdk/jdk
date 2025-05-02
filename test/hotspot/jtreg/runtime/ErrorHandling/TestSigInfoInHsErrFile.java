@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
  * @test segv
  * @summary Test that for a given crash situation we see the correct siginfo in the hs-err file
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
@@ -45,7 +46,7 @@ public class TestSigInfoInHsErrFile {
 
   public static void main(String[] args) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
@@ -68,7 +69,14 @@ public class TestSigInfoInHsErrFile {
     patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
     // Crash address: see VMError::_segfault_address
-    String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";
+    String crashAddress = "0x0*400";
+    if (Platform.isAix()) {
+        crashAddress = "0xffffffffffffffff";
+    } else if (Platform.isS390x()) {
+        // All faults on s390x give the address only on page granularity.
+        // Hence fault address is first page address.
+        crashAddress = "0x0*1000";
+    }
     patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_.*\\), si_addr: " + crashAddress + ".*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);

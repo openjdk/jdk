@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8269752
  * @summary C2: assert(false) failed: Bad graph detected in build_loop_late
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainBodyExecutedOnce TestMainBodyExecutedOnce
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainBodyExecutedOnce::* TestMainBodyExecutedOnce
  *
  */
 

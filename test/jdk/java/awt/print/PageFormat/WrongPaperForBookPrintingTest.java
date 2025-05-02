@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @key headful
+   @key printer
    @bug 8201818
    @summary Printing attributes break page size set via "java.awt.print.Book"
             object

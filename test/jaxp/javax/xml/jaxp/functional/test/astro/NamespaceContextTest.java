@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,14 @@ import static org.testng.Assert.assertEquals;
 
 import javax.xml.namespace.QName;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.NamespaceContextTest
  * @run testng/othervm test.astro.NamespaceContextTest
  * @summary javax.xml.namespace.QName tests
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class NamespaceContextTest {
     private static final String PREFIX = "astro";
     private static final String LOCAL_PART = "stardb";

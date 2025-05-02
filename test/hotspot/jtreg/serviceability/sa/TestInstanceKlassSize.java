@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class TestInstanceKlassSize {
         }
         try {
             // Run this app with the LingeredApp PID to get SA output from the LingeredApp
-            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "--add-modules=jdk.hotspot.agent",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 #include <jni.h>
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 
 #define FIND_CLASS(_class, _className)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             env->FindClass(_className)) != NULL))\
+             env->FindClass(_className)) != nullptr))\
                 return
 
 #define GET_OBJECT_CLASS(_class, _obj)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             env->GetObjectClass(_obj)) != NULL))\
+             env->GetObjectClass(_obj)) != nullptr))\
                 return
 
 #define GET_OBJ_FIELD(_value, _obj, _class, _fieldName, _fieldSig)\
@@ -41,12 +41,12 @@ extern "C" {
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
         if (!NSK_JNI_VERIFY(env, (_fieldID = \
-             env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+             env->GetFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
                 return
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
         if (!NSK_JNI_VERIFY(env, (_methodID = \
-             env->GetMethodID(_class, _methodName, _sig)) != NULL)) \
+             env->GetMethodID(_class, _methodName, _sig)) != nullptr)) \
                 return
 
 #define CALL_VOID_NOPARAM(_obj, _class, _methodName)\
@@ -72,23 +72,23 @@ JNIEXPORT void JNICALL Java_nsk_monitoring_share_thread_Deadlock_00024NativeLock
         FIND_CLASS(testBugClass, "nsk/share/TestBug");
         GET_OBJ_FIELD(lock, o, nativeLockerClass, "lock", "Ljava/lang/Object;");
         GET_OBJ_FIELD(step1, o, nativeLockerClass, "step1", "Lnsk/share/Wicket;");
-        if (step1 == NULL) {
+        if (step1 == nullptr) {
                 env->ThrowNew(testBugClass, "step1 field is null");
                 return;
         }
         GET_OBJ_FIELD(step2, o, nativeLockerClass, "step2", "Lnsk/share/Wicket;");
-        if (step2 == NULL) {
+        if (step2 == nullptr) {
                 env->ThrowNew(testBugClass, "step2 field is null");
                 return;
         }
         GET_OBJ_FIELD(step3, o, nativeLockerClass, "step3", "Lnsk/share/Wicket;");
-        if (step3 == NULL) {
+        if (step3 == nullptr) {
                 env->ThrowNew(testBugClass, "step3 field is null");
                 return;
         }
         GET_OBJ_FIELD(inner, o, lockerClass, "inner", "Lnsk/monitoring/share/thread/Deadlock$Locker;");
         if (env->MonitorEnter(lock) == JNI_OK) {
-                if (inner == NULL) {
+                if (inner == nullptr) {
                         env->ThrowNew(testBugClass, "Should not reach here");
                 } else {
                         CALL_VOID_NOPARAM(step1, wicketClass, "unlock");

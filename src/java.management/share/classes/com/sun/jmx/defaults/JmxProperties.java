@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,23 +44,13 @@ public class JmxProperties {
     //------------------------
 
     /**
-     * References the property that specifies the directory where
-     * the native libraries will be stored before the MLet Service
-     * loads them into memory.
+     * References the property that optionally specifies the class name
+     * of an alternative MBeanServerBuilder.
      * <p>
-     * Property Name: <B>jmx.mlet.library.dir</B>
+     * Property Name: <B>javax.management.builder.initial</B>
      */
     public static final String JMX_INITIAL_BUILDER =
             "javax.management.builder.initial";
-
-    /**
-     * References the property that specifies the directory where
-     * the native libraries will be stored before the MLet Service
-     * loads them into memory.
-     * <p>
-     * Property Name: <B>jmx.mlet.library.dir</B>
-     */
-    public static final String MLET_LIB_DIR = "jmx.mlet.library.dir";
 
     /**
      * References the property that specifies the full name of the JMX
@@ -121,18 +111,6 @@ public class JmxProperties {
      */
     public static final Logger MBEANSERVER_LOGGER =
             System.getLogger(MBEANSERVER_LOGGER_NAME);
-
-    /**
-     * Logger name for MLet service information.
-     */
-    public static final String MLET_LOGGER_NAME =
-            "javax.management.mlet";
-
-    /**
-     * Logger for MLet service information.
-     */
-    public static final Logger MLET_LOGGER =
-            System.getLogger(MLET_LOGGER_NAME);
 
     /**
      * Logger name for Monitor information.

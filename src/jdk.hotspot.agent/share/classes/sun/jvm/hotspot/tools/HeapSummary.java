@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,44 +79,44 @@ public class HeapSummary extends Tool {
       printValMB("MaxHeapSize              = ", getFlagValue("MaxHeapSize", flagMap));
       printValMB("NewSize                  = ", getFlagValue("NewSize", flagMap));
       printValMB("MaxNewSize               = ", getFlagValue("MaxNewSize", flagMap));
-      printValMB("OldSize                  = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio                 = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio            = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
-      if (heap instanceof ShenandoahHeap) {
-         printValMB("ShenandoahRegionSize     = ", ShenandoahHeapRegion.regionSizeBytes());
-      } else {
-         printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+      if (heap instanceof G1CollectedHeap) {
+        printValMB("G1HeapRegionSize       = ", G1HeapRegion.grainBytes());
       }
 
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof GenCollectedHeap) {
-         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-         for (int n = 0; n < genHeap.nGens(); n++) {
-            Generation gen = genHeap.getGen(n);
-            if (gen instanceof DefNewGeneration) {
-               System.out.println("New Generation (Eden + 1 Survivor Space):");
-               printGen(gen);
+      if (heap instanceof SerialHeap) {
+         SerialHeap sh = (SerialHeap) heap;
+         {
+           // youngGen
+           DefNewGeneration youngGen = sh.youngGen();
 
-               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-               System.out.println("Eden Space:");
-               printSpace(eden);
+           System.out.println("New Generation (Eden + 1 Survivor Space):");
+           printGen(youngGen);
 
-               ContiguousSpace from = ((DefNewGeneration)gen).from();
-               System.out.println("From Space:");
-               printSpace(from);
+           ContiguousSpace eden = youngGen.eden();
+           System.out.println("Eden Space:");
+           printSpace(eden);
 
-               ContiguousSpace to = ((DefNewGeneration)gen).to();
-               System.out.println("To Space:");
-               printSpace(to);
-            } else {
-               System.out.println(gen.name() + ":");
-               printGen(gen);
-            }
+           ContiguousSpace from = youngGen.from();
+           System.out.println("From Space:");
+           printSpace(from);
+
+           ContiguousSpace to = youngGen.to();
+           System.out.println("To Space:");
+           printSpace(to);
+         }
+         {
+           // oldGen
+           TenuredGeneration oldGen = sh.oldGen();
+           System.out.println(oldGen.name() + ":");
+           printGen(oldGen);
          }
       } else if (heap instanceof G1CollectedHeap) {
           printG1HeapSummary((G1CollectedHeap)heap);
@@ -137,6 +137,7 @@ public class HeapSummary extends Tool {
          long num_regions = sh.numOfRegions();
          System.out.println("Shenandoah Heap:");
          System.out.println("   regions   = " + num_regions);
+         printValMB("region size = ", ShenandoahHeapRegion.regionSizeBytes());
          printValMB("capacity  = ", num_regions * ShenandoahHeapRegion.regionSizeBytes());
          printValMB("used      = ", sh.used());
          printValMB("committed = ", sh.committed());
@@ -247,10 +248,9 @@ public class HeapSummary extends Tool {
       G1MonitoringSupport monitoringSupport = g1h.monitoringSupport();
       long edenSpaceRegionNum = monitoringSupport.edenSpaceRegionNum();
       long survivorSpaceRegionNum = monitoringSupport.survivorSpaceRegionNum();
-      HeapRegionSetBase oldSet = g1h.oldSet();
-      HeapRegionSetBase archiveSet = g1h.archiveSet();
-      HeapRegionSetBase humongousSet = g1h.humongousSet();
-      long oldGenRegionNum = oldSet.length() + archiveSet.length() + humongousSet.length();
+      G1HeapRegionSetBase oldSet = g1h.oldSet();
+      G1HeapRegionSetBase humongousSet = g1h.humongousSet();
+      long oldGenRegionNum = oldSet.length() + humongousSet.length();
       printG1Space(tty, "G1 Heap:", g1h.n_regions(),
                    g1h.used(), g1h.capacity());
       tty.println("G1 Young Generation:");
@@ -278,14 +278,10 @@ public class HeapSummary extends Tool {
       printValMB(System.out, title, value);
    }
 
-   private static final double FACTOR = 1024*1024;
    private void printValMB(PrintStream tty, String title, long value) {
-      if (value < 0) {
-        tty.println(alignment + title +   (value >>> 20)  + " MB");
-      } else {
-        double mb = value/FACTOR;
-        tty.println(alignment + title + value + " (" + mb + "MB)");
-      }
+       double valueMB = value >>> 20;  // unsigned divide by 1024*1024
+       String valueUnsigned = Long.toUnsignedString(value, 10);
+       tty.println(alignment + title + valueUnsigned + " (" + valueMB + "MB)");
    }
 
    private void printValue(String title, long value) {

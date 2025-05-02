@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 package java.nio;
 
 import java.lang.foreign.MemorySegment;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.util.Objects;
 
 /**
@@ -277,6 +281,62 @@ class Heap$Type$Buffer$RW$
     }
 
 #if[char]
+
+    //
+    // Use getChars() to load chars directly into the heap buffer array.
+    // For a String or StringBuffer source this improves performance if
+    // a proper subsequence is being appended as copying to a new intermediate
+    // String object is avoided. For a StringBuilder where either a subsequence
+    // or the full sequence of chars is being appended, copying the chars to
+    // an intermedite String in StringBuilder::toString is avoided.
+    //
+    private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
+        checkSession();
+
+        Objects.checkFromToIndex(start, end, csq.length());
+
+        int length = end - start;
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+        if (csq instanceof String str) {
+            str.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof StringBuilder sb) {
+            sb.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof StringBuffer sb) {
+            sb.getChars(start, end, hb, ix(pos));
+        }
+
+        position(pos + length);
+
+        return this;
+    }
+
+    public $Type$Buffer append(CharSequence csq) {
+#if[rw]
+        if (csq instanceof StringBuilder)
+            return appendChars(csq, 0, csq.length());
+
+        return super.append(csq);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
+    public $Type$Buffer append(CharSequence csq, int start, int end) {
+#if[rw]
+        if (csq instanceof String || csq instanceof StringBuffer ||
+            csq instanceof StringBuilder)
+            return appendChars(csq, start, end);
+
+        return super.append(csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public $Type$Buffer put(String src, int start, int end) {
 #if[rw]
@@ -679,6 +739,23 @@ class Heap$Type$Buffer$RW$
 
 #end[char]
 
+#if[byte]
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return 0;
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
+#end[byte]
 
 #if[!byte]
 
