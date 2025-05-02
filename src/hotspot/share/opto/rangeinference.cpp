@@ -67,7 +67,7 @@ public:
     assert(bits.is_satisfied_by(bounds._lo) && bits.is_satisfied_by(bounds._hi), "must be canonical");
     // 0b1000...
     constexpr U mid_point = (std::numeric_limits<U>::max() >> 1) + U(1);
-    assert((bounds._lo < mid_point) == (bounds._hi < mid_point), "must be a simple interval");
+    assert((bounds._lo < mid_point) == (bounds._hi < mid_point), "must be a simple interval, see Lemma 4");
   }
 
   bool empty() const {
@@ -80,8 +80,7 @@ public:
 };
 
 // Find the minimum value that is not less than lo and satisfies bits. If there
-// does not exist one such number, the calculation will overflow and return a
-// value < lo.
+// does not exist one such number, the calculation will return a value < lo.
 //
 // Formally, this function tries to find the minimum value that is not less
 // than lo and satisfies bits, assuming such value exists. The cases where such
@@ -245,7 +244,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   */
 
   // The algorithm depends on whether the first violation violates zeros or
-  // ones, if it violates zeros, we have the bit being 1 in zero_violation and
+  // ones. If it violates zeros, we have the bit being 1 in zero_violation and
   // 0 in one_violation. Since all higher bits are 0 in zero_violation and
   // one_violation, we have zero_violation > one_violation. Similarly, if the
   // first violation violates ones, we have zero_violation < one_violation.
@@ -318,7 +317,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     new_lo |= bits._ones;
     // Note that in this case, new_lo is always a valid answer. That is, it is
     // a value not less than lo and satisfies bits.
-    assert(lo < new_lo, "this case cannot overflow");
+    assert(lo < new_lo, "the result must be valid");
     return new_lo;
   } else {
     assert(zero_violation > one_violation, "remaining case");
@@ -333,9 +332,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // We know that lo satisfies all bits before first_violation, hence (3.1)
     // holds. However, first_violation is not the value i we are looking for
     // because lo[first_violation] == 1. We can also see that any larger value
-    // of i would violate 3.1 since lo[first_violation] does not satisfy bits.
-    // As a result, we should find the last i upto first_violation such that
-    // lo[i] == zeros[i] == 0.
+    // of i would violate (3.1) since lo[first_violation] does not satisfy
+    // bits. As a result, we should find the last index x upto first_violation
+    // such that lo[x] == zeros[x] == 0. That value of x would be the value of
+    // i we are looking for.
     //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 0 0 0 1 1 1 0
@@ -359,27 +359,28 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // This masks out all bits after the first violation
     //           1 1 1 1 1 0 0 0
     U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
-    // A bit that is 0 in both lo and zeros must be 0 in either
-    //           1 0 0 1 1 1 1 0
+    // We want to find the last index x upto first_violation such that
+    // lo[x] == zeros[x] == 0.
+    // We start with all bits where lo[x] == zeros[x] == 0:
+    //           0 1 1 0 0 0 0 1
     U either = lo | bits._zeros;
-    // This is all the bits that are not lower than first_violation and are 0
-    // in both lo and zeros. Note that there may not exist such bits. In those
-    // cases tmp == 0 and there is no value not less than lo and satisfies
-    // bits. We will expand the implication of such cases below.
+    // Now let us find all the bit indices x upto first_violation such that
+    // lo[x] == zeros[x] == 0. The last one of these bits must be at index i.
     //           0 1 1 0 0 0 0 0
     U tmp = ~either & find_mask;
-    // According to the conclusion in the overview of this case above, i is the
-    // last bit being 0 in both lo and zeros that is upto the first violation,
-    // which is the last set bit of tmp.
-    // In our example, i == 2 here, we want to obtain the value with only the
-    // bit i set, this is equivalent to extracting the last set bit of tmp, do
-    // it directly without going through i.
+    // We now want to select the last one of these candidates, which is exactly
+    // the last index x upto first_violation such that lo[x] == zeros[x] == 0.
+    // This would be the value i we are looking for.
+    // Similar to the other case, we want to obtain the value with only the bit
+    // i set, this is equivalent to extracting the last set bit of tmp, do it
+    // directly without going through i.
+    // In our example, i == 2
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
-    // Set the bit of lo at i and unset all the bits after, this is the smallest
-    // value that satisfies bits._zeros. Similar to the above case, this is
-    // similar to aligning lo upto alignment. Also similar to the above case,
-    // this computation cannot overflow.
+    // Set the bit of lo at i and unset all the bits after, this is the
+    // smallest value that satisfies bits._zeros. Similar to the above case,
+    // this is similar to aligning lo up to a multiple of alignment. Also
+    // similar to the above case, this computation cannot overflow.
     // We now have:
     // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
     // - new_lo[i] = 1                     (2.6)
@@ -396,18 +397,20 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // This is the result we are looking for.
     //           1 0 1 0 0 0 1 1
     new_lo |= bits._ones;
-    // In this case, new_lo may not always be a valid answer. This can happen
-    // if there is no bit upto first_violation that is 0 in both lo and zeros,
-    // i.e. tmp == 0. In such cases, alignment == 0 && lo == bits._ones. It is
-    // the only case when this function does not return a valid answer.
-    // Note: it can be seen as an overflow because we can say that the
-    // computation of tmp above results in 0b...1100..00 with W trailing 0s.
-    // As a result, alignment should be 0b100...00 with W trailing 0s. This
-    // overflows the W-bit arithmetic and we obtain the value alignment == 0.
-    // We can say that the algorithm should round up lo to a multiple of 2**W.
-    // This overflows and the highest bit is discarded, leaving us with the
-    // result of rounding up being 0.
-    assert(lo < new_lo || new_lo == bits._ones, "overflow must return bits._ones");
+    // Note that formally, this function assumes that there exists a value not
+    // smaller than lo and satisfies bits. This implies the existence of the
+    // index i satisfies (3.1-3.3), which means that tmp != 0. The converse is
+    // also true, if tmp != 0, then an index i satisfies (3.1-3.3) exists,
+    // which implies the existence of a value not smaller than lo and satisfies
+    // bits. As a result, the negation of those statements are equivalent.
+    // tmp == 0 if and only if there does not exists a value not smaller than
+    // lo and satisfies bits. In this case, alignment == 0 and
+    // new_lo == bits._ones, since bits._ones satisfies bits. This function
+    // always returns a value satisfying bits, regardless whether if it is a
+    // formally valid one. As a result, the caller only needs to check
+    // lo <= new_lo to find the cases where there exists no value not smaller
+    // than lo and satisfies bits.
+    assert(lo < new_lo || new_lo == bits._ones, "invalid result must be bits._ones");
     return new_lo;
   }
 }
