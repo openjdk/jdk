@@ -94,12 +94,11 @@ public class InferenceContext {
     Types types;
     Infer infer;
 
-    /* when an inference context is minimized from a given inference context (IC), the minimized one (MIC) contains a
-     * proper subset of IC's undetermined vars (IC_UV) and inference vars (IC_IV). In other words there will be at least
-     * one inference variable T that belongs to IC_IV which doesn't belong to MIC_IV.
-     * We need the field below to, among other things, check for set membership for cases where the minimized context
-     * or any other context derived from it needs to deal with an inference variable that has been eliminated from IC_IV
-     * while minimizing it
+    /* when an inference context (IC) is minimized, the minimized inference context (MIC) contains a
+     * proper subset of IC's inference vars (IC_IV). In other words there will be at least one inference variable T
+     * that belongs to IC_IV which doesn't belong to MIC_IV. We need the field below to, among other things,
+     * check for set membership for cases where the minimized context or any other context derived from it
+     * needs to deal with an inference variable that has been eliminated from IC_IV while minimizing it
      */
     InferenceContext supplementaryIC;
 
