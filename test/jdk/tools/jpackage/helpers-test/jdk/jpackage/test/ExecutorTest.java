@@ -128,8 +128,8 @@ public class ExecutorTest extends JUnitAdapter {
         DUMP(Executor::dumpOutput),
         SAVE_ALL(Executor::saveOutput),
         SAVE_FIRST_LINE(Executor::saveFirstLineOfOutput),
-        DISCARD_STDOUT(NOP),
-        DISCARD_STDERR(NOP),
+        DISCARD_STDOUT(Executor::discardStdout),
+        DISCARD_STDERR(Executor::discardStderr),
         ;
 
         OutputControl(Consumer<Executor> configureExector) {
@@ -213,6 +213,9 @@ public class ExecutorTest extends JUnitAdapter {
             assertEquals(expectedCapturedSystemOut(commandWithDiscardedStreams), outputCapture.outLines());
             assertEquals(expectedCapturedSystemErr(commandWithDiscardedStreams), outputCapture.errLines());
 
+            assertEquals(expectedResultStdout(commandWithDiscardedStreams), result[0].stdout().getOutput());
+            assertEquals(expectedResultStderr(commandWithDiscardedStreams), result[0].stderr().getOutput());
+
             if (!saveOutput()) {
                 assertNull(result[0].getOutput());
             } else {
@@ -269,6 +272,28 @@ public class ExecutorTest extends JUnitAdapter {
                 return List.of();
             } else {
                 return command.stderr();
+            }
+        }
+
+        private List<String> expectedResultStdout(Command command) {
+            return expectedResultStream(command.stdout());
+        }
+
+        private List<String> expectedResultStderr(Command command) {
+            if (outputControl.contains(OutputControl.SAVE_FIRST_LINE) && !command.stdout().isEmpty()) {
+                return List.of();
+            }
+            return expectedResultStream(command.stderr());
+        }
+
+        private List<String> expectedResultStream(List<String> commandOutput) {
+            Objects.requireNonNull(commandOutput);
+            if (outputControl.contains(OutputControl.SAVE_ALL)) {
+                return commandOutput;
+            } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
+                return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
+            } else {
+                return null;
             }
         }
 
