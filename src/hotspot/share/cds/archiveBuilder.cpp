@@ -782,7 +782,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     // Every archived Klass must carry a valid klute. That is because every archived Klass
     // would have been created via the usual dynamic class loading or - generation, which should
     // have registered the Klass with klut.
-    DEBUG_ONLY(k->klute().verify_against_klass(k);)
+    DEBUG_ONLY(KlassLUTEntry(k->klute()).verify_against_klass(k);)
   }
 
   for (int i = 0; i < klasses()->length(); i++) {

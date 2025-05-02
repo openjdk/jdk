@@ -98,7 +98,7 @@ void oopDesc::init_mark() {
 }
 
 template <HeaderMode mode>
-KlassLUTEntry oopDesc::get_klute() const {
+klute_raw_t oopDesc::get_klute() const {
   switch (mode) {
     case HeaderMode::Compact:
       return KlassInfoLUT::lookup(mark().narrow_klass());
@@ -109,7 +109,7 @@ KlassLUTEntry oopDesc::get_klute() const {
   }
 }
 
-KlassLUTEntry oopDesc::get_klute() const {
+klute_raw_t oopDesc::get_klute() const {
   switch (ObjLayout::klass_mode()) {
     case HeaderMode::Compact:     return get_klute<HeaderMode::Compact>();
     case HeaderMode::Compressed:  return get_klute<HeaderMode::Compressed>();
@@ -264,13 +264,13 @@ bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_k
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
 
 bool oopDesc::is_objArray() const {
-  const bool rc = get_klute().is_obj_array();
+  const bool rc = KlassLUTEntry(get_klute()).is_obj_array();
   assert(rc == klass()->is_objArray_klass(), "Sanity");
   return rc;
 }
 
 bool oopDesc::is_typeArray() const {
-  const bool rc = get_klute().is_type_array();
+  const bool rc = KlassLUTEntry(get_klute()).is_type_array();
   assert(rc == klass()->is_typeArray_klass(), "Sanity");
   return rc;
 }

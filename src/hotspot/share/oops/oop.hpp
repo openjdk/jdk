@@ -85,8 +85,8 @@ class oopDesc {
   inline void init_mark();
 
   template <HeaderMode mode>
-  inline KlassLUTEntry get_klute() const;
-  inline KlassLUTEntry get_klute() const;
+  inline klute_raw_t get_klute() const;
+  inline klute_raw_t get_klute() const;
 
   template <HeaderMode mode>
   inline Klass* klass() const;

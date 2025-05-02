@@ -69,7 +69,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(
 }
 
 template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
@@ -81,7 +81,7 @@ void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEn
 }
 
 template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a  = objArrayOop(obj);
 
@@ -93,7 +93,7 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
 }
 
 template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
   // No reverse implementation ATM.
   oop_oop_iterate<T>(obj, closure, klute);
 }

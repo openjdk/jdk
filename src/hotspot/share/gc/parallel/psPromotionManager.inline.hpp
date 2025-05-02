@@ -115,13 +115,13 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 // order of these function calls.
 //
 template <>
-inline void InstanceRefKlass::oop_oop_iterate_reverse<oop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, KlassLUTEntry klute) {
+inline void InstanceRefKlass::oop_oop_iterate_reverse<oop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, klute_raw_t klute) {
   oop_oop_iterate_ref_processing<oop>(obj, closure);
   InstanceKlass::oop_oop_iterate_reverse<oop>(obj, closure, klute);
 }
 
 template <>
-inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, KlassLUTEntry klute) {
+inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, klute_raw_t klute) {
   oop_oop_iterate_ref_processing<narrowOop>(obj, closure);
   InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure, klute);
 }

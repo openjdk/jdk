@@ -121,15 +121,15 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Iterate over oop elements and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Iterate over oop elements and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Iterate over oop elements within mr, and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
   // Iterate over oop elements within [start, end), and metadata.
   template <HeaderMode mode, typename T, class OopClosureType>

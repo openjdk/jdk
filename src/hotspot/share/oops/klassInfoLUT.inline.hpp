@@ -38,12 +38,11 @@ ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
   return _table[index];
 }
 
-ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
+ALWAYSINLINE klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
-  const uint32_t v = at(nk);
-  KlassLUTEntry e(v);
+  const klute_raw_t klute = at(nk);
 #if INCLUDE_CDS
-  if (!e.is_valid()) {
+  if (klute == KlassLUTEntry::invalid_entry) {
     // This branch, and the late_register_klass mechanic, only exists because it is
     // so difficult to iterate CDS classes after loading CDS archives. See discussion
     // surrounding 8353225. Hopefully we can remove this in the future.
@@ -54,14 +53,14 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
 #endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
-  update_hit_stats(e);
+  update_hit_stats(klute);
 #endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
   log_hit(e);
 #endif
 
-  return e;
+  return klute;
 }
 
 ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(int index) {

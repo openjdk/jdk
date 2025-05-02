@@ -36,7 +36,7 @@
 #include "utilities/ostream.hpp"
 
 ClassLoaderData* KlassInfoLUT::_common_loaders[4] = { nullptr };
-uint32_t* KlassInfoLUT::_table = nullptr;
+klute_raw_t* KlassInfoLUT::_table = nullptr;
 unsigned KlassInfoLUT::_max_entries = -1;
 
 void KlassInfoLUT::initialize() {
@@ -52,31 +52,31 @@ void KlassInfoLUT::initialize() {
     assert(CompressedKlassPointers::shift() == 10, "must be (for density)");
 
     const narrowKlass highest_nk = CompressedKlassPointers::highest_valid_narrow_klass_id();
-    size_t table_size_in_bytes = sizeof(uint32_t) * highest_nk;
+    size_t table_size_in_bytes = sizeof(klute_raw_t) * highest_nk;
     bool uses_large_pages = false;
     if (UseLargePages) {
       const size_t large_page_size = os::large_page_size();
       if (large_page_size < 16 * M) { // not for freakishly large pages
         table_size_in_bytes = align_up(table_size_in_bytes, large_page_size);
-        _table = (uint32_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
+        _table = (klute_raw_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
         if (_table != nullptr) {
           uses_large_pages = true;
-          _max_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
+          _max_entries = (unsigned)(table_size_in_bytes / sizeof(klute_raw_t));
         }
       }
     }
     if (_table == nullptr) {
       table_size_in_bytes = align_up(table_size_in_bytes, os::vm_page_size());
-      _table = (uint32_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
+      _table = (klute_raw_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
       os::commit_memory_or_exit((char*)_table, table_size_in_bytes, false, "KLUT");
-      _max_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
+      _max_entries = (unsigned)(table_size_in_bytes / sizeof(klute_raw_t));
     }
 
     log_info(klut)("Lookup table initialized (%u entries, using %s pages): " RANGEFMT,
                     _max_entries, (uses_large_pages ? "large" : "normal"), RANGEFMTARGS(_table, table_size_in_bytes));
 
     // We need to zap the whole LUT if CDS is enabled or dumping, since we may need to late-register classes.
-    memset(_table, 0xff, _max_entries * sizeof(uint32_t));
+    memset(_table, 0xff, _max_entries * sizeof(klute_raw_t));
     assert(_table[0] == KlassLUTEntry::invalid_entry, "Sanity"); // must be 0xffffffff
 
   }
@@ -126,18 +126,19 @@ int KlassInfoLUT::index_for_cld(const ClassLoaderData* cld) {
 }
 
 static void log_klass_registration(const Klass* k, narrowKlass nk, bool added_to_table,
-                                   KlassLUTEntry klute, const char* message) {
+                                   klute_raw_t klute, const char* message) {
   char tmp[1024];
+  const KlassLUTEntry klutehelper(klute);
   log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u(%c), klute: " INT32_FORMAT_X_0 ": %s %s%s",
-                  p2i(k), common_loader_names[klute.loader_index()], nk,
+                  p2i(k), common_loader_names[klutehelper.loader_index()], nk,
                   (added_to_table ? '+' : '-'),
-                  klute.value(),
+                  klute,
                   message,
                   (k->is_shared() ? "(shared) " : ""),
                   k->name()->as_C_string(tmp, sizeof(tmp)));
 }
 
-KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
+klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 
   // First register the CLD in case we did not already do that
   ClassLoaderData* const cld = k->class_loader_data();
@@ -152,20 +153,18 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   const bool add_to_table =  use_lookup_table() ? CompressedKlassPointers::is_encodable(k) : false;
   const narrowKlass nk = add_to_table ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
-  KlassLUTEntry klute = k->klute();
-
   // Calculate klute from Klass properties and update the table value.
-  klute = KlassLUTEntry::build_from_klass(k);
+  const klute_raw_t klute = KlassLUTEntry::build_from_klass(k);
   if (add_to_table) {
-    _table[nk] = klute.value();
+    _table[nk] = klute;
   }
   log_klass_registration(k, nk, add_to_table, klute, "registered");
 
 #ifdef ASSERT
-  klute.verify_against_klass(k);
+  KlassLUTEntry(klute).verify_against_klass(k);
   if (add_to_table) {
     KlassLUTEntry e2(at(nk));
-    assert(e2 == klute, "sanity");
+    assert(e2.value() == klute, "sanity");
   }
 #endif // ASSERT
 
@@ -194,7 +193,7 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 // this function is called where we add the table entry on the fly.
 // Unfortunately, this adds a branch into the very hot oop iteration path, albeit one that
 // would hopefully be mitigated by branch prediction since this should be exceedingly rare.
-KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
+klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
@@ -202,18 +201,19 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   // That klute would have been pre-calculated during CDS dump time when the to-be-dumped Klass
   // was dynamically constructed.
   // We just copy that entry into the table slot.
-  const KlassLUTEntry klute = k->klute();
-  assert(klute.is_valid(), "Must be a valid klute");
-  _table[nk] = klute.value();
+  const klute_raw_t klute = k->klute();
+  const KlassLUTEntry klutehelper(klute);
+  assert(klutehelper.is_valid(), "Must be a valid klute");
+  _table[nk] = klutehelper.value();
   ClassLoaderData* const cld = k->class_loader_data();
   if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
     register_cld_if_needed(cld);
-    DEBUG_ONLY(klute.verify_against_klass(k);)
+    DEBUG_ONLY(klutehelper.verify_against_klass(k);)
   } else {
     // Note: cld may still be nullptr; in that case it will be initialized by CDS before the Klass
     // is used. At that point we may correct the klute entry to account for the new CDS.
   }
-  log_klass_registration(k, nk, true, klute.value(), "late-registered");
+  log_klass_registration(k, nk, true, klute, "late-registered");
   return klute;
 }
 
@@ -221,12 +221,12 @@ void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
   // Called when a shared class gets its ClassLoaderData restored after being loaded.
   // The function makes sure that the CLD bits in the Klass' klute match the new
   // ClassLoaderData.
-  const KlassLUTEntry klute = k->klute();
+  const klute_raw_t klute = k->klute();
   ClassLoaderData* cld = k->class_loader_data();
   assert(cld != nullptr, "must be");
   register_cld_if_needed(cld);
   const int cld_index = index_for_cld(cld);
-  if (klute.loader_index() != cld_index) {
+  if (KlassLUTEntry(klute).loader_index() != cld_index) {
     // for simplicity, just recalculate the klute and update the table.
     log_debug(klut)("Re-registering Klass after CLD change");
     k->register_with_klut();
@@ -251,7 +251,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
   st->print_cr("KLUT statistics:");
 
   if (use_lookup_table()) {
-    st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(uint32_t));
+    st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(klute_raw_t));
   }
 
   const uint64_t registered_all = counter_registered_IK + counter_registered_IRK + counter_registered_IMK +
@@ -334,21 +334,22 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 }
 
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
-void KlassInfoLUT::update_hit_stats(KlassLUTEntry klute) {
-  switch (klute.kind()) {
+void KlassInfoLUT::update_hit_stats(klute_raw_t klute) {
+  const KlassLUTEntry klutehelper(klute);
+  switch (klutehelper.kind()) {
 #define XX(name, shortname) case name ## Kind: inc_hits_ ## shortname(); break;
   KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
   default: ShouldNotReachHere();
   };
-  if (klute.is_instance() && !klute.ik_carries_infos()) {
-    switch (klute.kind()) {
+  if (klutehelper.is_instance() && !klutehelper.ik_carries_infos()) {
+    switch (klutehelper.kind()) {
       case InstanceClassLoaderKlassKind: inc_noinfo_ICLK(); break;
       case InstanceMirrorKlassKind: inc_noinfo_IMK(); break;
       default: inc_noinfo_IK_other(); break;
     }
   }
-  switch (klute.loader_index()) {
+  switch (klutehelper.loader_index()) {
   case 1: inc_hits_bootloader(); break;
   case 2: inc_hits_sysloader(); break;
   case 3: inc_hits_platformloader(); break;
@@ -357,7 +358,7 @@ void KlassInfoLUT::update_hit_stats(KlassLUTEntry klute) {
 #endif // KLUT_ENABLE_EXPENSIVE_STATS
 
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
-void KlassInfoLUT::log_hit(KlassLUTEntry klute) {
+void KlassInfoLUT::log_hit(klute_raw_t klute) {
   //log_debug(klut)("retrieval: klute: name: %s kind: %d", k->name()->as_C_string(), k->kind());
 }
 #endif

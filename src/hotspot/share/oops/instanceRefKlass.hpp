@@ -68,17 +68,17 @@ class InstanceRefKlass: public InstanceKlass {
   // Forward iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline static void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  inline static void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline static void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  inline static void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline static void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
+  inline static void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
   private:
 

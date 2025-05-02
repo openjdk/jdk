@@ -1017,24 +1017,24 @@ public:
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
-  static inline ClassLoaderData* cld_from_klut_or_klass(oop obj, KlassLUTEntry klute);
+  static inline ClassLoaderData* cld_from_klut_or_klass(oop obj, klute_raw_t klute);
 
  public:
 
   // Forward iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 

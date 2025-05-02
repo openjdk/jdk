@@ -57,7 +57,7 @@ static void read_and_check_omb_values(const OopMapBlock* omb, unsigned& omb_offs
   omb_count = count;
 }
 
-uint32_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_encodable_reason) {
+klute_raw_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_encodable_reason) {
 
   assert(ik->is_instance_klass(), "sanity");
 
@@ -140,7 +140,7 @@ uint32_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_
 
 }
 
-uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
+klute_raw_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
   assert(ak->is_array_klass(), "sanity");
 
@@ -164,9 +164,9 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
 }
 
-KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
+klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
 
-  uint32_t value = invalid_entry;
+  klute_raw_t value = invalid_entry;
   if (k->is_array_klass()) {
     value = build_from_ak(ArrayKlass::cast(k));
   } else {
@@ -178,7 +178,7 @@ KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
                       k->name()->as_C_string(), not_encodable_reason);
     }
   }
-  return KlassLUTEntry(value);
+  return value;
 }
 
 #ifdef ASSERT

@@ -129,6 +129,8 @@ class typeArrayOopDesc;
 // Implementation note: the value -1 (all bits 1) relies on the fact that a KlassKind of 7 (0b111) is invalid. We
 // don't use zero as "invalid entry" since zero would encode a valid Klass.
 
+typedef uint32_t klute_raw_t;
+
 class KlassLUTEntry {
 
   static constexpr int bits_total      = 32;
@@ -179,14 +181,14 @@ class KlassLUTEntry {
   };
 
   union U {
-    uint32_t raw;
+    klute_raw_t raw;
     KE common;
     IKE ike;
     AKE ake;
-    U(uint32_t v) : raw(v) {}
+    U(klute_raw_t v) : raw(v) {}
   };
 
-  U _v;
+  const U _v;
 
   // The limits to what we can numerically represent in an (InstanceKlass) Entry
   static constexpr size_t ik_wordsize_limit = nth_bit(bits_ik_wordsize);
@@ -195,37 +197,30 @@ class KlassLUTEntry {
   static constexpr size_t ik_omb_offset_2_limit = nth_bit(bits_ik_omb_offset_2);
   static constexpr size_t ik_omb_count_2_limit = nth_bit(bits_ik_omb_count_2);
 
-  static uint32_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
-  static uint32_t build_from_ak(const ArrayKlass* k);
+  static klute_raw_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
+  static klute_raw_t build_from_ak(const ArrayKlass* k);
 
 public:
 
   // Invalid entries are entries that have not been set yet.
   // Note: cannot use "0" as invalid_entry, since 0 is valid (interface or abstract InstanceKlass, size = 0 and has no oop map)
   // We use kind=7=0b111 (invalid), and set the rest of the bits also to 1
-  static constexpr uint32_t invalid_entry = 0xFFFFFFFF;
+  static constexpr klute_raw_t invalid_entry = 0xFFFFFFFF;
 
-  inline KlassLUTEntry() : _v(invalid_entry) {}
-  inline KlassLUTEntry(uint32_t v) : _v(v) {}
+  inline KlassLUTEntry(klute_raw_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
-
-  inline KlassLUTEntry& operator=(uint32_t v)                   { _v = v; return *this; }
-  inline KlassLUTEntry& operator=(const KlassLUTEntry& other)   { _v = other._v; return *this; }
-
-  inline bool operator==(const KlassLUTEntry& other) const          { return _v.raw == other._v.raw; }
-  inline bool operator!=(const KlassLUTEntry& other) const          { return _v.raw != other._v.raw; }
 
   // Note: all entries should be valid. An invalid entry indicates
   // an error somewhere.
   bool is_valid() const   { return _v.raw != invalid_entry; }
 
-  static KlassLUTEntry build_from_klass(const Klass* k);
+  static klute_raw_t build_from_klass(const Klass* k);
 
 #ifdef ASSERT
   void verify_against_klass(const Klass* k) const;
 #endif
 
-  uint32_t value() const { return _v.raw; }
+  klute_raw_t value() const { return _v.raw; }
 
   inline unsigned kind() const { return _v.common.kind; }
 

@@ -91,19 +91,19 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
 }
 
 template <typename T, class OopClosureType>
-void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
   InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
   ik->oop_oop_iterate<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
   InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
   ik->oop_oop_iterate_reverse<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
   InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
   ik->oop_oop_iterate_bounded<T>(obj, closure, mr);
 }

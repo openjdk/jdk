@@ -114,7 +114,7 @@ class Klass : public Metadata {
   jint _layout_helper;
 
   // KLUT entry
-  KlassLUTEntry _klute;
+  klute_raw_t _klute;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
@@ -218,7 +218,7 @@ protected:
   enum class PrivateLookupMode  { find, skip };
 
   // Klute handling
-  KlassLUTEntry klute() const { return _klute; }
+  klute_raw_t klute() const { return _klute; }
   void register_with_klut();
 
   virtual bool is_klass() const { return true; }

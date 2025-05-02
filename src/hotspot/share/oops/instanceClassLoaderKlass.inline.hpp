@@ -35,7 +35,7 @@
 #include "utilities/macros.hpp"
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
   InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
 
   if (Devirtualizer::do_metadata(closure)) {
@@ -48,14 +48,14 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
 }
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
   InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
   assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 }
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
   InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
 
   if (Devirtualizer::do_metadata(closure)) {

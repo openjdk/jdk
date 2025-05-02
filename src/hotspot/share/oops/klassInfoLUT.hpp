@@ -83,9 +83,9 @@ class KlassInfoLUT : public AllStatic {
 
 
   static unsigned _max_entries;
-  static uint32_t* _table;
+  static klute_raw_t* _table;
   static inline unsigned max_entries() { return _max_entries; }
-  static inline uint32_t at(unsigned index);
+  static inline klute_raw_t at(unsigned index);
   static void allocate_lookup_table();
 
   // Klass registration statistics. These are not expensive and therefore
@@ -123,15 +123,15 @@ class KlassInfoLUT : public AllStatic {
 #define XX(xx) static void inc_##xx();
   HIT_STATS_DO(XX)
 #undef XX
-  static void update_hit_stats(KlassLUTEntry klute);
+  static void update_hit_stats(klute_raw_t klute);
 #endif // KLUT_ENABLE_EXPENSIVE_STATS
 
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
-  static void log_hit(KlassLUTEntry klute);
+  static void log_hit(klute_raw_t klute);
 #endif
 
 #if INCLUDE_CDS
-  static KlassLUTEntry late_register_klass(narrowKlass nk);
+  static klute_raw_t late_register_klass(narrowKlass nk);
 #endif
 
   static bool use_lookup_table() { return _table != nullptr; }
@@ -140,8 +140,8 @@ public:
 
   static void initialize();
 
-  static KlassLUTEntry register_klass(const Klass* k);
-  static inline KlassLUTEntry lookup(narrowKlass k);
+  static klute_raw_t register_klass(const Klass* k);
+  static inline klute_raw_t lookup(narrowKlass k);
 
   // ClassLoaderData handling
   static void register_cld_if_needed(ClassLoaderData* cld);
