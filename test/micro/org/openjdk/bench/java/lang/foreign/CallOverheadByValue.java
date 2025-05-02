@@ -73,8 +73,9 @@ public class CallOverheadByValue {
         );
     }
 
-    Arena arena = Arena.ofConfined();
-    MemorySegment point = arena.allocate(POINT_LAYOUT);
+    private static final Arena arena = Arena.ofConfined();
+    private static final MemorySegment point = arena.allocate(POINT_LAYOUT);
+    private static final SegmentAllocator BY_VALUE_ALLOCATOR = (SegmentAllocator) (_, _) -> point;
 
     @TearDown
     public void tearDown() {
@@ -84,8 +85,7 @@ public class CallOverheadByValue {
     @Benchmark
     public void byValue() throws Throwable {
         // point = unit();
-        MemorySegment unused = (MemorySegment) MH_UNIT_BY_VALUE.invokeExact(
-                (SegmentAllocator) (_, _) -> point);
+        MemorySegment unused = (MemorySegment) MH_UNIT_BY_VALUE.invokeExact(BY_VALUE_ALLOCATOR);
     }
 
     @Benchmark

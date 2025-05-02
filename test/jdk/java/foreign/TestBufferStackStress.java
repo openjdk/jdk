@@ -25,7 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress
- * @run junit/othervm --enable-native-access=ALL-UNNAMED TestBufferStackStress
+ * @run junit TestBufferStackStress
  */
 
 import jdk.internal.foreign.BufferStack;
@@ -41,11 +41,11 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestBufferStackStress extends NativeTestHelper {
+public class TestBufferStackStress {
 
     @Test
     public void stress() throws InterruptedException {
-        BufferStack stack = BufferStack.of(256);
+        BufferStack stack = BufferStack.of(256, 1);
         Thread[] vThreads = IntStream.range(0, 1024).mapToObj(_ ->
                 Thread.ofVirtual().start(() -> {
                     long threadId = Thread.currentThread().threadId();

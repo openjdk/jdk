@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @library /test/lib
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress2
- * @run junit/othervm --enable-native-access=ALL-UNNAMED TestBufferStackStress2
+ * @run junit TestBufferStackStress2
  */
 
 import jdk.internal.foreign.BufferStack;
@@ -42,7 +41,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-final class TestBufferStackStress2 extends NativeTestHelper {
+import static org.junit.jupiter.api.Assertions.*;
+
+final class TestBufferStackStress2 {
 
     private static final long POOL_SIZE = 64;
     private static final long SMALL_ALLOC_SIZE = 8;
@@ -62,11 +63,12 @@ final class TestBufferStackStress2 extends NativeTestHelper {
     @Test
     void movingVirtualThreadWithGc() throws InterruptedException {
         final long begin = System.nanoTime();
-        var pool = BufferStack.of(POOL_SIZE);
+        var pool = BufferStack.of(POOL_SIZE, 1);
 
         System.setProperty("jdk.virtualThreadScheduler.parallelism", "1");
 
         var done = new AtomicBoolean();
+        var completed = new AtomicBoolean();
         var quiescent = new Object();
         var executor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -95,11 +97,12 @@ final class TestBufferStackStress2 extends NativeTestHelper {
                     if (i % 100 == 0) {
                         System.gc();
                     }
-                    segment.get(ValueLayout.JAVA_BYTE, i);
+                    segment.get(ValueLayout.JAVA_BYTE, i % SMALL_ALLOC_SIZE);
                 }
                 System.out.println(duration(begin) + "DONE ACCESSING SEGMENT");
             }
             System.out.println(duration(begin) + "VT DONE");
+            completed.set(true);
         });
 
         long count;
@@ -119,6 +122,7 @@ final class TestBufferStackStress2 extends NativeTestHelper {
         System.out.println(duration(begin) + "CLOSING EXECUTOR");
         executor.close();
         System.out.println(duration(begin) + "EXECUTOR CLOSED");
+        assertTrue(completed.get(), "The VT did not complete properly");
     }
 
     private static String duration(Long begin) {

@@ -33,36 +33,58 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.ref.Reference;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import java.util.function.Consumer;
 
 /**
  * A buffer stack that allows efficient reuse of memory segments. This is useful in cases
  * where temporary memory is needed.
  * <p>
- * Use the factory {@link #of(long)} to create new instances of this class.
+ * Use the factories {@code BufferStack.of(...)} to create new instances of this class.
  * <p>
  * Note: The reused segments are neither zeroed out before nor after re-use.
  */
-public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
+public final class BufferStack {
+
+    private final long byteSize;
+    private final CarrierThreadLocal<PerThread> tl;
+
+    public BufferStack(long byteSize, long byteAlignment) {
+        this.byteSize = byteSize;
+        this.tl = new CarrierThreadLocal<>() {
+            @Override
+            protected BufferStack.PerThread initialValue() {
+                return BufferStack.PerThread.of(byteSize, byteAlignment);
+            }
+        };
+    }
 
     /**
-     * {@return a new Arena that tries to provide {@code size} and {@code byteAlignment}
-     *          allocations by recycling the BufferStacks internal memory}
+     * {@return a new Arena that tries to provide {@code byteSize} and {@code byteAlignment}
+     *          allocations by recycling the BufferStack's internal memory}
      *
-     * @param size          to be reserved from this BufferStacks internal memory
+     * @param byteSize      to be reserved from this BufferStack's internal memory
      * @param byteAlignment to be used for reservation
      */
     @ForceInline
-    public Arena pushFrame(long size, long byteAlignment) {
-        return tl.get().pushFrame(size, byteAlignment);
+    public Arena pushFrame(long byteSize, long byteAlignment) {
+        return tl.get().pushFrame(byteSize, byteAlignment);
+    }
+
+    /**
+     * {@return a new Arena that tries to provide {@code byteSize}
+     *          allocations by recycling the BufferStack's internal memory}
+     *
+     * @param byteSize      to be reserved from this BufferStack's internal memory
+     */
+    @ForceInline
+    public Arena pushFrame(long byteSize) {
+        return pushFrame(byteSize, 1);
     }
 
     /**
      * {@return a new Arena that tries to provide {@code layout}
-     *          allocations by recycling the BufferStacks internal memory}
+     *          allocations by recycling the BufferStack's internal memory}
      *
      * @param layout for which to reserve internal memory
      */
@@ -73,20 +95,10 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
 
     @Override
     public String toString() {
-        return "BufferStack[" + size + "]";
+        return "BufferStack[" + byteSize + "]";
     }
 
-    @Override
-    public int hashCode() {
-        return System.identityHashCode(this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return this == obj;
-    }
-
-    private record PerThread(ReentrantLock lock, SlicingAllocator stack, Arena arena) {
+    private record PerThread(ReentrantLock lock, Arena arena, SlicingAllocator stack) {
 
         @ForceInline
         public Arena pushFrame(long size, long byteAlignment) {
@@ -102,10 +114,11 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
             return new Frame(needsLock, size, byteAlignment);
         }
 
-        static PerThread of(long size) {
+        static PerThread of(long byteSize, long byteAlignment) {
             final Arena arena = Arena.ofAuto();
-            final SlicingAllocator stack = new SlicingAllocator(arena.allocate(size));
-            return new PerThread(new ReentrantLock(), stack, arena);
+            return new PerThread(new ReentrantLock(),
+                    arena,
+                    new SlicingAllocator(arena.allocate(byteSize, byteAlignment)));
         }
 
         private final class Frame implements Arena {
@@ -122,7 +135,17 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
                 parentOffset = stack.currentOffset();
                 MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
                 topOfStack = stack.currentOffset();
-                frame = new SlicingAllocator(frameSegment.reinterpret(confinedArena, null));
+                // The cleanup action will keep the original automatic `arena` (from which
+                // the reusable segment is first allocated) alive even if this Frame
+                // becomes unreachable but there are reachable segments still alive.
+                frame = new SlicingAllocator(frameSegment.reinterpret(confinedArena, new CleanupAction(arena)));
+            }
+
+            record CleanupAction(Arena arena) implements Consumer<MemorySegment> {
+                @Override
+                public void accept(MemorySegment memorySegment) {
+                    Reference.reachabilityFence(arena);
+                }
             }
 
             @ForceInline
@@ -135,10 +158,8 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
             @Override
             @SuppressWarnings("restricted")
             public MemorySegment allocate(long byteSize, long byteAlignment) {
-                // Make sure we are on the right thread
-                if (((MemorySessionImpl) scope()).ownerThread() != Thread.currentThread()) {
-                    throw MemorySessionImpl.wrongThread();
-                }
+                // Make sure we are on the right thread and not closed
+                MemorySessionImpl.toMemorySession(confinedArena).checkValidState();
                 return frame.allocate(byteSize, byteAlignment);
             }
 
@@ -160,29 +181,26 @@ public record BufferStack(long size, CarrierThreadLocal<PerThread> tl) {
                 if (locked) {
                     lock.unlock();
                 }
-                Reference.reachabilityFence(arena);
             }
         }
     }
 
-    public static BufferStack of(long size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("Size is negative: " + size);
+    public static BufferStack of(long byteSize, long byteAlignment) {
+        if (byteSize < 0) {
+            throw new IllegalArgumentException("Negative byteSize: " + byteSize);
         }
-        return new BufferStack(size, new CarrierThreadLocal<>() {
-            @Override
-            protected BufferStack.PerThread initialValue() {
-                return BufferStack.PerThread.of(size);
-            }
-        });
+        if (byteAlignment < 0) {
+            throw new IllegalArgumentException("Negative byteAlignment: " + byteAlignment);
+        }
+        return new BufferStack(byteSize, byteAlignment);
+    }
+
+    public static BufferStack of(long byteSize) {
+        return new BufferStack(byteSize, 1);
     }
 
     public static BufferStack of(MemoryLayout layout) {
-        Objects.requireNonNull(layout);
-        // Allocations are always at least aligned with the largest Java type (e.g., long)
-        long size = layout.byteAlignment() > JAVA_LONG.byteSize()
-                ? Utils.alignUp(layout.byteSize(), layout.byteAlignment())
-                : layout.byteSize();
-        return of(size);
+        // Implicit null check
+        return of(layout.byteSize(), layout.byteAlignment());
     }
 }

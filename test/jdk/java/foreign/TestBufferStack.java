@@ -56,11 +56,13 @@ final class TestBufferStack extends NativeTestHelper {
 
     @Test
     void invariants() {
-        var ex = assertThrows(IllegalArgumentException.class, () -> BufferStack.of(-1));
-        assertEquals("Size is negative: -1", ex.getMessage());
+        var exBS = assertThrows(IllegalArgumentException.class, () -> BufferStack.of(-1, 1));
+        assertEquals("Negative byteSize: -1", exBS.getMessage());
+        var exBA = assertThrows(IllegalArgumentException.class, () -> BufferStack.of(1, -1));
+        assertEquals("Negative byteAlignment: -1", exBA.getMessage());
         assertThrows(NullPointerException.class, () -> BufferStack.of(null));
 
-        BufferStack stack = BufferStack.of(POOL_SIZE);
+        BufferStack stack = newBufferStack();
         assertThrows(IllegalArgumentException.class, () -> stack.pushFrame(-1, 8));
         assertThrows(IllegalArgumentException.class, () -> stack.pushFrame(SMALL_ALLOC_SIZE, -1));
 
@@ -78,15 +80,13 @@ final class TestBufferStack extends NativeTestHelper {
     @Test
     void testScopedAllocation() {
         int stackSize = 128;
-        BufferStack stack = BufferStack.of(stackSize);
-        MemorySegment stackSegment;
+        BufferStack stack = newBufferStack();
         try (Arena frame1 = stack.pushFrame(3 * JAVA_INT.byteSize(), JAVA_INT.byteAlignment())) {
             // Segments have expected sizes and are accessible and allocated consecutively in the same scope.
             MemorySegment segment11 = frame1.allocate(JAVA_INT);
             assertEquals(frame1.scope(), segment11.scope());
             assertEquals(JAVA_INT.byteSize(), segment11.byteSize());
             segment11.set(JAVA_INT, 0, 1);
-            stackSegment = segment11.reinterpret(stackSize);
 
             MemorySegment segment12 = frame1.allocate(JAVA_INT);
             assertEquals(segment11.address() + JAVA_INT.byteSize(), segment12.address());
@@ -121,7 +121,7 @@ final class TestBufferStack extends NativeTestHelper {
             try (Arena hugeFrame = stack.pushFrame(1024, 4)) {
                 outOfStack = hugeFrame.allocate(4);
                 assertEquals(hugeFrame.scope(), outOfStack.scope());
-                assertTrue(outOfStack.asOverlappingSlice(stackSegment).isEmpty());
+                assertTrue(outOfStack.asOverlappingSlice(segment11).isEmpty());
             }
             assertThrows(IllegalStateException.class, () -> outOfStack.get(JAVA_INT, 0));
 
@@ -169,8 +169,8 @@ final class TestBufferStack extends NativeTestHelper {
 
     @Test
     void equals() {
-        var first = BufferStack.of(POOL_SIZE);
-        var second = BufferStack.of(POOL_SIZE);
+        var first = newBufferStack();
+        var second = newBufferStack();
         assertNotEquals(first, second);
         assertEquals(first, first);
     }
@@ -178,7 +178,7 @@ final class TestBufferStack extends NativeTestHelper {
     @Test
     void allocationSameAsPoolSize() {
         MemoryLayout twoInts = MemoryLayout.sequenceLayout(2, JAVA_INT);
-        var pool = BufferStack.of(POOL_SIZE);
+        var pool = newBufferStack();
         long firstAddress;
         try (var arena = pool.pushFrame(JAVA_INT)) {
             var segment = arena.allocate(JAVA_INT);
@@ -189,38 +189,20 @@ final class TestBufferStack extends NativeTestHelper {
                 var segment = arena.allocate(JAVA_INT);
                 assertEquals(firstAddress, segment.address());
                 var segmentTwo = arena.allocate(JAVA_INT);
-                assertNotEquals(firstAddress, segmentTwo.address());
+                assertEquals(firstAddress + JAVA_INT.byteSize(), segmentTwo.address());
+                // Questionable exception type
+                assertThrows(IndexOutOfBoundsException.class, () -> arena.allocate(JAVA_INT));
             }
         }
     }
-
     @Test
     void allocationSameAsPoolSizeVt() {
         VThreadRunner.run(this::allocationSameAsPoolSize);
     }
 
     @Test
-    void allocationCaptureStateLayout() {
-        var layout = Linker.Option.captureStateLayout();
-        var pool = BufferStack.of(layout);
-        long firstAddress;
-        try (var arena = pool.pushFrame(layout)) {
-            var segment = arena.allocate(layout);
-            firstAddress = segment.address();
-        }
-        for (int i = 0; i < 10; i++) {
-            try (var arena = pool.pushFrame(layout)) {
-                var segment = arena.allocate(layout);
-                assertEquals(firstAddress, segment.address());
-                // Questionable exception type
-                assertThrows(IndexOutOfBoundsException.class, () -> arena.allocate(layout));
-            }
-        }
-    }
-
-    @Test
     void allocateConfinement() {
-        var pool = BufferStack.of(POOL_SIZE);
+        var pool = newBufferStack();
         Consumer<Arena> allocateAction = arena ->
                 assertThrows(WrongThreadException.class, () -> {
                     CompletableFuture<Arena> future = CompletableFuture.supplyAsync(() -> pool.pushFrame(SMALL_ALLOC_SIZE, 1));
@@ -238,7 +220,7 @@ final class TestBufferStack extends NativeTestHelper {
 
     @Test
     void closeConfinement() {
-        var pool = BufferStack.of(POOL_SIZE);
+        var pool = newBufferStack();
         Consumer<Arena> closeAction = arena -> {
             // Do not use CompletableFuture here as it might accidentally run on the
             // same carrier thread as a virtual thread.
@@ -263,8 +245,27 @@ final class TestBufferStack extends NativeTestHelper {
 
     @Test
     void toStringTest() {
-        BufferStack stack = BufferStack.of(POOL_SIZE);
+        BufferStack stack = newBufferStack();
         assertEquals("BufferStack[" + POOL_SIZE + "]", stack.toString());
+    }
+
+    @Test
+    void allocBounds() {
+        BufferStack stack = newBufferStack();
+        try (var arena = stack.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+            assertThrows(IllegalArgumentException.class, () -> arena.allocate(-1));
+            assertDoesNotThrow(() -> arena.allocate(SMALL_ALLOC_SIZE));
+            assertThrows(IndexOutOfBoundsException.class, () -> arena.allocate(SMALL_ALLOC_SIZE + 1));
+        }
+    }
+
+    @Test
+    void accessBounds() {
+        BufferStack stack = newBufferStack();
+        try (var arena = stack.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+            var segment = arena.allocate(SMALL_ALLOC_SIZE);
+            assertThrows(IndexOutOfBoundsException.class, () -> segment.get(JAVA_BYTE, SMALL_ALLOC_SIZE));
+        }
     }
 
     static void doInTwoStackedArenas(BufferStack pool,
@@ -277,5 +278,10 @@ final class TestBufferStack extends NativeTestHelper {
             }
         }
     }
+
+    private static BufferStack newBufferStack() {
+        return BufferStack.of(POOL_SIZE, 1);
+    }
+
 
 }

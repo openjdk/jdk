@@ -391,7 +391,7 @@ public final class SharedUtils {
     }
 
     private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
-    private static final BufferStack LINKER_STACK = BufferStack.of(LINKER_STACK_SIZE);
+    private static final BufferStack LINKER_STACK = BufferStack.of(LINKER_STACK_SIZE, 1);
 
     @ForceInline
     public static Arena newBoundedArena(long size) {
