@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,103 @@
 
 /*
  * @test
- * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096 8275308
+ * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096
+ *      8275308 8355536
  * @summary Test latest, latestSupported, underscore as keyword, etc.
  * @author  Joseph D. Darcy
  * @modules java.compiler
  *          jdk.compiler
+ * @run junit TestSourceVersion
  */
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import javax.lang.model.SourceVersion;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static javax.lang.model.SourceVersion.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verify behavior of latest[Supported] and other methods.
  */
 public class TestSourceVersion {
-    public static void main(String... args) {
-        testLatestSupported();
-        testVersionVaryingKeywords();
-        testRestrictedKeywords();
-        testVar();
-        testYield();
-        testValueOfRV();
-        testRuntimeVersion();
-    }
 
-    private static void testLatestSupported() {
+    @Test
+    void testLatestSupported() {
         SourceVersion[] values = SourceVersion.values();
-        SourceVersion last = values[values.length - 1];
+        SourceVersion last = values[values.length - 2];
         SourceVersion latest = SourceVersion.latest();
         SourceVersion latestSupported = SourceVersion.latestSupported();
 
-        if (latest == last &&
-            latestSupported == SourceVersion.valueOf("RELEASE_" +
-                                                     Runtime.version().feature()) &&
-            (latest == latestSupported ||
-             (latest.ordinal() - latestSupported.ordinal() == 1)) )
-            return;
-        else {
-            throw new RuntimeException("Unexpected release value(s) found:\n" +
-                                       "latest:\t" + latest + "\n" +
-                                       "latestSupported:\t" + latestSupported);
+        assertSame(last, latest);
+        assertSame(latestSupported, SourceVersion.valueOf("RELEASE_" + Runtime.version().feature()));
+        assertTrue(latest == latestSupported || latestSupported.ordinal() + 1 == latest.ordinal(),
+                () -> String.format("latest:\t%s\nlatestSupported:\t%s", latest, latestSupported));
+    }
+
+    @Test
+    void testCurrentPreview() {
+        final SourceVersion preview = CURRENT_PREVIEW;
+
+        assertFalse(preview.isSupported());
+        assertNotSame(CURRENT_PREVIEW, SourceVersion.latest());
+        assertNotSame(CURRENT_PREVIEW, SourceVersion.latestSupported());
+        assertEquals(values().length - 1, CURRENT_PREVIEW.ordinal());
+
+        assertEquals(latest().runtimeVersion(), CURRENT_PREVIEW.runtimeVersion());
+    }
+
+    static Stream<SourceVersion> actualSvs() {
+        return Arrays.stream(SourceVersion.values()).filter(SourceVersion::isSupported);
+    }
+
+    @ParameterizedTest
+    @MethodSource("actualSvs")
+    void testEachVersion(SourceVersion sv) {
+        if (sv.compareTo(SourceVersion.RELEASE_6) >= 0) {
+            assertEquals(sv, SourceVersion.valueOf(sv.runtimeVersion()));
+        }
+        Runtime.Version result = sv.runtimeVersion();
+        if (sv.compareTo(RELEASE_6) < 0) {
+            assertNull(result);
+        } else {
+            Runtime.Version expected = Runtime.Version.parse(Integer.toString(sv.ordinal()));
+            assertEquals(expected, result);
         }
     }
 
-    private static void testVersionVaryingKeywords() {
+    static Stream<Arguments> keywordStart() {
         Map<String, SourceVersion> keyWordStart =
             Map.of("strictfp", RELEASE_2,
                    "assert",   RELEASE_4,
                    "enum",     RELEASE_5,
                    "_",        RELEASE_9);
 
-        for (Map.Entry<String, SourceVersion> entry : keyWordStart.entrySet()) {
-            String key = entry.getKey();
-            SourceVersion value = entry.getValue();
+        return keyWordStart.entrySet().stream().map(e -> Arguments.of(e.getKey(), e.getValue()));
+    }
 
-            check(true,  key, (String s) -> isKeyword(s), "keyword", latest());
-            check(false, key, (String s) -> isName(s),    "name",    latest());
+    @ParameterizedTest
+    @MethodSource("keywordStart")
+    void testVersionVaryingKeywords(String key, SourceVersion value) {
+        check(true,  key, (String s) -> isKeyword(s), "keyword", latest());
+        check(false, key, (String s) -> isName(s),    "name",    latest());
 
-            for(SourceVersion version : SourceVersion.values()) {
-                boolean isKeyword = version.compareTo(value) >= 0;
+        for(SourceVersion version : SourceVersion.values()) {
+            boolean isKeyword = version.compareTo(value) >= 0;
 
-                check(isKeyword,  key, (String s) -> isKeyword(s, version), "keyword", version);
-                check(!isKeyword, key, (String s) -> isName(s, version),    "name",    version);
-            }
+            check(isKeyword,  key, (String s) -> isKeyword(s, version), "keyword", version);
+            check(!isKeyword, key, (String s) -> isName(s, version),    "name",    version);
         }
     }
 
-    private static void testRestrictedKeywords() {
+    @Test
+    void testRestrictedKeywords() {
         // Restricted keywords are not full keywords
 
         /*
@@ -114,7 +142,8 @@ public class TestSourceVersion {
         }
     }
 
-    private static void testVar() {
+    @Test
+    void testVar() {
         for (SourceVersion version : SourceVersion.values()) {
             Predicate<String> isKeywordVersion = (String s) -> isKeyword(s, version);
             Predicate<String> isNameVersion = (String s) -> isName(s, version);
@@ -126,7 +155,8 @@ public class TestSourceVersion {
         }
     }
 
-    private static void testYield() {
+    @Test
+    void testYield() {
         for (SourceVersion version : SourceVersion.values()) {
             Predicate<String> isKeywordVersion = (String s) -> isKeyword(s, version);
             Predicate<String> isNameVersion = (String s) -> isName(s, version);
@@ -138,11 +168,11 @@ public class TestSourceVersion {
         }
     }
 
-    private static void check(boolean expected,
-                              String input,
-                              Predicate<String> predicate,
-                              String message,
-                              SourceVersion version) {
+    void check(boolean expected,
+               String input,
+               Predicate<String> predicate,
+               String message,
+               SourceVersion version) {
         boolean result  = predicate.test(input);
         if (result != expected) {
             throw new RuntimeException("Unexpected " + message +  "-ness of " + input +
@@ -155,11 +185,10 @@ public class TestSourceVersion {
      * SourceVersion properly. The SourceVersion result is only a
      * function of the feature() component of a Runtime.Version.
      */
-    private static void testValueOfRV() {
+    @Test
+    void testValueOfRV() {
         for (SourceVersion sv : SourceVersion.values()) {
-            if (sv == RELEASE_0) {
-                continue;
-            } else {
+            if (sv != RELEASE_0 && sv.isSupported()) {
                 // Plain mapping; e.g. "17" -> RELEASE_17
                 String featureBase = Integer.toString(sv.ordinal());
                 checkValueOfResult(sv, featureBase);
@@ -179,31 +208,13 @@ public class TestSourceVersion {
         }
     }
 
-    private static void checkValueOfResult(SourceVersion expected, String versionString) {
+    void checkValueOfResult(SourceVersion expected, String versionString) {
         Runtime.Version rv = Runtime.Version.parse(versionString);
         SourceVersion  result = SourceVersion.valueOf(rv);
         if (result != expected) {
             throw new RuntimeException("Unexpected result " + result +
                                        " of mapping Runtime.Version " + versionString +
                                        " intead of " + expected);
-        }
-    }
-
-    private static void testRuntimeVersion() {
-        for (SourceVersion sv : SourceVersion.values()) {
-            Runtime.Version result = sv.runtimeVersion();
-            if (sv.compareTo(RELEASE_6) < 0) {
-                if (result != null) {
-                    throw new RuntimeException("Unexpected result non-null " + result +
-                                               " as runtime version of  " + sv);
-                }
-            } else {
-                Runtime.Version expected = Runtime.Version.parse(Integer.toString(sv.ordinal()));
-                if (!result.equals(expected)) {
-                    throw new RuntimeException("Unexpected result " + result +
-                                               " as runtime version of " + sv);
-                }
-            }
         }
     }
 }
