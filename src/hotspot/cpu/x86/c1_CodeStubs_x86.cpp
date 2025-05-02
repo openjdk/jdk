@@ -37,66 +37,12 @@
 
 #define __ ce->masm()->
 
-#ifndef _LP64
-float ConversionStub::float_zero = 0.0;
-double ConversionStub::double_zero = 0.0;
-
-void ConversionStub::emit_code(LIR_Assembler* ce) {
-  __ bind(_entry);
-  assert(bytecode() == Bytecodes::_f2i || bytecode() == Bytecodes::_d2i, "other conversions do not require stub");
-
-
-  if (input()->is_single_xmm()) {
-    __ comiss(input()->as_xmm_float_reg(),
-              ExternalAddress((address)&float_zero));
-  } else if (input()->is_double_xmm()) {
-    __ comisd(input()->as_xmm_double_reg(),
-              ExternalAddress((address)&double_zero));
-  } else {
-    __ push(rax);
-    __ ftst();
-    __ fnstsw_ax();
-    __ sahf();
-    __ pop(rax);
-  }
-
-  Label NaN, do_return;
-  __ jccb(Assembler::parity, NaN);
-  __ jccb(Assembler::below, do_return);
-
-  // input is > 0 -> return maxInt
-  // result register already contains 0x80000000, so subtracting 1 gives 0x7fffffff
-  __ decrement(result()->as_register());
-  __ jmpb(do_return);
-
-  // input is NaN -> return 0
-  __ bind(NaN);
-  __ xorptr(result()->as_register(), result()->as_register());
-
-  __ bind(do_return);
-  __ jmp(_continuation);
-}
-#endif // !_LP64
-
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(ce->masm()->pc() - ce->masm()->offset() + safepoint_offset());
-#ifdef _LP64
   __ lea(rscratch1, safepoint_pc);
   __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
-#else
-  const Register tmp1 = rcx;
-  const Register tmp2 = rdx;
-  __ push(tmp1);
-  __ push(tmp2);
 
-  __ lea(tmp1, safepoint_pc);
-  __ get_thread(tmp2);
-  __ movptr(Address(tmp2, JavaThread::saved_exception_pc_offset()), tmp1);
-
-  __ pop(tmp2);
-  __ pop(tmp1);
-#endif /* _LP64 */
   assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
 
@@ -122,7 +68,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     __ call(RuntimeAddress(a));
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ should_not_reach_here());
+    DEBUG_ONLY(__ should_not_reach_here());
     return;
   }
 
@@ -142,7 +88,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ call(RuntimeAddress(Runtime1::entry_for(stub_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
@@ -155,7 +101,7 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
@@ -165,7 +111,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::throw_div0_exception_id)));
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 
@@ -453,7 +399,7 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   __ call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 
@@ -467,7 +413,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   }
   __ call(RuntimeAddress(Runtime1::entry_for(_stub)));
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 

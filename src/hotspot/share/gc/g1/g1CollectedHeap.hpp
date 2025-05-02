@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -1312,9 +1312,9 @@ private:
   void print_regions_on(outputStream* st) const;
 
 public:
-  void print_on(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_extended_on(outputStream* st) const;
+  void print_gc_on(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
 

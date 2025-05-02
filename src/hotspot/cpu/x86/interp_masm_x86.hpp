@@ -42,7 +42,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
  protected:
 
   virtual void call_VM_base(Register oop_result,
-                            Register java_thread,
                             Register last_java_sp,
                             address  entry_point,
                             int number_of_arguments,
@@ -58,8 +57,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void jump_to_entry(address entry);
 
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   void load_earlyret_value(TosState state);
 

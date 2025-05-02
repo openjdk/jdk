@@ -267,6 +267,9 @@ define DefineMainTargets
 
   $$(main_targets_file):
 	@( cd $$(TOPDIR) && \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
+	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) )
+	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
 	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
