@@ -801,7 +801,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   address ip = inst;
   bool is_64bit = false;
 
-  debug_only(bool has_disp32 = false);
+  DEBUG_ONLY(bool has_disp32 = false);
   int tail_size = 0; // other random bytes (#32, #16, etc.) at end of insn
 
   again_after_prefix:
@@ -859,7 +859,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x8A: // movb r, a
   case 0x8B: // movl r, a
   case 0x8F: // popl a
-    debug_only(has_disp32 = true);
+    DEBUG_ONLY(has_disp32 = true);
     break;
 
   case 0x68: // pushq #32
@@ -898,10 +898,10 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
 
     case 0x8B: // movw r, a
     case 0x89: // movw a, r
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
     case 0xC7: // movw a, #16
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       tail_size = 2;  // the imm16
       break;
     case 0x0F: // several SSE/SSE2 variants
@@ -923,7 +923,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x69: // imul r, a, #32
   case 0xC7: // movl a, #32(oop?)
     tail_size = 4;
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x0F: // movx..., etc.
@@ -932,11 +932,11 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       tail_size = 1;
     case 0x38: // ptest, pmovzxbw
       ip++; // skip opcode
-      debug_only(has_disp32 = true); // has both kinds of operands!
+      DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
       break;
 
     case 0x70: // pshufd r, r/a, #8
-      debug_only(has_disp32 = true); // has both kinds of operands!
+      DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     case 0x73: // psrldq r, #8
       tail_size = 1;
       break;
@@ -961,7 +961,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
     case 0xD6: // movq
     case 0xFE: // paddd
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
 
     case 0xAD: // shrd r, a, %cl
@@ -976,18 +976,18 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0xC1: // xaddl
     case 0xC7: // cmpxchg8
     case REP16(0x90): // setcc a
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       // fall out of the switch to decode the address
       break;
 
     case 0xC4: // pinsrw r, a, #8
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
     case 0xC5: // pextrw r, r, #8
       tail_size = 1;  // the imm8
       break;
 
     case 0xAC: // shrd r, a, #8
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       tail_size = 1;  // the imm8
       break;
 
@@ -1004,12 +1004,12 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
     // on 32bit in the case of cmpl, the imm might be an oop
     tail_size = 4;
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x83: // addl a, #8; addl r, #8
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     tail_size = 1;
     break;
 
@@ -1026,7 +1026,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x9B:
     switch (0xFF & *ip++) {
     case 0xD9: // fnstcw a
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
     default:
       ShouldNotReachHere();
@@ -1045,7 +1045,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x87: // xchg r, a
   case REP4(0x38): // cmp...
   case 0x85: // test r, a
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0xA8: // testb rax, #8
@@ -1057,7 +1057,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0xC6: // movb a, #8
   case 0x80: // cmpb a, #8
   case 0x6B: // imul r, a, #8
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     tail_size = 1; // the imm8
     break;
 
@@ -1109,7 +1109,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
         break;
     }
     ip++; // skip opcode
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x62: // EVEX_4bytes
@@ -1135,7 +1135,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       break;
     }
     ip++; // skip opcode
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0xD1: // sal a, 1; sar a, 1; shl a, 1; shr a, 1
@@ -1147,7 +1147,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0xD8: // fadd_s a; fsubr_s a; fmul_s a; fdivr_s a; fcomp_s a
   case 0xDC: // fadd_d a; fsubr_d a; fmul_d a; fdivr_d a; fcomp_d a
   case 0xDE: // faddp_d a; fsubrp_d a; fmulp_d a; fdivrp_d a; fcompp_d a
-    debug_only(has_disp32 = true);
+    DEBUG_ONLY(has_disp32 = true);
     break;
 
   case 0xE8: // call rdisp32
@@ -1184,7 +1184,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     default:
       ip++;
     }
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   default:
@@ -2008,6 +2008,11 @@ void Assembler::comiss(XMMRegister dst, XMMRegister src) {
 
 void Assembler::cpuid() {
   emit_int16(0x0F, (unsigned char)0xA2);
+}
+
+void Assembler::serialize() {
+  assert(VM_Version::supports_serialize(), "");
+  emit_int24(0x0F, 0x01, 0xE8);
 }
 
 // Opcode / Instruction                      Op /  En  64 - Bit Mode     Compat / Leg Mode Description                  Implemented

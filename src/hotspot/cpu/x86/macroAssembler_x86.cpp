@@ -24,6 +24,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -366,7 +367,9 @@ void MacroAssembler::stop(const char* msg) {
     lea(c_rarg1, InternalAddress(rip));
     movq(c_rarg2, rsp); // pass pointer to regs array
   }
-  lea(c_rarg0, ExternalAddress((address) msg));
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  lea(c_rarg0, ExternalAddress((address) str));
   andq(rsp, -16); // align stack as required by ABI
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
   hlt();
@@ -1226,7 +1229,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 }
 
@@ -1316,15 +1319,15 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
-  movptr(oop_result, Address(r15_thread, JavaThread::vm_result_offset()));
-  movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
+  movptr(oop_result, Address(r15_thread, JavaThread::vm_result_oop_offset()));
+  movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result) {
-  movptr(metadata_result, Address(r15_thread, JavaThread::vm_result_2_offset()));
-  movptr(Address(r15_thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+void MacroAssembler::get_vm_result_metadata(Register metadata_result) {
+  movptr(metadata_result, Address(r15_thread, JavaThread::vm_result_metadata_offset()));
+  movptr(Address(r15_thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
 }
 
 void MacroAssembler::check_and_handle_earlyret() {
@@ -9594,8 +9597,14 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp, obj, rscratch1);
+    testb(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+    jcc(Assembler::notZero, slow);
   }
 
   // Load top.

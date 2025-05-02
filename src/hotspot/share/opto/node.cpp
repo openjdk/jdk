@@ -322,7 +322,7 @@ Node::Node(uint req)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
     _in = nullptr;
@@ -341,7 +341,7 @@ Node::Node(Node *n0)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
@@ -354,7 +354,7 @@ Node::Node(Node *n0, Node *n1)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -369,7 +369,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -386,7 +386,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -405,7 +405,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -427,7 +427,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -451,7 +451,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   , _parse_idx(_idx)
 #endif
 {
-  debug_only( verify_construction() );
+  DEBUG_ONLY( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
@@ -489,7 +489,7 @@ Node *Node::clone() const {
   n->_outcnt = 0;
   n->_outmax = 0;
   // Unlock this guy, since he is not in any hash table.
-  debug_only(n->_hash_lock = 0);
+  DEBUG_ONLY(n->_hash_lock = 0);
   // Walk the old node's input list to duplicate its edges
   uint i;
   for( i = 0; i < len(); i++ ) {
@@ -525,11 +525,11 @@ Node *Node::clone() const {
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
-  debug_only( n->verify_construction() );
+  DEBUG_ONLY( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
   // impossible to break on the clone's moment of creation.
-  //debug_only( n->set_debug_idx( debug_idx() ) );
+  //DEBUG_ONLY( n->set_debug_idx( debug_idx() ) );
 
   C->copy_node_notes_to(n, (Node*) this);
 
@@ -942,7 +942,7 @@ void Node::disconnect_inputs(Compile* C) {
 #endif
 
   // Node::destruct requires all out edges be deleted first
-  // debug_only(destruct();)   // no reuse benefit expected
+  // DEBUG_ONLY(destruct();)   // no reuse benefit expected
   C->record_dead_node(_idx);
 }
 
@@ -2057,7 +2057,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+      C->igv_print_graph_to_network("PrintBFS", _print_list);
     }
   } else {
     _output->print_cr("No nodes to print.");
