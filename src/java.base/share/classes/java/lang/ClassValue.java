@@ -368,7 +368,7 @@ public abstract class ClassValue<T> {
         boolean isLive() {
             Version<T> v = version();
             if (v == null)  return false;
-            if (v.isLive())  return true;
+            if (v.isLive()) return true;
             version.clear();
             return false;
         }
