@@ -34,6 +34,8 @@ import jdk.jpackage.internal.util.CompositeProxy;
  */
 public interface LinuxPackage extends Package, LinuxPackageMixin {
 
+    LinuxApplication app();
+
     @Override
     AppImageLayout packageLayout();
 

@@ -28,6 +28,8 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinMsiPackage extends Package, WinMsiPackageMixin {
 
+    WinApplication app();
+
     public static WinMsiPackage create(Package pkg, WinMsiPackageMixin mixin) {
         return CompositeProxy.create(WinMsiPackage.class, pkg, mixin);
     }
