@@ -456,6 +456,18 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 25 Edition</cite></a>
      */
     RELEASE_25,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 26.
+     *
+     * @since 26
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se26/html/index.html">
+     * <cite>The Java Language Specification, Java SE 26 Edition</cite></a>
+     */
+    RELEASE_26,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -465,7 +477,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_25;
+        return RELEASE_26;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -480,7 +492,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(25, intVersion)):
+            valueOf("RELEASE_" + Math.min(26, intVersion)):
             RELEASE_10;
     }
 
