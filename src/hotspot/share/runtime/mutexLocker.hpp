@@ -130,6 +130,7 @@ extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
+extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used by FinalImageRecipes.
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -147,6 +148,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
 extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
+
+extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the AOT code C strings table
 
 extern Monitor* ContinuationRelativize_lock;
 

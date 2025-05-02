@@ -1805,7 +1805,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_wait_set_lock, "wait_set - add");
+  Thread::SpinAcquire(&_wait_set_lock);
   add_waiter(&node);
   Thread::SpinRelease(&_wait_set_lock);
 
@@ -1864,7 +1864,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // That is, we fail toward safety.
 
     if (node.TState == ObjectWaiter::TS_WAIT) {
-      Thread::SpinAcquire(&_wait_set_lock, "wait_set - unlink");
+      Thread::SpinAcquire(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
         dequeue_specific_waiter(&node);       // unlink from wait_set
         assert(!node._notified, "invariant");
@@ -1980,7 +1980,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
 bool ObjectMonitor::notify_internal(JavaThread* current) {
   bool did_notify = false;
-  Thread::SpinAcquire(&_wait_set_lock, "wait_set - notify");
+  Thread::SpinAcquire(&_wait_set_lock);
   ObjectWaiter* iterator = dequeue_waiter();
   if (iterator != nullptr) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
@@ -2058,6 +2058,12 @@ void ObjectMonitor::notify(TRAPS) {
     return;
   }
 
+  quick_notify(current);
+}
+
+void ObjectMonitor::quick_notify(JavaThread* current) {
+  assert(has_owner(current), "Precondition");
+
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
   int tally = notify_internal(current) ? 1 : 0;
@@ -2079,6 +2085,12 @@ void ObjectMonitor::notifyAll(TRAPS) {
   if (_wait_set == nullptr) {
     return;
   }
+
+  quick_notifyAll(current);
+}
+
+void ObjectMonitor::quick_notifyAll(JavaThread* current) {
+  assert(has_owner(current), "Precondition");
 
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notifyAll, this, object(), current);
@@ -2108,7 +2120,7 @@ void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
   // returns because of a timeout or interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_wait_set_lock, "wait_set - add");
+  Thread::SpinAcquire(&_wait_set_lock);
   add_waiter(node);
   Thread::SpinRelease(&_wait_set_lock);
 
@@ -2131,7 +2143,7 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // need to check if we were interrupted or the wait timed-out, and
   // in that case remove ourselves from the _wait_set queue.
   if (node->TState == ObjectWaiter::TS_WAIT) {
-    Thread::SpinAcquire(&_wait_set_lock, "wait_set - unlink");
+    Thread::SpinAcquire(&_wait_set_lock);
     if (node->TState == ObjectWaiter::TS_WAIT) {
       dequeue_specific_waiter(node);       // unlink from wait_set
       assert(!node->_notified, "invariant");
@@ -2559,7 +2571,7 @@ void ObjectMonitor::print_on(outputStream* st) const {
   st->print("{contentions=0x%08x,waiters=0x%08x"
             ",recursions=%zd,owner=" INT64_FORMAT "}",
             contentions(), waiters(), recursions(),
-            owner());
+            owner_raw());
 }
 void ObjectMonitor::print() const { print_on(tty); }
 

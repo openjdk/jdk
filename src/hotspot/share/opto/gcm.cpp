@@ -2160,8 +2160,13 @@ float Block::succ_prob(uint i) {
     // Pass frequency straight thru to target
     return 1.0f;
 
-  case Op_NeverBranch:
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    if (_succs[i]->head() == succ) {
+      return 1.0f;
+    }
     return 0.0f;
+  }
 
   case Op_TailCall:
   case Op_TailJump:

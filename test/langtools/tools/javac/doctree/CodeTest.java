@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8241780 8273244 8284908 8352249
+ * @bug 7021614 8241780 8273244 8284908 8352249 8352389
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -128,7 +128,7 @@ DocComment[DOC_COMMENT, pos:0
       name:pre
       attributes: empty
     ]
-    Literal[CODE, pos:5, |____@Override|____void_m()_{_}|]
+    Literal[CODE, pos:5, ____@Override|____void_m()_{_}|]
   body: 1
     EndElement[END_ELEMENT, pos:44, pre]
   block tags: empty

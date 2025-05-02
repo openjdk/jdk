@@ -102,7 +102,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   {
     // The thread state list manipulation code must not have safepoints.
     // See periodic_clean_up().
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     _prev = nullptr;
     _next = _head;
@@ -154,7 +154,7 @@ JvmtiThreadState::~JvmtiThreadState()   {
   {
     // The thread state list manipulation code must not have safepoints.
     // See periodic_clean_up().
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     if (_prev == nullptr) {
       assert(_head == this, "sanity check");
@@ -773,7 +773,7 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
   // add this environment thread state to the end of the list (order is important)
   {
     // list deallocation (which occurs at a safepoint) cannot occur simultaneously
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
 
     JvmtiEnvThreadStateIterator it(this);
     JvmtiEnvThreadState* previous_ets = nullptr;

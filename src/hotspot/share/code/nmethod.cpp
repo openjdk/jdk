@@ -112,7 +112,7 @@
 // Cast from int value to narrow type
 #define CHECKED_CAST(result, T, thing)      \
   result = static_cast<T>(thing); \
-  assert(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
+  guarantee(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
 
 //---------------------------------------------------------------------------------
 // NMethod statistics
@@ -1122,7 +1122,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
 
   if (nm != nullptr) {
     // verify nmethod
-    debug_only(nm->verify();) // might block
+    DEBUG_ONLY(nm->verify();) // might block
 
     nm->log_new_nmethod();
   }
@@ -1269,7 +1269,7 @@ void nmethod::post_init() {
   finalize_relocations();
 
   Universe::heap()->register_nmethod(this);
-  debug_only(Universe::heap()->verify_nmethod(this));
+  DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
 }
@@ -1296,7 +1296,7 @@ nmethod::nmethod(
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -1437,7 +1437,7 @@ nmethod::nmethod(
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -2802,7 +2802,7 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, add
   }
 
   // Take giant steps at first (4096, then 256, then 16, then 1)
-  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ debug_only(-1);
+  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ DEBUG_ONLY(-1);
   const int RADIX = (1 << LOG2_RADIX);
   for (int step = (1 << (LOG2_RADIX*3)); step > 1; step >>= LOG2_RADIX) {
     while ((mid = lower + step) < upper) {
@@ -3243,7 +3243,7 @@ void nmethod::print_relocations() {
   ResourceMark m;       // in case methods get printed via the debugger
   tty->print_cr("relocations:");
   RelocIterator iter(this);
-  iter.print();
+  iter.print_on(tty);
 }
 #endif
 

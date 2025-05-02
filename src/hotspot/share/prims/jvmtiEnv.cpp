@@ -199,7 +199,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);
@@ -1194,7 +1194,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
-  JavaThread* current_thread  = JavaThread::current();
+  JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
@@ -1210,6 +1210,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     // For virtual threads we have to call into Java to interrupt:
     Handle obj(current_thread, thread_obj);
+    JvmtiJavaUpcallMark jjum(current_thread); // hide JVMTI events for Java upcall
     JavaValue result(T_VOID);
     JavaCalls::call_virtual(&result,
                             obj,

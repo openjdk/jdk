@@ -244,10 +244,11 @@ public:
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
-  static bool is_builtin(InstanceKlass* k) {
+  static bool is_builtin(const InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
 
   static void finish_exclusion_checks();
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }
