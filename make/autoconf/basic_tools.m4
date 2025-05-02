@@ -54,6 +54,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
   # Tools only needed on some platforms
+  UTIL_LOOKUP_PROGS(LOCALE, locale)
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
   UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)

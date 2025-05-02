@@ -37,6 +37,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -135,6 +136,8 @@ public class HelloClasslist {
         String oldDate = String.format("%s%n",
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
+        StandardCharsets.US_ASCII.encode("");
+        StandardCharsets.UTF_8.encode("");
 
         // A selection of trivial and common reflection operations
         var instance = HelloClasslist.class.getConstructor().newInstance();
