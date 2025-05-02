@@ -868,7 +868,7 @@ public class Basic {
     }
 
     @Test
-    public void testSynchListReversedReturnsSameObject() {
+    public void testSynchListReversedAlwaysReturnsSameObject() {
         var list = sylist(ORIGINAL);
         var rev1 = list.reversed();
         var rev2 = list.reversed();

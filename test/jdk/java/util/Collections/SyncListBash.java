@@ -39,20 +39,28 @@ import java.util.stream.*;
 import jdk.test.lib.Utils;
 
 public class SyncListBash {
-    static List<Integer> list;
     static final int LOOP_COUNT = 1000;
     static final int NUM_WORKERS = 4;
+    static List<Integer> list;
 
-    static void worker() {
-        while (! Thread.currentThread().isInterrupted()) {
-            list.add(0, -1);
-            list.remove(0);
-        }
-    }
-
+    /**
+     * Test for race conditions with synchronized lists. Several worker threads
+     * add and remove elements from the front of the list, while the main thread
+     * gets the last element. The last element should never change. However, if
+     * the list isn't properly synchronized, getLast() might return the wrong
+     * element or throw IndexOutOfBoundsException.
+     *
+     * On an unsynchronized list, this fails 200-500 out of 1000 times, so this
+     * seems like a fairly reliable way to test for a race condition.
+     *
+     * @param args there must be one arg, "f" or "r", which determines whether the
+     *             forward (original) list or reversed view of the list is tested
+     * @throws InterruptedException if the main thread is interrupted
+     */
     public static void main(String[] args) throws InterruptedException {
         int wrongElement = 0;
         int numExceptions = 0;
+
         boolean reversed = switch (args[0]) {
             case "f" -> false;
             case "r" -> true;
@@ -69,7 +77,12 @@ public class SyncListBash {
 
         ExecutorService pool = Executors.newFixedThreadPool(NUM_WORKERS);
         for (int i = 0; i < NUM_WORKERS; i++)
-            pool.submit(SyncListBash::worker);
+            pool.submit(() -> {
+                while (! Thread.currentThread().isInterrupted()) {
+                    list.add(0, -1);
+                    list.remove(0);
+                }
+            });
 
         for (int i = 0; i < LOOP_COUNT; i++) {
             Thread.sleep(1L);

@@ -2802,20 +2802,19 @@ public final class Collections {
          * Reversed view handling. The reversedView field is transient
          * and is initialized to null upon construction of the wrapper
          * and upon deserialization. Reversed views are not serializable.
+         * The reversed view is created on first call to the reversed()
+         * method.
+         *
+         * There are four objects at play here:
          *
          * L = original list
          * Lr = reversed view of original list
-         * S(L) = synchronized forward wrapper: its backing list is the original list
-         * Sr(Lr) = synchronized reversed wrapper: its backing list is the reversed
-         * view of the original list
+         * S = synchronized forward wrapper: its backing list is L
+         * Sr = synchronized reversed wrapper: its backing list is Lr
          *
          * The reversedView field of S points to Sr and vice versa.
-         *
-         * This allows S.reversed().reversed() to return S, and
-         * Sr.reversed().reversed() to return Sr.
-         *
-         * In addition, repeated calls to reversed() return the same instance; so that
-         * S.reversed() == S.reversed() and Sr.reversed() == Sr.reversed().
+         * This enables the reversed() method always to return the same
+         * object, and for S.reversed().reversed() to return S.
          *
          * An alternative would be to have a ReversedSynchronizedList view class. However,
          * that would require two extra classes (one RandomAccess and one not) and it would
