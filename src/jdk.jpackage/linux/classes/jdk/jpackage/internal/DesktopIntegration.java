@@ -345,7 +345,7 @@ final class DesktopIntegration extends ShellCustomAction {
             xml.writeStartElement("mime-type");
             xml.writeAttribute("type", fa.mimeType());
 
-            final var description = fa.nonEmptyDescription().orElse(null);
+            final var description = fa.description().orElse(null);
             if (description != null) {
                 xml.writeStartElement("comment");
                 xml.writeCharacters(description);

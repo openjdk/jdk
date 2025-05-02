@@ -27,10 +27,12 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.ApplicationImageUtils.createWriteAppImageFileAction;
 import static jdk.jpackage.internal.util.PListWriter.writeArray;
 import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
+import static jdk.jpackage.internal.util.PListWriter.writeBooleanIf;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writeKey;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
 import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
+import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -341,13 +343,13 @@ final class MacPackagingPipeline {
         final var fas = app.fileAssociations().toList();
         if (!fas.isEmpty()) {
             writeKey(xml, "CFBundleDocumentTypes");
-            for (var fa : fas) {
-                writeArray(xml, toXmlConsumer(() -> {
+            writeArray(xml, toXmlConsumer(() -> {
+                for (var fa : fas) {
                     writeDict(xml, toXmlConsumer(() -> {
                         addFaToCFBundleDocumentTypes(xml, app, (MacFileAssociation) fa);
                     }));
-                }));
-            }
+                }
+            }));
         }
     }
 
@@ -356,13 +358,13 @@ final class MacPackagingPipeline {
         final var fas = app.fileAssociations().toList();
         if (!fas.isEmpty()) {
             writeKey(xml, "UTExportedTypeDeclarations");
-            for (var fa : fas) {
-                writeArray(xml, toXmlConsumer(() -> {
+            writeArray(xml, toXmlConsumer(() -> {
+                for (var fa : fas) {
                     writeDict(xml, toXmlConsumer(() -> {
                         addFaToUTExportedTypeDeclarations(xml, app, (MacFileAssociation) fa);
                     }));
-                }));
-            }
+                }
+            }));
         }
     }
 
@@ -381,26 +383,22 @@ final class MacPackagingPipeline {
             MacApplication app, MacFileAssociation fa) throws XMLStreamException, IOException {
 
         writeStringArray(xml, "LSItemContentTypes", List.of(faContentType(app, fa)));
-        writeString(xml, "CFBundleTypeName", fa.description());
+        writeStringOptional(xml, "CFBundleTypeName", fa.description());
         writeString(xml, "LSHandlerRank", fa.lsHandlerRank());
         writeString(xml, "CFBundleTypeRole", fa.cfBundleTypeRole());
-        writeString(xml, "NSPersistentStoreTypeKey",
-                fa.nsPersistentStoreTypeKey());
-        writeString(xml, "NSDocumentClass", fa.nsDocumentClass());
+        writeStringOptional(xml, "NSPersistentStoreTypeKey", fa.nsPersistentStoreTypeKey());
+        writeStringOptional(xml, "NSDocumentClass", fa.nsDocumentClass());
         writeBoolean(xml, "LSIsAppleDefaultForType", true);
-        writeBoolean(xml, "LSTypeIsPackage", fa.lsTypeIsPackage());
-        writeBoolean(xml, "LSSupportsOpeningDocumentsInPlace",
-                fa.lsSupportsOpeningDocumentsInPlace());
-        writeBoolean(xml, "UISupportsDocumentBrowser",
-                fa.uiSupportsDocumentBrowser());
+        writeBooleanIf(xml, "LSTypeIsPackage", fa.lsTypeIsPackage(), true);
+        writeBooleanIf(xml, "LSSupportsOpeningDocumentsInPlace", fa.lsSupportsOpeningDocumentsInPlace(), true);
+        writeBooleanIf(xml, "UISupportsDocumentBrowser", fa.uiSupportsDocumentBrowser(), true);
         faWriteIcon(xml, "CFBundleTypeIconFile", fa);
     }
 
     private static void addFaToUTExportedTypeDeclarations(XMLStreamWriter xml,
-            MacApplication app, MacFileAssociation fa) throws XMLStreamException,
-            IOException {
-        writeString(xml, "UTTypeIdentifier", List.of(faContentType(app, fa)));
-        writeString(xml, "UTTypeDescription", fa.description());
+            MacApplication app, MacFileAssociation fa) throws XMLStreamException, IOException {
+        writeString(xml, "UTTypeIdentifier", faContentType(app, fa));
+        writeStringOptional(xml, "UTTypeDescription", fa.description());
         writeStringArray(xml, "UTTypeConformsTo", fa.utTypeConformsTo());
         faWriteIcon(xml, "UTTypeIconFile", fa);
 

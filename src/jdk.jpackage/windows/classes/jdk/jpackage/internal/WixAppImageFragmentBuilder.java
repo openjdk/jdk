@@ -525,9 +525,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         Path path = INSTALLDIR.resolve(String.format("%s_%s", fa.extension(), launcherExe));
         return addComponent(xml, path, Component.ProgId, unused -> {
-            fa.nonEmptyDescription().ifPresent(toConsumer(description -> {
-                xml.writeAttribute("Description", description);
-            }));
+            xml.writeAttribute("Description", fa.description().orElseThrow());
 
             if (fa.hasIcon()) {
                 xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));

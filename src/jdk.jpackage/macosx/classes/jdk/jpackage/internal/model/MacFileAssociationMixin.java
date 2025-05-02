@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MacFileAssociationMixin {
 
@@ -36,9 +37,9 @@ public interface MacFileAssociationMixin {
 
     boolean lsTypeIsPackage();
 
-    String nsDocumentClass();
+    Optional<String> nsDocumentClass();
 
-    String nsPersistentStoreTypeKey();
+    Optional<String> nsPersistentStoreTypeKey();
 
     boolean lsSupportsOpeningDocumentsInPlace();
 
@@ -49,8 +50,8 @@ public interface MacFileAssociationMixin {
     List<String> nsExportableTypes();
 
     record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, String nsDocumentClass,
-            String nsPersistentStoreTypeKey,
+            String lsHandlerRank, boolean lsTypeIsPackage, Optional<String> nsDocumentClass,
+            Optional<String> nsPersistentStoreTypeKey,
             boolean lsSupportsOpeningDocumentsInPlace,
             boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
             List<String> nsExportableTypes) implements MacFileAssociationMixin {

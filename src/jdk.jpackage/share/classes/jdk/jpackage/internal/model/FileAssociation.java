@@ -26,7 +26,6 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 /**
  * File association.
@@ -35,7 +34,6 @@ public interface FileAssociation {
 
     /**
      * Returns file association description if available or an empty {@link Optional} instance.
-     * @see {@link #nonEmptyDescription()}
      * @return file association description
      */
     Optional<String> description();
@@ -54,15 +52,6 @@ public interface FileAssociation {
      */
     default boolean hasIcon() {
         return icon().isPresent();
-    }
-
-    /**
-     * Returns a non-empty description of this file association if available or an empty {@link Optional} instance.
-     * @see {@link #description()}
-     * @return non-empty file association description
-     */
-    default Optional<String> nonEmptyDescription() {
-        return description().filter(Predicate.not(String::isEmpty));
     }
 
     /**
