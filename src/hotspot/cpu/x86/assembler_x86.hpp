@@ -809,8 +809,8 @@ private:
   void evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                      int size, int byte1, bool no_flags, bool is_map1 = false);
 
-  void evex_opcode_and_int16_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                 InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false, bool is_map1 = true);
+  void evex_opcode_prefix_and_encode_swap(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                          int size, int byte1, bool no_flags, bool is_map1 = false);
 
   void evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
                                      int size, int byte1, bool no_flags, bool is_map1 = false);
