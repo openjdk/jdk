@@ -319,6 +319,8 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& me
 template<typename T>
 static void register_command(TypedMethodOptionMatcher* matcher,
                              CompileCommandEnum option,
+                             char* errorbuf,
+                             const int buf_size,
                              T value) {
   assert(matcher != option_list, "No circular lists please");
   if (option == CompileCommandEnum::Log && !LogCompilation) {
@@ -332,6 +334,16 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     // Delete matcher as we don't keep it
     delete matcher;
     return;
+  }
+
+  if (!UnlockDiagnosticVMOptions) {
+    const char* name = option2name(option);
+    JVMFlag* flag = JVMFlag::find_declared_flag(name);
+    if (flag != nullptr && flag->is_diagnostic()) {
+      jio_snprintf(errorbuf, buf_size, "VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.", name);
+      delete matcher;
+      return;
+    }
   }
 
   matcher->init(option, option_list);
@@ -734,7 +746,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
-      register_command(matcher, option, value);
+      register_command(matcher, option, errorbuf, buf_size, value);
       return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
@@ -752,7 +764,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
-      register_command(matcher, option, value);
+      register_command(matcher, option, errorbuf, buf_size, value);
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
     }
@@ -762,7 +774,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     if (sscanf(line, "%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
       line += bytes_read;
-      register_command(matcher, option, (ccstr) value);
+      register_command(matcher, option, errorbuf, buf_size, (ccstr) value);
       return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
@@ -819,7 +831,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         assert(false, "Ccstrlist type option missing validator");
       }
 
-      register_command(matcher, option, (ccstr) value);
+      register_command(matcher, option, errorbuf, buf_size, (ccstr) value);
       return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
@@ -829,19 +841,19 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     if (*line == '\0') {
       // Short version of a CompileCommand sets a boolean Option to true
       // -XXCompileCommand=<Option>,<method pattern>
-      register_command(matcher, option, true);
+      register_command(matcher, option, errorbuf, buf_size,true);
       return;
     }
     if (sscanf(line, "%255[a-zA-Z]%n", value, &bytes_read) == 1) {
       if (strcasecmp(value, "true") == 0) {
         total_bytes_read += bytes_read;
         line += bytes_read;
-        register_command(matcher, option, true);
+        register_command(matcher, option, errorbuf, buf_size,true);
         return;
       } else if (strcasecmp(value, "false") == 0) {
         total_bytes_read += bytes_read;
         line += bytes_read;
-        register_command(matcher, option, false);
+        register_command(matcher, option, errorbuf, buf_size,false);
         return;
       } else {
         jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
@@ -858,7 +870,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       jio_snprintf(value, sizeof(value), "%s.%s", buffer[0], buffer[1]);
       total_bytes_read += bytes_read;
       line += bytes_read;
-      register_command(matcher, option, atof(value));
+      register_command(matcher, option, errorbuf, buf_size, atof(value));
       return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
@@ -1011,7 +1023,11 @@ bool CompilerOracle::parse_from_line(char* line) {
           return false;
         }
         if (option2type(option) == OptionType::Bool) {
-          register_command(typed_matcher, option, true);
+          register_command(typed_matcher, option, error_buf, sizeof(error_buf), true);
+          if (*error_buf != '\0') {
+            print_parse_error(error_buf, original.get());
+            return false;
+          }
         } else {
           jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
                        optiontype2name(option2type(option)), option2name(option));
@@ -1041,11 +1057,19 @@ bool CompilerOracle::parse_from_line(char* line) {
     if (*line == '\0') {
       if (option2type(option) == OptionType::Bool) {
         // if this is a bool option this implies true
-        register_command(matcher, option, true);
+        register_command(matcher, option, error_buf, sizeof(error_buf), true);
+        if (*error_buf != '\0') {
+          print_parse_error(error_buf, original.get());
+          return false;
+        }
         return true;
       } else if (option == CompileCommandEnum::MemStat) {
         // MemStat default action is to collect data but to not print
-        register_command(matcher, option, (uintx)MemStatAction::collect);
+        register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect);
+        if (*error_buf != '\0') {
+          print_parse_error(error_buf, original.get());
+          return false;
+        }
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
@@ -1161,8 +1185,10 @@ bool CompilerOracle::parse_compile_only(char* line) {
     if (method_pattern != nullptr) {
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
       if (matcher != nullptr) {
-        register_command(matcher, CompileCommandEnum::CompileOnly, true);
-        continue;
+        register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), true);
+        if (*error_buf == '\0') {
+          continue;
+        }
       }
     }
     ttyLocker ttyl;
