@@ -230,6 +230,11 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
+  _type_profile_level = TypeProfileLevel;
+  _type_profile_width = TypeProfileWidth;
+  _bci_profile_width = BciProfileWidth;
+  _profile_traps = ProfileTraps;
+  _spec_trap_limit_extra_entries = SpecTrapLimitExtraEntries;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
@@ -1867,6 +1872,40 @@ bool FileMapHeader::validate() {
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
     return false;
+  }
+  if (_type_profile_level != TypeProfileLevel) {
+    log_info(cds)("The %s's TypeProfileLevel setting (%d)"
+                  " does not equal the current TypeProfileLevel setting (%d).", file_type,
+                  _type_profile_level, TypeProfileLevel);
+    return false;
+  }
+  if (_type_profile_width != TypeProfileWidth) {
+    log_info(cds)("The %s's TypeProfileWidth setting (%ld)"
+                  " does not equal the current TypeProfileWidth setting (%ld).", file_type,
+                  _type_profile_width, TypeProfileWidth);
+    return false;
+
+  }
+  if (_bci_profile_width != BciProfileWidth) {
+    log_info(cds)("The %s's BciProfileWidth setting (%ld)"
+                  " does not equal the current BciProfileWidth setting (%ld).", file_type,
+                  _bci_profile_width, BciProfileWidth);
+    return false;
+  }
+  if (_profile_traps != ProfileTraps) {
+    log_info(cds)("The %s's ProfileTraps setting (%s)"
+                  " does not equal the current ProfileTraps setting (%s).", file_type,
+                  _profile_traps ? "enabled" : "disabled",
+                  ProfileTraps   ? "enabled" : "disabled");
+
+    return false;
+  }
+  if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
+    log_info(cds)("The %s's SpecTrapLimitExtraEntries setting (%d)"
+                  " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
+                  _spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
+    return false;
+
   }
 
   // This must be done after header validation because it might change the
