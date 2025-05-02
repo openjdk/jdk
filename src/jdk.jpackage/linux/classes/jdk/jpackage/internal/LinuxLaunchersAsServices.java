@@ -73,7 +73,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
     private static final class LauncherImpl extends UnixLauncherAsService {
 
         LauncherImpl(BuildEnv env, Package pkg, Launcher launcher) {
-            super(launcher, env.createResource("unit-template.service").setCategory(
+            super(pkg.app(), launcher, env.createResource("unit-template.service").setCategory(
                     I18N.getString("resource.systemd-unit-file")));
 
             unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());

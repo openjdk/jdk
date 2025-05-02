@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.WinLauncher;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +38,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.model.WinApplication;
+import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -47,8 +48,8 @@ import org.xml.sax.SAXException;
 
 class WixLauncherAsService extends LauncherAsService {
 
-    WixLauncherAsService(WinLauncher launcher, Function<String, OverridableResource> createResource) {
-        super(launcher,
+    WixLauncherAsService(WinApplication app, WinLauncher launcher, Function<String, OverridableResource> createResource) {
+        super(app, launcher,
                 createResource.apply("service-install.wxi").setCategory(
                         I18N.getString("resource.launcher-as-service-wix-file")));
 

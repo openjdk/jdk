@@ -24,14 +24,24 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.Objects;
+import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.Launcher;
 
 class LauncherAsService {
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
+    LauncherAsService(Application app, Launcher launcher, OverridableResource resource) {
         this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
+
+        if (app.mainLauncher().orElseThrow() == launcher) {
+            // Main launcher
+            this.description = launcher.description();
+        } else {
+            // Additional launcher
+            this.description = String.format("%s (%s)", app.description(), name);
+        }
+
+        this.resource = Objects.requireNonNull(resource);
         resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
     }
 

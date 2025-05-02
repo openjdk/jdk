@@ -107,7 +107,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                     var launcherPath = installedAppImage.launchersDirectory().resolve(
                             launcher.executableNameWithSuffix());
                     var id = Id.File.of(launcherPath);
-                    return new WixLauncherAsService(launcher, env::createResource)
+                    return new WixLauncherAsService(pkg.app(), launcher, env::createResource)
                             .setLauncherInstallPath(toWixPath(launcherPath))
                             .setLauncherInstallPathId(id);
                 }).toList();

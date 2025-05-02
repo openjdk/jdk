@@ -50,7 +50,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
     private static class MacLauncherAsService extends UnixLauncherAsService {
 
         MacLauncherAsService(BuildEnv env, MacPackage pkg, Launcher launcher) {
-            super(launcher, env.createResource("launchd.plist.template").setCategory(I18N
+            super(pkg.app(), launcher, env.createResource("launchd.plist.template").setCategory(I18N
                     .getString("resource.launchd-plist-file")));
 
             plistFilename = getServicePListFileName(pkg.app().bundleIdentifier(), getName());

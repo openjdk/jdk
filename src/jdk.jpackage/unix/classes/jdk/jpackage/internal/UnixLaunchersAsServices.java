@@ -103,8 +103,8 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
     abstract static class UnixLauncherAsService extends LauncherAsService {
 
-        UnixLauncherAsService(Launcher launcher, OverridableResource resource) {
-            super(launcher, resource);
+        UnixLauncherAsService(Application app, Launcher launcher, OverridableResource resource) {
+            super(app, launcher, resource);
         }
 
         abstract Path descriptorFilePath(Path root);
