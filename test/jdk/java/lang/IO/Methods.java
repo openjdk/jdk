@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8344706
- * @summary enums: ensure unnamed class is visible to java.lang.Enum<unnamed_class>
- * @compile NestedEnum.java
- */
+import static java.lang.IO.*;
 
-enum Foo {A, B}
-void main() {
-    System.out.println(Foo.A);
+public class Methods {
+
+    public static void main(String[] args) {
+        switch (args[0]) {
+            case "println" -> println("hello");
+            case "print" -> print("hello");
+            case "input" -> readln("hello");
+            default -> throw new IllegalArgumentException(args[0]);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,18 @@
  * questions.
  */
 
-import static java.io.IO.*;
+import java.io.IOException;
 
-public class Methods {
+import static java.lang.IO.readln;
 
-    public static void main(String[] args) {
+public class Input {
+
+    public static void main(String[] args) throws IOException {
         switch (args[0]) {
-            case "println" -> println("hello");
-            case "print" -> print("hello");
-            case "input" -> readln("hello");
-            default -> throw new IllegalArgumentException(args[0]);
+            case "0" -> System.out.print(readln(null));
+            case "1" -> System.out.print(readln(args[1]));
+            case "2" -> System.out.print(readln());
+            default -> throw new AssertionError("Unknown command: " + args[0]);
         }
     }
 }
