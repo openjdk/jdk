@@ -283,19 +283,19 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     constexpr U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
     // This is the bit at which we want to change the bit 0 in lo to a 1, and
     // all bits after to zero. This is similar to an operation that aligns lo
-    // up to a multiple of this modulo.
+    // up to the next multiple of this modulo.
     //           0 0 0 1 0 0 0 0
     U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
-    // that the result should not be smaller than this. This is a standard
-    // operation to align a value up to a multiple of a certain power of 2.
-    // Since alignment is a power of 2, -alignment is a value having all the
-    // bits being 1 upto the location of the bit in alignment (in the example,
-    // -alignment = 11110000). As a result, lo & -alignment set all bits after
-    // the bit in alignment to 0, which is equivalent to rounding lo down to a
-    // multiple of alignment. Since lo is not divisible by alignment, to round
-    // lo up to a multiple of alignment, we add alignment to the rounded down
-    // value.
+    // that the result should not be smaller than this.
+    // This is a standard operation to align a value up to the next multiple of
+    // a certain power of 2. Since alignment is a power of 2, -alignment is a
+    // value having all the bits being 1 upto the location of the bit in
+    // alignment (in the example, -alignment = 11110000). As a result,
+    // lo & -alignment set all bits after the bit in alignment to 0, which is
+    // equivalent to rounding lo down to a multiple of alignment. To round lo
+    // up to the next multiple of alignment, we add alignment to the rounded
+    // down value.
     // Note that this computation cannot overflow as the bit in lo that is at
     // the same position as the only bit 1 in alignment must be 0. As a result,
     // this operation just set that bit to 1 and set all the bits after to 0.
@@ -379,8 +379,8 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     U alignment = tmp & (-tmp);
     // Set the bit of lo at i and unset all the bits after, this is the
     // smallest value that satisfies bits._zeros. Similar to the above case,
-    // this is similar to aligning lo up to a multiple of alignment. Also
-    // similar to the above case, this computation cannot overflow.
+    // this is similar to aligning lo up to the next multiple of alignment.
+    // Also similar to the above case, this computation cannot overflow.
     // We now have:
     // - new_lo[x] = lo[x], for 0 <= x < i (2.5)
     // - new_lo[i] = 1                     (2.6)
