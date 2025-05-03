@@ -235,7 +235,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
 oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                        ShenandoahAffiliation target_gen) {
+                                                    ShenandoahAffiliation target_gen) {
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
@@ -315,10 +315,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // our branch typically has a much larger remembered set size (i.e. a larger old-gen size).  It seems plausible that
       // the branch is more successful with promoting by shared allocations.  We need to study this further.  May revert
       // this change depending on results of further analysis.
-      
 
-      // Reduce, but do not totally eliminate promotion by shared allocation
-      static size_t size_threshhold = MIN2(PLAB::max_size(), PLAB::min_size() * 6);
+      // Reduce, but do not totally eliminate promotion by shared allocation.  Our intention would be to only promote
+      // by shared allocation when/if we know that we are not operating under "memory pressure".  
+      static size_t size_threshhold = MIN2(PLAB::max_size() / 4, PLAB::min_size() * 32);
       if (!is_promotion || !has_plab || (size > size_threshhold)) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
         copy = allocate_memory(req);
@@ -347,10 +347,12 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       }
     }
 
+#undef KELVIN_OOM_EVAC
+#ifdef KELVIN_OOM_EVAC
+    log_info(gc)("OOM Failure during evac, target region was: %s", (target_gen == OLD_GENERATION)? "old": "young");
+#endif
     control_thread()->handle_alloc_failure_evac(size);
-
     oom_evac_handler()->handle_out_of_memory_during_evacuation();
-
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 

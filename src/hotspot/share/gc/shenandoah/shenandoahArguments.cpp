@@ -107,7 +107,11 @@ void ShenandoahArguments::initialize() {
   // make set ParallelGCThreads to 2.
   bool ergo_parallel = FLAG_IS_DEFAULT(ParallelGCThreads);
   if (ergo_parallel) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, MAX2(1, 3 * os::initial_active_processor_count() / 4));
+    if (os::initial_active_processor_count() == 2) {
+      FLAG_SET_DEFAULT(ParallelGCThreads, 2);
+    } else {
+      FLAG_SET_DEFAULT(ParallelGCThreads, MAX2(1, 3 * os::initial_active_processor_count() / 4));
+    }
   }
 
   if (ParallelGCThreads == 0) {

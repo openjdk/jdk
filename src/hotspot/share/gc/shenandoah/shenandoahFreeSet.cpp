@@ -1941,6 +1941,13 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
   const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
   young_reserve_result = young_generation->get_evacuation_reserve();
   old_reserve_result = promoted_reserve + old_evac_reserve;
+
+#undef KELVIN_RESERVE
+#ifdef KELVIN_RESERVE
+  log_info(gc)("compute_young_and_old_reserves(), promoted_reserve: %zu, old_evac_reserve: %zu, young_reserve: %zu",
+               promoted_reserve, old_evac_reserve, young_reserve_result);
+#endif
+
   assert(old_reserve_result + young_reserve_result <= old_available + young_available,
          "Cannot reserve (%zu + %zu + %zu) more than is available: %zu + %zu",
          promoted_reserve, old_evac_reserve, young_reserve_result, old_available, young_available);
@@ -1966,6 +1973,12 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
 // the collector set is at least to_reserve and the memory available for allocations within the old collector set
 // is at least to_reserve_old.
 void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count) {
+
+#undef KELVIN_RESERVE
+#ifdef KELVIN_RESERVE
+    log_info(gc)("reserve_regions(to_reserve: %zu, to_reserve_old: %zu)", to_reserve, to_reserve_old);
+#endif
+
   for (size_t i = _heap->num_regions(); i > 0; i--) {
     size_t idx = i - 1;
     ShenandoahHeapRegion* r = _heap->get_region(idx);

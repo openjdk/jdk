@@ -396,8 +396,8 @@ double ShenandoahAdaptiveHeuristics::predict_gc_time() {
   double evac_time = predict_evac_time(get_anticipated_evac_words());
   double update_time = predict_update_time(get_anticipated_update_words());
   double result = mark_time + evac_time + update_time;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
+#undef KELVIN_DEBUG_GC_TIME
+#ifdef KELVIN_DEBUG_GC_TIME
   log_info(gc)("AddaptiveHeuristics::predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu): %.3f, update(%zu): %.3f",
 	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(),
 	       evac_time, get_anticipated_update_words(), update_time);
@@ -840,6 +840,12 @@ ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
 // Our current approach to this problem is to only add samples that result from measurement of "unsurged execution phases".
 
 void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
+
+#undef KELVIN_ESTIMATOR
+#ifdef KELVIN_ESTIMATOR
+  log_info(gc)("%s add_sample(x: %.3f, y: %.3f)", _name, x_value, y_value);
+#endif
+
   if (_num_samples >= MaxSamples) {
     _sum_of_x -= _x_values[_first_index];
     _sum_of_xx -= _x_values[_first_index] * _x_values[_first_index];
@@ -863,33 +869,54 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _changed = true;
 }
 
-double ShenandoahPhaseTimeEstimator::predict_at(double x_value) {
-  if (!_changed && (_most_recent_prediction_x_value == x_value)) {
+double ShenandoahPhaseTimeEstimator::predict_at(double predict_at_x_value) {
+  if (!_changed && (_most_recent_prediction_x_value == predict_at_x_value)) {
     return _most_recent_prediction;
   } else if (_num_samples > 2) {
+#ifdef KELVIN_ESTIMATOR
+    log_info(gc)("PhaseTimeEstimator::predict_at(%03f)", predict_at_x_value);
+#endif
     double m = (_num_samples * _sum_of_xy - _sum_of_x * _sum_of_y) / (_num_samples * _sum_of_xx - _sum_of_x * _sum_of_x);
     double b = (_sum_of_y - m * _sum_of_x) / _num_samples;
     double sum_of_squared_deviations = 0;
+    double min_x = _x_values[_first_index];
+    double max_x = min_x;
     for (uint i = 0; i < _num_samples; i++) {
       double x_value = _x_values[(_first_index + i) % MaxSamples];
+      if (x_value < min_x) {
+        min_x = x_value;
+      }
+      if (x_value > max_x) {
+        max_x = x_value;
+      }
       double estimated_y = b + m * x_value;
       double y_value = _y_values[(_first_index + i) % MaxSamples];
       double delta = estimated_y - y_value;
       sum_of_squared_deviations += delta * delta;
-#undef KELVIN_ESTIMATOR
 #ifdef KELVIN_ESTIMATOR
       log_info(gc)("%s sample[%u] (x: %.3f, y: %.3f), predicted_y: %.3f, delta: %.3f",
 		   _name, i, x_value, y_value, estimated_y, delta);
 #endif
     }
+    double span = max_x - min_x;
+    double standard_deviation_multiplier;
+    if (predict_at_x_value < min_x) {
+      standard_deviation_multiplier = (max_x - predict_at_x_value) / span;
+    } else if (predict_at_x_value > max_x) {
+      standard_deviation_multiplier = (predict_at_x_value - min_x) / span;
+    } else {
+      standard_deviation_multiplier = 1.0;
+    }
     double standard_deviation = sqrt(sum_of_squared_deviations / _num_samples);
-    double prediction_by_trend = b + m * x_value + standard_deviation;;
+    double prediction = b + m * predict_at_x_value + standard_deviation;;
+    double adjusted_prediction = prediction + standard_deviation * standard_deviation_multiplier;;
 #ifdef KELVIN_ESTIMATOR
-    log_info(gc)(" m: %.3f, b: %3f, std_dev: %.3f, prediction_by_trend: %.3f", m, b, standard_deviation, prediction_by_trend);
+    log_info(gc)(" m: %.9f, b: %3f, std_dev: %.3f, multiplier: %.3f, prediction: %.3f, adjusted prediction: %.3f",
+                 m, b, standard_deviation, standard_deviation_multiplier, prediction, adjusted_prediction);
 #endif
-    _most_recent_prediction = prediction_by_trend;
+    _most_recent_prediction = adjusted_prediction;
     _changed = false;
-    _most_recent_prediction_x_value = x_value;
+    _most_recent_prediction_x_value = predict_at_x_value;
     return _most_recent_prediction;
   } else {
     // Insufficient samples to make a non-zero prediction

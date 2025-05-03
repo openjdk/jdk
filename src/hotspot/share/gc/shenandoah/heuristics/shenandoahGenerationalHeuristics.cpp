@@ -271,8 +271,8 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     ShenandoahTracer().report_evacuation_info(&evacInfo);
   }
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
+#undef KELVIN_CSET
+#ifdef KELVIN_CSET
   log_info(gc)("Finished choosing collection set. Here is what we know:");
 
   size_t young_bytes_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
