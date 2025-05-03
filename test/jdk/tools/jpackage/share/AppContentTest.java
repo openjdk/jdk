@@ -58,7 +58,7 @@ public class AppContentTest {
 
     private static final String TEST_JAVA = "apps/PrintEnv.java";
     private static final String TEST_DUKE = "apps/dukeplug.png";
-    private static final String TEST_DUKE_LINK = "dukeplugLink.png";
+    private static final String TEST_DUKE_LINK = "dukeplugLink.txt";
     private static final String TEST_DIR = "apps";
     private static final String TEST_BAD = "non-existant";
 
@@ -94,30 +94,29 @@ public class AppContentTest {
             .addRunOnceInitializer(appContentInitializer::initAppContent)
             .addInitializer(appContentInitializer::applyTo)
             .addInstallVerifier(cmd -> {
-                Path baseDir = getAppContentRoot(cmd);
                 for (String arg : testPathArgs) {
                     List<String> paths = Arrays.asList(arg.split(","));
                     for (String p : paths) {
                         Path name = Path.of(p).getFileName();
                         if (name.toString().contains("Link")) {
-                            TKit.assertSymbolicLinkExists(baseDir.resolve(name));
+                            TKit.assertSymbolicLinkExists(getAppContentPath(cmd, name));
                         } else {
-                            TKit.assertPathExists(baseDir.resolve(name), true);
+                            TKit.assertPathExists(getAppContentPath(cmd, name), true);
                         }
                     }
                 }
-
             })
             .setExpectedExitCode(expectedJPackageExitCode)
             .run();
     }
 
-    private static Path getAppContentRoot(JPackageCommand cmd) {
+    private static Path getAppContentPath(JPackageCommand cmd, Path name) {
         Path contentDir = cmd.appLayout().contentDirectory();
-        if (copyInResources) {
-            return contentDir.resolve("Resources");
+        // Links are always created in "Resources"
+        if (copyInResources || name.toString().contains("Link")) {
+            return contentDir.resolve("Resources").resolve(name);
         } else {
-            return contentDir;
+            return contentDir.resolve(name);
         }
     }
 
@@ -144,17 +143,14 @@ public class AppContentTest {
         }
 
         private static Path copyAppContentPath(Path appContentPath) throws IOException {
-            Path appContentArg = TKit.createTempDirectory("app-content");
-            if (copyInResources) {
-                appContentArg = appContentArg.resolve("Resources");
-            }
+            Path appContentArg = TKit.createTempDirectory("app-content").resolve("Resources");
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             Path dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
             if (dstPath.getFileName().toString().contains("Link")) {
                 String tagetName = dstPath.getFileName().toString().replace("Link", "");
                 Path targetPath = dstPath.getParent().resolve(tagetName);
-                Files.createFile(targetPath);
+                Files.write(targetPath, "foo".getBytes());
                 Files.createSymbolicLink(dstPath, targetPath.getFileName());
             } else {
                 FileUtils.copyRecursive(srcPath, dstPath);
