@@ -1840,7 +1840,9 @@ public class Basic {
         // Test Runtime.exec(...envp...) with envstrings without any `='
         //----------------------------------------------------------------
         try {
-            String[] cmdp = Windows.is() ? new String[]{"cmd", "/c", "echo/"} : new String[]{"echo"};
+            // In Windows CMD (`cmd.exe`), `echo/` outputs a newline (i.e., an empty line).
+            // Wrapping it with `cmd.exe /c` ensures compatibility in both native Windows and Cygwin environments.
+            String[] cmdp = Windows.is() ? new String[]{"cmd.exe", "/c", "echo/"} : new String[]{"echo"};
             String[] envp = {"Hello", "World"}; // Yuck!
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             equal(commandOutput(p), "\n");
