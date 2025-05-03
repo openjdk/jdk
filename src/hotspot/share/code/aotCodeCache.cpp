@@ -582,7 +582,6 @@ AOTCodeEntry* AOTCodeCache::find_entry(AOTCodeEntry::Kind kind, uint id) {
     _load_entries = (AOTCodeEntry*)(_search_entries + 2 * count);
     log_debug(aot, codecache, init)("Read %d entries table at offset %d from AOT Code Cache", count, _load_header->entries_offset());
   }
-  // TODO: better to replace it with a CompactHashtable?
   // Binary search
   int l = 0;
   int h = count - 1;
