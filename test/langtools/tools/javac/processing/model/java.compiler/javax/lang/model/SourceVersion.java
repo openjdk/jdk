@@ -451,6 +451,7 @@ public enum SourceVersion {
      * @since 25
      */
     RELEASE_25,
+    RELEASE_26,
 
     // Note to maintainers: Add new constants right above.
     // The implementation of latest() and latestSupported() must be updated too.
@@ -492,7 +493,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_25;
+        return RELEASE_26;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -507,8 +508,8 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(25, intVersion)):
-            RELEASE_10;
+                valueOf("RELEASE_" + Math.min(26, intVersion)):
+                RELEASE_10;
     }
 
     /**
@@ -566,8 +567,8 @@ public enum SourceVersion {
             return false;
         }
         for (int i = Character.charCount(cp);
-                i < id.length();
-                i += Character.charCount(cp)) {
+             i < id.length();
+             i += Character.charCount(cp)) {
             cp = id.codePointAt(i);
             if (!Character.isJavaIdentifierPart(cp)) {
                 return false;
@@ -672,61 +673,61 @@ public enum SourceVersion {
         String id = s.toString();
         switch(id) {
             // A trip through history
-        case "strictfp":
-            return version.compareTo(RELEASE_2) >= 0;
+            case "strictfp":
+                return version.compareTo(RELEASE_2) >= 0;
 
-        case "assert":
-            return version.compareTo(RELEASE_4) >= 0;
+            case "assert":
+                return version.compareTo(RELEASE_4) >= 0;
 
-        case "enum":
-            return version.compareTo(RELEASE_5) >= 0;
+            case "enum":
+                return version.compareTo(RELEASE_5) >= 0;
 
-        case "_":
-            return version.compareTo(RELEASE_9) >= 0;
+            case "_":
+                return version.compareTo(RELEASE_9) >= 0;
 
-     // case "non-sealed": can be added once it is a keyword only
-     // dependent on release and not also preview features being
-     // enabled.
+            // case "non-sealed": can be added once it is a keyword only
+            // dependent on release and not also preview features being
+            // enabled.
 
             // Keywords common across versions
 
             // Modifiers
-        case "public":    case "protected": case "private":
-        case "abstract":  case "static":    case "final":
-        case "transient": case "volatile":  case "synchronized":
-        case "native":
+            case "public":    case "protected": case "private":
+            case "abstract":  case "static":    case "final":
+            case "transient": case "volatile":  case "synchronized":
+            case "native":
 
-            // Declarations
-        case "class":     case "interface": case "extends":
-        case "package":   case "throws":    case "implements":
+                // Declarations
+            case "class":     case "interface": case "extends":
+            case "package":   case "throws":    case "implements":
 
-            // Primitive types and void
-        case "boolean":   case "byte":      case "char":
-        case "short":     case "int":       case "long":
-        case "float":     case "double":
-        case "void":
+                // Primitive types and void
+            case "boolean":   case "byte":      case "char":
+            case "short":     case "int":       case "long":
+            case "float":     case "double":
+            case "void":
 
-            // Control flow
-        case "if":      case "else":
-        case "try":     case "catch":    case "finally":
-        case "do":      case "while":
-        case "for":     case "continue":
-        case "switch":  case "case":     case "default":
-        case "break":   case "throw":    case "return":
+                // Control flow
+            case "if":      case "else":
+            case "try":     case "catch":    case "finally":
+            case "do":      case "while":
+            case "for":     case "continue":
+            case "switch":  case "case":     case "default":
+            case "break":   case "throw":    case "return":
 
-            // Other keywords
-        case  "this":   case "new":      case "super":
-        case "import":  case "instanceof":
+                // Other keywords
+            case  "this":   case "new":      case "super":
+            case "import":  case "instanceof":
 
-            // Forbidden!
-        case "goto":        case "const":
+                // Forbidden!
+            case "goto":        case "const":
 
-            // literals
-        case "null":         case "true":       case "false":
-            return true;
+                // literals
+            case "null":         case "true":       case "false":
+                return true;
 
-        default:
-            return false;
+            default:
+                return false;
         }
     }
 

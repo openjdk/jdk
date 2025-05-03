@@ -29,7 +29,9 @@
  * @author  Joseph D. Darcy
  * @modules java.compiler
  *          jdk.compiler
- * @run junit TestSourceVersion
+ * @run junit/othervm -DTestSourceVersion.DIFFERENT_LATEST_SUPPORTED=false TestSourceVersion
+ * @build java.compiler/javax.lang.model.SourceVersion
+ * @run junit/othervm -DTestSourceVersion.DIFFERENT_LATEST_SUPPORTED=true TestSourceVersion
  */
 
 import java.util.*;
@@ -47,8 +49,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verify behavior of latest[Supported] and other methods.
+ * There's a copy of "updated" SourceVersion in java.compiler subdirectory
+ * to emulate running with a newer java.compiler module.
  */
 public class TestSourceVersion {
+
+    private static final boolean DIFFERENT_LATEST_SUPPORTED = Boolean.getBoolean("TestSourceVersion.DIFFERENT_LATEST_SUPPORTED");
 
     @Test
     void testLatestSupported() {
@@ -59,8 +65,12 @@ public class TestSourceVersion {
 
         assertSame(last, latest);
         assertSame(latestSupported, SourceVersion.valueOf("RELEASE_" + Runtime.version().feature()));
-        assertTrue(latest == latestSupported || latestSupported.ordinal() + 1 == latest.ordinal(),
-                () -> String.format("latest:\t%s\nlatestSupported:\t%s", latest, latestSupported));
+        assertSame(Runtime.version().feature(), latestSupported.runtimeVersion().feature());
+        if (DIFFERENT_LATEST_SUPPORTED) {
+            assertEquals(latestSupported.ordinal(), latest.ordinal() - 1, () -> latestSupported.toString() + " ordinal");
+        } else {
+            assertSame(latest, latestSupported);
+        }
     }
 
     @Test
