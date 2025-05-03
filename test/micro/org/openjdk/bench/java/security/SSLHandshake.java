@@ -78,9 +78,6 @@ public class SSLHandshake {
     @Param({"TLSv1.2", "TLS"})
     String tlsVersion;
 
-    @Param({"SunX509", "SunX509c", "PKIX"})
-    String keyMgr;
-
     private static SSLContext getServerContext() {
         try {
             KeyStore ks = TestCertificates.getKeyStore();
@@ -105,11 +102,8 @@ public class SSLHandshake {
                 TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyMgr);
-        kmf.init(ts, new char[0]);
-
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslCtx.init(null, tmf.getTrustManagers(), null);
         sslClientCtx = sslCtx;
     }
 

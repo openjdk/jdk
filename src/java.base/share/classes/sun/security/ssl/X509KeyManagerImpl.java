@@ -57,6 +57,7 @@ import javax.net.ssl.*;
  *
  * @author  Andreas Sterbenz
  */
+
 final class X509KeyManagerImpl extends X509ExtendedKeyManager
         implements KeyManagerAlgorithmConstraints {
 

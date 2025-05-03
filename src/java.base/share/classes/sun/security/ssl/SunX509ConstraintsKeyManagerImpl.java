@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,37 +49,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
-
-/**
- * An implementation of X509KeyManager backed by a KeyStore.
- *
- * The backing KeyStore is inspected when this object is constructed.
- * All key entries containing a PrivateKey and a non-empty chain of
- * X509Certificate are then copied into an internal store. This means
- * that subsequent modifications of the KeyStore have no effect on the
- * X509KeyManagerImpl object.
- *
- * Note that this class assumes that all keys are protected by the same
- * password.
- *
- * The JSSE handshake code currently calls into this class via
- * chooseClientAlias() and chooseServerAlias() to find the certificates to
- * use. As implemented here, both always return the first alias returned by
- * getClientAliases() and getServerAliases(). In turn, these methods are
- * implemented by calling getAliases(), which performs the actual lookup.
- *
- * Note that this class currently implements no checking of the local
- * certificates. In particular, it is *not* guaranteed that:
- *  . the certificates are within their validity period and not revoked
- *  . the signatures verify
- *  . they form a PKIX compliant chain.
- *  . the certificate extensions allow the certificate to be used for
- *    the desired purpose.
- *
- * Chains that fail any of these criteria will probably be rejected by
- * the remote peer.
- *
- */
 class SunX509ConstraintsKeyManagerImpl extends X509ExtendedKeyManager
         implements KeyManagerAlgorithmConstraints {
 
@@ -128,8 +97,8 @@ class SunX509ConstraintsKeyManagerImpl extends X509ExtendedKeyManager
             NoSuchAlgorithmException, UnrecoverableKeyException {
 
         credentialsMap = new HashMap<>();
-        serverAliasCache = Collections.synchronizedMap(
-                new HashMap<>());
+        serverAliasCache = Collections.synchronizedMap(new HashMap<>());
+
         if (ks == null) {
             return;
         }
