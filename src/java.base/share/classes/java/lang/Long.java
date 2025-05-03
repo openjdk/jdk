@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -462,11 +463,11 @@ public final class Long extends Number
     public static String toString(long i) {
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
-            byte[] buf = StringConcatHelper.newArray(size);
+            byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size);
             DecimalDigits.getCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = StringConcatHelper.newArray(size << 1);
+            byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size << 1);
             DecimalDigits.getCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
