@@ -59,6 +59,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -1873,39 +1874,41 @@ bool FileMapHeader::validate() {
                   CompactStrings   ? "enabled" : "disabled");
     return false;
   }
-  if (_type_profile_level != TypeProfileLevel) {
-    log_info(cds)("The %s's TypeProfileLevel setting (%d)"
-                  " does not equal the current TypeProfileLevel setting (%d).", file_type,
-                  _type_profile_level, TypeProfileLevel);
-    return false;
-  }
-  if (_type_profile_width != TypeProfileWidth) {
-    log_info(cds)("The %s's TypeProfileWidth setting (%ld)"
-                  " does not equal the current TypeProfileWidth setting (%ld).", file_type,
-                  _type_profile_width, TypeProfileWidth);
-    return false;
+  if (TrainingData::have_data()) {
+    if (_type_profile_level != TypeProfileLevel) {
+      log_info(cds)("The %s's TypeProfileLevel setting (%d)"
+                    " does not equal the current TypeProfileLevel setting (%d).", file_type,
+                    _type_profile_level, TypeProfileLevel);
+      return false;
+    }
+    if (_type_profile_width != TypeProfileWidth) {
+      log_info(cds)("The %s's TypeProfileWidth setting (%ld)"
+                    " does not equal the current TypeProfileWidth setting (%ld).", file_type,
+                    _type_profile_width, TypeProfileWidth);
+      return false;
 
-  }
-  if (_bci_profile_width != BciProfileWidth) {
-    log_info(cds)("The %s's BciProfileWidth setting (%ld)"
-                  " does not equal the current BciProfileWidth setting (%ld).", file_type,
-                  _bci_profile_width, BciProfileWidth);
-    return false;
-  }
-  if (_profile_traps != ProfileTraps) {
-    log_info(cds)("The %s's ProfileTraps setting (%s)"
-                  " does not equal the current ProfileTraps setting (%s).", file_type,
-                  _profile_traps ? "enabled" : "disabled",
-                  ProfileTraps   ? "enabled" : "disabled");
+    }
+    if (_bci_profile_width != BciProfileWidth) {
+      log_info(cds)("The %s's BciProfileWidth setting (%ld)"
+                    " does not equal the current BciProfileWidth setting (%ld).", file_type,
+                    _bci_profile_width, BciProfileWidth);
+      return false;
+    }
+    if (_profile_traps != ProfileTraps) {
+      log_info(cds)("The %s's ProfileTraps setting (%s)"
+                    " does not equal the current ProfileTraps setting (%s).", file_type,
+                    _profile_traps ? "enabled" : "disabled",
+                    ProfileTraps   ? "enabled" : "disabled");
 
-    return false;
-  }
-  if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
-    log_info(cds)("The %s's SpecTrapLimitExtraEntries setting (%d)"
-                  " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
-                  _spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
-    return false;
+      return false;
+    }
+    if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
+      log_info(cds)("The %s's SpecTrapLimitExtraEntries setting (%d)"
+                    " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
+                    _spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
+      return false;
 
+    }
   }
 
   // This must be done after header validation because it might change the
