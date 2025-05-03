@@ -2358,7 +2358,6 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def, cons
   }
 
   // Subword cast: Element sizes differ, but the platform supports a cast to change the def shape to the use shape.
-
   if ((is_subword_type(def_bt) || is_subword_type(use_bt)) && VectorCastNode::implemented(-1, pack_size, def_bt, use_bt)) {
     return true;
   }

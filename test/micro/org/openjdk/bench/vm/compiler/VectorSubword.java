@@ -32,8 +32,8 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
 public class VectorSubword {
     @Param({"1024"})
