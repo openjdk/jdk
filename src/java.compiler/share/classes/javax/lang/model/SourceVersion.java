@@ -92,6 +92,8 @@ public enum SourceVersion {
      *      switch in second preview, module Import Declarations in second
      *      preview, simple source files and instance main in fourth
      *      preview, flexible constructor bodies in third preview)
+     *  25: module import declarations, compact source files and
+     *      instance main methods,
      */
 
     /**
@@ -445,9 +447,16 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 25.
      *
+     * Additions in this release include module import declarations
+     * and compact source files and instance main methods.
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se25/html/index.html">
      * <cite>The Java Language Specification, Java SE 25 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/511">
+     * JEP 511: Module Import Declarations</a>
+     * @see <a href="https://openjdk.org/jeps/512">
+     * JEP 512: Compact Source Files and Instance Main Methods</a>
      * @since 25
      */
     RELEASE_25,
