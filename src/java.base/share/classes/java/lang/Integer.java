@@ -432,15 +432,14 @@ public final class Integer extends Number
     @IntrinsicCandidate
     public static String toString(int i) {
         int size = DecimalDigits.stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size);
+        byte coder = COMPACT_STRINGS ? LATIN1 : UTF16;
+        byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size << coder);
+        if (coder == LATIN1) {
             DecimalDigits.getCharsLatin1(i, size, buf);
-            return new String(buf, LATIN1);
         } else {
-            byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size << 1);
             DecimalDigits.getCharsUTF16(i, size, buf);
-            return new String(buf, UTF16);
         }
+        return new String(buf, coder);
     }
 
     /**
