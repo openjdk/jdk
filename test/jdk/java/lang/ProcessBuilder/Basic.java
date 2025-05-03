@@ -1840,7 +1840,7 @@ public class Basic {
         // Test Runtime.exec(...envp...) with envstrings without any `='
         //----------------------------------------------------------------
         try {
-            String[] cmdp = Windows.is() ? new String[]{"cmd", "/c", "echo."} : new String[]{"echo"};
+            String[] cmdp = Windows.is() ? new String[]{"cmd", "/c", "echo/"} : new String[]{"echo"};
             String[] envp = {"Hello", "World"}; // Yuck!
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             equal(commandOutput(p), "\n");
