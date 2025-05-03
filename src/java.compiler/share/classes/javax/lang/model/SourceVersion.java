@@ -462,7 +462,7 @@ public enum SourceVersion {
     RELEASE_25,
 
     // Note to maintainers: Add new constants right above.
-    // The implementation of latest() and latestSupported() must be updated too.
+    // The implementation of latest() must be updated too.
     // Also update the dummy SourceVersion for processing/model/TestSourceVersion.
     /**
      * An enum constant representing all preview language features of the
@@ -516,7 +516,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(25, intVersion)):
+            valueOf("RELEASE_" + Math.min(latest().ordinal(), intVersion)):
             RELEASE_10;
     }
 
