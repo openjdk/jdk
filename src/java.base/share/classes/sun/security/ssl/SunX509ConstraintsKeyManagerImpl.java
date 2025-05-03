@@ -353,20 +353,20 @@ class SunX509ConstraintsKeyManagerImpl extends X509ExtendedKeyManager
                         continue;
                     }
                 }
+            }
 
-                // check the algorithm constraints
-                if (constraints != null &&
-                        !conformsToAlgorithmConstraints(constraints, certs,
-                                checkType.getValidator())) {
+            // check the algorithm constraints
+            if (constraints != null &&
+                    !conformsToAlgorithmConstraints(constraints, certs,
+                            checkType.getValidator())) {
 
-                    if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                        SSLLogger.fine("Ignore alias " + alias +
-                                ": certificate list does not conform to " +
-                                "algorithm constraints");
-                    }
-
-                    continue;
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine("Ignore alias " + alias +
+                            ": certificate list does not conform to " +
+                            "algorithm constraints");
                 }
+
+                continue;
             }
 
             if (issuers.length == 0) {
