@@ -49,7 +49,7 @@ ALWAYSINLINE klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
     return late_register_klass(nk);
   }
 #else
-  assert(e.is_valid(), "must never be invalid");
+  assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
 #endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
@@ -57,7 +57,7 @@ ALWAYSINLINE klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
 #endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
-  log_hit(e);
+  log_hit(klute);
 #endif
 
   return klute;
