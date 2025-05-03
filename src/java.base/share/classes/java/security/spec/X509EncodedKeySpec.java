@@ -51,7 +51,7 @@ import java.security.DEREncodable;
  * @since 1.2
  */
 
-public final class X509EncodedKeySpec extends EncodedKeySpec implements
+public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
     DEREncodable {
 
     /**

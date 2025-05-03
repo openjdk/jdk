@@ -285,9 +285,7 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
         }
 
-        return new PEMRecord(
-            header.substring(11, header.lastIndexOf('-') - 4), data,
-            preData);
+        return new PEMRecord(headerType, data, preData);
     }
 
     public static PEMRecord readPEM(InputStream is) throws IOException {
@@ -295,7 +293,8 @@ public class Pem {
     }
 
     /**
-     * Construct a String-based encoding based off the type.
+     * Construct a String-based encoding based off the type.  leadingData
+     * is not used with this method.
      * @return the string
      */
     public static String pemEncoded(String type, byte[] data) {

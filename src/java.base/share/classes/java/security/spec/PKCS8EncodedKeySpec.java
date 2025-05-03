@@ -72,7 +72,7 @@ import java.security.DEREncodable;
  * @since 1.2
  */
 
-public final class PKCS8EncodedKeySpec extends EncodedKeySpec implements
+public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
     DEREncodable {
 
     /**

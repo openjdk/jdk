@@ -60,7 +60,7 @@ import java.util.Objects;
  * @since 1.4
  */
 
-public final class EncryptedPrivateKeyInfo implements DEREncodable {
+public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
@@ -343,9 +343,12 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *                 encryption operations. The default provider list will be
      *                 used if {@code null}.
      * @return an EncryptedPrivateKeyInfo.
-     * @throws IllegalArgumentException when an argument causes an
-     * initialization error.
-     * @throws SecurityException on a cryptographic errors.
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method. The cause may include
+     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+     * or NoSuchPaddingException.
+     * @throws RuntimeException on an encryption errors.  The cause may include
+     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
      * @throws NullPointerException if the key or password are null. Also, if
      * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
@@ -392,8 +395,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *                 cloned before being used.
      * @return an {@code EncryptedPrivateKeyInfo}.
      * @throws IllegalArgumentException on initialization errors based on the
-     * arguments passed to the method.
-     * @throws SecurityException on a encryption errors.
+     * arguments passed to the method.  The cause may include
+     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+     * or NoSuchPaddingException.
+     * @throws RuntimeException on an encryption errors. The cause may include
+     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
      * @throws NullPointerException when the password is null.
      *
      * @implNote The `jdk.epkcs8.defaultAlgorithm` Security Property defines
@@ -407,7 +413,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         char[] password) {
         char[] pass = password.clone();
         if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
-            throw new SecurityException("Security property " +
+            throw new RuntimeException("Security property " +
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                 "valid algorithm.  Operation cannot be performed.");
         }
@@ -435,8 +441,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *                 used if {@code null}.
      * @return an {@code EncryptedPrivateKeyInfo}.
      * @throws IllegalArgumentException on initialization errors based on the
-     *                                  arguments passed to the method.
-     * @throws SecurityException on an encryption errors.
+     * arguments passed to the method. The cause may include
+     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+     * or NoSuchPaddingException.
+     * @throws RuntimeException on an encryption errors.  The cause may include
+     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
      * @throws NullPointerException if the key or password are null. Also, if
      * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
@@ -456,7 +465,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         }
 
         if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
-            throw new SecurityException("Security property " +
+            throw new RuntimeException("Security property " +
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                 "valid algorithm.  Operation cannot be performed.");
         }
@@ -496,7 +505,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
             throw new IllegalArgumentException(e);
         } catch (IllegalBlockSizeException | BadPaddingException |
                  InvalidKeyException e) {
-            throw new SecurityException(e);
+            throw new RuntimeException(e);
         }
         return new EncryptedPrivateKeyInfo(
             DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),

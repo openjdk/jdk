@@ -129,7 +129,7 @@ public class X509Key implements PublicKey, DerEncoder {
         algorithm = AlgorithmId.parse(in.data.getDerValue());
         try {
             subjectKey = buildX509Key(algorithm,
-                                      in.data.getUnalignedBitString());
+                in.data.getUnalignedBitString());
 
         } catch (InvalidKeyException e) {
             throw new IOException("subject key, " + e.getMessage(), e);
@@ -138,6 +138,27 @@ public class X509Key implements PublicKey, DerEncoder {
         if (in.data.available() != 0)
             throw new IOException("excess subject key");
         return subjectKey;
+    }
+
+    /*
+     * Parses X.509 subject public key DER and return it as a
+     * X509Key.  Useful for PKCS8v2.
+     */
+    public static X509Key parse(byte[] encoded) throws IOException
+    {
+        DerValue in = new DerValue(encoded);
+        AlgorithmId algorithm;
+
+        if (in.tag != DerValue.tag_Sequence)
+            throw new IOException("corrupt subject key");
+
+        algorithm = AlgorithmId.parse(in.data.getDerValue());
+        BitArray keyBits = in.data.getUnalignedBitString();
+
+        if (in.data.available() != 0)
+            throw new IOException("excess subject key");
+
+        return new X509Key(algorithm, keyBits);
     }
 
     /**
@@ -338,14 +359,10 @@ public class X509Key implements PublicKey, DerEncoder {
         }
     }
 
-    /**
-     * Parses X509 public key.  With PKCS8v2 allowing public keys in private key
-     * encoding, this method allows PKCS8Key access, but keeps the code in this
-     * file.
-     */
-    public static PublicKey parseKey(byte[] encoded) throws IOException {
+  /*  public static PublicKey parseKey(byte[] encoded) throws IOException {
         PublicKey pubKey;
         try {
+
             X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
             pubKey = KeyFactory.getInstance(spec.getAlgorithm())
                 .generatePublic(spec);
@@ -355,7 +372,7 @@ public class X509Key implements PublicKey, DerEncoder {
         }
         return pubKey;
     }
-
+*/
     /**
      * Serialization write ... X.509 keys serialize as
      * themselves, and they're parsed when they get read back.

@@ -125,18 +125,13 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
         }
     }
 
-    public static class FakeX509Spec extends EncodedKeySpec {
+    public static class FakeX509Spec extends X509EncodedKeySpec {
         public FakeX509Spec(byte[] encodedKey) {
             super(encodedKey);
         }
 
         public FakeX509Spec(byte[] encodedKey, String algorithm) {
             super(encodedKey, algorithm);
-        }
-
-        @Override
-        public String getFormat() {
-            return null;
         }
     }
 }
