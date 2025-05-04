@@ -416,7 +416,6 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/456">
      * JEP 456: Unnamed Variables &amp; Patterns</a>
-
      * @since 22
      */
     RELEASE_22,
