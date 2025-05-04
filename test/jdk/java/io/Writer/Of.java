@@ -39,12 +39,7 @@ import static org.testng.Assert.*;
 public class Of {
     private static final String CONTENT = "Some Writer Test";
 
-    private static record Config(String id, Writer writer, Supplier<String> spy) {
-        @Override
-        public String toString() {
-            return id; // allows to identify config when test case fails
-        }
-    };
+    private static record Config(String id, Writer writer, Supplier<String> spy) {};
 
     /*
      * Writers to be tested.
