@@ -410,7 +410,7 @@ public enum ClassFileFormatVersion {
      * Programmers should test their programs with preview features enabled to
      * ensure the program is compatible with future Java SE releases.
      * <p>
-     * This is a reflective preview API to allows tools running in Java runtime
+     * This is a reflective preview API to allow tools running in Java runtime
      * environments with no preview feature enabled to access information
      * related to preview features.
      * <p>
