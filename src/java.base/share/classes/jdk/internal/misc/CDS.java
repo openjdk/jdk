@@ -82,8 +82,35 @@ public class CDS {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
+    public static boolean isSingleThreadVM() {
+        return isDumpingStaticArchive();
+    }
+
     private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
+
+
+    // Used only when dumping static archive to keep weak references alive to
+    // ensure that Soft/Weak Reference objects can be reliably archived.
+    private static ArrayList<Object> keepAliveList;
+
+    public static void keepAlive(Object s) {
+        assert isSingleThreadVM(); // no need for synchronization
+        assert isDumpingStaticArchive();
+        if (keepAliveList == null) {
+            keepAliveList = new ArrayList<>();
+        }
+        keepAliveList.add(s);
+    }
+
+    // This is called by native JVM code at the very end of Java execution before
+    // dumping the static archive.
+    // It collects the objects from keepAliveList so that they can be easily processed
+    // by the native JVM code to check that any Reference objects that need special
+    // clean up must have been registed with keepAlive()
+    private static Object[] getKeepAliveObjects() {
+        return keepAliveList.toArray();
+    }
 
     /**
      * Initialize archived static fields in the given Class using archived

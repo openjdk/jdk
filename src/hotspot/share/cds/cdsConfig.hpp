@@ -186,6 +186,12 @@ public:
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
 
+  // --- AOT code
+
+  static bool is_dumping_aot_code()                          NOT_CDS_RETURN_(false);
+  static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
+  static void enable_dumping_aot_code()                      NOT_CDS_RETURN;
+
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:
   //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
