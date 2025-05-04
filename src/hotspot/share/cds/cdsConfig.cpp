@@ -47,7 +47,7 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
-bool CDSConfig::_is_one_step_training = false;
+bool CDSConfig::_is_single_command_training = false;
 bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
@@ -458,12 +458,45 @@ void CDSConfig::check_aotmode_auto_or_on() {
   }
 }
 
+// %p substitution in AOTCache, AOTCacheOutput and AOTCacheConfiguration
+static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
+  JVMFlag* flag = JVMFlag::flag_from_enum(flag_enum);
+  const char* filename = flag->read<const char*>();
+  assert(filename != nullptr, "must not have default value");
+
+  // For simplicity, we don't allow %t (time) substitution -- otherwise
+  // if %t is used in both -XX:AOTCacheOutput and -XX:AOTConfiguration,
+  // they will end up having different timestamps, which will be confusing.
+  if (strstr(filename, "%t") != nullptr) {
+    vm_exit_during_initialization(err_msg("%s cannot contain %%t", flag->name()));
+  }
+
+  // For simplicity, we don't allow %p to be specified twice, because make_log_name()
+  // substitutes only the first occurrence. Otherwise, if we run with
+  //     java -XX:AOTCacheOutput=%p%p.aot
+ // it will end up with both the pid of the training process and the assembly process.
+  const char* first_p = strstr(filename, "%p");
+  if (first_p != nullptr && strstr(first_p + 2, "%p") != nullptr) {
+    vm_exit_during_initialization(err_msg("%s cannot contain more than one %%p", flag->name()));
+  }
+
+  // Note: with single-command training, %p will be the pid of the training process, not the
+  // assembly process.
+  const char* new_filename = make_log_name(filename, nullptr);
+  if (strcmp(filename, new_filename) != 0) {
+    JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
+    assert(err == JVMFlag::SUCCESS, "must never fail");
+  }
+  FREE_C_HEAP_ARRAY(char, new_filename);
+}
+
 void CDSConfig::check_aotmode_record() {
   bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
   bool has_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
 
   if (has_output) {
-    _is_one_step_training = true;
+    _is_single_command_training = true;
+    substitute_aot_filename(FLAG_MEMBER_ENUM(AOTCacheOutput));
     if (!has_config) {
       // Too early; can't use resource allocation yet.
       size_t len = strlen(AOTCacheOutput) + 10;
@@ -482,6 +515,8 @@ void CDSConfig::check_aotmode_record() {
   if (!FLAG_IS_DEFAULT(AOTCache)) {
     vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
   }
+
+  substitute_aot_filename(FLAG_MEMBER_ENUM(AOTConfiguration));
 
   UseSharedSpaces = false;
   RequireSharedSpaces = false;
@@ -503,14 +538,16 @@ void CDSConfig::check_aotmode_create() {
 
   if (!has_cache && !has_cache_output) {
     vm_exit_during_initialization("AOTCache or AOTCacheOutput must be specified when using -XX:AOTMode=create");
-  } else if (has_cache && has_cache_output && strcmp(AOTCache, AOTCacheOutput) != 0) {
-    vm_exit_during_initialization("AOTCache and AOTCacheOutput have different values");
+  } else if (has_cache && has_cache_output) {
+    vm_exit_during_initialization("Only one of AOTCache or AOTCacheOutput can be specified");
   }
 
   if (!has_cache) {
     precond(has_cache_output);
     FLAG_SET_ERGO(AOTCache, AOTCacheOutput);
   }
+
+  substitute_aot_filename(FLAG_MEMBER_ENUM(AOTCache));
 
   _is_dumping_final_static_archive = true;
   UseSharedSpaces = true;

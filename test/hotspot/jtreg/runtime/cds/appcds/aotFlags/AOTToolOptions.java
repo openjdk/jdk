@@ -48,10 +48,13 @@ public class AOTToolOptions {
     static String helloClass = "Hello";
 
     public static void main(String[] args) throws Exception {
-        //----------------------------------------------------------------------
-        printTestCase("AOT_TOOL_OPTIONS (one-command training)");
+        ProcessBuilder pb;
+        OutputAnalyzer out;
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        //----------------------------------------------------------------------
+        printTestCase("AOT_TOOL_OPTIONS (single-command training)");
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:cds=debug",
@@ -59,7 +62,7 @@ public class AOTToolOptions {
         // The "-Xshare:off" below should be treated as part of a property value and not
         // a VM option by itself
         pb.environment().put("AOT_TOOL_OPTIONS", "-Dsome.option='foo -Xshare:off ' -Xmx512m -XX:-AOTClassLinking");
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTCache creation is complete: hello.aot");
         out.shouldContain("Picked up AOT_TOOL_OPTIONS: -Dsome.option='foo -Xshare:off '");

@@ -23,7 +23,7 @@
  */
 
 /*
- * @test id=aot
+ * @test
  * @summary Use special characters in the name of the cache file specified by -XX:AOTCacheOutput
  *          Make sure these characters are passed to the child JVM process that assembles the cache.
  * @requires vm.cds.supports.aot.class.linking

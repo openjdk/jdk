@@ -324,11 +324,11 @@ public class AOTFlags {
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=aaa",
-            "-XX:AOTCacheOutput=bbb",
+            "-XX:AOTCacheOutput=aaa",
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("AOTCache and AOTCacheOutput have different values");
+        out.shouldContain("Only one of AOTCache or AOTCacheOutput can be specified");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
