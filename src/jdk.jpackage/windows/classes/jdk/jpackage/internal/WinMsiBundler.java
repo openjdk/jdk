@@ -431,14 +431,6 @@ public class WinMsiBundler  extends AbstractBundler {
             }
 
             Map<String, String> wixVars = prepareMainProjectFile(params);
-
-            new ScriptRunner()
-            .setDirectory(imageDir)
-            .setResourceCategoryId("resource.post-app-image-script")
-            .setScriptNameSuffix("post-image")
-            .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-            .run(params);
-
             return buildMSI(params, wixVars, outputParentDir);
         } catch (IOException ex) {
             Log.verbose(ex);
@@ -599,6 +591,15 @@ public class WinMsiBundler  extends AbstractBundler {
 
         // Save all WiX resources into config dir.
         wixResources.saveResources();
+
+        final var imageDir = WIN_APP_IMAGE.fetchFrom(params);
+
+        new ScriptRunner()
+                .setDirectory(imageDir)
+                .setResourceCategoryId("resource.post-app-image-script")
+                .setScriptNameSuffix("post-image")
+                .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
+                .run(params);
 
         // All l10n files are supplied to WiX with "-loc", but only
         // Cultures from custom files and a single primary Culture are
