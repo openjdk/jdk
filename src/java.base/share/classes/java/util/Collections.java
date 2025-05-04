@@ -1048,6 +1048,71 @@ public final class Collections {
     }
 
     /**
+     * Finds the index of the first element in the specified sorted list
+     * that is not less than the given target, according to the provided comparator.
+     * This is functionally equivalent to the C++ STL {@code lower_bound()}.
+     *
+     * The list must be sorted using the same comparator prior to calling this method.
+     *
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>        the type of elements in the list
+     * @param list       the sorted list to be searched
+     * @param target     the value to search for
+     * @param comparator the comparator defining the sort order
+     * @return the index of the first element not less than the target
+     *
+     * @throws NullPointerException if list or comparator is {@code null}
+     *
+     * @since 1.9
+     */
+    public static <T> int lowerBound(List<T> list, T target, Comparator<? super T> comparator) {
+        int low = 0, high = list.size();
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (comparator.compare(list.get(mid), target) < 0)
+                low = mid + 1;
+            else
+                high = mid;
+        }
+        return low;
+    }
+
+
+    /**
+     * Finds the index of the first element in the specified sorted list
+     * that is greater than the given target, using the provided comparator.
+     * This is equivalent to the C++ STL {@code upper_bound()}.
+     *
+     * The list must be sorted using the same comparator prior to calling this method.
+     *
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>        the type of elements in the list
+     * @param list       the sorted list to be searched
+     * @param target     the value to search for
+     * @param comparator the comparator defining the sort order
+     * @return the index of the first element strictly greater than the target
+     *
+     * @throws NullPointerException if list or comparator is {@code null}
+     *
+     * @since 1.9
+     */
+    public static <T> int upperBound(List<T> list, T target, Comparator<? super T> comparator) {
+        int low = 0, high = list.size();
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (comparator.compare(list.get(mid), target) <= 0)
+                low = mid + 1;
+            else
+                high = mid;
+        }
+        return low;
+    }
+
+    /**
      * @serial include
      */
     static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
