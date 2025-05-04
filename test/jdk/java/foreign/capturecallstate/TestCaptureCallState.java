@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8356126
  * @library ../ /test/lib
  * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestCaptureCallState
  */
