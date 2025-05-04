@@ -464,13 +464,6 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
   const char* filename = flag->read<const char*>();
   assert(filename != nullptr, "must not have default value");
 
-  // For simplicity, we don't allow %t (time) substitution -- otherwise
-  // if %t is used in both -XX:AOTCacheOutput and -XX:AOTConfiguration,
-  // they will end up having different timestamps, which will be confusing.
-  if (strstr(filename, "%t") != nullptr) {
-    vm_exit_during_initialization(err_msg("%s cannot contain %%t", flag->name()));
-  }
-
   // For simplicity, we don't allow %p to be specified twice, because make_log_name()
   // substitutes only the first occurrence. Otherwise, if we run with
   //     java -XX:AOTCacheOutput=%p%p.aot
