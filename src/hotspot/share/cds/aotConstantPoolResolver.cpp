@@ -133,9 +133,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
 
 void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
-    // The cp->resolved_referenced() array is not ready yet.
-    // We will still archive all the interned strings for the static fields with initial values.
-    // See HeapShared::scan_java_class() -> ConstantPool::add_dumped_interned_strings();
+    // The cp->resolved_referenced() array is not ready yet, so we can't call resolve_string().
     return;
   }
   constantPoolHandle cp(THREAD, ik->constants());

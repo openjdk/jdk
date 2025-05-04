@@ -606,11 +606,8 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
 }
 
 void HeapShared::archive_strings() {
-  oop shared_strings_array = StringTable::init_shared_strings_array(_dumped_interned_strings);
+  oop shared_strings_array = StringTable::init_shared_strings_array();
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
-  // We must succeed because:
-  // - _dumped_interned_strings do not contain any large strings.
-  // - StringTable::init_shared_table() doesn't create any large arrays.
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
@@ -683,7 +680,7 @@ void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
     check_special_subgraph_classes();
   }
 
-  StringTable::write_shared_table(_dumped_interned_strings);
+  StringTable::write_shared_table();
   ArchiveHeapWriter::write(_pending_roots, heap_info);
 
   ArchiveBuilder::OtherROAllocMark mark;
@@ -710,8 +707,6 @@ void HeapShared::scan_java_class(Klass* orig_k) {
       bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
     }
-
-    orig_ik->constants()->add_dumped_interned_strings();
   }
 }
 

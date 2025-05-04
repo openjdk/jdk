@@ -646,15 +646,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_heap() && _extra_interned_strings != nullptr) {
-    for (int i = 0; i < _extra_interned_strings->length(); i ++) {
-      OopHandle string = _extra_interned_strings->at(i);
-      HeapShared::add_to_dumped_interned_strings(string.resolve());
-    }
-  }
-#endif
-
   _builder.gather_source_objs();
   _builder.reserve_buffer();
 
