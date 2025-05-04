@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,66 +30,70 @@ import jdk.internal.util.OperatingSystem;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public enum CapturableState {
-    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0, OperatingSystem.isWindows()),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, OperatingSystem.isWindows()),
-    ERRNO             ("errno",           JAVA_INT, 1 << 2, true);
+    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0),
+    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1),
+    ERRNO             ("errno",           JAVA_INT, 1 << 2);
 
-    public static final StructLayout LAYOUT = MemoryLayout.structLayout(
-        supportedStates().map(CapturableState::layout).toArray(MemoryLayout[]::new));
-    public static final List<CapturableState> BY_ORDINAL = List.of(values());
+    public static final StructLayout LAYOUT;
+    public static final Map<String, CapturableState> SUPPORTED;
 
     static {
-        assert (BY_ORDINAL.size() < Integer.SIZE); // Update LinkerOptions.CaptureCallState
+        var values = values();
+
+        if (OperatingSystem.isWindows()) {
+            SUPPORTED = Map.of(GET_LAST_ERROR.stateName, GET_LAST_ERROR,
+                               WSA_GET_LAST_ERROR.stateName, WSA_GET_LAST_ERROR,
+                               ERRNO.stateName, ERRNO);
+        } else {
+            SUPPORTED = Map.of(ERRNO.stateName, ERRNO);
+        }
+
+        MemoryLayout[] stateLayouts = new MemoryLayout[SUPPORTED.size()];
+        int i = 0;
+        for (var supported : SUPPORTED.values()) {
+            stateLayouts[i++] = supported.layout;
+        }
+        LAYOUT = MemoryLayout.structLayout(stateLayouts);
     }
 
-    private final String stateName;
-    private final ValueLayout layout;
-    private final int mask;
-    private final boolean isSupported;
+    public final String stateName;
+    public final ValueLayout layout;
+    public final int mask;
 
-    CapturableState(String stateName, ValueLayout layout, int mask, boolean isSupported) {
+    CapturableState(String stateName, ValueLayout layout, int mask) {
         this.stateName = stateName;
         this.layout = layout.withName(stateName);
         this.mask = mask;
-        this.isSupported = isSupported;
-    }
-
-    private static Stream<CapturableState> supportedStates() {
-        return Stream.of(values()).filter(CapturableState::isSupported);
     }
 
     public static CapturableState forName(String name) {
-        return Stream.of(values())
-                .filter(stl -> stl.stateName().equals(name))
-                .filter(CapturableState::isSupported)
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown name: " + name +", must be one of: "
-                            + supportedStates()
-                                    .map(CapturableState::stateName)
-                                    .collect(Collectors.joining(", "))));
+        var ret = SUPPORTED.get(name);
+        if (ret == null) {
+            throw new IllegalArgumentException(
+                    "Unknown name: " + name +", must be one of: "
+                            + SUPPORTED.keySet());
+        }
+        return ret;
     }
 
-    public String stateName() {
-        return stateName;
-    }
-
-    public ValueLayout layout() {
-        return layout;
-    }
-
-    public int mask() {
-        return mask;
-    }
-
-    public boolean isSupported() {
-        return isSupported;
+    /**
+     * Returns a list-like display string for a captured state mask.
+     * Enclosed with brackets.
+     */
+    public static String displayString(int mask) {
+        var displayList = new ArrayList<>();
+        for (var e : SUPPORTED.values()) {
+            if ((mask & e.mask) != 0) {
+                displayList.add(e.stateName);
+            }
+        }
+        return displayList.toString();
     }
 }

@@ -859,12 +859,11 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            int set = Stream.of(Objects.requireNonNull(capturedState))
-                    .map(Objects::requireNonNull)
-                    .map(CapturableState::forName)
-                    .mapToInt(state -> 1 << state.ordinal())
-                    .sum();
-            return new LinkerOptions.CaptureCallState(set);
+            int mask = 0;
+            for (var state : capturedState) {
+                mask |= CapturableState.forName(state).mask;
+            }
+            return new LinkerOptions.CaptureCallState(mask);
         }
 
          /**
