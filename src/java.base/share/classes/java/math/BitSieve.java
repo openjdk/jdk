@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,22 +44,22 @@ package java.math;
  * @author  Michael McCloskey
  * @since   1.3
  */
-class BitSieve {
+final class BitSieve {
     /**
      * Stores the bits in this bitSieve.
      */
-    private long bits[];
+    private final long[] bits;
 
     /**
      * Length is how many bits this sieve holds.
      */
-    private int length;
+    private final int length;
 
     /**
      * A small sieve used to filter out multiples of small primes in a search
      * sieve.
      */
-    private static BitSieve smallSieve = new BitSieve();
+    private static final BitSieve smallSieve = new BitSieve();
 
     /**
      * Construct a "small sieve" with a base of 0.  This constructor is
