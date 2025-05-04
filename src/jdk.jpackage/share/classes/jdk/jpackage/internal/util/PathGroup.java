@@ -24,7 +24,10 @@
  */
 package jdk.jpackage.internal.util;
 
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +57,8 @@ public final class PathGroup {
      * @param paths the initial paths
      */
     public PathGroup(Map<Object, Path> paths) {
+        paths.keySet().forEach(Objects::requireNonNull);
+        paths.values().forEach(Objects::requireNonNull);
         entries = new HashMap<>(paths);
     }
 
@@ -179,12 +185,30 @@ public final class PathGroup {
      */
     public long sizeInBytes() throws IOException {
         long reply = 0;
-        for (Path dir : roots().stream().filter(Files::isDirectory).toList()) {
-            try (Stream<Path> stream = Files.walk(dir)) {
-                reply += stream.filter(Files::isRegularFile).mapToLong(f -> f.toFile().length()).sum();
+        final var roots = roots();
+        try {
+            for (Path dir : roots.stream().filter(Files::isDirectory).toList()) {
+                try (Stream<Path> stream = Files.walk(dir)) {
+                    reply += stream.mapToLong(PathGroup::sizeInBytes).sum();
+                }
             }
+            reply += roots.stream().mapToLong(PathGroup::sizeInBytes).sum();
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
         return reply;
+    }
+
+    private static long sizeInBytes(Path path) throws UncheckedIOException {
+        if (Files.isRegularFile(path)) {
+            try {
+                return Files.size(path);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -300,16 +324,42 @@ public final class PathGroup {
         }
     }
 
-    private record CopySpec(Path from, Path to, Path fromNormalized, Path toNormalized) {
+    private record CopySpec(Path basepath, Path from, Path to) {
         CopySpec {
-            Objects.requireNonNull(from);
-            Objects.requireNonNull(fromNormalized);
+            Objects.requireNonNull(basepath);
             Objects.requireNonNull(to);
-            Objects.requireNonNull(toNormalized);
+            if (!from.startsWith(basepath)) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if ((obj == null) || (getClass() != obj.getClass())) {
+                return false;
+            }
+            CopySpec other = (CopySpec) obj;
+            return Objects.equals(from, other.from) && Objects.equals(to, other.to);
+        }
+
+        Path fromNormalized() {
+            return from().normalize();
+        }
+
+        Path toNormalized() {
+            return to().normalize();
         }
 
         CopySpec(Path from, Path to) {
-            this(from, to, from.normalize(), to.normalize());
+            this(from, from, to);
         }
     }
 
@@ -361,21 +411,22 @@ public final class PathGroup {
         Objects.requireNonNull(excludePaths);
         Objects.requireNonNull(handler);
 
-        final var copySpecMap = copySpecs.stream().<CopySpec>mapMulti((copySpec, consumer) -> {
-            final var src = copySpec.from;
+
+        final var filteredCopySpecs = copySpecs.stream().<CopySpec>mapMulti((copySpec, consumer) -> {
+            final var src = copySpec.from();
 
             if (!Files.exists(src) || match(src, excludePaths)) {
                 return;
             }
 
-            if (Files.isDirectory(copySpec.from)) {
+            if (Files.isDirectory(copySpec.from())) {
                 final var dst = copySpec.to;
                 final var walkMode = followSymlinks ? new FileVisitOption[] { FileVisitOption.FOLLOW_LINKS } : new FileVisitOption[0];
                 try (final var files = Files.walk(src, walkMode)) {
                     files.filter(file -> {
                         return !match(file, excludePaths);
                     }).map(file -> {
-                        return new CopySpec(file, dst.resolve(src.relativize(file)));
+                        return new CopySpec(src, file, dst.resolve(src.relativize(file)));
                     }).toList().forEach(consumer::accept);
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);
@@ -383,25 +434,32 @@ public final class PathGroup {
             } else {
                 consumer.accept(copySpec);
             }
-        }).collect(toMap(CopySpec::toNormalized, x -> x, (x, y) -> {
-            if (x.fromNormalized.equals(y.fromNormalized)) {
-                // Duplicated copy specs, accept.
-                return x;
-            } else {
-                throw new IllegalStateException(String.format(
-                        "Duplicate source files [%s] and [%s] for [%s] destination file", x.from, y.from, x.to));
-            }
+        }).collect(groupingBy(CopySpec::fromNormalized, collectingAndThen(toSet(), copySpecGroup -> {
+            return copySpecGroup.stream().filter(copySpec -> {
+                for (final var otherCopySpec : copySpecGroup) {
+                    if (otherCopySpec != copySpec && !otherCopySpec.basepath().equals(copySpec.basepath())
+                            && otherCopySpec.basepath().startsWith(copySpec.basepath())) {
+                        return false;
+                    }
+                }
+                return true;
+            }).toList();
+        }))).values().stream().flatMap(Collection::stream).toList();
+
+        filteredCopySpecs.stream().collect(toMap(CopySpec::toNormalized, x -> x, (x, y) -> {
+            throw new IllegalStateException(String.format(
+                    "Duplicate source files [%s] and [%s] for [%s] destination file", x.from(), y.from(), x.to()));
         }));
 
         try {
-            copySpecMap.values().stream().forEach(copySpec -> {
+            filteredCopySpecs.stream().forEach(copySpec -> {
                 try {
-                    if (Files.isSymbolicLink(copySpec.from)) {
-                        handler.copySymbolicLink(copySpec.from, copySpec.to);
-                    } else if (Files.isDirectory(copySpec.from)) {
-                        handler.createDirectory(copySpec.to);
+                    if (Files.isSymbolicLink(copySpec.from())) {
+                        handler.copySymbolicLink(copySpec.from(), copySpec.to());
+                    } else if (Files.isDirectory(copySpec.from())) {
+                        handler.createDirectory(copySpec.to());
                     } else {
-                        handler.copyFile(copySpec.from, copySpec.to);
+                        handler.copyFile(copySpec.from(), copySpec.to());
                     }
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);
