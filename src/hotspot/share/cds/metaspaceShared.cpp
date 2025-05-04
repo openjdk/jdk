@@ -757,6 +757,10 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    FinalImageRecipes::apply_recipes(CHECK);
+  }
+
   while (true) {
     ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
@@ -777,7 +781,7 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
     // Keep scanning until we have linked no more classes.
   }
 
-  // Resolve constant pool entries -- we don't load any new classes during this stage
+  // Eargerly resolve all string constants in constant pools
   {
     ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
@@ -785,12 +789,8 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
       InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
-      AOTConstantPoolResolver::dumptime_resolve_constants(ik, CHECK);
+      AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
-  }
-
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    FinalImageRecipes::apply_recipes(CHECK);
   }
 }
 
