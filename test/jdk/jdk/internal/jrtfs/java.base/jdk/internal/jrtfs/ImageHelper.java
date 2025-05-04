@@ -114,5 +114,10 @@ public final class ImageHelper {
         public int hashCode() {
             return node.hashCode() ^ 0x55555555;
         }
+
+        @Override
+        public String toString() {
+            return (isDirectory() ? "[D] " : isLink() ? "[L] " : "[F] ") + node.getName();
+        }
     }
 }
