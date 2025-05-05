@@ -395,7 +395,8 @@ TEST_OPTS keywords.</p>
 <h4 id="jobs">JOBS</h4>
 <p>Currently only applies to JTReg.</p>
 <h4 id="timeout_factor">TIMEOUT_FACTOR</h4>
-<p>Currently only applies to JTReg.</p>
+<p>Currently only applies to <a href="#timeout_factor-1">JTReg
+-timeoutFactor</a>.</p>
 <h4 id="java_options">JAVA_OPTIONS</h4>
 <p>Applies to JTReg, GTest and Micro.</p>
 <h4 id="vm_options">VM_OPTIONS</h4>
@@ -438,8 +439,13 @@ otherwise it defaults to JOBS, except for Hotspot, where the default is
 <em>number of CPU cores/2</em>, but never more than <em>memory size in
 GB/2</em>.</p>
 <h4 id="timeout_factor-1">TIMEOUT_FACTOR</h4>
-<p>The timeout factor (<code>-timeoutFactor</code>).</p>
-<p>Defaults to 4.</p>
+<p>The <code>TIMEOUT_FACTOR</code> is forwarded to JTReg framework
+itself (<code>-timeoutFactor</code>). Also, some test cases that
+programmatically wait a certain amount of time will apply this factor.
+If we run in interpreted mode (<code>-Xcomp</code>), <a
+href="../make/RunTests.gmk">RunTest.gmk</a> will automatically adjust
+this factor to compensate for the interpreter not being as fast as JITed
+code. Defaults to 1.</p>
 <h4 id="failure_handler_timeout">FAILURE_HANDLER_TIMEOUT</h4>
 <p>Sets the argument <code>-timeoutHandlerTimeout</code> for JTReg. The
 default value is 0. This is only valid if the failure handler is
