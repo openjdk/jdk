@@ -134,7 +134,7 @@ public final class BufferStack {
             }
         }
 
-        private final class Frame implements Arena {
+        private final class Frame implements Arena, NoInitSegmentAllocator {
 
             private final boolean locked;
             private final long parentOffset;
@@ -165,10 +165,18 @@ public final class BufferStack {
             @ForceInline
             @Override
             @SuppressWarnings("restricted")
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
+            public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
+                // Do not zero initialize, so override the default zeroing method
+                // Todo: Maybe we could introduce a parameter that indicates zeroing
+                return allocateNoInit(byteSize, byteAlignment);
+            }
+
+            @ForceInline
+            @Override
+            public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
                 // Make sure we are on the right thread and not closed
                 MemorySessionImpl.toMemorySession(confinedArena).checkValidState();
-                return frame.allocate(byteSize, byteAlignment);
+                return (NativeMemorySegmentImpl) frame.allocate(byteSize, byteAlignment);
             }
 
             @ForceInline

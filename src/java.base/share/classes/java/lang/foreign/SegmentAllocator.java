@@ -721,9 +721,9 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(long byteSize) {
-        return this instanceof NoInitSegmentAllocator noInit ?
-                noInit.allocateNoInit(byteSize, 1) :
-                allocate(byteSize);
+        return this instanceof NoInitSegmentAllocator noInit
+                ? noInit.allocateNoInit(byteSize, 1)
+                : allocate(byteSize);
     }
 
     @ForceInline

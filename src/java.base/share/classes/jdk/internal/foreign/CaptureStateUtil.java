@@ -24,8 +24,8 @@
 package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
+import jdk.internal.lang.stable.InternalStableFactories;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
@@ -36,10 +36,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 /**
  * An internal utility class that can be used to adapt system-call-styled method handles
@@ -48,15 +50,34 @@ import java.util.function.Function;
 public final class CaptureStateUtil {
 
     private static final StructLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
-    private static final CarrierLocalArenaPools POOL = CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
+    private static final BufferStack POOL = BufferStack.of(CAPTURE_LAYOUT);
+
+    // Do not use a lambda in order to allow early use in the init sequence
+    private static final Function<BasicKey, MethodHandle> UNDERLYING_MAKE_BASIC_HANDLE = new Function<>() {
+        @Override
+        public MethodHandle apply(BasicKey basicKey) {
+            return makeBasicHandle(basicKey);
+        }
+    };
 
     // The `BASIC_HANDLE_CACHE` contains the common "basic handles" that can be reused for
     // all adapted method handles. Keeping as much as possible reusable reduces the number
     // of combinators needed to form an adapted method handle.
-    // The map is lazily computed.
+    // The function is lazily computed.
     //
-    private static final Map<BasicKey, MethodHandle> BASIC_HANDLE_CACHE =
-            new ConcurrentHashMap<>();
+    private static final Function<BasicKey, MethodHandle> BASIC_HANDLE_CACHE;
+
+    static {
+        final Set<BasicKey> inputs = new HashSet<>();
+        // The Cartesian product : (int.class, long.class) x ("errno", ...)
+        // Do not use Streams in order to enable "early" use in the init sequence.
+        for (Class<?> c : List.of(int.class, long.class)) {
+            for (MemoryLayout layout : CAPTURE_LAYOUT.memberLayouts()) {
+                inputs.add(new BasicKey(c, layout.name().orElseThrow()));
+            }
+        }
+        BASIC_HANDLE_CACHE = InternalStableFactories.function(inputs, UNDERLYING_MAKE_BASIC_HANDLE);
+    }
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
     // specific "basic handle" in the `BASIC_HANDLE_CACHE`.
@@ -138,13 +159,13 @@ public final class CaptureStateUtil {
      * {@snippet lang = java:
      *         private static final MemoryLayout CAPTURE_LAYOUT =
      *                 Linker.Option.captureStateLayout();
-     *         private static final CarrierLocalArenaPools POOL =
-     *                 CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
+     *         private static final BufferStack POOL =
+     *                 BufferStack.of(CAPTURE_LAYOUT);
      *
      *         public int invoke(MethodHandle target,
      *                           String stateName,
      *                           int a, int b) {
-     *             try (var arena = POOL.take()) {
+     *             try (var arena = POOL.pushFrame(CAPTURE_LAYOUT)) {
      *                 final MemorySegment segment = arena.allocate(CAPTURE_LAYOUT);
      *                 final int result = (int) handle.invoke(segment, a, b);
      *                 if (result >= 0) {
@@ -177,16 +198,7 @@ public final class CaptureStateUtil {
         final BasicKey basicKey = new BasicKey(target, stateName);
 
         // ((int | long), MemorySegment)(int | long)
-        final MethodHandle basicHandle = BASIC_HANDLE_CACHE
-                // Do not use a lambda in order to allow early use in the init sequence
-                // This is equivalent to:
-                //   computeIfAbsent(basicKey, CaptureStateUtil::basicHandleFor);
-                .computeIfAbsent(basicKey, new Function<>() {
-                    @Override
-                    public MethodHandle apply(BasicKey basicKey) {
-                        return basicHandleFor(basicKey);
-                    }
-                });
+        final MethodHandle basicHandle = BASIC_HANDLE_CACHE.apply(basicKey);
 
         // Make `target` specific adaptations of the basic handle
 
@@ -206,7 +218,7 @@ public final class CaptureStateUtil {
 
         // Use an `Arena` for the first argument instead and extract a segment from it.
         // (C0=Arena, C1-Cn)(int|long)
-        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, handleFor(ALLOCATE));
+        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, HANDLES_CACHE.apply(ALLOCATE));
 
         // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
@@ -219,7 +231,7 @@ public final class CaptureStateUtil {
         // cleanup action and invoke `Arena::close` when it is run. The `cleanup` handle
         // does not have to have all parameters. It can have zero or more.
         // (Throwable, (int|long), Arena)(int|long)
-        cleanup = MethodHandles.collectArguments(cleanup, 2, handleFor(ARENA_CLOSE));
+        cleanup = MethodHandles.collectArguments(cleanup, 2, HANDLES_CACHE.apply(ARENA_CLOSE));
 
         // Combine the `innerAdapted` and `cleanup` action into a try/finally block.
         // (Arena, C1-Cn)(int|long)
@@ -228,10 +240,10 @@ public final class CaptureStateUtil {
         // Acquire the arena from the global pool.
         // With this, we finally arrive at the intended method handle:
         // (C1-Cn)(int|long)
-        return MethodHandles.collectArguments(tryFinally, 0, handleFor(ACQUIRE_ARENA));
+        return MethodHandles.collectArguments(tryFinally, 0, HANDLES_CACHE.apply(ACQUIRE_ARENA));
     }
 
-    private static MethodHandle basicHandleFor(BasicKey basicKey) {
+    private static MethodHandle makeBasicHandle(BasicKey basicKey) {
         final VarHandle vh = CAPTURE_LAYOUT.varHandle(
                 MemoryLayout.PathElement.groupElement(basicKey.stateName()));
         // This MH is used to extract the named captured state
@@ -258,15 +270,15 @@ public final class CaptureStateUtil {
         if (basicKey.returnType().equals(int.class)) {
             // (int, MemorySegment)int
             return MethodHandles.guardWithTest(
-                    handleFor(NON_NEGATIVE_INT),
-                    handleFor(SUCCESS_INT),
-                    handleFor(ERROR_INT).bindTo(intExtractor));
+                    HANDLES_CACHE.apply(NON_NEGATIVE_INT),
+                    HANDLES_CACHE.apply(SUCCESS_INT),
+                    HANDLES_CACHE.apply(ERROR_INT).bindTo(intExtractor));
         } else {
             // (long, MemorySegment)long
             return MethodHandles.guardWithTest(
-                    handleFor(NON_NEGATIVE_LONG),
-                    handleFor(SUCCESS_LONG),
-                    handleFor(ERROR_LONG).bindTo(intExtractor));
+                    HANDLES_CACHE.apply(NON_NEGATIVE_LONG),
+                    HANDLES_CACHE.apply(SUCCESS_LONG),
+                    HANDLES_CACHE.apply(ERROR_LONG).bindTo(intExtractor));
         }
     }
 
@@ -274,7 +286,7 @@ public final class CaptureStateUtil {
 
     @ForceInline
     private static Arena acquireArena() {
-        return POOL.take();
+        return POOL.pushFrame(CAPTURE_LAYOUT);
     }
 
     @ForceInline
@@ -322,8 +334,6 @@ public final class CaptureStateUtil {
 
     // The method handles below are bound to static methods residing in this class
 
-    // Todo: Replace the cache below with a stable value Map
-
     private static final int
             NON_NEGATIVE_INT  = 0,
             SUCCESS_INT       = 1,
@@ -335,20 +345,16 @@ public final class CaptureStateUtil {
             ALLOCATE          = 7,
             ARENA_CLOSE       = 8;
 
-    private static final @Stable MethodHandle[] HANDLES = new MethodHandle[ARENA_CLOSE + 1];
-
-    private static MethodHandle handleFor(int index) {
-        MethodHandle handle = HANDLES[index];
-        if (handle == null) {
-            synchronized (HANDLES) {
-                handle = HANDLES[index];
-                if (handle == null) {
-                    HANDLES[index] = (handle = makeHandle(index));
-                }
-            }
+    // Do not use a lambda in order to allow early use in the init sequence
+    private static final IntFunction<MethodHandle> UNDERLYING_MAKE_HANDLE = new IntFunction<MethodHandle>() {
+        @Override
+        public MethodHandle apply(int value) {
+            return makeHandle(value);
         }
-        return handle;
-    }
+    };
+
+    private static final IntFunction<MethodHandle> HANDLES_CACHE =
+            InternalStableFactories.intFunction(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 

@@ -24,7 +24,6 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import jdk.internal.foreign.CaptureStateUtil;
-import jdk.internal.foreign.CarrierLocalArenaPools;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -54,8 +53,6 @@ import java.util.concurrent.TimeUnit;
         "--enable-native-access=ALL-UNNAMED"})
 public class CaptureStateUtilBench {
 
-    private static final CarrierLocalArenaPools POOLS = CarrierLocalArenaPools.create(16);
-
     private static final String ERRNO_NAME = "errno";
 
     private static final VarHandle ERRNO_HANDLE = Linker.Option.captureStateLayout()
@@ -76,20 +73,6 @@ public class CaptureStateUtilBench {
     @Benchmark
     public int explicitAllocationFail() throws Throwable {
         try (var arena = Arena.ofConfined()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invokeExact(arena.allocate(SIZE), -1, 1);
-        }
-    }
-
-    @Benchmark
-    public int tlAllocationSuccess() throws Throwable {
-        try (var arena = POOLS.take()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invokeExact(arena.allocate(SIZE), 0, 0);
-        }
-    }
-
-    @Benchmark
-    public int tlAllocationFail() throws Throwable {
-        try (var arena = POOLS.take()) {
             return (int) DUMMY_EXPLICIT_ALLOC.invokeExact(arena.allocate(SIZE), -1, 1);
         }
     }
