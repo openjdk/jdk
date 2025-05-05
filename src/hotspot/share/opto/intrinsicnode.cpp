@@ -293,11 +293,13 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
 
       assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
       assert((lo == (bt == T_INT) ? min_jint : min_jlong) || lo == 0, "");
-      // For upper bound estimation of result value range with a constant input we
-      // pessimistically pick max_int value to prevent incorrect constant folding
-      // in case input equals above estimated lower bound.
-      hi = src_type->hi_as_long() == lo ? hi : src_type->hi_as_long();
-      hi = result_bit_width < mask_bit_width ? (1L << result_bit_width) - 1 : hi;
+
+      // Following rules applies to upper bound estimation of results value range
+      // res.hi = src.hi iff src.hi > 0 else max_value
+      // if result_bit_width < mask_bit_width, then we can further constrain res.hi as follows.
+      // res.hi = MIN(res.hi, (1L << result_bit_width) - 1)
+      hi = src_type->hi_as_long() >= 0 ? src_type->hi_as_long() : hi;
+      hi = result_bit_width < mask_bit_width ? MIN2((1L << result_bit_width) - 1, hi) : hi;
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
