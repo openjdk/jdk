@@ -108,9 +108,9 @@ final class MacFileAssociationBuilder {
     private String lsHandlerRank;
     private String nsDocumentClass;
     private String nsPersistentStoreTypeKey;
-    private boolean lsTypeIsPackage;
-    private boolean lsSupportsOpeningDocumentsInPlace;
-    private boolean uiSupportsDocumentBrowser;
+    private Boolean lsTypeIsPackage;
+    private Boolean lsSupportsOpeningDocumentsInPlace;
+    private Boolean uiSupportsDocumentBrowser;
     private List<String> utTypeConformsTo;
     private List<String> nsExportableTypes;
 
