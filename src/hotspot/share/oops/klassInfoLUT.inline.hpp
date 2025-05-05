@@ -32,22 +32,30 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
 
-ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
+inline uint32_t KlassInfoLUT::at(unsigned index) {
+  assert(_initialized, "not initialized");
   assert(_table != nullptr, "LUT table does not exist");
   assert(index < max_entries(), "oob (%x vs %x)", index, max_entries());
   return _table[index];
 }
 
-ALWAYSINLINE klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
+inline void KlassInfoLUT::put(unsigned index, klute_raw_t klute) {
+  assert(_initialized, "not initialized");
+  assert(_table != nullptr, "LUT table does not exist");
+  assert(index < max_entries(), "oob (%x vs %x)", index, max_entries());
+  _table[index] = klute;
+}
+
+inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const klute_raw_t klute = at(nk);
 #if INCLUDE_CDS
-  if (klute == KlassLUTEntry::invalid_entry) {
-    // This branch, and the late_register_klass mechanic, only exists because it is
-    // so difficult to iterate CDS classes after loading CDS archives. See discussion
-    // surrounding 8353225. Hopefully we can remove this in the future.
-    return late_register_klass(nk);
-  }
+//  if (klute == KlassLUTEntry::invalid_entry) {
+//    // This branch, and the late_register_klass mechanic, only exists because it is
+//    // so difficult to iterate CDS classes after loading CDS archives. See discussion
+//    // surrounding 8353225. Hopefully we can remove this in the future.
+//    return late_register_klass(nk);
+//  }
 #else
   assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
 #endif

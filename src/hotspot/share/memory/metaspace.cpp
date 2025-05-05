@@ -53,6 +53,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
@@ -809,6 +810,9 @@ void Metaspace::global_initialize() {
     // Set up compressed class pointer encoding.
     // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
+
+    // Initialize KLUT
+    KlassInfoLUT::initialize();
 
     // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
     // establish a protection zone. Accidentally decoding a zero nKlass ID and then using it will result

@@ -80,12 +80,12 @@ class ClassLoaderData;
 class KlassInfoLUT : public AllStatic {
 
   static ClassLoaderData* _common_loaders[4]; // See "loader" bits in Klute
-
-
   static unsigned _max_entries;
   static klute_raw_t* _table;
+  static bool _initialized;
   static inline unsigned max_entries() { return _max_entries; }
   static inline klute_raw_t at(unsigned index);
+  static inline void put(unsigned index, klute_raw_t klute);
   static void allocate_lookup_table();
 
   // Klass registration statistics. These are not expensive and therefore
@@ -142,6 +142,8 @@ public:
 
   static klute_raw_t register_klass(const Klass* k);
   static inline klute_raw_t lookup(narrowKlass k);
+
+  static void scan_klass_range_update_lut(address from, address to);
 
   // ClassLoaderData handling
   static void register_cld_if_needed(ClassLoaderData* cld);

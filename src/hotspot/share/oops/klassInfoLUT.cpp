@@ -36,11 +36,12 @@
 #include "utilities/ostream.hpp"
 
 ClassLoaderData* KlassInfoLUT::_common_loaders[4] = { nullptr };
+bool KlassInfoLUT::_initialized = false;
 klute_raw_t* KlassInfoLUT::_table = nullptr;
 unsigned KlassInfoLUT::_max_entries = -1;
 
 void KlassInfoLUT::initialize() {
-
+  assert(!_initialized, "Only once");
   if (UseCompactObjectHeaders) {
 
     // Init Lookup Table
@@ -80,6 +81,7 @@ void KlassInfoLUT::initialize() {
     assert(_table[0] == KlassLUTEntry::invalid_entry, "Sanity"); // must be 0xffffffff
 
   }
+  _initialized = true;
 }
 
 static const char* common_loader_names[4] = { "other", "boot", "app", "platform" };
@@ -156,7 +158,7 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
   // Calculate klute from Klass properties and update the table value.
   const klute_raw_t klute = KlassLUTEntry::build_from_klass(k);
   if (add_to_table) {
-    _table[nk] = klute;
+    put(nk, klute);
   }
   log_klass_registration(k, nk, add_to_table, klute, "registered");
 
@@ -183,6 +185,45 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 }
 
 #if INCLUDE_CDS
+
+void KlassInfoLUT::scan_klass_range_update_lut(address from, address to) {
+  assert(_initialized, "not initialized");
+  if (use_lookup_table()) {
+    log_info(klut)("Scanning CDS klass range: " RANGE2FMT, RANGE2FMTARGS(from, to));
+    const size_t stepsize = CompressedKlassPointers::klass_alignment_in_bytes();
+    assert(stepsize >= K, "only for COH and large alignments");
+    assert(is_aligned(from, stepsize), "from address unaligned");
+    assert(is_aligned(to, stepsize), "to address unaligned");
+    assert(from < to, "invalid range");
+    unsigned found = 0;
+    for (address here = from; here < to; here += stepsize) {
+      if (!os::is_readable_range(here, here + sizeof(Klass))) {
+        continue;
+      }
+      const Klass* const candidate = (Klass*)here;
+      if (!candidate->check_stamp()) {
+        continue;
+      }
+      const klute_raw_t klute = candidate->klute();
+      if (klute == KlassLUTEntry::invalid_entry) {
+        continue;
+      }
+      // Above checks may of course, rarely, give false positives. That is absolutely fine: we
+      // then copy a "klute" from a "Klass" to the table that really isn't either klute nor Klass.
+      // Since that slot is not used anyway by a real Klass, nothing bad will happen.
+      // OTOH, *missing* to add a klute for a Klass that really exists would be really bad. Hence,
+      // err on the plus side.
+      const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(candidate));
+      put(nk, klute);
+      log_info(klut)("Suspected Klass found at " PTR_FORMAT "; adding nk %u, klute: " INT32_FORMAT_X_0,
+                     p2i(candidate), nk, klute);
+      found ++;
+    }
+    log_info(klut)("Found and registered %u possible Klass locations in CDS klass range " RANGE2FMT,
+                   found, RANGE2FMTARGS(from, to));
+  }
+}
+
 // We only tolerate this for CDS:
 // We currently have no simple way to iterate all Klass structures in a CDS/AOT archive
 // before the JVM starts calling methods on oops that refer to these classes. This is because
@@ -194,6 +235,7 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 // Unfortunately, this adds a branch into the very hot oop iteration path, albeit one that
 // would hopefully be mitigated by branch prediction since this should be exceedingly rare.
 klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
+  assert(_initialized, "not initialized");
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
@@ -204,7 +246,7 @@ klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const klute_raw_t klute = k->klute();
   const KlassLUTEntry klutehelper(klute);
   assert(klutehelper.is_valid(), "Must be a valid klute");
-  _table[nk] = klutehelper.value();
+  put(nk, klutehelper.value());
   ClassLoaderData* const cld = k->class_loader_data();
   if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
     register_cld_if_needed(cld);
@@ -336,11 +378,13 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
 void KlassInfoLUT::update_hit_stats(klute_raw_t klute) {
   const KlassLUTEntry klutehelper(klute);
+  assert(klutehelper.is_valid(), "invalid klute");
   switch (klutehelper.kind()) {
 #define XX(name, shortname) case name ## Kind: inc_hits_ ## shortname(); break;
   KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
-  default: ShouldNotReachHere();
+  default:
+    fatal("invalid klute kind (%x)", klute);
   };
   if (klutehelper.is_instance() && !klutehelper.ik_carries_infos()) {
     switch (klutehelper.kind()) {

@@ -198,6 +198,8 @@ private:
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
 
+  const uint64_t _stamp;
+
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 public:
@@ -792,6 +794,8 @@ public:
 
   // Returns true if this Klass needs to be addressable via narrow Klass ID.
   inline bool needs_narrow_id() const;
+
+  bool check_stamp() const;
 
 };
 

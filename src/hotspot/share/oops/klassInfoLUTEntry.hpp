@@ -216,6 +216,8 @@ public:
 
   static klute_raw_t build_from_klass(const Klass* k);
 
+  bool is_valid_for_klass(const Klass* k) const;
+
 #ifdef ASSERT
   void verify_against_klass(const Klass* k) const;
 #endif

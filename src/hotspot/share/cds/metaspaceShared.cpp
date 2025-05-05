@@ -75,6 +75,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
@@ -1436,6 +1437,14 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
       }
       CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);
+
+      // Initialize KLUT
+      KlassInfoLUT::initialize();
+
+      // Scan the CDS klass range for already existing Klass structures
+      const address start = (address)align_up(archive_space_rs.base() + prot_zone_size, CompressedKlassPointers::klass_alignment_in_bytes());
+      const address end   = (address)archive_space_rs.base() + archive_space_rs.size();
+      KlassInfoLUT::scan_klass_range_update_lut(start, end);
 
       // map_or_load_heap_region() compares the current narrow oop and klass encodings
       // with the archived ones, so it must be done after all encodings are determined.

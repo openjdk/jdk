@@ -185,6 +185,8 @@ klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
 
 void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
+  assert(k->check_stamp(), "Stamp invalid");
+
   // General static asserts that need access to private members, but I don't want
   // to place them in a header
   STATIC_ASSERT(bits_common + bits_specific == bits_total);
