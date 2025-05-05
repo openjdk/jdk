@@ -133,10 +133,10 @@ public enum OperatingSystem {
     /**
      * Returns the OperatingSystem of the build.
      * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
+     * Names not recognized throw IllegalArgumentException.
      */
     private static OperatingSystem initOS() {
-        // Called lazily, valueOf has overhead
+        // Called lazily, valueOf has MH.dropArguments overhead from reflective invocation
         return OperatingSystem.valueOf(PlatformProps.CURRENT_OS_STRING.toUpperCase(Locale.ROOT));
     }
 }

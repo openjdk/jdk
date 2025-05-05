@@ -92,7 +92,7 @@ public final class CapturableState {
      * Enclosed with brackets.
      */
     public static String displayString(int mask) {
-        var displayList = new ArrayList<>();
+        var displayList = new ArrayList<>(); // unordered
         for (var e : LOOKUP.values()) {
             if ((mask & e.mask) != 0) {
                 displayList.add(e.stateName);
