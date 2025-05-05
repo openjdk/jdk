@@ -31,54 +31,57 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-public enum CapturableState {
-    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1),
-    ERRNO             ("errno",           JAVA_INT, 1 << 2);
+public final class CapturableState {
 
     public static final StructLayout LAYOUT;
-    public static final Map<String, CapturableState> SUPPORTED;
+    private static final Map<String, CapturableState> LOOKUP;
 
     static {
-        var values = values();
+        List<CapturableState> supported;
 
         if (OperatingSystem.isWindows()) {
-            SUPPORTED = Map.of(GET_LAST_ERROR.stateName, GET_LAST_ERROR,
-                               WSA_GET_LAST_ERROR.stateName, WSA_GET_LAST_ERROR,
-                               ERRNO.stateName, ERRNO);
+            supported = List.of(
+                    new CapturableState("GetLastError",    JAVA_INT, 1 << 0),
+                    new CapturableState("WSAGetLastError", JAVA_INT, 1 << 1),
+                    new CapturableState("errno",           JAVA_INT, 1 << 2)
+            );
         } else {
-            SUPPORTED = Map.of(ERRNO.stateName, ERRNO);
+            supported = List.of(new CapturableState("errno", JAVA_INT, 1 << 2));
         }
 
-        MemoryLayout[] stateLayouts = new MemoryLayout[SUPPORTED.size()];
+        MemoryLayout[] stateLayouts = new MemoryLayout[supported.size()];
+        @SuppressWarnings("rawtypes")
+        Map.Entry<String, CapturableState>[] entries = new Map.Entry[supported.size()];
         int i = 0;
-        for (var supported : SUPPORTED.values()) {
-            stateLayouts[i++] = supported.layout;
+        for (var each : supported) {
+            stateLayouts[i++] = each.layout;
+            entries[i++] = Map.entry(each.stateName, each);
         }
         LAYOUT = MemoryLayout.structLayout(stateLayouts);
+        LOOKUP = Map.ofEntries(entries);
     }
 
     public final String stateName;
     public final ValueLayout layout;
     public final int mask;
 
-    CapturableState(String stateName, ValueLayout layout, int mask) {
+    private CapturableState(String stateName, ValueLayout layout, int mask) {
         this.stateName = stateName;
         this.layout = layout.withName(stateName);
         this.mask = mask;
     }
 
     public static CapturableState forName(String name) {
-        var ret = SUPPORTED.get(name);
+        var ret = LOOKUP.get(name);
         if (ret == null) {
             throw new IllegalArgumentException(
                     "Unknown name: " + name +", must be one of: "
-                            + SUPPORTED.keySet());
+                            + LOOKUP.keySet());
         }
         return ret;
     }
@@ -89,11 +92,16 @@ public enum CapturableState {
      */
     public static String displayString(int mask) {
         var displayList = new ArrayList<>();
-        for (var e : SUPPORTED.values()) {
+        for (var e : LOOKUP.values()) {
             if ((mask & e.mask) != 0) {
                 displayList.add(e.stateName);
             }
         }
         return displayList.toString();
+    }
+
+    @Override
+    public String toString() {
+        return stateName;
     }
 }
