@@ -78,19 +78,15 @@ public abstract class SocketImpl implements SocketOptions {
     public SocketImpl() { }
 
     /**
-     * Creates either a stream or a datagram socket.
+     * Creates a stream socket.
      *
      * @apiNote
-     * The {@link Socket} constructors to create a datagram socket
-     * are deprecated for removal and throw an exception when creating
-     * a datagram socket. Those deprecated constructors no longer call
-     * this method.
-     * <p>
-     * This method will be re-specified in a future release to not
-     * support creating datagram sockets.
+     * The {@code stream} parameter provided a way in early JDK releases
+     * to create a {@link Socket} that used a datagram socket.
+     * It is no longer possible to do that and therefore this method will
+     * always be called by {@code Socket} with {@code stream} as {@code true}.
      *
-     * @param      stream   if {@code true}, create a stream socket;
-     *                      otherwise, create a datagram socket.
+     * @param      stream   must be {@code true}.
      * @throws     IOException  if an I/O error occurs while creating the
      *               socket.
      */
