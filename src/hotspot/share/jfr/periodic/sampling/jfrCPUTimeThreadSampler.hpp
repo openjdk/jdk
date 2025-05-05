@@ -36,73 +36,44 @@ class NonJavaThread;
 
 class JfrCPUTimeTrace;
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
+// Fixed size stack abstraction.
 // Designed to be only used under lock and read linearly
-template <class T>
-class JfrCPUTimeStack {
+class JfrLocalCPUTimeTraceStack {
 
-  T* _data;
+  JfrCPUTimeTrace** _data;
   u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
 public:
-  JfrCPUTimeStack(u4 capacity) : _capacity(capacity), _head(0) {
-    _data = JfrCHeapObj::new_array<T>(capacity);
-  }
+  JfrLocalCPUTimeTraceStack(u4 capacity);
 
-  ~JfrCPUTimeStack() {
-    JfrCHeapObj::free(_data, sizeof(T) * _capacity);
-  }
+  ~JfrLocalCPUTimeTraceStack();
 
-  bool enqueue(T element) {
-    u4 elementIndex;
-    do {
-      elementIndex = Atomic::load_acquire(&_head);
-      if (elementIndex >= _capacity) {
-        return false;
-      }
-    } while (Atomic::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
-    _data[elementIndex] = element;
-    return true;
-  }
+  bool enqueue(JfrCPUTimeTrace* element);
 
-  T dequeue() {
-    u4 elementIndex;
-    do {
-      elementIndex = Atomic::load_acquire(&_head);
-      if (elementIndex == 0) {
-        return nullptr;
-      }
-    } while (Atomic::cmpxchg(&_head, elementIndex, elementIndex - 1) != elementIndex);
-    return _data[--elementIndex];
-  }
+  JfrCPUTimeTrace* dequeue();
 
-  T at(u4 index) {
+  // deletes all samples in the queue
+  void set_capacity(u4 capacity);
+
+  JfrCPUTimeTrace* at(u4 index) {
     assert(index < _head, "invariant");
     return _data[index];
   }
 
   u4 size() const {
-    return Atomic::load(&_head);
+    return _head;
   }
 
   void set_size(u4 size) {
-    Atomic::store(&_head, size);
+    _head = size;
   }
 
   u4 capacity() const {
     return _capacity;
   }
 
-  // deletes all samples in the queue
-  void set_capacity(u4 capacity) {
-    _head = 0;
-    T* new_data = JfrCHeapObj::new_array<T>(capacity);
-    JfrCHeapObj::free(_data, _capacity * sizeof(T));
-    _data = new_data;
-    _capacity = capacity;
-  }
 
   bool is_full() const {
     return size() >= _capacity;
@@ -119,12 +90,9 @@ public:
   }
 
   void clear() {
-    Atomic::release_store(&_head, (u4)0);
+    _head = 0;
   }
 };
-
-// Used as a per thread sampling stack
-typedef JfrCPUTimeStack<JfrCPUTimeTrace*> JfrCPUTimeTraceStack;
 
 class JfrCPUTimeThreadSampler;
 

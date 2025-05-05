@@ -303,7 +303,7 @@ private:
   volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_events = false;
   volatile u4 _cpu_time_lost_samples = 0;
-  JfrCPUTimeTraceStack _cpu_time_jfr_stack{100};
+  JfrLocalCPUTimeTraceStack _cpu_time_jfr_stack{100};
   volatile bool _wants_cpu_time_out_of_safepoint_recording = false;
 
 public:
@@ -324,7 +324,7 @@ public:
   void set_has_cpu_time_jfr_events(bool has_events);
   bool has_cpu_time_jfr_events();
 
-  JfrCPUTimeTraceStack& cpu_time_jfr_stack();
+  JfrLocalCPUTimeTraceStack& cpu_time_jfr_stack();
 
   void increment_cpu_time_lost_samples();
   u4 get_and_reset_cpu_time_lost_samples();

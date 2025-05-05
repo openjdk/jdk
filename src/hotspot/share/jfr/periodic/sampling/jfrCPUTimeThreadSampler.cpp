@@ -222,6 +222,41 @@ private:
   }
 };
 
+JfrLocalCPUTimeTraceStack::JfrLocalCPUTimeTraceStack(u4 capacity) : _capacity(capacity), _head(0) {
+  _data = JfrCHeapObj::new_array<JfrCPUTimeTrace*>(capacity);
+}
+
+JfrLocalCPUTimeTraceStack::~JfrLocalCPUTimeTraceStack() {
+  JfrCHeapObj::free(_data, sizeof(JfrCPUTimeTrace*) * _capacity);
+}
+
+bool JfrLocalCPUTimeTraceStack::enqueue(JfrCPUTimeTrace* element) {
+  u4 elementIndex = _head;
+  if (elementIndex >= _capacity) {
+    return false;
+  }
+  _head++;
+  _data[elementIndex] = element;
+  return true;
+}
+
+JfrCPUTimeTrace* JfrLocalCPUTimeTraceStack::dequeue() {
+  u4 elementIndex = _head;
+  if (elementIndex == 0) {
+    return nullptr;
+  }
+  _head--;
+  return _data[elementIndex];
+}
+
+void JfrLocalCPUTimeTraceStack::set_capacity(u4 capacity) {
+  _head = 0;
+  JfrCPUTimeTrace** new_data = JfrCHeapObj::new_array<JfrCPUTimeTrace*>(capacity);
+  JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeTrace*));
+  _data = new_data;
+  _capacity = capacity;
+}
+
 // Queue used for the fresh traces
 //
 // Fixed size async-signal-safe MPMC queue backed by an array.
@@ -588,7 +623,7 @@ void JfrCPUTimeThreadSampler::record_out_of_safepoint() {
 
 
 void JfrCPUTimeThreadSampler::record_out_of_safepoint(JavaThread* thread, JfrThreadLocal* jtl) {
-  JfrCPUTimeTraceStack& stack = jtl->cpu_time_jfr_stack();
+  JfrLocalCPUTimeTraceStack& stack = jtl->cpu_time_jfr_stack();
   JfrStackFrame* tmp_stackframes = JfrCHeapObj::new_array<JfrStackFrame>(_max_frames_per_trace);
  // assert(!stack.is_empty(), "invariant");
   for (u4 i = 0; i < stack.size(); i++) {
@@ -607,7 +642,7 @@ static volatile size_t count = 0;
 void JfrCPUTimeThreadSampler::record_event(JavaThread* thread, JfrCPUTimeTrace* trace, JfrStackFrame* tmp_stackframes) {
   EventCPUTimeSample event(UNTIMED);
   traceid sid = 0;
-  if (trace->successful() && trace->stacktrace().nr_of_frames() > 0) {
+  if (trace->stacktrace().nr_of_frames() > 0) {
     JfrStackTrace tmp_stacktrace(tmp_stackframes, _max_frames_per_trace);
     if (trace->stacktrace().store(&tmp_stacktrace)) {
       sid = JfrStackTraceRepository::add(tmp_stacktrace);
@@ -622,7 +657,7 @@ void JfrCPUTimeThreadSampler::record_event(JavaThread* thread, JfrCPUTimeTrace* 
   event.commit();
   Atomic::inc(&count);
   if (Atomic::load(&count) % 1000 == 0) {
-    log_trace(jfr)("CPU time sample %ld\n", Atomic::load(&count));
+    log_trace(jfr)("CPU time sample %zu\n", Atomic::load(&count));
   }
 }
 
@@ -646,8 +681,7 @@ void JfrCPUTimeThreadSampler::on_safepoint(JavaThread* thread) {
   jtl->acquire_cpu_time_jfr_dequeue_lock();
 
   jtl->set_has_cpu_time_jfr_events(false);
-
-  JfrCPUTimeTraceStack& stack = jtl->cpu_time_jfr_stack();
+  JfrLocalCPUTimeTraceStack& stack = jtl->cpu_time_jfr_stack();
   JfrStackFrame* tmp_stackframes = JfrCHeapObj::new_array<JfrStackFrame>(_max_frames_per_trace);
   for (u4 i = 0; i < stack.size(); i++) {
     JfrCPUTimeThreadSampler::record_event(thread, stack.at(i), tmp_stackframes);

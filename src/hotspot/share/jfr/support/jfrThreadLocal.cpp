@@ -151,6 +151,7 @@ void JfrThreadLocal::on_java_thread_start(JavaThread* starter, JavaThread* start
     // skip level 2 to skip frames Thread.start() and Thread.start0()
     startee->jfr_thread_local()->set_cached_stack_trace_id(JfrStackTraceRepository::record(starter, 2));
   }
+
 }
 
 void JfrThreadLocal::release(Thread* t) {
@@ -599,7 +600,7 @@ bool JfrThreadLocal::has_cpu_time_jfr_events() {
   return Atomic::load_acquire(&_has_cpu_time_jfr_events);
 }
 
-JfrCPUTimeTraceStack& JfrThreadLocal::cpu_time_jfr_stack() {
+JfrLocalCPUTimeTraceStack& JfrThreadLocal::cpu_time_jfr_stack() {
   return _cpu_time_jfr_stack;
 }
 
