@@ -22,9 +22,8 @@
  *
  */
 
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
+
+#include "asm/macroAssembler.hpp"
 #include "cds/aotCacheAccess.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -44,14 +43,21 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1BarrierSetRuntime.hpp"
-#endif
-#if INCLUDE_ZGC
-#include "gc/z/zBarrierSetRuntime.hpp"
+#include "utilities/copy.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
 #endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_G1GC
+#include "gc/g1/g1BarrierSetRuntime.hpp"
+#endif
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahRuntime.hpp"
+#endif
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetRuntime.hpp"
 #endif
 
 #include <sys/stat.h>
@@ -1313,6 +1319,11 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_G1GC
   SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_post_entry);
   SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_pre_entry);
+#endif
+#if INCLUDE_SHENANDOAHGC
+  SET_ADDRESS(_extrs, ShenandoahRuntime::write_ref_field_pre);
+  SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom);
+  SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
 #endif
 #if INCLUDE_ZGC
   SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr());
