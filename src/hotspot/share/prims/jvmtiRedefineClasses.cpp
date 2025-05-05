@@ -1638,7 +1638,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
     } // end for each old_cp entry
 
     ConstantPool::copy_bsm_data(old_cp, merge_cp_p, CHECK_false);
-    (*merge_cp_p)->extend_bsm_data(scratch_cp, CHECK_false);
+    merge_cp_p->extend_bsm_data(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
