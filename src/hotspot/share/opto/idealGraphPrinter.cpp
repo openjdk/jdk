@@ -924,9 +924,8 @@ static bool should_end_stack_walk(const char* name) {
 
 void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
   char buf[O_BUFLEN];
-  int count = 0;
   int frame = 0;
-  while (count++ < StackPrintLimit && fr.pc() != nullptr) {
+  for (int count = 0; count < StackPrintLimit && fr.pc() != nullptr; count++) {
     int offset;
     buf[0] = '\0';
     bool found = os::dll_address_to_function_name(fr.pc(), buf, sizeof(buf), &offset);
