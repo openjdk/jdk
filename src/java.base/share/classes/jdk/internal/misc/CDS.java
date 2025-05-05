@@ -504,13 +504,15 @@ public class CDS {
     /**
      * This class is used only by native JVM code to spawn a child JVM process to assemble
      * the AOT cache. <code>args[]</code> are passed in the <code>JAVA_TOOL_OPTIONS</code>
-     * environment variable as described in
-     * https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions
+     * environment variable.
      */
     private static class ProcessLauncher {
         static int execWithJavaToolOptions(String javaLauncher, String args[]) throws IOException, InterruptedException {
             ProcessBuilder pb = new ProcessBuilder().inheritIO().command(javaLauncher);
             StringBuilder sb = new StringBuilder();
+
+            // Encode the args as described in
+            // https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions
             String prefix = "";
             for (String arg : args) {
                 sb.append(prefix);
