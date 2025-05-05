@@ -91,7 +91,7 @@ public interface HotSpotJVMCIBackendFactory {
      *            specifies a CPU feature and its value is a mask for a bit in {@code features}
      * @param features_pointer pointer to {@code _vm_target_features} field of {@code Abstract_VM_Version}
      * @param features_vector_offset offset of feature_vector field in {@code VM_Features}
-     * @param features_vector_size_offset offset of feature_vector_size field in {@code VM_Features}
+     * @param features_vector_size size of feature vector
      * @param features_element_shift_count log2 of dynamic feature bit vector lanesize in bits.
      * @param renaming maps from VM feature names to enum constant names where the two differ
      * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
