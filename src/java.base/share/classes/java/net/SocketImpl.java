@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,12 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @apiNote
      * The {@link Socket} constructors to create a datagram socket
-     * are deprecated for removal. This method will be re-specified
-     * in a future release to not support creating datagram sockets.
+     * are deprecated for removal and have been respecified to throw
+     * an exception when creating a datagram socket. Those deprecated
+     * constructors no longer call this method.
+     * <p>
+     * This method will be re-specified in a future release to not
+     * support creating datagram sockets.
      *
      * @param      stream   if {@code true}, create a stream socket;
      *                      otherwise, create a datagram socket.
