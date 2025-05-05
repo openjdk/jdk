@@ -27,6 +27,7 @@
 
 #include "oops/instanceKlass.hpp"
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "oops/klassInfoLUTEntry.inline.hpp"
@@ -155,26 +156,28 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
   }
 }
 
-ALWAYSINLINE ClassLoaderData* InstanceKlass::cld_from_klut_or_klass(oop obj, klute_raw_t klute) {
+template <typename T, class OopClosureType>
+inline void InstanceKlass::do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  // Resolve the CLD from the klute. If that fails, resolve CLD from Klass. Call closure->do_cld.
   const unsigned perma_cld_index = KlassLUTEntry(klute).loader_index();
   ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);
-  if (cld != nullptr) {
-#ifdef ASSERT
-    const ClassLoaderData* const cld_real = obj->klass()->class_loader_data();
-    assert(cld == cld_real, "CLD mismatch (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(cld_real), p2i(cld));
-#endif
-    return cld;
+  if (cld == nullptr) {
+    Klass* const k = obj->klass();
+    cld = k->class_loader_data();
+    if (cld == nullptr) {
+      // Unfortunately, this can now happen due to AOT, so we add another branch here
+      assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
+      return;
+    }
   }
-  // Rare path
-  return obj->klass()->class_loader_data();
+  Devirtualizer::do_cld(closure, cld);
 }
 
 // Iterate over all oop fields and metadata.
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
   if (Devirtualizer::do_metadata(closure)) {
-    ClassLoaderData* cld = cld_from_klut_or_klass(obj, klute);
-    Devirtualizer::do_cld(closure, cld);
+    do_cld_from_klut_or_klass<T>(obj, closure, klute);
   }
   const KlassLUTEntry klutehelper(klute);
   if (klutehelper.ik_carries_infos()) {
@@ -220,8 +223,7 @@ template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      ClassLoaderData* cld = cld_from_klut_or_klass(obj, klute);
-      Devirtualizer::do_cld(closure, cld);
+      do_cld_from_klut_or_klass<T>(obj, closure, klute);
     }
   }
   const KlassLUTEntry klutehelper(klute);

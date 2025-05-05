@@ -1017,7 +1017,8 @@ public:
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
-  static inline ClassLoaderData* cld_from_klut_or_klass(oop obj, klute_raw_t klute);
+  template <typename T, class OopClosureType>
+  static inline void do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klut);
 
  public:
 

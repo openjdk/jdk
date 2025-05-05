@@ -74,7 +74,8 @@ inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
 ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(int index) {
   assert(index >= 0 && index <= 3, "Sanity");
   ClassLoaderData* cld = _common_loaders[index];
-  assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);
+  // Because of AOT, we can now encounter objects of Klasses that are not fully linked yet
+  // assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);
   return cld;
 }
 
