@@ -41,4 +41,4 @@ java/lang/invoke/DumpMethodHandleInternals.java                 0000000 generic-
 
 # The test uses "--add-modules jdk.internal.le" during production.
 # So the test is incompatible with AOT_JDK testing because because all runs must have consistent module options on the command line.
-test/jdk/java/lang/IO/IO.java				0000000 generic-all
+test/jdk/java/lang/IO/IO.java                                   0000000 generic-all
