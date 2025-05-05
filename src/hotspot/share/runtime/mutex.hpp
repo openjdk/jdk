@@ -210,6 +210,15 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // by fatal error handler.
   static void print_owned_locks_on_error(outputStream* st);
   static void print_lock_ranks(outputStream* st);
+
+  /*
+    This fence is introduced to the mutex code in order to make the critical
+    section provided by the mutex follow the Roach-Motel semantics. One could have
+    two mutex types, say, a strict one with a fence and a non-strict without a fence,
+    but it would complicate things. Having a fence does not have any significant impact
+    on peformance, as this is an internal VM mutex and is generally not in hot code parts.
+  */
+  void fence_before_lock(){OrderAccess::fence();}
 };
 
 class Monitor : public Mutex {
