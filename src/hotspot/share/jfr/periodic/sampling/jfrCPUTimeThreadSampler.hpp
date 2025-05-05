@@ -72,7 +72,7 @@ public:
     do {
       elementIndex = Atomic::load_acquire(&_head);
       if (elementIndex == 0) {
-        return NULL;
+        return nullptr;
       }
     } while (Atomic::cmpxchg(&_head, elementIndex, elementIndex - 1) != elementIndex);
     return _data[--elementIndex];

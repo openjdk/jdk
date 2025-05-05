@@ -127,7 +127,9 @@ void JfrThreadLocal::on_start(Thread* t) {
   if (JfrRecorder::is_recording()) {
     JfrCheckpointManager::write_checkpoint(t);
     if (t->is_Java_thread()) {
-      send_java_thread_start_event(JavaThread::cast(t));
+      JavaThread* jt = JavaThread::cast(t);
+      send_java_thread_start_event(jt);
+      JfrCPUTimeThreadSampling::on_javathread_create(jt);
     }
   }
   if (t->jfr_thread_local()->has_cached_stack_trace()) {
@@ -224,6 +226,7 @@ void JfrThreadLocal::on_exit(Thread* t) {
     JavaThread* const jt = JavaThread::cast(t);
     send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
     JfrThreadCPULoadEvent::send_event_for_thread(jt);
+    JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
 }
