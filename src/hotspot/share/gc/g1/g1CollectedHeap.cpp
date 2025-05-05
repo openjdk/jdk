@@ -1234,7 +1234,8 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
   // Allocate a new reserved space, preferring to use large pages.
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              alignment,
-                                             preferred_page_size);
+                                             preferred_page_size,
+                                             mtGC);
 
   size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =
