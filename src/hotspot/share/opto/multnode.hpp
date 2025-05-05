@@ -49,6 +49,8 @@ public:
   ProjNode* proj_out(uint which_proj) const; // Get a named projection
   ProjNode* proj_out_or_null(uint which_proj) const;
   ProjNode* proj_out_or_null(uint which_proj, bool is_io_use) const;
+  uint number_of_projs(uint which_proj) const;
+  uint number_of_projs(uint which_proj, bool is_io_use) const;
 };
 
 //------------------------------ProjNode---------------------------------------
@@ -109,7 +111,7 @@ public:
 // for array elements/fields.
 class NarrowMemProjNode : public ProjNode {
 private:
-  const TypePtr* _adr_type;
+  const TypePtr* const _adr_type;
 protected:
   virtual uint hash() const {
     return ProjNode::hash() + _adr_type->hash();
@@ -129,9 +131,7 @@ public:
   virtual const TypePtr* adr_type() const {
     return _adr_type;
   }
-  void set_adr_type(const TypePtr* adr_type) {
-    _adr_type = adr_type;
-  }
+
   virtual int Opcode() const;
 
 #ifndef PRODUCT

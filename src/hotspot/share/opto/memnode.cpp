@@ -5470,6 +5470,16 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   }
 }
 
+bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    NarrowMemProjNode* proj = fast_out(i)->as_Proj()->isa_NarrowMemProj();
+    if (proj != nullptr && proj->adr_type() == adr_type) {
+      return true;
+    }
+  }
+  return false;
+}
+
 #ifdef ASSERT
 bool InitializeNode::stores_are_sane(PhaseValues* phase) {
   if (is_complete())

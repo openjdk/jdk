@@ -4464,14 +4464,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           if (proj != nullptr) {
             const TypePtr* adr_type = proj->adr_type();
             const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
-            if (adr_type != new_adr_type) {
+            if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
               DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
               assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
               NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
-              Node* existing = igvn->hash_find_insert(new_proj);
-              if (existing != nullptr) {
-                ShouldNotReachHere();
-              }
               igvn->set_type(new_proj, new_proj->bottom_type());
               record_for_optimizer(new_proj);
               set_map(proj, new_proj);
@@ -4906,7 +4902,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       }
       nmm->set_memory_at(i, (cur != nullptr) ? cur : mem);
-      record_for_optimizer(nmm);
       // Find any instance of the current type if we haven't encountered
       // already a memory slice of the instance along the memory chain.
       for (uint ni = new_index_start; ni < new_index_end; ni++) {

@@ -1366,7 +1366,9 @@ public:
   void replace_mem_projs_by(Node* mem, Compile* C);
   void replace_mem_projs_by(Node* mem, PhaseIterGVN* ivn);
 
- private:
+  bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
+
+private:
   void remove_extra_zeroes();
 
   // Find out where a captured store should be placed (or already is placed).

@@ -1407,6 +1407,7 @@ class DUIterator_Common {
 //  }
 // Compiles in product mode to a unsigned integer index, which indexes
 // onto a repeatedly reloaded base pointer of x->_out.  The loop predicate
+// onto a repeatedly reloaded base pointer of x->_out.  The loop predicate
 // also reloads x->_outcnt.  If you delete, you must perform "--i" just
 // before continuing the loop.  You must delete only the last-produced
 // edge.  You must delete only a single copy of the last-produced edge,

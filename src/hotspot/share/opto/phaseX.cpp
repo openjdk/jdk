@@ -1655,8 +1655,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
     InitializeNode* init = use->as_Allocate()->initialization();
     if (init != nullptr) {
-      Node* imem = init->proj_out_or_null(TypeFunc::Memory);
-      if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+      for (DUIterator_Fast imax, i = init->fast_outs(imax); i < imax; i++) {
+        ProjNode* proj = init->fast_out(i)->isa_Proj();
+        if (proj->_con == TypeFunc::Memory) {
+          add_users_to_worklist0(proj, worklist);
+        }
+      }
     }
   }
   // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
@@ -1670,8 +1674,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   if (use_op == Op_Initialize) {
-    Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
-    if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      ProjNode* proj = use->fast_out(i)->isa_Proj();
+      if (proj->_con == TypeFunc::Memory) {
+        add_users_to_worklist0(proj, worklist);
+      }
+    }
   }
   // Loading the java mirror from a Klass requires two loads and the type
   // of the mirror load depends on the type of 'n'. See LoadNode::Value().
