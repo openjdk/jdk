@@ -27,12 +27,10 @@ package gc.z;
  * @test TestUncommit
  * @requires vm.gc.Z
  * @summary Test ZGC uncommit unused memory
- * @library /test/lib
  * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=5 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;
-import jdk.test.lib.Utils;
 
 public class TestUncommit {
     private static final int delay = 5 * 1000; // milliseconds
@@ -110,7 +108,7 @@ public class TestUncommit {
             throw new Exception("Uncommitted too fast");
         }
 
-        if (actualDelay > delay * 3 * Utils.TIMEOUT_FACTOR) {
+        if (actualDelay > delay * 3) {
             throw new Exception("Uncommitted too slow");
         }
 
