@@ -2426,6 +2426,7 @@ void Node::dump_bfs(const int max_distance) const {
 }
 
 // Call this from debugger, with stack handling register arguments for IGV dumps.
+// Example: p find_node(741)->dump_bfs(7, find_node(741), "c+A!", $sp, $fp, $pc).
 void Node::dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const {
   frame fr(sp, fp, pc);
   dump_bfs(max_distance, target, options, tty, &fr);

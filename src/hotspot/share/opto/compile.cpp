@@ -5205,6 +5205,7 @@ IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
 // Called from debugger. Prints method to the default file with the default phase name.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
+// Use in debugger (gdb/rr): p igv_print($sp, $fp, $pc).
 void igv_print(void* sp, void* fp, void* pc) {
   frame fr(sp, fp, pc);
   Compile::current()->igv_print_method_to_file(nullptr, false, &fr);
@@ -5219,6 +5220,7 @@ void igv_print(const char* phase_name, void* sp, void* fp, void* pc) {
 // Called from debugger. Prints method with the default phase name to the default network or the one specified with
 // the network flags for the Ideal Graph Visualizer, or to the default file depending on the 'network' argument.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
+// Use in debugger (gdb/rr): p igv_print(true, $sp, $fp, $pc).
 void igv_print(bool network, void* sp, void* fp, void* pc) {
   frame fr(sp, fp, pc);
   if (network) {
@@ -5228,7 +5230,8 @@ void igv_print(bool network, void* sp, void* fp, void* pc) {
   }
 }
 
-// Same as igv_print(bool network) above but with a specified phase name.
+// Same as igv_print(bool network, ...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_print(true, "MyPhase", $sp, $fp, $pc).
 void igv_print(bool network, const char* phase_name, void* sp, void* fp, void* pc) {
   frame fr(sp, fp, pc);
   if (network) {
@@ -5246,12 +5249,14 @@ void igv_print_default() {
 // Called from debugger, especially when replaying a trace in which the program state cannot be altered like with rr replay.
 // A method is appended to an existing default file with the default phase name. This means that igv_append() must follow
 // an earlier igv_print(*) call which sets up the file. This works regardless of any Ideal Graph Visualizer flags set or not.
+// Use in debugger (gdb/rr): p igv_append($sp, $fp, $pc).
 void igv_append(void* sp, void* fp, void* pc) {
   frame fr(sp, fp, pc);
   Compile::current()->igv_print_method_to_file(nullptr, true, &fr);
 }
 
-// Same as igv_append() above but with a specified phase name.
+// Same as igv_append(...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_append("MyPhase", $sp, $fp, $pc).
 void igv_append(const char* phase_name, void* sp, void* fp, void* pc) {
   frame fr(sp, fp, pc);
   Compile::current()->igv_print_method_to_file(phase_name, true, &fr);
