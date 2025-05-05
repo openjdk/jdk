@@ -60,6 +60,28 @@ class TypeVariableWithBound5<T extends CharSequence> {
 class TypeVariableWithBound6<T extends Object & CharSequence> {
 }
 
+class TypeVariableBoundsOnMethods {
+    public <@TA T> void test1() {}
+    public <@TA T extends Object> void test2() {}
+    public <T extends @TA Object> void test3() {}
+    public <T extends @TA CharSequence> void test4() {}
+    public <T extends @TA Object & CharSequence> void test5() {}
+    public <T extends Object & @TA CharSequence> void test6() {}
+    public <T extends CharSequence> void test7() {}
+    public <T extends Object & CharSequence> void test8() {}
+}
+
+class TypeVariableBoundsOnConstructors {
+    public <@TA T> TypeVariableBoundsOnConstructors(boolean b) {}
+    public <@TA T extends Object> TypeVariableBoundsOnConstructors(byte b) {}
+    public <T extends @TA Object> TypeVariableBoundsOnConstructors(char c) {}
+    public <T extends @TA CharSequence> TypeVariableBoundsOnConstructors(short s) {}
+    public <T extends @TA Object & CharSequence> TypeVariableBoundsOnConstructors(int i) {}
+    public <T extends Object & @TA CharSequence> TypeVariableBoundsOnConstructors(long l) {}
+    public <T extends CharSequence> TypeVariableBoundsOnConstructors(float f) {}
+    public <T extends Object & CharSequence> TypeVariableBoundsOnConstructors(double d) {}
+}
+
 @Target(ElementType.TYPE_USE)
 @interface TA {
 }
