@@ -2050,19 +2050,19 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   // load pre-calculated powers of 31:
   //   31^^MaxVectorSize             ==> scalar register
   //   31^^(MaxVectorSize-1)...31^^0 ==> vector registers
-  la(pows31, ExternalAddress(adr_pows31));
+  la(tmp3, ExternalAddress(adr_pows31));
+  lw(pows31, Address(tmp3, -1 * sizeof(jint)));
   mv(t1, nof_vec_elems);
   vsetvli(t0, t1, Assembler::e32, Assembler::m4);
-  vle32_v(v_coeffs, pows31);
-  lw(pows31, Address(pows31, -1 * sizeof(jint)));
+  vle32_v(v_coeffs, tmp3);
   // clear vector registers used in intermediate calculations
   vmv_v_i(v_sum, 0);
   vmv_v_i(v_powmax, 0);
   vmv_v_i(v_result, 0);
-  vmv_s_x(v_zred, x0);
   // set initial values
   vmv_s_x(v_powmax, pows31);
   vmv_s_x(v_result, result);
+  vmv_s_x(v_zred, x0);
 
   bind(VEC_LOOP);
   vmul_vv(v_result, v_result, v_powmax);
