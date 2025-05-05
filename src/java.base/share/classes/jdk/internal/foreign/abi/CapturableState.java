@@ -55,7 +55,7 @@ public final class CapturableState {
         }
 
         MemoryLayout[] stateLayouts = new MemoryLayout[supported.size()];
-        @SuppressWarnings("rawtypes")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         Map.Entry<String, CapturableState>[] entries = new Map.Entry[supported.size()];
         int i = 0;
         for (var each : supported) {
