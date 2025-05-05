@@ -81,7 +81,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             return false;
         }
         // Prevent reentry via an orElseSet(supplier)
-        preventReentry();
+        StableUtil.preventReentry(this);
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
@@ -132,7 +132,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @DontInline
     private T orElseSetSlowPath(Supplier<? extends T> supplier) {
-        preventReentry();
+        StableUtil.preventReentry(this);
         synchronized (this) {
             final Object t = contents;  // Plain semantics suffice here
             if (t == null) {
@@ -167,14 +167,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     // Private methods
-
-    // This method is not annotated with @ForceInline as it is always called
-    // in a slow path.
-    private void preventReentry() {
-        if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursive initialization of a stable value is illegal");
-        }
-    }
 
     /**
      * Wraps the provided {@code newValue} and tries to set the contents.

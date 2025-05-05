@@ -40,8 +40,12 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
 import java.nio.file.Path;
 import java.text.Normalizer;
+import java.util.function.ToIntFunction;
+
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -544,6 +548,12 @@ public final class URI
     // The remaining fields may be computed on demand, which is safe even in
     // the face of multiple threads racing to initialize them
     private transient String schemeSpecificPart;
+
+    private static final ToIntFunction<URI> HASH_UPDATER = StableUpdater.ofInt(
+            URI.class, "hash", new ToIntFunction<>() {
+                @ForceInline @Override public int applyAsInt(URI uri) { return uri.hashCode0(); }}, -1);
+
+    // Used reflectively by HASH_UPDATER
     private transient int hash;        // Zero ==> undefined
 
     private transient String decodedUserInfo;
@@ -1575,25 +1585,24 @@ public final class URI
      * @return  A hash-code value for this URI
      */
     public int hashCode() {
-        int h = hash;
-        if (h == 0) {
-            h = hashIgnoringCase(0, scheme);
-            h = hash(h, fragment);
-            if (isOpaque()) {
-                h = hash(h, schemeSpecificPart);
+        return HASH_UPDATER.applyAsInt(this);
+    }
+
+    private int hashCode0() {
+        int h = 0;
+        h = hashIgnoringCase(0, scheme);
+        h = hash(h, fragment);
+        if (isOpaque()) {
+            h = hash(h, schemeSpecificPart);
+        } else {
+            h = hash(h, path);
+            h = hash(h, query);
+            if (host != null) {
+                h = hash(h, userInfo);
+                h = hashIgnoringCase(h, host);
+                h += 1949 * port;
             } else {
-                h = hash(h, path);
-                h = hash(h, query);
-                if (host != null) {
-                    h = hash(h, userInfo);
-                    h = hashIgnoringCase(h, host);
-                    h += 1949 * port;
-                } else {
-                    h = hash(h, authority);
-                }
-            }
-            if (h != 0) {
-                hash = h;
+                h = hash(h, authority);
             }
         }
         return h;

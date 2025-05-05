@@ -26,6 +26,8 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
@@ -47,6 +49,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
 import java.nio.ByteBuffer;
 import java.util.StringJoiner;
+import java.util.function.ToIntFunction;
 
 /**
  * A {@code Method} provides information about, and access to, a single method
@@ -93,7 +96,19 @@ public final class Method extends Executable {
     private Method root;
     private transient volatile MethodRepository genericInfo;
     private @Stable MethodAccessor methodAccessor;
+
+    private static final ToIntFunction<Method> HASH_UPDATER =
+            StableUpdater.ofIntRaw(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
+                @Override
+                public int applyAsInt(Method method) {
+                    return method.getDeclaringClass().getName().hashCode() ^ method.getName()
+                            .hashCode();
+                }
+            }, 0); // The `hashCode()` is specified so, zeroReplacement is 0
     // End shared states
+
+    // Used reflectively via HASH_UPDATER
+    @Stable
     private int hash; // not shared right now, eligible if expensive
 
     // Generics infrastructure
@@ -360,13 +375,7 @@ public final class Method extends Executable {
      * method's declaring class name and the method's name.
      */
     public int hashCode() {
-        int hc = hash;
-
-        if (hc == 0) {
-            hc = hash = getDeclaringClass().getName().hashCode() ^ getName()
-                .hashCode();
-        }
-        return hc;
+        return HASH_UPDATER.applyAsInt(this);
     }
 
     /**
