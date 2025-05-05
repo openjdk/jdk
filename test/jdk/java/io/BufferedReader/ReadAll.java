@@ -79,7 +79,8 @@ public class ReadAll {
 
     @AfterAll
     public static void cleanup() throws IOException {
-        file.delete();
+        if (file != null)
+            file.delete();
     }
 
     @Test
