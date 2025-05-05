@@ -450,7 +450,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     @Override
     protected void create(boolean stream) throws IOException {
         if (!stream) {
-            throw new IllegalArgumentException("datagram socket creation not supported");
+            throw new IOException("Datagram socket creation not supported");
         }
         synchronized (stateLock) {
             if (state != ST_NEW)
