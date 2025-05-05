@@ -162,7 +162,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      * Constructs an X11InputMethod instance. It initializes the XIM
      * environment if it's not done yet.
      *
-     * @exception AWTException if XOpenIM() failed.
+     * @throws AWTException if XOpenIM() failed.
      */
     public X11InputMethodBase() throws AWTException {
         // supports only the locale in which the VM is started

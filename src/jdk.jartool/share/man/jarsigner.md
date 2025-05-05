@@ -929,6 +929,11 @@ was selected, and the others were discarded.
 hasNonexistentEntries
 :   This JAR contains signed entries for files that do not exist.
 
+internalInconsistenciesDetected
+:   This JAR contains internal inconsistencies detected during verification
+    that may result in different contents when reading via JarFile
+    and JarInputStream.
+
 legacyAlg
 :   An algorithm used is considered a security risk but not disabled.
 
