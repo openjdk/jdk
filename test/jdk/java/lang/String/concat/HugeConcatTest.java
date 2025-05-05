@@ -53,21 +53,25 @@ public class HugeConcatTest {
 
     @Test
     public void testConcat_Latin1_Latin1() {
+        assertThrows(OutOfMemoryError.class, () -> { var s = hugeLatin1 + hugeLatin1; });
         assertThrows(OutOfMemoryError.class, () -> hugeLatin1.concat(hugeLatin1));
     }
 
     @Test
     public void testConcat_Latin1_UTF16() {
+        assertThrows(OutOfMemoryError.class, () -> { var s = hugeLatin1 + hugeUTF16; });
         assertThrows(OutOfMemoryError.class, () -> hugeLatin1.concat(hugeUTF16));
     }
 
     @Test
     public void testConcat_UTF16_Latin1() {
+        assertThrows(OutOfMemoryError.class, () -> { var s = hugeUTF16 + hugeLatin1; });
         assertThrows(OutOfMemoryError.class, () -> hugeUTF16.concat(hugeLatin1));
     }
 
     @Test
     public void testConcat_UTF16_UTF16() {
+        assertThrows(OutOfMemoryError.class, () -> { var s = hugeUTF16 + hugeUTF16; });
         assertThrows(OutOfMemoryError.class, () -> hugeUTF16.concat(hugeUTF16));
     }
 
