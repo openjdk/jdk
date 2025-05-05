@@ -38,6 +38,11 @@ static void test_intn_t() {
   static_assert(std::numeric_limits<intn_t<nbits>>::min() <= intn_t<nbits>(-1) &&
                 intn_t<nbits>(-1) < intn_t<nbits>(0) &&
                 intn_t<nbits>(0) <= std::numeric_limits<intn_t<nbits>>::max(), "basic sanity");
+  constexpr int period = intn_t<nbits>::max - intn_t<nbits>::min + 1;
+  for (int i = std::numeric_limits<signed char>::min(); i < std::numeric_limits<signed char>::max(); i++) {
+    ASSERT_EQ(intn_t<nbits>(i), intn_t<nbits>(i + period));
+    ASSERT_EQ(int(intn_t<nbits>(i)), int(intn_t<nbits>(i + period)));
+  }
   for (int i = intn_t<nbits>::min; i <= intn_t<nbits>::max; i++) {
     ASSERT_EQ(i, int(intn_t<nbits>(i)));
     if (i > intn_t<nbits>::min) {
