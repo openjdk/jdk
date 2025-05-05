@@ -294,6 +294,20 @@ public class Basic {
         ).iterator();
     }
 
+    // These Lists don't all implement RandomAccess; they're Lists that should be
+    // tested for proper propagation of the RandomAccess markers.
+    @DataProvider(name="randomAccessLists")
+    public Iterator<Object[]> randomAccessLists() {
+        return Arrays.asList(
+            new Object[] { "ArrayList", new ArrayList<>(ORIGINAL) },
+            new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()) },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL) },
+            new Object[] { "LinkedList", new LinkedList<>(ORIGINAL) },
+            new Object[] { "ListOf", ORIGINAL },
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL) }
+        ).iterator();
+    }
+
     // mode bit tests for subList testing
 
     boolean reverseList(int mode) { return (mode & 1) != 0; }
@@ -873,5 +887,15 @@ public class Basic {
         var rev1 = list.reversed();
         var rev2 = list.reversed();
         assertSame(rev1, rev2);
+    }
+
+    @Test(dataProvider="randomAccessLists")
+    public void testRandomAccess(String label, List<String> list) {
+        assertEquals(list.reversed() instanceof RandomAccess, list instanceof RandomAccess);
+
+        // Collections.synchronizedList() preservation of RandomAccess is somewhat
+        // tested by java/util/Collection/MOAT.java but it might not have all these cases.
+        assertEquals(sylist(list) instanceof RandomAccess, list instanceof RandomAccess);
+        assertEquals(sylist(list).reversed() instanceof RandomAccess, sylist(list) instanceof RandomAccess);
     }
 }

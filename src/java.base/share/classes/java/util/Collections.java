@@ -2883,6 +2883,15 @@ public final class Collections {
             super(list, mutex, forward);
         }
 
+        public List<E> reversed() {
+            synchronized (mutex) {
+                if (reversedView == null) {
+                    reversedView = new SynchronizedRandomAccessList<>(list.reversed(), mutex, this);
+                }
+                return reversedView;
+            }
+        }
+
         public List<E> subList(int fromIndex, int toIndex) {
             synchronized (mutex) {
                 return new SynchronizedRandomAccessList<>(
