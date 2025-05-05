@@ -213,7 +213,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
 {
-  _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
+  _live_bytes_at_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
 
@@ -315,17 +315,17 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
   }
 }
 
-size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
-  return _live_bytes_after_last_mark;
+size_t ShenandoahOldGeneration::get_live_bytes_at_last_mark() const {
+  return _live_bytes_at_last_mark;
 }
 
-void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
+void ShenandoahOldGeneration::set_live_bytes_at_last_mark(size_t bytes) {
   if (bytes == 0) {
     // Restart search for best old-gen size to the initial state
-    _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
+    _live_bytes_at_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
     _growth_before_compaction = INITIAL_GROWTH_BEFORE_COMPACTION;
   } else {
-    _live_bytes_after_last_mark = bytes;
+    _live_bytes_at_last_mark = bytes;
     _growth_before_compaction /= 2;
     if (_growth_before_compaction < _min_growth_before_compaction) {
       _growth_before_compaction = _min_growth_before_compaction;
@@ -338,8 +338,11 @@ void ShenandoahOldGeneration::handle_failed_transfer() {
 }
 
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
-  size_t result = _live_bytes_after_last_mark + (_live_bytes_after_last_mark * _growth_before_compaction) / FRACTIONAL_DENOMINATOR;
-  return result;
+  size_t threshold_by_relative_growth = (_live_bytes_at_last_mark *
+                                         (1 + _growth_before_compaction / FRACTIONAL_DENOMINATOR));
+  size_t threshold_by_absolute_growth = (_live_bytes_at_last_mark + (size_t) 
+                                         (ShenandoahMinOldGenGrowthHeapPercent / 100.0 * ShenandoahHeap::heap()->max_capacity()));
+  return MIN2(threshold_by_relative_growth, threshold_by_absolute_growth);
 }
 
 bool ShenandoahOldGeneration::contains(ShenandoahAffiliation affiliation) const {

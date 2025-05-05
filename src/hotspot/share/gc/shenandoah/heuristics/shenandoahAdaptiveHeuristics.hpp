@@ -38,6 +38,7 @@ class ShenandoahPhaseTimeEstimator {
 
   const char* _name;
   bool   _changed;
+  bool   _changed_no_stdev;
   uint   _first_index;
   uint   _num_samples;
   double _sum_of_x;
@@ -49,6 +50,8 @@ class ShenandoahPhaseTimeEstimator {
   double _y_values[MaxSamples];
   double _most_recent_prediction_x_value;
   double _most_recent_prediction;
+  double _most_recent_prediction_x_value_no_stdev;
+  double _most_recent_prediction_no_stdev;
   double _most_recent_bytes_allocated;
 
  public:
@@ -61,6 +64,8 @@ class ShenandoahPhaseTimeEstimator {
   //   average_prediction is average + std_dev, and
   //   linear_prediction is determined best-fit line + std_dev of this calculation
   double predict_at(double independent_value);
+
+  double predict_at_without_stdev(double independent_value);
 
   void set_most_recent_start_time(double now) {
     _most_recent_start = now;
@@ -221,11 +226,17 @@ protected:
   size_t _anticipated_update_words;
 
   double predict_mark_time(size_t anticipated_marked_words) override;
-  double predict_evac_time(size_t anticipated_evac_words);
-  double predict_update_time(size_t anticipated_update_words);
-  double predict_final_roots_time();
+  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) override;
+  double predict_update_time(size_t anticipated_update_words) override;
+  double predict_final_roots_time(size_t pip_words) override;
+  
+  double predict_mark_time_nonconservative(size_t anticipated_marked_words) override;
+  double predict_evac_time_nonconservative(size_t anticipated_evac_words, size_t anticipated_pip_words) override;
+  double predict_update_time_nonconservative(size_t anticipated_update_words) override;
+  double predict_final_roots_time_nonconservative(size_t pip_words) override;
   
   double predict_gc_time() override;
+  double predict_gc_time_nonconservative() override;
 
   inline size_t get_anticipated_mark_words() {
     return _anticipated_mark_words;

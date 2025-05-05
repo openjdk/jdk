@@ -183,7 +183,11 @@ public:
   double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words);
   double predict_final_roots_time(size_t anticipated_pip_words);
 
+  double predict_evac_time_nonconservative(size_t anticipated_evac_words, size_t anticipated_pip_words);
+  double predict_final_roots_time_nonconservative(size_t anticipated_pip_words);
+
   double predict_gc_time() override;
+  double predict_gc_time_nonconservative() override;
 
   // Setting this value to zero denotes current GC cycle to be "traditional young", so average GC cycle tine is best predictor.
   inline void set_anticipated_mark_words(size_t words) {

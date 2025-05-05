@@ -308,7 +308,8 @@ private:
   // is 9.375% of the total heap size.
   static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 16;                //   6.25%
 
-  size_t _live_bytes_after_last_mark;
+  size_t _live_bytes_at_last_mark;
+  size_t _used_bytes_at_start_of_mark;
 
   // How much growth in usage before we trigger old collection, per FRACTIONAL_DENOMINATOR (65_536)
   size_t _growth_before_compaction;
@@ -327,8 +328,16 @@ public:
 
   void transition_to(State new_state);
 
-  size_t get_live_bytes_after_last_mark() const;
-  void set_live_bytes_after_last_mark(size_t new_live);
+  size_t get_used_bytes_at_start_of_mark() const {
+    return _used_bytes_at_start_of_mark;
+  }
+
+  void set_used_bytes_at_start_of_mark(size_t used) {
+    _used_bytes_at_start_of_mark = used;
+  }
+
+  size_t get_live_bytes_at_last_mark() const;
+  void set_live_bytes_at_last_mark(size_t new_live);
 
   size_t usage_trigger_threshold() const;
 

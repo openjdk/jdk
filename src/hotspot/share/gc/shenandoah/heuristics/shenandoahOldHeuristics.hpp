@@ -255,6 +255,8 @@ public:
 
   bool is_experimental() override;
 
+  uintx desired_time_slice_ms();
+
 private:
   void slide_pinned_regions_to_front();
   bool all_candidates_are_pinned();

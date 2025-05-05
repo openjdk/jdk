@@ -160,11 +160,19 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
 
-  // Checks that an old cycle has run for at least ShenandoahMinimumOldTimeMs before allowing a young cycle.
-  if (ShenandoahMinimumOldTimeMs > 0) {
+  // Checks that an old cycle has run for adjustment of ShenandoahMinimumOldTimeMs before allowing a young cycle.
+  uintx min_old_time_ms = old_heuristics->desired_time_slice_ms();
+  // Not adding standard deviation because we want conservatively short time  here.
+  double avg_cycle_time = _gc_cycle_time_history->davg();
+  // Allow old-gen time slice to grow to no more than 10% of average young cycle time.  Note that delaying
+  // the start of a young GC may result in need for increased worker surge during the young GC.
+  if (1000 * min_old_time_ms > avg_cycle_time / 10.0) {
+    min_old_time_ms = (uintx) (1000.0 * avg_cycle_time / 10.0);
+  }
+  if (min_old_time_ms > 0) {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
-      if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+      if (old_time_elapsed < min_old_time_ms) {
         // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
         // to trigger at this time.
         log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
@@ -320,12 +328,12 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 						      size_t promo_potential_words, size_t pip_potential_words,
 						      size_t mixed_candidate_live_words, size_t mixed_candidate_garbage_words) {
 
-#undef KELVIN_DEBUG
+#undef KELVIN_RATIO
   if ((mixed_candidate_live_words == 0) && (promo_potential_words == 0)) {
     // No need for any reserve in old.  Return with simple solution.
     set_anticipated_mark_words(0);
     ShenandoahOldEvacRatioPercent = 0;
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
     log_info(gc)("Not adjusting old evac ratio because no demand for old");
 #endif
     return;
@@ -359,7 +367,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
   size_t excess_reserves = intended_young_reserve_words - proposed_young_evac_reserve;
   size_t proposed_promo_evac_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
 
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
   log_info(gc)("Searching for EvacRatio, young_evac_words: %zu, promo_evac_reserve: %zu, mixed_candidate_live_words: %zu",
 	       proposed_young_evac_reserve, proposed_promo_evac_reserve, mixed_candidate_live_words);
   log_info(gc)(" allocation_runway: %zu, excess_reserves: %zu", allocation_runway_words, excess_reserves);
@@ -376,7 +384,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     size_t proposed_promo_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
     size_t total_available_reserve = intended_young_reserve_words + allocation_runway_words;
 
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
     log_info(gc)("No mixed evac candidates, but there is promo potential: %zu, so consider mark_words: %zu",
                  promo_potential_words, anticipated_mark_words);
 #endif
@@ -402,7 +410,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       return;
     } else {
       ShenandoahOldEvacRatioPercent = 0;
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
       log_info(gc)("Abandoning promotion because consumed_words_during_gc: %zu, proposed_promo_reserve: %zu, "
 		   "proposed_young_evac_budget: %zu, intended_young_reserve: %zu, allocation_runway_words: %zu",
 		   consumed_words_during_gc, proposed_promo_reserve, proposed_young_evac_budget,
@@ -413,7 +421,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       return;
     }
   }
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
   log_info(gc)("Did not take the short-circuit path because non-zero mixed_candidate_live_words is %zu",
 	       mixed_candidate_live_words);
 #endif
@@ -424,13 +432,11 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     // Compute the mixed GC cycle time based on proposed configuration
     size_t proposed_old_evac_budget = mixed_candidate_live_words / planned_mixed_collection_count;
     size_t proposed_old_garbage = mixed_candidate_garbage_words / planned_mixed_collection_count;
-    size_t proposed_old_evac_reserve = (size_t) (proposed_old_evac_budget / ShenandoahOldEvacWaste);
+    size_t proposed_old_evac_reserve = (size_t) (proposed_old_evac_budget * ShenandoahOldEvacWaste);
+    size_t proposed_promo_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
+    size_t proposed_total_reserve = proposed_young_evac_reserve + proposed_old_evac_reserve + proposed_promo_reserve;
 
-    // During mixed evacs, prioritize mixed evacuation over promotions.  Assume we budget mainly for mixed evacuation.
-    // Promotion happens only if there is extra available memory within the old-gen regions.
-    size_t proposed_total_reserve = proposed_young_evac_reserve + proposed_old_evac_reserve;
-
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
     log_info(gc)("Can we do this load in %u mixed collections?", planned_mixed_collection_count);
     log_info(gc)(" proposed_young_evac_reserve: %zu, proposed_old_evac_reserve: %zu, total_reserve: %zu",
                  proposed_young_evac_reserve, proposed_old_evac_reserve, proposed_total_reserve);
@@ -460,7 +466,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       size_t young_2b_updated = get_young_live_words_not_in_most_recent_cset();
       anticipated_update_words = old_2b_updated + young_2b_updated;
 
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
       log_info(gc)("Exploring plan for %u mixed evacuation, anticipated_mark_words: %zu",
                    planned_mixed_collection_count, anticipated_mark_words);
 #endif
@@ -468,8 +474,17 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       set_anticipated_evac_words(anticipated_evac_words);
       set_anticipated_pip_words(pip_potential_words);
       set_anticipated_update_words(anticipated_update_words);
-      double anticipated_gc_time = predict_gc_time();
+
+      // predict_gc_time is often way too conservative because the anticipated_evac_words and anticipated update words
+      // may reside far outside the span of recently collected predictive history.  Use nonconservative prediction here.
+      // The actual trigger is more aggressive.
+      double anticipated_gc_time = predict_gc_time_nonconservative();
       size_t consumed_words_during_gc = (size_t) (anticipated_gc_time * avg_alloc_rate);
+
+#ifdef KELVIN_RATIO
+      log_info(gc)("predict_gc_time_nonconservative: %.3f vs. avg_cycle_time: %.3f * alloc_rate: %.3f",
+                   anticipated_gc_time, avg_cycle_time, avg_alloc_rate);
+#endif
 
       if (consumed_words_during_gc + proposed_old_evac_reserve + proposed_young_evac_budget <
 	  intended_young_reserve_words + allocation_runway_words) {
@@ -488,7 +503,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 		     ShenandoahOldEvacRatioPercent, approximate_mix_count);
 	return;
       }
-#ifdef KELVIN_DEBUG
+#ifdef KELVIN_RATIO
       log_info(gc)("Rejected plan!");
       log_info(gc)(" consumed_words_during_gc: %zu + proposed_old_evac_reserve: %zu + proposed_young_evac_budget: %zu >=",
                    consumed_words_during_gc, proposed_old_evac_reserve, proposed_young_evac_budget);
@@ -533,12 +548,40 @@ double ShenandoahYoungHeuristics::predict_gc_time() {
   return result;
 }
 
+double ShenandoahYoungHeuristics::predict_gc_time_nonconservative() {
+  size_t mark_words = get_anticipated_mark_words();
+  if (mark_words == 0) {
+    // Use other heuristics to trigger.
+    return 0.0;
+  }
+  double mark_time = predict_mark_time_nonconservative(mark_words);
+  double evac_time = predict_evac_time_nonconservative(get_anticipated_evac_words(), get_anticipated_pip_words());
+  double update_time = predict_update_time_nonconservative(get_anticipated_update_words());
+  double result = mark_time + evac_time + update_time;
+#undef KELVIN_PREDICT
+#ifdef KELVIN_PREDICT
+  log_info(gc)("YH::predict_gc: %.3f from mark(%zu): %.3f, evac(%zu, %zu): %.3f, update(%zu): %.3f returns %.3f",
+	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(), get_anticipated_pip_words(),
+	       evac_time, get_anticipated_update_words(), update_time, result);
+#endif
+  return result;
+}
+
 double ShenandoahYoungHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words + anticipated_pip_words));
 }
 
 double ShenandoahYoungHeuristics::predict_final_roots_time(size_t anticipated_pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at((double) anticipated_pip_words);
+}
+
+double ShenandoahYoungHeuristics::predict_evac_time_nonconservative(size_t anticipated_evac_words, size_t anticipated_pip_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at_without_stdev((double) (5 * anticipated_evac_words
+                                                                                        + anticipated_pip_words));
+}
+
+double ShenandoahYoungHeuristics::predict_final_roots_time_nonconservative(size_t anticipated_pip_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at_without_stdev((double) anticipated_pip_words);
 }
 
 uint ShenandoahYoungHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase, double now) {

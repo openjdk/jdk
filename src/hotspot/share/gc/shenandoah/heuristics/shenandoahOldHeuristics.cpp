@@ -397,10 +397,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t immediate_garbage = 0;
   size_t immediate_regions = 0;
   size_t live_data = 0;
+  size_t humongous_waste = 0;
 #ifdef ASSERT
   bool reclaimed_immediate = false;
 #endif
   RegionData* candidates = _region_data;
+  size_t mixed_garbage = 0;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!region->is_old()) {
@@ -433,6 +435,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
         region->begin_preemptible_coalesce_and_fill();
         candidates[cand_idx].set_region_and_livedata(region, live_bytes);
         cand_idx++;
+        mixed_garbage += garbage;
       }
     } else if (region->is_humongous_start()) {
       // This will handle humongous start regions whether they are also pinned, or not.
@@ -456,6 +459,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
         immediate_garbage += garbage;
         size_t region_count = heap->trash_humongous_region_at(region);
         log_debug(gc)("Trashed %zu regions for humongous object.", region_count);
+      } else {
+        oop humongous_obj = cast_to_oop(region->bottom());
+        size_t word_size = humongous_obj->size();
+        size_t region_count = ShenandoahHeapRegion::required_regions(word_size * HeapWordSize);
+        size_t waste_words = region_count * ShenandoahHeapRegion::region_size_words() - word_size;
+        humongous_waste += waste_words * HeapWordSize;
       }
     } else if (region->is_trash()) {
       // Count humongous objects made into trash here.
@@ -464,7 +473,13 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
   }
 
-  _old_generation->set_live_bytes_after_last_mark(live_data);
+  // A previous implementation calculated live_bytes as sum of "live data" within this region.  But that
+  // overestimates live data because it includes an abundance of floating garbage.  This calculation improves
+  // detection of floating garbage and allows the next Old GC to be triggered more quickly when appropriate.
+  size_t live_bytes = _old_generation->get_used_bytes_at_start_of_mark();
+  live_bytes -= immediate_garbage;
+  live_bytes -= mixed_garbage;
+  _old_generation->set_live_bytes_at_last_mark(live_bytes + humongous_waste);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
   // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
@@ -839,7 +854,8 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                     consecutive_young_cycles);
       _growth_trigger = false;
     } else if (current_usage > trigger_threshold) {
-      const size_t live_at_previous_old = _old_generation->get_live_bytes_after_last_mark();
+      const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
+      _old_generation->set_used_bytes_at_start_of_mark(current_usage);
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
       log_trigger("Old has overgrown, live at end of previous OLD marking: "
                   "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
@@ -860,6 +876,16 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   } else {
     return false;
   }
+}
+
+uintx ShenandoahOldHeuristics::desired_time_slice_ms() {
+  // We increase the desired time slice by 50 ms every 4 cycles, until old is done.  The young heuristic will
+  // limit our granted time slice to 10% of its average cycle time.  There's some tension here.  We don't really
+  // know that old-gen needs higher priority until it has taken inordinantlly long to complete it work.  However,
+  // by the time we see that it is requiring higher priority, young collections are probably already feeling duress,
+  // so that is not a good time to steal cycles for old collections.  So we need to start out being a bit greedy.
+  unsigned int num_increases = _consecutive_concurrent_old_cycles / 4;
+  return ShenandoahMinimumOldTimeMs + 50 * num_increases;
 }
 
 uint ShenandoahOldHeuristics::should_surge() {

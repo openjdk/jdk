@@ -45,13 +45,23 @@
           "fail, resulting in stop-the-world full GCs.")                    \
           range(0,100)                                                      \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthPercent, 25, EXPERIMENTAL,     \
+  product(double, ShenandoahMinOldGenGrowthPercent, 12.5, EXPERIMENTAL,     \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of its live memory size "     \
-          "at completion of the most recent old-generation marking "        \
-          "effort, heuristics may trigger the start of a new old-gen "      \
-          "collection.")                                                    \
+          "at the start of the prevoius old-generation marking effort, "    \
+          "heuristics may trigger the start of a new old-gen collection. "  \
+          "This form of trigger often applies when the old generation is "  \
+          "relatively small.")                                              \
           range(0.0,100.0)                                                  \
+                                                                            \
+  product(double, ShenandoahMinOldGenGrowthHeapPercent, 5, EXPERIMENTAL,    \
+          "(Generational mode only) If the usage within old generation "    \
+          "has grown by at least this percent of the total heap size "      \
+          "larger than the live memory at the start of the previous "       \
+          "old-generation marking effort, heuristics may trigger the "      \
+          "start of a new old-gen collection.  This form of trigger "       \
+          "often applies when the old generation is very large.")           \
+           range(0.0,100.0)                                                 \
                                                                             \
   product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage, 40, EXPERIMENTAL,\
           "(Generational mode only) If the total usage of the old "         \
@@ -63,7 +73,7 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahDoNotIgnoreGrowthAfterYoungCycles,               \
-          500, EXPERIMENTAL,                                                 \
+          500, EXPERIMENTAL,                                                \
           "(Generational mode only) Even if the usage of old generation "   \
           "is below ShenandoahIgnoreOldGrowthBelowPercentage, "             \
           "trigger an old-generation mark if old has grown and this "       \
@@ -574,12 +584,15 @@
           "Log cumulative card stats every so many remembered set or "      \
           "update refs scans")                                              \
                                                                             \
-  product(uintx, ShenandoahMinimumOldTimeMs, 80, EXPERIMENTAL,              \
+  product(uintx, ShenandoahMinimumOldTimeMs, 150, EXPERIMENTAL,             \
          "Minimum amount of time in milliseconds to run old collections "   \
          "before a young collection is allowed to run. This is intended "   \
          "to prevent starvation of the old collector. Setting this to "     \
          "0 will allow back to back young collections to run during old "   \
-         "collections.")                                                    \
+         "collections.  In the case that this value is insufficient "       \
+         "to prevent starvation of the old collector, adaptive heuristics " \
+         "will increase old-marking time slice above this value.")          \
+
   // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

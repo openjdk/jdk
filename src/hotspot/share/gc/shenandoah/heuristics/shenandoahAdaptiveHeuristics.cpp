@@ -386,6 +386,8 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
   return _space_info->max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
+
+
 double ShenandoahAdaptiveHeuristics::predict_gc_time() {
   size_t mark_words = get_anticipated_mark_words();
   if (mark_words == 0) {
@@ -393,12 +395,31 @@ double ShenandoahAdaptiveHeuristics::predict_gc_time() {
     return 0.0;
   }
   double mark_time = predict_mark_time(mark_words);
-  double evac_time = predict_evac_time(get_anticipated_evac_words());
+  double evac_time = predict_evac_time(get_anticipated_evac_words(), 0);
   double update_time = predict_update_time(get_anticipated_update_words());
   double result = mark_time + evac_time + update_time;
 #undef KELVIN_DEBUG_GC_TIME
 #ifdef KELVIN_DEBUG_GC_TIME
   log_info(gc)("AddaptiveHeuristics::predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu): %.3f, update(%zu): %.3f",
+	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(),
+	       evac_time, get_anticipated_update_words(), update_time);
+#endif
+  return result;
+}
+
+double ShenandoahAdaptiveHeuristics::predict_gc_time_nonconservative() {
+  size_t mark_words = get_anticipated_mark_words();
+  if (mark_words == 0) {
+    // Use other heuristics to trigger.
+    return 0.0;
+  }
+  double mark_time = predict_mark_time_nonconservative(mark_words);
+  double evac_time = predict_evac_time_nonconservative(get_anticipated_evac_words(), 0);
+  double update_time = predict_update_time_nonconservative(get_anticipated_update_words());
+  double result = mark_time + evac_time + update_time;
+#undef KELVIN_DEBUG_GC_TIME
+#ifdef KELVIN_DEBUG_GC_TIME
+  log_info(gc)("AddaptiveHeuristics::predicting gc time nonconservatively: %.3f from mark(%zu): %.3f, evac(%zu): %.3f, update(%zu): %.3f",
 	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(),
 	       evac_time, get_anticipated_update_words(), update_time);
 #endif
@@ -483,7 +504,7 @@ double ShenandoahAdaptiveHeuristics::predict_mark_time(size_t anticipated_marked
   return _phase_stats[ShenandoahMajorGCPhase::_mark].predict_at((double) anticipated_marked_words);
 }
 
-double ShenandoahAdaptiveHeuristics::predict_evac_time(size_t anticipated_evac_words) {
+double ShenandoahAdaptiveHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words));
 }
 
@@ -491,8 +512,25 @@ double ShenandoahAdaptiveHeuristics::predict_update_time(size_t anticipated_upda
   return _phase_stats[ShenandoahMajorGCPhase::_update].predict_at((double) anticipated_update_words);
 }
 
-double ShenandoahAdaptiveHeuristics::predict_final_roots_time() {
+double ShenandoahAdaptiveHeuristics::predict_final_roots_time(size_t pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at((double) 0.0);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_mark_time_nonconservative(size_t anticipated_marked_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_mark].predict_at_without_stdev((double) anticipated_marked_words);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_evac_time_nonconservative(size_t anticipated_evac_words,
+                                                                       size_t anticipated_pip_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at_without_stdev((double) (5 * anticipated_evac_words));
+}
+
+double ShenandoahAdaptiveHeuristics::predict_update_time_nonconservative(size_t anticipated_update_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_update].predict_at_without_stdev((double) anticipated_update_words);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_final_roots_time_nonconservative(size_t pip_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at_without_stdev((double) 0.0);
 }
 
 uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase phase, double now) {
@@ -535,7 +573,7 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
     case ShenandoahMajorGCPhase::_final_roots:
     {
       // May happen after _mark in case this is an abbreviated cycle
-      time_to_finish_gc += predict_final_roots_time();
+      time_to_finish_gc += predict_final_roots_time(0);
 
       // final_roots is preceded by mark, no evac or update
       size_t allocated_since_last_sample = bytes_allocated;
@@ -582,7 +620,7 @@ uint ShenandoahAdaptiveHeuristics::should_surge_phase(ShenandoahMajorGCPhase pha
 #endif
       	}
       }
-      time_to_finish_gc += predict_evac_time(get_anticipated_evac_words());
+      time_to_finish_gc += predict_evac_time(get_anticipated_evac_words(), 0);
 #ifdef KELVIN_SURGE
       log_info(gc)(" with evac, time_to_finish_gc: %.3f", time_to_finish_gc);
 #endif
@@ -795,6 +833,7 @@ void ShenandoahAdaptiveHeuristics::record_phase_duration(ShenandoahMajorGCPhase 
 ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
   _name(name),
   _changed(true),
+  _changed_no_stdev(true),
   _first_index(0),
   _num_samples(0),
   _sum_of_x(0.0),
@@ -867,6 +906,39 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _x_values[(_first_index + _num_samples) % MaxSamples] = x_value;
   _y_values[(_first_index + _num_samples++) % MaxSamples] = y_value;;
   _changed = true;
+}
+
+double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_x_value) {
+  if (!_changed_no_stdev && (_most_recent_prediction_x_value_no_stdev == predict_at_x_value)) {
+    return _most_recent_prediction_no_stdev;
+  } else if (_num_samples > 2) {
+#ifdef KELVIN_ESTIMATOR
+    log_info(gc)("PhaseTimeEstimator::predict_at(%03f)", predict_at_x_value);
+#endif
+    double m = (_num_samples * _sum_of_xy - _sum_of_x * _sum_of_y) / (_num_samples * _sum_of_xx - _sum_of_x * _sum_of_x);
+    double b = (_sum_of_y - m * _sum_of_x) / _num_samples;
+    for (uint i = 0; i < _num_samples; i++) {
+      double x_value = _x_values[(_first_index + i) % MaxSamples];
+#ifdef KELVIN_ESTIMATOR
+      double estimated_y = b + m * x_value;
+      double y_value = _y_values[(_first_index + i) % MaxSamples];
+      double delta = estimated_y - y_value;
+      log_info(gc)("%s sample[%u] (x: %.3f, y: %.3f), predicted_y: %.3f, delta: %.3f",
+		   _name, i, x_value, y_value, estimated_y, delta);
+#endif
+    }
+    double prediction = b + m * predict_at_x_value;
+#ifdef KELVIN_ESTIMATOR
+    log_info(gc)(" m: %.9f, b: %3f, prediction: %.3f", m, b, prediction);
+#endif
+    _most_recent_prediction_no_stdev = prediction;
+    _changed_no_stdev = false;
+    _most_recent_prediction_x_value_no_stdev = predict_at_x_value;
+    return _most_recent_prediction_no_stdev;
+  } else {
+    // Insufficient samples to make a non-zero prediction
+    return 0.0;
+  }
 }
 
 double ShenandoahPhaseTimeEstimator::predict_at(double predict_at_x_value) {

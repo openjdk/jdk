@@ -306,27 +306,58 @@ public:
     return 0.0;
   }
 
-  // Young-gen version takes an anticipated_pip_words parameter
-  double predict_evac_time(size_t anticipated_evac_words) {
+  // For satb mode, anticipate_pip_words is zero
+  virtual double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
     //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
     //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
     return 0.0;
   }
 
-  double predict_update_time(size_t anticipated_update_words) {
+  virtual double predict_update_time(size_t anticipated_update_words) {
     //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
     //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
     return 0.0;
   }
 
   // In non-generational mode, supply pip_words as zero
-  double predict_final_roots_time(size_t pip_words) {
+  virtual double predict_final_roots_time(size_t pip_words) {
     //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
     //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
     return 0.0;
   }
 
   virtual double predict_gc_time() {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  virtual double predict_gc_time_nonconservative() {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  virtual double predict_mark_time_nonconservative(size_t anticipated_marked_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  // For satb mode, anticipated_pip_words is zero.
+  virtual double predict_evac_time_nonconservative(size_t anticipated_evac_words, size_t anticipated_pip_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  virtual double predict_update_time_nonconservative(size_t anticipated_update_words) {
+    //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
+    //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
+    return 0.0;
+  }
+
+  virtual double predict_final_roots_time_nonconservative(size_t pip_words) {
     //  Subclass ShenandoahAdaptiveHeuristics overrides for satb mode.
     //  Subclass ShenandoahYoungHeuristics overrides for generational mode.
     return 0.0;
