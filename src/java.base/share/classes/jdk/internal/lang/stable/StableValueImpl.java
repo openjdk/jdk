@@ -51,7 +51,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Unsafe offsets for direct field access
 
-    private static final long CONTENT_OFFSET =
+    private static final long CONTENTS_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "contents");
 
     // Used to indicate a holder value is `null` (see field `value` below)
@@ -159,7 +159,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     public Object wrappedContentsAcquire() {
-        return UNSAFE.getReferenceAcquire(this, CONTENT_OFFSET);
+        return UNSAFE.getReferenceAcquire(this, CONTENTS_OFFSET);
     }
 
     static String renderWrapped(Object t) {
@@ -189,7 +189,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
         if (contents == null) {
-            UNSAFE.putReferenceRelease(this, CONTENT_OFFSET, wrap(newValue));
+            UNSAFE.putReferenceRelease(this, CONTENTS_OFFSET, wrap(newValue));
             return true;
         }
         return false;

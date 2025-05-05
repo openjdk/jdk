@@ -868,7 +868,7 @@ class ImmutableCollections {
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
-            int size = size();
+            final int size = size();
             subListRangeCheck(fromIndex, toIndex, size);
             return StableSubList.fromList(this, fromIndex, toIndex);
         }
@@ -891,15 +891,13 @@ class ImmutableCollections {
 
             @Override
             public List<E> subList(int fromIndex, int toIndex) {
-                int size = size();
-                subListRangeCheck(fromIndex, toIndex, size);
+                subListRangeCheck(fromIndex, toIndex, size());
                 return StableSubList.fromSubList(this, fromIndex, toIndex);
             }
 
             @Override
             public String toString() {
-                final StableList<E> deepRoot = deepRoot(root);
-                final StableValueImpl<E>[] delegates = deepRoot.delegates;
+                final StableValueImpl<E>[] delegates = deepRoot(root).delegates;
                 // Todo: Provide a copy free solution
                 final StableValueImpl<E>[] reversed = Arrays.copyOfRange(delegates, this.offset, this.size - offset);
                 return StableUtil.renderElements(this, "StableCollection", reversed);
@@ -924,8 +922,7 @@ class ImmutableCollections {
             // This method does not evaluate the elements
             @Override
             public String toString() {
-                final StableList<E> deepRoot = deepRoot(base);
-                final StableValueImpl<E>[] delegates = deepRoot.delegates;
+                final StableValueImpl<E>[] delegates = deepRoot(base).delegates;
                 // Todo: Provide a copy free solution
                 final StableValueImpl<E>[] reversed = ArraysSupport.reverse(
                         Arrays.copyOf(delegates, delegates.length));
@@ -939,7 +936,7 @@ class ImmutableCollections {
 
             @Override
             public List<E> subList(int fromIndex, int toIndex) {
-                int size = base.size();
+                final int size = base.size();
                 subListRangeCheck(fromIndex, toIndex, size);
                 return new StableReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex));
             }
