@@ -26,7 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.lang.stable.StableFieldUpdater;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
@@ -98,7 +98,7 @@ public final class Method extends Executable {
     private @Stable MethodAccessor methodAccessor;
 
     private static final ToIntFunction<Method> HASH_UPDATER =
-            StableUpdater.ofIntRaw(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
+            StableFieldUpdater.ofIntRaw(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
                 @Override
                 public int applyAsInt(Method method) {
                     return method.getDeclaringClass().getName().hashCode() ^ method.getName()

@@ -23,7 +23,7 @@
 
 package org.openjdk.bench.java.lang.stable;
 
-import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.lang.stable.StableFieldUpdater;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -94,7 +94,7 @@ public class StableUpdatersBenchmark {
     static final class Updater extends Abstract {
 
         private static final ToIntFunction<Updater> HASH_CODE_UPDATER =
-                StableUpdater.ofInt(Updater.class, "hashCode", new ToIntFunction<>() {
+                StableFieldUpdater.ofInt(Updater.class, "hashCode", new ToIntFunction<>() {
                     @Override
                     public int applyAsInt(Updater updater) {
                         return updater.string.hashCode();

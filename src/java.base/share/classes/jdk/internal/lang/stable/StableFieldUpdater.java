@@ -18,9 +18,9 @@ import java.util.function.ToLongFunction;
  * The provided {@code underlying} function must not recurse or the result of the
  * operation is unspecified.
  */
-public final class StableUpdater {
+public final class StableFieldUpdater {
 
-    private StableUpdater() {}
+    private StableFieldUpdater() {}
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -34,7 +34,7 @@ public final class StableUpdater {
         Objects.requireNonNull(underlying);
 
         final long offset = offset(holderType, fieldName, int.class, Reflection.getCallerClass());
-        return new StableIntUpdater<>(holderType, offset, underlying, zeroReplacement);
+        return new StableIntFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
     }
 
     // Only to be used by classes that are used "early" in the init sequence.
@@ -47,7 +47,7 @@ public final class StableUpdater {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(underlying);
-        return new StableIntUpdater<>(holderType, offset, underlying, zeroReplacement);
+        return new StableIntFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
     }
 
     @CallerSensitive
@@ -61,16 +61,16 @@ public final class StableUpdater {
 
         final long offset = offset(holderType, fieldName, long.class, Reflection.getCallerClass());
         if (Architecture.is64bit()) {
-            return new StableLongUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
         } else {
-            return new TearingStableLongUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return new TearingStableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
         }
     }
 
-    private record StableIntUpdater<T>(Class<T> holderType,
-                                      long offset,
-                                      ToIntFunction<? super T> underlying,
-                                      int zeroReplacement) implements ToIntFunction<T> {
+    private record StableIntFieldUpdater<T>(Class<T> holderType,
+                                            long offset,
+                                            ToIntFunction<? super T> underlying,
+                                            int zeroReplacement) implements ToIntFunction<T> {
 
         @ForceInline
         @Override
@@ -98,10 +98,10 @@ public final class StableUpdater {
         }
     }
 
-    private record StableLongUpdater<T>(Class<T> holderType,
-                                        long offset,
-                                        ToLongFunction<? super T> underlying,
-                                        long zeroReplacement) implements ToLongFunction<T> {
+    private record StableLongFieldUpdater<T>(Class<T> holderType,
+                                             long offset,
+                                             ToLongFunction<? super T> underlying,
+                                             long zeroReplacement) implements ToLongFunction<T> {
 
         @ForceInline
         @Override
@@ -129,10 +129,10 @@ public final class StableUpdater {
         }
     }
 
-    private record TearingStableLongUpdater<T>(Class<T> holderType,
-                                               long offset,
-                                               ToLongFunction<? super T> underlying,
-                                               long zeroReplacement) implements ToLongFunction<T> {
+    private record TearingStableLongFieldUpdater<T>(Class<T> holderType,
+                                                    long offset,
+                                                    ToLongFunction<? super T> underlying,
+                                                    long zeroReplacement) implements ToLongFunction<T> {
 
         @ForceInline
         @Override

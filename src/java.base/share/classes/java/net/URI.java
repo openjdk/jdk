@@ -44,7 +44,7 @@ import java.util.function.ToIntFunction;
 
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.lang.stable.StableFieldUpdater;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.cs.UTF_8;
 
@@ -549,7 +549,7 @@ public final class URI
     // the face of multiple threads racing to initialize them
     private transient String schemeSpecificPart;
 
-    private static final ToIntFunction<URI> HASH_UPDATER = StableUpdater.ofInt(
+    private static final ToIntFunction<URI> HASH_UPDATER = StableFieldUpdater.ofInt(
             URI.class, "hash", new ToIntFunction<>() {
                 @ForceInline @Override public int applyAsInt(URI uri) { return uri.hashCode0(); }}, -1);
 

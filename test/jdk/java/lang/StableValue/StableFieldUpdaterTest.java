@@ -27,14 +27,14 @@
  * @run junit StableUpdatersTest
  */
 
-import jdk.internal.lang.stable.StableUpdater;
+import jdk.internal.lang.stable.StableFieldUpdater;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.ToIntFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableUpdaterTest {
+final class StableFieldUpdaterTest {
 
     private static final int ZERO_REPLACEMENT = 42;
     private static final String STRING = "Abc";
@@ -42,10 +42,10 @@ final class StableUpdaterTest {
 
     @Test
     void invariants() {
-        assertThrows(NullPointerException.class, () -> StableUpdater.ofInt(null, "a", _ -> 0, ZERO_REPLACEMENT));
-        assertThrows(NullPointerException.class, () -> StableUpdater.ofInt(String.class, null, _ -> 0, ZERO_REPLACEMENT));
-        assertThrows(NullPointerException.class, () -> StableUpdater.ofInt(Foo.class, "hash", null, ZERO_REPLACEMENT));
-        var x = assertThrows(IllegalArgumentException.class, () -> StableUpdater.ofInt(Foo.class, "dummy", _ -> 0, ZERO_REPLACEMENT));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(null, "a", _ -> 0, ZERO_REPLACEMENT));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(String.class, null, _ -> 0, ZERO_REPLACEMENT));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(Foo.class, "hash", null, ZERO_REPLACEMENT));
+        var x = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofInt(Foo.class, "dummy", _ -> 0, ZERO_REPLACEMENT));
         assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableUpdatersTest$Foo.dummy'", x.getMessage());
     }
 
@@ -62,7 +62,7 @@ final class StableUpdaterTest {
         var recordFoo = new RecordFoo(STRING, 0);
         // The field is `final`
         var x = assertThrows(IllegalArgumentException.class,
-                () -> StableUpdater.ofInt(RecordFoo.class, "hash", _ -> 0, ZERO_REPLACEMENT));
+                () -> StableFieldUpdater.ofInt(RecordFoo.class, "hash", _ -> 0, ZERO_REPLACEMENT));
         assertEquals("Only non final fields are supported. " +
                 "The provided field is 'private final int StableUpdatersTest$RecordFoo.hash'", x.getMessage());
     }
@@ -81,7 +81,7 @@ final class StableUpdaterTest {
     static final class Foo {
 
         private static final ToIntFunction<Foo> UPDATER =
-                StableUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+                StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
         private final String string;
 
         int hash;
@@ -101,7 +101,7 @@ final class StableUpdaterTest {
 
     static final class Bar extends AbstractBar {
         private static final ToIntFunction<Bar> UPDATER =
-                StableUpdater.ofInt(Bar.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+                StableFieldUpdater.ofInt(Bar.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
 
         public Bar(String string) {
             super(string);
