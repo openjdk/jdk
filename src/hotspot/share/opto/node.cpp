@@ -1774,7 +1774,7 @@ Node* Node::find(const int idx, bool only_ctrl) {
 
 class PrintBFS {
 public:
-  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, frame* fr)
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, const frame* fr)
     : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st), _frame(fr),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
@@ -1796,7 +1796,7 @@ private:
   const Node* _target;
   const char* _options;
   outputStream* _output;
-  frame* _frame;
+  const frame* _frame;
 
   // options
   bool _traverse_inputs = false;
@@ -2415,7 +2415,7 @@ void Node::dump_bfs(const int max_distance, Node* target, const char* options) c
 }
 
 // Used to dump to stream.
-void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, frame* fr) const {
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, const frame* fr) const {
   PrintBFS bfs(this, max_distance, target, options, st, fr);
   bfs.run();
 }

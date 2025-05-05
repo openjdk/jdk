@@ -922,7 +922,7 @@ static bool should_end_stack_walk(const char* name) {
   return strstr(name, "C2Compiler::compile_method") != nullptr;
 }
 
-void IdealGraphPrinter::print_stack(frame* initial_frame, outputStream* graph_name) {
+void IdealGraphPrinter::print_stack(const frame* initial_frame, outputStream* graph_name) {
   char buf[O_BUFLEN];
   frame fr = initial_frame == nullptr ? os::current_frame() : *initial_frame;
   int frame = 0;
@@ -958,14 +958,14 @@ void IdealGraphPrinter::print_stack(frame* initial_frame, outputStream* graph_na
   }
 }
 
-void IdealGraphPrinter::print_graph(const char* name, frame* fr) {
+void IdealGraphPrinter::print_graph(const char* name, const frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
   print(name, (Node*) C->root(), empty_list, fr);
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, frame* fr) {
+void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
 

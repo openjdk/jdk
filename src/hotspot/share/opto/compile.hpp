@@ -678,9 +678,9 @@ public:
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, frame* fr = nullptr);
-  void igv_print_method_to_network(const char* phase_name = nullptr, frame* fr = nullptr);
-  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, frame* fr);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif

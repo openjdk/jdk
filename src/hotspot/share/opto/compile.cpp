@@ -5262,7 +5262,7 @@ void igv_append(const char* phase_name, void* sp, void* fp, void* pc) {
   Compile::current()->igv_print_method_to_file(phase_name, true, &fr);
 }
 
-void Compile::igv_print_method_to_file(const char* phase_name, bool append, frame* fr) {
+void Compile::igv_print_method_to_file(const char* phase_name, bool append, const frame* fr) {
   const char* file_name = "custom_debug.xml";
   if (_debug_file_printer == nullptr) {
     _debug_file_printer = new IdealGraphPrinter(C, file_name, append);
@@ -5273,13 +5273,13 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append, fram
   _debug_file_printer->print_graph(phase_name, fr);
 }
 
-void Compile::igv_print_method_to_network(const char* phase_name, frame* fr) {
+void Compile::igv_print_method_to_network(const char* phase_name, const frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
   igv_print_graph_to_network(phase_name, empty_list, fr);
 }
 
-void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, frame* fr) {
+void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {
