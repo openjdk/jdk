@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8003267 8062588 8210406 8174269 8327434 8347841
+ * @bug 4052440 8003267 8062588 8210406 8174269 8327434 8347841 8347955
  * @summary TimeZoneNameProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -74,7 +74,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     void test1() {
         List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getTimeZoneNameProvider().getAvailableLocales());
         List<Locale> providerLocales = Arrays.asList(tznp.getAvailableLocales());
-        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] ids = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
 

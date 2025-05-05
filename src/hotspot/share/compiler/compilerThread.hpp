@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ class CompilerThread : public JavaThread {
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }
   ArenaStatCounter* arena_stat() const           { return _arena_stat; }
+  void set_arenastat(ArenaStatCounter* v)        { _arena_stat = v; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }

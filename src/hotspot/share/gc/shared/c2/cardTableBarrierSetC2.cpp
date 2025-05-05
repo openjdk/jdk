@@ -23,9 +23,9 @@
  */
 
 #include "ci/ciUtilities.hpp"
+#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
@@ -49,13 +49,9 @@ Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
 // Insert a write-barrier store.  This is to let generational GC work; we have
 // to flag all oop-stores before the next GC point.
 void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
-                                         Node* ctl,
-                                         Node* oop_store,
                                          Node* obj,
                                          Node* adr,
-                                         uint  adr_idx,
                                          Node* val,
-                                         BasicType bt,
                                          bool use_precise) const {
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
@@ -124,7 +120,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   kit->final_sync(ideal);
 }
 
-bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() const {
+bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
   return ReduceInitialCardMarks;
 }
 

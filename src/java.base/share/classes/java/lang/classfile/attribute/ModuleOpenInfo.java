@@ -64,6 +64,7 @@ public sealed interface ModuleOpenInfo
 
     /**
      * {@return the flags associated with this open declaration, as a bit mask}
+     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
      *
      * @see ModuleDescriptor.Opens#modifiers()
      * @see AccessFlag.Location#MODULE_OPENS

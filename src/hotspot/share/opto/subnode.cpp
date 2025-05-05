@@ -53,11 +53,16 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
-  // Remove double negation
-  const Type *zero = add_id();
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  const Type* zero = add_id();
+
+  // Remove double negation if it is not a floating point number since negation
+  // is not the same as subtraction for floating point numbers
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
@@ -398,7 +403,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }
@@ -552,6 +557,24 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 
 
 //=============================================================================
+//------------------------------sub--------------------------------------------
+// A subtract node differences its two inputs.
+const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
+  // no folding if one of operands is infinity or NaN, do not do constant folding
+  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+    return TypeH::make(t1->getf() - t2->getf());
+  }
+  else if(g_isnan(t1->getf())) {
+    return t1;
+  }
+  else if(g_isnan(t2->getf())) {
+    return t2;
+  }
+  else {
+    return Type::HALF_FLOAT;
+  }
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
@@ -1620,27 +1643,17 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
-  // Change ((x & (m - 1)) u< m) into (m > 0)
-  // This is the off-by-one variant of ((x & m) u<= m)
-  if (cop == Op_CmpU &&
-      _test._test == BoolTest::lt &&
-      cmp1_op == Op_AndI) {
-    Node* l = cmp1->in(1);
-    Node* r = cmp1->in(2);
-    for (int repeat = 0; repeat < 2; repeat++) {
-      bool match = r->Opcode() == Op_AddI && r->in(2)->find_int_con(0) == -1 &&
-                   r->in(1) == cmp2;
-      if (match) {
-        // arraylength known to be non-negative, so a (arraylength != 0) is sufficient,
-        // but to be compatible with the array range check pattern, use (arraylength u> 0)
-        Node* ncmp = cmp2->Opcode() == Op_LoadRange
-                     ? phase->transform(new CmpUNode(cmp2, phase->intcon(0)))
-                     : phase->transform(new CmpINode(cmp2, phase->intcon(0)));
-        return new BoolNode(ncmp, BoolTest::gt);
-      } else {
-        // commute and try again
-        l = cmp1->in(2);
-        r = cmp1->in(1);
+  // Transform: "((x & (m - 1)) <u m)" or "(((m - 1) & x) <u m)" into "(m >u 0)"
+  // This is case [CMPU_MASK] which is further described at the method comment of BoolNode::Value_cmpu_and_mask().
+  if (cop == Op_CmpU && _test._test == BoolTest::lt && cmp1_op == Op_AndI) {
+    Node* m = cmp2; // RHS: m
+    for (int add_idx = 1; add_idx <= 2; add_idx++) { // LHS: "(m + (-1)) & x" or "x & (m + (-1))"?
+      Node* maybe_m_minus_1 = cmp1->in(add_idx);
+      if (maybe_m_minus_1->Opcode() == Op_AddI &&
+          maybe_m_minus_1->in(2)->find_int_con(0) == -1 &&
+          maybe_m_minus_1->in(1) == m) {
+        Node* m_cmpu_0 = phase->transform(new CmpUNode(m, phase->intcon(0)));
+        return new BoolNode(m_cmpu_0, BoolTest::gt);
       }
     }
   }
@@ -1806,9 +1819,57 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
-//------------------------------Value------------------------------------------
-// Change ((x & m) u<= m) or ((m & x) u<= m) to always true
-// Same with ((x & m) u< m+1) and ((m & x) u< m+1)
+// We use the following Lemmas/insights for the following two transformations (1) and (2):
+//   x & y <=u y, for any x and y           (Lemma 1, masking always results in a smaller unsigned number)
+//   y <u y + 1 is always true if y != -1   (Lemma 2, (uint)(-1 + 1) == (uint)(UINT_MAX + 1) which overflows)
+//   y <u 0 is always false for any y       (Lemma 3, 0 == UINT_MIN and nothing can be smaller than that)
+//
+// (1a) Always:     Change ((x & m) <=u m  ) or ((m & x) <=u m  ) to always true   (true by Lemma 1)
+// (1b) If m != -1: Change ((x & m) <u  m + 1) or ((m & x) <u  m + 1) to always true:
+//    x & m <=u m          is always true   // (Lemma 1)
+//    x & m <=u m <u m + 1 is always true   // (Lemma 2: m <u m + 1, if m != -1)
+//
+// A counter example for (1b), if we allowed m == -1:
+//     (x & m)  <u m + 1
+//     (x & -1) <u 0
+//      x       <u 0
+//   which is false for any x (Lemma 3)
+//
+// (2) Change ((x & (m - 1)) <u m) or (((m - 1) & x) <u m) to (m >u 0)
+// This is the off-by-one variant of the above.
+//
+// We now prove that this replacement is correct. This is the same as proving
+//   "m >u 0" if and only if "x & (m - 1) <u m", i.e. "m >u 0 <=> x & (m - 1) <u m"
+//
+// We use (Lemma 1) and (Lemma 3) from above.
+//
+// Case "x & (m - 1) <u m => m >u 0":
+//   We prove this by contradiction:
+//     Assume m <=u 0 which is equivalent to m == 0:
+//   and thus
+//     x & (m - 1) <u m = 0               // m == 0
+//     y           <u     0               // y = x & (m - 1)
+//   by Lemma 3, this is always false, i.e. a contradiction to our assumption.
+//
+// Case "m >u 0 => x & (m - 1) <u m":
+//   x & (m - 1) <=u (m - 1)              // (Lemma 1)
+//   x & (m - 1) <=u (m - 1) <u m         // Using assumption m >u 0, no underflow of "m - 1"
+//
+//
+// Note that the signed version of "m > 0":
+//   m > 0 <=> x & (m - 1) <u m
+// does not hold:
+//   Assume m == -1 and x == -1:
+//     x  & (m - 1) <u m
+//     -1 & -2      <u -1
+//     -2           <u -1
+//     UINT_MAX - 1 <u UINT_MAX           // Signed to unsigned numbers
+// which is true while
+//   m > 0
+// is false which is a contradiction.
+//
+// (1a) and (1b) is covered by this method since we can directly return a true value as type while (2) is covered
+// in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
 const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
   Node* cmp = in(1);
   if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
@@ -1816,14 +1877,21 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
     Node* cmp2 = cmp->in(2);
 
     if (cmp1->Opcode() == Op_AndI) {
-      Node* bound = nullptr;
+      Node* m = nullptr;
       if (_test._test == BoolTest::le) {
-        bound = cmp2;
+        // (1a) "((x & m) <=u m)", cmp2 = m
+        m = cmp2;
       } else if (_test._test == BoolTest::lt && cmp2->Opcode() == Op_AddI && cmp2->in(2)->find_int_con(0) == 1) {
-        bound = cmp2->in(1);
+        // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1", cmp2 = m + 1
+        Node* rhs_m = cmp2->in(1);
+        const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
+        if (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1) {
+          // Exclude any case where m == -1 is possible.
+          m = rhs_m;
+        }
       }
 
-      if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
+      if (cmp1->in(2) == m || cmp1->in(1) == m) {
         return TypeInt::ONE;
       }
     }
@@ -1944,6 +2012,15 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   return TypeF::make( (float)sqrt( (double)f ) );
 }
 
+const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t1->base() != Type::HalfFloatCon) { return Type::HALF_FLOAT; }
+  float f = t1->getf();
+  if (f < 0.0f) return Type::HALF_FLOAT;
+  return TypeH::make((float)sqrt((double)f));
+}
+
 const Type* ReverseINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if (t1 == Type::TOP) {
@@ -1970,15 +2047,9 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
-  }
-  return this;
-}
-
-Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
+Node* InvolutionNode::Identity(PhaseGVN* phase) {
+  // Op ( Op x ) => x
+  if (in(1)->Opcode() == Opcode()) {
     return in(1)->in(1);
   }
   return this;

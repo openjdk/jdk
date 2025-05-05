@@ -46,14 +46,17 @@ SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
                                                size_t init_word_size):
   _reserved(reserved) {
   size_t size = compute_size(reserved.word_size());
+
   ReservedSpace rs = MemoryReserver::reserve(size, mtGC);
+
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }
 
-  if (!_vs.initialize(rs, 0)) {
-    vm_exit_during_initialization("Could not reserve enough space for heap offset array");
-  }
+  const bool initialized = _vs.initialize(rs, 0 /* committed_size */);
+
+  assert(initialized, "Should never fail when commmitted_size is 0");
+
   _offset_base = (uint8_t*)(_vs.low_boundary() - (uintptr_t(reserved.start()) >> CardTable::card_shift()));
   resize(init_word_size);
   log_trace(gc, bot)("SerialBlockOffsetTable::SerialBlockOffsetTable: ");
@@ -152,7 +155,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
     assert(start_card_for_region > end_card, "Sanity check");
   }
 
-  debug_only(verify_for_block(blk_start, blk_end);)
+  DEBUG_ONLY(verify_for_block(blk_start, blk_end);)
 }
 
 HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* addr) const {

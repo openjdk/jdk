@@ -55,7 +55,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
     private static final String NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
     private static class AVAILABLE_IDS {
         static final String[] INSTANCE =
-            Arrays.stream(ZoneInfoFile.getZoneIds())
+                ZoneInfoFile.zoneIds()
                 .sorted()
                 .toArray(String[]::new);
     }

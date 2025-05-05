@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.GSSCredential;
 
 /**
- * GSS-API Utilities for using in conjunction with Sun Microsystem's
- * implementation of Java GSS-API.
+ * GSS-API Utilities for use in conjunction with the JDK implementation
+ * of Java GSS-API.
  *
  * @since 1.4
  */
@@ -42,37 +42,35 @@ public class GSSUtil {
     private GSSUtil() {}
 
     /**
-     * Use this method to convert a GSSName and GSSCredential into a
-     * Subject. Typically this would be done by a server that wants to
-     * impersonate a client thread at the Java level by setting a client
-     * Subject in the current access control context. If the server is merely
-     * interested in using a principal based policy in its local JVM, then
-     * it only needs to provide the GSSName of the client.
+     * Use this method to convert a {@code GSSName} and {@code GSSCredential}
+     * into a {@code Subject}. Typically this would be used by a server that
+     * wants to impersonate a client.
      *
-     * The elements from the GSSName are placed in the principals set of this
-     * Subject and those from the GSSCredential are placed in the private
-     * credentials set of the Subject. Any Kerberos specific elements that
-     * are added to the subject will be instances of the standard Kerberos
-     * implementation classes defined in javax.security.auth.kerberos.
+     * The elements from the {@code GSSName} are placed in the principals set
+     * of this {@code Subject} and those from the {@code GSSCredential} are
+     * placed in the private credentials set of the {@code Subject}. Any
+     * Kerberos specific elements that are added to the subject will be
+     * instances of the standard Kerberos implementation classes defined in
+     * {@link javax.security.auth.kerberos}.
      *
-     * @return a Subject with the entries that contain elements from the
-     * given GSSName and GSSCredential.
+     * @param principals a {@code GSSName} containing one or more mechanism
+     * specific representations of the same entity. These mechanism specific
+     * representations will be populated in the returned {@code Subject}'s
+     * principal set.
      *
-     * @param principals a GSSName containing one or more mechanism specific
-     * representations of the same entity. These mechanism specific
-     * representations will be populated in the returned Subject's principal
-     * set.
+     * @param credentials a {@code GSSCredential} containing one or more
+     * mechanism specific credentials for the same entity. These mechanism
+     * specific credentials will be populated in the returned {@code Subject}'s
+     * private credential set. Passing in a value of {@code null} will imply
+     * that the private credential set should be left empty.
      *
-     * @param credentials a GSSCredential containing one or more mechanism
-     * specific credentials for the same entity. These mechanism specific
-     * credentials will be populated in the returned Subject's private
-     * credential set. Passing in a value of null will imply that the private
-     * credential set should be left empty.
+     * @return a {@code Subject} with the entries that contain elements from
+     * the given {@code GSSName} and {@code GSSCredential}.
      */
     public static Subject createSubject(GSSName principals,
-                                     GSSCredential credentials) {
+                                        GSSCredential credentials) {
 
-        return  sun.security.jgss.GSSUtil.getSubject(principals,
-                                                     credentials);
+        return sun.security.jgss.GSSUtil.getSubject(principals,
+                                                    credentials);
     }
 }

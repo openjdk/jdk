@@ -325,5 +325,28 @@ TEST_VM_F(NMTTreapTest, VerifyItThroughStressTest) {
     verify_it(treap);
   }
 }
+struct NTD {
+  static bool has_run_destructor;
+  ~NTD() {
+    has_run_destructor = true;
+  }
+};
+
+bool NTD::has_run_destructor = false;
+
+TEST_VM_F(NMTTreapTest, ValueDestructorsAreRun) {
+  TreapCHeap<int, NTD, Cmp> treap;
+  NTD ntd;
+  treap.upsert(0, ntd);
+  treap.remove(0);
+  EXPECT_TRUE(NTD::has_run_destructor);
+  NTD::has_run_destructor = false;
+  {
+    TreapCHeap<int, NTD, Cmp> treap;
+    NTD ntd;
+    treap.upsert(0, ntd);
+  }
+  EXPECT_TRUE(NTD::has_run_destructor);
+}
 
 #endif // ASSERT

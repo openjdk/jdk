@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -78,7 +79,7 @@ static FillersTable* _fillers;
 static int _num_native_ptrs = 0;
 
 void ArchiveHeapWriter::init() {
-  if (HeapShared::can_write()) {
+  if (CDSConfig::is_dumping_heap()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
@@ -99,7 +100,7 @@ void ArchiveHeapWriter::add_source_obj(oop src_obj) {
 
 void ArchiveHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
                               ArchiveHeapInfo* heap_info) {
-  assert(HeapShared::can_write(), "sanity");
+  assert(CDSConfig::is_dumping_heap(), "sanity");
   allocate_buffer();
   copy_source_objs_to_buffer(roots);
   set_requested_address(heap_info);
@@ -607,18 +608,27 @@ class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
   oop _src_obj;
   address _buffered_obj;
   CHeapBitMap* _oopmap;
-
+  bool _is_java_lang_ref;
 public:
   EmbeddedOopRelocator(oop src_obj, address buffered_obj, CHeapBitMap* oopmap) :
-    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap) {}
+    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap)
+  {
+    _is_java_lang_ref = AOTReferenceObjSupport::check_if_ref_obj(src_obj);
+  }
 
   void do_oop(narrowOop *p) { EmbeddedOopRelocator::do_oop_work(p); }
   void do_oop(      oop *p) { EmbeddedOopRelocator::do_oop_work(p); }
 
 private:
   template <class T> void do_oop_work(T *p) {
-    size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    ArchiveHeapWriter::relocate_field_in_buffer<T>((T*)(_buffered_obj + field_offset), _oopmap);
+    int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_src_obj));
+    T* field_addr = (T*)(_buffered_obj + field_offset);
+    if (_is_java_lang_ref && AOTReferenceObjSupport::skip_field(field_offset)) {
+      // Do not copy these fields. Set them to null
+      *field_addr = (T)0x0;
+    } else {
+      ArchiveHeapWriter::relocate_field_in_buffer<T>(field_addr, _oopmap);
+    }
   }
 };
 

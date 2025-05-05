@@ -11,6 +11,11 @@ extern "C" {
 
 #include <spa/param/audio/raw.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 enum spa_audio_aac_stream_format {
     SPA_AUDIO_AAC_STREAM_FORMAT_UNKNOWN,
     /* Raw AAC frames */

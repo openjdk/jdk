@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,10 @@ public class MicroTime {
                 count++;
             }
         }
-        // We believe a nice KerberosTime can at least tell the
-        // difference of 100 musec.
-        if (count < 10000) {
+        // Before JDK-6882687, KerberosTime was measured in milliseconds.
+        // Now it's in microseconds. We should be able to record more than
+        // 1000 distinct KerberosTime values within one second.
+        if (count < 1001) {
             throw new Exception("What? only " + (1000000/count) +
                     " musec precision?");
         }

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -598,7 +598,7 @@ cmsUInt32Number CMSEXPORT cmsMLUgetASCII(const cmsMLU* mlu,
     if (BufferSize < ASCIIlen + 1)
         ASCIIlen = BufferSize - 1;
 
-    // Precess each character
+    // Process each character
     for (i=0; i < ASCIIlen; i++) {
 
         wchar_t wc = Wide[i];

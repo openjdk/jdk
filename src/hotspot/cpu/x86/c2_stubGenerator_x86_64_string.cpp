@@ -199,13 +199,14 @@ void StubGenerator::generate_string_indexof(address *fnptrs) {
 
 static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptrs,
                                           StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
-  StubCodeMark mark(stubgen, "StubRoutines", "stringIndexOf");
   bool isLL = (ae == StrIntrinsicNode::LL);
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
+  StubGenStubId stub_id = (isLL ?  StubGenStubId::string_indexof_linear_ll_id : (isUL ? StubGenStubId::string_indexof_linear_ul_id : StubGenStubId::string_indexof_linear_uu_id));
+  StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
   // This is done at L_wcharBegin.  The algorithm used is:

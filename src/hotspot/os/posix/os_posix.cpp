@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -491,9 +492,9 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size, exec);
+  char* extra_base = os::reserve_memory(extra_size, mem_tag, exec);
   if (extra_base == nullptr) {
     return nullptr;
   }
@@ -551,7 +552,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   setutxent();
   while ((ent = getutxent())) {
     if (!strcmp("system boot", ent->ut_line)) {
-      bootsec = ent->ut_tv.tv_sec;
+      bootsec = (int)ent->ut_tv.tv_sec;
       break;
     }
   }
@@ -930,11 +931,11 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  ALLOW_C_FUNCTION(::exit, ::exit(num);)
+  permit_forbidden_function::exit(num);
 }
 
 void os::_exit(int num) {
-  ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
+  permit_forbidden_function::_exit(num);
 }
 
 void os::naked_yield() {
@@ -991,7 +992,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
+  char* p = permit_forbidden_function::realpath(filename, nullptr);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -999,7 +1000,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -1008,7 +1009,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
+      p = permit_forbidden_function::realpath(filename, outbuf);
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
@@ -1325,6 +1326,10 @@ void os::Posix::init_2(void) {
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
 
+int os::Posix::clock_tics_per_second() {
+  return clock_tics_per_sec;
+}
+
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
 // and sem_timedwait().
@@ -1472,12 +1477,9 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time

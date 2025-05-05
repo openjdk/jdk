@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -543,7 +543,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Float>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -678,6 +678,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -703,12 +706,22 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return blend(unaryMathOp(op), m);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
             opc, getClass(), maskClass, float.class, length(),
             this, m,
             UN_IMPL.find(op, opc, FloatVector::unaryOperations));
+    }
+
+    @ForceInline
+    final
+    FloatVector unaryMathOp(VectorOperators.Unary op) {
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), FloatVector::unaryOperations,
+                                             this);
     }
 
     private static final
@@ -781,6 +794,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = this.viewAsIntegralLanes().compare(EQ, (int) 0);
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, that);
+            }
         }
 
         int opc = opCode(op);
@@ -815,6 +831,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = bits.compare(EQ, (int) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return this.blend(binaryMathOp(op, that), m);
+            }
+
         }
 
         int opc = opCode(op);
@@ -822,6 +842,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
             opc, getClass(), maskClass, float.class, length(),
             this, that, m,
             BIN_IMPL.find(op, opc, FloatVector::binaryOperations));
+    }
+
+    @ForceInline
+    final
+    FloatVector binaryMathOp(VectorOperators.Binary op, FloatVector that) {
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), FloatVector::binaryOperations,
+                                              this, that);
     }
 
     private static final
@@ -2790,7 +2817,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code FloatVector},
      * there will be no loss of precision.
      */
@@ -2860,7 +2887,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Float>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3070,7 +3098,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+        ((AbstractMask<Float>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3138,7 +3167,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
         } else {
             FloatSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Float>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3277,7 +3307,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             }
             FloatSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+                ((AbstractMask<Float>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3504,26 +3535,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     // End of low-level memory operations.
 
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                FloatSpecies vsp,
-                                VectorMask<Float> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Float>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                FloatSpecies vsp,
-                                VectorMask<Float> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Float>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
     @ForceInline
     private void conditionalStoreNYI(int offset,
                                      FloatSpecies vsp,
@@ -3565,7 +3576,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

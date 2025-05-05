@@ -30,7 +30,7 @@
  * 4174361 4177484 4197699 4209071 4288792 4328747 4413980 4546637 4623997
  * 4685354 4655637 4683492 4080631 4080631 4167995 4340146 4639407
  * 4652815 4652830 4740554 4936355 4738710 4633646 4846659 4822110 4960642
- * 4973919 4980088 4965624 5013094 5006864 8152077 8347841
+ * 4973919 4980088 4965624 5013094 5006864 8152077 8347841 8347955
  * @library /java/text/testlib
  * @run junit CalendarRegression
  */
@@ -43,7 +43,6 @@ import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -78,7 +77,7 @@ public class CalendarRegression {
     public void Test4031502() {
         // This bug actually occurs on Windows NT as well, and doesn't
         // require the host zone to be set; it can be set in Java.
-        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] ids = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
         boolean bad = false;

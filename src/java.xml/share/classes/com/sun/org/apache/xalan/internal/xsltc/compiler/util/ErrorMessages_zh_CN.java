@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Nov 2024
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_zh_CN extends ListResourceBundle {
 
@@ -548,6 +548,12 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
         {ErrorMsg.DATA_CONVERSION_ERR,
         "\u65E0\u6CD5\u5C06\u6570\u636E\u7C7B\u578B ''{0}'' \u8F6C\u6362\u4E3A ''{1}''\u3002"},
 
+        /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "\u5F53\u6269\u5C55\u51FD\u6570\u88AB\u5B89\u5168\u5904\u7406\u529F\u80FD\u6216\u5C5E\u6027 ''jdk.xml.enableExtensionFunctions'' \u7981\u7528\u65F6\uFF0C\u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u51FD\u6570 ''{0}''\u3002\u8981\u542F\u7528\u6269\u5C55\u51FD\u6570\uFF0C\u8BF7\u5C06 ''jdk.xml.enableExtensionFunctions'' \u8BBE\u7F6E\u4E3A ''true''\u3002"},
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.

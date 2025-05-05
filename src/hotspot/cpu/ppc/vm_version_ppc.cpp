@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,9 @@ void VM_Version::initialize() {
     }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_ERGO(AlignVector, false);
+  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
@@ -216,7 +219,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -516,7 +519,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", cpu_info_string(), L1_data_cache_line_size());
 
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
@@ -723,6 +726,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }

@@ -55,6 +55,7 @@ public sealed interface ModuleRequireInfo
 
     /**
      * {@return the flags associated with this require declaration, as a bit mask}
+     * It is in the range of unsigned short, {@code [0, 0xFFFF]}.
      *
      * @see ModuleDescriptor.Requires#modifiers()
      * @see AccessFlag.Location#MODULE_REQUIRES

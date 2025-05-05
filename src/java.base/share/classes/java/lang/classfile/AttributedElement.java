@@ -39,7 +39,14 @@ import static java.util.Objects.requireNonNull;
  * A {@link ClassFileElement} describing a {@code class} file structure that has
  * attributes, such as a {@code class} file, a field, a method, a {@link
  * CodeAttribute Code} attribute, or a record component.
+ * <p>
+ * Unless otherwise specified, most attributes that can be discovered in a
+ * {@link CompoundElement} implements the corresponding {@linkplain
+ * ClassFileElement##membership membership subinterface} of {@code
+ * ClassFileElement}, and can be sent to a {@link ClassFileBuilder} to be
+ * integrated into the built structure.
  *
+ * @see java.lang.classfile.attribute
  * @jvms 4.7 Attributes
  * @sealedGraph
  * @since 24

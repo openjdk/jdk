@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ import sun.reflect.misc.MethodUtil;
  * @since 1.5
  */
 public class Introspector {
-    public static final boolean ALLOW_NONPUBLIC_MBEAN = Boolean.parseBoolean(System.getProperty("jdk.jmx.mbeans.allowNonPublic"));
 
      /*
      * ------------------------------------------
@@ -517,8 +516,7 @@ public class Introspector {
         Class<?>[] interfaces = c.getInterfaces();
         for (int i = 0;i < interfaces.length; i++) {
             if (interfaces[i].getName().equals(clMBeanName) &&
-                (Modifier.isPublic(interfaces[i].getModifiers()) ||
-                 ALLOW_NONPUBLIC_MBEAN)) {
+                Modifier.isPublic(interfaces[i].getModifiers())) {
                 return Util.cast(interfaces[i]);
             }
         }

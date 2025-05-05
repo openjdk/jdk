@@ -28,6 +28,7 @@
 
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zLock.inline.hpp"
+#include "gc/z/zMarkStack.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/osThread.hpp"
@@ -60,8 +61,7 @@ inline void ZMarkTerminate::leave() {
 inline void ZMarkTerminate::maybe_reduce_stripes(ZMarkStripeSet* stripes, size_t used_nstripes) {
   size_t nstripes = stripes->nstripes();
   if (used_nstripes == nstripes && nstripes > 1u) {
-    nstripes >>= 1;
-    stripes->set_nstripes(nstripes);
+    stripes->try_set_nstripes(nstripes, nstripes >> 1);
   }
 }
 
