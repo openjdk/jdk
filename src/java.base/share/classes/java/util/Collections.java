@@ -1048,68 +1048,81 @@ public final class Collections {
     }
 
     /**
-     * Finds the index of the first element in the specified sorted list
-     * that is not less than the given target, according to the provided comparator.
-     * This is functionally equivalent to the C++ STL {@code lower_bound()}.
-     *
-     * The list must be sorted using the same comparator prior to calling this method.
-     *
+     * Finds the index of the first element in the sorted list that is not less than the specified key,
+     * using the given comparator.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param <T>        the type of elements in the list
-     * @param list       the sorted list to be searched
-     * @param target     the value to search for
-     * @param comparator the comparator defining the sort order
-     * @return the index of the first element not less than the target
-     *
-     * @throws NullPointerException if list or comparator is {@code null}
-     *
-     * @since 1.9
+     * @param <T>   the element type
+     * @param list  the sorted list to be searched
+     * @param key   the target value
+     * @param comp  the comparator to determine order
+     * @return the index of the first element not less than key
      */
-    public static <T> int lowerBound(List<T> list, T target, Comparator<? super T> comparator) {
-        int low = 0, high = list.size();
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (comparator.compare(list.get(mid), target) < 0)
-                low = mid + 1;
-            else
-                high = mid;
+    public static <T> int lowerBound(List<T> list, T key, Comparator<? super T> comp) {
+        int low = 0, high = list.size() - 1, idx = list.size();
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(list.get(mid), key) >= 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
-
     /**
-     * Finds the index of the first element in the specified sorted list
-     * that is greater than the given target, using the provided comparator.
-     * This is equivalent to the C++ STL {@code upper_bound()}.
-     *
-     * The list must be sorted using the same comparator prior to calling this method.
-     *
+     * Finds the index of the first element in the sorted list that is not less than the specified key,
+     * using natural ordering.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param <T>        the type of elements in the list
-     * @param list       the sorted list to be searched
-     * @param target     the value to search for
-     * @param comparator the comparator defining the sort order
-     * @return the index of the first element strictly greater than the target
-     *
-     * @throws NullPointerException if list or comparator is {@code null}
-     *
-     * @since 1.9
+     * @param <T>  the element type, must be comparable
+     * @param list the sorted list to be searched
+     * @param key  the target value
+     * @return the index of the first element not less than key
      */
-    public static <T> int upperBound(List<T> list, T target, Comparator<? super T> comparator) {
-        int low = 0, high = list.size();
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (comparator.compare(list.get(mid), target) <= 0)
-                low = mid + 1;
-            else
-                high = mid;
+    public static <T extends Comparable<? super T>> int lowerBound(List<T> list, T key) {
+        return lowerBound(list, key, Comparator.naturalOrder());
+    }
+
+    /**
+     * Finds the index of the first element in the sorted list that is greater than the specified key,
+     * using the given comparator.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type
+     * @param list  the sorted list to be searched
+     * @param key   the target value
+     * @param comp  the comparator to determine order
+     * @return the index of the first element greater than key
+     */
+    public static <T> int upperBound(List<T> list, T key, Comparator<? super T> comp) {
+        int low = 0, high = list.size() - 1, idx = list.size();
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(list.get(mid), key) > 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
+    }
+
+    /**
+     * Finds the index of the first element in the sorted list that is greater than the specified key,
+     * using natural ordering.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>  the element type, must be comparable
+     * @param list the sorted list to be searched
+     * @param key  the target value
+     * @return the index of the first element greater than key
+     */
+    public static <T extends Comparable<? super T>> int upperBound(List<T> list, T key) {
+        return upperBound(list, key, Comparator.naturalOrder());
     }
 
     /**
