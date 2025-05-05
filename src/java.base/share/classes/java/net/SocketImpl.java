@@ -82,9 +82,9 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @apiNote
      * The {@link Socket} constructors to create a datagram socket
-     * are deprecated for removal and have been respecified to throw
-     * an exception when creating a datagram socket. Those deprecated
-     * constructors no longer call this method.
+     * are deprecated for removal and throw an exception when creating
+     * a datagram socket. Those deprecated constructors no longer call
+     * this method.
      * <p>
      * This method will be re-specified in a future release to not
      * support creating datagram sockets.
