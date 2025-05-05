@@ -37,48 +37,37 @@ import static org.junit.Assert.assertThrows;
 public class HugeConcatTest {
 
     private static final int HUGE_LENGTH_UTF16 = Integer.MAX_VALUE / 2 - 2;
-    private static int HUGE_LENGTH_LATIN1;
+
+    private static String hugeLatin1;
+    private static final String hugeUTF16 = "\u20AC".repeat(HUGE_LENGTH_UTF16);
 
     @BeforeAll
-    public static void setHugeLengthLatin1() {
+    public static void initHugeLatin1() {
         String compact = System.getProperty("compact", "true");
-        HUGE_LENGTH_LATIN1 = Boolean.parseBoolean(compact)
+        int hugeLatin1Length = Boolean.parseBoolean(compact)
                 ? Integer.MAX_VALUE - 2
                 : HUGE_LENGTH_UTF16;
-    }
-
-    private static String hugeLatin1() {
-        return "a".repeat(HUGE_LENGTH_LATIN1);
-    }
-
-    private static String hugeUTF16() {
-        return "\u20AC".repeat(HUGE_LENGTH_UTF16);
+        hugeLatin1 = "a".repeat(hugeLatin1Length);
     }
 
     @Test
     public void testConcat_Latin1_Latin1() {
-        String s1 = hugeLatin1();
-        assertThrows(OutOfMemoryError.class, () -> s1.concat(s1));
+        assertThrows(OutOfMemoryError.class, () -> hugeLatin1.concat(hugeLatin1));
     }
 
     @Test
     public void testConcat_Latin1_UTF16() {
-        String s1 = hugeLatin1();
-        String s2 = hugeUTF16();
-        assertThrows(OutOfMemoryError.class, () -> s1.concat(s2));
+        assertThrows(OutOfMemoryError.class, () -> hugeLatin1.concat(hugeUTF16));
     }
 
     @Test
     public void testConcat_UTF16_Latin1() {
-        String s1 = hugeUTF16();
-        String s2 = hugeLatin1();
-        assertThrows(OutOfMemoryError.class, () -> s1.concat(s2));
+        assertThrows(OutOfMemoryError.class, () -> hugeUTF16.concat(hugeLatin1));
     }
 
     @Test
     public void testConcat_UTF16_UTF16() {
-        String s1 = hugeUTF16();
-        assertThrows(OutOfMemoryError.class, () -> s1.concat(s1));
+        assertThrows(OutOfMemoryError.class, () -> hugeUTF16.concat(hugeUTF16));
     }
 
 }
