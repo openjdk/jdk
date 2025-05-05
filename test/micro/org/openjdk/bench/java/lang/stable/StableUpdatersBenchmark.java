@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToIntFunction;
 
@@ -50,22 +51,19 @@ import java.util.function.ToIntFunction;
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableUpdatersBenchmark {
 
-    private static final String STRING = "Abc";
+    private static final String STRING = "https://some.site.com";
 
     private static final Base BASE = new Base(STRING);
     private static final Updater UPDATER = new Updater(STRING);
+    private static final URI U_R_I = URI.create(STRING);
 
     private final Base base = new Base(STRING);
     private final Updater updater = new Updater(STRING);
+    private static final URI uri = URI.create(STRING);
 
     @Benchmark
     public int baseStatic() {
         return BASE.hashCode();
-    }
-
-    @Benchmark
-    public int updaterStatic() {
-        return UPDATER.hashCode();
     }
 
     @Benchmark
@@ -74,8 +72,23 @@ public class StableUpdatersBenchmark {
     }
 
     @Benchmark
+    public int updaterStatic() {
+        return UPDATER.hashCode();
+    }
+
+    @Benchmark
     public int updater() {
         return updater.hashCode();
+    }
+
+    @Benchmark
+    public int uriStatic() {
+        return U_R_I.hashCode();
+    }
+
+    @Benchmark
+    public int uri() {
+        return uri.hashCode();
     }
 
     static final class Base extends Abstract {

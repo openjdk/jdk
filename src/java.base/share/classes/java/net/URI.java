@@ -46,6 +46,7 @@ import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableFieldUpdater;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -554,6 +555,7 @@ public final class URI
                 @ForceInline @Override public int applyAsInt(URI uri) { return uri.hashCode0(); }}, -1);
 
     // Used reflectively by HASH_UPDATER
+    @Stable
     private transient int hash;        // Zero ==> undefined
 
     private transient String decodedUserInfo;
