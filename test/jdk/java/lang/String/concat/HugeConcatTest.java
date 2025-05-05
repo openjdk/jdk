@@ -25,6 +25,7 @@
  * @test
  * @bug 8356152
  * @summary Check that huge concatenations throw OutOfMemoryError
+ * @requires os.maxMemory > 6G
  * @run junit/othervm -Xmx6G -XX:+CompactStrings -Dcompact=true HugeConcatTest
  * @run junit/othervm -Xmx6G -XX:-CompactStrings -Dcompact=false HugeConcatTest
  */
