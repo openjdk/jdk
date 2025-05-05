@@ -1709,7 +1709,7 @@ public class Attr extends JCTree.Visitor {
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
-            if (seltypeUnboxed.isPrimitive() && !intSwitch) {
+            if (seltype.isPrimitive() && !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PRIMITIVE_PATTERNS);
                 patternSwitch = true;
             }
@@ -1803,9 +1803,12 @@ public class Attr extends JCTree.Visitor {
                                     }
                                 }
                                 else {
-                                    if (!stringSwitch && !intSwitch &&
-                                            !((pattype.getTag().isInSuperClassesOf(LONG) || pattype.getTag().equals(BOOLEAN)) &&
-                                              types.isSameType(seltypeUnboxed, pattype))) {
+                                    boolean isLongFloatDoubleOrBooleanConstant =
+                                            pattype.getTag().isInSuperClassesOf(LONG) || pattype.getTag().equals(BOOLEAN);
+                                    if (isLongFloatDoubleOrBooleanConstant) {
+                                        preview.checkSourceLevel(label.pos(), Feature.PRIMITIVE_PATTERNS);
+                                    }
+                                    if (!stringSwitch && !intSwitch && !(isLongFloatDoubleOrBooleanConstant && types.isSameType(seltypeUnboxed, pattype))) {
                                         log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                     } else if (!constants.add(pattype.constValue())) {
                                         log.error(c.pos(), Errors.DuplicateCaseLabel);
