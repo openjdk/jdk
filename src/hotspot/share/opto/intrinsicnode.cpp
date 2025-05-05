@@ -299,7 +299,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // if result_bit_width < mask_bit_width, then we can further constrain res.hi as follows.
       // res.hi = MIN(res.hi, (1L << result_bit_width) - 1)
       hi = src_type->hi_as_long() >= 0 ? src_type->hi_as_long() : hi;
-      hi = result_bit_width < mask_bit_width ? MIN2((1L << result_bit_width) - 1, hi) : hi;
+      hi = result_bit_width < mask_bit_width ? MIN2((jlong)((1L << result_bit_width) - 1L), hi) : hi;
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();

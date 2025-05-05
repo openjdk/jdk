@@ -289,6 +289,23 @@ public class TestBitCompressValueTransform {
         Asserts.assertEQ(0L, res);
     }
 
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " 1 " })
+    public int test15(int src, int mask) {
+        // src_type = [min_int + 1, -1]
+        src = Math.max(Integer.MIN_VALUE + 1, Math.min(src, -1));
+        return Integer.compress(src, mask);
+    }
+
+    @Run (test = "test15")
+    public void run15(RunInfo info) {
+        int res = 0;
+        for (int i = 0; i < 100000; i++) {
+            res |= test15(0, 0);
+        }
+        Asserts.assertEQ(0, res);
+    }
+
     public static void main(String[] args) {
         TestFramework.run(TestBitCompressValueTransform.class);
     }
