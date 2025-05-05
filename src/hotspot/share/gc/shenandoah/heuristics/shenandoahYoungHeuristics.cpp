@@ -159,20 +159,32 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   auto heap = ShenandoahGenerationalHeap::heap();
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
-
+#undef KELVIN_START_YOUNG
+#ifdef KELVIN_START_YOUNG
+  static bool deferring_young = false;
+#endif
   // Checks that an old cycle has run for adjustment of ShenandoahMinimumOldTimeMs before allowing a young cycle.
   uintx min_old_time_ms = old_heuristics->desired_time_slice_ms();
   // Not adding standard deviation because we want conservatively short time  here.
   double avg_cycle_time = _gc_cycle_time_history->davg();
   // Allow old-gen time slice to grow to no more than 10% of average young cycle time.  Note that delaying
-  // the start of a young GC may result in need for increased worker surge during the young GC.
-  if (1000 * min_old_time_ms > avg_cycle_time / 10.0) {
-    min_old_time_ms = (uintx) (1000.0 * avg_cycle_time / 10.0);
+  // the start of a young GC may result in need for increased worker surge during the young GC.  I've done my
+  // own constant foding here: 1000 ms/s * 10% of average_cycle_time (s) is 100 * average_cycle_time.
+  if (min_old_time_ms > (100.0 * avg_cycle_time)) {
+    min_old_time_ms = (uintx) (100.0 * avg_cycle_time);
   }
   if (min_old_time_ms > 0) {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < min_old_time_ms) {
+#ifdef KELVIN_START_YOUNG
+        if (!deferring_young) {
+          deferring_young = true;
+          printf("Delaying young trigger for %zu ms: ", (size_t) min_old_time_ms);
+        } else {
+          printf(".");
+        }
+#endif
         // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
         // to trigger at this time.
         log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
@@ -180,7 +192,12 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
       }
     }
   }
-
+#ifdef KELVIN_START_YOUNG
+  if (deferring_young) {
+    deferring_young = false;
+    printf("\n");
+  }
+#endif  
   // inherited triggers have already decided to start a cycle, so no further evaluation is required
   if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
     return true;
