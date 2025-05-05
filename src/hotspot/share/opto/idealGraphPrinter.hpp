@@ -119,7 +119,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   // Walk the native stack and print relevant C2 frames as IGV properties (if
   // graph_name == nullptr) or the graph name based on the highest C2 frame (if
   // graph_name != nullptr).
-  void print_stack(frame fr, outputStream* graph_name);
+  void print_stack(frame* initial_frame, outputStream* graph_name);
   void print_method(ciMethod* method, int bci, InlineTree* tree);
   void print_inline_tree(InlineTree* tree);
   void visit_node(Node* n, bool edges);

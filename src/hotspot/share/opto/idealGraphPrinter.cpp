@@ -922,8 +922,9 @@ static bool should_end_stack_walk(const char* name) {
   return strstr(name, "C2Compiler::compile_method") != nullptr;
 }
 
-void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
+void IdealGraphPrinter::print_stack(frame* initial_frame, outputStream* graph_name) {
   char buf[O_BUFLEN];
+  frame fr = initial_frame == nullptr ? os::current_frame() : *initial_frame;
   int frame = 0;
   for (int count = 0; count < StackPrintLimit && fr.pc() != nullptr; count++) {
     int offset;
@@ -968,11 +969,9 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
 
-  frame current = fr == nullptr ? os::current_frame() : *fr;
-
   if (name == nullptr) {
     stringStream graph_name;
-    print_stack(current, &graph_name);
+    print_stack(fr, &graph_name);
     name = graph_name.freeze();
     if (strlen(name) == 0) {
       name = "Debug";
@@ -987,7 +986,7 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
   end_head();
 
   head(PROPERTIES_ELEMENT);
-  print_stack(current, nullptr);
+  print_stack(fr, nullptr);
   tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);
