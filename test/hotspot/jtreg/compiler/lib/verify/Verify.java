@@ -32,10 +32,10 @@ import java.util.HashMap;
 
 
 /**
- * The {@link Verify} class provide {@link Verify#checkEQ} and {@link Verify#checkEQWithRawBits},
- * which recursively compare the two  {@link Object}s by value. They deconstruct an array of objects,
+ * The {@link Verify} class provides {@link Verify#checkEQ} and {@link Verify#checkEQWithRawBits},
+ * which recursively compare the two {@link Object}s by value. They deconstruct an array of objects,
  * compare boxed primitive types, compare the content of arrays and {@link MemorySegment}s, and check
- * that the messages of two {@link Exception}s are equal. They also checks for the equivalent content
+ * that the messages of two {@link Exception}s are equal. They also check for the equivalent content
  * in {@code Vector}s from the Vector API.
  *
  * <p>
@@ -482,8 +482,6 @@ public final class Verify {
         System.err.println("  a:       " + a);
         System.err.println("  b:       " + b);
     }
-
-
     /**
      * When comparing arbitrary classes recursively, we need to remember which
      * pairs of objects {@code (a, b)} we have already visited. The maps
