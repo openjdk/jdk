@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
@@ -49,10 +50,10 @@ OopHandle CDSProtectionDomain::_shared_jar_manifests;
 Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS) {
   int index = ik->shared_classpath_index();
   assert(index >= 0, "Sanity");
-  SharedClassPathEntry* ent = FileMapInfo::shared_path(index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(index);
   Symbol* class_name = ik->name();
 
-  if (ent->is_modules_image()) {
+  if (cl->is_modules_image()) {
     // For shared app/platform classes originated from the run-time image:
     //   The ProtectionDomains are cached in the corresponding ModuleEntries
     //   for fast access by the VM.
@@ -63,15 +64,14 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     return get_shared_protection_domain(class_loader, mod_entry, THREAD);
   } else {
     // For shared app/platform classes originated from JAR files on the class path:
-    //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
-    //   as the shared classpath table in the shared archive (see
-    //   FileMap::_shared_path_table in filemap.hpp for details).
+    //   Each of the 3 CDSProtectionDomain::_shared_xxx arrays has the same length
+    //   as the shared classpath table in the shared archive.
     //
     //   If a shared InstanceKlass k is loaded from the class path, let
     //
-    //     index = k->shared_classpath_index():
+    //     index = k->shared_classpath_index();
     //
-    //   FileMap::_shared_path_table[index] identifies the JAR file that contains k.
+    //   AOTClassLocationConfig::_runtime_instance->_array->at(index) identifies the JAR file that contains k.
     //
     //   k's protection domain is:
     //
@@ -84,10 +84,10 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //     define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
     //
     //   Note that if an element of these 3 _shared_xxx arrays is null, it will be initialized by
-    //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
+    //   the corresponding CDSProtectionDomain::get_shared_xxx() function.
     Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
     Handle url = get_shared_jar_url(index, CHECK_NH);
-    int index_offset = index - ClassLoaderExt::app_class_paths_start_index();
+    int index_offset = index - AOTClassLocationConfig::runtime()->app_cp_start_index();
     if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
       if (pkg_entry == nullptr || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
         // define_shared_package only needs to be called once for each package in a jar specified
@@ -178,14 +178,14 @@ Handle CDSProtectionDomain::create_jar_manifest(const char* manifest_chars, size
 Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS) {
   Handle manifest;
   if (shared_jar_manifest(shared_path_index) == nullptr) {
-    SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
-    size_t size = (size_t)ent->manifest_size();
+    const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(shared_path_index);
+    size_t size = cl->manifest_length();
     if (size == 0) {
       return Handle();
     }
 
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-    const char* src = ent->manifest();
+    const char* src = cl->manifest();
     assert(src != nullptr, "No Manifest data");
     manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
@@ -198,7 +198,7 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
-    const char* path = FileMapInfo::shared_path_name(shared_path_index);
+    const char* path = AOTClassLocationConfig::runtime()->class_location_at(shared_path_index)->path();
     oop result_oop = to_file_URL(path, url_h, CHECK_(url_h));
     atomic_set_shared_jar_url(shared_path_index, result_oop);
   }

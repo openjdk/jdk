@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug 8298425
+ * @bug 8298425 8344706
  * @summary Verify behavior of System.console()
- * @enablePreview
  * @build KullaTesting TestingInputStream
  * @run testng ConsoleTest
  */
@@ -68,13 +67,6 @@ public class ConsoleTest extends KullaTesting {
             }
         };
         assertEval("System.console().readLine(\"expected\")", "\"AB\"");
-        console = new ThrowingJShellConsole() {
-            @Override
-            public String readLine() throws IOError {
-                return "AB";
-            }
-        };
-        assertEval("System.console().readLine()", "\"AB\"");
         console = new ThrowingJShellConsole() {
             @Override
             public char[] readPassword(String prompt) throws IOError {
@@ -218,10 +210,6 @@ public class ConsoleTest extends KullaTesting {
                 return console.readLine(prompt);
             }
             @Override
-            public String readLine() throws IOError {
-                return console.readLine();
-            }
-            @Override
             public char[] readPassword(String prompt) throws IOError {
                 return console.readPassword(prompt);
             }
@@ -249,10 +237,6 @@ public class ConsoleTest extends KullaTesting {
         }
         @Override
         public String readLine(String prompt) throws IOError {
-            throw new IllegalStateException("Not expected!");
-        }
-        @Override
-        public String readLine() throws IOError {
             throw new IllegalStateException("Not expected!");
         }
         @Override

@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 LogTagSet*  LogTagSet::_list      = nullptr;
 size_t      LogTagSet::_ntagsets  = 0;
@@ -78,13 +79,7 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   // the implied memory order of Atomic::add().
   LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
-#ifdef ASSERT
-  // If we log for tag deathtest2 then we're testing that recursive logging works.
-  // In this case, do not crash when detecting recursive logging.
-  if (this->contains(LogTagType::_deathtest2)) {
-    AsyncLogWriter::ignore_recursive_logging = true;
-  }
-#endif
+
   for (; it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
   }
@@ -155,7 +150,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   } else {
     // Buffer too small, allocate a large enough buffer using malloc/free to avoid circularity.
     // Since logging is a very basic function, conceivably used within NMT itself, avoid os::malloc/free
-    ALLOW_C_FUNCTION(::malloc, char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));)
+    char* newbuf = (char*)permit_forbidden_function::malloc(newbuf_len * sizeof(char));
     if (newbuf != nullptr) {
       prefix_len = _write_prefix(newbuf, newbuf_len);
       ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
@@ -165,7 +160,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
       if (ret < 0) {
         log(level, "Log message newbuf issue");
       }
-      ALLOW_C_FUNCTION(::free, ::free(newbuf);)
+      permit_forbidden_function::free(newbuf);
     } else {
       // Native OOM, use buf to output the least message. At this moment buf is full of either
       // truncated prefix or truncated prefix + string. Put trunc_msg at the end of buf.

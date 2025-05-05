@@ -432,6 +432,8 @@ protected:
   enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
+    CPU_FAMILY_AMD_17H       = 0x17, /* Zen1 & Zen2 */
+    CPU_FAMILY_AMD_19H       = 0x19, /* Zen3 & Zen4 */
     // ZX
     CPU_FAMILY_ZX_CORE_F6    = 6,
     CPU_FAMILY_ZX_CORE_F7    = 7,
@@ -640,7 +642,7 @@ public:
   static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
   static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
 
-  LP64_ONLY(static void clear_apx_test_state());
+  static void clear_apx_test_state();
 
   static void clean_cpuFeatures()   { _features = 0; }
   static void set_avx_cpuFeatures() { _features |= (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
@@ -771,6 +773,17 @@ public:
   //
   static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
 
+  static bool supports_avx512_simd_sort() {
+    if (supports_avx512dq()) {
+      // Disable AVX512 version of SIMD Sort on AMD Zen4 Processors.
+      if (is_amd() && cpu_family() == CPU_FAMILY_AMD_19H) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
@@ -826,12 +839,12 @@ public:
 
   // x86_64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() {
-    return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
+    return true;
   }
 
   // x86_64 supports secondary supers table
   constexpr static bool supports_secondary_supers_table() {
-    return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
+    return true;
   }
 
   constexpr static bool supports_stack_watermark_barrier() {
@@ -866,11 +879,7 @@ public:
   // synchronize with other memory ops. so, it needs preceding
   // and trailing StoreStore fences.
 
-#ifdef _LP64
   static bool supports_clflush(); // Can't inline due to header file conflict
-#else
-  static bool supports_clflush() { return  ((_features & CPU_FLUSH) != 0); }
-#endif // _LP64
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }

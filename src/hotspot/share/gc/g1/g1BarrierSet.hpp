@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/bufferNode.hpp"
 
 class G1CardTable;
 

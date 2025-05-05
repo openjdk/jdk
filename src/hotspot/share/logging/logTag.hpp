@@ -69,7 +69,6 @@ class outputStream;
   LOG_TAG(datacreation) \
   LOG_TAG(dcmd) \
   DEBUG_ONLY(LOG_TAG(deathtest)) /* Log Internal death test tag */ \
-  DEBUG_ONLY(LOG_TAG(deathtest2)) /* Log Internal death test tag */ \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(deoptimization) \

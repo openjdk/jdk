@@ -753,6 +753,17 @@ $(eval $(call SetupTarget, test-image-lib, \
     DEPS := build-test-lib, \
 ))
 
+$(eval $(call SetupTarget, build-test-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    DEPS := interim-langtools exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    TARGET := images, \
+    DEPS :=  build-test-setup-aot, \
+))
+
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   # Builds the failure handler jtreg extension
   $(eval $(call SetupTarget, build-test-failure-handler, \
@@ -862,6 +873,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     MAKEFILE := Bundles, \
     TARGET := static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
+))
+
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -1281,7 +1298,8 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib test-image-lib-native
+    test-image-lib test-image-lib-native \
+    test-image-setup-aot
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1309,10 +1327,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  all-images: static-jdk-image
-endif
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles

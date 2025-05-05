@@ -195,58 +195,61 @@ public final class LinuxHelper {
     }
 
     static PackageHandlers createDebPackageHandlers() {
-        PackageHandlers deb = new PackageHandlers();
-        deb.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-i")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        deb.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        deb.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("dpkg", "-x")
-            .addArgument(cmd.outputBundle())
-            .addArgument(destinationDir)
-            .execute();
-            return destinationDir;
-        };
-        return deb;
+        return new PackageHandlers(LinuxHelper::installDeb, LinuxHelper::uninstallDeb, LinuxHelper::unpackDeb);
+    }
+
+    private static int installDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        return Executor.of("sudo", "dpkg", "-i")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackDeb(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        Executor.of("dpkg", "-x")
+        .addArgument(cmd.outputBundle())
+        .addArgument(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static PackageHandlers createRpmPackageHandlers() {
-        PackageHandlers rpm = new PackageHandlers();
-        rpm.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-U")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        rpm.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! rpm -q %s || sudo rpm -e %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        rpm.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sh", "-c", String.format(
-                    "rpm2cpio '%s' | cpio -idm --quiet",
-                    JPackageCommand.escapeAndJoin(
-                            cmd.outputBundle().toAbsolutePath().toString())))
-            .setDirectory(destinationDir)
-            .execute();
-            return destinationDir;
-        };
+        return new PackageHandlers(LinuxHelper::installRpm, LinuxHelper::uninstallRpm, LinuxHelper::unpackRpm);
+    }
 
-        return rpm;
+    private static int installRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        return Executor.of("sudo", "rpm", "-U")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! rpm -q %s || sudo rpm -e %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackRpm(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        Executor.of("sh", "-c", String.format(
+                "rpm2cpio '%s' | cpio -idm --quiet",
+                JPackageCommand.escapeAndJoin(
+                        cmd.outputBundle().toAbsolutePath().toString())))
+        .setDirectory(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static Path getLauncherPath(JPackageCommand cmd) {
@@ -306,9 +309,9 @@ public final class LinuxHelper {
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
         String packageName = LinuxHelper.getPackageName(cmd);
-        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
-        TKit.assertNotEquals(0L, packageSize, String.format(
+        TKit.assertNotEquals(0, packageSize, String.format(
                 "Check installed size of [%s] package in not zero", packageName));
 
         final boolean checkPrerequisites;
@@ -424,7 +427,7 @@ public final class LinuxHelper {
 
         Map<String, String> data = lines.stream()
         .skip(1)
-        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(Stream.of(str)))
+        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str)))
         .map(str -> {
             String components[] = str.split("=(?=.+)");
             if (components.length == 1) {

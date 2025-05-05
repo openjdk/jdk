@@ -65,7 +65,7 @@ public class TestVectorizationNotRun {
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void test(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             if ((i < 0) || (8 > sizeBytes - i)) {

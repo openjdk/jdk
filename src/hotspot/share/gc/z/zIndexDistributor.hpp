@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
 #define SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
 
+#include <utilities/globalDefinitions.hpp>
+
 class ZIndexDistributor {
 private:
   void* _strategy;
@@ -39,6 +41,10 @@ public:
 
   template <typename Function>
   void do_indices(Function function);
+
+  // Returns a count that is max_count or larger and upholds the requirements
+  // for using the ZIndexDistributor strategy specfied by ZIndexDistributorStrategy
+  static size_t get_count(size_t max_count);
 };
 
 #endif // SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP

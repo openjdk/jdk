@@ -28,8 +28,8 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -633,9 +633,9 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
       task = next_task;
       continue;
     }
-    if (task->compile_reason() == CompileTask::Reason_Whitebox) {
-      // Whitebox (CTW) tasks do not participate in rate selection and/or any level
-      // adjustments. Just return them in order.
+    if (task->is_blocking() && task->compile_reason() == CompileTask::Reason_Whitebox) {
+      // CTW tasks, submitted as blocking Whitebox requests, do not participate in rate
+      // selection and/or any level adjustments. Just return them in order.
       return task;
     }
     Method* method = task->method();
@@ -796,7 +796,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
         if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant();
+          osr_nm->make_not_entrant("OSR invalidation for compiling with C1");
         }
         compile(mh, bci, CompLevel_simple, THREAD);
       }
@@ -1201,7 +1201,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
               int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
               print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
             }
-            nm->make_not_entrant();
+            nm->make_not_entrant("OSR invalidation, back branch");
           }
         }
         // Fix up next_level if necessary to avoid deopts
