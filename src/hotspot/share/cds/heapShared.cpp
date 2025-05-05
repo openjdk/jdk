@@ -2062,11 +2062,8 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
 #endif
 }
 
-// Not all the strings in the global StringTable are dumped into the archive, because
-// some of those strings may be only referenced by classes that are excluded from
-// the archive. We need to explicitly mark the strings that are:
-//   [1] used by classes that WILL be archived;
-//   [2] included in the SharedArchiveConfigFile.
+// Keep track of the contents of the archived interned string table. This table
+// is used only by CDSHeapVerifier.
 void HeapShared::add_to_dumped_interned_strings(oop string) {
   assert_at_safepoint(); // DumpedInternedStrings uses raw oops
   assert(!ArchiveHeapWriter::is_string_too_large_to_archive(string), "must be");
