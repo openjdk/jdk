@@ -4395,12 +4395,6 @@ void Assembler::enotl(Register dst, Register src) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
-void Assembler::orw(Register dst, Register src) {
-  emit_int8(0x66);
-  (void) prefix_and_encode(dst->encoding(), src->encoding());
-  emit_arith(0x0B, 0xC0, dst, src);
-}
-
 void Assembler::eorw(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
@@ -12957,25 +12951,6 @@ void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int src_enc, int valu
     emit_int16(0x69, (0xC0 | encode));
     emit_int32(value);
   }
-}
-
-void Assembler::evex_prefix_int8_operand_ndd(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
-                                             InstructionAttr *attributes, int byte1, bool use_prefixq, bool no_flags, bool is_map1) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    if (use_prefixq) {
-      emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), byte1);
-    }
-    else {
-      prefix(src2, dst, false, is_map1);
-      emit_int8(byte1);
-    }
-  }
-  else {
-    attributes->set_is_evex_instruction();
-    vex_prefix(src2, dst->encoding(), src1->encoding(), pre, opc, attributes, /* nds_is_ndd */ true, no_flags);
-    emit_int8(byte1);
-  }
-  emit_operand(src1, src2, 0);
 }
 
 void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
