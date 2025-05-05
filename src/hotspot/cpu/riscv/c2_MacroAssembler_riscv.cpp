@@ -2084,8 +2084,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   mv(pow31_3,  29791);           // [31^^3]
   mv(pow31_2,    961);           // [31^^2]
 
-  slli(chunks_end, chunks, elsize_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, chunks, ary, chunks, elsize_shift);
   andi(cnt, cnt, scalar_stride-1);      // don't forget about tail!
 
   bind(WIDE_LOOP);
@@ -2108,8 +2107,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(cnt, DONE);
 
   bind(TAIL);
-  slli(chunks_end, cnt, elsize_shift);
-  add(chunks_end, ary, chunks_end);
+  shadd(chunks_end, cnt, ary, chunks, elsize_shift);
 
   bind(TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
