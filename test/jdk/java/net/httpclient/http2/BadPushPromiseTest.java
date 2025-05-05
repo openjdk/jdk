@@ -168,7 +168,7 @@ public class BadPushPromiseTest {
             }
         }
 
-        private void pushPromise(HttpServerAdapters.HttpTestExchange exchange) {
+        private void pushPromise(HttpServerAdapters.HttpTestExchange exchange) throws IOException {
             URI requestURI = exchange.getRequestURI();
             String query = exchange.getRequestURI().getQuery();
             int badHeadersIndex = Integer.parseInt(query.substring(query.indexOf("=") + 1));
