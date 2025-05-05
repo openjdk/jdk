@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,5 +26,13 @@ set stty_init "rows 24 cols 80"
 set timeout -1
 
 spawn {*}$argv
-send "hello\r"
+expect {
+    -exact "$prompt" {
+        send "hello\r"
+    }
+    timeout {
+        puts "timeout"
+        exit 1
+    }
+}
 expect eof
