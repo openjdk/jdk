@@ -24,15 +24,15 @@
 
 /*
 
-public class NonFinalStaticWithInitVal_Helper { 
+public class NonFinalStaticWithInitVal_Helper {
     static String foo = String "Dummy 12345678";
 }
 
 */
 
 public class NonFinalStaticWithInitVal_Helper
-	version 51:0
+    version 51:0
 {
-static Field foo:"Ljava/lang/String;" = String "Dummy 12345678";
+    static Field foo:"Ljava/lang/String;" = String "Dummy 12345678";
 }
 
