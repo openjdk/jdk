@@ -28,7 +28,15 @@
 /* Implement and update https://bugs.openjdk.org/browse/JDK-8030957 */
 
 #include <jni.h>
+#include <stdlib.h>
+#include <libperfstat.h>
 #include "com_sun_management_internal_OperatingSystemImpl.h"
+perfstat_process_t prev_stats = {0};
+static unsigned long long prev_timebase = 0;
+static int initialized = 0;
+ 
+#define HTIC2SEC(x) (((double)(x) * XINTFRAC) / 1000000000.0)
+
 
 JNIEXPORT jdouble JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
@@ -37,11 +45,50 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
     return -1.0;
 }
 
+
+
 JNIEXPORT jdouble JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
-    return -1.0;
+    perfstat_process_t curr_stats;
+    perfstat_id_t id;
+    unsigned long long curr_timebase, timebase_diff;
+    double user_diff, sys_diff, delta_time;
+    
+
+    if (perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1) == -1) {
+        return -1.0;  // Unable to get stats
+    }
+    if (!initialized) {
+        // First call: just store and return -1.0
+        prev_stats = curr_stats;
+        prev_timebase = curr_stats.last_timebase;
+        initialized = 1;
+        return -1.0;
+    }
+    printf("initialised done");
+    curr_timebase = curr_stats.last_timebase;
+    timebase_diff = curr_timebase - prev_timebase;
+    
+    if ((long long)timebase_diff <= 0 || XINTFRAC == 0) {
+        return -1.0;
+    }
+
+    delta_time = HTIC2SEC(timebase_diff);
+
+    user_diff = (double)(curr_stats.ucpu_time - prev_stats.ucpu_time);
+    sys_diff  = (double)(curr_stats.scpu_time - prev_stats.scpu_time);
+
+    prev_stats = curr_stats;
+    prev_timebase = curr_timebase;
+
+    double cpu_load = (user_diff + sys_diff) / delta_time;
+
+    return (jdouble)cpu_load;
+
+
+
 }
 
 JNIEXPORT jdouble JNICALL
