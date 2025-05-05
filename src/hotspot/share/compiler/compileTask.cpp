@@ -226,7 +226,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
                              jlong time_created, jlong time_queued, jlong time_started, jlong time_finished) {
   if (!short_form) {
     // Print current time
-    st->print(UINT64_FORMAT_W(7), (uint64_t) tty->time_stamp().milliseconds());
+    st->print(UINT64_FORMAT_W(7) " ", (uint64_t) tty->time_stamp().milliseconds());
     // Time waiting to be put on queue
     if (time_created != 0 && time_queued != 0) {
       st->print("%7.0f ", TimeHelper::counter_to_micros(time_queued - time_created));
@@ -245,13 +245,12 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
     } else {
       st->print("%7s ", "");
     }
-    st->print("  ");
   }
   // print compiler name if requested
   if (CIPrintCompilerName) {
     st->print("%s:", CompileBroker::compiler_name(comp_level));
   }
-  st->print("%4d ", compile_id);    // print compilation number
+  st->print("%5d ", compile_id);    // print compilation number
 
   bool is_synchronized = false;
   bool has_exception_handler = false;
@@ -272,10 +271,10 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
 
   if (TieredCompilation) {
-    if (comp_level != -1)  st->print("%d ", comp_level);
-    else                   st->print("- ");
+    if (comp_level != -1)  st->print("%3d ", comp_level);
+    else                   st->print("%3s ", "-");
   }
-  st->print("     ");  // more indent
+  st->print("  ");  // more indent
 
   if (method == nullptr) {
     st->print("(method)");
@@ -296,6 +295,19 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   if (cr) {
     st->cr();
   }
+}
+
+void CompileTask::print_legend_on(outputStream* st) {
+  // Matches to format in CompileTask::print_impl above.
+  st->print_cr(" (T)  Elapsed time since JVM start, ms");
+  st->print_cr(" (W)  Time spent in waiting before enqueue, us");
+  st->print_cr(" (Q)  Time spent in compilation queue, us");
+  st->print_cr(" (C)  Time spent in compilation, us");
+  st->print_cr(" (ID) Compile task ID");
+  st->print_cr(" (AT) Compile task attributes: %% = OSR, s = synchronized, ! = has exception handler, b = blocking, n = native");
+  st->print_cr(" (L)  Compile level");
+  st->cr();
+  st->print_cr("%7s %7s %7s %7s %5s %5s %3s    %s", "T", "W", "Q", "C", "ID", "AT", "L", "METHOD");
 }
 
 // ------------------------------------------------------------------

@@ -241,6 +241,7 @@ public:
                            msg, short_form, cr);
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
+  static void  print_legend_on(outputStream* st);
 
   /**
    * @deprecated Please rely on Compile::inline_printer. Do not directly write inlining information to tty.

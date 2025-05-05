@@ -782,6 +782,11 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
                                           CHECK);
   }
 
+  // Print the legend if we are reporting compilations.
+  if (PrintCompilation) {
+    CompileTask::print_legend_on(tty);
+  }
+
   _initialized = true;
 }
 
