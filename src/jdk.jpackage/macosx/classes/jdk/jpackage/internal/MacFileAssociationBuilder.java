@@ -42,11 +42,11 @@ final class MacFileAssociationBuilder {
                 Optional.ofNullable(cfBundleTypeName).orElse(DEFAULTS.cfBundleTypeName),
                 Optional.ofNullable(cfBundleTypeRole).orElse(DEFAULTS.cfBundleTypeRole),
                 Optional.ofNullable(lsHandlerRank).orElse(DEFAULTS.lsHandlerRank),
-                Optional.ofNullable(lsTypeIsPackage).orElse(DEFAULTS.lsTypeIsPackage),
+                Optional.ofNullable(lsTypeIsPackage),
                 Optional.ofNullable(nsDocumentClass),
                 Optional.ofNullable(nsPersistentStoreTypeKey),
-                Optional.ofNullable(lsSupportsOpeningDocumentsInPlace).orElse(DEFAULTS.lsSupportsOpeningDocumentsInPlace),
-                Optional.ofNullable(uiSupportsDocumentBrowser).orElse(DEFAULTS.uiSupportsDocumentBrowser),
+                Optional.ofNullable(lsSupportsOpeningDocumentsInPlace),
+                Optional.ofNullable(uiSupportsDocumentBrowser),
                 Optional.ofNullable(utTypeConformsTo).orElse(DEFAULTS.utTypeConformsTo),
                 Optional.ofNullable(nsExportableTypes).orElse(DEFAULTS.nsExportableTypes));
 
@@ -118,9 +118,6 @@ final class MacFileAssociationBuilder {
             .lsHandlerRank("Owner")
             .cfBundleTypeRole("Editor")
             .cfBundleTypeName("")
-            .lsTypeIsPackage(false)
-            .lsSupportsOpeningDocumentsInPlace(false)
-            .uiSupportsDocumentBrowser(false)
             .utTypeConformsTo(List.of("public.data"))
             .nsExportableTypes(List.of());
 

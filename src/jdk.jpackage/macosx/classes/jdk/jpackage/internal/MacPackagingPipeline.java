@@ -27,7 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.ApplicationImageUtils.createWriteAppImageFileAction;
 import static jdk.jpackage.internal.util.PListWriter.writeArray;
 import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
-import static jdk.jpackage.internal.util.PListWriter.writeBooleanIf;
+import static jdk.jpackage.internal.util.PListWriter.writeBooleanOptional;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writeKey;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
@@ -389,9 +389,9 @@ final class MacPackagingPipeline {
         writeStringOptional(xml, "NSPersistentStoreTypeKey", fa.nsPersistentStoreTypeKey());
         writeStringOptional(xml, "NSDocumentClass", fa.nsDocumentClass());
         writeBoolean(xml, "LSIsAppleDefaultForType", true);
-        writeBooleanIf(xml, "LSTypeIsPackage", fa.lsTypeIsPackage(), true);
-        writeBooleanIf(xml, "LSSupportsOpeningDocumentsInPlace", fa.lsSupportsOpeningDocumentsInPlace(), true);
-        writeBooleanIf(xml, "UISupportsDocumentBrowser", fa.uiSupportsDocumentBrowser(), true);
+        writeBooleanOptional(xml, "LSTypeIsPackage", fa.lsTypeIsPackage());
+        writeBooleanOptional(xml, "LSSupportsOpeningDocumentsInPlace", fa.lsSupportsOpeningDocumentsInPlace());
+        writeBooleanOptional(xml, "UISupportsDocumentBrowser", fa.uiSupportsDocumentBrowser());
         faWriteIcon(xml, "CFBundleTypeIconFile", fa);
     }
 

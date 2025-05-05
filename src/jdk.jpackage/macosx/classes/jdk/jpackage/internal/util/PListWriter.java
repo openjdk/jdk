@@ -41,10 +41,10 @@ public final class PListWriter {
         xml.writeEmptyElement(Boolean.toString(value));
     }
 
-    public static void writeBooleanIf(XMLStreamWriter xml, String key, boolean value, boolean expectedValue)
+    public static void writeBooleanOptional(XMLStreamWriter xml, String key, Optional<Boolean> value)
             throws XMLStreamException {
-        if (expectedValue == value) {
-            writeBoolean(xml, key, value);
+        if (value.isPresent()) {
+            writeBoolean(xml, key, value.orElseThrow());
         }
     }
 

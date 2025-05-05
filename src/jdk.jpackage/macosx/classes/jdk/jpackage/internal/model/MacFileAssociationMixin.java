@@ -35,25 +35,25 @@ public interface MacFileAssociationMixin {
 
     String lsHandlerRank();
 
-    boolean lsTypeIsPackage();
+    Optional<Boolean> lsTypeIsPackage();
 
     Optional<String> nsDocumentClass();
 
     Optional<String> nsPersistentStoreTypeKey();
 
-    boolean lsSupportsOpeningDocumentsInPlace();
+    Optional<Boolean> lsSupportsOpeningDocumentsInPlace();
 
-    boolean uiSupportsDocumentBrowser();
+    Optional<Boolean> uiSupportsDocumentBrowser();
 
     List<String> utTypeConformsTo();
 
     List<String> nsExportableTypes();
 
     record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, Optional<String> nsDocumentClass,
+            String lsHandlerRank, Optional<Boolean> lsTypeIsPackage, Optional<String> nsDocumentClass,
             Optional<String> nsPersistentStoreTypeKey,
-            boolean lsSupportsOpeningDocumentsInPlace,
-            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
+            Optional<Boolean> lsSupportsOpeningDocumentsInPlace,
+            Optional<Boolean> uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
             List<String> nsExportableTypes) implements MacFileAssociationMixin {
 
     }
