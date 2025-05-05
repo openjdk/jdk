@@ -494,8 +494,8 @@ CGGI_SizeCanvas(CGGI_GlyphCanvas *canvas, const vImagePixelCount width,
         const CGGI_RenderingMode* mode)
 {
     if (canvas->image != NULL &&
-        width  * CGGI_GLYPH_CANVAS_SLACK <= canvas->image->width &&
-        height * CGGI_GLYPH_CANVAS_SLACK <= canvas->image->height)
+        width < canvas->image->width &&
+        height < canvas->image->height)
     {
         return;
     }
