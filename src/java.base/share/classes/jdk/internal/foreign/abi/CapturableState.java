@@ -59,8 +59,9 @@ public final class CapturableState {
         Map.Entry<String, CapturableState>[] entries = new Map.Entry[supported.size()];
         int i = 0;
         for (var each : supported) {
-            stateLayouts[i++] = each.layout;
-            entries[i++] = Map.entry(each.stateName, each);
+            stateLayouts[i] = each.layout;
+            entries[i] = Map.entry(each.stateName, each);
+            i++;
         }
         LAYOUT = MemoryLayout.structLayout(stateLayouts);
         LOOKUP = Map.ofEntries(entries);
