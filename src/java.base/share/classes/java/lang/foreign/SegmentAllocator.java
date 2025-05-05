@@ -728,9 +728,9 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        return this instanceof NoInitSegmentAllocator noInit ?
-                noInit.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
-                allocate(layout);
+        return this instanceof NoInitSegmentAllocator noInit
+                ? noInit.allocateNoInit(layout.byteSize(), layout.byteAlignment())
+                : allocate(layout);
     }
 
     @ForceInline
