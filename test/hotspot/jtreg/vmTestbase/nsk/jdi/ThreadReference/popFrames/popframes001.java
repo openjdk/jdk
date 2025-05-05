@@ -302,7 +302,7 @@ public class popframes001 extends JDIBase {
             }
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
 
             String poppedMethod    = "poppedMethod";
@@ -311,7 +311,7 @@ public class popframes001 extends JDIBase {
 
             log2("......setting breakpoint in poppedMethod");
             try {
-                breakpointRequest = settingBreakpoint(debuggee.threadByNameOrThrow(thread2Name),
+                breakpointRequest = settingBreakpoint(thread2Ref,
                                           debuggeeClass,
                                           poppedMethod, breakpointLine, "one");
             } catch ( Exception e ) {

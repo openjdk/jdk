@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ package jdk.internal.net.http.common;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ProtocolException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /*
@@ -37,14 +39,15 @@ public class ValidatingHeadersConsumer {
     private final Context context;
 
     public ValidatingHeadersConsumer(Context context) {
-        this.context = context;
+        this.context = Objects.requireNonNull(context);
     }
 
     public enum Context {
         REQUEST,
         RESPONSE,
-        TRAILER
     }
+
+    // Map of permitted pseudo headers in requests and responses
     private static final Map<String, Context> PSEUDO_HEADERS =
             Map.of(":authority", Context.REQUEST,
                     ":method", Context.REQUEST,
@@ -54,7 +57,7 @@ public class ValidatingHeadersConsumer {
 
     // connection-specific, prohibited by RFC 9113 section 8.2.2
     private static final Set<String> PROHIBITED_HEADERS =
-            Set.of("connection","proxy-connection", "keep-alive",
+            Set.of("connection", "proxy-connection", "keep-alive",
                     "transfer-encoding", "upgrade");
 
     /** Used to check that if there are pseudo-headers, they go first */
@@ -92,7 +95,7 @@ public class ValidatingHeadersConsumer {
         } else {
             pseudoHeadersEnded = true;
             // Check for prohibited connection-specific headers.
-            // Some servers (Jetty, Tomcat) echo request headers in push promises.
+            // Some servers echo request headers in push promises.
             // If the request was a HTTP/1.1 upgrade, it included some prohibited headers.
             // For compatibility, we ignore prohibited headers in push promises.
             if (context != Context.REQUEST) {
@@ -119,6 +122,6 @@ public class ValidatingHeadersConsumer {
     protected UncheckedIOException newException(String message, String header)
     {
         return new UncheckedIOException(
-                new IOException(formatMessage(message, header)));
+                new ProtocolException(formatMessage(message, header)));
     }
 }

@@ -344,6 +344,7 @@ class Http2Connection  {
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
         PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+            super(Context.REQUEST);
             this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
@@ -989,7 +990,10 @@ class Http2Connection  {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
                     if (orphanedConsumer == null || frame.getClass() != ContinuationFrame.class) {
-                        orphanedConsumer = new ValidatingHeadersConsumer(Context.RESPONSE);
+                        orphanedConsumer = new ValidatingHeadersConsumer(
+                                frame instanceof PushPromiseFrame ?
+                                        Context.REQUEST :
+                                        Context.RESPONSE);
                     }
                     DecodingCallback decoder = orphanedConsumer::onDecoded;
                     try {

@@ -77,9 +77,9 @@ public class crstepreq004 {
 
     //------------------------------------------------------ test specific fields
 
-    static final int lineForBreakInThread = 146;
-    static final int[] checkedLines = { 160, 160, 193 };
-    static final int[] checkedLinesAlt = { 161, 161, 193 };
+    static final int lineForBreakInThread = 149;
+    static final int[] checkedLines = { 163, 163, 196 };
+    static final int[] checkedLinesAlt = { 164, 164, 196 };
 
     //------------------------------------------------------ mutable common methods
 
@@ -248,7 +248,7 @@ public class crstepreq004 {
             exitCode = FAILED;
         }
 
-        ThreadReference thread = debuggee.threadByNameOrThrow(threadName);
+        ThreadReference thread = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
         StepRequest stepRequest = setStepRequest( thread,
                                                   StepRequest.STEP_LINE,
                                                   stepDepth,
