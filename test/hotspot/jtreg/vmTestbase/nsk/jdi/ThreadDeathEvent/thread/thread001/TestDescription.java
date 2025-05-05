@@ -82,7 +82,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadDeathEvent.thread.thread001
  *        nsk.jdi.ThreadDeathEvent.thread.thread001a
- * @run driver
+ * @run driver/timeout=480
  *      nsk.jdi.ThreadDeathEvent.thread.thread001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -91,4 +91,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

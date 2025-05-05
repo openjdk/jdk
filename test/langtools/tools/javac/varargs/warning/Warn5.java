@@ -31,7 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @run main/othervm Warn5
+ * @run main/othervm/timeout=480 Warn5
  */
 
 import java.io.IOException;

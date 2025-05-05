@@ -27,7 +27,7 @@
  * @summary keytool and jarsigner for all algorithms
  * @library /test/lib
  * @modules java.base/sun.security.util
- * @run testng/timeout=300 GenerateAll
+ * @run testng/timeout=1200 GenerateAll
  */
 
 import jdk.test.lib.SecurityTools;

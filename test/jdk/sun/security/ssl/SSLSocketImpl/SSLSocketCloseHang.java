@@ -25,6 +25,7 @@
  * @test
  * @bug 8184328 8253368 8260923
  * @summary JDK8u131-b34-socketRead0 hang at SSL read
+ * @library /test/lib
  * @run main/othervm SSLSocketCloseHang TLSv1.2
  * @run main/othervm SSLSocketCloseHang TLSv1.2 shutdownInput
  * @run main/othervm SSLSocketCloseHang TLSv1.2 shutdownOutput
@@ -39,6 +40,7 @@ import java.net.*;
 import java.util.*;
 import java.security.*;
 import javax.net.ssl.*;
+import jdk.test.lib.Utils;
 
 public class SSLSocketCloseHang {
     /*
@@ -137,8 +139,7 @@ public class SSLSocketCloseHang {
         System.out.println("server ready");
 
         Socket baseSocket = new Socket("localhost", serverPort);
-        float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-        baseSocket.setSoTimeout((int)(1000 * timeoutFactor));
+        baseSocket.setSoTimeout((int)(1000 * Utils.TIMEOUT_FACTOR));
 
         SSLSocketFactory sslsf =
             (SSLSocketFactory) SSLSocketFactory.getDefault();

@@ -33,7 +33,7 @@ import static jdk.test.lib.SigTestUtil.SignatureType;
  * @summary Verify a chain of signed objects
  * @library /test/lib
  * @build jdk.test.lib.SigTestUtil
- * @run main Chain
+ * @run main/timeout=480 Chain
  */
 public class Chain {
 

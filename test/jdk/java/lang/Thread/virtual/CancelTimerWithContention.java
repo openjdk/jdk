@@ -27,7 +27,7 @@
  *     contention on the timer queue
  * @requires vm.continuations
  * @key randomness
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *     -Djdk.virtualThreadScheduler.parallelism=2
  *     -Djdk.virtualThreadScheduler.timerQueues=1
  *     CancelTimerWithContention

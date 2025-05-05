@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jshell
  * @build Compiler KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng VariablesTest
+ * @run testng/timeout=480 VariablesTest
  */
 
 import java.nio.file.Path;

@@ -33,7 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
 
- * @run main LambdaParserTest
+ * @run main/timeout=480 LambdaParserTest
  */
 
 import java.io.IOException;

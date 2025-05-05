@@ -25,7 +25,7 @@
  * @test
  * @bug 8184271
  * @summary Test correct scheduling of System.nanoTime C1 intrinsic.
- * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch
+ * @run main/othervm/timeout=480 -XX:TieredStopAtLevel=1 -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.c1.TestPinnedIntrinsics::checkNanoTime
  *                   compiler.c1.TestPinnedIntrinsics
  */

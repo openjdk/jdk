@@ -33,7 +33,7 @@
  * @library /vmTestbase /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -Xss10m
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions

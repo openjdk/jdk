@@ -24,12 +24,14 @@
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
+import jdk.test.lib.Utils;
 
 /**
  * @test
  * @bug 6459476
  * @summary Test interrupting debuggee with single stepping enable
  * @author jjh
+ * @library /test/lib
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g InterruptHangTest.java
@@ -284,8 +286,7 @@ public class InterruptHangTest extends TestScaffold {
         timerThread = new Thread("test timer") {
                 public void run() {
                     int mySteps = 0;
-                    float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-                    long sleepSeconds = (long)(20 * timeoutFactor);
+                    long sleepSeconds = (long)(20 * Utils.TIMEOUT_FACTOR);
                     println("Timer watching for steps every " + sleepSeconds + " seconds");
                     while (true) {
                         try {

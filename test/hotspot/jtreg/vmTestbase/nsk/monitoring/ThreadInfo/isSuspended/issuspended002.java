@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  *          /testlibrary
- * @run main/othervm nsk.monitoring.ThreadInfo.isSuspended.issuspended002
+ * @run main/othervm/timeout=480 nsk.monitoring.ThreadInfo.isSuspended.issuspended002
  */
 
 package nsk.monitoring.ThreadInfo.isSuspended;

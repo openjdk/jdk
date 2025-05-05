@@ -54,7 +54,7 @@ import static org.testng.Assert.*;
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm -Djdk.internal.httpclient.debug=true BufferingSubscriberTest
+ * @run testng/othervm/timeout=480 -Djdk.internal.httpclient.debug=true BufferingSubscriberTest
  */
 
 public class BufferingSubscriberTest {

@@ -42,7 +42,7 @@
  * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI

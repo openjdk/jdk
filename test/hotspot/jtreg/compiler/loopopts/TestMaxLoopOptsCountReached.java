@@ -26,7 +26,7 @@
  * @bug 8284944
  * @requires vm.compiler2.enabled
  * @summary triggers the loop optimization phase `LoopOptsCount` many times
- * @run main/othervm -Xcomp -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,TestMaxLoopOptsCountReached::test TestMaxLoopOptsCountReached
+ * @run main/othervm/timeout=480 -Xcomp -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,TestMaxLoopOptsCountReached::test TestMaxLoopOptsCountReached
  */
 
 import java.lang.System.Logger.Level;

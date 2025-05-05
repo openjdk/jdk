@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Test TestImpl RegistryVM RegistryRunner
- * @run main/othervm/timeout=360 DGCDeadLock
+ * @run main/othervm/timeout=1440 DGCDeadLock
  */
 
 /* This test attempts to cause a deadlock between the rmi leaseChecker
@@ -56,8 +56,7 @@ import java.io.*;
 
 public class DGCDeadLock implements Runnable {
     final static public int HOLD_TARGET_TIME = 25000;
-    public static final double TEST_FAIL_TIME =
-            (HOLD_TARGET_TIME + 30000) * TestLibrary.getTimeoutFactor();
+    public static final double TEST_FAIL_TIME = (HOLD_TARGET_TIME + 30000) * Math.max(TestLibrary.getTimeoutFactor(), 4);
     public static volatile boolean finished = false;
     static final DGCDeadLock test = new DGCDeadLock();
     static volatile int registryPort = -1;

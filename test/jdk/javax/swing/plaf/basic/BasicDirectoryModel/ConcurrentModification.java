@@ -42,7 +42,7 @@ import javax.swing.JFileChooser;
  * @bug 8323670 8307091 8240690
  * @requires os.family == "mac" | os.family == "linux"
  * @summary Verifies thread-safety of BasicDirectoryModel (JFileChooser)
- * @run main/othervm -Djava.awt.headless=true ConcurrentModification
+ * @run main/othervm/timeout=480 -Djava.awt.headless=true ConcurrentModification
  */
 public final class ConcurrentModification extends ThreadGroup {
     /** Initial number of files. */

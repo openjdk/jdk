@@ -26,7 +26,7 @@
  * @bug 8303882
  * @summary Verify that Iterators method work as expected
  * @modules jdk.compiler/com.sun.tools.javac.util
- * @run junit IteratorsTest
+ * @run junit/timeout=480 IteratorsTest
  */
 
 import com.sun.tools.javac.util.Iterators;

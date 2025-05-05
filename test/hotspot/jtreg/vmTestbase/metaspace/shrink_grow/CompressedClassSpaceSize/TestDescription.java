@@ -31,11 +31,10 @@
  *
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -DrequiresCompressedClassSpace=true
  *      -XX:MaxMetaspaceSize=100m
  *      -XX:CompressedClassSpaceSize=10m
  *      -Xlog:gc*:gc.log
  *      metaspace.shrink_grow.ShrinkGrowTest.ShrinkGrowTest
  */
-

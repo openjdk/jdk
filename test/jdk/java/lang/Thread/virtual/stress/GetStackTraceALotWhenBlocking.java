@@ -36,7 +36,7 @@
  * @requires vm.debug == true & vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/timeout=300 GetStackTraceALotWhenBlocking 50000
+ * @run main/othervm/timeout=1200 GetStackTraceALotWhenBlocking 50000
  */
 
 import java.time.Instant;

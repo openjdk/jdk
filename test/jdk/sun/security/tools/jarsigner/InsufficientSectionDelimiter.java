@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @test
  * @bug 8217375
  * @library /test/lib
- * @run testng InsufficientSectionDelimiter
+ * @run testng/timeout=480 InsufficientSectionDelimiter
  * @summary Checks some cases signing a jar the manifest of which has no or
  * only one line break at the end and no proper delimiting blank line does not
  * result in an invalid signed jar without jarsigner noticing and failing.

@@ -31,7 +31,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @build metaspace.shrink_grow.ShrinkGrowMultiJVM.ShrinkGrowMultiJVM
- * @run driver metaspace.shrink_grow.ShrinkGrowMultiJVM.ShrinkGrowMultiJVM
+ * @run driver/timeout=480 metaspace.shrink_grow.ShrinkGrowMultiJVM.ShrinkGrowMultiJVM
  */
 
 package metaspace.shrink_grow.ShrinkGrowMultiJVM;

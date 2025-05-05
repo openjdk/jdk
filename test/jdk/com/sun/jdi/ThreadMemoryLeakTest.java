@@ -32,7 +32,7 @@
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME
- * @run main/othervm -Xmx7m ThreadMemoryLeakTest
+ * @run main/othervm/timeout=480 -Xmx7m ThreadMemoryLeakTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

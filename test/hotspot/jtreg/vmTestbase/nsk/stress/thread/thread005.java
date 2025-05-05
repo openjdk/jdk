@@ -31,7 +31,7 @@
  * DESCRIPTION
  *     Try many threads starting simultaneously.
  *
- * @run main/othervm nsk.stress.thread.thread005 500 2m 5s
+ * @run main/othervm/timeout=480 nsk.stress.thread.thread005 500 2m 5s
  */
 
 package nsk.stress.thread;

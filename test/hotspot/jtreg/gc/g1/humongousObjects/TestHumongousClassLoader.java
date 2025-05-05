@@ -48,20 +48,20 @@ import java.nio.file.Paths;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=240  -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=960  -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                                gc.g1.humongousObjects.ClassLoaderGenerator 1
  *
- * @run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_Full_GC.log
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousClassLoader FULL_GC
  *
- * @run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_Full_GC_Mem_Pressure.log
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousClassLoader FULL_GC_MEMORY_PRESSURE
  *
- *@run main/othervm -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *@run main/othervm/timeout=480 -Xms256M -Xmx256M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+load,class+unload=debug:file=TestHumongousClassLoader_CMC.log
  *                   -XX:G1HeapRegionSize=1M -XX:MaxTenuringThreshold=1
  *                   gc.g1.humongousObjects.TestHumongousClassLoader CMC

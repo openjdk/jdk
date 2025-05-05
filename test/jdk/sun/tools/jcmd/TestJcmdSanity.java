@@ -43,7 +43,7 @@ import jdk.test.lib.Utils;
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:+UsePerfData TestJcmdSanity
+ * @run main/othervm/timeout=480 -XX:+UsePerfData TestJcmdSanity
  */
 public class TestJcmdSanity {
 

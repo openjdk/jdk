@@ -39,8 +39,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          key sizes, with and without entries in jdk.jar.disabledAlgorithms,
  *          jdk.certpath.disabledAlgorithms
  * @library /test/lib
- * @run main/othervm RestrictedAlgo RESTRICT
- * @run main/othervm RestrictedAlgo NO_RESTRICT
+ * @run main/othervm/timeout=480 RestrictedAlgo RESTRICT
+ * @run main/othervm/timeout=480 RestrictedAlgo NO_RESTRICT
  */
 
 public class RestrictedAlgo {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED StdLibTest
+ * @run testng/othervm/timeout=480 --enable-native-access=ALL-UNNAMED StdLibTest
  */
 
 import java.lang.invoke.MethodHandle;

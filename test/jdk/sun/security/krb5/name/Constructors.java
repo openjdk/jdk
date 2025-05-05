@@ -25,7 +25,7 @@
  * @bug 6966259
  * @summary Make PrincipalName and Realm immutable
  * @modules java.security.jgss/sun.security.krb5
- * @run main/othervm Constructors
+ * @run main/othervm/timeout=480 Constructors
  */
 
 import java.util.Arrays;
