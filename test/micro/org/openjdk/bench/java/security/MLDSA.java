@@ -66,10 +66,11 @@ public class MLDSA {
     public static class MyState {
 
         Object mldsa44;
+        Object mldsa44_2;
         Object mldsa65;
         Object mldsa87;
 
-        MethodHandle keygen, siggen, sigver;
+        MethodHandle keygen, siggen, sigver, siggen2;
 
         @Setup(Level.Trial)
         public void setup() throws Throwable, Exception {
@@ -96,6 +97,7 @@ public class MLDSA {
             sigver = lookup.unreflect(m);
 
             mldsa44 = constructor.newInstance(2);
+            mldsa44_2 = constructor.newInstance(2);
             mldsa65 = constructor.newInstance(3);
             mldsa87 = constructor.newInstance(5);
         }
@@ -144,6 +146,23 @@ public class MLDSA {
                         rnd, testCase.sk);
             }
         }
+    }
+
+    @Benchmark
+    public void siggenvp2(MyState myState) throws Throwable {
+        SigGenTestCase testCase = SigGenTestCases44[0];
+        dsa.signInternal(testCase.msg, rnd, testCase.sk);
+    }
+
+    sun.security.provider.ML_DSA dsa = new sun.security.provider.ML_DSA(2);
+    byte[] rnd = new byte[32];
+    sun.security.provider.ML_DSA.ML_DSA_PrivateKey sk = dsa.skDecode(SigGenTestCases44[0].sk);
+    sun.security.provider.SHA3.SHAKE256 hash = new sun.security.provider.SHA3.SHAKE256(0);
+    @Benchmark
+    public void siggenvp3(MyState myState) throws Throwable {
+        SigGenTestCase testCase = SigGenTestCases44[0];
+        dsa.resetSK(testCase.sk, sk);
+        dsa.signInternal(testCase.msg, rnd, sk, hash);
     }
 
     @Benchmark

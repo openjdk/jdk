@@ -471,7 +471,38 @@ public class ML_DSA {
             default:
                 throw new IllegalArgumentException("Wrong security level");
         }
+
+        z = new int[mlDsa_l][ML_DSA_N];
+        h = new boolean[mlDsa_k][ML_DSA_N];
+        commitmentHash = new byte[lambda/4];
+        y = new int[mlDsa_l][ML_DSA_N];
+        yy = new int[mlDsa_l][ML_DSA_N];
+        w = new int[mlDsa_k][ML_DSA_N];
+        w0 = new int[mlDsa_k][ML_DSA_N];
+        w1 = new int[mlDsa_k][ML_DSA_N];
+        w_ct0 = new int[mlDsa_k][ML_DSA_N];
+        c =  new int[ML_DSA_N];
+        cs1 = new int[mlDsa_l][ML_DSA_N];
+        cs2 = new int[mlDsa_k][ML_DSA_N];
+        ct0 = new int[mlDsa_k][ML_DSA_N];
+
+        a = new int[mlDsa_k][mlDsa_l][];
+        xofBufArr = new byte[2][SHAKE128_BLOCK_SIZE];
     }
+
+    int[][] z;
+    boolean[][] h;
+    byte[] commitmentHash;
+    int[][] y;
+    int[][] yy;
+    int[][] w;
+    int[][] w0;
+    int[][] w1;
+    int[][] w_ct0;
+    int[] c;
+    int[][] cs1;
+    int[][] cs2;
+    int[][] ct0;
 
     public record ML_DSA_PrivateKey(byte[] rho, byte[] k, byte[] tr,
                                     int[][] s1, int[][] s2, int[][] t0) {
@@ -573,25 +604,6 @@ public class ML_DSA {
         ML_DSA_PrivateKey sk = skDecode(skBytes);
         var hash = new SHAKE256(0);
 
-        //Do some NTTs
-        mlDsaVectorNtt(sk.s1());
-        mlDsaVectorNtt(sk.s2());
-        mlDsaVectorNtt(sk.t0());
-        int[][][] aHat = generateA(sk.rho());
-
-        //Compute mu
-        hash.update(sk.tr());
-        hash.update(message);
-        byte[] mu = hash.squeeze(MU_LEN);
-        hash.reset();
-
-        //Compute rho'
-        hash.update(sk.k());
-        hash.update(rnd);
-        hash.update(mu);
-        byte[] rhoDoublePrime = hash.squeeze(MASK_SEED_LEN);
-        hash.reset();
-
         //Initialize vectors used in loop
         int[][] z = new int[mlDsa_l][ML_DSA_N];
         boolean[][] h = new boolean[mlDsa_k][ML_DSA_N];
@@ -606,6 +618,33 @@ public class ML_DSA {
         int[][] cs1 = new int[mlDsa_l][ML_DSA_N];
         int[][] cs2 = new int[mlDsa_k][ML_DSA_N];
         int[][] ct0 = new int[mlDsa_k][ML_DSA_N];
+
+
+        ML_DSA_Signature sig = signInternal(message, rnd, sk, hash);
+        sk.destroy();
+        return sig;
+    }
+
+    public ML_DSA_Signature signInternal(byte[] message, byte[] rnd, ML_DSA_PrivateKey sk, SHAKE256 hash) {
+        //Do some NTTs
+        mlDsaVectorNtt(sk.s1());
+        mlDsaVectorNtt(sk.s2());
+        mlDsaVectorNtt(sk.t0());
+        int[][][] aHat = generateA(sk.rho());
+
+        //Compute mu
+        hash.reset();
+        hash.update(sk.tr());
+        hash.update(message);
+        byte[] mu = hash.squeeze(MU_LEN);
+        hash.reset();
+
+        //Compute rho'
+        hash.update(sk.k());
+        hash.update(rnd);
+        hash.update(mu);
+        byte[] rhoDoublePrime = hash.squeeze(MASK_SEED_LEN);
+        hash.reset();
 
         int kappa = 0;
         while (true) {
@@ -655,7 +694,7 @@ public class ML_DSA {
                     continue;
                 }
             }
-            sk.destroy();
+            // sk.destroy();
             return new ML_DSA_Signature(commitmentHash, z, h);
         }
     }
@@ -944,7 +983,7 @@ public class ML_DSA {
     }
 
     public ML_DSA_PrivateKey skDecode(byte[] sk) {
-        byte[] rho = new byte[A_SEED_LEN];
+        byte[] rho = new byte[A_SEED_LEN]; //here
         System.arraycopy(sk, 0, rho, 0, A_SEED_LEN);
 
         byte[] k = new byte[K_LEN];
@@ -971,6 +1010,22 @@ public class ML_DSA {
         bitUnpack(t0, sk, start, mlDsa_k, 1 << 12, T0_COEFF_SIZE);
 
         return new ML_DSA_PrivateKey(rho, k, tr, s1, s2, t0);
+    }
+
+    public void resetSK(byte[] sk, ML_DSA_PrivateKey sk2) {
+        //Parse s1
+        int start = A_SEED_LEN + K_LEN + TR_LEN;
+        int end = start + (32 * mlDsa_l * s1s2CoeffSize);
+        bitUnpack(sk2.s1, sk, start, mlDsa_l, eta, s1s2CoeffSize);
+
+        //Parse s2
+        start = end;
+        end += 32 * s1s2CoeffSize * mlDsa_k;
+        bitUnpack(sk2.s2, sk, start, mlDsa_k, eta, s1s2CoeffSize);
+
+        //Parse t0
+        start = end;
+        bitUnpack(sk2.t0, sk, start, mlDsa_k, 1 << 12, T0_COEFF_SIZE);
     }
 
     public byte[] sigEncode(ML_DSA_Signature sig) {
@@ -1091,8 +1146,10 @@ public class ML_DSA {
         }
     }
 
+    int[][][] a;
+    byte[][] xofBufArr;
     private int[][][] generateA(byte[] seed) {
-        int[][][] a = new int[mlDsa_k][mlDsa_l][];
+        //int[][][] a = new int[mlDsa_k][mlDsa_l][];
 
         int nrPar = 2;
         int rhoLen = seed.length;
@@ -1100,7 +1157,7 @@ public class ML_DSA {
         System.arraycopy(seed, 0, seedBuf, 0, seed.length);
         seedBuf[rhoLen + 2] = 0x1F;
         seedBuf[SHAKE128_BLOCK_SIZE - 1] = (byte)0x80;
-        byte[][] xofBufArr = new byte[nrPar][SHAKE128_BLOCK_SIZE];
+        // byte[][] xofBufArr = new byte[nrPar][SHAKE128_BLOCK_SIZE];
         int[] iIndex = new int[nrPar];
         int[] jIndex = new int[nrPar];
 
@@ -1228,10 +1285,10 @@ public class ML_DSA {
     }
 
     private void expandMask(int[][] result, byte[] rho, int mu) {
-        var xof = new SHAKE256(0);
+        var xof = new SHAKE256(0); //here
 
         int c = 1 + gamma1Bits;
-        byte[] v = new byte[mlDsa_l * 32 * c];
+        byte[] v = new byte[mlDsa_l * 32 * c]; //here
         for (int r = 0; r < mlDsa_l; r++) {
             int a = mu + r;
             byte[] n = {(byte) a, (byte) (a >> 8)};
