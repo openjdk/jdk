@@ -587,7 +587,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         Preconditions.checkFromToIndex(srcBegin, srcEnd, count, Preconditions.SIOOBE_FORMATTER);  // compatible to old version
         int n = srcEnd - srcBegin;
         Preconditions.checkFromToIndex(dstBegin, dstBegin + n, dst.length, Preconditions.IOOBE_FORMATTER);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         } else {
             StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
@@ -1209,7 +1209,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public String substring(int start, int end) {
         Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             return StringLatin1.newString(value, start, end - start);
         }
         return StringUTF16.newString(value, start, end - start);
@@ -1741,7 +1741,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte[] val = this.value;
         int count = this.count;
         int n = count - 1;
-        if (isLatin1()) {
+        if (isLatin1(this.coder)) {
             for (int j = (n-1) >> 1; j >= 0; j--) {
                 int k = n - j;
                 byte cj = val[j];
