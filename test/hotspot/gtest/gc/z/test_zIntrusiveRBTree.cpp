@@ -32,16 +32,16 @@
 
 #include <limits>
 
-struct ZTestEntryCompare {
+struct ZRBTestEntryCompare {
   int operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b);
   int operator()(int key, const ZIntrusiveRBTreeNode* entry);
 };
 
 class ZRBTestEntry : public ArenaObj {
-  friend class ZIntrusiveRBTree<int, ZTestEntryCompare>;
+  friend class ZIntrusiveRBTree<int, ZRBTestEntryCompare>;
 
 public:
-  using ZTree = ZIntrusiveRBTree<int, ZTestEntryCompare>;
+  using ZTree = ZIntrusiveRBTree<int, ZRBTestEntryCompare>;
 private:
   const int   _id;
   ZIntrusiveRBTreeNode _node;
@@ -64,10 +64,10 @@ public:
 
 };
 
-int ZTestEntryCompare::operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b) {
+int ZRBTestEntryCompare::operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b) {
   return ZRBTestEntry::cast_to_outer(a)->id() - ZRBTestEntry::cast_to_outer(b)->id();
 }
-int ZTestEntryCompare::operator()(int key, const ZIntrusiveRBTreeNode* entry) {
+int ZRBTestEntryCompare::operator()(int key, const ZIntrusiveRBTreeNode* entry) {
   return key - ZRBTestEntry::cast_to_outer(entry)->id();
 }
 
@@ -206,7 +206,7 @@ TEST_F(ZTreeTest, test_insert) {
   }
   shuffle_tree.verify_tree();
 
-  ZTestEntryCompare compare_fn;
+  ZRBTestEntryCompare compare_fn;
   const ZIntrusiveRBTreeNode* forward_node = forward_tree.first();
   const ZIntrusiveRBTreeNode* reverse_node = reverse_tree.first();
   const ZIntrusiveRBTreeNode* shuffle_node = shuffle_tree.first();
