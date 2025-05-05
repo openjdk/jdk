@@ -924,7 +924,6 @@ static bool should_end_stack_walk(const char* name) {
 
 void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
   char buf[O_BUFLEN];
-  Thread* _current = Thread::current_or_null();
   int count = 0;
   int frame = 0;
   while (count++ < StackPrintLimit && fr.pc() != nullptr) {
@@ -955,7 +954,7 @@ void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
         frame++;
       }
     }
-    fr = frame::next_frame(fr, _current);
+    fr = frame::next_frame(fr, Thread::current_or_null());
   }
 }
 
