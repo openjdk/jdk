@@ -2350,6 +2350,16 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
+void PhaseMacroExpand::refine_strip_mined_loop_macro_node() {
+   // Perform refining of strip mined loop node in the  macro nodes list.
+   for (int i = C->macro_count(); i > 0; i--) {
+    Node* n = C->macro_node(i - 1);
+    if (n->is_OuterStripMinedLoop()) {
+      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+    }
+  }
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
@@ -2457,13 +2467,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
-  // Perform refining of strip mined loop node before we start to expand.
-  for (int i = C->macro_count(); i > 0; i--) {
-    Node* n = C->macro_node(i-1);
-    if (n->Opcode() == Op_OuterStripMinedLoop) {
-      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
-    }
-  }
+  // Perform refining of strip mined loop before expanding macro nodes.
+  refine_strip_mined_loop_macro_node();
   // Do not allow new macro nodes once we started to expand
   C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
