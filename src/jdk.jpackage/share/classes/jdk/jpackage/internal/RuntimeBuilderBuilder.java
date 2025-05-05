@@ -78,29 +78,40 @@ final class RuntimeBuilderBuilder {
 
         RuntimeBuilderBuilder appy() {
             impl = new BuildingRuntime(RuntimeBuilderBuilder.this, addModules,
-                    limitModules, options, startupInfos);
+                    limitModules, validatedOptions(), startupInfos);
             return RuntimeBuilderBuilder.this;
         }
 
-        public RuntimeBuilderConfigBuilder addModules(Set<String> v) {
+        RuntimeBuilderConfigBuilder addModules(Set<String> v) {
             addModules = v;
             return this;
         }
 
-         public RuntimeBuilderConfigBuilder limitModules(Set<String> v) {
+        RuntimeBuilderConfigBuilder limitModules(Set<String> v) {
             limitModules = v;
             return this;
         }
 
-        public RuntimeBuilderConfigBuilder options(List<String> v) {
+        RuntimeBuilderConfigBuilder options(List<String> v) {
             options = v;
             return this;
+        }
+
+        private List<String> validatedOptions() {
+            return Optional.ofNullable(options).orElse(DEFAULT_JLINK_OPTIONS);
         }
 
         private Set<String> addModules;
         private Set<String> limitModules;
         private List<String> options;
         private final List<LauncherStartupInfo> startupInfos;
+
+        private static final List<String> DEFAULT_JLINK_OPTIONS = List.of(
+                "--strip-native-commands",
+                "--strip-debug",
+                "--no-man-pages",
+                "--no-header-files"
+        );
     }
 
     private static RuntimeBuilder createCopyingRuntimeBuilder(Path runtimeDir,
