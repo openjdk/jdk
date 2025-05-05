@@ -1047,7 +1047,6 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 }
 
 void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files) {
-  ThreadCritical tc;
   if (use_multiple_files && _file_count != 0) {
     assert(!_append, "append should only be used for debugging with a single file");
     ResourceMark rm;
