@@ -25,15 +25,15 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#include "gc/shenandoah/c2/shenandoahSupport.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#include "gc/shenandoah/c2/shenandoahSupport.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
@@ -896,7 +896,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
     uint gc_state_idx = Compile::AliasIdxRaw;
     const TypePtr* gc_state_adr_type = nullptr; // debug-mode-only argument
-    debug_only(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
+    DEBUG_ONLY(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
 
     Node* gc_state    = phase->transform_later(new LoadBNode(ctrl, mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered));
     Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(ShenandoahHeap::HAS_FORWARDED)));

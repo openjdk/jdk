@@ -624,7 +624,7 @@ class GrowableArrayMetadata {
   uintptr_t _bits;
 
   // resource area nesting at creation
-  debug_only(GrowableArrayNestingCheck _nesting_check;)
+  DEBUG_ONLY(GrowableArrayNestingCheck _nesting_check;)
 
   // Resource allocation
   static uintptr_t bits() {
@@ -647,19 +647,19 @@ public:
   // Resource allocation
   GrowableArrayMetadata() :
       _bits(bits())
-      debug_only(COMMA _nesting_check(true)) {
+      DEBUG_ONLY(COMMA _nesting_check(true)) {
   }
 
   // Arena allocation
   GrowableArrayMetadata(Arena* arena) :
       _bits(bits(arena))
-      debug_only(COMMA _nesting_check(arena)) {
+      DEBUG_ONLY(COMMA _nesting_check(arena)) {
   }
 
   // CHeap allocation
   GrowableArrayMetadata(MemTag mem_tag) :
       _bits(bits(mem_tag))
-      debug_only(COMMA _nesting_check(false)) {
+      DEBUG_ONLY(COMMA _nesting_check(false)) {
   }
 
 #ifdef ASSERT
@@ -727,7 +727,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
 
   GrowableArrayMetadata _metadata;
 
-  void init_checks() const { debug_only(_metadata.init_checks(this);) }
+  void init_checks() const { DEBUG_ONLY(_metadata.init_checks(this);) }
 
   // Where are we going to allocate memory?
   bool on_C_heap() const        { return _metadata.on_C_heap(); }
@@ -736,7 +736,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
 
   E* allocate() {
     if (on_resource_area()) {
-      debug_only(_metadata.on_resource_area_alloc_check());
+      DEBUG_ONLY(_metadata.on_resource_area_alloc_check());
       return allocate(this->_capacity);
     }
 
@@ -745,7 +745,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
     }
 
     assert(on_arena(), "Sanity");
-    debug_only(_metadata.on_arena_alloc_check());
+    DEBUG_ONLY(_metadata.on_arena_alloc_check());
     return allocate(this->_capacity, _metadata.arena());
   }
 

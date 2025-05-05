@@ -680,6 +680,9 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
 }
 
 static inline bool target_needs_far_branch(address addr) {
+  if (AOTCodeCache::is_on_for_dump()) {
+    return true;
+  }
   // codecache size <= 128M
   if (!MacroAssembler::far_branches()) {
     return false;
@@ -864,6 +867,9 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
 // Check the entry target is always reachable from any branch.
 static bool is_always_within_branch_range(Address entry) {
+  if (AOTCodeCache::is_on_for_dump()) {
+    return false;
+  }
   const address target = entry.target();
 
   if (!CodeCache::contains(target)) {
@@ -1008,9 +1014,6 @@ void MacroAssembler::c2bool(Register x) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  // address const_ptr = long_constant((jlong)Universe::non_oop_word());
-  // uintptr_t offset;
-  // ldr_constant(rscratch2, const_ptr);
   movptr(rscratch2, (intptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
 }
@@ -2046,7 +2049,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
   // Fast path check: class is fully initialized
   lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
   ldarb(scratch, scratch);
-  subs(zr, scratch, InstanceKlass::fully_initialized);
+  cmp(scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
   // Fast path check: current thread is initializer thread
@@ -2162,7 +2165,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
 
   stp(rscratch1, rmethod, Address(pre(sp, -2 * wordSize)));
 
-  mov(rscratch1, entry_point);
+  mov(rscratch1, RuntimeAddress(entry_point));
   blr(rscratch1);
   if (retaddr)
     bind(*retaddr);
@@ -3239,9 +3242,13 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 }
 
 void MacroAssembler::stop(const char* msg) {
-  BLOCK_COMMENT(msg);
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  BLOCK_COMMENT(str);
+  // load msg into r0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  lea(c_rarg0, ExternalAddress((address) str));
   dcps1(0xdeae);
-  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -5525,9 +5532,8 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
     mov(dst, Address((address)obj, rspec));
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
-    ldr_constant(dst, Address(dummy, rspec));
+    ldr(dst, Address(dummy, rspec));
   }
-
 }
 
 // Move a metadata address into a register.
