@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
         Path runtimeDirectory, Path runtimeHomeDirectory, Path appModsDirectory,
-        Path destktopIntegrationDirectory, Path contentDirectory) {
+        Path destktopIntegrationDirectory, Path contentDirectory, Path libapplauncher) {
 
     public ApplicationLayout resolveAt(Path root) {
         return new ApplicationLayout(
@@ -39,7 +39,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 resolve(root, runtimeHomeDirectory),
                 resolve(root, appModsDirectory),
                 resolve(root, destktopIntegrationDirectory),
-                resolve(root, contentDirectory));
+                resolve(root, contentDirectory),
+                resolve(root, libapplauncher));
     }
 
     public static ApplicationLayout linuxAppImage() {
@@ -50,7 +51,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("lib/runtime"),
                 Path.of("lib/app/mods"),
                 Path.of("lib"),
-                Path.of("lib")
+                Path.of("lib"),
+                Path.of("lib/libapplauncher.so")
         );
     }
 
@@ -62,7 +64,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("runtime"),
                 Path.of("app/mods"),
                 Path.of(""),
-                Path.of("")
+                Path.of(""),
+                null
         );
     }
 
@@ -74,7 +77,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("Contents/runtime/Contents/Home"),
                 Path.of("Contents/app/mods"),
                 Path.of("Contents/Resources"),
-                Path.of("Contents")
+                Path.of("Contents"),
+                null
         );
     }
 
@@ -102,6 +106,7 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -116,7 +121,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 lib.resolve("runtime"),
                 lib.resolve("app/mods"),
                 lib,
-                lib
+                lib,
+                lib.resolve("lib/libapplauncher.so")
         );
     }
 
