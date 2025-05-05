@@ -237,6 +237,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
   } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
     cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
