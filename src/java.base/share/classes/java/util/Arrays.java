@@ -4181,390 +4181,350 @@ public final class Arrays {
         return new ArrayList<>(a);
     }
 
+    // ----------------------- WRAPPER ARRAYS ----------------------------
+
     /**
-     * Finds the index of the first element in the specified sorted array
-     * that is not less than the given target, using the elements' natural ordering.
-     * This is equivalent to the C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in natural order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted array not less than the key using the given comparator.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param <T>    the type of elements, must be {@code Comparable}
-     * @param array  the sorted array to be searched
-     * @param target the value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @throws NullPointerException if array is {@code null}
-     *
-     * @since 1.9
+     * @param <T>   the element type
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @param comp  the comparator to compare elements
+     * @return index of the first element not less than key
      */
-    public static <T extends Comparable<? super T>> int lowerBound(T[] array, T target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid].compareTo(target) < 0)
-                low = mid + 1;
-            else
-                high = mid;
+    public static <T> int lowerBound(T[] arr, T key, Comparator<? super T> comp) {
+        int low = 0, high = arr.length - 1, idx = arr.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(arr[mid], key) >= 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the specified sorted array
-     * that is greater than the given target, using the elements' natural ordering.
-     * This is equivalent to the C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in natural order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted array not less than the key using natural order.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param <T>    the type of elements, must be {@code Comparable}
-     * @param array  the sorted array to be searched
-     * @param target the value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @throws NullPointerException if array is {@code null}
-     *
-     * @since 1.9
+     * @param <T>   the element type (comparable)
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @return index of the first element not less than key
      */
-    public static <T extends Comparable<? super T>> int upperBound(T[] array, T target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid].compareTo(target) <= 0)
-                low = mid + 1;
-            else
-                high = mid;
-        }
-        return low;
+    public static <T extends Comparable<? super T>> int lowerBound(T[] arr, T key) {
+        return lowerBound(arr, key, Comparator.naturalOrder());
     }
 
     /**
-     * Finds the index of the first element in the sorted integer array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted array greater than the key using the given comparator.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of integers
-     * @param target the integer to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param <T>   the element type
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @param comp  the comparator to compare elements
+     * @return index of the first element greater than key
      */
-    public static int lowerBound(int[] array, int target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
-                low = mid + 1;
-            else
-                high = mid;
+    public static <T> int upperBound(T[] arr, T key, Comparator<? super T> comp) {
+        int low = 0, high = arr.length - 1, idx = arr.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(arr[mid], key) > 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted integer array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted array greater than the key using natural order.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of integers
-     * @param target the integer to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param <T>   the element type (comparable)
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @return index of the first element greater than key
      */
-    public static int upperBound(int[] array, int target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
-                low = mid + 1;
-            else
-                high = mid;
+    public static <T extends Comparable<? super T>> int upperBound(T[] arr, T key) {
+        return upperBound(arr, key, Comparator.naturalOrder());
+    }
+
+    // ----------------------- PRIMITIVE ARRAYS ----------------------------
+
+    /**
+     * Returns the index of the first element in the sorted int array not less than key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element >= key
+     */
+    public static int lowerBound(int[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted long array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted int array greater than key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of longs
-     * @param target the long value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element > key
      */
-    public static int lowerBound(long[] array, long target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
-                low = mid + 1;
-            else
-                high = mid;
+    public static int upperBound(int[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted long array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted long array not less than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of longs
-     * @param target the long value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param array the sorted long array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
      */
-    public static int upperBound(long[] array, long target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
+    public static int lowerBound(long[] array, long key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted double array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted long array strictly greater than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of doubles
-     * @param target the double value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param array the sorted long array
+     * @param key the target value
+     * @return index of the first element greater than the key
      */
-    public static int lowerBound(double[] array, double target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
+    public static int upperBound(long[] array, long key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted double array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted int array not less than key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of doubles
-     * @param target the double value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element >= key
      */
-    public static int upperBound(double[] array, double target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
-                low = mid + 1;
-            else
-                high = mid;
+    public static int lowerBound(short[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted char array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted int array greater than key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of chars
-     * @param target the char value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element > key
      */
-    public static int lowerBound(char[] array, char target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
-                low = mid + 1;
-            else
-                high = mid;
+    public static int upperBound(short[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted char array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted double array not less than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of chars
-     * @param target the char value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param array the sorted double array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
      */
-    public static int upperBound(char[] array, char target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
+    public static int lowerBound(double[] array, double key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted float array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted double array strictly greater than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of floats
-     * @param target the float value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param array the sorted double array
+     * @param key the target value
+     * @return index of the first element greater than the key
      */
-    public static int lowerBound(float[] array, float target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
+    public static int upperBound(double[] array, double key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted float array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted float array not less than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of floats
-     * @param target the float value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param array the sorted float array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
      */
-    public static int upperBound(float[] array, float target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
+    public static int lowerBound(float[] array, float key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted short array
-     * that is not less than the given target. Equivalent to C++ STL {@code lower_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted float array strictly greater than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of shorts
-     * @param target the short value to search for
-     * @return the index of the first element not less than the target
-     *
-     * @since 1.9
+     * @param array the sorted float array
+     * @param key the target value
+     * @return index of the first element greater than the key
      */
-    public static int lowerBound(short[] array, short target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] < target)
+    public static int upperBound(float[] array, float key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
     }
 
     /**
-     * Finds the index of the first element in the sorted short array
-     * that is greater than the given target. Equivalent to C++ STL {@code upper_bound()}.
-     *
-     * The array must be sorted in ascending order prior to calling this method.
-     *
+     * Returns the index of the first element in the sorted char array not less than the given key.
      * @implNote This implementation uses binary search and runs in O(log n) time.
      * Contributed by Adarsh Sharma.
      *
-     * @param array  the sorted array of shorts
-     * @param target the short value to search for
-     * @return the index of the first element strictly greater than the target
-     *
-     * @since 1.9
+     * @param array the sorted char array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
      */
-    public static int upperBound(short[] array, short target) {
-        int low = 0, high = array.length;
-        while (low < high) {
-            int mid = (low + high) >>> 1;
-            if (array[mid] <= target)
+    public static int lowerBound(char[] array, char key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
                 low = mid + 1;
-            else
-                high = mid;
+            }
         }
-        return low;
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted char array strictly greater than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted char array
+     * @param key the target value
+     * @return index of the first element greater than the key
+     */
+    public static int upperBound(char[] array, char key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
     }
 
     /**
