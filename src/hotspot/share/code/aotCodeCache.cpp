@@ -22,6 +22,7 @@
  *
  */
 
+#include "asm/macroAssembler.hpp"
 #include "cds/aotCacheAccess.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -40,6 +41,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/copy.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
