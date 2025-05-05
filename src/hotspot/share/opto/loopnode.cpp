@@ -2030,26 +2030,8 @@ bool CountedLoopConverter::is_counted_loop() {
   Node* iff = iftrue->in(0);
   BoolNode* test = iff->in(1)->as_Bool();
 
-  Node* sfpt = nullptr;
-  if (_loop->_child == nullptr) {
-    sfpt = _phase->find_safepoint(back_control, _head, _loop);
-  } else {
-    sfpt = iff->in(0);
-    if (sfpt->Opcode() != Op_SafePoint) {
-      sfpt = nullptr;
-    }
-  }
-
-  if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
-    if (((_iv_bt == T_INT && LoopStripMiningIter != 0) ||
-        _iv_bt == T_LONG) &&
-        sfpt == nullptr) {
-      // Leaving the safepoint on the backedge and creating a
-      // CountedLoop will confuse optimizations. We can't move the
-      // safepoint around because its jvm state wouldn't match a new
-      // location. Give up on that loop.
-      return false;
-    }
+  if (has_invalid_safepoint(back_control, iff)) {
+    return false;
   }
 
   // Variables needed by convert() to do the actual conversion. We set these fields iff a counted loop is confirmed.
@@ -2076,6 +2058,132 @@ bool CountedLoopConverter::is_counted_loop() {
 #endif
 
   return true;
+}
+
+bool CountedLoopConverter::is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment,
+                                             BoolTest::mask mask) {
+  if (stride_con > 0) {
+    if (init_t->lo_as_long() > max_signed_integer(_iv_bt) - stride_con) {
+      return true; // cyclic loop
+    }
+  } else {
+    if (init_t->hi_as_long() < min_signed_integer(_iv_bt) - stride_con) {
+      return true; // cyclic loop
+    }
+  }
+
+  if (phi_increment != nullptr && mask != BoolTest::ne) {
+    // check if there is a possibility of IV overflowing after the first increment
+    if (stride_con > 0) {
+      if (init_t->hi_as_long() > max_signed_integer(_iv_bt) - stride_con) {
+        return true;
+      }
+    } else {
+      if (init_t->lo_as_long() < min_signed_integer(_iv_bt) - stride_con) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool CountedLoopConverter::is_infinite_loop(const CountedLoopNode::TruncatedIncrement& increment,
+                                            const TypeInteger* limit_t, const Node* incr) {
+  PhaseIterGVN& igvn = _phase->igvn();
+
+  if (increment.trunc1 != nullptr) {
+    // When there is a truncation, we must be sure that after the truncation
+    // the trip counter will end up higher than the limit, otherwise we are looking
+    // at an endless loop. Can happen with range checks.
+
+    // Example:
+    // int i = 0;
+    // while (true)
+    //    sum + = array[i];
+    //    i++;
+    //    i = i && 0x7fff;
+    //  }
+    //
+    // If the array is shorter than 0x8000 this exits through a AIOOB
+    //  - Counted loop transformation is ok
+    // If the array is longer then this is an endless loop
+    //  - No transformation can be done.
+
+    const TypeInteger* incr_t = igvn.type(incr)->is_integer(_iv_bt);
+    if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
+      // if the limit can have a higher value than the increment (before the0 phi)
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool CountedLoopConverter::has_truncation_wrap(const CountedLoopNode::TruncatedIncrement& increment, Node* phi, jlong stride_con) {
+  // If iv trunc type is smaller than int (i.e., short/char/byte), check for possible wrap.
+  if (!TypeInteger::bottom(_iv_bt)->higher_equal(increment.trunc_type)) {
+    assert(increment.trunc1 != nullptr, "must have found some truncation");
+
+    // Get a better type for the phi (filtered thru if's)
+    const TypeInteger* phi_ft = filtered_type(phi);
+
+    // Can iv take on a value that will wrap?
+    //
+    // Ensure iv's limit is not within "stride" of the wrap value.
+    //
+    // Example for "short" type
+    //    Truncation ensures value is in the range -32768..32767 (iv_trunc_t)
+    //    If the stride is +10, then the last value of the induction
+    //    variable before the increment (phi_ft->_hi) must be
+    //    <= 32767 - 10 and (phi_ft->_lo) must be >= -32768 to
+    //    ensure no truncation occurs after the increment.
+
+    if (stride_con > 0) {
+      if (increment.trunc_type->hi_as_long() - phi_ft->hi_as_long() < stride_con ||
+          increment.trunc_type->lo_as_long() > phi_ft->lo_as_long()) {
+        return true;  // truncation may occur
+      }
+    } else if (stride_con < 0) {
+      if (increment.trunc_type->lo_as_long() - phi_ft->lo_as_long() > stride_con ||
+          increment.trunc_type->hi_as_long() < phi_ft->hi_as_long()) {
+        return true;  // truncation may occur
+      }
+    }
+
+    // No possibility of wrap so truncation can be discarded
+    // Promote iv type to Int
+    // TODO: actually promote it?
+  } else {
+    assert(Type::equals(increment.trunc_type, TypeInt::INT) || Type::equals(increment.trunc_type, TypeLong::LONG),
+           "unexpected truncation type");
+    assert(increment.trunc1 == nullptr && increment.trunc2 == nullptr, "no truncation for int");
+  }
+
+  return false;
+}
+
+bool CountedLoopConverter::has_invalid_safepoint(Node* back_control, Node* iff) {
+  SafePointNode* sfpt = nullptr;
+  if (_loop->_child == nullptr) {
+    sfpt = _phase->find_safepoint(back_control, _head, _loop);
+  } else {
+    sfpt = iff->in(0)->isa_SafePoint();
+  }
+
+  if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
+    if (((_iv_bt == T_INT && LoopStripMiningIter != 0) ||
+        _iv_bt == T_LONG) &&
+        sfpt == nullptr) {
+      // Leaving the safepoint on the backedge and creating a
+      // CountedLoop will confuse optimizations. We can't move the
+      // safepoint around because its jvm state wouldn't match a new
+      // location. Give up on that loop.
+      return true;
+    }
+  }
+
+  return false;
 }
 
 IdealLoopTree* CountedLoopConverter::convert() {
