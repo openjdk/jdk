@@ -50,8 +50,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457 8342936 8351435
- * @summary java.io.IO tests
+ * @bug 8305457 8342936 8351435 8344706
+ * @summary java.lang.IO tests
  * @library /test/lib
  * @modules jdk.internal.le
  * @run junit IO
@@ -184,15 +184,12 @@ public class IO {
         var file = Path.of("PrintlnNoParams.java");
         try (Writer w = Files.newBufferedWriter(file)) {
             w.write("""
+                    import static java.lang.IO.*;
                     void main() {
                         print("1 ");
                         print("2 ");
                         print("3 ");
                         println();
-                        System.console().print("1 ");
-                        System.console().print("2 ");
-                        System.console().print("3 ");
-                        System.console().println();
                     }
                     """);
         }
@@ -203,22 +200,9 @@ public class IO {
         output.reportDiagnosticSummary();
         String out = output.getStdout();
         String nl = System.getProperty("line.separator");
-        assertEquals("1 2 3 " + nl + "1 2 3 " + nl, out);
+        assertEquals("1 2 3 " + nl, out);
     }
 
-
-    @ParameterizedTest
-    @ValueSource(strings = {"println", "print", "input"})
-    public void nullConsole(String method) throws Exception {
-        var file = Path.of(System.getProperty("test.src", "."), "Methods.java")
-                .toAbsolutePath().toString();
-        var pb = ProcessTools.createTestJavaProcessBuilder("-Djdk.console=gibberish",
-                "--enable-preview", file, method);
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.reportDiagnosticSummary();
-        assertEquals(1, output.getExitValue());
-        output.shouldContain("Exception in thread \"main\" java.io.IOError");
-    }
 
 
     // adapted from https://junit.org/junit5/docs/current/user-guide/#extensions-lifecycle-callbacks-timing-extension

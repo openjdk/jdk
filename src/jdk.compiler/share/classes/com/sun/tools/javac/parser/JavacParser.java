@@ -151,6 +151,7 @@ public class JavacParser implements Parser {
      * is true).
      */
     private boolean permitTypeAnnotationsPushBack = false;
+    private JCDiagnostic.Error unexpectedTopLevelDefinitionStartError;
 
     interface ErrorRecoveryAction {
         JCTree doRecover(JavacParser parser);
@@ -197,6 +198,7 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        updateUnexpectedTopLevelDefinitionStartError(false);
     }
 
     /** Construct a parser from an existing parser, with minimal overhead.
@@ -220,6 +222,7 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        updateUnexpectedTopLevelDefinitionStartError(false);
     }
 
     protected AbstractEndPosTable newEndPosTable(boolean keepEndPositions) {
@@ -4023,6 +4026,7 @@ public class JavacParser implements Parser {
             attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
+            updateUnexpectedTopLevelDefinitionStartError(true);
         }
 
         boolean firstTypeDecl = true;   // have we seen a class, enum, or interface declaration yet?
@@ -4096,7 +4100,7 @@ public class JavacParser implements Parser {
                 // it is parsed. Otherwise, parsing continues as though
                 // implicitly declared classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !isDeclaration()) {
+                if (!isDeclaration(true)) {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
@@ -4351,18 +4355,7 @@ public class JavacParser implements Parser {
                 errs = List.of(mods);
             }
 
-            JCDiagnostic.Error error;
-            if (parseModuleInfo) {
-                error = Errors.ExpectedModuleOrOpen;
-            } else if (Feature.IMPLICIT_CLASSES.allowedInSource(source) &&
-                       (!preview.isPreview(Feature.IMPLICIT_CLASSES) || preview.isEnabled())) {
-                error = Errors.ClassMethodOrFieldExpected;
-            } else if (allowRecords) {
-                error = Errors.Expected4(CLASS, INTERFACE, ENUM, "record");
-            } else {
-                error = Errors.Expected3(CLASS, INTERFACE, ENUM);
-            }
-            return toP(F.Exec(syntaxError(pos, errs, error)));
+            return toP(F.Exec(syntaxError(pos, errs, unexpectedTopLevelDefinitionStartError)));
 
         }
     }
@@ -4946,6 +4939,10 @@ public class JavacParser implements Parser {
     }
 
     protected boolean isDeclaration() {
+        return isDeclaration(allowRecords);
+    }
+
+    private boolean isDeclaration(boolean allowRecords) {
         return token.kind == CLASS ||
                token.kind == INTERFACE ||
                token.kind == ENUM ||
@@ -5605,6 +5602,19 @@ public class JavacParser implements Parser {
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
             preview.warnPreview(pos, feature);
+        }
+    }
+
+    private void updateUnexpectedTopLevelDefinitionStartError(boolean hasPackageDecl) {
+        //TODO: proper tests for this logic (and updates):
+        if (parseModuleInfo) {
+            unexpectedTopLevelDefinitionStartError = Errors.ExpectedModuleOrOpen;
+        } else if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !hasPackageDecl) {
+            unexpectedTopLevelDefinitionStartError = Errors.ClassMethodOrFieldExpected;
+        } else if (allowRecords) {
+            unexpectedTopLevelDefinitionStartError = Errors.Expected4(CLASS, INTERFACE, ENUM, "record");
+        } else {
+            unexpectedTopLevelDefinitionStartError = Errors.Expected3(CLASS, INTERFACE, ENUM);
         }
     }
 

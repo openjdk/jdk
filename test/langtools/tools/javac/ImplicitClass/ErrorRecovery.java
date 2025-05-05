@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8338301
+ * @bug 8338301 8344706
  * @summary Verify error recovery and reporting related to implicitly declared classes
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -78,8 +78,7 @@ public class ErrorRecovery extends TestRunner {
         Files.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
-            .options("-XDrawDiagnostics",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+            .options("-XDrawDiagnostics")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.FAIL)
@@ -109,8 +108,7 @@ public class ErrorRecovery extends TestRunner {
 
         List<String> log = new JavacTask(tb)
             .options("-XDrawDiagnostics",
-                     "-XDshould-stop.at=FLOW",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+                     "-XDshould-stop.at=FLOW")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.FAIL)
@@ -140,8 +138,7 @@ public class ErrorRecovery extends TestRunner {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("-XDrawDiagnostics",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+            .options("-XDrawDiagnostics")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -164,8 +161,7 @@ public class ErrorRecovery extends TestRunner {
         List<String> expected;
 
         log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                        "--enable-preview", "--release", SOURCE_VERSION)
+                .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -189,7 +185,7 @@ public class ErrorRecovery extends TestRunner {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         expected = List.of(
-                "Test.java:1:1: compiler.err.expected4: class, interface, enum, record",
+                "Test.java:1:1: compiler.err.class.method.or.field.expected",
                 "1 error"
         );
 

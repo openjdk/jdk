@@ -22,7 +22,6 @@
  */
 
  // key: compiler.err.implicit.class.should.not.have.package.declaration
- // options: -source ${jdk.version} --enable-preview
 
 package implicit.classes;
 
