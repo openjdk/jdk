@@ -1877,12 +1877,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     private static byte[] putCharsAt(byte[] value, byte coder, int count, int index, char[] s, int off, int end) {
         if (isLatin1(coder)) {
-            for (int i = off, j = index; i < end; i++) {
+            int latin1Len = StringUTF16.compress(s, off, value, index, end - off);
+            for (int i = off + latin1Len, j = index + latin1Len; i < end; i++) {
                 char c = s[i];
                 if (StringLatin1.canEncode(c)) {
                     value[j++] = (byte)c;
                 } else {
                     value = inflateToUTF16(value, count);
+                    // Store c to make sure sb has a UTF16 char
+                    StringUTF16.putCharSB(value, j++, c);
+                    i++;
                     StringUTF16.putCharsSB(value, j, s, i, end);
                     return value;
                 }
@@ -1967,12 +1971,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     private static byte[] appendChars(byte[] value, byte coder, int count, char[] s, int off, int end) {
         if (isLatin1(coder)) {
-            for (int i = off, j = count; i < end; i++) {
+            int latin1Len = StringUTF16.compress(s, off, value, count, end - off);
+            for (int i = off + latin1Len, j = count + latin1Len; i < end; i++) {
                 char c = s[i];
                 if (StringLatin1.canEncode(c)) {
                     value[j++] = (byte)c;
                 } else {
                     value = inflateToUTF16(value, j);
+                    // Store c to make sure sb has a UTF16 char
+                    StringUTF16.putCharSB(value, j++, c);
+                    i++;
                     StringUTF16.putCharsSB(value, j, s, i, end);
                     return value;
                 }
