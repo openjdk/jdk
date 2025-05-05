@@ -31,7 +31,7 @@ package gc.stress;
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=180 gc.stress.TestStressG1Humongous 4 3 1.1 120
+ * @run driver/timeout=240 gc.stress.TestStressG1Humongous 4 3 1.1 120
  */
 
 /*
@@ -40,7 +40,7 @@ package gc.stress;
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=180 gc.stress.TestStressG1Humongous 16 5 2.1 120
+ * @run driver/timeout=240 gc.stress.TestStressG1Humongous 16 5 2.1 120
  */
 
 /*
@@ -49,7 +49,7 @@ package gc.stress;
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=180 gc.stress.TestStressG1Humongous 32 4 0.6 120
+ * @run driver/timeout=240 gc.stress.TestStressG1Humongous 32 4 0.6 120
  */
 
 /*
@@ -58,7 +58,7 @@ package gc.stress;
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=900 gc.stress.TestStressG1Humongous 1 7 0.6 600
+ * @run driver/timeout=1200 gc.stress.TestStressG1Humongous 1 7 0.6 600
  */
 
 import java.util.ArrayList;

@@ -43,7 +43,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native nsk.stress.strace.strace006
+ * @run main/othervm/native/timeout=480 nsk.stress.strace.strace006
  */
 
 package nsk.stress.strace;

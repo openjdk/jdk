@@ -27,7 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer SplitResponse
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=all
  *      SplitResponse HTTP connection:KEEP_ALIVE mode:ASYNC

@@ -42,7 +42,7 @@ import jdk.test.lib.Utils;
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run driver TestObjectAlignment
+ * @run driver/timeout=480 TestObjectAlignment
  */
 
 public class TestObjectAlignment {

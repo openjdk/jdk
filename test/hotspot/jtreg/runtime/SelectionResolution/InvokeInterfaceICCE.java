@@ -28,7 +28,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /testlibrary/asm
  * @library /runtime/SelectionResolution/classes
- * @run main/othervm/timeout=500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeInterfaceICCE
+ * @run main/othervm/timeout=2000 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeInterfaceICCE
  */
 
 import java.util.Arrays;

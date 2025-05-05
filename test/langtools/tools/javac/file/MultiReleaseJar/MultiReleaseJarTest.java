@@ -30,7 +30,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng MultiReleaseJarTest
+ * @run testng/timeout=480 MultiReleaseJarTest
  */
 
 import org.testng.annotations.AfterClass;

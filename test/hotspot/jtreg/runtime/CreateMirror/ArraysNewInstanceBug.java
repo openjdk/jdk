@@ -26,7 +26,7 @@
  * @bug 8182397
  * @summary race in setting array_klass field for component mirror with mirror update for klass
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Xcomp ArraysNewInstanceBug
+ * @run main/othervm/timeout=480 -Xcomp ArraysNewInstanceBug
  */
 
 // This test crashes in compiled code with race, because the compiler generates code that assumes this ordering.

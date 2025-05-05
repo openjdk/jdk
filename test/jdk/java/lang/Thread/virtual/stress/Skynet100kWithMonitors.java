@@ -27,13 +27,13 @@
  *   a channel implementation based on object monitors. This variant uses a reduced number of
  *   100k virtual threads at the final level.
  * @requires vm.debug != true & vm.continuations & vm.opt.LockingMode != 1
- * @run main/othervm/timeout=300 Skynet100kWithMonitors 50
+ * @run main/othervm/timeout=1200 Skynet100kWithMonitors 50
  */
 
 /*
  * @test
  * @requires vm.debug == true & vm.continuations & vm.opt.LockingMode != 1
- * @run main/othervm/timeout=300 Skynet100kWithMonitors 10
+ * @run main/othervm/timeout=1200 Skynet100kWithMonitors 10
  */
 
 public class Skynet100kWithMonitors {

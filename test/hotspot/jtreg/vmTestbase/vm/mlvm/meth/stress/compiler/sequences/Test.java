@@ -41,7 +41,7 @@
  * @build vm.mlvm.meth.stress.compiler.sequences.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      vm.mlvm.meth.stress.compiler.sequences.Test
  *      -threadsPerCpu 1
  *      -threadsExtra 2

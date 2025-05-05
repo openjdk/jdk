@@ -28,7 +28,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      SuspendResume2
@@ -40,7 +40,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      -XX:-VerifyContinuations
@@ -53,7 +53,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -agentlib:SuspendResume2
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:-VMContinuations

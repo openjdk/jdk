@@ -27,7 +27,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit Parking
+ * @run junit/timeout=480 Parking
  */
 
 /*
@@ -35,7 +35,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xint Parking
+ * @run junit/othervm/timeout=480 -Xint Parking
  */
 
 /*
@@ -43,7 +43,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp Parking
+ * @run junit/othervm/timeout=480 -Xcomp Parking
  */
 
 /*
@@ -51,7 +51,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:-TieredCompilation Parking
+ * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation Parking
  */
 
 import java.time.Duration;

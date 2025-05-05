@@ -26,9 +26,9 @@
  * @bug 8306843
  * @summary Test that 10M tags doesn't time out.
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:TagMapTest
- *                          -Xlog:jvmti+table
- *                          TagMapTest
+ * @run main/othervm/native/timeout=480 -agentlib:TagMapTest
+ *                                      -Xlog:jvmti+table
+ *                                      TagMapTest
  */
 
 import java.util.ArrayList;

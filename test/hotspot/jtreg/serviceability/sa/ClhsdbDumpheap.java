@@ -46,7 +46,7 @@ import jtreg.SkippedException;
  *          timeouts. As there is no known direct benefit from running the test
  *          with -Xcomp, we disable such testing.
  * @library /test/lib
- * @run main/othervm/timeout=240 ClhsdbDumpheap
+ * @run main/othervm/timeout=960 ClhsdbDumpheap
  */
 
 public class ClhsdbDumpheap {

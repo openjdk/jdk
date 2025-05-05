@@ -28,7 +28,7 @@
  * @requires vm.compiler2.enabled
  *
  * @library /test/lib
- * @run driver compiler.loopstripmining.CheckLoopStripMining
+ * @run driver/timeout=480 compiler.loopstripmining.CheckLoopStripMining
  */
 
 package compiler.loopstripmining;

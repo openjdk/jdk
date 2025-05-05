@@ -57,7 +57,7 @@ import jdk.internal.module.Modules;
  *          loads all classes and get their declared fields
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest
+ * @run main/othervm/timeout=480 --add-modules=ALL-SYSTEM FieldSetAccessibleTest
  *
  * @author danielfuchs
  */

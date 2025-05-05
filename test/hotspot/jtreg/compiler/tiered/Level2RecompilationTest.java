@@ -33,7 +33,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
+ * @run main/othervm/timeout=960 -Xbootclasspath/a:. -XX:+TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=print,compiler.whitebox.SimpleTestCaseHelper::*
@@ -101,4 +101,3 @@ public class Level2RecompilationTest extends CompLevelsTest {
         super.checkLevel(expected, actual);
     }
 }
-

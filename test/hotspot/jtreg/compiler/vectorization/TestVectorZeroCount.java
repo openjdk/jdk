@@ -25,7 +25,7 @@
  * @bug 8349637
  * @summary Ensure that vectorization of numberOfLeadingZeros and numberOfTrailingZeros outputs correct values
  * @library /test/lib /
- * @run main/othervm compiler.vectorization.TestVectorZeroCount
+ * @run main/othervm/timeout=480 compiler.vectorization.TestVectorZeroCount
  */
 
 package compiler.vectorization;

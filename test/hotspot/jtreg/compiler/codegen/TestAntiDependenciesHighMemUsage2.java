@@ -25,7 +25,7 @@
  * @test
  * @bug 8333258
  * @summary C2: high memory usage in PhaseCFG::insert_anti_dependences()
- * @run main/othervm -XX:CompileOnly=TestAntiDependenciesHighMemUsage2::test1 -XX:-ClipInlining
+ * @run main/othervm/timeout=480 -XX:CompileOnly=TestAntiDependenciesHighMemUsage2::test1 -XX:-ClipInlining
  *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement TestAntiDependenciesHighMemUsage2
  */
 

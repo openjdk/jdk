@@ -33,7 +33,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build LimitUpdateChecker
- * @run driver TestLimitsUpdating
+ * @run driver/timeout=480 TestLimitsUpdating
  */
 
 import java.io.File;

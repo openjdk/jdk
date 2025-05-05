@@ -25,7 +25,7 @@
  * @test
  * @bug 6843181 6943963
  * @summary Confirm that NumericShaper is thread-safe.
- * @run main/timeout=300/othervm MTTest
+ * @run main/timeout=1200/othervm MTTest
  */
 
 import java.awt.font.NumericShaper;

@@ -27,15 +27,12 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.function.BooleanSupplier;
+import jdk.test.lib.Utils;
 
 /**
  * Utility class to invoke System.gc()
  */
 public class ForceGC {
-    // The jtreg testing timeout factor.
-    private static final double TIMEOUT_FACTOR = Double.valueOf(
-            System.getProperty("test.timeout.factor", "1.0"));
-
     /**
      * Causes the current thread to wait until the {@code booleanSupplier}
      * returns true, or the waiting time elapses.  The waiting time
@@ -57,7 +54,7 @@ public class ForceGC {
 
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
-        return waitFor(booleanSupplier, Math.round(1000L * TIMEOUT_FACTOR));
+        return waitFor(booleanSupplier, Math.round(1000L * Utils.TIMEOUT_FACTOR));
     }
 
     /**

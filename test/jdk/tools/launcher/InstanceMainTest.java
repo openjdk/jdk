@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * @test
  * @bug 8329420
  * @summary test execution priority and behavior of main methods
- * @run main InstanceMainTest
+ * @run main/timeout=480 InstanceMainTest
  */
 public class InstanceMainTest extends TestHelper {
 

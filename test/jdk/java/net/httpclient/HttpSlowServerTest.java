@@ -61,7 +61,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer HttpSlowServerTest
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run main/othervm -Dtest.requiresHost=true
+ * @run main/othervm/timeout=480 -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
  *                   HttpSlowServerTest

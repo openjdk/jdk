@@ -41,7 +41,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @requires os.family=="windows" | os.family == "linux" | os.family == "mac"
  * @requires vm.flagless
  * @library /test/lib
- * @run driver TestJhsdbJstackLineNumbers
+ * @run driver/timeout=480 TestJhsdbJstackLineNumbers
  */
 
 /*

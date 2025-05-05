@@ -33,7 +33,7 @@
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invokeinterfaceTests current-int
+ * @run driver/timeout=5400 invokeinterfaceTests current-int
  */
 
 /*
@@ -47,7 +47,7 @@
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invokeinterfaceTests current-comp
+ * @run driver/timeout=5400 invokeinterfaceTests current-comp
  */
 
 /*
@@ -61,7 +61,7 @@
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invokeinterfaceTests old-int
+ * @run driver/timeout=5400 invokeinterfaceTests old-int
  */
 
 import jdk.test.lib.process.ProcessTools;

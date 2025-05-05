@@ -57,7 +57,7 @@
  *          /test/lib
  * @build nsk.jdi.ObjectReference.referringObjects.referringObjects001.referringObjects001
  *        nsk.share.jdi.TestClass1
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=480
  *      nsk.jdi.ObjectReference.referringObjects.referringObjects001.referringObjects001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

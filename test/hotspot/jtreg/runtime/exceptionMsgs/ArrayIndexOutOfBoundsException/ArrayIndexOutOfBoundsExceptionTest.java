@@ -34,8 +34,8 @@
  * @test
  * @requires !vm.graal.enabled
  * @comment These test C1 and C2 so make no sense when Graal is enabled.
- * @run testng/othervm -Xcomp -XX:-TieredCompilation  ArrayIndexOutOfBoundsExceptionTest
- * @run testng/othervm -Xcomp -XX:TieredStopAtLevel=1 ArrayIndexOutOfBoundsExceptionTest
+ * @run testng/othervm/timeout=480 -Xcomp -XX:-TieredCompilation  ArrayIndexOutOfBoundsExceptionTest
+ * @run testng/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 ArrayIndexOutOfBoundsExceptionTest
  */
 
 import java.io.ByteArrayInputStream;

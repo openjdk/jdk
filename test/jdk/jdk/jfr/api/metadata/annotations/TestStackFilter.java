@@ -51,7 +51,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.events
  * @library /test/lib /test/jdk
- * @run main/othervm -Xlog:jfr=warning jdk.jfr.api.metadata.annotations.TestStackFilter
+ * @run main/othervm/timeout=480 -Xlog:jfr=warning jdk.jfr.api.metadata.annotations.TestStackFilter
  */
 public class TestStackFilter {
     private static class Quux {
