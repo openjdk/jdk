@@ -22,7 +22,6 @@
  */
 
  // key: compiler.err.bad.file.name
- // options: -source ${jdk.version} --enable-preview
 
 public static void main(String... args) {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,18 @@
  * questions.
  */
 
-import static java.io.IO.*;
+#include "export.h"
 
-public class Methods {
+typedef struct {
+    double x;
+    double y;
+} DoublePoint;
 
-    public static void main(String[] args) {
-        switch (args[0]) {
-            case "println" -> println("hello");
-            case "print" -> print("hello");
-            case "input" -> readln("hello");
-            default -> throw new IllegalArgumentException(args[0]);
-        }
-    }
+EXPORT DoublePoint unit() {
+    DoublePoint result = { 1, 0 };
+    return result;
+}
+
+EXPORT void unit_ptr(DoublePoint* out) {
+  *out = unit();
 }
