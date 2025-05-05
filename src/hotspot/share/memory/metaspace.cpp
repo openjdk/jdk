@@ -598,7 +598,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -771,8 +771,7 @@ void Metaspace::global_initialize() {
       rs = MemoryReserver::reserve((char*)base,
                                    size,
                                    Metaspace::reserve_alignment(),
-                                   os::vm_page_size(),
-                                   mtClass);
+                                   os::vm_page_size());
 
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));

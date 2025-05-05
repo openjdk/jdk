@@ -259,7 +259,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   // two pages, first one protected.
   const size_t ps = os::vm_page_size();
-  char* two_pages = os::reserve_memory(ps * 2, mtTest);
+  char* two_pages = os::reserve_memory(ps * 2, false, mtTest);
   os::commit_memory(two_pages, ps * 2, false);
   os::protect_memory(two_pages, ps, os::MEM_PROT_NONE, true);
 
@@ -493,7 +493,7 @@ TEST_VM(os, realpath) {
 static inline bool can_reserve_executable_memory(void) {
   bool executable = true;
   size_t len = 128;
-  char* p = os::reserve_memory(len, mtTest, executable);
+  char* p = os::reserve_memory(len, executable);
   bool exec_supported = (p != nullptr);
   if (exec_supported) {
     os::release_memory(p, len);
@@ -531,7 +531,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   for (int tries = 0; tries < 256 && p == nullptr; tries ++) {
     size_t total_range_len = num_stripes * stripe_len;
     // Reserve a large contiguous area to get the address space...
-    p = (address)os::reserve_memory(total_range_len, mtTest);
+    p = (address)os::reserve_memory(total_range_len);
     EXPECT_NE(p, (address)nullptr);
     // .. release it...
     EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
@@ -545,7 +545,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 #else
       const bool executable = stripe % 2 == 0;
 #endif
-      q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, mtTest, executable);
+      q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
       if (q == nullptr) {
         // Someone grabbed that area concurrently. Cleanup, then retry.
         tty->print_cr("reserve_multiple: retry (%d)...", stripe);
@@ -565,7 +565,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
   size_t total_range_len = num_stripes * stripe_len;
-  address p = (address)os::reserve_memory(total_range_len, mtTest);
+  address p = (address)os::reserve_memory(total_range_len);
   EXPECT_NE(p, (address)nullptr);
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
@@ -632,7 +632,7 @@ TEST_VM(os, release_multi_mappings) {
   PRINT_MAPPINGS("B");
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len, mtTest);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
 
   ASSERT_EQ(p2, p_middle_stripes);
 
@@ -655,7 +655,7 @@ TEST_VM_ASSERT_MSG(os, release_bad_ranges, ".*bad release") {
 #else
 TEST_VM(os, release_bad_ranges) {
 #endif
-  char* p = os::reserve_memory(4 * M, mtTest);
+  char* p = os::reserve_memory(4 * M);
   ASSERT_NE(p, (char*)nullptr);
   // Release part of range
   ASSERT_FALSE(os::release_memory(p, M));
@@ -690,7 +690,7 @@ TEST_VM(os, release_one_mapping_multi_commits) {
 
   // // make things even more difficult by trying to reserve at the border of the region
   address border = p + num_stripes * stripe_len;
-  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len, mtTest);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len);
   PRINT_MAPPINGS("B");
 
   ASSERT_TRUE(p2 == nullptr || p2 == border);
@@ -731,7 +731,7 @@ TEST_VM(os, show_mappings_small_range) {
 TEST_VM(os, show_mappings_full_range) {
   // Reserve a small range and fill it with a marker string, should show up
   // on implementations displaying range snippets
-  char* p = os::reserve_memory(1 * M, mtTest);
+  char* p = os::reserve_memory(1 * M, false, mtInternal);
   if (p != nullptr) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -755,7 +755,7 @@ TEST_VM(os, find_mapping_simple) {
 
   // A simple allocation
   {
-    address p = (address)os::reserve_memory(total_range_len, mtTest);
+    address p = (address)os::reserve_memory(total_range_len);
     ASSERT_NE(p, (address)nullptr);
     PRINT_MAPPINGS("A");
     for (size_t offset = 0; offset < total_range_len; offset += 4711) {
@@ -1060,9 +1060,9 @@ TEST_VM(os, open_O_CLOEXEC) {
 }
 
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
-  char* p1 = os::reserve_memory(M, mtTest);
+  char* p1 = os::reserve_memory(M, false, mtTest);
   ASSERT_NE(p1, nullptr);
-  char* p2 = os::attempt_reserve_memory_at(p1, M, mtTest);
+  char* p2 = os::attempt_reserve_memory_at(p1, M);
   ASSERT_EQ(p2, nullptr); // should have failed
   os::release_memory(p1, M);
 }
@@ -1070,7 +1070,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
   if (UseLargePages && !os::can_commit_large_page_memory()) { // aka special
     const size_t lpsz = os::large_page_size();
-    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
+    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, false);
     ASSERT_NE(p1, nullptr);
     char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
     ASSERT_EQ(p2, nullptr); // should have failed
@@ -1096,7 +1096,7 @@ TEST_VM(os, free_without_uncommit) {
   const size_t pages = 64;
   const size_t size = pages * page_sz;
 
-  char* base = os::reserve_memory(size, mtTest);
+  char* base = os::reserve_memory(size, false, mtTest);
   ASSERT_NE(base, (char*) nullptr);
   ASSERT_TRUE(os::commit_memory(base, size, false));
 
@@ -1120,7 +1120,7 @@ TEST_VM(os, commit_memory_or_exit) {
   const size_t size = 16 * page_sz;
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  char* base = os::reserve_memory(size, mtTest, false);
+  char* base = os::reserve_memory(size, false, mtTest);
   ASSERT_NOT_NULL(base);
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
@@ -1158,7 +1158,7 @@ TEST_VM(os, map_unmap_memory) {
   ::close(fd);
 
   fd = os::open(path, O_RDONLY, 0666);
-  char* result = os::map_memory(fd, path, 0, nullptr, size, mtTest, true, false);
+  char* result = os::map_memory(fd, path, 0, nullptr, size, true, false, mtTest);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
   EXPECT_TRUE(os::unmap_memory(result, size));

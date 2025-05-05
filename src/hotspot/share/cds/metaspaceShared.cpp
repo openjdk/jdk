@@ -1380,7 +1380,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         if (prot_zone_size > 0) {
           assert(prot_zone_size >= os::vm_allocation_granularity(), "must be"); // not just page size!
           char* p = os::attempt_reserve_memory_at(mapped_base_address, prot_zone_size,
-                                                  mtClassShared);
+                                                  false, MemTag::mtClassShared);
           assert(p == mapped_base_address || p == nullptr, "must be");
           if (p == nullptr) {
             log_debug(cds)("Failed to re-reserve protection zone");
@@ -1572,8 +1572,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                archive_space_size,
                                                archive_space_alignment,
-                                               os::vm_page_size(),
-                                               mtNone);
+                                               os::vm_page_size());
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1641,13 +1640,11 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                  archive_space_size,
                                                  archive_space_alignment,
-                                                 os::vm_page_size(),
-                                                 mtNone);
+                                                 os::vm_page_size());
       class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
                                                  class_space_size,
                                                  class_space_alignment,
-                                                 os::vm_page_size(),
-                                                 mtNone);
+                                                 os::vm_page_size());
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1660,8 +1657,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = MemoryReserver::reserve((char*) base_address,
                                                total_range_size,
                                                base_address_alignment,
-                                               os::vm_page_size(),
-                                               mtNone);
+                                               os::vm_page_size());
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass

@@ -246,8 +246,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
                                              rs_align,
-                                             page_sz,
-                                             mtGC);
+                                             page_sz);
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory.

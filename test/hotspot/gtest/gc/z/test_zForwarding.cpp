@@ -56,7 +56,7 @@ public:
     const size_t increment = MAX2(align_up(unused / 100, ZGranuleSize), ZGranuleSize);
 
     for (uintptr_t start = 0; start + ZGranuleSize <= ZAddressOffsetMax; start += increment) {
-      char* const reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase + start, ZGranuleSize, mtTest);
+      char* const reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase + start, ZGranuleSize, false /* executable */);
       if (reserved != nullptr) {
         // Success
         return reserved;
