@@ -897,9 +897,8 @@ class ImmutableCollections {
 
             @Override
             public String toString() {
-                final StableValueImpl<E>[] delegates = deepRoot(root).delegates;
                 // Todo: Provide a copy free solution
-                final StableValueImpl<E>[] reversed = Arrays.copyOfRange(delegates, this.offset, this.size - offset);
+                final StableValueImpl<E>[] reversed = Arrays.copyOfRange(deepRoot(root).delegates, this.offset, this.size - offset);
                 return StableUtil.renderElements(this, "StableCollection", reversed);
             }
 
