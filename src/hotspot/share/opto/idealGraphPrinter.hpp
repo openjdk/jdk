@@ -69,6 +69,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *COMPILATION_OSR_PROPERTY;
   static const char *COMPILATION_ARGUMENTS_PROPERTY;
   static const char *COMPILATION_MACHINE_PROPERTY;
+  static const char *COMPILATION_CPU_FEATURES_PROPERTY;
   static const char *COMPILATION_VM_VERSION_PROPERTY;
   static const char *COMPILATION_DATE_TIME_PROPERTY;
   static const char *COMPILATION_PROCESS_ID_PROPERTY;
