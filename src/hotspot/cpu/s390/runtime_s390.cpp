@@ -72,6 +72,9 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   Register handle_exception = Z_ARG5;

@@ -104,7 +104,15 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
   }
   { Label OK;
     // check if the locals pointer in Z_locals is correct
-    z_cg(Z_locals, _z_ijava_state_neg(locals), Z_fp);
+
+    // _z_ijava_state_neg(locals)) is fp relativized, so we need to
+    // extract the pointer.
+
+    z_lg(Z_R1_scratch, Address(Z_fp, _z_ijava_state_neg(locals)));
+    z_sllg(Z_R1_scratch, Z_R1_scratch, Interpreter::logStackElementSize);
+    z_agr(Z_R1_scratch, Z_fp);
+
+    z_cgr(Z_locals, Z_R1_scratch);
     z_bre(OK);
     reentry = stop_chain_static(reentry, "invalid locals pointer Z_locals: " FILE_AND_LINE);
     bind(OK);
@@ -444,7 +452,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 // Useful if consumed previously by access via stackTop().
 void InterpreterMacroAssembler::popx(int len) {
   add2reg(Z_esp, len*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 // Get Address object of stack top. No checks. No pop.
@@ -458,38 +466,38 @@ void InterpreterMacroAssembler::pop_i(Register r) {
   z_l(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_ptr(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_l(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), false);
   add2reg(Z_esp, Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), true);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   z_st(r, Address(Z_esp));
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
@@ -501,7 +509,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   z_stg(r, Address(Z_esp, offset));
   clear_mem(Address(Z_esp), Interpreter::stackElementSize);
@@ -509,13 +517,13 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister f) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   freg2mem_opt(f, Address(Z_esp), false);
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister d) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   freg2mem_opt(d, Address(Z_esp, offset));
   add2reg(Z_esp, 2 * offset);
@@ -684,6 +692,8 @@ void InterpreterMacroAssembler::save_mdp(Register mdp) {
 void InterpreterMacroAssembler::restore_locals() {
   asm_assert_ijava_state_magic(Z_locals);
   z_lg(Z_locals, Address(Z_fp, _z_ijava_state_neg(locals)));
+  z_sllg(Z_locals, Z_locals, Interpreter::logStackElementSize);
+  z_agr(Z_locals, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_method(Register reg) {

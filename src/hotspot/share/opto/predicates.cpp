@@ -758,7 +758,7 @@ void AssertionPredicateIfCreator::create_halt_node(IfFalseNode* fail_proj, Ideal
 }
 
 OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* new_control) const {
-  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->init_trip());
+  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->uncasted_init_trip(_loop_head->is_main_loop()));
   _phase->register_new_node(opaque_init, new_control);
   return opaque_init;
 }
