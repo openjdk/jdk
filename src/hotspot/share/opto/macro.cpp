@@ -2350,8 +2350,9 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
+//------------------refine_strip_mined_loop_macro_node-------------------
+// Perform refining of strip mined loop node in the macro nodes list.
 void PhaseMacroExpand::refine_strip_mined_loop_macro_node() {
-   // Perform refining of strip mined loop node in the  macro nodes list.
    for (int i = C->macro_count(); i > 0; i--) {
     Node* n = C->macro_node(i - 1);
     if (n->is_OuterStripMinedLoop()) {

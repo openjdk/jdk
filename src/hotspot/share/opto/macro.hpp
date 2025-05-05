@@ -202,6 +202,7 @@ public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
     _igvn.set_delay_transform(true);
   }
+
   void refine_strip_mined_loop_macro_node();
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
