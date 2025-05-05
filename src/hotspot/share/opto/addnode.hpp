@@ -47,11 +47,15 @@ class AddNode : public Node {
     bool valid = false;
     Node* variable = nullptr;
     jlong multiplier = 0;
-  };
 
-  inline static bool is_valid_multiplication(const Multiplication& mul, const Node* variable) {
-    return mul.valid && mul.variable == variable;
-  }
+    static Multiplication make_invalid() {
+      return Multiplication{false, nullptr, 0};
+    }
+
+    bool is_valid_with(const Node* variable) const {
+      return valid && this->variable == variable;
+    }
+  };
 
   Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
   static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
