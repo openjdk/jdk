@@ -3343,7 +3343,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   assert(next_entry == entries->length(), "");
 
 #ifdef ASSERT
-  if (bootstrap_methods_array_length > 0) {
+  if (attribute_entry_count > 0) {
     BSMAttributeEntry* bsme = cp->bsm_attribute_entry(0);
     assert(bsme->bootstrap_method_index() == entries->at(0), "");
     assert(bsme->argument_count()         == entries->at(1), "");
