@@ -44,6 +44,7 @@ class VMATree {
 public:
   using position = size_t;
   using size = size_t;
+  using SIndex = NativeCallStackStorage::StackIndex;
 
   class PositionComparator {
   public:
@@ -70,12 +71,12 @@ public:
 
   // Each point has some stack and a tag associated with it.
   struct RegionData {
-    const NativeCallStackStorage::StackIndex stack_idx;
+    const SIndex stack_idx;
     const MemTag mem_tag;
 
     RegionData() : stack_idx(), mem_tag(mtNone) {}
 
-    RegionData(NativeCallStackStorage::StackIndex stack_idx, MemTag mem_tag)
+    RegionData(SIndex stack_idx, MemTag mem_tag)
     : stack_idx(stack_idx), mem_tag(mem_tag) {}
 
     static bool equals(const RegionData& a, const RegionData& b) {
@@ -209,7 +210,7 @@ private:
     position A, B;
     StateType op;
     MemTag tag;
-    NativeCallStackStorage::StackIndex callstack;
+    SIndex callstack;
     bool use_tag_inplace;
     int op_to_index() const {
       return
@@ -251,11 +252,17 @@ public:
 
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
-  StateType get_new_state(StateType existinting_state, const RequestInfo& req);
-  NativeCallStackStorage::StackIndex get_new_reserve_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
-  NativeCallStackStorage::StackIndex get_new_commit_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
-  void compute_summary_diff(SingleDiff::delta region_size, MemTag t1, const StateType& ex, const RequestInfo& req, MemTag new_tag, SummaryDiff& diff);
+  StateType get_new_state(const StateType existinting_state, const RequestInfo& req) const;
+  SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
+  SIndex get_new_commit_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
+  void compute_summary_diff(const SingleDiff::delta region_size, const MemTag t1, const StateType& ex, const RequestInfo& req, const MemTag new_tag, SummaryDiff& diff) const;
   void update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff);
+  int state_to_index(const StateType st) const {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
+  }
 
  public:
   SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {

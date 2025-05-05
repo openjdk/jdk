@@ -176,6 +176,90 @@ public:
     EXPECT_TRUE(exists(found[2]));
     EXPECT_TRUE(exists(found[3]));
   };
+  template<int NodeCount> struct ExpectedTree {
+    int nodes[NodeCount];
+    MemTag tags[NodeCount + 1];
+    VMATree::StateType states[NodeCount + 1];
+    NativeCallStackStorage::StackIndex res_si[NodeCount + 1];
+    NativeCallStackStorage::StackIndex com_si[NodeCount + 1];
+  };
+
+  template<int N>
+  void create_tree(Tree& tree, ExpectedTree<N>& et) {
+    using SIndex = NativeCallStackStorage::StackIndex;
+    const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
+    VMATree::IntervalChange st;
+    for (int i = 0; i < N; i++) {
+      st.in.set_type(et.states[i]);
+      st.in.set_tag(et.tags[i]);
+      if (et.res_si[i] >= 0)
+        st.in.set_reserve_stack(et.res_si[i]);
+      else
+        st.in.set_reserve_stack(ES);
+      if (et.com_si[i] >= 0)
+        st.in.set_commit_stack(et.com_si[i]);
+      else
+        st.in.set_commit_stack(ES);
+
+      st.out.set_type(et.states[i+1]);
+      st.out.set_tag(et.tags[i+1]);
+      if (et.res_si[i+1] >= 0)
+        st.out.set_reserve_stack(et.res_si[i+1]);
+      else
+        st.out.set_reserve_stack(ES);
+      if (et.com_si[i+1] >= 0)
+        st.out.set_commit_stack(et.com_si[i+1]);
+      else
+        st.out.set_commit_stack(ES);
+      tree.tree().upsert((VMATree::position)et.nodes[i], st);
+    }
+}
+
+  template <int N>
+  void check_tree(Tree& tree,const ExpectedTree<N>& et, int line_no) {
+    using Node = VMATree::TreapNode;
+    auto left_released = [&](Node n) -> bool {
+      return n.val().in.type() == VMATree::StateType::Released and
+            n.val().in.mem_tag() == mtNone;
+    };
+    auto right_released = [&](Node n) -> bool {
+      return n.val().out.type() == VMATree::StateType::Released and
+            n.val().out.mem_tag() == mtNone;
+    };
+    for (int i = 0; i < N; i++) {
+      VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(et.nodes[i]);
+      ASSERT_TRUE(r.start != nullptr);
+      Node node = *r.start;
+      ASSERT_EQ(node.key(), (VMATree::position)et.nodes[i]) << "at line " << line_no;
+      if (i == (N -1)) { // last node
+        EXPECT_TRUE(right_released(node)) << "right-of last node is not Released";
+        break;
+      }
+      if (i == 0) { // first node
+        EXPECT_TRUE(left_released(node)) << "left-of first node is not Released";
+      }
+      stringStream ss(50);
+      ss.print("test at line: %d, for node: %d", line_no, et.nodes[i]);
+      const char* for_this_node = ss.base();
+      EXPECT_EQ(node.val().out.type(), et.states[i+1]) << for_this_node;
+      EXPECT_EQ(node.val().out.mem_tag(), et.tags[i+1]) << for_this_node;
+      if (et.res_si[i+1] >= 0) {
+        EXPECT_EQ(node.val().out.reserved_stack(), et.res_si[i+1]) << for_this_node;
+        EXPECT_EQ(r.end->val().in.reserved_stack(), et.res_si[i+1]) << for_this_node;
+      } else {
+        EXPECT_FALSE(node.val().out.has_reserved_stack()) << for_this_node;
+        EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << for_this_node;
+      }
+      if (et.com_si[i+1] >= 0) {
+        EXPECT_EQ(node.val().out.committed_stack(), et.com_si[i+1]) << for_this_node;
+        EXPECT_EQ(r.end->val().in.committed_stack(), et.com_si[i+1]) << for_this_node;
+      } else {
+        EXPECT_FALSE(node.val().out.has_committed_stack()) << for_this_node;
+        EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
+      }
+    }
+  }
+
 };
 
 
@@ -776,58 +860,6 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseTagInplace) {
   diff = tree.uncommit_mapping(0, 50, rd2);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-}
-
-template<int NodeCount> struct ExpectedTree {
-  int nodes[NodeCount];
-  MemTag tags[NodeCount + 1];
-  VMATree::StateType states[NodeCount + 1];
-  NativeCallStackStorage::StackIndex res_si[NodeCount + 1];
-  NativeCallStackStorage::StackIndex com_si[NodeCount + 1];
-};
-template <int N>
-void check_tree(Tree& tree,const ExpectedTree<N>& et, int line_no) {
-  using Node = VMATree::TreapNode;
-  auto left_released = [&](Node n) -> bool {
-    return n.val().in.type() == VMATree::StateType::Released and
-           n.val().in.mem_tag() == mtNone;
-  };
-  auto right_released = [&](Node n) -> bool {
-    return n.val().out.type() == VMATree::StateType::Released and
-           n.val().out.mem_tag() == mtNone;
-  };
-  for (int i = 0; i < N; i++) {
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(et.nodes[i]);
-    ASSERT_TRUE(r.start != nullptr);
-    Node node = *r.start;
-    ASSERT_EQ(node.key(), (VMATree::position)et.nodes[i]) << "at line " << line_no;
-    if (i == (N -1)) { // last node
-      EXPECT_TRUE(right_released(node)) << "right-of last node is not Released";
-      break;
-    }
-    if (i == 0) { // first node
-      EXPECT_TRUE(left_released(node)) << "left-of first node is not Released";
-    }
-    stringStream ss(50);
-    ss.print("test at line: %d, for node: %d", line_no, et.nodes[i]);
-    const char* for_this_node = ss.base();
-    EXPECT_EQ(node.val().out.type(), et.states[i+1]) << for_this_node;
-    EXPECT_EQ(node.val().out.mem_tag(), et.tags[i+1]) << for_this_node;
-    if (et.res_si[i+1] >= 0) {
-      EXPECT_EQ(node.val().out.reserved_stack(), et.res_si[i+1]) << for_this_node;
-      EXPECT_EQ(r.end->val().in.reserved_stack(), et.res_si[i+1]) << for_this_node;
-    } else {
-      EXPECT_FALSE(node.val().out.has_reserved_stack()) << for_this_node;
-      EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << for_this_node;
-    }
-    if (et.com_si[i+1] >= 0) {
-      EXPECT_EQ(node.val().out.committed_stack(), et.com_si[i+1]) << for_this_node;
-      EXPECT_EQ(r.end->val().in.committed_stack(), et.com_si[i+1]) << for_this_node;
-    } else {
-      EXPECT_FALSE(node.val().out.has_committed_stack()) << for_this_node;
-      EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
-    }
-  }
 }
 
 TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
@@ -1951,4 +1983,724 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
     EXPECT_EQ(r.start, nullptr);  // make sure 0 is removed
     EXPECT_EQ((int)r.end->key(), 700);
  }
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+
+  // row  0:  .........A..................B.....
+  // case of empty tree is already covered in other tests.
+  // row 1 is impossible. See the implementation.
+  {
+    // row  2:  .........A...Y.......................W.....B..........
+    //          .............100---120---140---160---200......
+    //                          si1   si2   si1   si2
+    // request:          50********************************250
+    // post:             50**100***120***140***160***200***250
+    //                    si2   si1   si2   si1   si2   si2
+    //                    si2   si2   si2   si2   si2   si2
+    // post:             50**100***120***140***160*********250   200 has the same state at its left and right, thus to be removed.
+    //                    si2   si1   si2   si1     si2
+    //                    si2   si2   si2   si2     si2
+    Tree tree;
+    ExpectedTree<5> pre = {{   100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
+    ExpectedTree<6> et = {{   50,     100,    120,    140,    160,    250        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row  3:  .........A...Y.......................WB.....
+    //          .............100---120---140---160---200......
+    //                          si1   si2   si1   si2
+    // request:          50**************************200
+    // post:             50**100***120***140***160***200
+    //                    si2   si1   si2   si1   si2
+    //                    si2   si2   si2   si2   si2
+
+    Tree tree;
+    ExpectedTree<5> pre = {{   100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
+    ExpectedTree<6> et = {{   50,     100,    120,    140,    160,    200        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+
+  {
+    // row  4:  .....X...A..................B.....
+    // nodes:   0---10...........................
+    // request:          50*****************250
+    // post:    0---10...50*****************250
+    //            si1        si2
+    //            -          si2
+    Tree tree;
+    ExpectedTree<2> pre = {{     0,     10,       },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
+    ExpectedTree<4> et = {{     0,     10,     50,    250        },
+                          {mtNone, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    , C     , Rl    },
+                          {-1    , si_1  , -1    , si_2  , -1    },
+                          {-1    , -1    , -1    , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row  5:  .....X...A...YW.............B.....
+    // nodes:   .....10------70................
+    // request:          50*****************250
+    // post:    .....10--50**70*************250
+    //                si1  si1    si2
+    //                -    si2    si2
+    Tree tree;
+    ExpectedTree<2> pre = {{    10,     70,       },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 70);
+    ExpectedTree<4> et = {{    10,     50,     70,    250        },
+                          {mtNone, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , C     , C     , Rl    },
+                          {-1    , si_1  , si_1  , si_2  , -1    },
+                          {-1    , -1    , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row  6:  .....X...A.....Y.......................W.....B...
+    // nodes:   0---10.........100---120---140---160---200........
+    //           si1              si1   si2   si1   si2
+    // request:          50**********************************250
+    // post:    0---10...50****100***120***140***160***200***250
+    //            si1       si2   si1   si2   si1   si2   si2
+    //            -         si2   si2   si2   si2   si2   si2
+    // post:    0---10...50****100***120***140***160*********250      ; 200 is noop
+    //            si1       si2   si1   si2   si1     si2
+    //            -         si2   si2   si2   si2     si2
+    Tree tree;
+    ExpectedTree<7> pre = {{     0,     10,    100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
+    ExpectedTree<8> et = {{     0,     10,     50,    100,    120,    140,    160,    250        },
+                          {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , -1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row  7:  .....X...A...Y.......................WB.....
+    // nodes:   0---10.......100---120---140---160---200....
+    //           si1            si1   si2   si1   si2
+    // request:          50**************************200
+    // post:    0---10...50****100***120***140***160*200
+    //            si1       si2   si1   si2   si1   si2
+    //            -         si2   si2   si2   si2   si2
+    Tree tree;
+    ExpectedTree<7> pre = {{     0,     10,    100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
+    ExpectedTree<8> et = {{     0,     10,     50,    100,    120,    140,    160,    200        },
+                          {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , -1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  {
+    // row  8:  ........XA..................B.....
+    // nodes:   0--------50...........................
+    //            si1
+    //            -
+    // request:          50*****************250
+    // post:    0--------50*****************250
+    //            si1        si2
+    //            -          si2
+    Tree tree;
+    ExpectedTree<2> pre = {{     0,     50,       },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
+    ExpectedTree<3> et = {{     0,     50,    250        },
+                          {mtNone, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , C     , Rl    },
+                          {-1    , si_1  , si_2  , -1    },
+                          {-1    , -1    , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row  9:  ........XA....YW.............B.....
+    // nodes:   ........10----70................
+    // request:             50*****************250
+    // post:    ........10--50**70*************250
+    //                    si1  si1    si2
+    //                    -    si2    si2
+    Tree tree;
+    ExpectedTree<2> pre = {{    10,     70,       },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 70);
+    ExpectedTree<4> et = {{    10,     50,     70,    250        },
+                          {mtNone, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , C     , C     , Rl    },
+                          {-1    , si_1  , si_1  , si_2  , -1    },
+                          {-1    , -1    , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 10:  ........XA...Y.......................W.....B...
+    // nodes:   ........50---100---120---140---160---200.......
+    //                    si2   si1   si2   si1   si2
+    // request:         50*********************************250
+    // post:    ........50***100***120***140***160***200***250
+    //                    si2   si1   si2   si1   si2   si2
+    //                    si2   si2   si2   si2   si2   si2
+    // post:    ........50***100***120***140***160***200***250        ; 200 is noop
+    //                    si2   si1   si2   si1   si2   si2
+    //                    si2   si2   si2   si2   si2   si2
+    Tree tree;
+    ExpectedTree<6> pre = {{    50,    100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 200);
+    ExpectedTree<6> et = {{    50,    100,    120,    140,    160,    250        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 11:  ........XA...Y.......................WB.....
+    // nodes:   ........50---100---120---140---160---200....
+    //                    si2   si1   si2   si1   si2
+    // request:         50***************************200
+    // post:    ........50***100***120***140***160***200....
+    //                    si2   si1   si2   si1   si2
+    //                    si2   si2   si2   si2   si2
+    Tree tree;
+    ExpectedTree<6> pre = {{    50,    100,    120,    140,    160,    200        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 0);
+    ExpectedTree<6> et = {{    50,    100,    120,    140,    160,    200        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+
+  {
+    // row 12:  .........A..................B.....U
+    // nodes:   ..................................300---400
+    // request:          50*****************250
+    // post:             50*****************250...300---400
+    //                          si2
+    //                          si2
+    Tree tree;
+    ExpectedTree<2> pre = {{   300,    400        },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
+    ExpectedTree<4> et = {{    50,    250,    300,    400        },
+                          {mtNone, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_2  , -1    , si_1  , -1    },
+                          {-1    , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 13:  .........A...YW.............B....U
+    // nodes:   .............70------------------300
+    // request:          50*****************250
+    // post:    .........50**70*************250--300
+    //                    si2     si1          si1
+    //                    si2     si2          -
+    Tree tree;
+    ExpectedTree<2> pre = {{    70,    300        },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
+    ExpectedTree<4> et = {{    50,     70,    250,    300        },
+                          {mtNone, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , Rs    , Rl    },
+                          {-1    , si_2  , si_1  , si_1  , -1    },
+                          {-1    , si_2  , si_2  , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 14:  .........A...Y.......................W....B....U
+    // nodes:   .............100---120---140---160---200.......300---400
+    // request:          50*******************************250
+    // post:             50***100**120***140***160***200**250..300---400
+    //                     si2   si1  si2   si1   si2   si2
+    //                     si2   si2  si2   si2   si2   si2
+    // post:             50***100**120***140***160********250..300---400        ; node 200 is noop
+    //                     si2   si1  si2   si1     si2
+    //                     si2   si2  si2   si2     si2
+    Tree tree;
+    ExpectedTree<7> pre = {{   100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
+    ExpectedTree<8> et = {{    50,    100,    120,    140,    160,    250,    300,    400        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 15:  .........A...Y.......................WB....U
+    // nodes:   .............100---120---140---160---200...300---400
+    // request:          50**************************200
+    // post:             50***100**120***140***160***200...300---400
+    //                     si2   si1  si2   si1   si2
+    //                     si2   si2  si2   si2   si2
+    // post:             50***100**120***140***160***200...300---400
+    //                     si2   si1  si2   si1    si2
+    //                     si2   si2  si2   si2    si2
+    Tree tree;
+    ExpectedTree<7> pre = {{   100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
+    ExpectedTree<8> et = {{    50,    100,    120,    140,    160,    200,    300,    400        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                          {-1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+
+  {
+    // row 16:  .....X...A..................B....U
+    // nodes:   0---10...........................300---400
+    // request:          50*****************250
+    // post:    0---10...50*****************250..300---400
+    //                          si2
+    //                          si2
+    Tree tree;
+    ExpectedTree<4> pre = {{     0,    10,     300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
+    ExpectedTree<6> et = {{     0,     10,     50,    250,    300,    400        },
+                          {mtNone, mtTest, mtNone, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_1  , -1    , si_2  , -1    , si_1  , -1    },
+                          {-1    , -1    , -1    , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 17:  .....X...A...YW.............B....U
+    // nodes:   0----10......70------------------300
+    // request:          50*****************250
+    // post:    0----10..50**70*************250--300
+    //                    si2     si1          si1
+    //                    si2     si2          -
+    Tree tree;
+    ExpectedTree<4> pre = {{     0,     10,     70,    300        },
+                           {mtNone, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
+    ExpectedTree<6> et = {{     0,     10,     50,     70,    250,    300        },
+                          {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    , C     , C     , Rs    , Rl    },
+                          {-1    , si_1  , -1    , si_2  , si_1  , si_1  , -1    },
+                          {-1    , -1    , -1    , si_2  , si_2  , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 18:  ....X....A...Y.......................W....B....U
+    // nodes:   0---10.......100---120---140---160---200.......300---400
+    //                          si2   si1   si2   si1
+    // request:          50*******************************250
+    // post:    0---10...50***100**120***140***160***200**250..300---400
+    //                     si2   si2  si1   si2   si1   si2
+    //                     si2   si2  si2   si2   si2   si2
+    // post:    0---10...50********120***140***160***200**250..300---400
+    //                        si2     si1   si2    si1  si2
+    //                        si2     si2   si2    si2  si2
+    Tree tree;
+    ExpectedTree<9> pre = {{     0,     10,    100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
+    ExpectedTree<10> et = {{     0,     10,     50,    120,    140,    160,    200,   250,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 19:  .....X...A...Y.......................WB....U
+    // nodes:   0----10......100---120---140---160---200...300---400
+    // request:          50**************************200
+    // post:    0----10..50***100**120***140***160***200...300---400
+    //                     si2   si1  si2   si1   si2
+    //                     si2   si2  si2   si2   si2
+    Tree tree;
+    ExpectedTree<9> pre = {{     0,     10,    100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
+    ExpectedTree<10> et = {{     0,     10,     50,    100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
+}
+
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows19to23) {
+  using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
+  VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+
+  {
+    // row 20:  ........XA..................B....U
+    // nodes:   0-------50.......................300---400
+    // request:         50******************250
+    // post:    0-------50******************250..300---400
+    //                          si2
+    //                          si2
+    Tree tree;
+    ExpectedTree<4> pre = {{     0,    50,     300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
+    ExpectedTree<5> et = {{     0,     50,    250,    300,    400        },
+                          {mtNone, mtTest, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_1  , si_2  , -1    , si_1  , -1    },
+                          {-1    , -1    , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 21:  ........XA...YW.............B....U
+    // nodes:   0-------50...70------------------300
+    // request:         50******************250
+    // post:    0-------50**70**************250--300
+    //                    si2     si1          si1
+    //                    si2     si2          -
+    Tree tree;
+    ExpectedTree<4> pre = {{     0,     50,     70,    300        },
+                           {mtNone, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
+    ExpectedTree<5> et = {{     0,     50,     70,    250,    300        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                          {Rl    , Rs    , C     , C     , Rs    , Rl    },
+                          {-1    , si_1  , si_2  , si_1  , si_1  , -1    },
+                          {-1    , -1    , si_2  , si_2  , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 22:  ........XA...Y.......................W....B....U
+    // nodes:   0-------50...100---120---140---160---200.......300---400
+    //                          si2   si1   si2   si1
+    // request:         50********************************250
+    // post:    0-------50***100***120***140***160***200**250..300---400
+    //                     si2   si2  si1   si2   si1   si2
+    //                     si2   si2  si2   si2   si2   si2
+    // post:    0-------50*********120***140***160***200**250..300---400
+    //                        si2     si1   si2    si1  si2
+    //                        si2     si2   si2    si2  si2
+    Tree tree;
+    ExpectedTree<9> pre = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
+    ExpectedTree<9> et = {{     0,     50,    120,    140,    160,    200,   250,    300,    400        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_1  , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                          {-1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+  {
+    // row 23:  ........XA...Y.......................WB....U
+    // nodes:   0-------50...100---120---140---160---200...300---400
+    // request:         50***************************200
+    // post:    0-------50***100***120***140***160***200...300---400
+    //                     si2  si1   si2   si1   si2
+    //                     si2  si2   si2   si2   si2
+    Tree tree;
+    ExpectedTree<9> pre = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
+                          };
+    create_tree(tree, pre);
+    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
+    ExpectedTree<9> et = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
+                          {-1    , si_1  , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
+                          {-1    , -1    , si_2  , si_2  , si_2  , si_2  , si_2  , -1    , -1    , -1    }
+                         };
+    check_tree(tree, et, __LINE__);
+  }
+
 }
