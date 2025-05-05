@@ -30,6 +30,7 @@
  * @requires vm.compiler2.enabled
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestShift::main
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstrlist,DisableIntrinsic,_bigIntegerLeftShiftWorker
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstrlist,DisableIntrinsic,_bigIntegerRightShiftWorker
@@ -38,6 +39,7 @@
  *      compiler.intrinsics.bigInteger.TestShift
  *
  * @run main/othervm/timeout=600
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestShift::main
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstrlist,DisableIntrinsic,_bigIntegerLeftShiftWorker
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstrlist,DisableIntrinsic,_bigIntegerRightShiftWorker
