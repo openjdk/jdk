@@ -36,7 +36,7 @@ class uintn_t;
 // bits. Conceptually, nbits == 8 gives a type equivalent to int8_t,
 // nbits == 16 gives a type equivalent to int16_t, and so on. This class may be
 // used to verify the correctness of an algorithm that is supposed to be
-// applicable to all fixed-width integral types. With a few bits, it makes it
+// applicable to all fixed-width integral types. With small nbits, it makes it
 // possible to perform an exhaustive test that exercises the algorithm with all
 // possible input values.
 // Implementation-wise, this class currently only supports 0 < nbits <= 8. Also

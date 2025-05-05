@@ -87,9 +87,9 @@ public:
 // value does not exists automatically follows.
 //
 // If there exists a value not less than lo and satisfies bits, then this
-// function will always find one such value. The conversion is also true, that
-// is if this function finds a value not less than lo and satisfies bits, then
-// it must trivially be the case that there exists one such value. As a result,
+// function will always find one such value. The converse is also true, that is
+// if this function finds a value not less than lo and satisfies bits, then it
+// must trivially be the case that there exists one such value. As a result,
 // the negation of those statements are also equivalent, there does not exists
 // a value not less than lo and satisfies bits if and only if this function
 // does not return one such value.
@@ -363,20 +363,22 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // lo[x] == zeros[x] == 0.
     // We start with all bits where lo[x] == zeros[x] == 0:
     //           0 1 1 0 0 0 0 1
-    U either = lo | bits._zeros;
+    U neither = ~(lo | bits._zeros);
     // Now let us find all the bit indices x upto first_violation such that
     // lo[x] == zeros[x] == 0. The last one of these bits must be at index i.
     //           0 1 1 0 0 0 0 0
-    U tmp = ~either & find_mask;
+    U neither_upto_first_violation = neither & find_mask;
     // We now want to select the last one of these candidates, which is exactly
     // the last index x upto first_violation such that lo[x] == zeros[x] == 0.
     // This would be the value i we are looking for.
     // Similar to the other case, we want to obtain the value with only the bit
-    // i set, this is equivalent to extracting the last set bit of tmp, do it
-    // directly without going through i.
+    // i set, this is equivalent to extracting the last set bit of
+    // neither_upto_first_violation, do it directly without going through i.
+    // The formula x & (-x) will give us the last set bit of an integer x
+    // (please see the x86 instruction blsi).
     // In our example, i == 2
     //           0 0 1 0 0 0 0 0
-    U alignment = tmp & (-tmp);
+    U alignment = neither_upto_first_violation & (-neither_upto_first_violation);
     // Set the bit of lo at i and unset all the bits after, this is the
     // smallest value that satisfies bits._zeros. Similar to the above case,
     // this is similar to aligning lo up to the next multiple of alignment.
@@ -399,20 +401,22 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     new_lo |= bits._ones;
     // Note that formally, this function assumes that there exists a value not
     // smaller than lo and satisfies bits. This implies the existence of the
-    // index i satisfies (3.1-3.3), which means that tmp != 0. The converse is
-    // also true, if tmp != 0, then an index i satisfies (3.1-3.3) exists,
-    // which implies the existence of a value not smaller than lo and satisfies
-    // bits. As a result, the negation of those statements are equivalent.
-    // tmp == 0 if and only if there does not exists a value not smaller than
-    // lo and satisfies bits. In this case, alignment == 0 and
-    // new_lo == bits._ones. We know that, if the assumption of this function
-    // holds, we return a value satisfying bits, and if the assumption of this
-    // function does not hold, the returned value would be bits._ones, which
-    // also satisfies bits. As a result, this function always returns a value
-    // satisfying bits, regardless whether if the assumption of this function
-    // holds. In conclusion, the caller only needs to check lo <= new_lo to
-    // find the cases where there exists no value not smaller than lo and
-    // satisfies bits (see the overview of the function).
+    // index i satisfies (3.1-3.3), which means that
+    // neither_upto_first_violation != 0. The converse is
+    // also true, if neither_upto_first_violation != 0, then an index i
+    // satisfies (3.1-3.3) exists, which implies the existence of a value not
+    // smaller than lo and satisfies bits. As a result, the negation of those
+    // statements are equivalent. neither_upto_first_violation == 0 if and only
+    // if there does not exists a value not smaller than lo and satisfies bits.
+    // In this case, alignment == 0 and new_lo == bits._ones. We know that, if
+    // the assumption of this function holds, we return a value satisfying
+    // bits, and if the assumption of this function does not hold, the returned
+    // value would be bits._ones, which also satisfies bits. As a result, this
+    // function always returns a value satisfying bits, regardless whether if
+    // the assumption of this function holds. In conclusion, the caller only
+    // needs to check lo <= new_lo to find the cases where there exists no
+    // value not smaller than lo and satisfies bits (see the overview of the
+    // function).
     assert(lo < new_lo || new_lo == bits._ones, "invalid result must be bits._ones");
     return new_lo;
   }
@@ -704,17 +708,18 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2) {
     using U = std::remove_const_t<decltype(CT::_ulo)>;
 
     if (!i1->_is_dual) {
-    // meet (a.k.a union)
+      // meet (a.k.a union)
       return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
                                                     {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
                                                     {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
                              MAX2(i1->_widen, i2->_widen), false);
+    } else {
+      // join (a.k.a intersection)
+      return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
+                                                    {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
+                                                    {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
+                             MIN2(i1->_widen, i2->_widen), true);
     }
-    // join (a.k.a intersection)
-    return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
-                                                  {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                                  {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
-                           MIN2(i1->_widen, i2->_widen), true);
   }
 
   assert(t2->base() != i1->base(), "");
