@@ -904,7 +904,9 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   }
 }
 
-static bool skip_frame(const char* name) {
+// Whether the stack walk should skip the given frame when producing a C2 stack
+// trace. We consider IGV- and debugger-specific frames uninteresting.
+static bool should_skip_frame(const char* name) {
   return strstr(name, "IdealGraphPrinter") != nullptr ||
          strstr(name, "Compile::print_method") != nullptr ||
          strstr(name, "Compile::igv_print_graph") != nullptr ||
@@ -912,7 +914,11 @@ static bool skip_frame(const char* name) {
          strstr(name, "Node::dump_bfs") != nullptr;
 }
 
-static bool stop_frame_walk(const char* name) {
+// Whether the stack walk should be considered done when visiting a certain
+// frame. The purpose of walking the stack is producing a C2 trace, so we
+// consider all frames below (and including) C2Compiler::compile_method(..)
+// uninteresting.
+static bool should_end_stack_walk(const char* name) {
   return strstr(name, "C2Compiler::compile_method") != nullptr;
 }
 
@@ -925,10 +931,10 @@ void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
     int offset;
     buf[0] = '\0';
     bool found = os::dll_address_to_function_name(fr.pc(), buf, sizeof(buf), &offset);
-    if (!found || stop_frame_walk(buf)) {
+    if (!found || should_end_stack_walk(buf)) {
       break;
     }
-    if (!skip_frame(buf)) {
+    if (!should_skip_frame(buf)) {
       stringStream frame_loc;
       frame_loc.print("%s", buf);
       buf[0] = '\0';
