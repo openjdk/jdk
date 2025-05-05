@@ -43,10 +43,28 @@ public class GetProcessCpuLoad {
 
         Exception ex = null;
         int good = 0;
-
+        int maxRetries = 12;
+        int retries = 0;
         for (int i = 0; i < TEST_COUNT; i++) {
             double load = mbean.getProcessCpuLoad();
-            if (load == -1.0 && Platform.isWindows()) {
+            System.out.printf("Load is %.10f at iteration %d%n", load, i);
+	   
+	    for (int j = 0; j < 10000000; j++) {
+        Math.sin(j);  // Force CPU usage
+    }	 
+	    if (load == -1.0 && !Platform.isWindows()) {
+              while (load == -1.0 && retries < maxRetries) {
+               try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                load = mbean.getProcessCpuLoad();
+                System.out.println("Load recalculated is "+load); 
+		retries++;
+		}
+            }
+            else if (load == -1.0 && Platform.isWindows()) {
                 // Some Windows systems can return -1 occasionally, at any time.
                 // Will fail if we never see good values.
                 ex = new RuntimeException("getProcessCpuLoad() returns " + load
@@ -56,6 +74,7 @@ public class GetProcessCpuLoad {
                           + " which is not in the [0.0,1.0] interval");
             } else {
                 // A good reading: forget any previous -1.
+                System.out.println("load calculated is "+load);
                 ex = null;
                 good++;
             }
