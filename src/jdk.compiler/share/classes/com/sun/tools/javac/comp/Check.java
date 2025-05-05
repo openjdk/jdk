@@ -5822,7 +5822,8 @@ public class Check {
                 if (sm != null && !t.getTypeArguments().isEmpty()) {
                     for (Attribute.TypeCompound ta: sm.getTypeAttributes().stream()
                             .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList()) {
-                        if (t.getTypeArguments().get(ta.position.parameter_index).isValueBased()) {
+                        Type type = t.getTypeArguments().get(ta.position.parameter_index);
+                        if (type != null && type.isValueBased()) {
                             requiresWarning = true;
                             return null;
                         }
@@ -5846,12 +5847,14 @@ public class Check {
             }
             if (sm != null)
                 for (Attribute.TypeCompound ta : sm.getTypeAttributes().stream()
-                        .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList())
-                    if (typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
+                        .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList()) {
+                    Type paramType = typeParamTrees.get(ta.position.parameter_index).type;
+                    if (paramType != null && paramType.isValueBased())
                         lint.logIfEnabled(
                                 typeParamTrees.get(ta.position.parameter_index).pos(),
                                 CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected
                         );
+                }
         }
     }
 }

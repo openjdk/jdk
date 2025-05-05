@@ -666,7 +666,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     }
 
     public boolean isValueBased() {
-        return (tsym.flags_field & VALUE_BASED) != 0;
+        return tsym != null && (tsym.flags_field & VALUE_BASED) != 0;
     }
 
     /**
