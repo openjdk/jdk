@@ -1525,11 +1525,11 @@ abstract class MethodHandleImpl {
         }
     }
 
-    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
 
+    // Also called from JVM when loading an AOT cache
     private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override

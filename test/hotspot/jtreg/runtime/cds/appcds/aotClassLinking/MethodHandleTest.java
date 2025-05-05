@@ -358,7 +358,10 @@ class UnsupportedBSMs {
             throw new RuntimeException("o has wrong interfaces");
         }
 
-        statementEnum(MyEnum.A);
+        String s = statementEnum(MyEnum.A);
+        if (!s.equals("A")) {
+            throw new RuntimeException("enum switch incorrect");
+        }
     }
 
     static int testTypeSwitch(Number n) {
