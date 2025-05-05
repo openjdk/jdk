@@ -165,9 +165,7 @@ class AOTCodeCache : public CHeapObj<mtCode> {
 protected:
   class Config {
     uint _compressedOopShift;
-    address _compressedOopBase;
     uint _compressedKlassShift;
-    address _compressedKlassBase;
     uint _contendedPaddingWidth;
     uint _objectAlignment;
     uint _gc;
@@ -303,6 +301,7 @@ public:
   static void init_shared_blobs_table() NOT_CDS_RETURN;
   static void init_early_c1_table() NOT_CDS_RETURN;
 
+  address address_for_C_string(int idx) const { return _table->address_for_C_string(idx); }
   address address_for_id(int id) const { return _table->address_for_id(id); }
 
   bool for_use()  const { return _for_use  && !_failed; }

@@ -154,29 +154,29 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 #define GEN_C2_STUB(name, fancy_jump, pass_tls, pass_retpc  )         \
   C2_STUB_FIELD_NAME(name) =                                          \
-    generate_stub(env,                                                  \
+    generate_stub(env,                                                \
                   C2_STUB_TYPEFUNC(name),                             \
                   C2_STUB_C_FUNC(name),                               \
                   C2_STUB_NAME(name),                                 \
-                  (int)C2_STUB_ID(name),                                   \
-                  fancy_jump,                                           \
-                  pass_tls,                                             \
-                  pass_retpc);                                          \
+                  (int)C2_STUB_ID(name),                              \
+                  fancy_jump,                                         \
+                  pass_tls,                                           \
+                  pass_retpc);                                        \
   if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
 
 #define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
 
 #define GEN_C2_JVMTI_STUB(name)                                       \
-  STUB_FIELD_NAME(name) =                                               \
-    generate_stub(env,                                                  \
-                  notify_jvmti_vthread_Type,                            \
+  STUB_FIELD_NAME(name) =                                             \
+    generate_stub(env,                                                \
+                  notify_jvmti_vthread_Type,                          \
                   C2_JVMTI_STUB_C_FUNC(name),                         \
                   C2_STUB_NAME(name),                                 \
-                  (int)C2_STUB_ID(name),                                     \
-                  0,                                                    \
-                  true,                                                 \
-                  false);                                               \
-  if (STUB_FIELD_NAME(name) == nullptr) { return false; }               \
+                  (int)C2_STUB_ID(name),                              \
+                  0,                                                  \
+                  true,                                               \
+                  false);                                             \
+  if (STUB_FIELD_NAME(name) == nullptr) { return false; }             \
 
 bool OptoRuntime::generate(ciEnv* env) {
 

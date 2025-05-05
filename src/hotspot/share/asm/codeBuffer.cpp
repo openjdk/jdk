@@ -23,6 +23,7 @@
  */
 
 #include "asm/codeBuffer.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -1085,6 +1086,11 @@ void CodeBuffer::print_on(outputStream* st) {
     CodeSection* cs = code_section(n);
     cs->print_on(st, code_section_name(n));
   }
+}
+
+CHeapString::~CHeapString() {
+  os::free((void*)_string);
+  _string = nullptr;
 }
 
 // ----- AsmRemarks ------------------------------------------------------------

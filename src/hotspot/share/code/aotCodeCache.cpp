@@ -36,9 +36,6 @@
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
@@ -52,6 +49,9 @@
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
 #endif
 
 #include <sys/stat.h>
@@ -351,9 +351,7 @@ void AOTCodeCache::Config::record() {
     _flags |= restrictContendedPadding;
   }
   _compressedOopShift    = CompressedOops::shift();
-  _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
-  _compressedKlassBase   = CompressedKlassPointers::base();
   _contendedPaddingWidth = ContendedPaddingWidth;
   _objectAlignment       = ObjectAlignmentInBytes;
   _gc                    = (uint)Universe::heap()->kind();
@@ -408,16 +406,8 @@ bool AOTCodeCache::Config::verify() const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
-  if (_compressedOopBase != CompressedOops::base()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::base() = %p vs current %p", _compressedOopBase, CompressedOops::base());
-    return false;
-  }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
-    return false;
-  }
-  if (_compressedKlassBase != CompressedKlassPointers::base()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::base() = %p vs current %p", _compressedKlassBase, CompressedKlassPointers::base());
     return false;
   }
   if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
@@ -771,7 +761,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if (AOTCodeEntry::is_blob(entry_kind) && !AOTStubCaching) {
     return false;
   }
-  log_info(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
@@ -851,7 +841,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps, blob.content_begin());
-  log_info(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
   return true;
 }
 
@@ -877,7 +867,7 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   AOTCodeReader reader(cache, entry);
   CodeBlob* blob = reader.compile_code_blob(name, entry_offset_count, entry_offsets);
 
-  log_info(aot, codecache, stubs)("Read blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Read blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
   return blob;
 }
 
@@ -1118,9 +1108,11 @@ bool AOTCodeCache::write_asm_remarks(CodeBlob& cb) {
     if (n != sizeof(uint)) {
       return false;
     }
-    uint len = (uint)strlen(str) + 1; // including '\0' char
-    n = write_bytes(str, len);
-    if (n != len) {
+    const char* cstr = add_C_string(str);
+    int id = _table->id_for_C_string((address)cstr);
+    assert(id != -1, "asm remark string '%s' not found in AOTCodeAddressTable", str);
+    n = write_bytes(&id, sizeof(int));
+    if (n != sizeof(int)) {
       return false;
     }
     count += 1;
@@ -1138,8 +1130,9 @@ void AOTCodeReader::read_asm_remarks(AsmRemarks& asm_remarks) {
   for (uint i = 0; i < count; i++) {
     uint remark_offset = *(uint *)addr(offset);
     offset += sizeof(uint);
-    const char* remark = (const char*)addr(offset);
-    offset += (uint)strlen(remark)+1;
+    int remark_string_id = *(uint *)addr(offset);
+    offset += sizeof(int);
+    const char* remark = (const char*)_cache->address_for_C_string(remark_string_id);
     asm_remarks.insert(remark_offset, remark);
   }
   set_read_position(offset);
@@ -1154,9 +1147,11 @@ bool AOTCodeCache::write_dbg_strings(CodeBlob& cb) {
   uint count = 0;
   bool result = cb.dbg_strings().iterate([&] (const char* str) -> bool {
     log_trace(aot, codecache, stubs)("dbg string=%s", str);
-    uint len = (uint)strlen(str) + 1; // including '\0' char
-    uint n = write_bytes(str, len);
-    if (n != len) {
+    const char* cstr = add_C_string(str);
+    int id = _table->id_for_C_string((address)cstr);
+    assert(id != -1, "db string '%s' not found in AOTCodeAddressTable", str);
+    uint n = write_bytes(&id, sizeof(int));
+    if (n != sizeof(int)) {
       return false;
     }
     count += 1;
@@ -1172,8 +1167,9 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
   uint count = *(uint *)addr(offset);
   offset += sizeof(uint);
   for (uint i = 0; i < count; i++) {
-    const char* str = (const char*)addr(offset);
-    offset += (uint)strlen(str)+1;
+    int string_id = *(uint *)addr(offset);
+    offset += sizeof(int);
+    const char* str = (const char*)_cache->address_for_C_string(string_id);
     dbg_strings.insert(str);
   }
   set_read_position(offset);
@@ -1276,6 +1272,7 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, Runtime1::predicate_failed_trap);
     SET_ADDRESS(_extrs, Runtime1::unimplemented_entry);
     SET_ADDRESS(_extrs, Thread::current);
+    SET_ADDRESS(_extrs, CompressedKlassPointers::base_addr());
 #ifndef PRODUCT
     SET_ADDRESS(_extrs, os::breakpoint);
 #endif

@@ -421,7 +421,6 @@ reg_class int_rdi_reg(RDI);
 source_hpp %{
 
 #include "peephole_x86_64.hpp"
-#include "code/aotCodeCache.hpp"
 
 bool castLL_is_imm32(const Node* n);
 
@@ -1860,12 +1859,7 @@ encode %{
   %}
 
   enc_class Java_To_Runtime(method meth) %{
-    if (AOTCodeCache::is_on_for_dump()) {
-      // Created runtime_call_type relocation when caching code
-      __ lea(r10, RuntimeAddress((address)$meth$$method));
-    } else {
-      __ mov64(r10, (int64_t) $meth$$method);
-    }
+    __ lea(r10, RuntimeAddress((address)$meth$$method));
     __ call(r10);
     __ post_call_nop();
   %}
