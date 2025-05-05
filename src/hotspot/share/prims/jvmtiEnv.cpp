@@ -1121,7 +1121,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
     if (java_lang_VirtualThread::is_instance(thread_oop)) {
       oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
       java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
-    }      
+    }
     results[i] = resume_thread(thread_oop, java_thread, /* single_resume */ true);
   }
   // per-thread resume results returned via results parameter
