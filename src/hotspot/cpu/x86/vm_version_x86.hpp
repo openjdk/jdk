@@ -447,9 +447,8 @@ protected:
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
+    MAX_CPU_FEATURES
   };
-
-#define MAX_CPU_FEATURES 64
 
   static const char* _features_names[];
 
@@ -594,7 +593,7 @@ protected:
     // Space to save apx registers after signal handle
     jlong        apx_save[2]; // Save r16 and r31
 
-    void feature_flags() const;
+    void install_feature_flags() const;
 
     // Asserts
     void assert_is_initialized() const {
@@ -678,28 +677,27 @@ public:
     Abstract_VM_Version::clear_cpu_features();
   }
   static void set_avx_cpuFeatures() {
-    SET_CPU_FEATURE(CPU_SSE);
-    SET_CPU_FEATURE(CPU_SSE2);
-    SET_CPU_FEATURE(CPU_AVX);
-    SET_CPU_FEATURE(CPU_VZEROUPPER);
+    _vm_target_features.set_feature(CPU_SSE);
+    _vm_target_features.set_feature(CPU_SSE2);
+    _vm_target_features.set_feature(CPU_AVX);
+    _vm_target_features.set_feature(CPU_VZEROUPPER);
   }
   static void set_evex_cpuFeatures() {
-    SET_CPU_FEATURE(CPU_AVX10_1);
-    SET_CPU_FEATURE(CPU_AVX512F);
-    SET_CPU_FEATURE(CPU_SSE);
-    SET_CPU_FEATURE(CPU_SSE2);
-    SET_CPU_FEATURE(CPU_VZEROUPPER);
+    _vm_target_features.set_feature(CPU_AVX10_1);
+    _vm_target_features.set_feature(CPU_AVX512F);
+    _vm_target_features.set_feature(CPU_SSE);
+    _vm_target_features.set_feature(CPU_SSE2);
+    _vm_target_features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { SET_CPU_FEATURE(CPU_APX_F); }
+  static void set_apx_cpuFeatures() { _vm_target_features.set_feature(CPU_APX_F); }
   static void set_bmi_cpuFeatures() {
-    SET_CPU_FEATURE(CPU_BMI1);
-    SET_CPU_FEATURE(CPU_BMI2);
-    SET_CPU_FEATURE(CPU_LZCNT);
-    SET_CPU_FEATURE(CPU_POPCNT);
+    _vm_target_features.set_feature(CPU_BMI1);
+    _vm_target_features.set_feature(CPU_BMI2);
+    _vm_target_features.set_feature(CPU_LZCNT);
+    _vm_target_features.set_feature(CPU_POPCNT);
   }
 
   // Initialization
-  static void pre_initialize();
   static void initialize();
 
   // Override Abstract_VM_Version implementation
@@ -753,39 +751,39 @@ public:
   // Feature identification which can be affected by VM settings
   //
   static bool supports_cpuid()        { return Abstract_VM_Version::vm_features_exist(); }
-  static bool supports_cmov()         { return SUPPORTS_CPU_FEATURE(CPU_CMOV); }
-  static bool supports_fxsr()         { return SUPPORTS_CPU_FEATURE(CPU_FXSR); }
-  static bool supports_ht()           { return SUPPORTS_CPU_FEATURE(CPU_HT); }
-  static bool supports_mmx()          { return SUPPORTS_CPU_FEATURE(CPU_MMX); }
-  static bool supports_sse()          { return SUPPORTS_CPU_FEATURE(CPU_SSE); }
-  static bool supports_sse2()         { return SUPPORTS_CPU_FEATURE(CPU_SSE2); }
-  static bool supports_sse3()         { return SUPPORTS_CPU_FEATURE(CPU_SSE3); }
-  static bool supports_ssse3()        { return SUPPORTS_CPU_FEATURE(CPU_SSSE3); }
-  static bool supports_sse4_1()       { return SUPPORTS_CPU_FEATURE(CPU_SSE4_1); }
-  static bool supports_sse4_2()       { return SUPPORTS_CPU_FEATURE(CPU_SSE4_2); }
-  static bool supports_popcnt()       { return SUPPORTS_CPU_FEATURE(CPU_POPCNT); }
-  static bool supports_avx()          { return SUPPORTS_CPU_FEATURE(CPU_AVX); }
-  static bool supports_avx2()         { return SUPPORTS_CPU_FEATURE(CPU_AVX2); }
-  static bool supports_tsc()          { return SUPPORTS_CPU_FEATURE(CPU_TSC); }
-  static bool supports_rdtscp()       { return SUPPORTS_CPU_FEATURE(CPU_RDTSCP); }
-  static bool supports_rdpid()        { return SUPPORTS_CPU_FEATURE(CPU_RDPID); }
-  static bool supports_aes()          { return SUPPORTS_CPU_FEATURE(CPU_AES); }
-  static bool supports_erms()         { return SUPPORTS_CPU_FEATURE(CPU_ERMS); }
-  static bool supports_fsrm()         { return SUPPORTS_CPU_FEATURE(CPU_FSRM); }
-  static bool supports_clmul()        { return SUPPORTS_CPU_FEATURE(CPU_CLMUL); }
-  static bool supports_rtm()          { return SUPPORTS_CPU_FEATURE(CPU_RTM); }
-  static bool supports_bmi1()         { return SUPPORTS_CPU_FEATURE(CPU_BMI1); }
-  static bool supports_bmi2()         { return SUPPORTS_CPU_FEATURE(CPU_BMI2); }
-  static bool supports_adx()          { return SUPPORTS_CPU_FEATURE(CPU_ADX); }
-  static bool supports_evex()         { return SUPPORTS_CPU_FEATURE(CPU_AVX512F); }
-  static bool supports_avx512dq()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512DQ); }
-  static bool supports_avx512ifma()   { return SUPPORTS_CPU_FEATURE(CPU_AVX512_IFMA); }
-  static bool supports_avxifma()      { return SUPPORTS_CPU_FEATURE(CPU_AVX_IFMA); }
-  static bool supports_avx512pf()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512PF); }
-  static bool supports_avx512er()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512ER); }
-  static bool supports_avx512cd()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512CD); }
-  static bool supports_avx512bw()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512BW); }
-  static bool supports_avx512vl()     { return SUPPORTS_CPU_FEATURE(CPU_AVX512VL); }
+  static bool supports_cmov()         { return _vm_target_features.supports_feature(CPU_CMOV); }
+  static bool supports_fxsr()         { return _vm_target_features.supports_feature(CPU_FXSR); }
+  static bool supports_ht()           { return _vm_target_features.supports_feature(CPU_HT); }
+  static bool supports_mmx()          { return _vm_target_features.supports_feature(CPU_MMX); }
+  static bool supports_sse()          { return _vm_target_features.supports_feature(CPU_SSE); }
+  static bool supports_sse2()         { return _vm_target_features.supports_feature(CPU_SSE2); }
+  static bool supports_sse3()         { return _vm_target_features.supports_feature(CPU_SSE3); }
+  static bool supports_ssse3()        { return _vm_target_features.supports_feature(CPU_SSSE3); }
+  static bool supports_sse4_1()       { return _vm_target_features.supports_feature(CPU_SSE4_1); }
+  static bool supports_sse4_2()       { return _vm_target_features.supports_feature(CPU_SSE4_2); }
+  static bool supports_popcnt()       { return _vm_target_features.supports_feature(CPU_POPCNT); }
+  static bool supports_avx()          { return _vm_target_features.supports_feature(CPU_AVX); }
+  static bool supports_avx2()         { return _vm_target_features.supports_feature(CPU_AVX2); }
+  static bool supports_tsc()          { return _vm_target_features.supports_feature(CPU_TSC); }
+  static bool supports_rdtscp()       { return _vm_target_features.supports_feature(CPU_RDTSCP); }
+  static bool supports_rdpid()        { return _vm_target_features.supports_feature(CPU_RDPID); }
+  static bool supports_aes()          { return _vm_target_features.supports_feature(CPU_AES); }
+  static bool supports_erms()         { return _vm_target_features.supports_feature(CPU_ERMS); }
+  static bool supports_fsrm()         { return _vm_target_features.supports_feature(CPU_FSRM); }
+  static bool supports_clmul()        { return _vm_target_features.supports_feature(CPU_CLMUL); }
+  static bool supports_rtm()          { return _vm_target_features.supports_feature(CPU_RTM); }
+  static bool supports_bmi1()         { return _vm_target_features.supports_feature(CPU_BMI1); }
+  static bool supports_bmi2()         { return _vm_target_features.supports_feature(CPU_BMI2); }
+  static bool supports_adx()          { return _vm_target_features.supports_feature(CPU_ADX); }
+  static bool supports_evex()         { return _vm_target_features.supports_feature(CPU_AVX512F); }
+  static bool supports_avx512dq()     { return _vm_target_features.supports_feature(CPU_AVX512DQ); }
+  static bool supports_avx512ifma()   { return _vm_target_features.supports_feature(CPU_AVX512_IFMA); }
+  static bool supports_avxifma()      { return _vm_target_features.supports_feature(CPU_AVX_IFMA); }
+  static bool supports_avx512pf()     { return _vm_target_features.supports_feature(CPU_AVX512PF); }
+  static bool supports_avx512er()     { return _vm_target_features.supports_feature(CPU_AVX512ER); }
+  static bool supports_avx512cd()     { return _vm_target_features.supports_feature(CPU_AVX512CD); }
+  static bool supports_avx512bw()     { return _vm_target_features.supports_feature(CPU_AVX512BW); }
+  static bool supports_avx512vl()     { return _vm_target_features.supports_feature(CPU_AVX512VL); }
   static bool supports_avx512vlbw()   { return (supports_evex() && supports_avx512bw() && supports_avx512vl()); }
   static bool supports_avx512bwdq()   { return (supports_evex() && supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512vldq()   { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
@@ -794,39 +792,39 @@ public:
   static bool supports_avx512novl()   { return (supports_evex() && !supports_avx512vl()); }
   static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
-  static bool supports_apx_f()        { return SUPPORTS_CPU_FEATURE(CPU_APX_F); }
+  static bool supports_apx_f()        { return _vm_target_features.supports_feature(CPU_APX_F); }
   static bool supports_avxonly()      { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
-  static bool supports_sha()          { return SUPPORTS_CPU_FEATURE(CPU_SHA); }
-  static bool supports_fma()          { return SUPPORTS_CPU_FEATURE(CPU_FMA) && supports_avx(); }
-  static bool supports_vzeroupper()   { return SUPPORTS_CPU_FEATURE(CPU_VZEROUPPER); }
-  static bool supports_avx512_vpopcntdq()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VPOPCNTDQ); }
-  static bool supports_avx512_vpclmulqdq() { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VPCLMULQDQ); }
-  static bool supports_avx512_vaes()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VAES); }
-  static bool supports_gfni()         { return SUPPORTS_CPU_FEATURE(CPU_GFNI); }
-  static bool supports_avx512_vnni()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VNNI); }
-  static bool supports_avx512_bitalg()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_BITALG); }
-  static bool supports_avx512_vbmi()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VBMI); }
-  static bool supports_avx512_vbmi2() { return SUPPORTS_CPU_FEATURE(CPU_AVX512_VBMI2); }
-  static bool supports_avx512_fp16()  { return SUPPORTS_CPU_FEATURE(CPU_AVX512_FP16); }
-  static bool supports_hv()           { return SUPPORTS_CPU_FEATURE(CPU_HV); }
-  static bool supports_serialize()    { return SUPPORTS_CPU_FEATURE(CPU_SERIALIZE); }
-  static bool supports_f16c()         { return SUPPORTS_CPU_FEATURE(CPU_F16C); }
-  static bool supports_pku()          { return SUPPORTS_CPU_FEATURE(CPU_PKU); }
-  static bool supports_ospke()        { return SUPPORTS_CPU_FEATURE(CPU_OSPKE); }
-  static bool supports_cet_ss()       { return SUPPORTS_CPU_FEATURE(CPU_CET_SS); }
-  static bool supports_cet_ibt()      { return SUPPORTS_CPU_FEATURE(CPU_CET_IBT); }
-  static bool supports_sha512()       { return SUPPORTS_CPU_FEATURE(CPU_SHA512); }
+  static bool supports_sha()          { return _vm_target_features.supports_feature(CPU_SHA); }
+  static bool supports_fma()          { return _vm_target_features.supports_feature(CPU_FMA) && supports_avx(); }
+  static bool supports_vzeroupper()   { return _vm_target_features.supports_feature(CPU_VZEROUPPER); }
+  static bool supports_avx512_vpopcntdq()  { return _vm_target_features.supports_feature(CPU_AVX512_VPOPCNTDQ); }
+  static bool supports_avx512_vpclmulqdq() { return _vm_target_features.supports_feature(CPU_AVX512_VPCLMULQDQ); }
+  static bool supports_avx512_vaes()  { return _vm_target_features.supports_feature(CPU_AVX512_VAES); }
+  static bool supports_gfni()         { return _vm_target_features.supports_feature(CPU_GFNI); }
+  static bool supports_avx512_vnni()  { return _vm_target_features.supports_feature(CPU_AVX512_VNNI); }
+  static bool supports_avx512_bitalg()  { return _vm_target_features.supports_feature(CPU_AVX512_BITALG); }
+  static bool supports_avx512_vbmi()  { return _vm_target_features.supports_feature(CPU_AVX512_VBMI); }
+  static bool supports_avx512_vbmi2() { return _vm_target_features.supports_feature(CPU_AVX512_VBMI2); }
+  static bool supports_avx512_fp16()  { return _vm_target_features.supports_feature(CPU_AVX512_FP16); }
+  static bool supports_hv()           { return _vm_target_features.supports_feature(CPU_HV); }
+  static bool supports_serialize()    { return _vm_target_features.supports_feature(CPU_SERIALIZE); }
+  static bool supports_f16c()         { return _vm_target_features.supports_feature(CPU_F16C); }
+  static bool supports_pku()          { return _vm_target_features.supports_feature(CPU_PKU); }
+  static bool supports_ospke()        { return _vm_target_features.supports_feature(CPU_OSPKE); }
+  static bool supports_cet_ss()       { return _vm_target_features.supports_feature(CPU_CET_SS); }
+  static bool supports_cet_ibt()      { return _vm_target_features.supports_feature(CPU_CET_IBT); }
+  static bool supports_sha512()       { return _vm_target_features.supports_feature(CPU_SHA512); }
 
   // Intel® AVX10 introduces a versioned approach for enumeration that is monotonically increasing, inclusive,
   // and supporting all vector lengths. Feature set supported by an AVX10 vector ISA version is also supported
   // by all the versions above it.
-  static bool supports_avx10_1()      { return SUPPORTS_CPU_FEATURE(CPU_AVX10_1);}
-  static bool supports_avx10_2()      { return SUPPORTS_CPU_FEATURE(CPU_AVX10_2);}
+  static bool supports_avx10_1()      { return _vm_target_features.supports_feature(CPU_AVX10_1);}
+  static bool supports_avx10_2()      { return _vm_target_features.supports_feature(CPU_AVX10_2);}
 
   //
   // Feature identification not affected by VM flags
   //
-  static bool cpu_supports_evex()     { return SUPPORTS_CPU_FEATURE_AUX(CPU_AVX512F); }
+  static bool cpu_supports_evex()     { return _cpu_target_features.supports_feature(CPU_AVX512F); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
@@ -864,19 +862,19 @@ public:
   static bool has_intel_jcc_erratum() { return _has_intel_jcc_erratum; }
 
   // AMD features
-  static bool supports_3dnow_prefetch()    { return SUPPORTS_CPU_FEATURE(CPU_3DNOW_PREFETCH); }
-  static bool supports_lzcnt()    { return SUPPORTS_CPU_FEATURE(CPU_LZCNT); }
-  static bool supports_sse4a()    { return SUPPORTS_CPU_FEATURE(CPU_SSE4A); }
+  static bool supports_3dnow_prefetch()    { return _vm_target_features.supports_feature(CPU_3DNOW_PREFETCH); }
+  static bool supports_lzcnt()    { return _vm_target_features.supports_feature(CPU_LZCNT); }
+  static bool supports_sse4a()    { return _vm_target_features.supports_feature(CPU_SSE4A); }
 
   static bool is_amd_Barcelona()  { return is_amd() &&
                                            extended_cpu_family() == CPU_FAMILY_AMD_11H; }
 
   // Intel and AMD newer cores support fast timestamps well
   static bool supports_tscinv_bit() {
-    return SUPPORTS_CPU_FEATURE(CPU_TSCINV_BIT);
+    return _vm_target_features.supports_feature(CPU_TSCINV_BIT);
   }
   static bool supports_tscinv() {
-    return SUPPORTS_CPU_FEATURE(CPU_TSCINV);
+    return _vm_target_features.supports_feature(CPU_TSCINV);
   }
 
   // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
@@ -937,8 +935,8 @@ public:
   static bool supports_clflush(); // Can't inline due to header file conflict
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
-  static bool supports_clflushopt() { return (SUPPORTS_CPU_FEATURE(CPU_FLUSHOPT)); }
-  static bool supports_clwb() { return (SUPPORTS_CPU_FEATURE(CPU_CLWB)); }
+  static bool supports_clflushopt() { return (_vm_target_features.supports_feature(CPU_FLUSHOPT)); }
+  static bool supports_clwb() { return (_vm_target_features.supports_feature(CPU_CLWB)); }
 
   // Old CPUs perform lea on AGU which causes additional latency transferring the
   // value from/to ALU for other operations

@@ -27,10 +27,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/vm_version.hpp"
 
-void VM_Version_pre_init() {
-  VM_Version::pre_initialize();
-}
-
 void VM_Version_init() {
   VM_Version::initialize();
   guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations is required");

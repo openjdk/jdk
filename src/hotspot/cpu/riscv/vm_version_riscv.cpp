@@ -64,8 +64,6 @@ void VM_Version::initialize() {
 #endif // COMPILER2
 }
 
-void VM_Version::pre_initialize() {}
-
 void VM_Version::common_initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;

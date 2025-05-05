@@ -44,20 +44,26 @@ typedef enum {
 class outputStream;
 enum class vmIntrinsicID;
 
+#define MAX_FEATURE_VEC_SIZE 4
+
 class VM_Features {
  public:
-  // Dynamically sized feature flags currently only used by x86 backend,
-  // can be affected by VM settings.
-  uint64_t* _dynamic_features_vector;
-  uint32_t _dynamic_features_vector_size;
-  uint32_t _dynamic_features_element_shift_count;
+  using FeatureVector = uint64_t [MAX_FEATURE_VEC_SIZE];
 
-  void init_vm_features(uint32_t size, uint32_t elem_shift_count);
+  // Feature vector bitmap currently only used by x86 backend.
+  FeatureVector _features_vector;
+
+  // Size of feature vector bitmap.
+  static uint32_t _features_vector_size;
+
+  // Log2 of feature vector element size in bits, used by JVMCI to check enabled feature bits.
+  // Refer HotSpotJVMCIBackendFactory::convertFeaturesVector.
+  static uint32_t _features_vector_element_shift_count;
+
+  static bool is_within_feature_vector_bounds(uint32_t num_features);
 
   void set_feature(uint32_t feature);
-
   void clear_feature(uint32_t feature);
-
   bool supports_feature(uint32_t feature);
 };
 
@@ -81,49 +87,32 @@ class Abstract_VM_Version: AllStatic {
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
 
-  static VM_Features _dynamic_features;
+  // CPU feature flags vector, can be affected by VM settings.
+  static VM_Features _vm_target_features;
 
-  static VM_Features _dynamic_cpu_features;
-
-#define SET_CPU_FEATURE(feature) \
-  _dynamic_features.set_feature(feature)
-
-#define CLEAR_CPU_FEATURE(feature) \
-  _dynamic_features.clear_feature(feature)
-
-#define SUPPORTS_CPU_FEATURE(feature) \
-  _dynamic_features.supports_feature(feature)
-
-#define SUPPORTS_CPU_FEATURE_AUX(feature) \
-  _dynamic_cpu_features.supports_feature(feature)
-
-  static void init_vm_features(uint32_t size, uint32_t elem_shift_count) {
-    _dynamic_features.init_vm_features(size, elem_shift_count);
-    _dynamic_cpu_features.init_vm_features(size, elem_shift_count);
-  }
+  // Original CPU feature flags vector, not affected by VM settings.
+  static VM_Features _cpu_target_features;
 
   static void sync_cpu_features() {
-    assert(_dynamic_cpu_features._dynamic_features_vector_size == _dynamic_features._dynamic_features_vector_size, "");
-    memcpy(_dynamic_cpu_features._dynamic_features_vector, _dynamic_features._dynamic_features_vector,
-           sizeof(uint64_t) * _dynamic_features._dynamic_features_vector_size);
+    memcpy(_cpu_target_features._features_vector, _vm_target_features._features_vector,
+           sizeof(uint64_t) * VM_Features::_features_vector_size);
   }
 
   static void clear_cpu_features() {
-    memset(_dynamic_features._dynamic_features_vector, 0, sizeof(uint64_t) * _dynamic_features._dynamic_features_vector_size);
+    memset(_vm_target_features._features_vector, 0, sizeof(uint64_t) * VM_Features::_features_vector_size);
   }
 
   static bool vm_features_exist() {
-    return (_dynamic_features._dynamic_features_vector_size > 0) &&
-           (_dynamic_features._dynamic_features_vector != nullptr);
+    return VM_Features::_features_vector_size > 0;
   }
 
-  static uint32_t dynamic_features_vector_size() {
-    return _dynamic_features._dynamic_features_vector_size;
+  static uint32_t features_vector_size() {
+    return VM_Features::_features_vector_size;
   }
 
-  static uint64_t dynamic_features_vector_elem(uint32_t elem) {
-    assert(elem < _dynamic_features._dynamic_features_vector_size, "");
-    return _dynamic_features._dynamic_features_vector[elem];
+  static uint64_t features_vector_elem(uint32_t elem) {
+    assert(elem < VM_Features::_features_vector_size, "");
+    return _vm_target_features._features_vector[elem];
   }
 
   // These are set by machine-dependent initializations

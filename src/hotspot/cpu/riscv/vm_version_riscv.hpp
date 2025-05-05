@@ -305,7 +305,6 @@ class VM_Version : public Abstract_VM_Version {
 
  public:
   // Initialization
-  static void pre_initialize();
   static void initialize();
   static void initialize_cpu_information();
 

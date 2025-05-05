@@ -37,8 +37,10 @@ const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
-VM_Features Abstract_VM_Version::_dynamic_features = {nullptr, 0, 0};
-VM_Features Abstract_VM_Version::_dynamic_cpu_features = {nullptr, 0, 0};
+uint32_t VM_Features::_features_vector_element_shift_count = 6;
+uint32_t VM_Features::_features_vector_size = MAX_FEATURE_VEC_SIZE;
+VM_Features Abstract_VM_Version::_vm_target_features = {{0, 0, 0, 0}};
+VM_Features Abstract_VM_Version::_cpu_target_features = {{0, 0, 0, 0}};
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -420,33 +422,27 @@ const char* Abstract_VM_Version::cpu_description(void) {
   return tmp;
 }
 
-
-void VM_Features::init_vm_features(uint32_t size, uint32_t elem_shift_count) {
-  _dynamic_features_vector_size = size;
-  _dynamic_features_element_shift_count = elem_shift_count;
-
-  uint64_t* features_memory = NEW_C_HEAP_ARRAY(uint64_t, size, mtInternal);
-  memset(features_memory, 0, sizeof(uint64_t*) * size);
-  _dynamic_features_vector = features_memory;
-  }
-
 void VM_Features::set_feature(uint32_t feature) {
-  uint32_t index = feature >> _dynamic_features_element_shift_count;
-  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-  _dynamic_features_vector[index] |= (1ULL << (feature & index_mask));
+  uint32_t index = feature >> _features_vector_element_shift_count;
+  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
+  assert(index < _features_vector_size, "Features array index out of bounds");
+  _features_vector[index] |= (1ULL << (feature & index_mask));
 }
 
 void VM_Features::clear_feature(uint32_t feature) {
-  uint32_t index = feature >> _dynamic_features_element_shift_count;
-  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-  _dynamic_features_vector[index] &= ~(1ULL << (feature & index_mask));
+  uint32_t index = feature >> _features_vector_element_shift_count;
+  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
+  assert(index < _features_vector_size, "Features array index out of bounds");
+  _features_vector[index] &= ~(1ULL << (feature & index_mask));
 }
 
 bool VM_Features::supports_feature(uint32_t feature) {
-  uint32_t index = feature >> _dynamic_features_element_shift_count;
-  uint32_t index_mask = (1 << _dynamic_features_element_shift_count) - 1;
-  assert(index < _dynamic_features_vector_size, "Features array index out of bounds");
-  return (_dynamic_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
+  uint32_t index = feature >> _features_vector_element_shift_count;
+  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
+  assert(index < _features_vector_size, "Features array index out of bounds");
+  return (_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
+}
+
+bool VM_Features::is_within_feature_vector_bounds(uint32_t num_features) {
+   return _features_vector_size >= ((num_features >> _features_vector_element_shift_count) + 1);
 }

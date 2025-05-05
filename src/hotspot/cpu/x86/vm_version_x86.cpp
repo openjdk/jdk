@@ -82,7 +82,7 @@ bool VM_Version::supports_clflush() {
   // up. Assembler::flush calls this routine to check that clflush
   // is allowed. So, we give the caller a free pass if Universe init
   // is still in progress.
-  assert ((!Universe::is_fully_initialized() || SUPPORTS_CPU_FEATURE(CPU_FLUSH)), "clflush should be available");
+  assert ((!Universe::is_fully_initialized() || _vm_target_features.supports_feature(CPU_FLUSH)), "clflush should be available");
   return true;
 }
 
@@ -857,7 +857,7 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _cpuid_info.feature_flags(); // These can be changed by VM settings
+    _cpuid_info.install_feature_flags(); // These can be changed by VM settings
     Abstract_VM_Version::sync_cpu_features(); // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
@@ -907,21 +907,21 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseSSE < 4) {
-    CLEAR_CPU_FEATURE(CPU_SSE4_1);
-    CLEAR_CPU_FEATURE(CPU_SSE4_2);
+    _vm_target_features.clear_feature(CPU_SSE4_1);
+    _vm_target_features.clear_feature(CPU_SSE4_2);
   }
 
   if (UseSSE < 3) {
-    CLEAR_CPU_FEATURE(CPU_SSE3);
-    CLEAR_CPU_FEATURE(CPU_SSSE3);
-    CLEAR_CPU_FEATURE(CPU_SSE4A);
+    _vm_target_features.clear_feature(CPU_SSE3);
+    _vm_target_features.clear_feature(CPU_SSSE3);
+    _vm_target_features.clear_feature(CPU_SSE4A);
   }
 
   if (UseSSE < 2)
-    CLEAR_CPU_FEATURE(CPU_SSE2);
+    _vm_target_features.clear_feature(CPU_SSE2);
 
   if (UseSSE < 1)
-    CLEAR_CPU_FEATURE(CPU_SSE);
+    _vm_target_features.clear_feature(CPU_SSE);
 
   //since AVX instructions is slower than SSE in some ZX cpus, force USEAVX=0.
   if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7))) {
@@ -987,25 +987,25 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseAVX < 3) {
-    CLEAR_CPU_FEATURE(CPU_AVX512F);
-    CLEAR_CPU_FEATURE(CPU_AVX512DQ);
-    CLEAR_CPU_FEATURE(CPU_AVX512CD);
-    CLEAR_CPU_FEATURE(CPU_AVX512BW);
-    CLEAR_CPU_FEATURE(CPU_AVX512ER);
-    CLEAR_CPU_FEATURE(CPU_AVX512PF);
-    CLEAR_CPU_FEATURE(CPU_AVX512VL);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VPOPCNTDQ);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VPCLMULQDQ);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VAES);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VNNI);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VBMI);
-    CLEAR_CPU_FEATURE(CPU_AVX512_VBMI2);
-    CLEAR_CPU_FEATURE(CPU_AVX512_BITALG);
-    CLEAR_CPU_FEATURE(CPU_AVX512_IFMA);
-    CLEAR_CPU_FEATURE(CPU_APX_F);
-    CLEAR_CPU_FEATURE(CPU_AVX512_FP16);
-    CLEAR_CPU_FEATURE(CPU_AVX10_1);
-    CLEAR_CPU_FEATURE(CPU_AVX10_2);
+    _vm_target_features.clear_feature(CPU_AVX512F);
+    _vm_target_features.clear_feature(CPU_AVX512DQ);
+    _vm_target_features.clear_feature(CPU_AVX512CD);
+    _vm_target_features.clear_feature(CPU_AVX512BW);
+    _vm_target_features.clear_feature(CPU_AVX512ER);
+    _vm_target_features.clear_feature(CPU_AVX512PF);
+    _vm_target_features.clear_feature(CPU_AVX512VL);
+    _vm_target_features.clear_feature(CPU_AVX512_VPOPCNTDQ);
+    _vm_target_features.clear_feature(CPU_AVX512_VPCLMULQDQ);
+    _vm_target_features.clear_feature(CPU_AVX512_VAES);
+    _vm_target_features.clear_feature(CPU_AVX512_VNNI);
+    _vm_target_features.clear_feature(CPU_AVX512_VBMI);
+    _vm_target_features.clear_feature(CPU_AVX512_VBMI2);
+    _vm_target_features.clear_feature(CPU_AVX512_BITALG);
+    _vm_target_features.clear_feature(CPU_AVX512_IFMA);
+    _vm_target_features.clear_feature(CPU_APX_F);
+    _vm_target_features.clear_feature(CPU_AVX512_FP16);
+    _vm_target_features.clear_feature(CPU_AVX10_1);
+    _vm_target_features.clear_feature(CPU_AVX10_2);
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
@@ -1018,45 +1018,45 @@ void VM_Version::get_processor_features() {
   }
 
   if (!UseAPX) {
-    CLEAR_CPU_FEATURE(CPU_APX_F);
+    _vm_target_features.clear_feature(CPU_APX_F);
   }
 
   if (UseAVX < 2) {
-    CLEAR_CPU_FEATURE(CPU_AVX2);
-    CLEAR_CPU_FEATURE(CPU_AVX_IFMA);
+    _vm_target_features.clear_feature(CPU_AVX2);
+    _vm_target_features.clear_feature(CPU_AVX_IFMA);
   }
 
   if (UseAVX < 1) {
-    CLEAR_CPU_FEATURE(CPU_AVX);
-    CLEAR_CPU_FEATURE(CPU_VZEROUPPER);
-    CLEAR_CPU_FEATURE(CPU_F16C);
-    CLEAR_CPU_FEATURE(CPU_SHA512);
+    _vm_target_features.clear_feature(CPU_AVX);
+    _vm_target_features.clear_feature(CPU_VZEROUPPER);
+    _vm_target_features.clear_feature(CPU_F16C);
+    _vm_target_features.clear_feature(CPU_SHA512);
   }
 
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
-    CLEAR_CPU_FEATURE(CPU_HT);
+    _vm_target_features.clear_feature(CPU_HT);
   }
 
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
-      CLEAR_CPU_FEATURE(CPU_VZEROUPPER);
-      CLEAR_CPU_FEATURE(CPU_AVX512BW);
-      CLEAR_CPU_FEATURE(CPU_AVX512VL);
-      CLEAR_CPU_FEATURE(CPU_AVX512DQ);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VNNI);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VAES);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VPOPCNTDQ);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VPCLMULQDQ);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VBMI);
-      CLEAR_CPU_FEATURE(CPU_AVX512_VBMI2);
-      CLEAR_CPU_FEATURE(CPU_CLWB);
-      CLEAR_CPU_FEATURE(CPU_FLUSHOPT);
-      CLEAR_CPU_FEATURE(CPU_GFNI);
-      CLEAR_CPU_FEATURE(CPU_AVX512_BITALG);
-      CLEAR_CPU_FEATURE(CPU_AVX512_IFMA);
-      CLEAR_CPU_FEATURE(CPU_AVX_IFMA);
-      CLEAR_CPU_FEATURE(CPU_AVX512_FP16);
+      _vm_target_features.clear_feature(CPU_VZEROUPPER);
+      _vm_target_features.clear_feature(CPU_AVX512BW);
+      _vm_target_features.clear_feature(CPU_AVX512VL);
+      _vm_target_features.clear_feature(CPU_AVX512DQ);
+      _vm_target_features.clear_feature(CPU_AVX512_VNNI);
+      _vm_target_features.clear_feature(CPU_AVX512_VAES);
+      _vm_target_features.clear_feature(CPU_AVX512_VPOPCNTDQ);
+      _vm_target_features.clear_feature(CPU_AVX512_VPCLMULQDQ);
+      _vm_target_features.clear_feature(CPU_AVX512_VBMI);
+      _vm_target_features.clear_feature(CPU_AVX512_VBMI2);
+      _vm_target_features.clear_feature(CPU_CLWB);
+      _vm_target_features.clear_feature(CPU_FLUSHOPT);
+      _vm_target_features.clear_feature(CPU_GFNI);
+      _vm_target_features.clear_feature(CPU_AVX512_BITALG);
+      _vm_target_features.clear_feature(CPU_AVX512_IFMA);
+      _vm_target_features.clear_feature(CPU_AVX_IFMA);
+      _vm_target_features.clear_feature(CPU_AVX512_FP16);
     }
   }
 
@@ -1098,8 +1098,8 @@ void VM_Version::get_processor_features() {
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(cpu_info_size > 0, "not enough temporary space allocated");
   size_t buf_iter = cpu_info_size;
-  for (uint64_t i = 0; i < dynamic_features_vector_size(); i++) {
-    insert_features_names(dynamic_features_vector_elem(i), buf + buf_iter, sizeof(buf) - buf_iter, _features_names, 64 * i);
+  for (uint64_t i = 0; i < features_vector_size(); i++) {
+    insert_features_names(features_vector_elem(i), buf + buf_iter, sizeof(buf) - buf_iter, _features_names, 64 * i);
     buf_iter = strlen(buf);
   }
 
@@ -2101,12 +2101,10 @@ void VM_Version::clear_apx_test_state() {
 
 static bool _vm_version_initialized = false;
 
-void VM_Version::pre_initialize() {
-  Abstract_VM_Version::init_vm_features((MAX_CPU_FEATURES >> 6) + 1, 6);
-}
-
 void VM_Version::initialize() {
   ResourceMark rm;
+  assert(VM_Features::is_within_feature_vector_bounds(MAX_CPU_FEATURES), "Feature out of vector bounds");
+
   // Making this stub must be FIRST use of assembler
   stub_blob = BufferBlob::create("VM_Version stub", stub_size);
   if (stub_blob == nullptr) {
@@ -2882,94 +2880,94 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
-void VM_Version::CpuidInfo::feature_flags() const {
+void VM_Version::CpuidInfo::install_feature_flags() const {
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
-    SET_CPU_FEATURE(CPU_CX8);
+    _vm_target_features.set_feature(CPU_CX8);
   if (std_cpuid1_edx.bits.cmov != 0)
-    SET_CPU_FEATURE(CPU_CMOV);
+    _vm_target_features.set_feature(CPU_CMOV);
   if (std_cpuid1_edx.bits.clflush != 0)
-    SET_CPU_FEATURE(CPU_FLUSH);
+    _vm_target_features.set_feature(CPU_FLUSH);
   // clflush should always be available on x86_64
   // if not we are in real trouble because we rely on it
   // to flush the code cache.
-  assert (SUPPORTS_CPU_FEATURE(CPU_FLUSH), "clflush should be available");
+  assert (_vm_target_features.supports_feature(CPU_FLUSH), "clflush should be available");
   if (std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
       ext_cpuid1_edx.bits.fxsr != 0))
-    SET_CPU_FEATURE(CPU_FXSR);
+    _vm_target_features.set_feature(CPU_FXSR);
   // HT flag is set for multi-core processors also.
   if (threads_per_core() > 1)
-    SET_CPU_FEATURE(CPU_HT);
+    _vm_target_features.set_feature(CPU_HT);
   if (std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
       ext_cpuid1_edx.bits.mmx != 0))
-    SET_CPU_FEATURE(CPU_MMX);
+    _vm_target_features.set_feature(CPU_MMX);
   if (std_cpuid1_edx.bits.sse != 0)
-    SET_CPU_FEATURE(CPU_SSE);
+    _vm_target_features.set_feature(CPU_SSE);
   if (std_cpuid1_edx.bits.sse2 != 0)
-    SET_CPU_FEATURE(CPU_SSE2);
+    _vm_target_features.set_feature(CPU_SSE2);
   if (std_cpuid1_ecx.bits.sse3 != 0)
-    SET_CPU_FEATURE(CPU_SSE3);
+    _vm_target_features.set_feature(CPU_SSE3);
   if (std_cpuid1_ecx.bits.ssse3 != 0)
-    SET_CPU_FEATURE(CPU_SSSE3);
+    _vm_target_features.set_feature(CPU_SSSE3);
   if (std_cpuid1_ecx.bits.sse4_1 != 0)
-    SET_CPU_FEATURE(CPU_SSE4_1);
+    _vm_target_features.set_feature(CPU_SSE4_1);
   if (std_cpuid1_ecx.bits.sse4_2 != 0)
-    SET_CPU_FEATURE(CPU_SSE4_2);
+    _vm_target_features.set_feature(CPU_SSE4_2);
   if (std_cpuid1_ecx.bits.popcnt != 0)
-    SET_CPU_FEATURE(CPU_POPCNT);
+    _vm_target_features.set_feature(CPU_POPCNT);
   if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
       xem_xcr0_eax.bits.apx_f != 0) {
-    SET_CPU_FEATURE(CPU_APX_F);
+    _vm_target_features.set_feature(CPU_APX_F);
   }
   if (std_cpuid1_ecx.bits.avx != 0 &&
       std_cpuid1_ecx.bits.osxsave != 0 &&
       xem_xcr0_eax.bits.sse != 0 &&
       xem_xcr0_eax.bits.ymm != 0) {
-    SET_CPU_FEATURE(CPU_AVX);
-    SET_CPU_FEATURE(CPU_VZEROUPPER);
+    _vm_target_features.set_feature(CPU_AVX);
+    _vm_target_features.set_feature(CPU_VZEROUPPER);
     if (sefsl1_cpuid7_eax.bits.sha512 != 0)
-      SET_CPU_FEATURE(CPU_SHA512);
+      _vm_target_features.set_feature(CPU_SHA512);
     if (std_cpuid1_ecx.bits.f16c != 0)
-      SET_CPU_FEATURE(CPU_F16C);
+      _vm_target_features.set_feature(CPU_F16C);
     if (sef_cpuid7_ebx.bits.avx2 != 0) {
-      SET_CPU_FEATURE(CPU_AVX2);
+      _vm_target_features.set_feature(CPU_AVX2);
       if (sefsl1_cpuid7_eax.bits.avx_ifma != 0)
-        SET_CPU_FEATURE(CPU_AVX_IFMA);
+        _vm_target_features.set_feature(CPU_AVX_IFMA);
     }
     if (sef_cpuid7_ecx.bits.gfni != 0)
-        SET_CPU_FEATURE(CPU_GFNI);
+        _vm_target_features.set_feature(CPU_GFNI);
     if (sef_cpuid7_ebx.bits.avx512f != 0 &&
         xem_xcr0_eax.bits.opmask != 0 &&
         xem_xcr0_eax.bits.zmm512 != 0 &&
         xem_xcr0_eax.bits.zmm32 != 0) {
-      SET_CPU_FEATURE(CPU_AVX512F);
+      _vm_target_features.set_feature(CPU_AVX512F);
       if (sef_cpuid7_ebx.bits.avx512cd != 0)
-        SET_CPU_FEATURE(CPU_AVX512CD);
+        _vm_target_features.set_feature(CPU_AVX512CD);
       if (sef_cpuid7_ebx.bits.avx512dq != 0)
-        SET_CPU_FEATURE(CPU_AVX512DQ);
+        _vm_target_features.set_feature(CPU_AVX512DQ);
       if (sef_cpuid7_ebx.bits.avx512ifma != 0)
-        SET_CPU_FEATURE(CPU_AVX512_IFMA);
+        _vm_target_features.set_feature(CPU_AVX512_IFMA);
       if (sef_cpuid7_ebx.bits.avx512pf != 0)
-        SET_CPU_FEATURE(CPU_AVX512PF);
+        _vm_target_features.set_feature(CPU_AVX512PF);
       if (sef_cpuid7_ebx.bits.avx512er != 0)
-        SET_CPU_FEATURE(CPU_AVX512ER);
+        _vm_target_features.set_feature(CPU_AVX512ER);
       if (sef_cpuid7_ebx.bits.avx512bw != 0)
-        SET_CPU_FEATURE(CPU_AVX512BW);
+        _vm_target_features.set_feature(CPU_AVX512BW);
       if (sef_cpuid7_ebx.bits.avx512vl != 0)
-        SET_CPU_FEATURE(CPU_AVX512VL);
+        _vm_target_features.set_feature(CPU_AVX512VL);
       if (sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VPOPCNTDQ);
+        _vm_target_features.set_feature(CPU_AVX512_VPOPCNTDQ);
       if (sef_cpuid7_ecx.bits.avx512_vpclmulqdq != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VPCLMULQDQ);
+        _vm_target_features.set_feature(CPU_AVX512_VPCLMULQDQ);
       if (sef_cpuid7_ecx.bits.vaes != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VAES);
+        _vm_target_features.set_feature(CPU_AVX512_VAES);
       if (sef_cpuid7_ecx.bits.avx512_vnni != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VNNI);
+        _vm_target_features.set_feature(CPU_AVX512_VNNI);
       if (sef_cpuid7_ecx.bits.avx512_bitalg != 0)
-        SET_CPU_FEATURE(CPU_AVX512_BITALG);
+        _vm_target_features.set_feature(CPU_AVX512_BITALG);
       if (sef_cpuid7_ecx.bits.avx512_vbmi != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VBMI);
+        _vm_target_features.set_feature(CPU_AVX512_VBMI);
       if (sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
-        SET_CPU_FEATURE(CPU_AVX512_VBMI2);
+        _vm_target_features.set_feature(CPU_AVX512_VBMI2);
     }
     if (is_intel()) {
       if (sefsl1_cpuid7_edx.bits.avx10 != 0 &&
@@ -2978,113 +2976,113 @@ void VM_Version::CpuidInfo::feature_flags() const {
           xem_xcr0_eax.bits.opmask != 0 &&
           xem_xcr0_eax.bits.zmm512 != 0 &&
           xem_xcr0_eax.bits.zmm32 != 0) {
-        SET_CPU_FEATURE(CPU_AVX10_1);
-        SET_CPU_FEATURE(CPU_AVX512F);
-        SET_CPU_FEATURE(CPU_AVX512CD);
-        SET_CPU_FEATURE(CPU_AVX512DQ);
-        SET_CPU_FEATURE(CPU_AVX512PF);
-        SET_CPU_FEATURE(CPU_AVX512ER);
-        SET_CPU_FEATURE(CPU_AVX512BW);
-        SET_CPU_FEATURE(CPU_AVX512VL);
-        SET_CPU_FEATURE(CPU_AVX512_VPOPCNTDQ);
-        SET_CPU_FEATURE(CPU_AVX512_VPCLMULQDQ);
-        SET_CPU_FEATURE(CPU_AVX512_VAES);
-        SET_CPU_FEATURE(CPU_AVX512_VNNI);
-        SET_CPU_FEATURE(CPU_AVX512_BITALG);
-        SET_CPU_FEATURE(CPU_AVX512_VBMI);
-        SET_CPU_FEATURE(CPU_AVX512_VBMI2);
+        _vm_target_features.set_feature(CPU_AVX10_1);
+        _vm_target_features.set_feature(CPU_AVX512F);
+        _vm_target_features.set_feature(CPU_AVX512CD);
+        _vm_target_features.set_feature(CPU_AVX512DQ);
+        _vm_target_features.set_feature(CPU_AVX512PF);
+        _vm_target_features.set_feature(CPU_AVX512ER);
+        _vm_target_features.set_feature(CPU_AVX512BW);
+        _vm_target_features.set_feature(CPU_AVX512VL);
+        _vm_target_features.set_feature(CPU_AVX512_VPOPCNTDQ);
+        _vm_target_features.set_feature(CPU_AVX512_VPCLMULQDQ);
+        _vm_target_features.set_feature(CPU_AVX512_VAES);
+        _vm_target_features.set_feature(CPU_AVX512_VNNI);
+        _vm_target_features.set_feature(CPU_AVX512_BITALG);
+        _vm_target_features.set_feature(CPU_AVX512_VBMI);
+        _vm_target_features.set_feature(CPU_AVX512_VBMI2);
         if (std_cpuid24_ebx.bits.avx10_converged_isa_version >= 2) {
-          SET_CPU_FEATURE(CPU_AVX10_2);
+          _vm_target_features.set_feature(CPU_AVX10_2);
         }
       }
     }
   }
 
   if (std_cpuid1_ecx.bits.hv != 0)
-    SET_CPU_FEATURE(CPU_HV);
+    _vm_target_features.set_feature(CPU_HV);
   if (sef_cpuid7_ebx.bits.bmi1 != 0)
-    SET_CPU_FEATURE(CPU_BMI1);
+    _vm_target_features.set_feature(CPU_BMI1);
   if (std_cpuid1_edx.bits.tsc != 0)
-    SET_CPU_FEATURE(CPU_TSC);
+    _vm_target_features.set_feature(CPU_TSC);
   if (ext_cpuid7_edx.bits.tsc_invariance != 0)
-    SET_CPU_FEATURE(CPU_TSCINV_BIT);
+    _vm_target_features.set_feature(CPU_TSCINV_BIT);
   if (std_cpuid1_ecx.bits.aes != 0)
-    SET_CPU_FEATURE(CPU_AES);
+    _vm_target_features.set_feature(CPU_AES);
   if (ext_cpuid1_ecx.bits.lzcnt != 0)
-    SET_CPU_FEATURE(CPU_LZCNT);
+    _vm_target_features.set_feature(CPU_LZCNT);
   if (ext_cpuid1_ecx.bits.prefetchw != 0)
-    SET_CPU_FEATURE(CPU_3DNOW_PREFETCH);
+    _vm_target_features.set_feature(CPU_3DNOW_PREFETCH);
   if (sef_cpuid7_ebx.bits.erms != 0)
-    SET_CPU_FEATURE(CPU_ERMS);
+    _vm_target_features.set_feature(CPU_ERMS);
   if (sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
-    SET_CPU_FEATURE(CPU_FSRM);
+    _vm_target_features.set_feature(CPU_FSRM);
   if (std_cpuid1_ecx.bits.clmul != 0)
-    SET_CPU_FEATURE(CPU_CLMUL);
+    _vm_target_features.set_feature(CPU_CLMUL);
   if (sef_cpuid7_ebx.bits.rtm != 0)
-    SET_CPU_FEATURE(CPU_RTM);
+    _vm_target_features.set_feature(CPU_RTM);
   if (sef_cpuid7_ebx.bits.adx != 0)
-     SET_CPU_FEATURE(CPU_ADX);
+     _vm_target_features.set_feature(CPU_ADX);
   if (sef_cpuid7_ebx.bits.bmi2 != 0)
-    SET_CPU_FEATURE(CPU_BMI2);
+    _vm_target_features.set_feature(CPU_BMI2);
   if (sef_cpuid7_ebx.bits.sha != 0)
-    SET_CPU_FEATURE(CPU_SHA);
+    _vm_target_features.set_feature(CPU_SHA);
   if (std_cpuid1_ecx.bits.fma != 0)
-    SET_CPU_FEATURE(CPU_FMA);
+    _vm_target_features.set_feature(CPU_FMA);
   if (sef_cpuid7_ebx.bits.clflushopt != 0)
-    SET_CPU_FEATURE(CPU_FLUSHOPT);
+    _vm_target_features.set_feature(CPU_FLUSHOPT);
   if (sef_cpuid7_ebx.bits.clwb != 0)
-    SET_CPU_FEATURE(CPU_CLWB);
+    _vm_target_features.set_feature(CPU_CLWB);
   if (ext_cpuid1_edx.bits.rdtscp != 0)
-    SET_CPU_FEATURE(CPU_RDTSCP);
+    _vm_target_features.set_feature(CPU_RDTSCP);
   if (sef_cpuid7_ecx.bits.rdpid != 0)
-    SET_CPU_FEATURE(CPU_RDPID);
+    _vm_target_features.set_feature(CPU_RDPID);
 
   // AMD|Hygon additional features.
   if (is_amd_family()) {
     // PREFETCHW was checked above, check TDNOW here.
     if ((ext_cpuid1_edx.bits.tdnow != 0))
-      SET_CPU_FEATURE(CPU_3DNOW_PREFETCH);
+      _vm_target_features.set_feature(CPU_3DNOW_PREFETCH);
     if (ext_cpuid1_ecx.bits.sse4a != 0)
-      SET_CPU_FEATURE(CPU_SSE4A);
+      _vm_target_features.set_feature(CPU_SSE4A);
   }
 
   // Intel additional features.
   if (is_intel()) {
     if (sef_cpuid7_edx.bits.serialize != 0)
-      SET_CPU_FEATURE(CPU_SERIALIZE);
+      _vm_target_features.set_feature(CPU_SERIALIZE);
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
-      SET_CPU_FEATURE(CPU_AVX512_FP16);
+      _vm_target_features.set_feature(CPU_AVX512_FP16);
   }
 
   // ZX additional features.
   if (is_zx()) {
     // We do not know if these are supported by ZX, so we cannot trust
     // common CPUID bit for them.
-    assert(SUPPORTS_CPU_FEATURE(CPU_CLWB), "Check if it is supported?");
-    CLEAR_CPU_FEATURE(CPU_CLWB);
+    assert(_vm_target_features.supports_feature(CPU_CLWB), "Check if it is supported?");
+    _vm_target_features.clear_feature(CPU_CLWB);
   }
 
   // Protection key features.
   if (sef_cpuid7_ecx.bits.pku != 0) {
-    SET_CPU_FEATURE(CPU_PKU);
+    _vm_target_features.set_feature(CPU_PKU);
   }
   if (sef_cpuid7_ecx.bits.ospke != 0) {
-    SET_CPU_FEATURE(CPU_OSPKE);
+    _vm_target_features.set_feature(CPU_OSPKE);
   }
 
   // Control flow enforcement (CET) features.
   if (sef_cpuid7_ecx.bits.cet_ss != 0) {
-    SET_CPU_FEATURE(CPU_CET_SS);
+    _vm_target_features.set_feature(CPU_CET_SS);
   }
   if (sef_cpuid7_edx.bits.cet_ibt != 0) {
-    SET_CPU_FEATURE(CPU_CET_IBT);
+    _vm_target_features.set_feature(CPU_CET_IBT);
   }
 
   // Composite features.
   if (supports_tscinv_bit() &&
       ((is_amd_family() && !is_amd_Barcelona()) ||
        is_intel_tsc_synched_at_init())) {
-    SET_CPU_FEATURE(CPU_TSCINV);
+    _vm_target_features.set_feature(CPU_TSCINV);
   }
 }
 

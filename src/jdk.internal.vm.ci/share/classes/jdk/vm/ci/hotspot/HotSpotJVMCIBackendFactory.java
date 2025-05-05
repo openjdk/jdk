@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,30 +89,25 @@ public interface HotSpotJVMCIBackendFactory {
      * @param enumType the class of {@code CPUFeatureType}
      * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
      *            specifies a CPU feature and its value is a mask for a bit in {@code features}
-     * @param dynamic_features_vector_pointer pointer to dynamic feature bit vector of CPU features
-     * @param dynamic_features_vector_offset offset of dynamic_feature_vector field in {@code VM_Features}
-     * @param dynamic_features_vector_size_offset offset of dynamic_feature_vector_size field in {@code VM_Features}
-     * @param dynamic_features_element_shift_count_offset offset of dynamic_features_element_shift_count field in {@code VM_Features}
-     *             ,it holds the base2 logarithmic value of dynamic feature bit vector lanesize in bits.
+     * @param features_pointer pointer to {@code _vm_target_features} field of {@code Abstract_VM_Version}
+     * @param features_vector_offset offset of feature_vector field in {@code VM_Features}
+     * @param features_vector_size_offset offset of feature_vector_size field in {@code VM_Features}
+     * @param features_element_shift_count log2 of dynamic feature bit vector lanesize in bits.
      * @param renaming maps from VM feature names to enum constant names where the two differ
      * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
      *             enum value
      * @return the set of converted values
      */
-    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertDynamicFeaturesVector(
+    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeaturesVector(
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
-                    long dynamic_features_pointer,
-                    long dynamic_features_vector_offset,
-                    long dynamic_features_vector_size_offset,
-                    long dynamic_features_element_shift_count_offset,
+                    long features_pointer,
+                    long features_vector_offset,
+                    long features_vector_size,
+                    long features_element_shift_count,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
-
-        long dynamic_features_vector_pointer = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_vector_offset);
-        long dynamic_features_vector_size = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_vector_size_offset);
-        long dynamic_features_element_shift_count = UNSAFE.getLong(dynamic_features_pointer + dynamic_features_element_shift_count_offset);
 
         for (Entry<String, Long> e : constants.entrySet()) {
             String key = e.getKey();
@@ -121,17 +116,17 @@ public interface HotSpotJVMCIBackendFactory {
                 String name = key.substring("VM_Version::CPU_".length());
                 try {
                     CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
-                    long dynamic_features_vector_index = bitIndex >>> dynamic_features_element_shift_count;
-                    assert dynamic_features_vector_index < dynamic_features_vector_size;
+                    long features_vector_index = bitIndex >>> features_element_shift_count;
+                    assert features_vector_index < features_vector_size;
 
-                    long  dynamic_features_element_bitsize = (1L << dynamic_features_element_shift_count);
-                    assert (dynamic_features_element_bitsize & (dynamic_features_element_bitsize - 1)) == 0;
+                    long  features_element_bitsize = (1L << features_element_shift_count);
+                    assert (features_element_bitsize & (features_element_bitsize - 1)) == 0;
 
-                    long  dynamic_features_element_size = dynamic_features_element_bitsize / Byte.SIZE;
-                    long features = UNSAFE.getLong(dynamic_features_vector_pointer +
-                                                   dynamic_features_vector_index * dynamic_features_element_size);
+                    long  features_element_size = features_element_bitsize / Byte.SIZE;
+                    long features = UNSAFE.getLong(features_pointer + features_vector_offset +
+                                                   features_vector_index * features_element_size);
 
-                    long effective_bitMask = 1L << (bitIndex & (dynamic_features_element_bitsize - 1));
+                    long effective_bitMask = 1L << (bitIndex & (features_element_bitsize - 1));
                     if ((features & effective_bitMask) != 0) {
                         outFeatures.add(feature);
                     }

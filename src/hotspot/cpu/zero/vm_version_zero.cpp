@@ -32,8 +32,6 @@
 #include "runtime/vm_version.hpp"
 
 
-void VM_Version::pre_initialize() {}
-
 void VM_Version::initialize() {
   // This machine does not allow unaligned memory accesses
   if (! FLAG_IS_DEFAULT(UseUnalignedAccesses)) {

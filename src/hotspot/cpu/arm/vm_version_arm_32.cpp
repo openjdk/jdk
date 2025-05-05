@@ -353,8 +353,6 @@ void VM_Version::initialize() {
   _is_initialized = true;
 }
 
-void VM_Version::pre_initialize() {}
-
 void VM_Version::initialize_cpu_information(void) {
   // do nothing if cpu info has been initialized
   if (_initialized) {

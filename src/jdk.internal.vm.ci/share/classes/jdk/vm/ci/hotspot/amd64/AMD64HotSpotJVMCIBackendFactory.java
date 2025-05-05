@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,12 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         Map<String, Long> constants = config.getStore().getConstants();
         Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
         assert config.useSSE >= 2 : "minimum config for x64";
-        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertDynamicFeaturesVector(CPUFeature.class, constants,
-                                                                                               config.vmVersionDynFeatures,
-                                                                                               config.vmFeaturesDynFeaturesVecOffset,
-                                                                                               config.vmFeaturesDynFeaturesVecSizeOffset,
-                                                                                               config.vmFeaturesDynFeaturesElemShiftCntOffset,
-                                                                                               renaming);
+        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeaturesVector(CPUFeature.class, constants,
+                                                                                        config.vmVersionTargetFeatures,
+                                                                                        config.vmFeaturesFeaturesVecOffset,
+                                                                                        config.vmFeaturesFeaturesVecSize,
+                                                                                        config.vmFeaturesFeaturesElemShiftCnt,
+                                                                                        renaming);
         features.add(AMD64.CPUFeature.SSE);
         features.add(AMD64.CPUFeature.SSE2);
         return features;

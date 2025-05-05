@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,14 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useCountTrailingZerosInstruction = getFlag("UseCountTrailingZerosInstruction", Boolean.class);
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
+    final long vmVersionTargetFeatures = getFieldAddress("Abstract_VM_Version::_vm_target_features", "VM_Features");
+    final long vmFeaturesFeaturesVecOffset = getFieldOffset("VM_Features::_features_vector", Long.class, "VM_Features::FeatureVector");
+    final long vmFeaturesFeaturesVecSize = getFieldValue("VM_Features::_features_vector_size", Long.class, "uint32_t");
+    final long vmFeaturesFeaturesElemShiftCnt = getFieldValue("VM_Features::_features_vector_element_shift_count", Long.class, "uint32_t");
 
     // CPU capabilities
     final int useSSE = getFlag("UseSSE", Integer.class);
     final int useAVX = getFlag("UseAVX", Integer.class);
-
-    final long vmFeaturesDynFeaturesVecOffset = getFieldOffset("VM_Features::_dynamic_features_vector", Long.class, "uint64_t*");
-    final long vmFeaturesDynFeaturesVecSizeOffset = getFieldOffset("VM_Features::_dynamic_features_vector_size", Long.class, "uint32_t");
-    final long vmFeaturesDynFeaturesElemShiftCntOffset = getFieldOffset("VM_Features::_dynamic_features_element_shift_count", Long.class, "uint32_t");
-    final long vmVersionDynFeatures = getFieldAddress("Abstract_VM_Version::_dynamic_features", "VM_Features");
 
     // CPU feature flags
     final long amd64CX8 = getConstant("VM_Version::CPU_CX8", Long.class);

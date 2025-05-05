@@ -707,11 +707,11 @@
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
      static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
-     static_field(Abstract_VM_Version,         _dynamic_features,                             VM_Features)                           \
+     static_field(Abstract_VM_Version,         _vm_target_features,                           VM_Features)                           \
                                                                                                                                      \
-     nonstatic_field(VM_Features,              _dynamic_features_vector,                      uint64_t*)                             \
-     nonstatic_field(VM_Features,              _dynamic_features_vector_size,                 uint32_t)                              \
-     nonstatic_field(VM_Features,              _dynamic_features_element_shift_count,         uint32_t)                              \
+     nonstatic_field(VM_Features,              _features_vector,                              VM_Features::FeatureVector)            \
+     static_field(VM_Features,                 _features_vector_size,                         uint32_t)                              \
+     static_field(VM_Features,                 _features_vector_element_shift_count,          uint32_t)                              \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* JVMTI */                                                                                                                        \
@@ -1170,6 +1170,7 @@
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
   declare_toplevel_type(VM_Features)                                      \
+  declare_toplevel_type(VM_Features::FeatureVector)                       \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \
