@@ -1815,10 +1815,16 @@ bool FileMapInfo::open_as_input() {
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      MetaspaceShared::report_loading_error("Loading static archive failed.");
+      if (CDSConfig::is_dumping_final_static_archive()) {
+        MetaspaceShared::report_loading_error("Loading AOT configuration failed: %s", _full_path);
+      } else if (CDSConfig::new_aot_flags_used()) {
+        MetaspaceShared::report_loading_error("Loading AOT cache failed: %s", _full_path);
+      } else {
+        MetaspaceShared::report_loading_error("Loading static archive failed: %s", _full_path);
+      }
       return false;
     } else {
-      MetaspaceShared::report_loading_error("Loading dynamic archive failed.");
+      MetaspaceShared::report_loading_error("Loading dynamic archive failed: %s", _full_path);
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive(_full_path);
       }
