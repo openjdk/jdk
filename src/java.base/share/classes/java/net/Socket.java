@@ -378,11 +378,6 @@ public class Socket implements java.io.Closeable {
      * In other words, it is equivalent to specifying an address of the
      * loopback interface. </p>
      * <p>
-     * If the stream argument is {@code true}, this creates a
-     * stream socket. Only stream socket creation is allowed. If the stream
-     * argument is {@code false}, then this constructor throws
-     * {@code IllegalArgumentException}.
-     * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
      * socket implementation factory}, that factory's
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
@@ -391,8 +386,7 @@ public class Socket implements java.io.Closeable {
      *
      * @param      host     the host name, or {@code null} for the loopback address.
      * @param      port     the port number.
-     * @param      stream   a {@code boolean} indicating whether this is
-     *                      a stream socket or a datagram socket.
+     * @param      stream   must be true, false is not allowed.
      * @throws     IOException  if an I/O error occurs when creating the socket.
      * @throws     IllegalArgumentException if the stream parameter is {@code false}
      *             or if the port parameter is outside the specified range of valid
@@ -411,11 +405,6 @@ public class Socket implements java.io.Closeable {
      * Creates a socket and connects it to the specified port number at
      * the specified IP address.
      * <p>
-     * If the stream argument is {@code true}, this creates a
-     * stream socket. Only stream socket creation is allowed. If the stream
-     * argument is {@code false}, then this constructor throws
-     * {@code IllegalArgumentException}.
-     * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
      * socket implementation factory}, that factory's
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
@@ -424,8 +413,7 @@ public class Socket implements java.io.Closeable {
      *
      * @param      host     the IP address.
      * @param      port      the port number.
-     * @param      stream    a {@code boolean} indicating whether this is
-     *                       a stream socket or a datagram socket.
+     * @param      stream    must be true, false is not allowed.
      * @throws     IOException  if an I/O error occurs when creating the socket.
      * @throws     IllegalArgumentException if the stream parameter is {@code false}
      *             or if the port parameter is outside the specified range of valid
