@@ -77,7 +77,7 @@ static bool needs_explicit_null_check_for_read(Node *val) {
 }
 
 void PhaseCFG::move_into(Node* n, Block* b) {
-  Block *old = get_block_for_node(n);
+  Block* old = get_block_for_node(n);
   old->find_remove(n);
   b->add_inst(n);
   map_node_to_block(n, b);
