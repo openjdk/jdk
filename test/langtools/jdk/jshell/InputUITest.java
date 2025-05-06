@@ -51,7 +51,7 @@ public class InputUITest extends UITesting {
         doRunTest((inputSink, out) -> {
             inputSink.write("new String(System.in.readNBytes(4))\n\uD83D\uDE03\n");
             waitOutput(out, "\"\uD83D\uDE03\"");
-        });
+        }, false);
     }
 
 }
