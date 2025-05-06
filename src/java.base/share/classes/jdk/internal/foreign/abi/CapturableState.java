@@ -40,7 +40,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class CapturableState {
 
     public static final StructLayout LAYOUT;
-    // Keep in synch with DowncallLinker::capture_state
+    // Keep in synch with DowncallLinker::capture_state in downcallLinker.cpp
     private static final Map<String, Integer> MASKS;
 
     static {
