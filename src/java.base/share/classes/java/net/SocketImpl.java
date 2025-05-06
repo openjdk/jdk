@@ -83,8 +83,9 @@ public abstract class SocketImpl implements SocketOptions {
      * @apiNote
      * The {@code stream} parameter provided a way in early JDK releases
      * to create a {@link Socket} that used a datagram socket.
-     * It is no longer possible to do that and therefore this method will
-     * always be called by {@code Socket} with {@code stream} as {@code true}.
+     * The Socket API no longer provides a way to do this, so the
+     * {@code create} method will always be called with a {@code stream}
+     * value of {@code true}.
      *
      * @param      stream   must be {@code true}.
      * @throws     IOException  if an I/O error occurs while creating the

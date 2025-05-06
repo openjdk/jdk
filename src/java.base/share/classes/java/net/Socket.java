@@ -384,6 +384,11 @@ public class Socket implements java.io.Closeable {
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
      *
+     * @apiNote
+     * The {@code stream} parameter provided a way in early JDK releases
+     * to create a {@code Socket} that used a datagram socket, this feature
+     * no longer exists.
+     *
      * @param      host     the host name, or {@code null} for the loopback address.
      * @param      port     the port number.
      * @param      stream   must be true, false is not allowed.
@@ -410,6 +415,11 @@ public class Socket implements java.io.Closeable {
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
+     *
+     * @apiNote
+     * The {@code stream} parameter provided a way in early JDK releases
+     * to create a {@code Socket} that used a datagram socket, this feature
+     * no longer exists.
      *
      * @param      host     the IP address.
      * @param      port      the port number.
