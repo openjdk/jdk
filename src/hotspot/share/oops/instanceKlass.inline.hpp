@@ -158,14 +158,21 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
 
 template <typename T, class OopClosureType>
 inline void InstanceKlass::do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klute) {
-  // Resolve the CLD from the klute. If that fails, resolve CLD from Klass. Call closure->do_cld.
+  // Call closure->do_cld. The underlying assumption here is that if a closure subscribes via do_metadata(),
+  // it is really interested in the CLD instead of the Klass (does a do_cld(klass->class_loader_data()).
+  // That is true for all Closures that derive from OopIterateClosure.
+  static_assert(std::is_base_of<OopIterateClosure, OopClosureType>::value,
+                "must inherit from OopIterateClosure");
+  // ... and in that case we can fetch the CLD from the KLUT cld cache instead of letting the closure pull
+  // it from Klass. We don't even have to fetch and decode the narrowKlass.
   const unsigned perma_cld_index = KlassLUTEntry(klute).loader_index();
   ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);
   if (cld == nullptr) {
+    // Rare path
     Klass* const k = obj->klass();
     cld = k->class_loader_data();
     if (cld == nullptr) {
-      // Unfortunately, this can now happen due to AOT, so we add another branch here
+      // See JDK-8342429. Unfortunately, this can now happen due to AOT.
       assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
       return;
     }
