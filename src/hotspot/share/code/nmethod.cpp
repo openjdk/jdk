@@ -28,6 +28,7 @@
 #include "code/dependencies.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.inline.hpp"
+#include "code/relocInfo.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationLog.hpp"
@@ -1648,6 +1649,10 @@ void nmethod::maybe_print_nmethod(const DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  // Enter a critical section to prevent a race with deopts that patch code and updates the relocation info.
+  // Unfortunately, we have to lock the NMethodState_lock before the tty lock due to the deadlock rules and
+  // cannot lock in a more finely grained manner.
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != nullptr) {
     xtty->begin_head("print_nmethod");
@@ -2037,6 +2042,17 @@ bool nmethod::make_not_entrant(const char* reason) {
       // cache call.
       NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
                                        SharedRuntime::get_handle_wrong_method_stub());
+
+      // Update the relocation info for the patched entry.
+      // First, get the old relocation info...
+      RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
+      if (iter.next() && iter.addr() == verified_entry_point()) {
+        Relocation* old_reloc = iter.reloc();
+        // ...then reset the iterator to update it.
+        RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
+        relocInfo::change_reloc_info_for_address(&iter, verified_entry_point(), old_reloc->type(),
+                                                 relocInfo::relocType::runtime_call_type);
+      }
     }
 
     if (update_recompile_counts()) {
