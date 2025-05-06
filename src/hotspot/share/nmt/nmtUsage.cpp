@@ -54,7 +54,7 @@ void NMTUsage::walk_thread_stacks() {
 void NMTUsage::update_malloc_usage() {
   // Lock needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  ChunkPoolLock lock;
+  ChunkPoolLocker lock;
   const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;

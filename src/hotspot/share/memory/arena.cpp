@@ -46,12 +46,12 @@ void Arena::initialize_chunk_pool() {
   _global_chunk_pool_mutex = new PlatformMutex();
 }
 
-ChunkPoolLock::ChunkPoolLock() {
+ChunkPoolLocker::ChunkPoolLocker() {
   assert(_global_chunk_pool_mutex != nullptr, "must be initialized");
   _global_chunk_pool_mutex->lock();
 };
 
-ChunkPoolLock::~ChunkPoolLock() {
+ChunkPoolLocker::~ChunkPoolLocker() {
   _global_chunk_pool_mutex->unlock();
 };
 
@@ -86,7 +86,7 @@ class ChunkPool {
 
   // Returns null if pool is empty.
   Chunk* take_from_pool() {
-    ChunkPoolLock lock;
+    ChunkPoolLocker lock;
     Chunk* c = _first;
     if (_first != nullptr) {
       _first = _first->next();
@@ -95,16 +95,16 @@ class ChunkPool {
   }
   void return_to_pool(Chunk* chunk) {
     assert(chunk->length() == _size, "wrong pool for this chunk");
-    ChunkPoolLock lock;
+    ChunkPoolLocker lock;
     chunk->set_next(_first);
     _first = chunk;
   }
 
   // Clear this pool of all contained chunks
   void prune() {
-    // Free all chunks with ChunkPoolLock lock
+    // Free all chunks with ChunkPoolLocker lock
     // so NMT adjustment is stable.
-    ChunkPoolLock lock;
+    ChunkPoolLocker lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
     while (cur != nullptr) {
@@ -217,7 +217,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
     pool->return_to_pool(c);
   } else {
     // Free chunks under NMT lock so that NMT adjustment is stable.
-    ChunkPoolLock lock;
+    ChunkPoolLocker lock;
     os::free(c);
   }
 }
