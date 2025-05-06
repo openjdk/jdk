@@ -30,6 +30,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
+import sun.reflect.misc.ReflectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -58,9 +59,9 @@ import java.util.function.ToLongFunction;
  *
  *         @Override
  *         public boolean equals(Object o) {
- *             return o instanceof Foo that &&
- *                     Objects.equals(this.bar, that.bar) &&
- *                     Objects.equals(this.baz, that.baz);
+ *             return o instanceof Foo that
+ *                     && Objects.equals(this.bar, that.bar)
+ *                     && Objects.equals(this.baz, that.baz);
  *         }
  *
  *         @Override
@@ -91,9 +92,9 @@ import java.util.function.ToLongFunction;
  *
  *         @Override
  *         public boolean equals(Object o) {
- *             return o instanceof Foo that &&
- *                     Objects.equals(this.bar, that.bar) &&
- *                     Objects.equals(this.baz, that.baz);
+ *             return o instanceof Foo that
+ *                     && Objects.equals(this.bar, that.bar)
+ *                     && Objects.equals(this.baz, that.baz);
  *         }
  *
  *         @Override
@@ -130,9 +131,9 @@ import java.util.function.ToLongFunction;
 
         @Override
         public boolean equals(Object o) {
-             return (o instanceof Foo that) &&
-                     Objects.equals(this.bar, that.bar) &&
-                     Objects.equals(this.baz, that.baz);
+             return (o instanceof Foo that)
+                     && Objects.equals(this.bar, that.bar)
+                     && Objects.equals(this.baz, that.baz);
         }
 
         @Override
@@ -329,8 +330,7 @@ public final class StableFieldUpdater {
             if (Modifier.isFinal(modifiers)) {
                 throw illegalField("non final fields", field);
             }
-            sun.reflect.misc.ReflectUtil.ensureMemberAccess(
-                    caller, holderType, null, modifiers);
+            ReflectUtil.ensureMemberAccess(caller, holderType, null, modifiers);
             if (field.getType() != fieldType) {
                 throw illegalField("fields of type '" + fieldType + "'", field);
             }
@@ -348,8 +348,7 @@ public final class StableFieldUpdater {
         if (holderType.equals(Object.class)) {
             throw new NoSuchFieldException("'" + fieldName + "' in '" + holderType + "'");
         }
-        final Field[] fields = holderType.getDeclaredFields();
-        for (Field f : fields) {
+        for (Field f : holderType.getDeclaredFields()) {
             if (f.getName().equals(fieldName)) {
                 return f;
             }

@@ -94,9 +94,9 @@ final class StableFieldUpdaterExampleTest {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Foo that &&
-                    Objects.equals(this.bar, that.bar) &&
-                    Objects.equals(this.baz, that.baz);
+            return o instanceof Foo that
+                    && Objects.equals(this.bar, that.bar)
+                    && Objects.equals(this.baz, that.baz);
         }
 
         @Override
@@ -126,9 +126,9 @@ final class StableFieldUpdaterExampleTest {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Foo that &&
-                    Objects.equals(this.bar, that.bar) &&
-                    Objects.equals(this.baz, that.baz);
+            return o instanceof Foo that
+                    && Objects.equals(this.bar, that.bar)
+                    && Objects.equals(this.baz, that.baz);
         }
 
         @Override
@@ -158,9 +158,9 @@ final class StableFieldUpdaterExampleTest {
 
         @Override
         public boolean equals(Object o) {
-            return (o instanceof Foo that) &&
-                    Objects.equals(this.bar, that.bar) &&
-                    Objects.equals(this.baz, that.baz);
+            return (o instanceof Foo that)
+                    && Objects.equals(this.bar, that.bar)
+                    && Objects.equals(this.baz, that.baz);
         }
 
         @Override

@@ -101,8 +101,8 @@ public final class Method extends Executable {
             StableFieldUpdater.Raw.ofInt(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
                 @Override
                 public int applyAsInt(Method method) {
-                    return method.getDeclaringClass().getName().hashCode() ^ method.getName()
-                            .hashCode();
+                    return method.getDeclaringClass().getName().hashCode() ^
+                            method.getName().hashCode();
                 }
             }, 0); // The `hashCode()` is specified so, zeroReplacement is 0
     // End shared states
