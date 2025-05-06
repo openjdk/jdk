@@ -3925,7 +3925,6 @@ ins_attrib ins_alignment(4);    // Required alignment attribute (must
 // instructions and the first instruction can perform an implicit null check.
 ins_attrib ins_is_late_expanded_null_check_candidate(false);
 
-
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct parsing
 // in the ADLC because operands constitute user defined types which are used in
