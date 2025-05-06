@@ -471,7 +471,7 @@ void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult 
 }
 
 void CompileTask::print_ul(const char* msg){
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print(&ls, msg, /* short form */ true, /* cr */ true);
@@ -479,7 +479,7 @@ void CompileTask::print_ul(const char* msg){
 }
 
 void CompileTask::print_ul(const nmethod* nm, const char* msg) {
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_impl(&ls, nm->method(), nm->compile_id(),
@@ -491,7 +491,7 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
 }
 
 void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
-  LogTarget(Debug, jit, inlining) lt;
+  LogTarget(Info, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_inlining_inner(&ls, method, inline_level, bci, result, msg);
