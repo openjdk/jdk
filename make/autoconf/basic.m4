@@ -155,6 +155,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
         AC_MSG_WARN([No UTF-8 locale found. This is not supported. Proceeding with the C locale, but the build might fail unexpectedly.])
         LOCALE_USED=C
       fi
+      AC_MSG_NOTICE([The recommended locale is C.UTF-8, but en_US.UTF-8 is also accepted.])
     fi
   else
     LOCALE_USED=C.UTF-8
