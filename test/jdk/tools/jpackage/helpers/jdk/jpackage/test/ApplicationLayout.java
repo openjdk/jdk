@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
         Path runtimeDirectory, Path runtimeHomeDirectory, Path appModsDirectory,
-        Path destktopIntegrationDirectory, Path contentDirectory, Path libapplauncher) {
+        Path desktopIntegrationDirectory, Path contentDirectory, Path libapplauncher) {
 
     public ApplicationLayout resolveAt(Path root) {
         return new ApplicationLayout(
@@ -38,7 +38,7 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 resolve(root, runtimeDirectory),
                 resolve(root, runtimeHomeDirectory),
                 resolve(root, appModsDirectory),
-                resolve(root, destktopIntegrationDirectory),
+                resolve(root, desktopIntegrationDirectory),
                 resolve(root, contentDirectory),
                 resolve(root, libapplauncher));
     }
