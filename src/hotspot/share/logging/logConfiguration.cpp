@@ -101,6 +101,8 @@ void LogConfiguration::post_initialize() {
     ConfigurationLock cl;
     describe_current_configuration(&info_stream);
   }
+
+  LogTagSet::verify_for_aot_aliases();
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {

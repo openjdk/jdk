@@ -173,18 +173,20 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
 
 #if INCLUDE_CDS
 LogSelection LogSelection::translate_aot_tag_aliases() const {
-  if (tag_sets_selected() == 0) {
-    // Make "aot" an alias for "cds. E.g.,
-    // -Xlog:aot -> -Xlog:cds
-    // -Xlog:aot+class -> -Xlog:cds+class
-    if (_tags[0] == LogTag::_aot) {
-      LogTagType aliased_tags[LogTag::MaxTags];
-      memcpy(aliased_tags, _tags, sizeof(_tags));
-      aliased_tags[0] = LogTag::_cds;
-      LogSelection aliased_ls = LogSelection(aliased_tags, _wildcard, _level);
-      if (aliased_ls.tag_sets_selected() > 0) {
-        return aliased_ls;
-      }
+  if (tag_sets_selected() == 0 && _tags[0] == LogTag::_aot) {
+    // LogTagSet::verify_for_aot_aliases() has already verified that there are no overlaps
+    // in the aot vs cds LogSets:
+    //     if (cds) exists, then (aot) must not exist.
+    //     if (cds,foo) exists, then (aot,foo) must not exist.
+    //
+    // We come here if the user is asking -Xlog:aot or -Xlog:aot+foo. Let's see if we can
+    // translate to -Xlog:cds or -Xlog:cds+foo
+    LogTagType aliased_tags[LogTag::MaxTags];
+    memcpy(aliased_tags, _tags, sizeof(_tags));
+    aliased_tags[0] = LogTag::_cds;
+    LogSelection aliased_ls = LogSelection(aliased_tags, _wildcard, _level);
+    if (aliased_ls.tag_sets_selected() > 0) {
+      return aliased_ls;
     }
   }
   return *this;

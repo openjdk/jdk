@@ -34,6 +34,7 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -226,3 +227,50 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
   out->cr();
   FREE_C_HEAP_ARRAY(char*, tagset_labels);
 }
+
+void LogTagSet::verify_for_aot_aliases() {
+#if !defined(PRODUCT) && INCLUDE_CDS
+  // If we had both log_info(cds, abc) and log_info(aot, abc) in the C++ code, it would make
+  // LogSelection::translate_aot_tag_aliases() more complicated. We scan all the LogTagSets
+  // that are used in the C++ code to make sure we don't have such combinations.
+
+  // Rule: if we have a LogTagSet that starts with cds, then we cannot have another LogTagSet
+  // that starts with aot, where the rest of the tags of the two LogTagSets are the same.
+  //
+  // Uncomment one or more of the following lines to test the verification code. All cases are
+  // forbidden.
+  //
+  // log_info(aot, heap)("bad");
+  // log_info(aot)("bad");
+
+  for (LogTagSet* x = first(); x != nullptr; x = x->next()) {
+    if (x->tag(0) == LogTag::_cds) {
+      for (LogTagSet* y = first(); y != nullptr; y = y->next()) {
+        if (y->tag(0) == LogTag::_aot && x->ntags() == y->ntags()) {
+          bool same = true;
+          for (size_t i = 1; i < x->ntags(); i++) {
+            if (x->tag(i) != y->tag(i)) {
+              same = false;
+              break;
+            }
+          }
+          if (same) {
+            ResourceMark rm;
+            PrintCDSLogsAsAOTLogs = false;
+            stringStream ss;
+            ss.print("Limitation: in C++ logging code, you cannot use both of these two log sets: ");
+            ss.print("(");
+            x->label(&ss);
+            ss.print("), and (");
+            y->label(&ss);
+            ss.print("). They must all start with 'cds', or all start with 'aot'");
+            fatal("%s", ss.freeze());
+          }
+        }
+      }
+    }
+  }
+#endif
+}
+
+
