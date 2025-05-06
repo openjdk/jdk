@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,40 +69,6 @@ public final class JdkConsoleImpl implements JdkConsole {
         pw.print(obj);
         pw.flush(); // automatic flushing does not cover print
         return this;
-    }
-
-    @Override
-    public String readln(String prompt) {
-        String line = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                pw.print(prompt);
-                pw.flush(); // automatic flushing does not cover print
-                try {
-                    char[] ca = readline(false);
-                    if (ca != null)
-                        line = new String(ca);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public String readln() {
-        String line = null;
-        synchronized(readLock) {
-            try {
-                char[] ca = readline(false);
-                if (ca != null)
-                    line = new String(ca);
-            } catch (IOException x) {
-                throw new IOError(x);
-            }
-        }
-        return line;
     }
 
     @Override

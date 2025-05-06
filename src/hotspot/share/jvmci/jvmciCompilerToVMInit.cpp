@@ -52,6 +52,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#endif
 
 int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
 int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
@@ -85,6 +89,11 @@ address CompilerToVM::Data::ZBarrierSetRuntime_clone;
 address CompilerToVM::Data::ZPointerVectorLoadBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreGoodMask_address;
+
+#if INCLUDE_SHENANDOAHGC
+address CompilerToVM::Data::shenandoah_in_cset_fast_test_addr;
+int CompilerToVM::Data::shenandoah_region_size_bytes_shift;
+#endif
 
 bool CompilerToVM::Data::continuations_enabled;
 
@@ -227,11 +236,21 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
+  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
     cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    shenandoah_in_cset_fast_test_addr = ShenandoahHeap::in_cset_fast_test_addr();
+    shenandoah_region_size_bytes_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+  }
+#endif
 
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();

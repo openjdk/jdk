@@ -53,6 +53,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
+#include "utilities/ostream.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
   return named_heap<ZCollectedHeap>(CollectedHeap::Z);
@@ -245,7 +246,7 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 }
 
 MemoryUsage ZCollectedHeap::memory_usage() {
-  const size_t initial_size = ZHeap::heap()->initial_capacity();
+  const size_t initial_size = InitialHeapSize;
   const size_t committed    = ZHeap::heap()->capacity();
   const size_t used         = MIN2(ZHeap::heap()->used(), committed);
   const size_t max_size     = ZHeap::heap()->max_capacity();
@@ -354,12 +355,12 @@ void ZCollectedHeap::prepare_for_verify() {
   // Does nothing
 }
 
-void ZCollectedHeap::print_on(outputStream* st) const {
-  _heap.print_on(st);
+void ZCollectedHeap::print_heap_on(outputStream* st) const {
+  _heap.print_usage_on(st);
 }
 
-void ZCollectedHeap::print_on_error(outputStream* st) const {
-  _heap.print_on_error(st);
+void ZCollectedHeap::print_gc_on(outputStream* st) const {
+  _heap.print_gc_on(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {
