@@ -1538,7 +1538,7 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CopySignD:
     case Op_CopySignF:
-      if (UseAVX < 1 || !is_LP64)  {
+      if (UseAVX < 1)  {
         return false;
       }
       break;
@@ -1668,7 +1668,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       break;
     case Op_CopySignVD:
     case Op_CopySignVF:
-      if (UseAVX < 1 || !is_LP64)  {
+      if (UseAVX < 1)  {
         return false;
       }
       break;

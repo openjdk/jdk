@@ -38,9 +38,12 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.Setup;
+import compiler.lib.verify.*;
 import java.util.stream.IntStream;
 import java.util.Random;
 import jdk.test.lib.Utils;
+import compiler.lib.generators.Generator;
+import static compiler.lib.generators.Generators.G;
 
 public class TestCopySignIntrinsic {
     private static final Random rd = Utils.getRandomInstance();
@@ -73,28 +76,14 @@ public class TestCopySignIntrinsic {
         adresult = new double[SIZE];
         edresult = new double[SIZE];
 
-        IntStream.range(0, SIZE - 8).forEach(i -> { fmagnitude[i] = rd.nextFloat(-Float.MAX_VALUE, Float.MAX_VALUE); });
-        IntStream.range(0, SIZE - 8).forEach(i -> { dmagnitude[i] = rd.nextFloat(-Float.MAX_VALUE, Float.MAX_VALUE); });
-        IntStream.range(0, SIZE).forEach(i -> { fsign[i] = rd.nextFloat(-Float.MAX_VALUE, Float.MAX_VALUE); });
-        IntStream.range(0, SIZE).forEach(i -> { dsign[i] = rd.nextFloat(-Float.MAX_VALUE, Float.MAX_VALUE); });
-
-        fmagnitude[SIZE - 1] = Float.NaN;
-        fmagnitude[SIZE - 2] = Float.NaN;
-        fmagnitude[SIZE - 3] = 0.0f;
-        fmagnitude[SIZE - 4] = -0.0f;
-        fmagnitude[SIZE - 5] = Float.NEGATIVE_INFINITY;
-        fmagnitude[SIZE - 6] = Float.POSITIVE_INFINITY;
-        fmagnitude[SIZE - 7] = -Float.MIN_VALUE;
-        fmagnitude[SIZE - 8] = Float.MIN_VALUE;
-
-        dmagnitude[SIZE - 1] = Double.NaN;
-        dmagnitude[SIZE - 2] = Double.NaN;
-        dmagnitude[SIZE - 3] = 0.0;
-        dmagnitude[SIZE - 4] = -0.0;
-        dmagnitude[SIZE - 5] = Double.NEGATIVE_INFINITY;
-        dmagnitude[SIZE - 6] = Double.POSITIVE_INFINITY;
-        dmagnitude[SIZE - 7] = -Double.MIN_VALUE;
-        dmagnitude[SIZE - 8] = Double.MIN_VALUE;
+        Generator<Float> genFloat = G.floats();
+        Generator<Double> genDouble = G.doubles();
+        for (int i = 0; i < SIZE; i++) {
+            fmagnitude[i] = genFloat.next();
+            dmagnitude[i] = genFloat.next();
+            fsign[i]      = genFloat.next();
+            dsign[i]      = genFloat.next();
+        }
 
         for (int i = 0; i < SIZE; i++) {
             efresult[i] = Math.copySign(fmagnitude[i], fsign[i]);
@@ -113,12 +102,7 @@ public class TestCopySignIntrinsic {
     @Check(test = "testCopySignF")
     public void checkCopySignF() {
         for (int i = 0; i < SIZE; i++) {
-            if (afresult[i] != efresult[i]) {
-                if (Float.isNaN(afresult[i]) ^ Float.isNaN(efresult[i]))  {
-                    throw new RuntimeException("Incorrect result, Math.copySign(" + fmagnitude[i] + " , " + fsign[i] + ") => " +
-                                               "expected : " + efresult[i] + " != " + " actual : " + afresult[i]);
-                }
-            }
+            Verify.checkEQ(afresult[i], efresult[i]);
         }
     }
 
@@ -133,12 +117,7 @@ public class TestCopySignIntrinsic {
     @Check(test = "testCopySignD")
     public void checkCopySignD() {
         for (int i = 0; i < SIZE; i++) {
-            if (Double.isNaN(adresult[i]) ^ Double.isNaN(edresult[i])) {
-                if (adresult[i] != edresult[i]) {
-                    throw new RuntimeException("Incorrect result, Math.copySign(" + dmagnitude[i] + " , " + dsign[i] + ") => " +
-                                               "expected : " + edresult[i] + " != " + " actual : " + adresult[i]);
-                }
-            }
+            Verify.checkEQ(adresult[i], edresult[i]);
         }
     }
 }
