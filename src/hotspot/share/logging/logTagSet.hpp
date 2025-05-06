@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "logging/logPrefix.hpp"
 #include "logging/logTag.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 class LogMessageBuffer;
 
@@ -67,7 +66,6 @@ class LogTagSet {
  public:
   static void describe_tagsets(outputStream* out);
   static void list_all_tagsets(outputStream* out);
-  static void verify_for_aot_aliases() PRODUCT_RETURN;
 
   void wait_until_no_readers() const {
     _output_list.wait_until_no_readers();

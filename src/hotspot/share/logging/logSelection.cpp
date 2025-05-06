@@ -21,8 +21,6 @@
  * questions.
  *
  */
-
-#include "cds/cds_globals.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
@@ -171,36 +169,9 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   return LogSelection(tags, wildcard, level);
 }
 
-#if INCLUDE_CDS
-LogSelection LogSelection::translate_aot_tag_aliases() const {
-  if (tag_sets_selected() == 0 && _tags[0] == LogTag::_aot) {
-    // LogTagSet::verify_for_aot_aliases() has already verified that there are no overlaps
-    // in the aot vs cds LogSets:
-    //     if (cds) exists, then (aot) must not exist.
-    //     if (cds,foo) exists, then (aot,foo) must not exist.
-    //
-    // We come here if the user is asking -Xlog:aot or -Xlog:aot+foo. Let's see if we can
-    // translate to -Xlog:cds or -Xlog:cds+foo
-    LogTagType aliased_tags[LogTag::MaxTags];
-    memcpy(aliased_tags, _tags, sizeof(_tags));
-    aliased_tags[0] = LogTag::_cds;
-    LogSelection aliased_ls = LogSelection(aliased_tags, _wildcard, _level);
-    if (aliased_ls.tag_sets_selected() > 0) {
-      return aliased_ls;
-    }
-  }
-  return *this;
-}
-#endif
-
 LogSelection LogSelection::parse(const char* str, outputStream* error_stream) {
   char* copy = os::strdup_check_oom(str, mtLogging);
   LogSelection s = parse_internal(copy, error_stream);
-#if INCLUDE_CDS
-  if (PrintCDSLogsAsAOTLogs) {
-    s = s.translate_aot_tag_aliases();
-  }
-#endif
   os::free(copy);
   return s;
 }

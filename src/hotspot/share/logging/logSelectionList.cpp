@@ -92,14 +92,18 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     _selections[_nselections++] = selection;
 
 #if INCLUDE_CDS
-    if (PrintCDSLogsAsAOTLogs && strncmp(cur, "aot*", 4) == 0) {
-      // Special case: because -Xlog:aot* matches with (unaliased) aot logs, we
-      // need to inject an "cds*" tag as well.
+    if (PrintCDSLogsAsAOTLogs && 
+        cur[0] == 'a' &&
+        cur[1] == 'o' &&
+        cur[2] == 't' &&
+        (cur[3] < 'a' || 'z' > cur[3])) {
+      // If the user has specified any log that starts with "aot", try to (also)
+      // match any existing LogSets that start with "cds". E.g.,
       //
-      // This is not necessary for -Xlog:aot+mirror*, because this will not
-      // match any aot logs (guarateed by LogTagSet::verify_for_aot_aliases()).
-      // The alias matching will be done inside LogSelection::parse().
+      // -Xlog:aot*=             ->   -Xlog:cds*=
+      // -Xlog:aot+heap=debug    ->   -Xlog:cds+heap=debug
 
+      // We can't use resource allocation yet. Hence malloc.
       size_t len = strlen(cur);
       char* alias = (char*)os::malloc(len + 1, mtLogging);
       strcpy(alias, cur);
@@ -110,11 +114,10 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       selection = LogSelection::parse(alias, errstream);
       os::free(alias);
 
-      if (selection == LogSelection::Invalid) {
-        success = false;
-        break;
+      if (selection != LogSelection::Invalid) {
+        // If we don't get any matches, that's not an error!
+        _selections[_nselections++] = selection;
       }
-      _selections[_nselections++] = selection;
     }
 #endif
 
