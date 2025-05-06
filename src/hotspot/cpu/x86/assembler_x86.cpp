@@ -12971,7 +12971,7 @@ void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_
                                               int size, int byte1, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit);
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    if (pre == VEX_SIMD_66) {
+    if (size == EVEX_16bit) {
       emit_int8(0x66);
     }
     int encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
@@ -12988,7 +12988,7 @@ void Assembler::evex_opcode_prefix_and_encode_swap(int dst_enc, int nds_enc, int
                                                    int size, int byte1, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit);
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    if (pre == VEX_SIMD_66) {
+    if (size == EVEX_16bit) {
       emit_int8(0x66);
     }
     int encode = is_prefixq ? prefixq_and_encode(dst_enc, src_enc, is_map1) : prefix_and_encode(dst_enc, src_enc, is_map1);
@@ -13041,7 +13041,7 @@ void Assembler::evex_prefix_arith(Register dst, Register nds, int32_t imm32, Vex
   int nds_enc = nds->encoding();
   bool demote = is_demotable(no_flags, dst_enc, nds_enc);
   if (demote) {
-    (size == EVEX_64bit) ? prefixq_and_encode(dst_enc) : prefix_and_encode(dst_enc);
+    (size == EVEX_64bit) ? (void) prefixq_and_encode(dst_enc) : (void) prefix_and_encode(dst_enc);
   } else {
     bool vex_w = (size == EVEX_64bit) ? true : false;
     InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
