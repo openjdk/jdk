@@ -602,9 +602,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    tree.print_on(tty);
     all_diff = tree.commit_mapping(0, 100, rd);
-    tree.print_on(tty);
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
