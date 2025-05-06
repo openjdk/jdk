@@ -109,7 +109,7 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   // The vast majority of memory operands seen in practice are of indOffL8 type.
   // By construction, these memory operands do not lead to out-of-range offsets
   // (see definition of immLoffset8), so ldr is guaranteed to be the first
-  // instruction emitted.
+  // instruction emitted by legitimize_address() (no preceding lea).
   ins_is_late_expanded_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
@@ -118,14 +118,16 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 
   ins_encode %{
     Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
-    assert(!this->is_late_expanded_null_check_candidate() ||
-           Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(8)),
-           "an instruction that can be used for implicit null checking should emit the candidate memory access first");
     if (ref_addr.getMode() == Address::base_plus_offset) {
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
       assert_different_registers(rscratch2, $dst$$Register);
-      ref_addr = __ legitimize_address(ref_addr, 8, rscratch2);
+      int size = 8;
+      assert(!this->is_late_expanded_null_check_candidate() ||
+             // Condition required by legitimize_address() to avoid inserting a preceding lea:
+             Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(size)),
+             "an instruction that can be used for implicit null checking should emit the candidate memory access first");
+      ref_addr = __ legitimize_address(ref_addr, size, rscratch2);
     }
     __ ldr($dst$$Register, ref_addr);
     z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
