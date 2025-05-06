@@ -23,6 +23,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -182,8 +183,12 @@ klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
 }
 
 #ifdef ASSERT
+void KlassLUTEntry::verify_against_klass(const Klass* k, bool tolerate_aot_unlinked_classes) const {
 
-void KlassLUTEntry::verify_against_klass(const Klass* k) const {
+#define PREAMBLE_FORMAT               "Klass: " PTR_FORMAT "(%s), klute " KLUTE_FORMAT ": "
+#define PREAMBLE_ARGS                 p2i(k), k->external_name(), _v.raw
+#define ASSERT_HERE(cond, msg)        assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS);
+#define ASSERT_HERE2(cond, msg, ...)  assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS, __VA_ARGS__);
 
   assert(k->check_stamp(), "Stamp invalid");
 
@@ -200,40 +205,54 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   // Kind must fit into 3 bits
   STATIC_ASSERT(KlassKindCount < nth_bit(bits_kind));
 
-  assert(is_valid(), "klute should be valid (%x)", _v.raw);
+  ASSERT_HERE(is_valid(), "klute invalid");
 
   // kind
   const unsigned real_kind = (unsigned)k->kind();
   const unsigned our_kind = kind();
   const int real_lh = k->layout_helper();
 
-  assert(our_kind == real_kind, "kind mismatch (%d vs %d) (%x)", real_kind, our_kind, _v.raw);
+  ASSERT_HERE2(our_kind == real_kind, "kind mismatch (%d vs %d)", real_kind, our_kind);
 
   const ClassLoaderData* const real_cld = k->class_loader_data();
   const unsigned cld_index = loader_index();
-  assert(cld_index < 4, "invalid loader index");
-  if (cld_index > 0) {
+  ASSERT_HERE(cld_index < 4, "invalid loader index");
+  // With AOT, we can encounter Klasses that have not set their CLD yet. Until that is solved (JDK-8342429),
+  // work around this problem. Dealing with unlinked classes is very frustrating.
+  const bool skip_cld_check = (real_cld == nullptr) && tolerate_aot_unlinked_classes;
+  if (!skip_cld_check) {
+    ASSERT_HERE(real_cld != nullptr, "Klass CLD is null?");
     const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cld_index);
-    assert(cld_from_klute == real_cld,
-           "Different CLD (loader_index: %d, real CLD: " PTR_FORMAT ", from klute lookup table: " PTR_FORMAT ")?",
-           cld_index, p2i(real_cld), p2i(cld_from_klute));
-  } else {
-    assert(!real_cld->is_permanent_class_loader_data(), "perma cld?");
+    if (cld_index > 0) {
+      // We expect to get one of the three permanent class loaders, and for it to match the one in Klass
+      ASSERT_HERE2(cld_from_klute->is_permanent_class_loader_data(), "not perma cld (loader_index: %d, CLD: " PTR_FORMAT ")",
+                   cld_index, p2i(cld_from_klute));
+      ASSERT_HERE2(cld_from_klute == real_cld,
+                   "Different CLD (loader_index: %d, real Klass CLD: " PTR_FORMAT ", from klute CLD lookup table: " PTR_FORMAT ")?",
+                   cld_index, p2i(real_cld), p2i(cld_from_klute));
+    } else {
+      // We expect to get a NULL from the CLD lookup table.
+      ASSERT_HERE2(cld_from_klute == nullptr, "CLD not null? (" PTR_FORMAT ")", p2i(cld_from_klute));
+      // cld_index == 0 means "unknown CLD" and since we expect only to ever run with three permanent CLDs,
+      // that cld should not be permanent.
+      ASSERT_HERE2(!real_cld->is_permanent_class_loader_data(),
+                   "Unregistered permanent CLD? (" PTR_FORMAT ")", p2i(cld_from_klute));
+    }
   }
 
   if (k->is_array_klass()) {
 
     // compare our (truncated) lh with the real one
     const LayoutHelperHelper lhu = { (unsigned) real_lh };
-    assert(lhu.bytes.lh_esz == ak_log2_elem_size() &&
-           lhu.bytes.lh_hsz == ak_first_element_offset_in_bytes() &&
-           ( (lhu.bytes.lh_tag == 0xC0 && real_kind == TypeArrayKlassKind) ||
-             (lhu.bytes.lh_tag == 0x80 && real_kind == ObjArrayKlassKind) ),
-             "layouthelper mismatch (layouthelper: 0x%x, klute: 0x%x)", real_lh, _v.raw);
+    ASSERT_HERE2(lhu.bytes.lh_esz == ak_log2_elem_size() &&
+                 lhu.bytes.lh_hsz == ak_first_element_offset_in_bytes() &&
+                 ( (lhu.bytes.lh_tag == 0xC0 && real_kind == TypeArrayKlassKind) ||
+                 (lhu.bytes.lh_tag == 0x80 && real_kind == ObjArrayKlassKind) ),
+                 "layouthelper mismatch (lh from Klass: 0x%x", real_lh);
 
   } else {
 
-    assert(k->is_instance_klass(), "unexpected");
+    ASSERT_HERE(k->is_instance_klass(), "unexpected");
     const InstanceKlass* const ik = InstanceKlass::cast(k);
 
     const int real_oop_map_count = ik->nonstatic_oop_map_count();
@@ -248,43 +267,47 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
     if (ik_carries_infos()) {
 
       // check wordsize
-      assert(real_wordsize == ik_wordsize(), "wordsize mismatch? (%d vs %d) (%x)", real_wordsize, ik_wordsize(), _v.raw);
+      ASSERT_HERE2(real_wordsize == ik_wordsize(), "wordsize mismatch? (%d vs %d)", real_wordsize, ik_wordsize());
 
       // check omb info
       switch (real_oop_map_count) {
       case 0: {
-        assert(ik_omb_offset_1() == 0 && ik_omb_count_1() == 0 &&
-               ik_omb_offset_2() == 0 && ik_omb_count_2() == 0, "omb should not be present (0x%x)", _v.raw);
+        ASSERT_HERE(ik_omb_offset_1() == 0 && ik_omb_count_1() == 0 &&
+                    ik_omb_offset_2() == 0 && ik_omb_count_2() == 0,
+                    "omb should not be present");
       }
       break;
       case 1: {
-        assert(ik_omb_offset_1() * BytesPerHeapOop == omb_offset_1, "first omb offset mismatch (0x%x)", _v.raw);
-        assert(ik_omb_count_1() == omb_count_1, "first omb count mismatch (0x%x)", _v.raw);
-        assert(ik_omb_offset_2() == 0 && ik_omb_count_2() == 0, "second omb should not be present (0x%x)", _v.raw);
+        ASSERT_HERE(ik_omb_offset_1() * BytesPerHeapOop == omb_offset_1, "first omb offset mismatch");
+        ASSERT_HERE(ik_omb_count_1() == omb_count_1, "first omb count mismatch");
+        ASSERT_HERE(ik_omb_offset_2() == 0 && ik_omb_count_2() == 0, "second omb should not be present");
       }
       break;
       case 2: {
-        assert(ik_omb_offset_1() * BytesPerHeapOop == omb_offset_1, "first omb offset mismatch (0x%x)", _v.raw);
-        assert(ik_omb_count_1() == omb_count_1, "first omb count mismatch (0x%x)", _v.raw);
-        assert(ik_omb_offset_2() * BytesPerHeapOop == omb_offset_2, "second omb offset mismatch (0x%x)", _v.raw);
-        assert(ik_omb_count_2() == omb_count_2, "second omb count mismatch (0x%x)", _v.raw);
+        ASSERT_HERE(ik_omb_offset_1() * BytesPerHeapOop == omb_offset_1, "first omb offset mismatch");
+        ASSERT_HERE(ik_omb_count_1() == omb_count_1, "first omb count mismatch");
+        ASSERT_HERE(ik_omb_offset_2() * BytesPerHeapOop == omb_offset_2, "second omb offset mismatch");
+        ASSERT_HERE(ik_omb_count_2() == omb_count_2, "second omb count mismatch");
       }
       break;
-      default: fatal("More than one oop maps, IKE should not be encodable");
+      default: fatal("More than one oop maps, IKE should not have been fully encodable");
       }
     } else {
-      // Check if this Klass should, in fact, have been encodable
-      assert( Klass::layout_helper_needs_slow_path(real_lh)       ||
-              (real_wordsize >= (int)ik_wordsize_limit)           ||
-              (real_oop_map_count > 2)                            ||
-              ((size_t) omb_offset_1 >= ik_omb_offset_1_limit)    ||
-              ((size_t) omb_count_1 >= ik_omb_count_1_limit)      ||
-              ((size_t) omb_offset_2 >= ik_omb_offset_2_limit)    ||
-              ((size_t) omb_count_2 >= ik_omb_count_2_limit),
-              "Klass should have been encodable" );
+      // Check if this Klass should, in fact, have been fully encodable
+      ASSERT_HERE(Klass::layout_helper_needs_slow_path(real_lh)       ||
+                  (real_wordsize >= (int)ik_wordsize_limit)           ||
+                  (real_oop_map_count > 2)                            ||
+                  ((size_t) omb_offset_1 >= ik_omb_offset_1_limit)    ||
+                  ((size_t) omb_count_1 >= ik_omb_count_1_limit)      ||
+                  ((size_t) omb_offset_2 >= ik_omb_offset_2_limit)    ||
+                  ((size_t) omb_count_2 >= ik_omb_count_2_limit),
+                  "Klass should have been encodable" );
     }
   }
-
+#undef PREAMBLE_FORMAT
+#undef PREAMBLE_ARGS
+#undef ASSERT_HERE
+#undef ASSERT2_HERE
 } // KlassLUTEntry::verify_against
 
 #endif // ASSERT

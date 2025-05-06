@@ -773,18 +773,21 @@ void ArchiveBuilder::make_klasses_shareable() {
 
   for (int i = 0; i < klasses()->length(); i++) {
     Klass* k = get_buffered_addr(klasses()->at(i));
-
-    // Every archived Klass must carry a valid klute. That is because every archived Klass
-    // would have been created via the usual dynamic class loading or - generation, which should
-    // have registered the Klass with klut.
-    DEBUG_ONLY(KlassLUTEntry(k->klute()).verify_against_klass(k);)
-
     // Some of the code in ConstantPool::remove_unshareable_info() requires the classes
     // to be in linked state, so it must be call here before the next loop, which returns
     // all classes to unlinked state.
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
+    // Every archived Klass must carry a valid klute. That is because every archived Klass
+    // would have been created via the usual dynamic class loading or - generation, which should
+    // have registered the Klass with klut.
+#ifdef ASSERT
+    // We can, unfortunately, encounter classes that are not linked yet at this point.
+    // Hopefully this will be resolved with JDK-8342429.
+    constexpr bool tolerate_aot_unlinked_classes = true;
+    KlassLUTEntry(k->klute()).verify_against_klass(k, tolerate_aot_unlinked_classes);
+#endif
   }
 
   for (int i = 0; i < klasses()->length(); i++) {

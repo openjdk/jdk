@@ -219,8 +219,8 @@ public:
   bool is_valid_for_klass(const Klass* k) const;
 
 #ifdef ASSERT
-  void verify_against_klass(const Klass* k) const;
-#endif
+  void verify_against_klass(const Klass* k, bool tolerate_aot_unlinked_classes) const;
+#endif // ASSERT
 
   klute_raw_t value() const { return _v.raw; }
 
@@ -280,5 +280,7 @@ public:
   void print(outputStream* st) const;
 
 }; // KlassInfoLUEntry
+
+#define KLUTE_FORMAT INT32_FORMAT_X_0
 
 #endif // SHARE_OOPS_KLASSINFOLUTENTRY_HPP

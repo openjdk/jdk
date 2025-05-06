@@ -131,7 +131,7 @@ static void log_klass_registration(const Klass* k, narrowKlass nk, bool added_to
                                    klute_raw_t klute, const char* message) {
   char tmp[1024];
   const KlassLUTEntry klutehelper(klute);
-  log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u(%c), klute: " INT32_FORMAT_X_0 ": %s %s%s",
+  log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u(%c), klute: " KLUTE_FORMAT ": %s %s%s",
                   p2i(k), common_loader_names[klutehelper.loader_index()], nk,
                   (added_to_table ? '+' : '-'),
                   klute,
@@ -163,7 +163,7 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
   log_klass_registration(k, nk, add_to_table, klute, "registered");
 
 #ifdef ASSERT
-  KlassLUTEntry(klute).verify_against_klass(k);
+  KlassLUTEntry(klute).verify_against_klass(k, false /* tolerate_aot_unlinked_classes */);
   if (add_to_table) {
     KlassLUTEntry e2(at(nk));
     assert(e2.value() == klute, "sanity");
@@ -215,7 +215,7 @@ void KlassInfoLUT::scan_klass_range_update_lut(address from, address to) {
       // err on the plus side.
       const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(candidate));
       put(nk, klute);
-      log_info(klut)("Suspected Klass found at " PTR_FORMAT "; adding nk %u, klute: " INT32_FORMAT_X_0,
+      log_info(klut)("Suspected Klass found at " PTR_FORMAT "; adding nk %u, klute: " KLUTE_FORMAT,
                      p2i(candidate), nk, klute);
       found ++;
     }
@@ -250,11 +250,11 @@ klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
   ClassLoaderData* const cld = k->class_loader_data();
   if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
     register_cld_if_needed(cld);
-    DEBUG_ONLY(klutehelper.verify_against_klass(k);)
   } else {
     // Note: cld may still be nullptr; in that case it will be initialized by CDS before the Klass
     // is used. At that point we may correct the klute entry to account for the new CDS.
   }
+  DEBUG_ONLY(klutehelper.verify_against_klass(k, (cld != nullptr) /* tolerate_aot_unlinked_classes */));
   log_klass_registration(k, nk, true, klute, "late-registered");
   return klute;
 }
@@ -384,7 +384,7 @@ void KlassInfoLUT::update_hit_stats(klute_raw_t klute) {
   KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
   default:
-    fatal("invalid klute kind (%x)", klute);
+    fatal("invalid klute kind (" KLUTE_FORMAT ")", klute);
   };
   if (klutehelper.is_instance() && !klutehelper.ik_carries_infos()) {
     switch (klutehelper.kind()) {
