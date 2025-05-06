@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
 #include <cmath>
@@ -61,16 +62,16 @@ bool ZUncommitter::wait(uint64_t timeout) const {
 
   if (!_stop && timeout > 0) {
     if (!uncommit_cycle_is_finished()) {
-      log_trace(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s left to uncommit: "
+      log_trace(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "ms left to uncommit: "
                           EXACTFMT, _id, timeout, EXACTFMTARGS(_to_uncommit));
     } else {
-      log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s", _id, timeout);
+      log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "ms", _id, timeout);
     }
 
     double now = os::elapsedTime();
-    const double wait_until = now + double(timeout);
+    const double wait_until = now + double(timeout) / MILLIUNITS;
     do {
-      const uint64_t remaining_timeout_ms = uint64_t((wait_until - now) * MILLIUNITS);
+      const uint64_t remaining_timeout_ms = to_millis(wait_until - now);
       if (remaining_timeout_ms == 0) {
         // Less than a millisecond left to wait, just return early
         break;
@@ -93,7 +94,7 @@ bool ZUncommitter::should_continue() const {
 
 void ZUncommitter::run_thread() {
   // Initialize first cycle timeout
-  _next_cycle_timeout = ZUncommitDelay;
+  _next_cycle_timeout = to_millis(ZUncommitDelay);
 
   while (wait(_next_cycle_timeout)) {
     // Counters for event and statistics
@@ -198,11 +199,15 @@ size_t ZUncommitter::to_uncommit() const {
   return _to_uncommit;
 }
 
+uint64_t ZUncommitter::to_millis(double seconds) const {
+  return uint64_t(std::floor(seconds * double(MILLIUNITS)));
+}
+
 void ZUncommitter::update_next_cycle_timeout(double from_time) {
   const double now = os::elapsedTime();
 
   if (now < from_time + double(ZUncommitDelay)) {
-    _next_cycle_timeout = ZUncommitDelay - uint64_t(std::floor(now - from_time));
+    _next_cycle_timeout = to_millis(ZUncommitDelay) - to_millis(now - from_time);
   } else {
     // ZUncommitDelay has already expired
     _next_cycle_timeout = 0;
@@ -214,7 +219,7 @@ void ZUncommitter::update_next_cycle_timeout_on_cancel() {
 
   update_next_cycle_timeout(_cancel_time);
 
-  log_debug(gc, heap)("Uncommitter (%u) Cancel Next Cycle Timeout: " UINT64_FORMAT "s",
+  log_debug(gc, heap)("Uncommitter (%u) Cancel Next Cycle Timeout: " UINT64_FORMAT "ms",
                       _id, _next_cycle_timeout);
 }
 
@@ -224,7 +229,7 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
 
   update_next_cycle_timeout(_cycle_start);
 
-  log_debug(gc, heap)("Uncommitter (%u) Finish Next Cycle Timeout: " UINT64_FORMAT "s",
+  log_debug(gc, heap)("Uncommitter (%u) Finish Next Cycle Timeout: " UINT64_FORMAT "ms",
                       _id, _next_cycle_timeout);
 }
 
@@ -273,15 +278,15 @@ void ZUncommitter::register_uncommit(size_t size) {
   }
 
   const size_t uncommits_remaining_estimate = _to_uncommit / size + 1;
-  const uint64_t time_left_rounded_down = uint64_t(std::floor(time_left));
+  const uint64_t millis_left_rounded_down = to_millis(time_left);
 
-  if (uncommits_remaining_estimate < time_left_rounded_down) {
-    // We have at least one second per uncommit, spread them out.
-    _next_uncommit_timeout = time_left_rounded_down / uncommits_remaining_estimate;
+  if (uncommits_remaining_estimate < millis_left_rounded_down) {
+    // We have at least one millisecond per uncommit, spread them out.
+    _next_uncommit_timeout = millis_left_rounded_down / uncommits_remaining_estimate;
     return;
   }
 
-  // Randomly distribute the extra time, one second at a time.
+  // Randomly distribute the extra time, one millisecond at a time.
   const double extra_time = time_left - time_to_compleat;
   const double random = double(uint32_t(os::random())) / double(std::numeric_limits<uint32_t>::max());
 

@@ -46,6 +46,8 @@ private:
   bool wait(uint64_t timeout) const;
   bool should_continue() const;
 
+  uint64_t to_millis(double seconds) const;
+
   void update_next_cycle_timeout(double from_time);
   void update_next_cycle_timeout_on_cancel();
   void update_next_cycle_timeout_on_finish();
