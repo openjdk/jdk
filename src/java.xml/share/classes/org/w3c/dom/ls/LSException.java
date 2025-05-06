@@ -64,6 +64,9 @@ public class LSException extends RuntimeException {
        super(message);
        this.code = code;
     }
+    /**
+     * @serial
+     */
     public short   code;
     // LSExceptionCode
     /**

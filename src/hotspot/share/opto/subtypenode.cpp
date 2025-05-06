@@ -195,7 +195,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
 #endif
           Node* p2 = phase->transform(new AddPNode(subklass, subklass, chk_off_X));
-          Node* nkls = phase->transform(LoadKlassNode::make(*phase, nullptr, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
+          Node* nkls = phase->transform(LoadKlassNode::make(*phase, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
           return verify_helper(phase, nkls, cached_t);
         }
@@ -218,7 +218,7 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   Node* subklass = nullptr;
   if (sub_t->isa_oopptr()) {
     Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
-    subklass  = phase->transform(LoadKlassNode::make(*phase, nullptr, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
+    subklass  = phase->transform(LoadKlassNode::make(*phase, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
     record_for_cleanup(subklass, phase);
   } else {
     subklass = obj_or_subklass;

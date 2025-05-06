@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,13 +146,6 @@ public class TestParallelGCWithCDS {
                     out.shouldContain(HELLO);
                     out.shouldNotContain(errMsg);
                 } else {
-                    String pattern = "((Too small maximum heap)" +
-                                     "|(GC triggered before VM initialization completed)" +
-                                     "|(CDS archive has aot-linked classes but the archived heap objects cannot be loaded)" +
-                                     "|(Initial heap size set to a larger value than the maximum heap size)" +
-                                     "|(java.lang.OutOfMemoryError)" +
-                                     "|(Error: A JNI error has occurred, please check your installation and try again))";
-                    out.shouldMatch(pattern);
                     out.shouldNotHaveFatalError();
                 }
                 n++;

@@ -26,13 +26,12 @@
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
-
 #include "logging/log.hpp"
 
 ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation)
@@ -131,7 +130,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = heap->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
+      bool bm_live = heap->active_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
@@ -237,7 +236,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     evacInfo.set_regular_promoted_free(regular_regions_promoted_free);
     evacInfo.set_regions_immediate(immediate_regions);
     evacInfo.set_immediate_size(immediate_garbage);
-    evacInfo.set_regions_freed(free_regions);
+    evacInfo.set_free_regions(free_regions);
 
     ShenandoahTracer().report_evacuation_info(&evacInfo);
   }

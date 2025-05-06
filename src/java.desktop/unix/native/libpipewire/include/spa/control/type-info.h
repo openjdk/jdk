@@ -27,6 +27,7 @@ static const struct spa_type_info spa_type_control[] = {
     { SPA_CONTROL_Properties, SPA_TYPE_Int, SPA_TYPE_INFO_CONTROL_BASE "Properties", NULL },
     { SPA_CONTROL_Midi, SPA_TYPE_Int, SPA_TYPE_INFO_CONTROL_BASE "Midi", NULL },
     { SPA_CONTROL_OSC, SPA_TYPE_Int, SPA_TYPE_INFO_CONTROL_BASE "OSC", NULL },
+    { SPA_CONTROL_UMP, SPA_TYPE_Int, SPA_TYPE_INFO_CONTROL_BASE "UMP", NULL },
     { 0, 0, NULL, NULL },
 };
 

@@ -53,9 +53,9 @@ STEP 2: BUILD CHANGES INCREMENTALLY
 
 STEP 3: COMPILER WARNINGS AND SETTING FLAGS
 -------------------------------------------
-- Update make parameters in Awt2DLibraries.gmk
+- Update make parameters in make/modules/java.desktop/lib/ClientLibraries.gmk
   Since we don't use configure we need to manually specify the options
-  we need in the Harfbuzz section of Awt2DLibraries.gmk.
+  we need in the Harfbuzz section of ClientLibraries.gmk.
   As well as adding new options, we may need to clean up obsolete options.
   Note there may be platform variations in the flags.
 

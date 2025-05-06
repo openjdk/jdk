@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-include LauncherCommon.gmk
+################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, modules/java.base/Launcher.gmk))
+include LauncherCommon.gmk
 
 JAVA_VERSION_INFO_RESOURCE := \
     $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
@@ -103,3 +102,5 @@ ifeq ($(call isTargetOsType, unix), true)
 
   TARGETS += $(BUILD_JSPAWNHELPER)
 endif
+
+################################################################################

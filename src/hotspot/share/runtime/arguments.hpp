@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,8 +238,8 @@ class Arguments : AllStatic {
   // java launcher
   static const char* _sun_java_launcher;
 
-  // was this VM created via the -XXaltjvm=<path> option
-  static bool   _sun_java_launcher_is_altjvm;
+  // was this VM created with the -XX:+ExecutingUnitTests option
+  static bool _executing_unit_tests;
 
   // for legacy gc options (-verbose:gc and -Xloggc:)
   static LegacyGCLogging _legacyGCLogging;
@@ -252,6 +252,9 @@ class Arguments : AllStatic {
 
   // preview features
   static bool _enable_preview;
+
+  // jdwp
+  static bool _has_jdwp_agent;
 
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
@@ -426,8 +429,8 @@ class Arguments : AllStatic {
   static const char* sun_java_launcher()    { return _sun_java_launcher; }
   // Was VM created by a Java launcher?
   static bool created_by_java_launcher();
-  // -Dsun.java.launcher.is_altjvm
-  static bool sun_java_launcher_is_altjvm();
+  // -XX:+ExecutingUnitTests
+  static bool executing_unit_tests();
 
   // abort, exit, vfprintf hooks
   static abort_hook_t    abort_hook()       { return _abort_hook; }
@@ -504,6 +507,9 @@ class Arguments : AllStatic {
   // preview features
   static void set_enable_preview() { _enable_preview = true; }
   static bool enable_preview() { return _enable_preview; }
+
+  // jdwp
+  static bool has_jdwp_agent() { return _has_jdwp_agent; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
