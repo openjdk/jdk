@@ -31,7 +31,6 @@
 #include "nmt/memTracker.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
