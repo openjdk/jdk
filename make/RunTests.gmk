@@ -1348,7 +1348,9 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	if $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -status 1>/dev/null 2>&1 ; then \
 	  $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600 ; \
 	fi
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
+	$(JAVA) -Xmx4g \
+            -Djdk.xml.totalEntitySizeLimit=1000000 -Djdk.xml.maxGeneralEntitySizeLimit=1000000 \
+            -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
