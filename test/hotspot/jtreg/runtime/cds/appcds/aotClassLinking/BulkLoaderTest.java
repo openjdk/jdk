@@ -158,7 +158,7 @@ public class BulkLoaderTest {
 
             if (isDumping(runMode)) {
                 // Check that we are archiving classes for custom class loaders.
-                out.shouldMatch("cds,class.* SimpleCusty");
+                out.shouldMatch(",class.* SimpleCusty");
             }
         }
     }

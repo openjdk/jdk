@@ -49,8 +49,8 @@ public class AOTCacheSupportForCustomLoaders {
             .addVmArgs("-Xlog:cds+class=debug", "-Xlog:cds")
             .appCommandLine("AppWithCustomLoaders")
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                    out.shouldMatch("cds,class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
-                       .shouldMatch("cds,class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;");
+                    out.shouldMatch(",class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
+                       .shouldMatch(",class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Using AOT-linked classes: true");
