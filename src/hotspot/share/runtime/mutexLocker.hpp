@@ -48,6 +48,7 @@ extern Monitor* JNICritical_lock;                // a lock used while synchroniz
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* JvmtiVTMSTransition_lock;        // a lock for Virtual Thread Mount State transition (VTMS transition) management
+extern Mutex*   JvmtiVThreadSuspend_lock;        // a lock for virtual threads suspension
 extern Monitor* Heap_lock;                       // a lock on the heap
 #if INCLUDE_PARALLELGC
 extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
@@ -129,6 +130,7 @@ extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
+extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used by FinalImageRecipes.
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -146,6 +148,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
 extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
+
+extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the AOT code C strings table
 
 extern Monitor* ContinuationRelativize_lock;
 
