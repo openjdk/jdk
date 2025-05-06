@@ -36,9 +36,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
-// One global static mutex.
-// It is used very early in the vm's initialization, in allocation
-// code and other areas. It is allocated on first use when the vm is single threaded.
+// One global static mutex for chunk pools.
+// It is used very early in the vm initialization, in allocation
+// code and other areas.  For many calls, the current thread has not
+// been created so we cannot use Mutex.
 static PlatformMutex* _global_chunk_pool_mutex = nullptr;
 
 void Arena::initialize_chunk_pool() {
