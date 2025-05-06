@@ -403,7 +403,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }

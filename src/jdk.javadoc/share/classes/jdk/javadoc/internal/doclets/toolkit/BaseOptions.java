@@ -236,6 +236,14 @@ public abstract class BaseOptions {
      */
     private boolean noTimestamp = false;
 
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * If set, the JavaDoc inline tag with the given name is considered
+     * a preview note and added to the preview API page.
+     */
+    private String previewNoteTag = null;
+
     /**
      * Argument for command-line option {@code -quiet}.
      * Suppress all messages
@@ -545,6 +553,14 @@ public abstract class BaseOptions {
                                 return false;
                             }
                         }
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-note-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewNoteTag = args.getFirst();
                         return true;
                     }
                 },
@@ -939,6 +955,12 @@ public abstract class BaseOptions {
     public boolean noTimestamp() {
         return noTimestamp;
     }
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * Name of inline tag for preview notes.
+     */
+    public String previewNoteTag() { return previewNoteTag; }
 
     /**
      * Argument for command-line option {@code -quiet}.

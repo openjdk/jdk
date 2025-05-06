@@ -355,7 +355,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptD3DWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptD3DWindowPainter extends VIOptWindowPainter {
 
         protected VIOptD3DWindowPainter(WWindowPeer peer) {
             super(peer);
@@ -370,7 +370,7 @@ abstract class TranslucentWindowPainter {
         }
     }
 
-    private static class VIOptWGLWindowPainter extends VIOptWindowPainter {
+    private static final class VIOptWGLWindowPainter extends VIOptWindowPainter {
 
         protected VIOptWGLWindowPainter(WWindowPeer peer) {
             super(peer);

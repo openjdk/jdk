@@ -67,11 +67,11 @@ class MetaspaceShared : AllStatic {
     ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     hp = 3,  // heap region
+    ac = 4,  // aot code
     num_core_region = 2,       // rw and ro
-    n_regions = 4              // total number of regions
+    n_regions = 5              // total number of regions
   };
 
-  static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
@@ -110,7 +110,8 @@ public:
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
   static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
 
-  static void unrecoverable_loading_error(const char* message = nullptr);
+  static void unrecoverable_loading_error(const char* message = nullptr) ATTRIBUTE_PRINTF(1, 0);
+  static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 
@@ -131,8 +132,7 @@ public:
   }
 
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
-  static void link_shared_classes(bool jcmd_request, TRAPS) NOT_CDS_RETURN;
-  static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
+  static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS

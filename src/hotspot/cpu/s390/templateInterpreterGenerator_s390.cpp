@@ -1134,7 +1134,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
@@ -2228,7 +2232,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
 
-  __ get_vm_result(Z_ARG1);     // Restore exception.
+  __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);
   __ z_lgr(Z_ARG2, return_pc);  // Restore return address.
 
