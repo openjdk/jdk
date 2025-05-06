@@ -144,6 +144,22 @@
   product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
           "Compile methods as soon as possible")                            \
                                                                             \
+  /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
+          "Enable saving and restoring i2c2i adapters in AOT cache")        \
+                                                                            \
+  product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
+          "Buffer size in bytes for AOT code caching")                      \
+          range(1*M, max_jint)                                              \
+                                                                            \
+  product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
+          "Abort VM on the first occurrence of AOT code load or store "     \
+          "failure. By default VM will continue execute without AOT code.") \
+                                                                            \
+  develop(bool, TestAOTAdapterLinkFailure, false,                           \
+          "Test failure of adapter linking when loading from AOT cache.")   \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

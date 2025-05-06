@@ -25,6 +25,7 @@
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
@@ -74,6 +75,7 @@ void AOTArtifactFinder::find_artifacts() {
   // Note, if a class is not excluded, it does NOT mean it will be automatically included
   // into the AOT cache -- that will be decided by the code below.
   SystemDictionaryShared::finish_exclusion_checks();
+  AOTReferenceObjSupport::init_keep_alive_objs_table();
 
   start_scanning_for_oops();
 

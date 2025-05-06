@@ -24,6 +24,7 @@
 
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -144,7 +145,7 @@ jint init_globals() {
     LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
   }
 #endif // LEAK_SANITIZER
-
+  AOTCodeCache::init2();     // depends on universe_init
   AsyncLogWriter::initialize();
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
@@ -157,6 +158,8 @@ jint init_globals() {
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
+  AOTCodeCache::init_shared_blobs_table();  // need this after generate_stubs
+  SharedRuntime::init_adapter_library(); // do this after AOTCodeCache::init_shared_blobs_table
   return JNI_OK;
 }
 
