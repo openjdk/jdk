@@ -48,6 +48,7 @@ public class GifEmptyBackgroundTest {
 
         if (new Color(frames[3].getRGB(20, 20), true).getAlpha() != 0) {
             throw new Error("See System.err for details");
+        }
     }
 
     private static BufferedImage[] getFrames(URL gifURL, int numberOfFrames) {
