@@ -98,6 +98,7 @@ void LogTagSet::log(const LogMessageBuffer& msg) {
 
 void LogTagSet::label(outputStream* st, const char* separator) const {
   size_t i = 0;
+
 #if INCLUDE_CDS
   if (PrintCDSLogsAsAOTLogs && _ntags > 0 && _tag[0] == LogTag::_cds) {
     st->print("%s", "aot");

@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/cds_globals.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
@@ -90,36 +89,6 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       break;
     }
     _selections[_nselections++] = selection;
-
-#if INCLUDE_CDS
-    if (PrintCDSLogsAsAOTLogs && 
-        cur[0] == 'a' &&
-        cur[1] == 'o' &&
-        cur[2] == 't' &&
-        (cur[3] < 'a' || 'z' > cur[3])) {
-      // If the user has specified any log that starts with "aot", try to (also)
-      // match any existing LogSets that start with "cds". E.g.,
-      //
-      // -Xlog:aot*=             ->   -Xlog:cds*=
-      // -Xlog:aot+heap=debug    ->   -Xlog:cds+heap=debug
-
-      // We can't use resource allocation yet. Hence malloc.
-      size_t len = strlen(cur);
-      char* alias = (char*)os::malloc(len + 1, mtLogging);
-      strcpy(alias, cur);
-      alias[0] = 'c';
-      alias[1] = 'd';
-      alias[2] = 's';
-
-      selection = LogSelection::parse(alias, errstream);
-      os::free(alias);
-
-      if (selection != LogSelection::Invalid) {
-        // If we don't get any matches, that's not an error!
-        _selections[_nselections++] = selection;
-      }
-    }
-#endif
 
     if (comma_pos == nullptr) {
       break;

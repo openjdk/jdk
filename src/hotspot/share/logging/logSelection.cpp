@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+#include "cds/cds_globals.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
@@ -180,7 +182,13 @@ bool LogSelection::selects(const LogTagSet& ts) const {
   if (!_wildcard && _ntags != ts.ntags()) {
     return false;
   }
-  for (size_t i = 0; i < _ntags; i++) {
+  size_t i = 0;
+  if (PrintCDSLogsAsAOTLogs && _ntags > 0 && _tags[0] == LogTag::_aot && ts.tag(0) == LogTag::_cds) {
+    // Consider it a match
+    i ++;
+  }
+
+  for (; i < _ntags; i++) {
     if (!ts.contains(_tags[i])) {
       return false;
     }
