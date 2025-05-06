@@ -116,7 +116,6 @@ void CompileTask::initialize(int compile_id,
   _hot_method_holder = nullptr;
   _hot_count = hot_count;
   _time_created = os::elapsed_counter();
-  _time_queued = 0;
   _time_started = 0;
   _time_finished = 0;
   _compile_reason = compile_reason;
@@ -223,19 +222,13 @@ void CompileTask::print_tty() {
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
                              const char* msg, bool short_form, bool cr,
-                             jlong time_created, jlong time_queued, jlong time_started, jlong time_finished) {
+                             jlong time_created, jlong time_started, jlong time_finished) {
   if (!short_form) {
     // Print current time
     st->print(UINT64_FORMAT_W(7) " ", (uint64_t) tty->time_stamp().milliseconds());
-    // Time waiting to be put on queue
-    if (time_created != 0 && time_queued != 0) {
-      st->print("%7.0f ", TimeHelper::counter_to_micros(time_queued - time_created));
-    } else {
-      st->print("%7s ", "");
-    }
-    // Time in queue
-    if (time_queued != 0 && time_started != 0) {
-      st->print("%7.0f ", TimeHelper::counter_to_micros(time_started - time_queued));
+    // Time spent before the compilation started
+    if (time_created != 0 && time_started != 0) {
+      st->print("%7.0f ", TimeHelper::counter_to_micros(time_started - time_created));
     } else {
       st->print("%7s ", "");
     }
@@ -300,14 +293,13 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 void CompileTask::print_legend_on(outputStream* st) {
   // Matches to format in CompileTask::print_impl above.
   st->print_cr(" (T)  Elapsed time since JVM start, ms");
-  st->print_cr(" (W)  Time spent in waiting before enqueue, us");
-  st->print_cr(" (Q)  Time spent in compilation queue, us");
+  st->print_cr(" (Q)  Time spent in queueing, us");
   st->print_cr(" (C)  Time spent in compilation, us");
   st->print_cr(" (ID) Compile task ID");
   st->print_cr(" (AT) Compile task attributes: %% = OSR, s = synchronized, ! = has exception handler, b = blocking, n = native");
   st->print_cr(" (L)  Compile level");
   st->cr();
-  st->print_cr("%7s %7s %7s %7s %5s %5s %3s    %s", "T", "W", "Q", "C", "ID", "AT", "L", "METHOD");
+  st->print_cr("%7s %7s %7s %5s %5s %3s    %s", "T", "Q", "C", "ID", "AT", "L", "METHOD");
 }
 
 // ------------------------------------------------------------------
@@ -316,7 +308,7 @@ void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool
   bool is_osr_method = osr_bci() != InvocationEntryBci;
   print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
              is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr,
-             _time_created, _time_queued, _time_started, _time_finished);
+             _time_created, _time_started, _time_finished);
 }
 
 // ------------------------------------------------------------------

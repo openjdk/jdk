@@ -340,8 +340,6 @@ void CompileQueue::add(CompileTask* task) {
   // Mark the method as being in the compile queue.
   task->method()->set_queued_for_compilation();
 
-  task->mark_queued(os::elapsed_counter());
-
   if (CIPrintCompileQueue) {
     print_tty();
   }
