@@ -168,11 +168,7 @@ inline void JvmtiThreadState::process_pending_interp_only(JavaThread* current) {
   JvmtiThreadState* state = current->jvmti_thread_state();
 
   if (state != nullptr && state->is_pending_interp_only_mode()) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    state = current->jvmti_thread_state();
-    if (state != nullptr && state->is_pending_interp_only_mode()) {
-      JvmtiEventController::enter_interp_only_mode(state);
-    }
+    JvmtiEventController::enter_interp_only_mode(state);
   }
 }
 #endif // SHARE_PRIMS_JVMTITHREADSTATE_INLINE_HPP

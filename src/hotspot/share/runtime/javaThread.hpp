@@ -1175,8 +1175,8 @@ private:
   bool is_interp_only_mode()                { return (_interp_only_mode != 0); }
   int get_interp_only_mode()                { return _interp_only_mode; }
   int set_interp_only_mode(int val)         { return _interp_only_mode = val; }
-  void increment_interp_only_mode()         { ++_interp_only_mode; }
-  void decrement_interp_only_mode()         { --_interp_only_mode; }
+  void set_interp_only_mode()               { _interp_only_mode = 1; }
+  void clear_interp_only_mode()             { _interp_only_mode = 0; }
 
   // support for cached flag that indicates whether exceptions need to be posted for this thread
   // if this is false, we can avoid deoptimizing when events are thrown
