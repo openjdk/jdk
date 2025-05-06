@@ -25,7 +25,7 @@
  * @test
  * @bug 8356137
  * @summary This test verifies a non-zero transparent pixel in gifs works when
- * the disposal method changes from 2 to 1, and when the
+ * the disposal method changes from 2 to 1
  */
 
 import java.awt.Color;
