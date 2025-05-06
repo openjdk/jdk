@@ -175,15 +175,8 @@ public final class StableFieldUpdater {
         Objects.requireNonNull(underlying);
 
         final long offset = offset(holderType, fieldName, long.class, Reflection.getCallerClass());
-        if (Architecture.is64bit()) {
-            // We are also relying on the fact that the VM will not place 64-bit
-            // instance fields that can cross cache lines.
-            return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
-        } else {
-            return new TearingStableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
-        }
+        return makeLong(holderType, offset, underlying, zeroReplacement);
     }
-
 
     // Only to be used by classes that are used "early" in the init sequence.
     public static final class Raw {
@@ -211,11 +204,23 @@ public final class StableFieldUpdater {
                 throw new IllegalArgumentException();
             }
             Objects.requireNonNull(underlying);
-            return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return makeLong(holderType, offset, underlying, zeroReplacement);
         }
 
     }
 
+    private static <T> ToLongFunction<T> makeLong(Class<T> holderType,
+                                                  long offset,
+                                                  ToLongFunction<? super T> underlying,
+                                                  long zeroReplacement) {
+        if (Architecture.is64bit()) {
+            // We are also relying on the fact that the VM will not place 64-bit
+            // instance fields that can cross cache lines.
+            return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+        } else {
+            return new TearingStableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+        }
+    }
 
     private record StableIntFieldUpdater<T>(Class<T> holderType,
                                             long offset,
