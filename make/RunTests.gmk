@@ -1370,7 +1370,9 @@ ifeq ($(TEST_OPTS_JCOV), true)
 
   jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
+	$(JAVA) -Xmx4g \
+            -Djdk.xml.totalEntitySizeLimit=1000000 -Djdk.xml.maxGeneralEntitySizeLimit=1000000 \
+            -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
@@ -1394,10 +1396,12 @@ ifeq ($(TEST_OPTS_JCOV), true)
     jcov-gen-diffcoverage: jcov-stop-grabber
 	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
 	$(DIFF_COMMAND)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar \
-	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
-	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
-	    $(JCOV_DIFF_COVERAGE_REPORT)
+	$(JAVA) -Xmx4g \
+            -Djdk.xml.totalEntitySizeLimit=1000000 -Djdk.xml.maxGeneralEntitySizeLimit=1000000 \
+            -jar $(JCOV_HOME)/lib/jcov.jar \
+            DiffCoverage -replaceDiff "src/.*/classes/:" -all \
+            $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
+            $(JCOV_DIFF_COVERAGE_REPORT)
 
     TARGETS += jcov-gen-diffcoverage
 
