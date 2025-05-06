@@ -1169,9 +1169,9 @@
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
-  NOT_ZERO(declare_toplevel_type(VM_Features))                            \
+  NOT_ZERO(X86_ONLY(declare_toplevel_type(VM_Features)))                  \
   NOT_ZERO(declare_toplevel_type(VM_Version))                             \
-  NOT_ZERO(declare_toplevel_type(VM_Features::FeatureVector))             \
+  NOT_ZERO(X86_ONLY(declare_toplevel_type(VM_Features::FeatureVector)))   \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \
