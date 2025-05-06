@@ -239,6 +239,7 @@ public:
                            msg, short_form, cr);
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
+  static void  maybe_print_legend();
   static void  print_legend_on(outputStream* st);
 
   /**

@@ -302,6 +302,17 @@ void CompileTask::print_legend_on(outputStream* st) {
   st->print_cr("%7s %7s %7s %5s %5s %3s    %s", "T", "Q", "C", "ID", "AT", "L", "METHOD");
 }
 
+void CompileTask::maybe_print_legend() {
+  if (PrintCompilation) {
+    print_legend_on(tty);
+  }
+  LogTarget(Debug, jit, compilation) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_legend_on(&ls);
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
@@ -489,11 +500,14 @@ void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult 
   }
 }
 
-void CompileTask::print_ul(const char* msg){
+void CompileTask::print_ul(const char* msg) {
   LogTarget(Debug, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print(&ls, msg, /* short form */ true, /* cr */ true);
+    print_impl(&ls, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
+               osr_bci() != InvocationEntryBci, osr_bci(),
+               is_blocking(), msg, /* short form */ false, /* cr */ true,
+               _time_created, _time_started, _time_finished);
   }
 }
 
@@ -501,11 +515,9 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
   LogTarget(Debug, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print_impl(&ls, nm->method(), nm->compile_id(),
-               nm->comp_level(), nm->is_osr_method(),
-               nm->is_osr_method() ? nm->osr_entry_bci() : -1,
-               /*is_blocking*/ false,
-               msg, /* short form */ true, /* cr */ true);
+    print_impl(&ls, nm->method(), nm->compile_id(), nm->comp_level(),
+               nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1,
+               /*is_blocking*/ false, msg, /* short form */ false, /* cr */ true);
   }
 }
 
