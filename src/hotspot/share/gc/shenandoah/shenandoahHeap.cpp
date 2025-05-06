@@ -98,6 +98,9 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -161,7 +164,7 @@ static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
     size = align_up(size, alignment);
   }
 
-  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size);
+  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size, mtGC);
   if (!reserved.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space");
   }
@@ -375,7 +378,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size);
+      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size, mtGC);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -384,7 +387,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
+      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size(), mtGC);
       if (!cset_rs.is_reserved()) {
         vm_exit_during_initialization("Cannot reserve memory for collection set");
       }
@@ -583,7 +586,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #pragma warning( pop )
 #endif
 
-void ShenandoahHeap::print_on(outputStream* st) const {
+void ShenandoahHeap::print_heap_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
   st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
                byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
@@ -634,7 +637,6 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 
   st->cr();
-  MetaspaceUtils::print_on(st);
 
   if (Verbose) {
     st->cr();
@@ -642,9 +644,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 }
 
-void ShenandoahHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
+void ShenandoahHeap::print_gc_on(outputStream* st) const {
   print_heap_regions_on(st);
 }
 
@@ -2235,6 +2235,9 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Clean JVMCI metadata handles.
+      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       uint num_workers = _workers->active_workers();
       ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);

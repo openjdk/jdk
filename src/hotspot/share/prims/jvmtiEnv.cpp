@@ -199,7 +199,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);

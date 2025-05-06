@@ -148,6 +148,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
 
 extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
 
+extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the AOT code C strings table
+
 extern Monitor* ContinuationRelativize_lock;
 
 #if INCLUDE_JVMCI

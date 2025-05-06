@@ -57,7 +57,7 @@ public final class LauncherIconVerifier {
             label = String.format("[%s]", launcherName);
         }
 
-        Path iconPath = cmd.appLayout().destktopIntegrationDirectory().resolve(
+        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(
                 curLauncherName + TKit.ICON_SUFFIX);
 
         if (TKit.isWindows()) {
