@@ -71,7 +71,7 @@ public final class CaptureStateUtil {
         final Set<BasicKey> inputs = new HashSet<>();
         // The Cartesian product : (int.class, long.class) x ("errno", ...)
         // Do not use Streams in order to enable "early" use in the init sequence.
-        for (Class<?> c : List.of(int.class, long.class)) {
+        for (Class<?> c : new Class<?>[]{int.class, long.class}) {
             for (MemoryLayout layout : CAPTURE_LAYOUT.memberLayouts()) {
                 inputs.add(new BasicKey(c, layout.name().orElseThrow()));
             }
@@ -82,7 +82,7 @@ public final class CaptureStateUtil {
     // A key that holds both the `returnType` and the `stateName` needed to look up a
     // specific "basic handle" in the `BASIC_HANDLE_CACHE`.
     //   returnType in {int.class | long.class}
-    //   stateName can be anything non-null but should be in {"GetLastError" | "WSAGetLastError"} | "errno")}
+    //   stateName can be anything non-null but should be in {"GetLastError" | "WSAGetLastError" | "errno"}
     private record BasicKey(Class<?> returnType, String stateName) {
 
         BasicKey(MethodHandle target, String stateName) {
@@ -91,12 +91,13 @@ public final class CaptureStateUtil {
 
         static Class<?> returnType(MethodHandle target) {
             // Implicit null check
-            final Class<?> returnType = target.type().returnType();
+            final MethodType type = target.type();
+            final Class<?> returnType = type.returnType();
 
             if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
                 throw illegalArgDoesNot(target, "return an int or a long");
             }
-            if (target.type().parameterCount() == 0 || target.type().parameterType(0) != MemorySegment.class) {
+            if (type.parameterCount() == 0 || type.parameterType(0) != MemorySegment.class) {
                 throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
             }
             return returnType;
@@ -358,6 +359,7 @@ public final class CaptureStateUtil {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    // This is intentionally an old switch to improve on startup time.
     private static MethodHandle makeHandle(int index) {
         switch (index) {
             case NON_NEGATIVE_INT:

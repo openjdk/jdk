@@ -84,8 +84,8 @@ public final class MhUtil {
     }
 
     public static MethodHandle findStatic(MethodHandles.Lookup lookup,
-                                           String name,
-                                           MethodType type) {
+                                          String name,
+                                          MethodType type) {
         return findStatic(lookup, lookup.lookupClass(), name, type);
     }
 
