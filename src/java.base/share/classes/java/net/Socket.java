@@ -386,7 +386,7 @@ public class Socket implements java.io.Closeable {
      *
      * @apiNote
      * The {@code stream} parameter provided a way in early JDK releases
-     * to create a {@code Socket} that used a datagram socket, this feature
+     * to create a {@code Socket} that used a datagram socket. This feature
      * no longer exists.
      *
      * @param      host     the host name, or {@code null} for the loopback address.
@@ -418,7 +418,7 @@ public class Socket implements java.io.Closeable {
      *
      * @apiNote
      * The {@code stream} parameter provided a way in early JDK releases
-     * to create a {@code Socket} that used a datagram socket, this feature
+     * to create a {@code Socket} that used a datagram socket. This feature
      * no longer exists.
      *
      * @param      host     the IP address.
@@ -452,7 +452,7 @@ public class Socket implements java.io.Closeable {
         Objects.requireNonNull(address);
         if (!stream) {
             throw new IllegalArgumentException(
-                    "Socket constructor does not support creation of datagram socket");
+                    "Socket constructor does not support creation of datagram sockets");
         }
         assert address instanceof InetSocketAddress;
 
