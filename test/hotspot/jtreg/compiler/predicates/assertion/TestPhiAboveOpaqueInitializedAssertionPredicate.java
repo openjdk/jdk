@@ -27,13 +27,16 @@
  * @summary Check that we do not introduce a Phi above a OpaqueInitializedAssertionPredicateNode during Partial Peeling.
  * @run main/othervm -Xcomp -XX:CompileOnly=compiler.predicates.assertion.TestPhiAboveOpaqueInitializedAssertionPredicate::test
  *                   compiler.predicates.assertion.TestPhiAboveOpaqueInitializedAssertionPredicate
+ * @run main         compiler.predicates.assertion.TestPhiAboveOpaqueInitializedAssertionPredicate
  */
 
 package compiler.predicates.assertion;
 
 public class TestPhiAboveOpaqueInitializedAssertionPredicate {
-     public static void main(String[] o) {
-        test();
+    public static void main(String[] o) {
+        for (int i = 0; i < 1000; i++) {
+            test();
+        }
     }
 
     static void test() {
