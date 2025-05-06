@@ -67,7 +67,7 @@ class MyTestApp {
         StringBuilder sb = new StringBuilder();
         sb.append("Dummy ");
         sb.append("1234567");
-        sb.append("8");
+        sb.append(8 + x);
         String myValue = sb.toString().intern();
         String theirValue = NonFinalStaticWithInitVal_Helper.foo;
         System.out.println("field = " + theirValue);
