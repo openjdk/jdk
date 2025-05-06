@@ -1579,6 +1579,10 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 }
 
 bool nmethod::is_relocatable() {
+  if (is_compiled_by_jvmci()) {
+    return false;
+  }
+
   if (is_marked_for_deoptimization()) {
     return false;
   }
