@@ -87,7 +87,16 @@ void oopDesc::print_value_on(outputStream* st) const {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {
-    klass()->oop_print_value_on(obj, st);
+    Klass* k = klass_without_asserts();
+    if (k == nullptr) {
+      st->print("null klass");
+    } else if (!Metaspace::contains(k)) {
+      st->print("klass not in Metaspace");
+    } else if (!k->is_klass()) {
+      st->print("klass not a Klass");
+    } else {
+      k->oop_print_value_on(obj, st);
+    }
   }
 }
 

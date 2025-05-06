@@ -506,10 +506,10 @@ public class TestG1BarrierGeneration {
     @Test
     @IR(failOn = IRNode.SAFEPOINT)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, ">1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, ">1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
         failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},

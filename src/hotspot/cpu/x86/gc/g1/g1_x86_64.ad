@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -59,15 +59,14 @@ static void write_barrier_post(MacroAssembler* masm,
                                const MachNode* node,
                                Register store_addr,
                                Register new_val,
-                               Register tmp1,
-                               Register tmp2) {
-  if (!G1PostBarrierStubC2::needs_barrier(node)) {
+                               Register tmp1) {
+  if (!G1BarrierStubC2::needs_post_barrier(node)) {
     return;
   }
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
-  G1PostBarrierStubC2* const stub = G1PostBarrierStubC2::create(node);
-  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, tmp2, stub);
+  bool new_val_may_be_null = G1BarrierStubC2::post_new_val_may_be_null(node);
+  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, new_val_may_be_null);
 }
 
 %}
@@ -95,8 +94,7 @@ instruct g1StoreP(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rRegP tmp3, 
     write_barrier_post(masm, this,
                        $tmp1$$Register /* store_addr */,
                        $src$$Register /* new_val */,
-                       $tmp3$$Register /* tmp1 */,
-                       $tmp2$$Register /* tmp2 */);
+                       $tmp3$$Register /* tmp1 */);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -127,8 +125,7 @@ instruct g1StoreN(memory mem, rRegN src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFl
     write_barrier_post(masm, this,
                        $tmp1$$Register /* store_addr */,
                        $tmp2$$Register /* new_val */,
-                       $tmp3$$Register /* tmp1 */,
-                       $tmp2$$Register /* tmp2 */);
+                       $tmp3$$Register /* tmp1 */);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -158,8 +155,7 @@ instruct g1EncodePAndStoreN(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rR
     write_barrier_post(masm, this,
                        $tmp1$$Register /* store_addr */,
                        $src$$Register /* new_val */,
-                       $tmp3$$Register /* tmp1 */,
-                       $tmp2$$Register /* tmp2 */);
+                       $tmp3$$Register /* tmp1 */);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -187,8 +183,7 @@ instruct g1CompareAndExchangeP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -214,8 +209,7 @@ instruct g1CompareAndExchangeN(indirect mem, rRegN newval, rRegP tmp1, rRegP tmp
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -246,8 +240,7 @@ instruct g1CompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp1, rR
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -279,8 +272,7 @@ instruct g1CompareAndSwapN(rRegI res, indirect mem, rRegN newval, rRegP tmp1, rR
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -303,8 +295,7 @@ instruct g1GetAndSetP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp2, rRegP 
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -328,8 +319,7 @@ instruct g1GetAndSetN(indirect mem, rRegN newval, rRegP tmp1, rRegP tmp2, rRegP 
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp1 */);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
