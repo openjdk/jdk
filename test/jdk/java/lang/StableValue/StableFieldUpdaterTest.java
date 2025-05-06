@@ -75,7 +75,15 @@ final class StableFieldUpdaterTest {
     }
 
 
-    // Todo: Cast to T
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    void uncheckedCall() {
+        // Use a raw type
+        ToIntFunction updater = StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+        var object = new Object();
+        var x = assertThrows(IllegalArgumentException.class, () -> updater.applyAsInt(object));
+        assertEquals("The provided t is not an instance of class StableFieldUpdaterTest$Foo", x.getMessage());
+    }
 
     static final class Foo {
 
