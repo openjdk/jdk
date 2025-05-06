@@ -21,6 +21,8 @@
  * questions.
  *
  */
+
+#include "cds/cds_globals.hpp"
 #include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorations.hpp"
@@ -93,14 +95,14 @@ void LogTagSet::log(const LogMessageBuffer& msg) {
   }
 }
 
-extern int _cds_tag_specified;
-
 void LogTagSet::label(outputStream* st, const char* separator) const {
   size_t i = 0;
-  if (_ntags > 0 && _tag[0] == LogTag::_cds && _cds_tag_specified == 0) {
+#if INCLUDE_CDS
+  if (PrintCDSLogsAsAOTLogs && _ntags > 0 && _tag[0] == LogTag::_cds) {
     st->print("%s", "aot");
     i++;
   }
+#endif
 
   for (; i < _ntags; i++) {
     st->print("%s%s", (i == 0 ? "" : separator), LogTag::name(_tag[i]));

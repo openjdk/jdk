@@ -22,13 +22,12 @@
  *
  */
 
+#include "cds/cds_globals.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
 
 static const char* DefaultExpressionString = "all";
-
-extern int _cds_tag_specified;
 
 bool LogSelectionList::verify_selections(outputStream* out) const {
   bool valid = true;
@@ -69,7 +68,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
-  char* injected_copy = nullptr;
+  CDS_ONLY(char* injected_copy = nullptr);
 
   // Split string on commas
   for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
@@ -87,7 +86,8 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       *comma_pos = '\0';
     }
 
-    if (strncmp(cur, "aot*", 4) == 0 && injected_copy == nullptr) {
+#if INCLUDE_CDS
+    if (PrintCDSLogsAsAOTLogs && strncmp(cur, "aot*", 4) == 0 && injected_copy == nullptr) {
       // Special case: because -Xlog:aot* matches with (unaliased) aot logs, we
       // need to inject an "cds*" tag as well.
       //
@@ -101,8 +101,9 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       injected_copy[1] = 'c';
       injected_copy[2] = 'd';
       injected_copy[3] = 's';
-      _cds_tag_specified --;
     }
+#endif
+
     LogSelection selection = LogSelection::parse(cur, errstream);
     if (selection == LogSelection::Invalid) {
       success = false;
@@ -111,12 +112,15 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     _selections[_nselections++] = selection;
 
     if (comma_pos == nullptr) {
+#if INCLUDE_CDS
       if (injected_copy != nullptr) {
         os::free(copy);
         copy = injected_copy;
         comma_pos = copy;
         injected_copy = nullptr;
-      } else {
+      } else
+#endif
+      {
         break;
       }
     }
