@@ -387,11 +387,9 @@ public:
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
 
-  // Whether the first instruction in the code emitted for this node is a
-  // candidate for implicit null check. This function is only defined for nodes
-  // with barrier data that are expanded late.
-  virtual bool has_initial_implicit_null_check_candidate() const {
-    assert(barrier_data() != 0, "only defined for nodes with barrier data");
+  // Whether this node is expanded during code emission into a sequence of
+  // instructions and the first instruction can perform an implicit null check.
+  virtual bool is_late_expanded_null_check_candidate() const {
     return false;
   }
 

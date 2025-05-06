@@ -118,7 +118,7 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
   predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, KILL cr);
-  ins_has_initial_implicit_null_check_candidate(true);
+  ins_is_late_expanded_null_check_candidate(true);
 
   ins_cost(125);
 

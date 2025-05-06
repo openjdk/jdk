@@ -189,7 +189,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
     if (mach->barrier_data() != 0 &&
-        !mach->has_initial_implicit_null_check_candidate()) {
+        !mach->is_late_expanded_null_check_candidate()) {
       // Using memory accesses with barriers to perform implicit null checks is
       // only supported if these are explicit marked as emitting a candidate
       // memory access instruction at their initial address. If not marked as

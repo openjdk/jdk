@@ -3841,9 +3841,9 @@ ins_attrib ins_field_cbuf_insts_offset(-1);
 ins_attrib ins_field_load_ic_hi_node(0);
 ins_attrib ins_field_load_ic_node(0);
 
-// Whether the first instruction in the code emitted for this node is a
-// candidate for implicit null check.
-ins_attrib ins_has_initial_implicit_null_check_candidate(false);
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
 
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct
