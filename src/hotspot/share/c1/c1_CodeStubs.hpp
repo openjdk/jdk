@@ -26,8 +26,8 @@
 #define SHARE_C1_C1_CODESTUBS_HPP
 
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/nativeInst.hpp"

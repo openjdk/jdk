@@ -5,7 +5,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 -->
 
 <!--
-  Copyright © 1991-2024 Unicode, Inc.
+  Copyright © 1991-2025 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
   SPDX-License-Identifier: Unicode-3.0
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -24,10 +24,10 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="version">
     <xs:complexType>
       <xs:attribute name="number" use="required"/>
-      <xs:attribute default="46" name="cldrVersion">
+      <xs:attribute default="47" name="cldrVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="46"/>
+            <xs:enumeration value="47"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>

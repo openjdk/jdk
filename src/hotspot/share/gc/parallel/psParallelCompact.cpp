@@ -210,8 +210,8 @@ void SplitInfo::verify_clear()
 #endif  // #ifdef ASSERT
 
 
-void PSParallelCompact::print_on_error(outputStream* st) {
-  _mark_bitmap.print_on_error(st);
+void PSParallelCompact::print_on(outputStream* st) {
+  _mark_bitmap.print_on(st);
 }
 
 ParallelCompactData::ParallelCompactData() :
@@ -246,7 +246,8 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
                                              rs_align,
-                                             page_sz);
+                                             page_sz,
+                                             mtGC);
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory.
@@ -256,7 +257,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
 
@@ -993,10 +994,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
-  if (GCLocker::check_active_before_gc()) {
-    return false;
-  }
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCIdMark gc_id_mark;
@@ -1633,7 +1630,7 @@ void PSParallelCompact::forward_to_new_addr() {
   } task(nworkers);
 
   ParallelScavengeHeap::heap()->workers().run_task(&task);
-  debug_only(verify_forward();)
+  DEBUG_ONLY(verify_forward();)
 }
 
 #ifdef ASSERT

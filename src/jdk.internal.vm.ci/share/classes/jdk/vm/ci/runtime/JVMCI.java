@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@ package jdk.vm.ci.runtime;
 
 import java.util.Formatter;
 
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.services.Services;
 
 public class JVMCI {
@@ -32,9 +31,9 @@ public class JVMCI {
     /**
      * Singleton instance lazily initialized via double-checked locking.
      */
-    @NativeImageReinitialize private static volatile JVMCIRuntime runtime;
+    private static volatile JVMCIRuntime runtime;
 
-    @NativeImageReinitialize private static boolean initializing;
+    private static boolean initializing;
 
     public static void initialize() {
         // force static initializer

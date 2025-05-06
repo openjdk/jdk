@@ -48,7 +48,11 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathGroup;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -76,10 +80,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Path appLocation = prepareAppBundle(params);
 
             if (appLocation != null && prepareConfigFiles(appLocation,params)) {
-                Path configScript = getConfig_Script(params);
-                if (IOUtils.exists(configScript)) {
-                    IOUtils.run("bash", configScript);
-                }
+                new ScriptRunner()
+                        .setDirectory(appLocation)
+                        .setResourceCategoryId("resource.post-app-image-script")
+                        .setScriptNameSuffix("post-image")
+                        .setEnvironmentVariable("JpAppImageDir", appLocation.toAbsolutePath().toString())
+                        .run(params);
 
                 return buildDMG(params, appLocation, outdir);
             }
@@ -193,21 +199,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 .setExternal(ICON_ICNS.fetchFrom(params))
                 .saveToFile(getConfig_VolumeIcon(params));
 
-        createResource(null, params)
-                .setCategory(I18N.getString("resource.post-install-script"))
-                .saveToFile(getConfig_Script(params));
-
         prepareLicense(params);
 
         prepareDMGSetupScript(appLocation, params);
 
         return true;
-    }
-
-    // name of post-image script
-    private Path getConfig_Script(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-post-image.sh");
     }
 
     // Location of SetFile utility may be different depending on MacOS version

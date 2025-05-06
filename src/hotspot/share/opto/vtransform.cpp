@@ -23,6 +23,7 @@
 
 #include "opto/vtransform.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
@@ -142,6 +143,94 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
   }
 }
 #endif
+
+void VTransform::apply_speculative_runtime_checks() {
+  if (VLoop::vectors_should_be_aligned()) {
+#ifdef ASSERT
+    if (_trace._align_vector || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
+    }
+#endif
+
+    const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
+    for (int i = 0; i < vtnodes.length(); i++) {
+      VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+      if (vtn == nullptr) { continue; }
+      MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
+      if (p0 == nullptr) { continue; }
+      const VPointer& vp = vpointer(p0);
+      if (vp.mem_pointer().base().is_object()) { continue; }
+      assert(vp.mem_pointer().base().is_native(), "VPointer base must be object or native");
+
+      // We have a native memory reference. Build a runtime check for it.
+      // See: AlignmentSolver::solve
+      // In a future RFE we may be able to speculate on invar alignment as
+      // well, and allow vectorization of more cases.
+      add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
+    }
+  }
+}
+
+#define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
+  DEBUG_ONLY(                                                         \
+    if (_trace._align_vector || _trace._speculative_runtime_checks) { \
+      tty->print("  " #node ": ");                                    \
+      node->dump();                                                   \
+    }                                                                 \
+  )                                                                   \
+}                                                                     \
+
+// Check: (node % alignment) == 0.
+void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  Node* ctrl = phase()->get_ctrl(node);
+
+  // Cast adr/long -> int
+  if (node->bottom_type()->basic_type() == T_ADDRESS) {
+    // adr -> int/long
+    node = new CastP2XNode(nullptr, node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+  if (node->bottom_type()->basic_type() == T_LONG) {
+    // long -> int
+    node  = new ConvL2INode(node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
+  }
+
+  Node* mask_alignment = igvn().intcon(alignment-1);
+  Node* base_alignment = new AndINode(node, mask_alignment);
+  phase()->register_new_node(base_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(mask_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(base_alignment);
+
+  Node* zero = igvn().intcon(0);
+  Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
+  BoolNode* bol_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
+  phase()->register_new_node(cmp_alignment, ctrl);
+  phase()->register_new_node(bol_alignment, ctrl);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
+
+  add_speculative_check(bol_alignment);
+}
+
+void VTransform::add_speculative_check(BoolNode* bol) {
+  assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
+  ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
+  IfTrueNode* new_check_proj = nullptr;
+  if (parse_predicate_proj != nullptr) {
+    new_check_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                          Deoptimization::Reason_auto_vectorization_check,
+                                                          Op_If);
+  } else {
+    new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
+  }
+  Node* iff_speculate = new_check_proj->in(0);
+  igvn().replace_input_of(iff_speculate, 1, bol);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
+}
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
 // It wraps a VPointer. The VPointer has an iv_offset applied, which
@@ -487,6 +576,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    const TypeVect* vt = TypeVect::make(bt, vlen);
+    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
@@ -503,8 +596,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD ||
-           opc == Op_FmaF ||
+    assert(opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");

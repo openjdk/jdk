@@ -59,13 +59,20 @@ import jdk.jfr.internal.util.ValueFormatter;
  */
 public final class PrettyWriter extends EventPrintWriter {
     private static final String TYPE_OLD_OBJECT = Type.TYPES_PREFIX + "OldObject";
+    private static final DateTimeFormatter TIME_FORMAT_EXACT = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS (yyyy-MM-dd)");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (yyyy-MM-dd)");
     private static final Long ZERO = 0L;
+    private final boolean showExact;
     private boolean showIds;
     private RecordedEvent currentEvent;
 
-    public PrettyWriter(PrintWriter destination) {
+    public PrettyWriter(PrintWriter destination, boolean showExact) {
         super(destination);
+        this.showExact = showExact;
+    }
+
+    public PrettyWriter(PrintWriter destination) {
+        this(destination, false);
     }
 
     @Override
@@ -508,7 +515,11 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("Forever");
                 return true;
             }
-            println(ValueFormatter.formatDuration(d));
+            if (showExact) {
+                println(String.format("%.9f s", (double) d.toNanos() / 1_000_000_000));
+            } else {
+                println(ValueFormatter.formatDuration(d));
+            }
             return true;
         }
         if (value instanceof OffsetDateTime odt) {
@@ -516,40 +527,34 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("N/A");
                 return true;
             }
-            println(TIME_FORMAT.format(odt));
+            if (showExact) {
+                println(TIME_FORMAT_EXACT.format(odt));
+            } else {
+                println(TIME_FORMAT.format(odt));
+            }
             return true;
         }
         Percentage percentage = field.getAnnotation(Percentage.class);
         if (percentage != null) {
             if (value instanceof Number n) {
-                double d = n.doubleValue();
-                println(String.format("%.2f", d * 100) + "%");
+                double p = 100 * n.doubleValue();
+                if (showExact) {
+                    println(String.format("%.9f%%", p));
+                } else {
+                    println(String.format("%.2f%%", p));
+                }
                 return true;
             }
         }
         DataAmount dataAmount = field.getAnnotation(DataAmount.class);
-        if (dataAmount != null) {
-            if (value instanceof Number n) {
-                long amount = n.longValue();
-                if (field.getAnnotation(Frequency.class) != null) {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(ValueFormatter.formatBytesPerSecond(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(ValueFormatter.formatBitsPerSecond(amount));
-                        return true;
-                    }
-                } else {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(ValueFormatter.formatBytes(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(ValueFormatter.formatBits(amount));
-                        return true;
-                    }
-                }
+        if (dataAmount != null && value instanceof Number number) {
+            boolean frequency = field.getAnnotation(Frequency.class) != null;
+            String unit = dataAmount.value();
+            boolean bits = unit.equals(DataAmount.BITS);
+            boolean bytes = unit.equals(DataAmount.BYTES);
+            if (bits || bytes) {
+                formatMemory(number.longValue(), bytes, frequency);
+                return true;
             }
         }
         MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
@@ -569,6 +574,35 @@ public final class PrettyWriter extends EventPrintWriter {
         }
 
         return false;
+    }
+
+    private void formatMemory(long value, boolean bytesUnit, boolean frequency) {
+        if (showExact) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(value);
+            sb.append(bytesUnit ? " byte" : " bit");
+            if (value > 1) {
+                sb.append("s");
+            }
+            if (frequency) {
+                sb.append("/s");
+            }
+            println(sb.toString());
+            return;
+        }
+        if (frequency) {
+            if (bytesUnit) {
+                println(ValueFormatter.formatBytesPerSecond(value));
+            } else {
+                println(ValueFormatter.formatBitsPerSecond(value));
+            }
+            return;
+        }
+        if (bytesUnit) {
+            println(ValueFormatter.formatBytes(value));
+        } else {
+            println(ValueFormatter.formatBits(value));
+        }
     }
 
     public void setShowIds(boolean showIds) {

@@ -48,9 +48,10 @@ import jdk.internal.util.StaticProperty;
 public class CDS {
     // Must be in sync with cdsConfig.hpp
     private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
-    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 1;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 2;
-    private static final int IS_USING_ARCHIVE                = 1 << 3;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
+    private static final int IS_USING_ARCHIVE                = 1 << 4;
     private static final int configStatus = getCDSConfigStatus();
 
     /**
@@ -81,8 +82,35 @@ public class CDS {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
+    public static boolean isSingleThreadVM() {
+        return isDumpingStaticArchive();
+    }
+
     private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
+
+
+    // Used only when dumping static archive to keep weak references alive to
+    // ensure that Soft/Weak Reference objects can be reliably archived.
+    private static ArrayList<Object> keepAliveList;
+
+    public static void keepAlive(Object s) {
+        assert isSingleThreadVM(); // no need for synchronization
+        assert isDumpingStaticArchive();
+        if (keepAliveList == null) {
+            keepAliveList = new ArrayList<>();
+        }
+        keepAliveList.add(s);
+    }
+
+    // This is called by native JVM code at the very end of Java execution before
+    // dumping the static archive.
+    // It collects the objects from keepAliveList so that they can be easily processed
+    // by the native JVM code to check that any Reference objects that need special
+    // clean up must have been registed with keepAlive()
+    private static Object[] getKeepAliveObjects() {
+        return keepAliveList.toArray();
+    }
 
     /**
      * Initialize archived static fields in the given Class using archived
@@ -341,6 +369,29 @@ public class CDS {
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;
     }
+
+    /**
+     * Detects if we need to emit explicit class initialization checks in
+     * AOT-cached MethodHandles and VarHandles before accessing static fields
+     * and methods.
+     * @see jdk.internal.misc.Unsafe::shouldBeInitialized
+     *
+     * @return false only if a call to {@code ensureClassInitialized} would have
+     * no effect during the application's production run.
+     */
+    public static boolean needsClassInitBarrier(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+
+        if ((configStatus & IS_DUMPING_METHOD_HANDLES) == 0) {
+            return false;
+        } else {
+            return needsClassInitBarrier0(c);
+        }
+    }
+
+    private static native boolean needsClassInitBarrier0(Class<?> c);
 
     /**
      * This class is used only by native JVM code at CDS dump time for loading

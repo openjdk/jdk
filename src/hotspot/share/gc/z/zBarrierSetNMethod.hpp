@@ -36,6 +36,9 @@ protected:
 public:
   virtual ByteSize thread_disarmed_guard_value_offset() const;
   virtual int* disarmed_guard_value_address() const;
+
+  virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
+  virtual oop oop_load_phantom(const nmethod* nm, int index);
 };
 
 #endif // SHARE_GC_Z_ZBARRIERSETNMETHOD_HPP

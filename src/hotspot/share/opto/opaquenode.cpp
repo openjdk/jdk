@@ -82,32 +82,100 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   return iff->as_If();
 }
 
+void OpaqueMultiversioningNode::mark_useless(PhaseIterGVN& igvn) {
+  assert(_is_delayed_slow_loop, "must still be delayed");
+  _useless = true;
+  igvn._worklist.push(this);
+}
+
+Node* OpaqueMultiversioningNode::Identity(PhaseGVN* phase) {
+  // Constant fold the multiversion_if. Since the slow_loop is still delayed,
+  // i.e. we have not yet added any possibly failing condition, we can just
+  // take the true branch in all cases.
+  if (_useless) {
+    assert(_is_delayed_slow_loop, "the slow_loop should still be delayed");
+    return in(1);
+  }
+  return Opaque1Node::Identity(phase);
+}
+
+#ifndef PRODUCT
+void OpaqueMultiversioningNode::dump_spec(outputStream *st) const {
+  Opaque1Node::dump_spec(st);
+  if (_useless) {
+    st->print(" #useless");
+  }
+}
+#endif
+
 const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
+OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
+    : Node(nullptr, bol),
+      _loop_node(loop_node),
+      _predicate_state(PredicateState::Useful) {
+  init_class_id(Class_OpaqueTemplateAssertionPredicate);
+}
+
 Node* OpaqueTemplateAssertionPredicateNode::Identity(PhaseGVN* phase) {
-  if (phase->C->post_loop_opts_phase()) {
-    // Template Assertion Predicates only serve as templates to create Initialized Assertion Predicates when splitting
-    // a loop during loop opts. They are not used anymore once loop opts are over and can then be removed. They feed
-    // into the bool input of an If node and can thus be replaced by true to let the Template Assertion Predicate be
-    // folded away (the success path is always the true path by design).
-    return phase->intcon(1);
-  } else {
+  if (!phase->C->post_loop_opts_phase()) {
+    // Record Template Assertion Predicates for post loop opts IGVN. We can remove them when there is no more loop
+    // splitting possible. This also means that we do not create any new Initialized Assertion Predicates created from
+    // these templates.
     phase->C->record_for_post_loop_opts_igvn(this);
   }
   return this;
 }
 
 const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
+  if (is_useless() || phase->C->post_loop_opts_phase()) {
+    // Template Assertion Predicates only serve as templates to create Initialized Assertion Predicates when splitting
+    // a loop during loop opts. They are not used anymore once loop opts are over and can then be removed. They feed
+    // into the bool input of an If node and can thus be replaced by the success path to let the Template Assertion
+    // Predicate be folded away (the success path is always the true path by design). We can also fold the Template
+    // Assertion Predicate away when it's found to be useless and not used anymore.
+    return TypeInt::ONE;
+  }
   return phase->type(in(1));
 }
+
+void OpaqueTemplateAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
+}
+
+#ifndef PRODUCT
+void OpaqueTemplateAssertionPredicateNode::dump_spec(outputStream* st) const {
+  st->print("loop_idx=%d ", _loop_node->_idx);
+  if (is_useless()) {
+    st->print("#useless ");
+  }
+}
+#endif // NOT PRODUCT
 
 const Type* OpaqueInitializedAssertionPredicateNode::Value(PhaseGVN* phase) const {
+  if (_useless) {
+    return TypeInt::ONE;
+  }
   return phase->type(in(1));
 }
 
-//=============================================================================
+void OpaqueInitializedAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _useless = true;
+  igvn._worklist.push(this);
+}
+
+#ifndef PRODUCT
+void OpaqueInitializedAssertionPredicateNode::dump_spec(outputStream* st) const {
+  if (_useless) {
+    st->print("#useless ");
+  }
+}
+#endif // NOT PRODUCT
 
 uint ProfileBooleanNode::hash() const { return NO_HASH; }
 bool ProfileBooleanNode::cmp( const Node &n ) const {

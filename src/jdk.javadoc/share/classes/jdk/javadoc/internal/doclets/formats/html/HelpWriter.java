@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -101,8 +102,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     protected void addHelpFileContents(Content content) {
         var mainHeading = getContent("doclet.help.main_heading");
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
-        tableOfContents.pushNestedList();
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading, TableOfContents.Level.FIRST);
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
                 .add(HtmlTree.HR())
                 .add(getNavigationSection())
@@ -115,7 +115,6 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(HtmlTree.HR())
                 .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
-        tableOfContents.popNestedList();
     }
 
     /**
@@ -148,8 +147,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         content.add(navSection);
 
-        tableOfContents.addLink(HtmlIds.HELP_NAVIGATION, navHeading);
-        tableOfContents.pushNestedList();
+        tableOfContents.addLink(HtmlIds.HELP_NAVIGATION, navHeading, TableOfContents.Level.SECOND);
 
         HtmlTree section;
 
@@ -172,7 +170,26 @@ public class HelpWriter extends HtmlDocletWriter {
                     .add(searchRefer);
             navSection.add(section);
         }
-        tableOfContents.popNestedList();
+
+        // Keyboard Navigation
+        section = newHelpSection(contents.getContent("doclet.help.keyboard_navigation.title"),
+                HtmlIds.HELP_KEYBOARD_NAVIGATION);
+        section.add(HtmlTree.P(contents.getContent("doclet.help.keyboard_navigation.intro")));
+        var keyboardList = HtmlTree.UL();
+        if (options.createIndex()) {
+            keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.index",
+                    HtmlTree.KBD(Text.of("/")))));
+        }
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.filter",
+                HtmlTree.KBD(Text.of(".")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.escape",
+                HtmlTree.KBD(Text.of("Esc")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.search",
+                HtmlTree.KBD(Text.of("Tab")), HtmlTree.KBD(Entity.of("downarrow")),
+                HtmlTree.KBD(Entity.of("uparrow")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.tabs",
+                HtmlTree.KBD(Entity.of("leftarrow")), HtmlTree.KBD(Entity.of("rightarrow")))));
+        navSection.add(section.add(keyboardList));
 
         return content;
     }
@@ -198,8 +215,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
-        tableOfContents.addLink(HtmlIds.HELP_PAGES, pageKindsHeading);
-        tableOfContents.pushNestedList();
+        tableOfContents.addLink(HtmlIds.HELP_PAGES, pageKindsHeading, TableOfContents.Level.SECOND);
 
         HtmlTree section;
 
@@ -405,7 +421,6 @@ public class HelpWriter extends HtmlDocletWriter {
                     .add(HtmlTree.P(getContent("doclet.help.index.body", indexLink, links)));
             pageKindsSection.add(section);
         }
-        tableOfContents.popNestedList();
 
         return pageKindsSection;
     }
@@ -422,9 +437,7 @@ public class HelpWriter extends HtmlDocletWriter {
             releasesSection.add(HtmlTree.P(contents.getContent("doclet.help.releases.body.refer")));
         }
 
-        tableOfContents.addLink(HtmlIds.HELP_RELEASES, releasesHeading);
-        tableOfContents.pushNestedList();
-        tableOfContents.popNestedList();
+        tableOfContents.addLink(HtmlIds.HELP_RELEASES, releasesHeading, TableOfContents.Level.SECOND);
 
         return releasesSection;
 
@@ -443,7 +456,7 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     private HtmlTree newHelpSection(Content headingContent, HtmlId id) {
-        tableOfContents.addLink(id, headingContent);
+        tableOfContents.addLink(id, headingContent, TableOfContents.Level.THIRD);
 
         return HtmlTree.SECTION(HtmlStyles.helpSection,
                 HtmlTree.HEADING(Headings.SUB_HEADING, headingContent))

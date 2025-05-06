@@ -155,10 +155,12 @@ public class TestStringIntrinsics {
                 char cL = latin1.charAt(indexL);
                 char cU = utf16.charAt(indexU);
                 invokeAndCheck(m, cL - cU, latin1, latin1.replace(cL, cU));
+                invokeAndCheck(m, cU - cL, latin1.replace(cL, cU), latin1);
                 invokeAndCheck(m, cU - cL, utf16, utf16.replace(cU, cL));
 
                 // Different lengths
                 invokeAndCheck(m, 1, "ABCD", "ABC");
+                invokeAndCheck(m, '\uff21' - 'A', "ABCEFGHIJKLMNOPQRSTUVWXY\uff21Z", "ABCEFGHIJKLMNOPQRSTUVWXYAZ");
                 invokeAndCheck(m, -1, "\uff21\uff22\uff23", "\uff21\uff22\uff23\uff24");
                 invokeAndCheck(m, 1, "ABC\uff24", "ABC");
                 invokeAndCheck(m, 3, "ABC\uff24\uff25\uff26", "ABC");
