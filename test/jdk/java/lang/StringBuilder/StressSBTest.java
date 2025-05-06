@@ -73,7 +73,7 @@ public class StressSBTest {
      * Logging output indicates the number of operations performed by each thread
      *
      * @param numThreads the number of threads
-     * @param duration   a Duratio, typically a few seconds
+     * @param duration   a Duration, typically a few seconds
      */
     public void stress(int numThreads, Duration duration) {
         StressOps stressOps = new StressOps();

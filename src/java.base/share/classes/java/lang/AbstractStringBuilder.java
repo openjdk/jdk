@@ -182,10 +182,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte coder = this.coder;
         if (coder == another.coder) {
             return isLatin1(coder) ? StringLatin1.compareTo(val1, val2, count1, count2)
-                              : StringUTF16.compareTo(val1, val2, count1, count2);
+                    : StringUTF16.compareTo(val1, val2, count1, count2);
         }
         return isLatin1(coder) ? StringLatin1.compareToUTF16(val1, val2, count1, count2)
-                          : StringUTF16.compareToLatin1(val1, val2, count1, count2);
+                : StringUTF16.compareToLatin1(val1, val2, count1, count2);
     }
 
     /**
@@ -235,9 +235,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     /**
      * {@return true if the byte array should be replaced due to increased capacity or coder change}
      * <ul>
-     *     <li>The new coder is the different thn the old coder
+     *     <li>The new coder is the different than the old coder
      *     <li>The new length is greater than to the current length
-     *     <li>The new length is non-negative, as it might have overflowed due to an increment
+     *     <li>The new length is negative, as it might have overflowed due to an increment
      * </ul>
      *
      * @param value       a byte array
@@ -331,6 +331,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
      * unless the given minimum capacity is greater than that.
      *
+     * @param value the current buffer
+     * @param coder of the current buffer
      * @param  minCapacity the desired minimum capacity
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
@@ -1864,7 +1866,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     /**
      * {@return Return the buffer containing the composed string and inserted characters}
      * If the buffer coder needs to support UTF16 and does not, it is inflated and a different
-     * buffer is returned. TThe caller is responsible for setting the coder and updating the value ref
+     * buffer is returned. The caller is responsible for setting the coder and updating the value ref
      * based solely on the difference in the buffer reference.
      *
      * @param value byte array destination for the string (if the coder matches)
