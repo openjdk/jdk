@@ -76,7 +76,7 @@ non_hotspot_tests = \
   testlibrary_tests \
   sources
 
-# Gtest unit-test with jtreg wrapper
+# Gtest unit-test with jtreg wrapper, VM flags are set by test
 hotspot_gtest = \
  gtest
 
