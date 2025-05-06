@@ -23,33 +23,37 @@
 
 /*
  * @test
- * @bug 8329534 8332934
- * @summary Redundant stack map case
+ * @bug 8332934
+ * @summary Incorrect defined locals escaped from continue in do loop
  * @library /tools/lib /test/lib
- * @run main LoopSwitchLocalFrameTest
+ * @run main DoLoopLocalEscapeThroughContinueTest
  */
 
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
+import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandles;
 
-void main() throws Throwable {
-    final String source = """
-            static void main(String[] k) {
-              do {
-                int b = 1;
-                continue;
-              } while (k.length > -1);
-              switch (2) {
-              case 3:
-                double d;
-              case 4:
-                k.toString();
-              }
-            }
-            """;
-    var bytes = InMemoryJavaCompiler.compile("Test", source);
-    var clz = ByteCodeLoader.load("Test", bytes);
-    MethodHandles.lookup().ensureInitialized(clz); // force verification
+public class DoLoopLocalEscapeThroughContinueTest {
+    public static void main(String... args) throws Throwable {
+        String source = """
+                static void main(String[] k) {
+                  do {
+                    int b = 1;
+                    continue;
+                  } while (Math.random() > 0.5D) ;
+                  switch (2) {
+                  case 3:
+                    double d;
+                  case 4:
+                    k.toString();
+                  }
+                }
+                """;
+        var bytes = InMemoryJavaCompiler.compile("Test", source, "-XDdebug.code");
+        System.out.println(ClassFile.of().parse(bytes).toDebugString());
+        var clz = ByteCodeLoader.load("Test", bytes);
+        MethodHandles.privateLookupIn(clz, MethodHandles.lookup()).ensureInitialized(clz); // force verification
+    }
 }
