@@ -1526,9 +1526,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   // Check if memory should be freed before allocation
   CodeCache::gc_on_allocation();
 
-  MutexLocker ml(Compile_lock);
+  MutexLocker ml_Compile_lock(Compile_lock);
   MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
 
   run_nmethod_entry_barrier();
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(this);
@@ -1569,6 +1568,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
 
   // Update corresponding Java method to point to this nmethod
+  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
   if (nm_copy->method() != nullptr && nm_copy->method()->code() == this && nm_copy->make_in_use()) {
     methodHandle mh(Thread::current(), nm_copy->method());
     nm_copy->method()->set_code(mh, nm_copy);
