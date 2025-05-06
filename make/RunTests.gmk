@@ -1395,9 +1395,9 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
 	$(DIFF_COMMAND)
 	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar \
-            DiffCoverage -replaceDiff "src/.*/classes/:" -all \
-            $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
-            $(JCOV_DIFF_COVERAGE_REPORT)
+	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
+	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
+	    $(JCOV_DIFF_COVERAGE_REPORT)
 
     TARGETS += jcov-gen-diffcoverage
 
