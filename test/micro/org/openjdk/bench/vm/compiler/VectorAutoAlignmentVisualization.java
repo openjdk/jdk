@@ -90,7 +90,7 @@ import java.util.concurrent.TimeUnit;
 
         public static void main(String[] args) throws Exception {
             String fileName = args[0];
-    	System.out.println("Loading from file: " + fileName);
+            System.out.println("Loading from file: " + fileName);
 
             ArrayList<Cell> cells = new ArrayList<>();
 
