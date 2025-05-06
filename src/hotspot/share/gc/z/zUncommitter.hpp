@@ -27,6 +27,7 @@
 #include "gc/z/zLock.hpp"
 #include "gc/z/zThread.hpp"
 
+class ZMappedCache;
 class ZPartition;
 
 class ZUncommitter : public ZThread {
@@ -45,6 +46,7 @@ private:
   bool wait(uint64_t timeout) const;
   bool should_continue() const;
 
+  void update_next_cycle_timeout(double from_time);
   void update_next_cycle_timeout_on_cancel();
   void update_next_cycle_timeout_on_finish();
 
@@ -57,9 +59,9 @@ protected:
 public:
   ZUncommitter(uint32_t id, ZPartition* partition);
 
-  void activate_uncommit_cycle(size_t to_uncommit);
+  void activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_limit);
   size_t to_uncommit() const;
-  void cancel_uncommit_cycle();
+  void cancel_uncommit_cycle(ZMappedCache* cache);
   void register_uncommit(size_t size);
 
   bool uncommit_cycle_is_finished() const;

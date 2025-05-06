@@ -562,7 +562,10 @@ size_t ZMappedCache::reset_uncommit_cycle() {
 }
 
 size_t ZMappedCache::remove_for_uncommit(size_t max_size, ZArray<ZVirtualMemory>* out) {
-  const size_t remove_allowed = MAX2(_min_last_uncommit_cycle, _removed_last_uncommit_cycle) - _removed_last_uncommit_cycle;
+  const size_t remove_allowed =
+      _min_last_uncommit_cycle < _removed_last_uncommit_cycle
+          ? 0
+          : _min_last_uncommit_cycle - _removed_last_uncommit_cycle;
   const size_t size = MIN2(remove_allowed, max_size);
 
   if (size == 0) {

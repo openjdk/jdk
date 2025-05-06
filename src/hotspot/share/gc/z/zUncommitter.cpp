@@ -25,6 +25,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
+#include "gc/z/zMappedCache.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUncommitter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -33,7 +34,6 @@
 #include "utilities/debug.hpp"
 
 #include <cmath>
-#include <limits>
 
 static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
 
@@ -60,7 +60,7 @@ bool ZUncommitter::wait(uint64_t timeout) const {
 
   if (!_stop && timeout > 0) {
     if (!uncommit_cycle_is_finished()) {
-      log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s left to uncommit: "
+      log_trace(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s left to uncommit: "
                           EXACTFMT, _id, timeout, EXACTFMTARGS(_to_uncommit));
     } else {
       log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s", _id, timeout);
@@ -121,6 +121,7 @@ void ZUncommitter::deactivate_uncommit_cycle() {
   _partition->evaluate_under_lock([&]() {
     precond(uncommit_cycle_is_active() || uncommit_cycle_is_canceled());
     precond(uncommit_cycle_is_finished() || uncommit_cycle_is_canceled());
+
     // Update the next timeout
     if (uncommit_cycle_is_canceled()) {
       update_next_cycle_timeout_on_cancel();
@@ -133,37 +134,46 @@ void ZUncommitter::deactivate_uncommit_cycle() {
     _uncommitted = 0;
     _cycle_start = 0.0;
     _cancel_time = 0.0;
+
     postcond(uncommit_cycle_is_finished());
     postcond(!uncommit_cycle_is_canceled());
     postcond(!uncommit_cycle_is_active());
   });
 }
 
-void ZUncommitter::activate_uncommit_cycle(size_t to_uncommit) {
+void ZUncommitter::activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_limit) {
   precond(uncommit_cycle_is_finished());
   precond(!uncommit_cycle_is_active());
   precond(!uncommit_cycle_is_canceled());
-  precond(is_aligned(to_uncommit, ZGranuleSize));
+  precond(is_aligned(uncommit_limit, ZGranuleSize));
+
+  // Claim and reset the cache cycle tracking and register the cycle start time.
   _cycle_start = os::elapsedTime();
-  _to_uncommit = to_uncommit;
+  _to_uncommit = MIN2(uncommit_limit, cache->reset_uncommit_cycle());
   _uncommitted = 0;
+
+  postcond(is_aligned(_to_uncommit, ZGranuleSize));
 }
 
 size_t ZUncommitter::to_uncommit() const {
   return _to_uncommit;
 }
 
+void ZUncommitter::update_next_cycle_timeout(double from_time) {
+  const double now = os::elapsedTime();
+
+  if (now < from_time + double(ZUncommitDelay)) {
+    _next_cycle_timeout = ZUncommitDelay - uint64_t(std::floor(now - from_time));
+  } else {
+    // ZUncommitDelay has already expired
+    _next_cycle_timeout = 0;
+  }
+}
+
 void ZUncommitter::update_next_cycle_timeout_on_cancel() {
   precond(uncommit_cycle_is_canceled());
 
-  const double now = os::elapsedTime();
-
-  if (now < _cancel_time + double(ZUncommitDelay)) {
-    _next_cycle_timeout = ZUncommitDelay - uint64_t(std::floor(now - _cancel_time));
-  } else {
-    // ZUncommitDelay has already expired
-    _next_cycle_timeout = 0.0;
-  }
+  update_next_cycle_timeout(_cancel_time);
 
   log_debug(gc, heap)("Uncommitter (%u) Cancel Next Cycle Timeout: " UINT64_FORMAT "s",
                       _id, _next_cycle_timeout);
@@ -173,20 +183,15 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
   precond(uncommit_cycle_is_active());
   precond(uncommit_cycle_is_finished());
 
-  const double now = os::elapsedTime();
-
-  if (now < _cycle_start + double(ZUncommitDelay)) {
-    _next_cycle_timeout = ZUncommitDelay - uint64_t(std::floor(now - _cycle_start));
-  } else {
-    // ZUncommitDelay has already expired
-    _next_cycle_timeout = 0.0;
-  }
+  update_next_cycle_timeout(_cycle_start);
 
   log_debug(gc, heap)("Uncommitter (%u) Finish Next Cycle Timeout: " UINT64_FORMAT "s",
                       _id, _next_cycle_timeout);
 }
 
-void ZUncommitter::cancel_uncommit_cycle() {
+void ZUncommitter::cancel_uncommit_cycle(ZMappedCache* cache) {
+  // Reset the cache cycle tracking and register the cancel time.
+  cache->reset_uncommit_cycle();
   _cancel_time = os::elapsedTime();
 }
 
