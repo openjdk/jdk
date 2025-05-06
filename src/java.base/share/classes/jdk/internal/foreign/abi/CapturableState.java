@@ -29,80 +29,67 @@ import jdk.internal.util.OperatingSystem;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
+/**
+ * Utility class for the call states to capture.
+ */
 public final class CapturableState {
 
     public static final StructLayout LAYOUT;
-    private static final Map<String, CapturableState> LOOKUP;
+    private static final Map<String, Integer> MASKS;
 
     static {
-        List<CapturableState> supported;
-
         if (OperatingSystem.isWindows()) {
-            supported = List.of(
-                    new CapturableState("GetLastError",    JAVA_INT, 1 << 0),
-                    new CapturableState("WSAGetLastError", JAVA_INT, 1 << 1),
-                    new CapturableState("errno",           JAVA_INT, 1 << 2)
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("GetLastError"),
+                    JAVA_INT.withName("WSAGetLastError"),
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "GetLastError",    1 << 0,
+                    "WSAGetLastError", 1 << 1,
+                    "errno",           1 << 2
             );
         } else {
-            supported = List.of(new CapturableState("errno", JAVA_INT, 1 << 2));
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "errno",           1 << 2
+            );
         }
-
-        MemoryLayout[] stateLayouts = new MemoryLayout[supported.size()];
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        Map.Entry<String, CapturableState>[] entries = new Map.Entry[supported.size()];
-        int i = 0;
-        for (var each : supported) {
-            stateLayouts[i] = each.layout;
-            entries[i] = Map.entry(each.stateName, each);
-            i++;
-        }
-        LAYOUT = MemoryLayout.structLayout(stateLayouts);
-        LOOKUP = Map.ofEntries(entries);
     }
 
-    public final String stateName;
-    public final ValueLayout layout;
-    public final int mask;
-
-    private CapturableState(String stateName, ValueLayout layout, int mask) {
-        this.stateName = stateName;
-        this.layout = layout.withName(stateName);
-        this.mask = mask;
+    private CapturableState() {
     }
 
-    public static CapturableState forName(String name) {
-        var ret = LOOKUP.get(name);
+    /**
+     * Returns the mask for a supported capturable state, or throw an
+     * IllegalArgumentException if no supported state with this name exists.
+     */
+    public static int maskFromName(String name) {
+        var ret = MASKS.get(name);
         if (ret == null) {
             throw new IllegalArgumentException(
                     "Unknown name: " + name + ", must be one of: "
-                            + LOOKUP.keySet());
+                            + MASKS.keySet());
         }
         return ret;
     }
 
     /**
-     * Returns a list-like display string for a captured state mask.
+     * Returns a collection-like display string for a captured state mask.
      * Enclosed with brackets.
      */
     public static String displayString(int mask) {
         var displayList = new ArrayList<>(); // unordered
-        for (var e : LOOKUP.values()) {
-            if ((mask & e.mask) != 0) {
-                displayList.add(e.stateName);
+        for (var e : MASKS.entrySet()) {
+            if ((mask & e.getValue()) != 0) {
+                displayList.add(e.getKey());
             }
         }
         return displayList.toString();
-    }
-
-    @Override
-    public String toString() {
-        return stateName;
     }
 }
