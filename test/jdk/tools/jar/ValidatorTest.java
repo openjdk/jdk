@@ -34,10 +34,7 @@
 
 import java.io.ByteArrayOutputStream;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -49,9 +46,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.jar.Attributes;
+import java.util.List;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -70,7 +66,6 @@ class ValidatorTest {
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private final PrintStream jarOut = new PrintStream(baos);
 
-    static final Path zip = Path.of("MultipleManifestTest.jar");
     static final String jdkVendor = System.getProperty("java.vendor");
     static final String jdkVersion = System.getProperty("java.version");
     static final String MANIFEST1 = "Manifest-Version: 1.0"
@@ -83,26 +78,6 @@ class ValidatorTest {
             + System.lineSeparator()
             + "Created-By: " + jdkVersion + " (" + jdkVendor + ")";
     private static final String META_INF = "META-INF/";
-
-    /**
-     * Delete the ZIP file produced by this test
-     *
-     * @throws IOException if an unexpected IOException occurs
-     */
-    @AfterAll
-    public void cleanup() throws IOException {
-        Files.deleteIfExists(zip);
-    }
-
-    /**
-     * Create a JAR with the Manifest as the 1st, 2nd and 4th entry
-     *
-     * @throws IOException if an error occurs
-     */
-    @BeforeAll
-    public void beforeAll() throws IOException {
-        writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
-    }
 
     private void writeManifestAsFirstSecondAndFourthEntry(Path path, boolean useCen, boolean useLoc) throws IOException {
         int locPosA, locPosB, cenPos;
@@ -139,8 +114,6 @@ class ValidatorTest {
         }
         if (useLoc) {
             var loc = s.indexOf("AANIFEST.MF", locPosA);
-            template[loc] = (byte) 'M';
-            loc = s.indexOf("BANIFEST.MF", locPosB);
             template[loc] = (byte) 'M';
         }
         Files.write(path, template);
@@ -180,20 +153,85 @@ class ValidatorTest {
         Files.write(path, template);
     }
 
-    @AfterEach
-    public void removeExtractedFiles() {
-        rm("META-INF entry1.txt entry2.txt");
+    record EntryNameTestCase(String entryName, boolean isValid) {}
+
+    private static Stream<EntryNameTestCase> zipEntryPaths() {
+        return Stream.of(
+                new EntryNameTestCase("../../c:////d:/tmp/testentry0", false),
+                new EntryNameTestCase("..\\..\\c:\\d:\\tmp\\testentry1", false),
+                new EntryNameTestCase("////c:/tmp/testentry2", false),
+                new EntryNameTestCase("////c:/d:/tmp/testentry3", false),
+                new EntryNameTestCase("c://///d:/tmp/testentry4", false),
+                new EntryNameTestCase("//tmp/tmp2/testentry5", false),
+                new EntryNameTestCase("///tmp/abc", false),
+                new EntryNameTestCase("C:\\Documents\\tennis\\CardioTennis.pdf", false),
+                new EntryNameTestCase("\\Program Files\\Custom Utilities\\tennis.exe", false),
+                new EntryNameTestCase("myhome\\Hello.txt", false),
+                new EntryNameTestCase("Hello.txt", true),
+                new EntryNameTestCase("./Hello.txt", true),
+                new EntryNameTestCase("../Hello.txt", false),
+                new EntryNameTestCase(".\\Hello.txt", false),
+                new EntryNameTestCase("..\\Hello.txt", false),
+                new EntryNameTestCase("C:\\Hello.txt", false),
+                new EntryNameTestCase("D:/Hello.txt", false),
+                new EntryNameTestCase("foo\\bar.txt", false),
+                new EntryNameTestCase("foo/bar.txt", true),
+                new EntryNameTestCase("foo/../bar.txt", false),
+                new EntryNameTestCase("foo/./bar.txt", true),
+                new EntryNameTestCase("..", false),
+                new EntryNameTestCase(".", false),
+                new EntryNameTestCase("/home/foo.txt", false),
+                new EntryNameTestCase("./home/foo.txt", true),
+                new EntryNameTestCase("../home/foo.txt", false),
+                new EntryNameTestCase("foo/bar/..", false),
+                new EntryNameTestCase("foo/bar/.", true),
+                new EntryNameTestCase("/foo/bar/../../myhome/bin", false),
+                new EntryNameTestCase("/foo/bar/././myhome/bin", false),
+                new EntryNameTestCase("myHome/..valid", true),
+                new EntryNameTestCase("myHome/.valid", true),
+                new EntryNameTestCase("..valid", true),
+                new EntryNameTestCase(".valid", true)
+        );
     }
 
+    private List<String> createInvalidEntryJar(Path path) throws IOException {
+        System.out.printf("%n%n*****Creating Jar with the invalid entry names*****%n%n");
+        var out = new ByteArrayOutputStream(1024);
+        List<String> invalidEntryNames;
+        try (var zos = new ZipOutputStream(out)) {
+            invalidEntryNames = zipEntryPaths()
+                .filter(testCase -> {
+                        try {
+                            zos.putNextEntry(new ZipEntry(testCase.entryName()));
+                            var content = "Content of " + testCase.entryName();
+                            zos.write(content.getBytes(StandardCharsets.UTF_8));
+                            return !testCase.isValid();
+                        } catch (IOException ioe) {
+                            throw new UncheckedIOException(ioe);
+                        }
+                    })
+                .map(EntryNameTestCase::entryName).toList();
+            zos.flush();
+        } catch (UncheckedIOException uioe) {
+            throw uioe.getCause();
+        }
+        Files.write(path, out.toByteArray());
+        return invalidEntryNames;
+    }
+
+
     @Test
-    public void testValidate() {
+    public void testValidate() throws IOException {
+        var zip = Path.of("MultipleManifestTest.jar");
+        writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
         try {
             jar("--validate --file " + zip.toString());
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in local file header"));
-            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in central directory"));
+            Assertions.assertTrue(err.contains("Warning: 2 copies of META-INF/MANIFEST.MF is detected in local file header"));
+            Assertions.assertTrue(err.contains("Warning: 3 copies of META-INF/MANIFEST.MF is detected in central directory"));
+            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
         }
     }
 
@@ -206,9 +244,8 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in local file header"));
+            Assertions.assertTrue(err.contains("Warning: 2 copies of META-INF/MANIFEST.MF is detected in local file header"));
             Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in central directory is not in local file header"));
-            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in central directory is not in local file header"));
         }
     }
 
@@ -221,7 +258,7 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected in central directory"));
+            Assertions.assertTrue(err.contains("Warning: 3 copies of META-INF/MANIFEST.MF is detected in central directory"));
             Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in local file header is not in central directory"));
             Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
         }
@@ -240,10 +277,18 @@ class ValidatorTest {
         }
     }
 
-    private String getManifestVersion() throws IOException {
-        try (var is = Files.newInputStream(Path.of(JarFile.MANIFEST_NAME))) {
-            var manifest = new Manifest(is);
-            return manifest.getMainAttributes().getValue(Attributes.Name.MANIFEST_VERSION);
+    @Test
+    public void testInvalidEntryName() throws IOException {
+        Path f = Path.of("InvalidEntry.jar");
+        var invalidEntryNames = createInvalidEntryJar(f);
+        try {
+            jar("--validate --file " + f.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            for (var entryName : invalidEntryNames) {
+                Assertions.assertTrue(err.contains("entry name malformed, " + entryName));
+            }
         }
     }
 
@@ -267,14 +312,6 @@ class ValidatorTest {
         } finally {
             System.setErr(saveErr);
         }
-    }
-
-    private void assertOutputContains(String expected) {
-        Assertions.assertTrue(baos.toString().contains(expected));
-    }
-
-    private void println() throws IOException {
-        System.out.println(new String(baos.toByteArray()));
     }
 
     private Stream<Path> mkpath(String... args) {

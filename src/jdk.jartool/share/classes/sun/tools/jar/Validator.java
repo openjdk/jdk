@@ -35,12 +35,14 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -53,7 +55,25 @@ import static sun.tools.jar.Main.getMsg;
 import static sun.tools.jar.Main.formatMsg;
 import static sun.tools.jar.Main.toBinaryName;
 
-final class Validator {
+public final class Validator {
+    /**
+     * Regex expression to verify that the Zip Entry file name:
+     *  - is not an absolute path
+     *  - the file name is not '.' or '..'
+     *  - does not contain a backslash, '\'
+     *  - does not contain a drive letter
+     *  - path element does not include '..'
+     */
+    private static final Pattern INVALID_ZIP_ENTRY_NAME_PATTERN = Pattern.compile(
+            "^(\\.|\\.\\.)$"
+                    + "|^\\.\\./"
+                    + "|/\\.\\.$"
+                    + "|/\\.\\./"
+                    + "|^/"
+                    + "|^\\\\"
+                    + "|.*\\\\.*"
+                    + "|.*[a-zA-Z]:.*"
+    );
 
     private final Map<String,FingerPrint> classes = new HashMap<>();
     private final Main main;
@@ -63,7 +83,6 @@ final class Validator {
     private ModuleDescriptor md;
     private String mdName;
     private final ZipInputStream zis;
-    private final LinkedHashSet<String> cenEntryNames = new LinkedHashSet<>();
 
     private Validator(Main main, ZipFile zf, ZipInputStream zis) {
         this.main = main;
@@ -76,17 +95,68 @@ final class Validator {
         return new Validator(main, zf, zis).validate();
     }
 
-    // Detect duplicates when iterate through CEN entries
-    private void checkDuplicates(ZipEntry e) {
-        var cenEntryName = e.getName();
-        if (!cenEntryNames.add(cenEntryName)) {
-            warn(formatMsg("warn.validator.duplicate.cen.entry", cenEntryName));
-            isValid = false;
+    /**
+     * Validate that the CEN/LOC file name header field adheres  to
+     * PKWARE APPNOTE-6.3.3.TXT:
+     *
+     * 4.4.17.1 The name of the file, with optional relative path.
+     * The path stored MUST not contain a drive or
+     * device letter, or a leading slash.  All slashes
+     * MUST be forward slashes '/' as opposed to
+     * backwards slashes '\' for compatibility with Amiga
+     * and UNIX file systems etc.
+     * Also validate that the file name is not "." and that any name element is
+     * not equal to ".."
+     *
+     * @param entryName CEN/LOC header file name field entry
+     * @return true if a valid Zip Entry file name; false otherwise
+     */
+    public static boolean isZipEntryNameValid(String entryName) {
+        return !INVALID_ZIP_ENTRY_NAME_PATTERN.matcher(entryName).find();
+    }
+
+    /**
+     * Helper class to deduplicate entry names.
+     * Keep a coutner for duplicate entry names and check if the entry name is valid on first add.
+     */
+    private class DedupEntryNames {
+        LinkedHashMap<String, Integer> entries = new LinkedHashMap<>();
+        boolean isCEN;
+
+        public DedupEntryNames(boolean isCEN) {
+            this.isCEN = isCEN;
+        }
+
+        public void add(String entryName) {
+            int latestCount = entries.merge(entryName, 1, (count, _) -> count + 1);
+            if (latestCount > 1) {
+                isValid = false;
+            } else if (!isZipEntryNameValid(entryName)) {
+                warn(formatMsg("error.validator.bad.entry.name", entryName));
+                isValid = false;
+            }
+        }
+
+        private boolean checkDuplicates(Map.Entry<String, Integer> counter) {
+            var count = counter.getValue();
+            if (count == 1) {
+            } else {
+                var msg = isCEN ? "warn.validator.duplicate.cen.entry" : "warn.validator.duplicate.loc.entry";
+                warn(formatMsg(msg, count.toString(), counter.getKey()));
+            }
+            return true;
+        }
+
+        public LinkedList<String> dedup() {
+            return entries.sequencedEntrySet().stream()
+                    .filter(this::checkDuplicates)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toCollection(LinkedList::new));
         }
     }
 
     // Check any CEN entry is matching the specified name
-    private boolean checkAnyCenEntry(String locEntryName) {
+    private boolean checkAnyCenEntry(String locEntryName, LinkedList<String> cenEntryNames) {
         var hasEntry = cenEntryNames.remove(locEntryName);
         if (!hasEntry) {
             warn(formatMsg("warn.validator.loc.only.entry", locEntryName));
@@ -96,15 +166,15 @@ final class Validator {
     }
 
     // Check next CEN entry is matching the specified name
-    private boolean checkNextCenEntry(String locEntryName) {
+    private boolean checkNextCenEntry(String locEntryName, LinkedList<String> cenEntryNames) {
         var nextCenEntryName = cenEntryNames.removeFirst();
         if (nextCenEntryName.equals(locEntryName)) {
             return true;
         }
 
-        if (checkAnyCenEntry(locEntryName)) {
+        cenEntryNames.addFirst(nextCenEntryName);
+        if (checkAnyCenEntry(locEntryName, cenEntryNames)) {
             warn(getMsg("warn.validator.order.mismatch"));
-            cenEntryNames.addFirst(nextCenEntryName);
             // order mismatch is just a warning, still consider valid
         }
         return false;
@@ -114,24 +184,21 @@ final class Validator {
      * Retrieve entries from the XipInputStream to verify local file headers(LOC)
      * have same entries as the cental directory(CEN).
      */
-    private void checkZipInputStream() {
-        var locEntryNames = new LinkedHashSet<String>();
-        var outOfOrder = false;
-
+    private void checkZipInputStream(LinkedList<String> cenEntryNames) {
         try {
             ZipEntry e;
-            while ((e = zis.getNextEntry()) != null) {
-                var locEntryName = e.getName();
-                if (!locEntryNames.add(locEntryName)) {
-                    isValid = false;
-                    warn(formatMsg("warn.validator.duplicate.loc.entry", locEntryName));
-                    continue;
-                }
+            var dedupLocNames = new DedupEntryNames(false);
+            boolean outOfOrder = false;
 
+            while ((e = zis.getNextEntry()) != null) {
+                dedupLocNames.add(e.getName());
+            }
+
+            for (var locEntryName : dedupLocNames.dedup()) {
                 if (outOfOrder) {
-                    checkAnyCenEntry(locEntryName);
+                    checkAnyCenEntry(locEntryName, cenEntryNames);
                 } else {
-                    outOfOrder = !checkNextCenEntry(locEntryName);
+                    outOfOrder = !checkNextCenEntry(locEntryName, cenEntryNames);
                 }
             }
             // remaining entries in CEN not matching any in LOC
@@ -145,8 +212,9 @@ final class Validator {
 
     private boolean validate() {
         try {
+            var dedupCEN = new DedupEntryNames(true);
             zf.stream()
-              .peek(this::checkDuplicates)
+              .peek(e -> dedupCEN.add(e.getName()))
               .filter(e -> e.getName().endsWith(".class"))
               .map(this::getFingerPrint)
               .filter(FingerPrint::isClass)    // skip any non-class entry
@@ -162,7 +230,8 @@ final class Validator {
                       else
                           validateVersioned(entries);
                   });
-            checkZipInputStream();
+
+            checkZipInputStream(dedupCEN.dedup());
         } catch (InvalidJarException e) {
             errorAndInvalid(e.getMessage());
         }
