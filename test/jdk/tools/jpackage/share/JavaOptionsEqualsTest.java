@@ -82,7 +82,7 @@ public class JavaOptionsEqualsTest {
     public void test() {
         cmd.executeAndAssertHelloAppImageCreated();
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertTextStream(WARNING1).apply(output.stream());
-        TKit.assertTextStream(WARNING2).apply(output.stream());
+        TKit.assertTextStream(WARNING1).apply(output);
+        TKit.assertTextStream(WARNING2).apply(output);
     }
 }

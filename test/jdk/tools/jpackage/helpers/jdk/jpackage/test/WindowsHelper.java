@@ -323,18 +323,19 @@ public class WindowsHelper {
     private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
         // Get the list of PIDs and PPIDs of app launcher processes. Run setWinRunWithEnglishOutput(true) for JDK-8344275.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
-        List<String> output = Executor.of("wmic", "process", "where", "(name",
+        final var result = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
-                setWinRunWithEnglishOutput(true).executeAndGetOutput();
-        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+                setWinRunWithEnglishOutput(true).execute();
+        if ("No Instance(s) Available.".equals(result.stderr().findFirstLineOfOutput().map(String::trim).orElse(""))) {
             return new long[0];
         }
 
-        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
+        final var stdout = result.stdout();
+        String[] headers = Stream.of(stdout.getFirstLineOfOutput().split("\\s+", 2)).map(
                 String::trim).map(String::toLowerCase).toArray(String[]::new);
-        Pattern pattern;
+        final Pattern pattern;
         if (headers[0].equals("parentprocessid") && headers[1].equals(
                 "processid")) {
             pattern = Pattern.compile("^(?<ppid>\\d+)\\s+(?<pid>\\d+)\\s+$");
@@ -346,7 +347,7 @@ public class WindowsHelper {
                     "Unrecognizable output of \'wmic process\' command");
         }
 
-        List<long[]> processes = output.stream().skip(1).map(line -> {
+        List<long[]> processes = stdout.getOutput().stream().skip(1).map(line -> {
             Matcher m = pattern.matcher(line);
             long[] pids = null;
             if (m.matches()) {

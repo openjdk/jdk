@@ -35,8 +35,6 @@ import jdk.internal.classfile.impl.BoundAttribute;
  * unknown if it is not recognized by one of the mappers in {@link Attributes}
  * and is not recognized by the {@link ClassFile.AttributesProcessingOption}.
  * <p>
- * This attribute is not delivered in the traversal of a {@link CodeModel}.
- * <p>
  * An unknown attribute may appear anywhere where an attribute may appear, and
  * has an {@linkplain AttributeStability#UNKNOWN unknown} data dependency.
  *
@@ -45,7 +43,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
  */
 public sealed interface UnknownAttribute
         extends Attribute<UnknownAttribute>,
-                ClassElement, MethodElement, FieldElement
+                ClassElement, MethodElement, FieldElement, CodeElement
         permits BoundAttribute.BoundUnknownAttribute {
 
     /**

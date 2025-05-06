@@ -1023,7 +1023,9 @@ public class DocCommentTester {
                     .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@")  // Between block tags
                     .replaceAll("\n[ \t]+@(?!([@*]|(dummy|Override)))", "\n@")
                     .replaceAll("(?i)\\{@([a-z][a-z0-9.:-]*)\\s+}", "{@$1}")
-                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2");
+                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2")
+                    .replaceAll("<pre> *\\{@code\\n", "<pre>{@code ")
+                    .replaceAll("<pre> *<code>\\n", "<pre><code>");
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,6 @@ public class popframes003 extends JDIBase {
 
     //====================================================== test program
 
-    BreakpointRequest  bpRequest;
     MethodEntryRequest meRequest;
 
     BreakpointRequest  bpRequest2;
@@ -260,18 +259,7 @@ public class popframes003 extends JDIBase {
             return;
         }
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference threadMainRef = debuggee.threadByNameOrThrow("main");
-        try {
-            bpRequest = settingBreakpoint(threadMainRef,
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
-            throw e;
-        }
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -284,9 +272,10 @@ public class popframes003 extends JDIBase {
 
         vm.resume();
         breakpointForCommunication();
+        ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
         log2("......setting MethodEntryRequest (meRequest) in ForCommunication.methodForCommunication");
-        meRequest = settingMethodEntryRequest(threadMainRef,
+        meRequest = settingMethodEntryRequest(mainThread,
                                               debuggeeName + "$ForCommunication",
                                               "zero");
         log2("meRequest.enable();");
@@ -294,10 +283,10 @@ public class popframes003 extends JDIBase {
 
 
         String thread2Name         = "thread2";
-        ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+        ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
         String thread3Name         = "thread3";
-        ThreadReference thread3Ref = debuggee.threadByNameOrThrow(thread3Name);
+        ThreadReference thread3Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread3Name);
 
         String poppedMethod    = "poppedMethod";
         String breakpointLine  = "breakpointLine";
