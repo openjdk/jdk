@@ -89,7 +89,7 @@ class BSMAttributeEntry {
   const u2* argument_indexes() const { return (const u2*)(this+1); }
 
   // These are overlays on top of Array<u2> data.  Do not construct.
-  BSMAttributeEntry() { ShouldNotReachHere(); }
+  BSMAttributeEntry() = delete;
 
   // See also parse_classfile_bootstrap_methods_attribute in the class
   // file parser, which builds this layout.
@@ -103,10 +103,10 @@ class BSMAttributeEntry {
  private:
   // how to locate one of these inside a packed u2 data array:
   static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
-    assert(0 <= offset && offset+2 < entries->length(), "oob-1");
+    assert(0 <= offset && offset+1 < entries->length(), "oob-1");
     // do not bother to copy u2 data; just overlay the struct within the array
     BSMAttributeEntry* bsme = (BSMAttributeEntry*)entries->adr_at(offset);
-    assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
+    assert(offset+1+bsme->argument_count() <= entries->length(), "oob-2");
     return bsme;
   }
   friend class ConstantPool;  // uses entry_at_offset
