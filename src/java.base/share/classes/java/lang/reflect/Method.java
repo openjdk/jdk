@@ -98,7 +98,7 @@ public final class Method extends Executable {
     private @Stable MethodAccessor methodAccessor;
 
     private static final ToIntFunction<Method> HASH_UPDATER =
-            StableFieldUpdater.ofIntRaw(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
+            StableFieldUpdater.Raw.ofInt(Method.class, Unsafe.getUnsafe().objectFieldOffset(Method.class, "hash"), new ToIntFunction<Method>() {
                 @Override
                 public int applyAsInt(Method method) {
                     return method.getDeclaringClass().getName().hashCode() ^ method.getName()

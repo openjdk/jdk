@@ -146,7 +146,7 @@ final class StableFieldUpdaterExampleTest {
 
         private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
                 StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
-                        l -> Objects.hash(l.bar, l.baz), 1L << 32);
+                        l -> (l.bar == null && l.baz == null) ? 0 : Objects.hash(l.bar, l.baz), 1L << 32);
 
         @Stable
         private long hash;
@@ -184,6 +184,7 @@ final class StableFieldUpdaterExampleTest {
         var foo = new LazySpecifiedFoo(null, null);
         assertEquals(0, foo.hashCode());
         assertEquals(0, foo.hashCode());
+        assertEquals(1L << 32, foo.hash);
     }
 
 }
