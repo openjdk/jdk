@@ -127,24 +127,6 @@ public class PSPrinterJob extends RasterPrinterJob {
      */
     private static final int MAX_PSSTR = (1024 * 64 - 1);
 
-    private static final int RED_MASK = 0x00ff0000;
-    private static final int GREEN_MASK = 0x0000ff00;
-    private static final int BLUE_MASK = 0x000000ff;
-
-    private static final int RED_SHIFT = 16;
-    private static final int GREEN_SHIFT = 8;
-    private static final int BLUE_SHIFT = 0;
-
-    private static final int LOWNIBBLE_MASK = 0x0000000f;
-    private static final int HINIBBLE_MASK =  0x000000f0;
-    private static final int HINIBBLE_SHIFT = 4;
-    private static final byte[] hexDigits = {
-        (byte)'0', (byte)'1', (byte)'2', (byte)'3',
-        (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-        (byte)'8', (byte)'9', (byte)'A', (byte)'B',
-        (byte)'C', (byte)'D', (byte)'E', (byte)'F'
-    };
-
     private static final int PS_XRES = 300;
     private static final int PS_YRES = 300;
 
@@ -266,11 +248,6 @@ public class PSPrinterJob extends RasterPrinterJob {
 
    private double xres = PS_XRES;
    private double yres = PS_YRES;
-
-   /**
-    * The metrics for the font currently set.
-    */
-   FontMetrics mCurMetrics;
 
    /**
     * The output stream to which the generated PostScript
@@ -530,7 +507,7 @@ public class PSPrinterJob extends RasterPrinterJob {
             if (mDestType == RasterPrinterJob.FILE) {
                 try {
                     spoolFile = new File(mDestination);
-                    output =  new FileOutputStream(spoolFile);
+                    output = new FileOutputStream(spoolFile);
                 } catch (IOException ex) {
                     abortDoc();
                     throw new PrinterIOException(ex);
@@ -1166,36 +1143,6 @@ public class PSPrinterJob extends RasterPrinterJob {
 
          return psFont;
      }
-
-
-    private static String escapeParens(String str) {
-        if (str.indexOf('(') == -1 && str.indexOf(')') == -1 ) {
-            return str;
-        } else {
-            int count = 0;
-            int pos = 0;
-            while ((pos = str.indexOf('(', pos)) != -1) {
-                count++;
-                pos++;
-            }
-            pos = 0;
-            while ((pos = str.indexOf(')', pos)) != -1) {
-                count++;
-                pos++;
-            }
-            char []inArr = str.toCharArray();
-            char []outArr = new char[inArr.length+count];
-            pos = 0;
-            for (int i=0;i<inArr.length;i++) {
-                if (inArr[i] == '(' || inArr[i] == ')') {
-                    outArr[pos++] = '\\';
-                }
-                outArr[pos++] = inArr[i];
-            }
-            return new String(outArr);
-
-        }
-    }
 
     /* return of 0 means unsupported. Other return indicates the number
      * of distinct PS fonts needed to draw this text. This saves us
