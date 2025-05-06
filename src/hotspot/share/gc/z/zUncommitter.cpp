@@ -43,7 +43,7 @@ ZUncommitter::ZUncommitter(uint32_t id, ZPartition* partition)
     _lock(),
     _stop(false),
     _cancel_time(0.0),
-    _next_cycle_timeout(ZUncommitDelay),
+    _next_cycle_timeout(0),
     _next_uncommit_timeout(0),
     _cycle_start(0.0),
     _to_uncommit(0),
@@ -65,7 +65,21 @@ bool ZUncommitter::wait(uint64_t timeout) const {
     } else {
       log_debug(gc, heap)("Uncommitter (%u) Timeout: " UINT64_FORMAT "s", _id, timeout);
     }
-    _lock.wait(timeout * MILLIUNITS);
+
+    double now = os::elapsedTime();
+    const double wait_until = now + double(timeout);
+    do {
+      const uint64_t remaining_timeout_ms = uint64_t((wait_until - now) * MILLIUNITS);
+      if (remaining_timeout_ms == 0) {
+        // Less than a millisecond left to wait, just return early
+        break;
+      }
+
+      // Wait
+      _lock.wait(remaining_timeout_ms);
+
+      now = os::elapsedTime();
+    } while (!_stop && now < wait_until);
   }
 
   return !_stop;
@@ -77,6 +91,9 @@ bool ZUncommitter::should_continue() const {
 }
 
 void ZUncommitter::run_thread() {
+  // Initialize first cycle timeout
+  _next_cycle_timeout = ZUncommitDelay;
+
   while (wait(_next_cycle_timeout)) {
     EventZUncommit event;
 
