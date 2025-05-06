@@ -137,9 +137,6 @@
           "and the value of the per-method flag.")                          \
           range(0.0, DBL_MAX)                                               \
                                                                             \
-  product(bool, StressNMethodRelocation, false,                             \
-          "Stress relocation nmethods")                                     \
-                                                                            \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
           range(0, 30)                                                      \

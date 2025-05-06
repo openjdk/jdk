@@ -1121,24 +1121,17 @@ void ciEnv::register_method(ciMethod* target,
     }
   }
 
-  {
-    NoSafepointVerifier nsv;
-    if (nm != nullptr) {
-      // Compilation succeeded, post what we know about it
-      nm->post_compiled_method(task());
-      task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
-    } else {
-      // The CodeCache is full.
-      record_failure("code cache is full");
-    }
+  NoSafepointVerifier nsv;
+  if (nm != nullptr) {
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
+  } else {
+    // The CodeCache is full.
+    record_failure("code cache is full");
   }
-  // safepoints are allowed again
 
-  if (StressNMethodRelocation) {
-    if (nm != nullptr) {
-      nm = nm->relocate(CodeBlobType::MethodNonProfiled);
-    }
-  }
+  // safepoints are allowed again
 }
 
 // ------------------------------------------------------------------
