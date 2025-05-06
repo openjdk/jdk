@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,40 +30,25 @@ import java.lang.foreign.*;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The purpose of this benchmark is to see the effect of automatic alignment in auto vectorization.
+ *
+ * Note: If you are interested in a nice visualization of load and store misalignment, please look
+ *       at the benchmark {@link VectorAutoAlignmentVisualization}.
+ */
+
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 2, time = 200, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 3, time = 200, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
-public class VectorAutoAlignment {
+public abstract class VectorAutoAlignment {
     @Param({"2000"})
     public int SIZE;
 
-    @Param({  "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",
-             "10",  "11",  "12",  "13",  "14",  "15",  "16",  "17",  "18",  "19",
-             "20",  "21",  "22",  "23",  "24",  "25",  "26",  "27",  "28",  "29",
-             "30",  "31"})
-    //@Param({  "0",   "1"})
-    public int OFFSET_LOAD;
-
-    @Param({  "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",
-             "10",  "11",  "12",  "13",  "14",  "15",  "16",  "17",  "18",  "19",
-             "20",  "21",  "22",  "23",  "24",  "25",  "26",  "27",  "28",  "29",
-             "30",  "31"})
-    //@Param({  "0",   "1"})
-    public int OFFSET_STORE;
-
     @Param({"2000"})
     public int DISTANCE;
-
-    // To get compile-time constants for OFFSET_LOAD, OFFSET_STORE, and DISTANCE
-    static final MutableCallSite MUTABLE_CONSTANT_OFFSET_LOAD = new MutableCallSite(MethodType.methodType(int.class));
-    static final MethodHandle MUTABLE_CONSTANT_OFFSET_LOAD_HANDLE = MUTABLE_CONSTANT_OFFSET_LOAD.dynamicInvoker();
-    static final MutableCallSite MUTABLE_CONSTANT_OFFSET_STORE = new MutableCallSite(MethodType.methodType(int.class));
-    static final MethodHandle MUTABLE_CONSTANT_OFFSET_STORE_HANDLE = MUTABLE_CONSTANT_OFFSET_STORE.dynamicInvoker();
-    static final MutableCallSite MUTABLE_CONSTANT_DISTANCE = new MutableCallSite(MethodType.methodType(int.class));
-    static final MethodHandle MUTABLE_CONSTANT_DISTANCE_HANDLE = MUTABLE_CONSTANT_DISTANCE.dynamicInvoker();
 
     private MemorySegment ms;
 
@@ -72,38 +57,44 @@ public class VectorAutoAlignment {
         long totalSize = 4L * SIZE + 4L * DISTANCE;
         long alignment = 4 * 1024; // 4k = page size
         ms = Arena.ofAuto().allocate(totalSize, alignment);
-
-        MethodHandle offset_load_con = MethodHandles.constant(int.class, OFFSET_LOAD);
-        MUTABLE_CONSTANT_OFFSET_LOAD.setTarget(offset_load_con);
-        MethodHandle offset_store_con = MethodHandles.constant(int.class, OFFSET_STORE);
-        MUTABLE_CONSTANT_OFFSET_STORE.setTarget(offset_store_con);
-        MethodHandle distance_con = MethodHandles.constant(int.class, DISTANCE);
-        MUTABLE_CONSTANT_DISTANCE.setTarget(distance_con);
     }
 
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private int offset_load_con() throws Throwable {
-        return (int) MUTABLE_CONSTANT_OFFSET_LOAD_HANDLE.invokeExact();
-    }
-
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private int offset_store_con() throws Throwable {
-        return (int) MUTABLE_CONSTANT_OFFSET_STORE_HANDLE.invokeExact();
-    }
-
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private int distance_con() throws Throwable {
-        return (int) MUTABLE_CONSTANT_DISTANCE_HANDLE.invokeExact();
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void kernel1L1S(int offset_load, int offset_store) {
+        for (int i = 0; i < SIZE - /* slack for offset */ 32; i++) {
+            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_load + 4L * DISTANCE);
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_store, v);
+        }
     }
 
     @Benchmark
     public void bench1L1S() throws Throwable {
-        int offset_load = offset_load_con();
-        int offset_store = offset_store_con();
-        int distance = distance_con();
-        for (int i = 0; i < SIZE - /* slack for offset */ 32; i++) {
-            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_load + 4L * distance);
-            ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_store, v);
+        // Go over all possible offsets, to get an average performance.
+        for (int offset_load = 0; offset_load < 32; offset_load++) {
+            for (int offset_store = 0; offset_store < 32; offset_store++) {
+                kernel1L1S(offset_load, offset_store);
+            }
         }
     }
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:-UseSuperWord"
+    })
+    public static class NoVectorization extends VectorAutoAlignment {}
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SuperWordAutomaticAlignment=0"
+    })
+    public static class NoAutoAlign extends VectorAutoAlignment {}
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SuperWordAutomaticAlignment=1"
+    })
+    public static class AlignStore extends VectorAutoAlignment {}
+
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:SuperWordAutomaticAlignment=2"
+    })
+    public static class AlignLoad extends VectorAutoAlignment {}
 }
