@@ -65,7 +65,6 @@ void classLoader_init1();
 void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
-void VM_Version_pre_init();
 void icache_init2();
 void initial_stubs_init();
 

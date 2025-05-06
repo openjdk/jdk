@@ -44,29 +44,6 @@ typedef enum {
 class outputStream;
 enum class vmIntrinsicID;
 
-#define MAX_FEATURE_VEC_SIZE 4
-
-class VM_Features {
- public:
-  using FeatureVector = uint64_t [MAX_FEATURE_VEC_SIZE];
-
-  // Feature vector bitmap currently only used by x86 backend.
-  FeatureVector _features_vector;
-
-  // Size of feature vector bitmap.
-  static uint32_t _features_vector_size;
-
-  // Log2 of feature vector element size in bits, used by JVMCI to check enabled feature bits.
-  // Refer HotSpotJVMCIBackendFactory::convertFeaturesVector.
-  static uint32_t _features_vector_element_shift_count;
-
-  static bool is_within_feature_vector_bounds(uint32_t num_features);
-
-  void set_feature(uint32_t feature);
-  void clear_feature(uint32_t feature);
-  bool supports_feature(uint32_t feature);
-};
-
 // Abstract_VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {
@@ -86,34 +63,6 @@ class Abstract_VM_Version: AllStatic {
 
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
-
-  // CPU feature flags vector, can be affected by VM settings.
-  static VM_Features _vm_target_features;
-
-  // Original CPU feature flags vector, not affected by VM settings.
-  static VM_Features _cpu_target_features;
-
-  static void sync_cpu_features() {
-    memcpy(_cpu_target_features._features_vector, _vm_target_features._features_vector,
-           sizeof(uint64_t) * VM_Features::_features_vector_size);
-  }
-
-  static void clear_cpu_features() {
-    memset(_vm_target_features._features_vector, 0, sizeof(uint64_t) * VM_Features::_features_vector_size);
-  }
-
-  static bool vm_features_exist() {
-    return VM_Features::_features_vector_size > 0;
-  }
-
-  static uint32_t features_vector_size() {
-    return VM_Features::_features_vector_size;
-  }
-
-  static uint64_t features_vector_elem(uint32_t elem) {
-    assert(elem < VM_Features::_features_vector_size, "");
-    return _vm_target_features._features_vector[elem];
-  }
 
   // These are set by machine-dependent initializations
 #ifndef SUPPORTS_NATIVE_CX8
@@ -180,13 +129,10 @@ class Abstract_VM_Version: AllStatic {
   static const char* jdk_debug_level();
   static const char* printable_jdk_debug_level();
 
-  static uint64_t features() {
-    return _features;
-  }
+  static uint64_t features() { return _features; }
 
   static const char* features_string() { return _features_string; }
 
-  static void insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[], uint features_names_index = 0);
   static const char* cpu_info_string() { return _cpu_info_string; }
   static const char* extract_features_string(const char* cpu_info_string,
                                              size_t cpu_info_string_len,

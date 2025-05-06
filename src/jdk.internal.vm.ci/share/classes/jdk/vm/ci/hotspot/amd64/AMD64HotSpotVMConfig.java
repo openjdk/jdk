@@ -42,7 +42,7 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useCountTrailingZerosInstruction = getFlag("UseCountTrailingZerosInstruction", Boolean.class);
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
-    final long vmVersionTargetFeatures = getFieldAddress("Abstract_VM_Version::_vm_target_features", "VM_Features");
+    final long vmVersionFeatures = getFieldAddress("VM_Version::_features", "VM_Features");
     final long vmFeaturesFeaturesVecOffset = getFieldOffset("VM_Features::_features_vector", Long.class, "VM_Features::FeatureVector");
     final long vmFeaturesFeaturesVecSize = getFieldValue("VM_Features::_features_vector_size", Long.class, "uint32_t");
     final long vmFeaturesFeaturesElemShiftCnt = getFieldValue("VM_Features::_features_vector_element_shift_count", Long.class, "uint32_t");

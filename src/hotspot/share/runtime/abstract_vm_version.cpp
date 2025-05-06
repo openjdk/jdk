@@ -37,11 +37,6 @@ const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
-uint32_t VM_Features::_features_vector_element_shift_count = 6;
-uint32_t VM_Features::_features_vector_size = MAX_FEATURE_VEC_SIZE;
-VM_Features Abstract_VM_Version::_vm_target_features = {{0, 0, 0, 0}};
-VM_Features Abstract_VM_Version::_cpu_target_features = {{0, 0, 0, 0}};
-
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
 #endif
@@ -330,20 +325,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-void Abstract_VM_Version::insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[],
-                                                uint features_names_index) {
-  while (features != 0) {
-    if (features & 1) {
-      int res = jio_snprintf(buf, buflen, ", %s", features_names[features_names_index]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
-    }
-    features >>= 1;
-    ++features_names_index;
-  }
-}
-
 const char* Abstract_VM_Version::extract_features_string(const char* cpu_info_string,
                                                          size_t cpu_info_string_len,
                                                          size_t features_offset) {
@@ -420,29 +401,4 @@ const char* Abstract_VM_Version::cpu_description(void) {
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;
-}
-
-void VM_Features::set_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  _features_vector[index] |= (1ULL << (feature & index_mask));
-}
-
-void VM_Features::clear_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  _features_vector[index] &= ~(1ULL << (feature & index_mask));
-}
-
-bool VM_Features::supports_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  return (_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
-}
-
-bool VM_Features::is_within_feature_vector_bounds(uint32_t num_features) {
-   return _features_vector_size >= ((num_features >> _features_vector_element_shift_count) + 1);
 }

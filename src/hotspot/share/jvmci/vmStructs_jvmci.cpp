@@ -147,11 +147,6 @@
   JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                        \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
-  static_field(Abstract_VM_Version,            _vm_target_features,                    VM_Features)                                  \
-                                                                                                                                     \
-  nonstatic_field(VM_Features,                 _features_vector,                       VM_Features::FeatureVector)                   \
-  static_field(VM_Features,                    _features_vector_size,                  uint32_t)                                     \
-  static_field(VM_Features,                    _features_vector_element_shift_count,   uint32_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
@@ -980,7 +975,12 @@
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
-  static_field(VM_Version, _has_intel_jcc_erratum, bool)
+  static_field(VM_Version,                     _features,                              VM_Features)                                  \
+                                                                                                                                     \
+  nonstatic_field(VM_Features,                 _features_vector,                       VM_Features::FeatureVector)                   \
+  static_field(VM_Features,                    _features_vector_size,                  uint32_t)                                     \
+  static_field(VM_Features,                    _features_vector_element_shift_count,   uint32_t)                                     \
+  static_field(VM_Version,                     _has_intel_jcc_erratum,                     bool)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
