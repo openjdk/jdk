@@ -54,9 +54,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
@@ -130,7 +127,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     }
 
                     if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result);
+                        MacCertificate certificate = new MacCertificate(result, keychain);
 
                         if (!certificate.isValid()) {
                             Log.error(MessageFormat.format(
@@ -154,11 +151,22 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             Path appImageDir = prepareAppBundle(params);
 
             if (appImageDir != null && prepareConfigFiles(params)) {
+                prepareCPLFile(params, appImageDir);
 
-                Path configScript = getConfig_Script(params);
-                if (IOUtils.exists(configScript)) {
-                    IOUtils.run("bash", configScript);
+                if (withServicesPkg(params)) {
+                    prepareServicesPkg(params);
                 }
+
+                if (!APP_STORE.fetchFrom(params)) {
+                    preparePackageScripts(params);
+                }
+
+                new ScriptRunner()
+                        .setDirectory(appImageDir)
+                        .setResourceCategoryId("resource.post-app-image-script")
+                        .setScriptNameSuffix("post-image")
+                        .setEnvironmentVariable("JpAppImageDir", appImageDir.toAbsolutePath().toString())
+                        .run(params);
 
                 return createPKG(params, outdir, appImageDir);
             }
@@ -360,17 +368,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         prepareDistributionXMLFile(params);
 
-        createResource(null, params)
-                .setCategory(I18N.getString("resource.post-install-script"))
-                .saveToFile(getConfig_Script(params));
-
         return true;
-    }
-
-    // name of post-image script
-    private Path getConfig_Script(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-post-image.sh");
     }
 
     private void patchCPLFile(Path cpl) throws IOException {
@@ -464,8 +462,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    private void createServicesPkg(Map<String, Object> params) throws
-            IOException {
+    private void prepareServicesPkg(Map<String, Object> params) throws IOException {
         Path root = TEMP_ROOT.fetchFrom(params).resolve("services");
 
         Path srcRoot = root.resolve("src");
@@ -482,22 +479,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 .setSubstitutionData(data)
                 .saveInFolder(scriptsDir);
 
-        var pb = new ProcessBuilder("/usr/bin/pkgbuild",
-                "--root",
-                srcRoot.toString(),
-                "--install-location",
-                "/",
-                "--scripts",
-                scriptsDir.toString(),
-                "--identifier",
-                getServicesIdentifier(params),
-                getPackages_ServicesPackage(params).toAbsolutePath().toString());
-        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
-
-        createSupportPkg(params, data);
+        prepareSupportPkg(params, data);
     }
 
-    private void createSupportPkg(Map<String, Object> params,
+    private void prepareSupportPkg(Map<String, Object> params,
             Map<String, String> servicesSubstitutionData) throws IOException {
         Path root = TEMP_ROOT.fetchFrom(params).resolve("support");
 
@@ -518,6 +503,35 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         .setPublicName("uninstaller")
                         .setSubstitutionData(data))
                 .saveInFolder(srcRoot.resolve(APP_NAME.fetchFrom(params)));
+    }
+
+    private void createServicesPkg(Map<String, Object> params) throws
+            IOException {
+        Path root = TEMP_ROOT.fetchFrom(params).resolve("services");
+
+        Path srcRoot = root.resolve("src");
+
+        Path scriptsDir = root.resolve("scripts");
+
+        var pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                "--root",
+                srcRoot.toString(),
+                "--install-location",
+                "/",
+                "--scripts",
+                scriptsDir.toString(),
+                "--identifier",
+                getServicesIdentifier(params),
+                getPackages_ServicesPackage(params).toAbsolutePath().toString());
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+
+        createSupportPkg(params);
+    }
+
+    private void createSupportPkg(Map<String, Object> params) throws IOException {
+        Path root = TEMP_ROOT.fetchFrom(params).resolve("support");
+
+        Path srcRoot = root.resolve("src");
 
         var pb = new ProcessBuilder("/usr/bin/pkgbuild",
                 "--root",
@@ -528,6 +542,23 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 getSupportIdentifier(params),
                 getPackages_SupportPackage(params).toAbsolutePath().toString());
         IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+    }
+
+    private void prepareCPLFile(Map<String, ? super Object> params, Path appLocation) throws IOException {
+        String root = getRoot(params, appLocation);
+        // Generate default CPL file
+        Path cpl = CONFIG_ROOT.fetchFrom(params).resolve("cpl.plist");
+        ProcessBuilder pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                "--root",
+                root,
+                "--install-location",
+                getInstallDir(params, false),
+                "--analyze",
+                cpl.toAbsolutePath().toString());
+
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+
+        patchCPLFile(cpl);
     }
 
     private Path createPKG(Map<String, ? super Object> params,
@@ -542,19 +573,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 createServicesPkg(params);
             }
 
-            // Generate default CPL file
+            ProcessBuilder pb;
+
             Path cpl = CONFIG_ROOT.fetchFrom(params).resolve("cpl.plist");
-            ProcessBuilder pb = new ProcessBuilder("/usr/bin/pkgbuild",
-                    "--root",
-                    root,
-                    "--install-location",
-                    getInstallDir(params, false),
-                    "--analyze",
-                    cpl.toAbsolutePath().toString());
-
-            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
-
-            patchCPLFile(cpl);
 
             // build application package
             if (APP_STORE.fetchFrom(params)) {
@@ -570,7 +591,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         appPKG.toAbsolutePath().toString());
                 IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } else {
-                preparePackageScripts(params);
                 pb = new ProcessBuilder("/usr/bin/pkgbuild",
                         "--root",
                         root,

@@ -368,6 +368,7 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
+  bool  map_aot_code_region(ReservedSpace rs);
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
