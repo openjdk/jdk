@@ -32,7 +32,7 @@ package gc;
  * Reference.get() works as expected.  Disable the intrinsic implementation to
  * force use of the native method.
  * @library /test/lib
- * @modules java.base/jdk.internal.access
+ * @modules java.base/java.lang.ref:open
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
@@ -46,8 +46,6 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.access.JavaLangRefAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.test.whitebox.WhiteBox;
 
 public final class TestNativeReferenceGet {
@@ -103,7 +101,7 @@ public final class TestNativeReferenceGet {
     }
 
     // Discard all the strong references.
-    private static void clearReferents() {
+    private static void dropReferents() {
         // Not using List.clear() because it doesn't document null'ing elements.
         for (int i = 0; i < NUM_REFS; ++i) {
             referents.set(i, null);
@@ -119,24 +117,18 @@ public final class TestNativeReferenceGet {
         }
     }
 
-    private static void checkQueue() {
-        if (queue.poll() != null) {
-            throw new RuntimeException("Reference enqueued");
-        }
-    }
-
     private static void check() {
         // None of the references should have been cleared and enqueued,
         // because we have strong references to all the referents.
         try {
-            JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
-            while (jlra.waitForReferenceProcessing()) {
-                checkQueue();
-            }
-            checkQueue();       // One last check after refproc complete.
+            while (WB.waitForReferenceProcessing()) {}
         } catch (InterruptedException e) {
             throw new RuntimeException("Test interrupted");
         }
+        if (queue.poll() != null) {
+            throw new RuntimeException("Reference enqueued");
+        }
+
         // Check details of expected state.
         for (int i = 0; i < NUM_REFS; ++i) {
             Ref reference = (Ref) references.get(i);
@@ -157,7 +149,7 @@ public final class TestNativeReferenceGet {
         System.out.println("Testing concurrent GC");
         try {
             WB.concurrentGCAcquireControl();
-            clearReferents();
+            dropReferents();
             WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
             strengthenReferents();
             WB.concurrentGCRunToIdle();
@@ -172,7 +164,7 @@ public final class TestNativeReferenceGet {
         // A GC between clearing and strengthening will result in test failure.
         // We try to make that unlikely via this immediately preceeding GC.
         WB.fullGC();
-        clearReferents();
+        dropReferents();
         strengthenReferents();
         WB.fullGC();
         check();
