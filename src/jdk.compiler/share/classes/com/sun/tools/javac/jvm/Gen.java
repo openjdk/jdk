@@ -2566,14 +2566,18 @@ public class Gen extends JCTree.Visitor {
         /** Add given chain to exit chain.
          */
         void addExit(Chain c)  {
-            c.state.defined.excludeFrom(limit);
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             exit = Code.mergeChains(c, exit);
         }
 
         /** Add given chain to cont chain.
          */
         void addCont(Chain c) {
-            c.state.defined.excludeFrom(limit);
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             cont = Code.mergeChains(c, cont);
         }
     }
