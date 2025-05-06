@@ -236,9 +236,11 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
+#if INCLUDE_SHENANDOAHGC
   } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
     cardtable_start_address = nullptr;
     cardtable_shift = CardTable::card_shift();
+#endif
   } else {
     // No card mark barriers
     cardtable_start_address = nullptr;
