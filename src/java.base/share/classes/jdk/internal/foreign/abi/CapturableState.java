@@ -81,7 +81,7 @@ public final class CapturableState {
         var ret = LOOKUP.get(name);
         if (ret == null) {
             throw new IllegalArgumentException(
-                    "Unknown name: " + name +", must be one of: "
+                    "Unknown name: " + name + ", must be one of: "
                             + LOOKUP.keySet());
         }
         return ret;
