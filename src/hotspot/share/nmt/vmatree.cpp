@@ -304,10 +304,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
     tty->print(" req: %4d---%4d", (int)_A, (int)_B);
     tty->print(" row: %2d", row);
     if (a) {
-      tty->print(" X: %4ld", X_exists ? X->key() : -1);
-      tty->print(" Y: %4ld", Y_exists ? Y->key() : -1);
-      tty->print(" W: %4ld", W_exists ? W->key() : -1);
-      tty->print(" U: %4ld", U_exists ? U->key() : -1);
+      tty->print(" X: %4ld", X_exists ? (long)X->key() : -1);
+      tty->print(" Y: %4ld", Y_exists ? (long)Y->key() : -1);
+      tty->print(" W: %4ld", W_exists ? (long)W->key() : -1);
+      tty->print(" U: %4ld", U_exists ? (long)U->key() : -1);
     }
     tty->print_cr("");
   };
