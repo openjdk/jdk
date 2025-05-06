@@ -123,6 +123,8 @@ Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
 Mutex*   ExternalsRecorder_lock       = nullptr;
 
+Mutex*   AOTCodeCStrings_lock         = nullptr;
+
 Monitor* ContinuationRelativize_lock  = nullptr;
 
 Mutex*   Metaspace_lock               = nullptr;
@@ -147,6 +149,7 @@ Mutex*   ClassListFile_lock           = nullptr;
 Mutex*   UnregisteredClassesTable_lock= nullptr;
 Mutex*   LambdaFormInvokers_lock      = nullptr;
 Mutex*   ScratchObjects_lock          = nullptr;
+Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
 
@@ -299,6 +302,7 @@ void mutex_init() {
   MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
   MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
+  MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
 
@@ -316,6 +320,8 @@ void mutex_init() {
 
   // tty_lock is held when printing nmethod and its relocations which use this lock.
   MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
+
+  MUTEX_DEFL(AOTCodeCStrings_lock           , PaddedMutex  , tty_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);

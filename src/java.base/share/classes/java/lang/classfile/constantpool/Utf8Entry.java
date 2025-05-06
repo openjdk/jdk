@@ -84,4 +84,22 @@ public sealed interface Utf8Entry
      * @param s the string to compare to
      */
     boolean equalsString(String s);
+
+    /**
+     * {@return whether this entry describes the descriptor string of this
+     * field type}
+     *
+     * @param desc the field type
+     * @since 25
+     */
+    boolean isFieldType(ClassDesc desc);
+
+    /**
+     * {@return whether this entry describes the descriptor string of this
+     * method type}
+     *
+     * @param desc the method type
+     * @since 25
+     */
+    boolean isMethodType(MethodTypeDesc desc);
 }

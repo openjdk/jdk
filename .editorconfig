@@ -8,3 +8,7 @@ trim_trailing_whitespace = true
 
 [Makefile]
 trim_trailing_whitespace = true
+
+[src/hotspot/**.{cpp,hpp,h}]
+indent_style = space
+indent_size = 2

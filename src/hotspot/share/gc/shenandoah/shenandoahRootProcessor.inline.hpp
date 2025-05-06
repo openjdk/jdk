@@ -29,11 +29,11 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"

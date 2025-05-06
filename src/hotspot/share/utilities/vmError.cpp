@@ -328,6 +328,12 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #endif // ZERO
 }
 
+const char* VMError::get_filename_only() {
+  char separator = os::file_separator()[0];
+  const char* p = strrchr(_filename, separator);
+  return p ? p + 1 : _filename;
+}
+
 /**
  * Adds `value` to `list` iff it's not already present and there is sufficient
  * capacity (i.e. length(list) < `list_capacity`). The length of the list
@@ -1194,7 +1200,15 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     if (Universe::heap() != nullptr) {
       st->print_cr("Heap:");
-      Universe::heap()->print_on_error(st);
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_heap_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
+
+  STEP_IF("printing GC information", _verbose)
+    if (Universe::heap() != nullptr) {
+      Universe::heap()->print_gc_on(st);
       st->cr();
     }
 
@@ -1252,6 +1266,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("Logging:");
     LogConfiguration::describe_current_configuration(st);
     st->cr();
+
+  STEP_IF("printing release file content", _verbose)
+    st->print_cr("Release file:");
+    os::print_image_release_file(st);
 
   STEP_IF("printing all environment variables", _verbose)
     os::print_environment_variables(st, env_list);
@@ -1372,16 +1390,32 @@ void VMError::print_vm_info(outputStream* st) {
   }
 #endif
 
-  // STEP("printing heap information")
+  // Take heap lock over both heap and GC printing so that information is
+  // consistent.
+  {
+    MutexLocker ml(Heap_lock);
 
-  if (Universe::is_fully_initialized()) {
-    MutexLocker hl(Heap_lock);
-    GCLogPrecious::print_on_error(st);
-    st->print_cr("Heap:");
-    Universe::heap()->print_on_error(st);
-    st->cr();
-    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-    st->cr();
+    // STEP("printing heap information")
+
+    if (Universe::is_fully_initialized()) {
+      GCLogPrecious::print_on_error(st);
+
+      st->print_cr("Heap:");
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_heap_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
+
+    // STEP("printing GC information")
+
+    if (Universe::is_fully_initialized()) {
+      Universe::heap()->print_gc_on(st);
+      st->cr();
+
+      st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+      st->cr();
+    }
   }
 
   // STEP("printing metaspace information")
@@ -1432,6 +1466,10 @@ void VMError::print_vm_info(outputStream* st) {
   st->print_cr("Logging:");
   LogConfiguration::describe(st);
   st->cr();
+
+  // STEP("printing release file content")
+  st->print_cr("Release file:");
+  os::print_image_release_file(st);
 
   // STEP("printing all environment variables")
 

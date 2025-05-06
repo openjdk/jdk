@@ -212,9 +212,12 @@ public class Lint {
         CAST("cast"),
 
         /**
-         * Warn about issues related to classfile contents
+         * Warn about issues related to classfile contents.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile"),
+        CLASSFILE("classfile", false),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -260,8 +263,11 @@ public class Lint {
 
         /**
          * Warn about use of incubating modules.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating"),
+        INCUBATING("incubating", false),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -284,14 +290,20 @@ public class Lint {
         OPENS("opens"),
 
         /**
-         * Warn about issues relating to use of command line options
+         * Warn about issues relating to use of command line options.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options"),
+        OPTIONS("options", false),
 
         /**
          * Warn when any output file is written to more than once.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash"),
+        OUTPUT_FILE_CLASH("output-file-clash", false),
 
         /**
          * Warn about issues regarding method overloads.
@@ -305,10 +317,11 @@ public class Lint {
 
         /**
          * Warn about invalid path elements on the command line.
-         * Such warnings cannot be suppressed with the SuppressWarnings
-         * annotation.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path"),
+        PATH("path", false),
 
         /**
          * Warn about issues regarding annotation processing.
@@ -357,8 +370,11 @@ public class Lint {
 
         /**
          * Warn about issues relating to use of text blocks
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings} (yet - see JDK-8224228).
          */
-        TEXT_BLOCKS("text-blocks"),
+        TEXT_BLOCKS("text-blocks", false),
 
         /**
          * Warn about possible 'this' escapes before subclass instance is fully initialized.
@@ -391,7 +407,12 @@ public class Lint {
         RESTRICTED("restricted");
 
         LintCategory(String option) {
+            this(option, true);
+        }
+
+        LintCategory(String option, boolean annotationSuppression) {
             this.option = option;
+            this.annotationSuppression = annotationSuppression;
             map.put(option, this);
         }
 
@@ -411,6 +432,9 @@ public class Lint {
 
         /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
+
+        /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
+        public final boolean annotationSuppression;
     }
 
     /**
@@ -504,6 +528,7 @@ public class Lint {
         for (Attribute value : values.values) {
             Optional.of((String)((Attribute.Constant)value).value)
               .flatMap(LintCategory::get)
+              .filter(lc -> lc.annotationSuppression)
               .ifPresent(result::add);
         }
         return result;

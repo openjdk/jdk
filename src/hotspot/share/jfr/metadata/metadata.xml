@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -453,10 +453,10 @@
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
     <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
     <Field type="ulong" name="numPlabsFilled" label="PLAB Fills" description="Number of PLABs filled" />
-    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
-    <Field type="ulong" name="numDirectAllocated" label="Direct allocations" description="Number of direct allocations" />
-    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
-    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (Direct)" description="Total memory allocated using direct allocation outside of PLABs" />
+    <Field type="ulong" name="numDirectAllocated" label="Direct Allocations" description="Number of direct allocations" />
+    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (Failure)" description="Total memory occupied by objects in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (Failure)" description="Total memory left unused in regions where evacuation failed" />
   </Type>
 
   <Event name="G1EvacuationYoungStatistics" category="Java Virtual Machine, GC, Detailed" label="G1 Evacuation Statistics for Young" startTime="false"
@@ -523,7 +523,7 @@
   <Event name="PromotionFailed" category="Java Virtual Machine, GC, Detailed" label="Promotion Failed" startTime="false" description="Promotion of an object failed">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="CopyFailed" struct="true" name="promotionFailed" label="Promotion Failed Data" />
-    <Field type="Thread" name="thread" label="Running thread" />
+    <Field type="Thread" name="thread" label="Running Thread" />
   </Event>
 
   <Event name="EvacuationFailed" category="Java Virtual Machine, GC, Detailed" label="Evacuation Failed" startTime="false" description="Evacuation of an object failed">
@@ -1007,7 +1007,7 @@
     <Field type="ulong" contentType="bytes" name="nmethodsSize" label="Compilation Resulting Size" />
     <Field type="ulong" contentType="bytes" name="nmethodCodeSize" label="Compilation Resulting Code Size" />
     <Field type="long" contentType="millis" name="peakTimeSpent" label="Peak Time" />
-    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total time" />
+    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total Time" />
   </Event>
 
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
@@ -1030,10 +1030,10 @@
   <Event name="CodeCacheConfiguration" category="Java Virtual Machine, Code Cache" label="Code Cache Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="ulong" contentType="bytes" name="initialSize" label="Initial Size" />
     <Field type="ulong" contentType="bytes" name="reservedSize" label="Reserved Size" />
-    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-nmethod Size" />
+    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-Nmethod Size" />
     <Field type="ulong" contentType="bytes" name="profiledSize" label="Profiled Size" />
-    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-profiled Size" />
-    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion size" />
+    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-Profiled Size" />
+    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion Size" />
     <Field type="ulong" contentType="bytes" name="minBlockLength" label="Minimum Block Length" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="reservedTopAddress" label="Reserved Top" />
@@ -1155,12 +1155,14 @@
   </Event>
 
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
-     <Field type="ZPageTypeType" name="type" label="Type" />
-     <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
-     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
-     <Field type="uint" name="segments" label="Segments" />
-     <Field type="boolean" name="nonBlocking" label="Non-blocking" />
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+    <Field type="ulong" contentType="bytes" name="harvested" label="Harvested" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+    <Field type="uint" name="harvestedRanges" label="Harvested Ranges" description="Number of harvested memory ranges" />
+    <Field type="boolean" name="multiPartition" label="Multi-Partition" />
+    <Field type="boolean" name="successful" label="Successful" />
+    <Field type="boolean" name="nonBlocking" label="Non-Blocking" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1196,10 +1198,6 @@
 
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
-  </Event>
-
-  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
   </Event>
 
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
