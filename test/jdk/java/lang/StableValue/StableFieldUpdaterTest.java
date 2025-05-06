@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for StableUpdaters implementations
+ * @summary Basic tests for StableFieldUpdater implementations
  * @modules java.base/jdk.internal.lang.stable
- * @run junit StableUpdatersTest
+ * @run junit StableFieldUpdaterTest
  */
 
 import jdk.internal.lang.stable.StableFieldUpdater;
@@ -46,7 +46,7 @@ final class StableFieldUpdaterTest {
         assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(String.class, null, _ -> 0, ZERO_REPLACEMENT));
         assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(Foo.class, "hash", null, ZERO_REPLACEMENT));
         var x = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofInt(Foo.class, "dummy", _ -> 0, ZERO_REPLACEMENT));
-        assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableUpdatersTest$Foo.dummy'", x.getMessage());
+        assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableFieldUpdaterTest$Foo.dummy'", x.getMessage());
     }
 
     @Test
@@ -63,8 +63,7 @@ final class StableFieldUpdaterTest {
         // The field is `final`
         var x = assertThrows(IllegalArgumentException.class,
                 () -> StableFieldUpdater.ofInt(RecordFoo.class, "hash", _ -> 0, ZERO_REPLACEMENT));
-        assertEquals("Only non final fields are supported. " +
-                "The provided field is 'private final int StableUpdatersTest$RecordFoo.hash'", x.getMessage());
+        assertEquals("Only non final fields are supported. The provided field is 'private final int StableFieldUpdaterTest$RecordFoo.hash'", x.getMessage());
     }
 
     @Test

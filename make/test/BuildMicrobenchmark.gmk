@@ -92,6 +92,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.lang.stable=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \

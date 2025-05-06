@@ -15,6 +15,108 @@ import java.util.function.ToLongFunction;
 /**
  * Stable field updaters.
  * <p>
+ * This class allows, for example, effortless conversion of immutable classes to use lazy
+ * {@link Object#hashCode()}.
+ * <p>
+ * Here is an example of how to convert
+ *
+ * {@snippet lang=java:
+ *    public final class Foo {
+ *
+ *         private final Bar bar;
+ *         private final Baz baz;
+ *
+ *         public Foo(Bar bar, Baz baz) {
+ *             this.bar = bar;
+ *             this.baz = baz;
+ *         }
+ *
+ *         @Override
+ *         public boolean equals(Object o) {
+ *             return o instanceof Foo that &&
+ *                     Objects.equals(this.bar, that.bar) &&
+ *                     Objects.equals(this.baz, that.baz);
+ *         }
+ *
+ *         @Override
+ *         public int hashCode() {
+ *             return Objects.hash(bar, baz);
+ *         }
+ *     }
+ * }
+ * to use {@code @Stable} lazy hashing:
+ *
+ * {@snippet lang=java:
+ *    public final class LazyFoo {
+ *
+ *         private final Bar bar;
+ *         private final Baz baz;
+ *
+ *         private static final ToIntFunction<LazyFoo> HASH_UPDATER =
+ *                 StableFieldUpdater.ofInt(LazyFoo.class, "hash",
+ *                         l -> Objects.hash(l.bar, l.baz), -1);
+ *
+ *         @Stable
+ *         private int hash;
+ *
+ *         public LazyFoo(Bar bar, Baz baz) {
+ *             this.bar = bar;
+ *             this.baz = baz;
+ *         }
+ *
+ *         @Override
+ *         public boolean equals(Object o) {
+ *             return o instanceof Foo that &&
+ *                     Objects.equals(this.bar, that.bar) &&
+ *                     Objects.equals(this.baz, that.baz);
+ *         }
+ *
+ *         @Override
+ *         public int hashCode() {
+ *             return HASH_UPDATER.applyAsInt(this);
+ *         }
+ *     }
+ * }
+ * <p>
+ * If the underlying hash lamba returns zero, it is replaced with {@code -1}.
+ *
+ * In cases where the entire range of hash codes are strictly specified (as it is for
+ * {@code String}), a {@code long} field can be used instead, and then we can use
+ * {@code 1 << 32} as a token for zero (as the lower 32 bits are zero) and then just
+ * cast to an {@code int} as shown in this example:
+ *
+ * {@snippet lang=java:
+        public final class LazySpecifiedFoo {
+
+        private final Bar bar;
+        private final Baz baz;
+
+        private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
+                StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
+                        l -> Objects.hash(l.bar, l.baz), 1L << 32);
+
+        @Stable
+        private long hash;
+
+        public LazySpecifiedFoo(Bar bar, Baz baz) {
+            this.bar = bar;
+            this.baz = baz;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+             return (o instanceof Foo that) &&
+                     Objects.equals(this.bar, that.bar) &&
+                     Objects.equals(this.baz, that.baz);
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) HASH_UPDATER.applyAsLong(this);
+        }
+    }
+ * }
+ * <p>
  * The provided {@code underlying} function must not recurse or the result of the
  * operation is unspecified.
  */
