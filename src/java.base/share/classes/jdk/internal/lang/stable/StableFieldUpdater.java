@@ -175,6 +175,8 @@ public final class StableFieldUpdater {
 
         final long offset = offset(holderType, fieldName, long.class, Reflection.getCallerClass());
         if (Architecture.is64bit()) {
+            // We are also relying on the fact that the VM will not place 64-bit
+            // instance fields that can cross cache lines.
             return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
         } else {
             return new TearingStableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
