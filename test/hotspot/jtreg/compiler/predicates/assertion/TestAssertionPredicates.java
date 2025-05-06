@@ -182,7 +182,7 @@
 /*
  * @test id=StressXcompMaxUnroll0
  * @key randomness
- * @bug 8288981
+ * @bug 8288981 8356084
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:LoopMaxUnroll=0 -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
