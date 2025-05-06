@@ -26,7 +26,6 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.inline.hpp"
-#include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_bsd.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
@@ -78,7 +77,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
     _initialized(false) {
 
   // Reserve address space for backing memory
-  _base = (uintptr_t)os::reserve_memory(max_capacity, false, mtJavaHeap);
+  _base = (uintptr_t)os::reserve_memory(max_capacity, mtJavaHeap);
   if (_base == 0) {
     // Failed
     ZInitialize::error("Failed to reserve address space for backing memory");
@@ -97,12 +96,12 @@ void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 
-bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
+bool ZPhysicalMemoryBacking::commit_inner(zbacking_offset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
-                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
+                      untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
   const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
@@ -116,7 +115,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   return true;
 }
 
-size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
+size_t ZPhysicalMemoryBacking::commit(zbacking_offset offset, size_t length, uint32_t /* numa_id - ignored */) const {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -124,8 +123,8 @@ size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
   }
 
   // Failed, try to commit as much as possible
-  zoffset start = offset;
-  zoffset end = offset + length;
+  zbacking_offset start = offset;
+  zbacking_offset end = offset + length;
 
   for (;;) {
     length = align_down((end - start) / 2, ZGranuleSize);
@@ -144,12 +143,12 @@ size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
   }
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
+size_t ZPhysicalMemoryBacking::uncommit(zbacking_offset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
-                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
+                      untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   const uintptr_t start = _base + untype(offset);
   const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
@@ -162,7 +161,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   return length;
 }
 
-void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zoffset offset) const {
+void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const {
   const ZErrno err = mremap(_base + untype(offset), untype(addr), size);
   if (err) {
     fatal("Failed to remap memory (%s)", err.to_string());

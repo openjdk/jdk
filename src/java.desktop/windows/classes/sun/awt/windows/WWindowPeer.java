@@ -849,7 +849,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * it removes the list of the active windows from the disposed AppContext and
      * unregisters ActiveWindowListener listener.
      */
-    private static class GuiDisposedListener implements PropertyChangeListener {
+    private static final class GuiDisposedListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             boolean isDisposed = (Boolean)e.getNewValue();
@@ -875,7 +875,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * window is always at the end of the list. The list is stored in AppContext.
      */
     @SuppressWarnings("unchecked")
-    private static class ActiveWindowListener implements PropertyChangeListener {
+    private static final class ActiveWindowListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             Window w = (Window)e.getNewValue();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,8 +476,27 @@ public abstract class SHA3 extends DigestBase {
 
         public void reset() {
             engineReset();
+            // engineReset (final in DigestBase) skips implReset if there's
+            // no update. This works for MessageDigest, since digest() always
+            // resets. But for XOF, squeeze() may be called without update,
+            // and still modifies state. So we always call implReset here
+            // to ensure correct behavior.
+            implReset();
         }
     }
+
+    public static final class SHAKE128Hash extends SHA3 {
+        public SHAKE128Hash() {
+            super("SHAKE128-256", 32, (byte) 0x1F, 32);
+        }
+    }
+
+    public static final class SHAKE256Hash extends SHA3 {
+        public SHAKE256Hash() {
+            super("SHAKE256-512", 64, (byte) 0x1F, 64);
+        }
+    }
+
 
     /*
      * The SHAKE128 extendable output function.

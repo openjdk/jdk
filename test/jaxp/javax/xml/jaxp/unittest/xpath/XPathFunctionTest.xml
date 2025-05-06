@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<toys>
+    <toy id="1">
+        <name>Some toy</name>
+        <price>10</price>
+    </toy>
+    <toy id="2">
+        <name>Another toy</name>
+        <price>20</price>
+    </toy>
+</toys>

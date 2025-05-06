@@ -242,13 +242,18 @@ const TypeFunc* OptoRuntime::_bigIntegerShift_Type                = nullptr;
 const TypeFunc* OptoRuntime::_vectorizedMismatch_Type             = nullptr;
 const TypeFunc* OptoRuntime::_ghash_processBlocks_Type            = nullptr;
 const TypeFunc* OptoRuntime::_chacha20Block_Type                  = nullptr;
-
+const TypeFunc* OptoRuntime::_kyberNtt_Type                       = nullptr;
+const TypeFunc* OptoRuntime::_kyberInverseNtt_Type                = nullptr;
+const TypeFunc* OptoRuntime::_kyberNttMult_Type                   = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_2_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_3_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_kyber12To16_Type                    = nullptr;
+const TypeFunc* OptoRuntime::_kyberBarrettReduce_Type             = nullptr;
 const TypeFunc* OptoRuntime::_dilithiumAlmostNtt_Type             = nullptr;
 const TypeFunc* OptoRuntime::_dilithiumAlmostInverseNtt_Type      = nullptr;
 const TypeFunc* OptoRuntime::_dilithiumNttMult_Type               = nullptr;
 const TypeFunc* OptoRuntime::_dilithiumMontMulByConstant_Type     = nullptr;
 const TypeFunc* OptoRuntime::_dilithiumDecomposePoly_Type         = nullptr;
-
 const TypeFunc* OptoRuntime::_base64_encodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
@@ -342,7 +347,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     // Scavenge and allocate an instance.
     Handle holder(current, klass->klass_holder()); // keep the klass alive
     oop result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
-    current->set_vm_result(result);
+    current->set_vm_result_oop(result);
 
     // Pass oops back through thread local storage.  Our apparent type to Java
     // is that we return an oop, but we can block on exit from this routine and
@@ -388,7 +393,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(result);
+  current->set_vm_result_oop(result);
   JRT_BLOCK_END;
 
   // inform GC that we won't do card marks for initializing writes.
@@ -416,14 +421,14 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   // a GC can trash the oop in C's return register.  The generated stub will
   // fetch the oop from TLS after any possible GC.
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(result);
+  current->set_vm_result_oop(result);
   JRT_BLOCK_END;
 
 
   // inform GC that we won't do card marks for initializing writes.
   SharedRuntime::on_slowpath_allocation_exit(current);
 
-  oop result = current->vm_result();
+  oop result = current->vm_result_oop();
   if ((len > 0) && (result != nullptr) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
@@ -460,7 +465,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 3 dimensions
@@ -477,7 +482,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 4 dimensions
@@ -495,7 +500,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 // multianewarray for 5 dimensions
@@ -514,7 +519,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int l
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* dims, JavaThread* current))
@@ -532,7 +537,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   Handle holder(current, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notify_C(oopDesc* obj, JavaThread* current))
@@ -1409,6 +1414,146 @@ static const TypeFunc* make_chacha20Block_Type() {
   return TypeFunc::make(domain, range);
 }
 
+// Kyber NTT function
+static const TypeFunc* make_kyberNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber inverse NTT function
+static const TypeFunc* make_kyberInverseNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // inverse NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber NTT multiply function
+static const TypeFunc* make_kyberNttMult_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // ntta
+    fields[argp++] = TypePtr::NOTNULL;      // nttb
+    fields[argp++] = TypePtr::NOTNULL;      // NTT multiply zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+// Kyber add 2 polynomials function
+static const TypeFunc* make_kyberAddPoly_2_Type() {
+    int argcnt = 3;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber add 3 polynomials function
+static const TypeFunc* make_kyberAddPoly_3_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+    fields[argp++] = TypePtr::NOTNULL;      // c
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber XOF output parsing into polynomial coefficients candidates
+// or decompress(12,...) function
+static const TypeFunc* make_kyber12To16_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // condensed
+    fields[argp++] = TypeInt::INT;          // condensedOffs
+    fields[argp++] = TypePtr::NOTNULL;      // parsed
+    fields[argp++] = TypeInt::INT;          // parsedLength
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber Barrett reduce function
+static const TypeFunc* make_kyberBarrettReduce_Type() {
+    int argcnt = 1;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
 // Dilithium NTT function except for the final "normalization" to |coeff| < Q
 static const TypeFunc* make_dilithiumAlmostNtt_Type() {
     int argcnt = 2;
@@ -1799,7 +1944,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 #ifndef PRODUCT
   SharedRuntime::_find_handler_ctr++;          // find exception handler
 #endif
-  debug_only(NoHandleMark __hm;)
+  DEBUG_ONLY(NoHandleMark __hm;)
   nmethod* nm = nullptr;
   address handler_address = nullptr;
   {
@@ -1867,7 +2012,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   }
 #endif
 
-  thread->set_vm_result(exception);
+  thread->set_vm_result_oop(exception);
   // Frame not compiled (handles deoptimization blob)
   return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);
 }
@@ -2120,13 +2265,18 @@ void OptoRuntime::initialize_types() {
   _vectorizedMismatch_Type            = make_vectorizedMismatch_Type();
   _ghash_processBlocks_Type           = make_ghash_processBlocks_Type();
   _chacha20Block_Type                 = make_chacha20Block_Type();
-
+  _kyberNtt_Type                      = make_kyberNtt_Type();
+  _kyberInverseNtt_Type               = make_kyberInverseNtt_Type();
+  _kyberNttMult_Type                  = make_kyberNttMult_Type();
+  _kyberAddPoly_2_Type                = make_kyberAddPoly_2_Type();
+  _kyberAddPoly_3_Type                = make_kyberAddPoly_3_Type();
+  _kyber12To16_Type                   = make_kyber12To16_Type();
+  _kyberBarrettReduce_Type            = make_kyberBarrettReduce_Type();
   _dilithiumAlmostNtt_Type            = make_dilithiumAlmostNtt_Type();
   _dilithiumAlmostInverseNtt_Type     = make_dilithiumAlmostInverseNtt_Type();
   _dilithiumNttMult_Type              = make_dilithiumNttMult_Type();
   _dilithiumMontMulByConstant_Type    = make_dilithiumMontMulByConstant_Type();
   _dilithiumDecomposePoly_Type        = make_dilithiumDecomposePoly_Type();
-
   _base64_encodeBlock_Type            = make_base64_encodeBlock_Type();
   _base64_decodeBlock_Type            = make_base64_decodeBlock_Type();
   _string_IndexOf_Type                = make_string_IndexOf_Type();
