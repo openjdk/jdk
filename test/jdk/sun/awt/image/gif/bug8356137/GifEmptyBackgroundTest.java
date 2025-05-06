@@ -46,13 +46,7 @@ public class GifEmptyBackgroundTest {
         URL srcURL = GifEmptyBackgroundTest.class.getResource("clyde.gif");
         BufferedImage[] frames = getFrames(srcURL, 4);
 
-        boolean pass = true;
         if (new Color(frames[3].getRGB(20, 20), true).getAlpha() != 0) {
-            System.err.println("Sampling at (20,20) failed");
-            pass = false;
-        }
-
-        if (!pass)
             throw new Error("See System.err for details");
     }
 
