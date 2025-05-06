@@ -41,6 +41,7 @@ public class TestInvalidJVMCIOption {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
+            "--add-modules=jdk.internal.vm.ci",
             "-XX:+UseJVMCICompiler",
             "-Djvmci.XXXXXXXXX=true");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -56,11 +56,7 @@ public class Decompile {
     private static final int PerBytecodeTrapLimit = WB.getIntxVMFlag("PerBytecodeTrapLimit").intValue();
     // The number of interpreter invocations after which a decompiled method will be re-compiled.
     private static final int Tier0InvokeNotifyFreq = (int)Math.pow(2, WB.getIntxVMFlag("Tier0InvokeNotifyFreqLog"));
-    // VM builds without JVMCI like x86_32 call the bimorphic inlining trap just 'bimorphic'
-    // while all the other builds with JVMCI call it 'bimorphic_or_optimized_type_check'.
-    // Only builds with JVMCI have the "EnableJVMCI" flag.
-    private static final boolean isJVMCISupported = (WB.getBooleanVMFlag("EnableJVMCI") != null);
-    private static final String bimorphicTrapName = isJVMCISupported ? "bimorphic_or_optimized_type_check" : "bimorphic";
+    private static final String bimorphicTrapName = "bimorphic_or_optimized_type_check";
 
     static class Base {
         void foo() {}

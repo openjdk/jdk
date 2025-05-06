@@ -45,7 +45,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:CompileCommand=exclude,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::check
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
@@ -57,7 +57,7 @@
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:CompileCommand=exclude,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::check
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
@@ -69,7 +69,7 @@
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:CompileCommand=exclude,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::check
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
@@ -81,7 +81,7 @@
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:CompileCommand=exclude,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::check
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2

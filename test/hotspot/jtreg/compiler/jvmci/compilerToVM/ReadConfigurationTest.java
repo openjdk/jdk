@@ -31,7 +31,7 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.ReadConfigurationTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *                   -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.ReadConfigurationTest
  */

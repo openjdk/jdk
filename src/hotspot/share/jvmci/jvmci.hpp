@@ -93,6 +93,12 @@ class JVMCI : public AllStatic {
   // execution has completed successfully.
   static volatile bool _is_initialized;
 
+  // True when at least one JVMCI compiled nmethod has been installed in the code cache.
+  static volatile bool _has_installed_code;
+
+  // Set to true when the jdk.internal.vm.ci module is defined.
+  static volatile bool _jvmci_module_defined;
+
   // True once boxing cache classes are guaranteed to be initialized.
   static bool _box_caches_initialized;
 
@@ -183,6 +189,23 @@ class JVMCI : public AllStatic {
   static bool in_shutdown();
 
   static bool is_compiler_initialized();
+
+  // Notifies that an nmethod was installed in the code cache.
+  static void installed_code() { _has_installed_code = true; }
+
+  // Queries whether a JVMCI compiled nmethod was ever installed in the code cache.
+  static bool has_installed_code() {
+    return _has_installed_code;
+  }
+
+  // Notifies that the jdk.internal.vm.ci module was defined.
+  static void jvmci_module_defined() { _jvmci_module_defined = true; }
+
+  // Queries whether the jdk.internal.vm.ci module was defined.
+  static bool is_jvmci_module_defined() {
+    return _jvmci_module_defined;
+  }
+
 
   /**
    * Determines if the VM is sufficiently booted to initialize JVMCI.

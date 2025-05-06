@@ -33,7 +33,7 @@
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Xbootclasspath/a:.
- *     -XX:+EnableJVMCI -XX:JVMCITraceLevel=1
+ *     -XX:JVMCITraceLevel=1
  *     -Dtest.jvmci.forceRuntimeStubAllocFail=test_stub_that_fails_to_be_allocated
  *     jdk.vm.ci.code.test.RuntimeStubAllocFailTest
  */

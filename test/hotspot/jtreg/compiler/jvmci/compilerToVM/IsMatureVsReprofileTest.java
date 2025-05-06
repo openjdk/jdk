@@ -38,7 +38,7 @@
  *        jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbatch -XX:CompileThresholdScaling=1.0
+ *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -Xbatch -XX:CompileThresholdScaling=1.0
  *     -XX:CompileCommand=dontinline,compiler.jvmci.common.testcases.SimpleClass::testMethod
  *     compiler.jvmci.compilerToVM.IsMatureVsReprofileTest
  */

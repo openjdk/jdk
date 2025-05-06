@@ -30,7 +30,6 @@
  * @test id=static
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
@@ -46,7 +45,6 @@
  * @test id=dynamic
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty

@@ -31,7 +31,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestSpeculationLog
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestSpeculationLog
  */
 package jdk.vm.ci.runtime.test;
 

@@ -49,11 +49,6 @@ public class Compiler {
      * @return true if JVMCI is enabled
      */
     public static boolean isJVMCIEnabled() {
-        Boolean enableJvmci = WB.getBooleanVMFlag("EnableJVMCI");
-        if (enableJvmci == null || !enableJvmci) {
-            return false;
-        }
-
         return true;
     }
 

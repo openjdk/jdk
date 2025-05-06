@@ -25,7 +25,7 @@
  * @test 8355034
  * @requires vm.jvmci
  * @modules jdk.internal.vm.ci/jdk.vm.ci.code
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.InstalledCodeTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions jdk.vm.ci.code.test.InstalledCodeTest
  */
 
 package jdk.vm.ci.code.test;

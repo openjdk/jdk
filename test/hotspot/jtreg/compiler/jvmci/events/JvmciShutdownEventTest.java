@@ -67,15 +67,7 @@ public class JvmciShutdownEventTest {
                 "Unexpected exit code with +EnableJVMCI",
                 "Unexpected output with +EnableJVMCI", ExitCode.OK,
                 addTestVMOptions, "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+EnableJVMCI", "-XX:-UseJVMCICompiler", "-Xbootclasspath/a:.",
-                JvmciShutdownEventListener.Main.class.getName()
-        );
-
-        CommandLineOptionTest.verifyJVMStartup(ERROR_MESSAGE, MESSAGE,
-                "Unexpected exit code with -EnableJVMCI",
-                "Unexpected output with -EnableJVMCI", ExitCode.OK,
-                addTestVMOptions, "-XX:+UnlockExperimentalVMOptions",
-                "-XX:-EnableJVMCI", "-XX:-UseJVMCICompiler", "-Xbootclasspath/a:.",
+                "-XX:-UseJVMCICompiler", "-Xbootclasspath/a:.",
                 JvmciShutdownEventListener.Main.class.getName()
         );
     }

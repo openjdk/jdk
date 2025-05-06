@@ -32,11 +32,6 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives.positive=true
- *      -XX:+EnableJVMCI
- *      compiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives
- * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *      -Dcompiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives.positive=false
- *      -XX:-EnableJVMCI -XX:-UseJVMCICompiler
  *      compiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives
  */
 

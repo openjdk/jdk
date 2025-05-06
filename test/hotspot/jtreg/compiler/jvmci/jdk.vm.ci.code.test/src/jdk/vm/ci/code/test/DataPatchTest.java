@@ -35,7 +35,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
  *          jdk.internal.vm.ci/jdk.vm.ci.riscv64
  * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java TestHotSpotVMConfig.java amd64/AMD64TestAssembler.java aarch64/AArch64TestAssembler.java riscv64/RISCV64TestAssembler.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.code.test.DataPatchTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.code.test.DataPatchTest
  */
 
 package jdk.vm.ci.code.test;
