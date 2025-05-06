@@ -698,8 +698,8 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
-  bool java_suspend(bool update_vthread_list);
-  bool java_resume(bool update_vthread_list);
+  bool java_suspend(bool register_vthread_SR);
+  bool java_resume(bool register_vthread_SR);
   bool is_suspended()     { return _handshake.is_suspended(); }
 
   // Check for async exception in addition to safepoint.

@@ -730,7 +730,7 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
   virtual bool is_suspend() { return true; }
 };
 
-bool HandshakeState::suspend_with_handshake(bool update_vthread_list) {
+bool HandshakeState::suspend_with_handshake(bool register_vthread_SR) {
   assert(_handshakee->threadObj() != nullptr, "cannot suspend with a null threadObj");
   if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
@@ -745,7 +745,7 @@ bool HandshakeState::suspend_with_handshake(bool update_vthread_list) {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
-      set_suspended(true, update_vthread_list);
+      set_suspended(true, register_vthread_SR);
       return true;
     }
   }
@@ -753,7 +753,7 @@ bool HandshakeState::suspend_with_handshake(bool update_vthread_list) {
   assert(!is_suspended(), "cannot be suspended without a suspend request");
   // Thread is safe, so it must execute the request, thus we can count it as suspended
   // from this point.
-  set_suspended(true, update_vthread_list);
+  set_suspended(true, register_vthread_SR);
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
@@ -763,19 +763,19 @@ bool HandshakeState::suspend_with_handshake(bool update_vthread_list) {
 
 // This is the closure that synchronously honors the suspend request.
 class SuspendThreadHandshake : public HandshakeClosure {
-  bool _update_vthread_list;
+  bool _register_vthread_SR;
   bool _did_suspend;
 public:
-  SuspendThreadHandshake(bool update_vthread_list) : HandshakeClosure("SuspendThread"),
-    _update_vthread_list(update_vthread_list), _did_suspend(false) {}
+  SuspendThreadHandshake(bool register_vthread_SR) : HandshakeClosure("SuspendThread"),
+    _register_vthread_SR(register_vthread_SR), _did_suspend(false) {}
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
-    _did_suspend = target->handshake_state()->suspend_with_handshake(_update_vthread_list);
+    _did_suspend = target->handshake_state()->suspend_with_handshake(_register_vthread_SR);
   }
   bool did_suspend() { return _did_suspend; }
 };
 
-bool HandshakeState::suspend(bool update_vthread_list) {
+bool HandshakeState::suspend(bool register_vthread_SR) {
   JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
@@ -783,31 +783,32 @@ bool HandshakeState::suspend(bool update_vthread_list) {
     // and just suspend directly
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    set_suspended(true, update_vthread_list);
+    set_suspended(true, register_vthread_SR);
     do_self_suspend();
     return true;
   } else {
-    SuspendThreadHandshake st(update_vthread_list);
+    SuspendThreadHandshake st(register_vthread_SR);
     Handshake::execute(&st, _handshakee);
     return st.did_suspend();
   }
 }
 
-bool HandshakeState::resume(bool update_vthread_list) {
+bool HandshakeState::resume(bool register_vthread_SR) {
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   if (!is_suspended()) {
     assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
   // Resume the thread.
-  set_suspended(false, update_vthread_list);
+  set_suspended(false, register_vthread_SR);
   _lock.notify();
   return true;
 }
 
-void HandshakeState::set_suspended(bool is_suspend, bool update_vthread_list) {
+void HandshakeState::set_suspended(bool is_suspend, bool register_vthread_SR) {
 #if INCLUDE_JVMTI
-  if (update_vthread_list && _handshakee->is_vthread_mounted()) {
+  if (register_vthread_SR) {
+    assert(_handshakee->is_vthread_mounted(), "sanity check");
     if (is_suspend) {
       JvmtiVTSuspender::register_vthread_suspend(_handshakee->vthread());
     } else {

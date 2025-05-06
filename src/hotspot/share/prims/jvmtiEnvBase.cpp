@@ -1795,7 +1795,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
     if (java_thread->is_suspended() || (!is_virtual && java_thread->is_carrier_thread_suspended())) {
       return JVMTI_ERROR_THREAD_SUSPENDED;
     }
-    if (!java_thread->java_suspend(single_suspend)) {
+    if (!java_thread->java_suspend(is_virtual && single_suspend)) {
       // Thread is already suspended or in process of exiting.
       if (java_thread->is_exiting()) {
         // The thread was in the process of exiting.
@@ -1855,7 +1855,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
       return JVMTI_ERROR_NONE;
     }
 
-    if (!java_thread->java_resume(single_resume)) {
+    if (!java_thread->java_resume(is_virtual && single_resume)) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     }
     return JVMTI_ERROR_NONE;
