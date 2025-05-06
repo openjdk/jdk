@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
