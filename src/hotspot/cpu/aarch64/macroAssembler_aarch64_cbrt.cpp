@@ -47,32 +47,32 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(4) static const juint _SIG_MASK[] =
+ATTRIBUTE_ALIGNED(4) static const juint _SIG_MASK[] =   // 0xfc00000000000
 {
     0, 1032192
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _EXP_MASK[] =
+ATTRIBUTE_ALIGNED(4) static const juint _EXP_MASK[] =   // Sign, exp, but not bias
 {
     0, 3220176896
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _EXP_MSK2[] =
+ATTRIBUTE_ALIGNED(4) static const juint _EXP_MSK2[] =   // WTAF? 0xbff0400000000000
 {
     0, 3220193280
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _EXP_MSK3[] =
+ATTRIBUTE_ALIGNED(4) static const juint _EXP_MSK3[] =   // Fraction part 0x000fffffffffffff (52 bits)
 {
     4294967295, 1048575
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _SCALE63[] =
+ATTRIBUTE_ALIGNED(4) static const juint _SCALE63[] =    // WTAF? 100001111100000000000000000000000000000000000000000000000000000
 {
     0, 1138753536
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _ZERON[] =
+ATTRIBUTE_ALIGNED(4) static const juint _ZERON[] =      // Sign bit
 {
     0, 2147483648
 };
@@ -205,7 +205,7 @@ void MacroAssembler::generate_libmCbrt() {
   address D_table         = (address)_D_table;
 
   address start = pc();
-  enter(); // required for proper stackwalking of RuntimeStub frame
+  // enter(); // required for proper stackwalking of RuntimeStub frame
 
   assert(v0 == c_farg0, "must be");
   FloatRegister xmm0 = v0;
@@ -231,91 +231,102 @@ void MacroAssembler::generate_libmCbrt() {
   // __ movsd(xmm3, ExternalAddress(EXP_MSK2), r11 /*rscratch*/);
 
   __ bind(B1_2);
-  __ fmovd(xmm7, xmm0);
-  __ mov(rdx, 524032);
-  __ ldrd(xmm5,  ExternalAddress(EXP_MSK3), rscratch1);
-  __ ldrd(xmm3,  ExternalAddress(EXP_MSK2), rscratch1);
+  __ fmovd(xmm7, xmm0);                                                   // xmm7_0 = c_farg0
+  __ mov(rdx, 524032);                                                    // rdx_0 = 0x7ff00
+  __ ldrd(xmm5,  ExternalAddress(EXP_MSK3), rscratch1);                   // xmm5_0 = EXP_MSK3
+  __ ldrd(xmm3,  ExternalAddress(EXP_MSK2), rscratch1);                   // xmm3_0 = EXP_MSK2
 
   // __ psrlq(xmm7, 44);
-  __ ushr(xmm7, T2D, xmm7, 44);
+  __ ushr(xmm7, T2D, xmm7, 44);                                           // xmm7_1 = xmm7_0 >> 44
+                                                     // This is the sign, exponent, and top 8 bits of fraction
   // __ pextrw(rcx, xmm7, 0);
-  __ fmovs(rcx, xmm7);
+  __ fmovs(rcx, xmm7);                                                    // rcx_0 = (unsigned short)xmm7_1
   // __ andr(rcx, rcx, 0xffff); // Unnecessary
   // __ movdl(rax, xmm7);
-  __ fmovd(rax, xmm7);
+  __ fmovd(rax, xmm7);                                                    // rax_0 = xmm7_1
   // __ movsd(xmm1, ExternalAddress(EXP_MASK), r11 /*rscratch*/);
   // __ movsd(xmm2, ExternalAddress(SIG_MASK), r11 /*rscratch*/);
-  __ ldrd(xmm1, ExternalAddress(EXP_MASK), rscratch1);
-  __ ldrd(xmm2, ExternalAddress(SIG_MASK), rscratch1);
+  __ ldrd(xmm1, ExternalAddress(EXP_MASK), rscratch1);                    // xmm1_0 = EXP_MASK
+  __ ldrd(xmm2, ExternalAddress(SIG_MASK), rscratch1);                    // xmm2_0 = SIG_MASK
   // __ andl(rcx, 248);
-  __ andr(rcx, rcx, 248);
+  __ andr(rcx, rcx, 248);                                                 // rcx_1 = rcx_0 & 0xf8
   // __ lea(r8, ExternalAddress(rcp_table));
   // __ movsd(xmm4, Address(r8, rcx, Address::times_1));
   __ lea(rscratch1, ExternalAddress(rcp_table));
-  __ ldrd(xmm4, Address(rscratch1, rcx));
+  __ ldrd(xmm4, Address(rscratch1, rcx));                                 // xmm4_0 = rcp_table[rcx_1]
   // __ movq(r9, rax);
   // __ andl(rdx, rax);
   // __ cmpl(rdx, 0);
   // __ jcc(Assembler::equal, L_2TAG_PACKET_0_0_1); // Branch only if |x| is denormalized
-  __ mov(r9, rax);
-  __ andr(rdx, rdx, rax);
-  __ cmp(rdx, (u1)0);
+  __ mov(r9, rax);                                                        // r9_0 = rax_0
+  __ andr(rdx, rdx, rax);                                                 // rdx_1 = rdx_0 & rax_0
+  __ cmp(rdx, (u1)0);                                                     // cmp rdx_1, 0
   __ br(__ EQ, L_2TAG_PACKET_0_0_1); // Branch only if |x| is denormalized
   // __ cmpl(rdx, 524032);
   // __ jcc(Assembler::equal, L_2TAG_PACKET_1_0_1); // Branch only if |x| is INF or NaN
   __ mov(rscratch1, 524032);
-  __ cmp(rdx, rscratch1);
+  __ cmp(rdx, rscratch1);                                                 // cmp rdx_1, 0x7ff00
   __ br(__ EQ, L_2TAG_PACKET_1_0_1); // Branch only if |x| is INF or NaN
 
   // __ shrl(rdx, 8);
   // __ shrq(r9, 8);
-  __ lsrw(rdx, rdx, 8);
-  __ lsr(r9, r9, 8);
+  __ lsrw(rdx, rdx, 8);                                                   // rdx_2 = rdx_1 & 0x7ff00
+  __ lsr(r9, r9, 8);                                                      // r9_1 = r9_0 >> 8
 
   // __ andpd(xmm2, xmm0);
   // __ andpd(xmm0, xmm5);
   // __ orpd(xmm3, xmm2);
   // __ orpd(xmm1, xmm0);
-  __ andr(xmm2, T16B, xmm2, xmm0);
-  __ andr(xmm0, T16B, xmm0, xmm5);
-  __ orr(xmm3, T16B, xmm3, xmm2);
-  __ orr(xmm1, T16B, xmm1, xmm0);
+  __ andr(xmm2, T16B, xmm2, xmm0);                                        // xmm2_1 = SIG_MASK & c_farg0
+  __ andr(xmm0, T16B, xmm5, xmm0);                                        // xmm0_1 = EXP_MSK3 & c_farg0
+  __ orr(xmm3, T16B, xmm3, xmm2);                                         // xmm3_1 = EXP_MSK2 | xmm2_1
+  __ orr(xmm1, T16B, xmm1, xmm0);                                         // xmm1_2 = EXP_MASK | xmm0_1
 
   // __ movapd(xmm5, ExternalAddress(coeff_table), r11 /*rscratch*/);
-  __ ldrq(xmm5, ExternalAddress(coeff_table), rscratch1);
+  __ ldrq(xmm5, ExternalAddress(coeff_table), rscratch1);                 // xmm5_1 = (coeff_table[0], coeff_table[1])
   // __ movl(rax, 5462);
-  __ mov(rax, 5462);
+  __ mov(rax, 5462);                                                      // rax_1 = 0x160a
   // __ movapd(xmm6, ExternalAddress(coeff_table + 16), r11 /*rscratch*/);
-  __ ldrq(xmm6, ExternalAddress(coeff_table + 16), rscratch1);
-  __ mul(rax, rax, rdx);
+  __ ldrq(xmm6, ExternalAddress(coeff_table + 16), rscratch1);            // xmm6_0 = (coeff_table[2], coeff_table[3])
+  __ mul(rax, rax, rdx);                                                  // rax_2 = rax_1 * rdx_2
 
   // __ movq(rdx, r9);
   // __ andq(r9, 2047);
   // __ shrl(rax, 14);
   // __ andl(rdx, 2048);
-  __ mov(rdx, r9);
-  __ andr(r9, r9, 2047);
-  __ lsr(rax, rax, 14);
-  __ andr(rdx, rdx, 2048);
+  __ mov(rdx, r9);                                                        // rdx_3 = r9_1
+  __ andr(r9, r9, 2047);                                                  // r9_2 = r9_1 & 0x7ff
+  __ lsr(rax, rax, 14);                                                   // rax_3 = rax_2 >> 0x0e
+  __ andr(rdx, rdx, 2048);                                                // rdx_4 = rdx_3 & 0x800
   // __ subq(r9, rax);
   // __ subq(r9, rax);
   // __ subq(r9, rax);
   // __ shlq(r9, 8);
+  __ sub(r9, r9, rax);                                                    // r9_3 = r9_2 - rax_3 * 3
   __ sub(r9, r9, rax);
   __ sub(r9, r9, rax);
-  __ sub(r9, r9, rax);
-  __ lsl(r9, r9, 8);
+  __ lsl(r9, r9, 8);                                                      // r9_4 = r9_3 << 8
 
   // __ addl(rax, 682);
   // __ orl(rax, rdx);
   // __ movdl(xmm7, rax);
   // __ addq(rcx, r9);
   // __ psllq(xmm7, 52);
-  __ addw(rax, rax, 682);
-  __ orrw(rax, rax, rdx);
-  __ fmovd(xmm7, rax);
-  __ add(rcx, rcx, r9);
-  __ shl(xmm7, T2D, xmm7, 52);
+  __ addw(rax, rax, 682);                                                 // rax_4 = rax_3 + 0x2aa
+  __ orrw(rax, rax, rdx);                                                 // rax_5 = rax_4 & rdx_4
+  __ fmovd(xmm7, rax);                                                    // xmm7_2 = (double) rax_5
+  __ add(rcx, rcx, r9);                                                   // rcx_2 = rcx_1 + r9_4
+
+  // rcx_3 = rcx_2 + r9_4
+  //       = (rcx_0 & 0xf8) + (r9_3 << 8)
+  //       = ((float)xmm7_1 & 0xf8) + ((r9_2 - rax_3 * 3) << 8)
+  //       = ((float)(xmm7_0 >> 44) & 0xf8) + (((r9_1 & 0x7ff) - (rax_2 >> 0x0e) * 3) << 8)
+  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((rax_1 & rdx_2) >> 0x0e) * 3) << 8)
+  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((0x160a & ((rdx_0 & rax_0) & 0x7ff00)) >> 0x0e) * 3) << 8)
+  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((0x160a & ((0x7ff00 & rax_0) & 0x7ff00)) >> 0x0e) * 3) << 8)
+  //       = ((float)(xmm7_0 >> 44) & 0xf8) + (((((xmm7_0 >> 44) >> 8) & 0x7ff) - ((0x160a & ((0x7ff00 & (c_farg0 >> 44)) & 0x7ff00)) >> 0x0e) * 3) << 8)
+
+  __ shl(xmm7, T2D, xmm7, 52);                                            // xmm7_3[0, 1] = xmm7_2[0, 1] << 52
 
   __ bind(L_2TAG_PACKET_2_0_1);
   lea(rscratch1, Address((address)&ppp));
@@ -323,24 +334,24 @@ void MacroAssembler::generate_libmCbrt() {
 
   // __ movapd(xmm2, ExternalAddress(coeff_table + 32), r11 /*rscratch*/);
   // __ movapd(xmm0, ExternalAddress(coeff_table + 48), r11 /*rscratch*/);
-  __ ldrq(xmm2, ExternalAddress(coeff_table + 32), rscratch1);
-  __ ldrq(xmm0, ExternalAddress(coeff_table + 48), rscratch1);
+  __ ldrq(xmm2, ExternalAddress(coeff_table + 32), rscratch1);            // xmm2_2 = (coeff_table[4], coeff_table[5])
+  __ ldrq(xmm0, ExternalAddress(coeff_table + 48), rscratch1);            // xmm0_2 = (coeff_table[6], coeff_table[7])
   // __ subsd(xmm1, xmm3);
   // __ movq(xmm3, xmm7);
   // __ lea(r8, ExternalAddress(cbrt_table));
-  __ fsubd(xmm1, xmm1, xmm3);
-  __ fmovd(xmm3, xmm7);
+  __ fsubd(xmm1, xmm1, xmm3);                                             // xmm1_3 = xmm1_2 - xmm3_1
+  __ fmovd(xmm3, xmm7);                                                   // xmm3_2 = xmm7_3
   __ lea(rscratch1, ExternalAddress(cbrt_table));
   // __ mulsd(xmm7, Address(r8, rcx, Address::times_1));
   // __ mulsd(xmm1, xmm4);
   // __ lea(r8, ExternalAddress(D_table));
   // __ mulsd(xmm3, Address(r8, rcx, Address::times_1));
   __ ldrd(xmm_scratch, Address(rscratch1, rcx));
-  __ fmuld(xmm7, xmm7, xmm_scratch);
-  __ fmuld(xmm1, xmm1, xmm4);
+  __ fmuld(xmm7, xmm7, xmm_scratch);                                      // xmm7_4 = xmm7_3 * cbrt_table[rcx_3]
+  __ fmuld(xmm1, xmm1, xmm4);                                             // xmm1_4 = xmm1_3 * xmm4_0
   __ lea(rscratch1, ExternalAddress(D_table));
   __ ldrd(xmm_scratch, Address(rscratch1, rcx));
-  __ fmuld(xmm3, xmm3, xmm_scratch);
+  __ fmuld(xmm3, xmm3, xmm_scratch);                                      // xmm3_3 = xmm3_2 * D_table[rcx_3]
 
   // __ movapd(xmm4, xmm1);
   __ orr(xmm4, T16B, xmm1, xmm1);
@@ -530,7 +541,8 @@ void MacroAssembler::generate_libmCbrt() {
 
   __ bind(B1_4);
   // __ addq(rsp, 24);
+  __ add(sp, sp, align_up(3 * wordSize, 16));
 
-  leave(); // required for proper stackwalking of RuntimeStub frame
+  // leave(); // required for proper stackwalking of RuntimeStub frame
   ret(lr);
 }
