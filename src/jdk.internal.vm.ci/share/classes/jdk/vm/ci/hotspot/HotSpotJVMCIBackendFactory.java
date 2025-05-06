@@ -83,28 +83,24 @@ public interface HotSpotJVMCIBackendFactory {
     }
 
     /**
-     * Converts a dynamically sized CPU features vector into enum constants.
+     * Converts CPU features bit map into enum constants.
      *
      * @param <CPUFeatureType> CPU feature enum type
      * @param enumType the class of {@code CPUFeatureType}
      * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
      *            specifies a CPU feature and its value is a mask for a bit in {@code features}
-     * @param features_pointer pointer to {@code _vm_target_features} field of {@code Abstract_VM_Version}
-     * @param features_vector_offset offset of feature_vector field in {@code VM_Features}
-     * @param features_vector_size size of feature vector
-     * @param features_element_shift_count log2 of dynamic feature bit vector lanesize in bits.
+     * @param featuresBitMapAddress pointer to {@code VM_Features::_features_bitmap} field of {@code VM_Version::_features}
+     * @param featuresBitMapSize size of feature bit map in bytes
      * @param renaming maps from VM feature names to enum constant names where the two differ
      * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
      *             enum value
      * @return the set of converted values
      */
-    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeaturesVector(
+    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertFeatures(
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
-                    long features_pointer,
-                    long features_vector_offset,
-                    long features_vector_size,
-                    long features_element_shift_count,
+                    long featuresBitMapAddress,
+                    long featuresBitMapSize,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
@@ -115,19 +111,18 @@ public interface HotSpotJVMCIBackendFactory {
             if (key.startsWith("VM_Version::CPU_")) {
                 String name = key.substring("VM_Version::CPU_".length());
                 try {
+                    final long featuresElementShiftCount = 6; // log (# of bits per long)
+                    final long featuresElementMask = (1L << featuresElementShiftCount) - 1;
+
                     CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
-                    long features_vector_index = bitIndex >>> features_element_shift_count;
-                    assert features_vector_index < features_vector_size;
 
-                    long  features_element_bitsize = (1L << features_element_shift_count);
-                    assert (features_element_bitsize & (features_element_bitsize - 1)) == 0;
+                    long featureIndex = bitIndex >>> featuresElementShiftCount;
+                    long featureBitMask = 1L << (bitIndex & featuresElementMask);
+                    assert featureIndex < featuresBitMapSize;
 
-                    long  features_element_size = features_element_bitsize / Byte.SIZE;
-                    long features = UNSAFE.getLong(features_pointer + features_vector_offset +
-                                                   features_vector_index * features_element_size);
+                    long featuresElement = UNSAFE.getLong(featuresBitMapAddress + featureIndex * Long.BYTES);
 
-                    long effective_bitMask = 1L << (bitIndex & (features_element_bitsize - 1));
-                    if ((features & effective_bitMask) != 0) {
+                    if ((featuresElement & featureBitMask) != 0) {
                         outFeatures.add(feature);
                     }
                 } catch (IllegalArgumentException iae) {

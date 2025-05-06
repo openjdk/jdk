@@ -975,12 +975,11 @@
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
-  static_field(VM_Version,                     _features,                              VM_Features)                                  \
-                                                                                                                                     \
-  nonstatic_field(VM_Features,                 _features_vector,                       VM_Features::FeatureVector)                   \
-  static_field(VM_Features,                    _features_vector_size,                  uint32_t)                                     \
-  static_field(VM_Features,                    _features_vector_element_shift_count,   uint32_t)                                     \
-  static_field(VM_Version,                     _has_intel_jcc_erratum,                     bool)
+  static_field(VM_Version,                     _features,                      VM_Version::VM_Features) \
+                                                                                                        \
+  nonstatic_field(VM_Version::VM_Features,     _features_bitmap[0],            uint64_t)                \
+  static_field(VM_Version::VM_Features,        _features_bitmap_size_in_bytes, int)                     \
+  static_field(VM_Version,                     _has_intel_jcc_erratum,         bool)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \

@@ -50,12 +50,12 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         Map<String, Long> constants = config.getStore().getConstants();
         Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
         assert config.useSSE >= 2 : "minimum config for x64";
-        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeaturesVector(CPUFeature.class, constants,
-                                                                                        config.vmVersionFeatures,
-                                                                                        config.vmFeaturesFeaturesVecOffset,
-                                                                                        config.vmFeaturesFeaturesVecSize,
-                                                                                        config.vmFeaturesFeaturesElemShiftCnt,
-                                                                                        renaming);
+        long featuresBitMapAddress = config.vmVersionFeatures + config.vmFeaturesFeaturesOffset;
+        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class,
+                                                                                  constants,
+                                                                                  featuresBitMapAddress,
+                                                                                  config.vmFeaturesFeaturesSize,
+                                                                                  renaming);
         features.add(AMD64.CPUFeature.SSE);
         features.add(AMD64.CPUFeature.SSE2);
         return features;

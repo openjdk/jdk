@@ -30,35 +30,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
-#define MAX_FEATURE_VEC_SIZE 4
-
-class VM_Features {
- public:
-  using FeatureVector = uint64_t [MAX_FEATURE_VEC_SIZE];
-
-  // Feature vector bitmap currently only used by x86 backend.
-  FeatureVector _features_vector;
-
-  // log2 of feature vector element size in bits, used by JVMCI to check enabled feature bits.
-  // Refer HotSpotJVMCIBackendFactory::convertFeaturesVector.
-  static uint32_t _features_vector_element_shift_count;
-
-  // Size of feature vector bitmap.
-  static uint32_t _features_vector_size;
-
-  VM_Features() {
-    clear_features();
-  }
-
-  void set_feature(uint32_t feature);
-  void clear_feature(uint32_t feature);
-  bool supports_feature(uint32_t feature);
-  void clear_features();
-
-  static bool is_within_feature_vector_bounds(uint32_t num_features);
-  static uint32_t features_vector_size() { return _features_vector_size;}
-};
-
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -393,7 +364,7 @@ protected:
    * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
    * src/jdk.internal.vm.ci/share/classes/jdk/vm/ci/amd64/AMD64.java
    */
-  enum Feature_Flag : uint32_t {
+  enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl) \
     decl(CX8,               "cx8",               0)  /*  next bits are from cpuid 1 (EDX) */ \
     decl(CMOV,              "cmov",              1)  \
@@ -479,7 +450,61 @@ protected:
     MAX_CPU_FEATURES
   };
 
-  static const char* _features_names[];
+  class VM_Features {
+    friend class VMStructs;
+    friend class JVMCIVMStructs;
+
+   private:
+    uint64_t _features_bitmap[2]; // tracks up to 128 features
+
+    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte > MAX_CPU_FEATURES);
+
+    // Number of 8-byte elements in _bitmap.
+    constexpr static int features_bitmap_element_count() {
+      return sizeof(_features_bitmap) / sizeof(uint64_t);
+    }
+
+    constexpr static int features_bitmap_element_shift_count() {
+      return LogBitsPerLong;
+    }
+
+    constexpr static uint64_t features_bitmap_element_mask() {
+      return (1ULL << features_bitmap_element_shift_count()) - 1;
+    }
+
+    static int index(Feature_Flag feature) {
+      int idx = feature >> features_bitmap_element_shift_count();
+      assert(idx < features_bitmap_element_count(), "Features array index out of bounds");
+      return idx;
+    }
+
+    static uint64_t bit_mask(Feature_Flag feature) {
+      return (1ULL << (feature & features_bitmap_element_mask()));
+    }
+
+    static int _features_bitmap_size_in_bytes; // for JVMCI purposes
+   public:
+    VM_Features() {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        _features_bitmap[i] = 0;
+      }
+    }
+
+    void set_feature(Feature_Flag feature) {
+      int idx = index(feature);
+      _features_bitmap[idx] |= bit_mask(feature);
+    }
+
+    void clear_feature(VM_Version::Feature_Flag feature) {
+      int idx = index(feature);
+      _features_bitmap[idx] &= ~bit_mask(feature);
+    }
+
+    bool supports_feature(VM_Version::Feature_Flag feature) {
+      int idx = index(feature);
+      return (_features_bitmap[idx] & bit_mask(feature)) != 0;
+    }
+  };
 
   // CPU feature flags vector, can be affected by VM settings.
   static VM_Features _features;
@@ -487,14 +512,11 @@ protected:
   // Original CPU feature flags vector, not affected by VM settings.
   static VM_Features _cpu_features;
 
-  static void clear_cpu_features() {
-    _features.clear_features();
-    _cpu_features.clear_features();
-  }
+  static const char* _features_names[];
 
-  static uint64_t features_vector_elem(uint32_t elem) {
-    assert(elem < VM_Features::_features_vector_size, "");
-    return _features._features_vector[elem];
+  static void clear_cpu_features() {
+    _features = VM_Features();
+    _cpu_features = VM_Features();
   }
 
   enum Extended_Family {
@@ -899,7 +921,7 @@ public:
 
   static bool is_intel_tsc_synched_at_init();
 
-  static void insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[], uint features_names_index = 0);
+  static void insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen);
 
   // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode

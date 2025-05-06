@@ -708,10 +708,9 @@
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
      static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
                                                                                                                                      \
-     NOT_ZERO(X86_ONLY(static_field(VM_Version,        _features,                             VM_Features)))                         \
-     NOT_ZERO(X86_ONLY(nonstatic_field(VM_Features,    _features_vector,                      VM_Features::FeatureVector)))          \
-     NOT_ZERO(X86_ONLY(static_field(VM_Features,       _features_vector_size,                 uint32_t)))                            \
-     NOT_ZERO(X86_ONLY(static_field(VM_Features,       _features_vector_element_shift_count,  uint32_t)))                            \
+     NOT_ZERO(X86_ONLY(   static_field(VM_Version,              _features,                      VM_Version::VM_Features)))           \
+     NOT_ZERO(X86_ONLY(nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)))                          \
+     NOT_ZERO(X86_ONLY(   static_field(VM_Version::VM_Features, _features_bitmap_size_in_bytes, int)))                               \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* JVMTI */                                                                                                                        \
@@ -1169,9 +1168,8 @@
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
-  NOT_ZERO(X86_ONLY(declare_toplevel_type(VM_Features)))                  \
   NOT_ZERO(declare_toplevel_type(VM_Version))                             \
-  NOT_ZERO(X86_ONLY(declare_toplevel_type(VM_Features::FeatureVector)))   \
+  NOT_ZERO(X86_ONLY(declare_toplevel_type(VM_Version::VM_Features)))      \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \

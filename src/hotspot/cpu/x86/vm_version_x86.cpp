@@ -63,10 +63,10 @@ address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
 
-uint32_t VM_Features::_features_vector_element_shift_count = 6;
-uint32_t VM_Features::_features_vector_size = MAX_FEATURE_VEC_SIZE;
-VM_Features VM_Version::_features;
-VM_Features VM_Version::_cpu_features;
+int VM_Version::VM_Features::_features_bitmap_size_in_bytes = sizeof(VM_Version::VM_Features::_features_bitmap);
+
+VM_Version::VM_Features VM_Version::_features;
+VM_Version::VM_Features VM_Version::_cpu_features;
 
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
@@ -1101,11 +1101,8 @@ void VM_Version::get_processor_features() {
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(cpu_info_size > 0, "not enough temporary space allocated");
-  size_t buf_iter = cpu_info_size;
-  for (uint64_t i = 0; i < VM_Features::features_vector_size(); i++) {
-    insert_features_names(features_vector_elem(i), buf + buf_iter, sizeof(buf) - buf_iter, _features_names, 64 * i);
-    buf_iter = strlen(buf);
-  }
+
+  insert_features_names(_features, buf + cpu_info_size, sizeof(buf) - cpu_info_size);
 
   _cpu_info_string = os::strdup(buf);
 
@@ -2107,7 +2104,6 @@ static bool _vm_version_initialized = false;
 
 void VM_Version::initialize() {
   ResourceMark rm;
-  assert(VM_Features::is_within_feature_vector_bounds(MAX_CPU_FEATURES), "Feature out of vector bounds");
 
   // Making this stub must be FIRST use of assembler
   stub_blob = BufferBlob::create("VM_Version stub", stub_size);
@@ -2884,7 +2880,7 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
-VM_Features VM_Version::CpuidInfo::feature_flags() const {
+VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   VM_Features vm_features;
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     vm_features.set_feature(CPU_CX8);
@@ -3280,47 +3276,13 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   return true;
 }
 
-void VM_Features::set_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  _features_vector[index] |= (1ULL << (feature & index_mask));
-}
-
-void VM_Features::clear_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  _features_vector[index] &= ~(1ULL << (feature & index_mask));
-}
-
-void VM_Features::clear_features() {
-  for (uint32_t i = 0; i < _features_vector_size; i++) {
-    _features_vector[i] = 0;
-  }
-}
-
-bool VM_Features::supports_feature(uint32_t feature) {
-  uint32_t index = feature >> _features_vector_element_shift_count;
-  uint32_t index_mask = (1 << _features_vector_element_shift_count) - 1;
-  assert(index < _features_vector_size, "Features array index out of bounds");
-  return (_features_vector[index] & (1ULL << (feature & index_mask))) != 0;
-}
-
-bool VM_Features::is_within_feature_vector_bounds(uint32_t num_features) {
-  return _features_vector_size >= ((num_features >> _features_vector_element_shift_count) + 1);
-}
-
-void VM_Version::insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[],
-                                       uint features_names_index) {
-  while (features != 0) {
-    if (features & 1) {
-      int res = jio_snprintf(buf, buflen, ", %s", features_names[features_names_index]);
+void VM_Version::insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen) {
+  for (int i = 0; i < MAX_CPU_FEATURES; i++) {
+    if (features.supports_feature((VM_Version::Feature_Flag)i)) {
+      int res = jio_snprintf(buf, buflen, ", %s", _features_names[i]);
       assert(res > 0, "not enough temporary space allocated");
       buf += res;
       buflen -= res;
     }
-    features >>= 1;
-    ++features_names_index;
   }
 }

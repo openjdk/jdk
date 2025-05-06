@@ -129,8 +129,6 @@ class Abstract_VM_Version: AllStatic {
   static const char* jdk_debug_level();
   static const char* printable_jdk_debug_level();
 
-  static uint64_t features() { return _features; }
-
   static const char* features_string() { return _features_string; }
 
   static const char* cpu_info_string() { return _cpu_info_string; }
