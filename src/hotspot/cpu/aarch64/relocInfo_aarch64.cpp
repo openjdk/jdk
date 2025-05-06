@@ -83,8 +83,9 @@ void Relocation::pd_set_call_destination(address x) {
     NativeCall* call = nativeCall_at(addr());
     if (!Assembler::reachable_from_branch_at(addr(), x)) {
       address trampoline = call->get_trampoline();
-      assert(trampoline != nullptr, "branch is too large with no available trampoline");
-      x = call->get_trampoline();
+      if (trampoline != nullptr) {
+        x = call->get_trampoline();
+      }
     }
     call->set_destination(x);
   } else {
