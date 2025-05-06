@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.util;
 import java.util.Locale;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * Enumeration of operating system types and testing for the current OS.
@@ -85,7 +84,7 @@ public enum OperatingSystem {
     ;
 
     // The current OperatingSystem
-    private static @Stable OperatingSystem CURRENT_OS;
+    private static final OperatingSystem CURRENT_OS = initOS();
 
     /**
      * {@return {@code true} if built for the Linux operating system}
@@ -123,20 +122,15 @@ public enum OperatingSystem {
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        var current = CURRENT_OS;
-        if (current == null) {
-            return CURRENT_OS = initOS();
-        }
-        return current;
+        return CURRENT_OS;
     }
 
     /**
      * Returns the OperatingSystem of the build.
      * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized throw IllegalArgumentException.
+     * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
      */
     private static OperatingSystem initOS() {
-        // Called lazily, valueOf has MH.dropArguments overhead from reflective invocation
         return OperatingSystem.valueOf(PlatformProps.CURRENT_OS_STRING.toUpperCase(Locale.ROOT));
     }
 }
