@@ -62,7 +62,7 @@ ZHeap::ZHeap()
     _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
-    _tlab_usage(InitialHeapSize),
+    _tlab_usage(),
     _initialized(false) {
 
   // Install global heap instance

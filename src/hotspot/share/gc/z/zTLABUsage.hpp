@@ -43,7 +43,7 @@ private:
   TruncatedSeq _used_history;
 
 public:
-  ZTLABUsage(size_t initial_heap_size);
+  ZTLABUsage();
 
   void update(size_t used);
 
