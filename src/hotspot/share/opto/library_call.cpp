@@ -154,7 +154,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
     const char *msg = msg_stream.freeze();
-    log_info(jit, inlining)("%s", msg);
+    log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("%s", msg);
     }
@@ -211,7 +211,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
     const char *msg = msg_stream.freeze();
-    log_info(jit, inlining)("%s", msg);
+    log_debug(jit, inlining)("%s", msg);
     C->inline_printer()->record(kit.callee(), jvms, InliningResult::FAILURE, msg);
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);

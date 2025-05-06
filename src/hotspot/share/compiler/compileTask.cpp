@@ -491,7 +491,7 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
 }
 
 void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
-  LogTarget(Info, jit, inlining) lt;
+  LogTarget(Debug, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_inlining_inner(&ls, method, inline_level, bci, result, msg);
