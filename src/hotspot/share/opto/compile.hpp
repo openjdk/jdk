@@ -673,13 +673,13 @@ public:
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_graph(graph_name);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
