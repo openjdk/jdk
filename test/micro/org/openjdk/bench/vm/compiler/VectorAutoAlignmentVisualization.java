@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
   The purpose of this benchmark is to see the effect of automatic alignment in auto vectorization.
   It is recommended to view the differing results when using SuperWordAutomaticAlignment.
 
-  Without automatic alignment, i.e. SuperWordAutomaticAlignment=0, we may get a plot like below, for scalarLoop:
+  Without automatic alignment, i.e. SuperWordAutomaticAlignment=0, we may get a plot like below, for bench1L1S:
 
   OFFSET_STORE
   ^
@@ -194,7 +194,7 @@ public class VectorAutoAlignmentVisualization {
     }
 
     @Benchmark
-    public void scalarLoop() throws Throwable {
+    public void bench1L1S() throws Throwable {
         int offset_load = offset_load_con();
         int offset_store = offset_store_con();
         int distance = distance_con();
