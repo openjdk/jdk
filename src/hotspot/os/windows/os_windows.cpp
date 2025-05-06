@@ -4678,6 +4678,45 @@ int os::stat(const char *path, struct stat *sbuf) {
     return -1;
   }
 
+  // check if it is a symbolic link
+  //============================================
+  WIN32_FIND_DATAW fd;
+  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+
+  if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
+  {
+    // this is a symlink -> file data should be read from target, not from link
+    HANDLE hFile;
+
+    hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+    const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
+      FILE_NAME_NORMALIZED);
+
+    if (target_path_size == 0)
+    {
+      errno = ::GetLastError();
+      return -1;
+    }
+
+    WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size + 1, mtInternal);
+
+    ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size+1),
+      FILE_NAME_NORMALIZED);
+
+    FREE_C_HEAP_ARRAY(WCHAR, wide_path);
+
+    wide_path = NEW_C_HEAP_ARRAY(WCHAR, target_path_size + 1, mtInternal);
+
+    memcpy(wide_path, path_to_target, target_path_size + 1);
+
+    int n = 1;
+  }
+
+
+  //============================================
+
   WIN32_FILE_ATTRIBUTE_DATA file_data;;
   BOOL bret = ::GetFileAttributesExW(wide_path, GetFileExInfoStandard, &file_data);
   os::free(wide_path);
