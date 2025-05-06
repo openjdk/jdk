@@ -353,7 +353,7 @@
           "total (young-generation) heap size.")                            \
           range(1,100)                                                      \
                                                                             \
-  product(double, ShenandoahEvacWaste, 1.2, EXPERIMENTAL,                   \
+  product(double, ShenandoahEvacWaste, 2.0, EXPERIMENTAL,                   \
           "How much waste evacuations produce within the reserved space. "  \
           "Larger values make evacuations more resilient against "          \
           "evacuation conflicts, at expense of evacuating less on each "    \
@@ -361,7 +361,7 @@
           "failures, which will trigger stop-the-world Full GC passes.")    \
           range(1.0,100.0)                                                  \
                                                                             \
-  product(double, ShenandoahOldEvacWaste, 1.4, EXPERIMENTAL,                \
+  product(double, ShenandoahOldEvacWaste, 2.4, EXPERIMENTAL,                \
           "How much waste evacuations produce within the reserved space. "  \
           "Larger values make evacuations more resilient against "          \
           "evacuation conflicts, at expense of evacuating less on each "    \
@@ -369,7 +369,7 @@
           "failures, which will trigger stop-the-world Full GC passes.")    \
           range(1.0,100.0)                                                  \
                                                                             \
-  product(double, ShenandoahPromoEvacWaste, 1.2, EXPERIMENTAL,              \
+  product(double, ShenandoahPromoEvacWaste, 2.0, EXPERIMENTAL,              \
           "How much waste promotions produce within the reserved space. "   \
           "Larger values make evacuations more resilient against "          \
           "evacuation conflicts, at expense of promoting less on each "     \

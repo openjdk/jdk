@@ -349,7 +349,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
 #undef KELVIN_OOM_EVAC
 #ifdef KELVIN_OOM_EVAC
-    log_info(gc)("OOM Failure during evac, target region was: %s", (target_gen == OLD_GENERATION)? "old": "young");
+    log_info(gc)("OOM Failure during evac, from_region: %s, target region was: %s",
+                 from_region->is_young()? "young": "old", (target_gen == OLD_GENERATION)? "old": "young");
+    free_set()->log_status_under_lock();
 #endif
     control_thread()->handle_alloc_failure_evac(size);
     oom_evac_handler()->handle_out_of_memory_during_evacuation();
