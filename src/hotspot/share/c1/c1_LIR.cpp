@@ -403,7 +403,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
     case lir_membar_acquire:           // result and info always invalid
@@ -443,8 +442,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 
 // LIR_Op1
-    case lir_fxch:           // input always valid, result and info always invalid
-    case lir_fld:            // input always valid, result and info always invalid
     case lir_push:           // input always valid, result and info always invalid
     case lir_pop:            // input always valid, result and info always invalid
     case lir_leal:           // input and result always valid, info always invalid
@@ -1702,12 +1699,9 @@ const char * LIR_Op::name() const {
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
-     case lir_fpop_raw:              s = "fpop_raw";      break;
      case lir_breakpoint:            s = "breakpoint";    break;
      case lir_get_thread:            s = "get_thread";    break;
      // LIR_Op1
-     case lir_fxch:                  s = "fxch";          break;
-     case lir_fld:                   s = "fld";           break;
      case lir_push:                  s = "push";          break;
      case lir_pop:                   s = "pop";           break;
      case lir_null_check:            s = "null_check";    break;

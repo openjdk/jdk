@@ -22,9 +22,9 @@
  *
  */
 
-#include "c1/c1_ValueStack.hpp"
-#include "c1/c1_RangeCheckElimination.hpp"
 #include "c1/c1_IR.hpp"
+#include "c1/c1_RangeCheckElimination.hpp"
+#include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/bitMap.inline.hpp"

@@ -48,6 +48,17 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
 
 bool StubRoutines::aarch64::_completed = false;
 
+ATTRIBUTE_ALIGNED(64) uint16_t StubRoutines::aarch64::_kyberConsts[] =
+{
+    // Because we sometimes load these in pairs, montQInvModR, kyber_q
+    // and kyberBarrettMultiplier should stay together and in this order.
+    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, // montQInvModR
+    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, // kyber_q
+    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, // kyberBarrettMultiplier
+    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, // toMont((kyber_n / 2)^-1 (mod kyber_q))
+    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549  // montRSquareModQ
+};
+
 ATTRIBUTE_ALIGNED(64) uint32_t StubRoutines::aarch64::_dilithiumConsts[] =
 {
     58728449, 58728449, 58728449, 58728449, // montQInvModR
