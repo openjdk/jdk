@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>As another example, this code allows {@code long} types to be
+ * <p>To read lines from {@link System#in} with {@link System##stdin.encoding
+ * stdin.encoding}:
+ * {@snippet :
+ *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
+ *      while (sc.hasNextLine()) {
+ *          String aLine = sc.nextLine();
+ *      }
+ * }
+ *
+ * <p>This code allows {@code long} types to be
  * assigned from entries in a file {@code myNumbers}:
  * {@snippet :
  *      Scanner sc = new Scanner(new File("myNumbers"));
