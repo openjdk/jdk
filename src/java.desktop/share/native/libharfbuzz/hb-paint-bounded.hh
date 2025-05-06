@@ -22,8 +22,8 @@
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-#ifndef HB_PAINT_EXTENTS_HH
-#define HB_PAINT_EXTENTS_HH
+#ifndef HB_PAINT_BOUNDED_HH
+#define HB_PAINT_BOUNDED_HH
 
 #include "hb.hh"
 #include "hb-paint.h"
@@ -31,114 +31,87 @@
 #include "hb-geometry.hh"
 
 
-typedef struct  hb_paint_extents_context_t hb_paint_extents_context_t;
+typedef struct  hb_paint_bounded_context_t hb_paint_bounded_context_t;
 
-struct hb_paint_extents_context_t
+struct hb_paint_bounded_context_t
 {
   void clear ()
   {
-    transforms.clear ();
-    clips.clear ();
+    clips = 0;
+    bounded = true;
     groups.clear ();
-
-    transforms.push (hb_transform_t{});
-    clips.push (hb_bounds_t{hb_bounds_t::UNBOUNDED});
-    groups.push (hb_bounds_t{hb_bounds_t::EMPTY});
   }
 
-  hb_paint_extents_context_t ()
+  hb_paint_bounded_context_t ()
   {
     clear ();
   }
 
-  hb_extents_t get_extents ()
-  {
-    return groups.tail().extents;
-  }
-
   bool is_bounded ()
   {
-    return groups.tail().status != hb_bounds_t::UNBOUNDED;
+    return bounded;
   }
 
-  void push_transform (const hb_transform_t &trans)
+  void push_clip ()
   {
-    hb_transform_t t = transforms.tail ();
-    t.multiply (trans);
-    transforms.push (t);
-  }
-
-  void pop_transform ()
-  {
-    transforms.pop ();
-  }
-
-  void push_clip (hb_extents_t extents)
-  {
-    /* Transform extents and push a new clip. */
-    const hb_transform_t &t = transforms.tail ();
-    t.transform_extents (extents);
-
-    auto bounds = hb_bounds_t {extents};
-    bounds.intersect (clips.tail ());
-
-    clips.push (bounds);
+    clips++;
   }
 
   void pop_clip ()
   {
-    clips.pop ();
+    if (clips == 0) return;
+    clips--;
   }
 
   void push_group ()
   {
-    groups.push (hb_bounds_t {hb_bounds_t::EMPTY});
+    groups.push (bounded);
+    bounded = true;
   }
 
   void pop_group (hb_paint_composite_mode_t mode)
   {
-    const hb_bounds_t src_bounds = groups.pop ();
-    hb_bounds_t &backdrop_bounds = groups.tail ();
+    const bool src_bounded = bounded;
+    bounded = groups.pop ();
+    bool &backdrop_bounded = bounded;
 
     // https://learn.microsoft.com/en-us/typography/opentype/spec/colr#format-32-paintcomposite
     switch ((int) mode)
     {
       case HB_PAINT_COMPOSITE_MODE_CLEAR:
-        backdrop_bounds.status = hb_bounds_t::EMPTY;
+        backdrop_bounded = true;
         break;
       case HB_PAINT_COMPOSITE_MODE_SRC:
       case HB_PAINT_COMPOSITE_MODE_SRC_OUT:
-        backdrop_bounds = src_bounds;
+        backdrop_bounded = src_bounded;
         break;
       case HB_PAINT_COMPOSITE_MODE_DEST:
       case HB_PAINT_COMPOSITE_MODE_DEST_OUT:
         break;
       case HB_PAINT_COMPOSITE_MODE_SRC_IN:
       case HB_PAINT_COMPOSITE_MODE_DEST_IN:
-        backdrop_bounds.intersect (src_bounds);
+        backdrop_bounded = backdrop_bounded && src_bounded;
         break;
       default:
-        backdrop_bounds.union_ (src_bounds);
+        backdrop_bounded = backdrop_bounded || src_bounded;
         break;
      }
   }
 
   void paint ()
   {
-    const hb_bounds_t &clip = clips.tail ();
-    hb_bounds_t &group = groups.tail ();
-
-    group.union_ (clip);
+    if (!clips)
+      bounded = false;
   }
 
   protected:
-  hb_vector_t<hb_transform_t> transforms;
-  hb_vector_t<hb_bounds_t> clips;
-  hb_vector_t<hb_bounds_t> groups;
+  bool bounded; // true if current drawing bounded
+  unsigned clips; // number of active clips
+  hb_vector_t<bool> groups; // true if group bounded
 };
 
 HB_INTERNAL hb_paint_funcs_t *
-hb_paint_extents_get_funcs ();
+hb_paint_bounded_get_funcs ();
 
 
-#endif /* HB_PAINT_EXTENTS_HH */
+#endif /* HB_PAINT_BOUNDED_HH */
