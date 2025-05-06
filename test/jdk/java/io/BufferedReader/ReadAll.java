@@ -23,14 +23,13 @@
 
 /* @test
  * @bug 8354724
- * @summary Test BufferedReader readAllLines and readString methods
+ * @summary Test Reader readAllLines and readAllAstring methods
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
  * @run junit ReadAll
  * @key randomness
  */
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -85,29 +84,34 @@ public class ReadAll {
 
     @Test
     public void readAllLines() throws IOException {
-        // BufferedReader implementation
+        // Reader implementation
         List<String> lines;
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            lines = br.readAllLines();
+        try (FileReader fr = new FileReader(file)) {
+            lines = fr.readAllLines();
         }
         System.out.println(lines.size() + " lines read");
 
         List<String> linesExpected = Files.readAllLines(path);
         assertEquals(linesExpected, lines);
 
-        // Reader implementation
-        try (Reader r = new StringReader(Files.readString(path))) {
+        // Reader.of implementation
+        String stringExpected = Files.readString(path);
+        int n = rnd.nextInt(stringExpected.length()/2);
+        String substringExpected = stringExpected.substring(n);
+        linesExpected = substringExpected.lines().toList();
+        try (Reader r = new StringReader(stringExpected)) {
+            r.skip(n);
             lines = r.readAllLines();
         }
         assertEquals(linesExpected, lines);
     }
 
     @Test
-    public void readAllChars() throws IOException {
+    public void readAllAsString() throws IOException {
         // Reader implementation
         String string;
         try (FileReader fr = new FileReader(file)) {
-            string = fr.readAllChars();
+            string = fr.readAllAsString();
         }
         String stringExpected = Files.readString(path);
         assertEquals(stringExpected, string);
@@ -116,7 +120,7 @@ public class ReadAll {
         int n = rnd.nextInt(stringExpected.length()/2);
         try (Reader r = Reader.of(stringExpected)) {
             r.skip(n);
-            string = r.readAllChars();
+            string = r.readAllAsString();
         }
         assertEquals(stringExpected.substring(n), string);
     }

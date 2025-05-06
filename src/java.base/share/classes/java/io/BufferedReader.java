@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.util.List;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -395,46 +394,10 @@ public class BufferedReader extends Reader {
      *
      * @throws     IOException  If an I/O error occurs
      *
-     * @see #readAllLines
      * @see java.nio.file.Files#readAllLines
      */
     public String readLine() throws IOException {
         return readLine(false, null);
-    }
-
-    /**
-     * Reads all remaining lines of text. A line is considered to be terminated
-     * by any one of a line feed ('\n'), a carriage return ('\r'), a carriage
-     * return followed immediately by a line feed, or by reaching the
-     * end-of-file (EOF).
-     *
-     * <p> This method works as if invoking it were equivalent to evaluating
-     * the expression:
-     * <blockquote>{@linkplain #lines()}.toList()</blockquote>
-     * The method does not close this reader nor its underlying stream.
-     * If an I/O error occurs, the states of the reader and its underlying
-     * stream are unspecified.
-     *
-     * @apiNote
-     * This method is intended for simple cases where it is convenient
-     * to read all remaining lines in a single operation. It is not intended for
-     * reading a large number of lines.
-     *
-     * @return     the remaining lines of text as an unmodifiable {@code List}
-     *
-     * @throws     IOException  If an I/O error occurs
-     *
-     * @see java.nio.file.Files#readAllLines
-     *
-     * @since 25
-     */
-    public List<String> readAllLines() throws IOException {
-        try {
-            return lines().toList();
-        } catch (UncheckedIOException ue) {
-            // the cause cannot be null
-            throw ue.getCause();
-        }
     }
 
     /**

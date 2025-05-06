@@ -208,9 +208,17 @@ public abstract class Reader implements Readable, Closeable {
                 return n;
             }
 
-            public String readAllChars() throws IOException {
+            @Override
+            public String readAllAsString() throws IOException {
                 ensureOpen();
-                return cs.toString().substring(next);
+                String result = cs.toString().substring(next);
+                next += result.length();
+                return result;
+            }
+
+            @Override
+            public List<String> readAllLines() throws IOException {
+                return readAllAsString().lines().toList();
             }
 
             @Override
@@ -397,16 +405,24 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
+    private String readAllCharsAsString() throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] str = new char[TRANSFER_BUFFER_SIZE];
+        int n;
+        while ((n = read(str)) != -1) {
+            result.append(str, 0, n);
+        }
+        return result.toString();
+    }
+
     /**
      * Reads all remaining characters as lines of text. A line is considered to
      * be terminated by any one of a line feed ('\n'), a carriage return ('\r'),
      * a carriage return followed immediately by a line feed, or by reaching the
-     * end-of-file (EOF).
+     * end-of-stream. There is no empty line following a line terminator at the
+     * end of a stream.
      *
-     * <p> This method works as if invoking it were equivalent to evaluating
-     * the expression:
-     * <blockquote>{@linkplain #readAllChars()}.lines().toList()</blockquote>
-     * The method does not close this reader nor its underlying stream.
+     * <p>  The method does not close this reader nor its underlying stream.
      * If an I/O error occurs, the states of the reader and its underlying
      * stream are unspecified.
      *
@@ -420,12 +436,14 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @throws     IOException  If an I/O error occurs
      *
+     * @see String#lines
+     * @see #readAllAsString
      * @see java.nio.file.Files#readAllLines
      *
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return readAllChars().lines().toList();
+        return readAllCharsAsString().lines().toList();
     }
 
     /**
@@ -433,9 +451,11 @@ public abstract class Reader implements Readable, Closeable {
      *
      * <p> This method reads all remaining content including the line separators
      * in the middle and/or at the end. The resulting string will contain line
-     * separators as they appear in the original content. The method does not
-     * close this reader nor its underlying stream. If an I/O error occurs,
-     * the states of the reader and its underlying stream are unspecified.
+     * separators as they appear in the original content.
+     *
+     * <p>  The method does not close this reader nor its underlying stream.
+     * If an I/O error occurs, the states of the reader and its underlying
+     * stream are unspecified.
      *
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
@@ -448,18 +468,13 @@ public abstract class Reader implements Readable, Closeable {
      * @throws     OutOfMemoryError  If the remaining content is extremely
      *                               large, for example larger than {@code 2GB}
      *
+     * @see #readAllLines
      * @see java.nio.file.Files#readString
      *
      * @since 25
      */
-    public String readAllChars() throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] str = new char[TRANSFER_BUFFER_SIZE];
-        int n;
-        while ((n = read(str)) != -1) {
-            result.append(str, 0, n);
-        }
-        return result.toString();
+    public String readAllAsString() throws IOException {
+        return readAllCharsAsString();
     }
 
     /** Maximum skip-buffer size */
