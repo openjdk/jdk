@@ -39,17 +39,19 @@
 // One global static mutex.
 // It is used very early in the vm's initialization, in allocation
 // code and other areas. It is allocated on first use when the vm is single threaded.
-static PlatformMutex* _global_arena_mutex = nullptr;
+static PlatformMutex* _global_chunk_pool_mutex = nullptr;
+
+void Arena::initialize_chunk_pool() {
+  _global_chunk_pool_mutex = new PlatformMutex();
+}
 
 ChunkPoolLock::ChunkPoolLock() {
-  if (_global_arena_mutex == nullptr) {
-    _global_arena_mutex = new PlatformMutex();
-  }
-  _global_arena_mutex->lock();
+  assert(_global_chunk_pool_mutex != nullptr, "must be initialized");
+  _global_chunk_pool_mutex->lock();
 };
 
 ChunkPoolLock::~ChunkPoolLock() {
-  _global_arena_mutex->unlock();
+  _global_chunk_pool_mutex->unlock();
 };
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
