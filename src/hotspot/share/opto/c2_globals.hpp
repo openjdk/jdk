@@ -379,6 +379,9 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
+  product(bool, MergeLoads, true, DIAGNOSTIC,                               \
+          "Optimize loads by combining values into larger load")            \
+                                                                            \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
                                                                             \
