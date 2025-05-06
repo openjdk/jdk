@@ -1779,7 +1779,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
 
   // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
-  // and it will be actually suspended at virtual thread unmount transition. 
+  // and it will be actually suspended at virtual thread unmount transition.
   bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
   if (is_thread_carrying) {
     return java_thread->set_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_SUSPENDED;
@@ -1821,7 +1821,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume, "sanity check");
     if (!JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    } 
+    }
     JvmtiVTSuspender::register_vthread_resume(thread_h());
     return JVMTI_ERROR_NONE;
   }
@@ -1830,7 +1830,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
 
   assert(java_thread != nullptr, "sanity check");
   assert(!java_thread->is_in_VTMS_transition(), "sanity check");
- 
+
   // Don't allow hidden thread resume request.
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
@@ -1841,7 +1841,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     return java_thread->clear_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   } else {
     // Platform thread (not carrying vthread) or mounted vthread cases.
- 
+
     assert(thread_h() != nullptr, "sanity check");
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
