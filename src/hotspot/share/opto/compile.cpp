@@ -4525,7 +4525,9 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
 void Compile::dump_print_inlining() {
   stringStream ss;
   inline_printer()->print_on(&ss);
-  _env->record_inline_messages(ss.as_string(/* c_heap = */ true));
+  if (ss.size() > 0) {
+    _env->record_inline_messages(ss.as_string(/* c_heap = */ true));
+  }
 }
 
 void Compile::log_late_inline(CallGenerator* cg) {
