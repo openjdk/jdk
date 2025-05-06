@@ -2668,6 +2668,12 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // Generally, we prefer to align with the largest memory op (load or store).
     // If there are multiple, then SuperWordAutomaticAlignment determines if we
     // prefer loads or stores.
+    // When a load or store is misaligned, this can lead to the load or store
+    // being split, when it goes over a cache line. Most CPUs can schedule
+    // more loads than stores per cycle (often 2 loads and 1 store). Hence,
+    // it is worse if a store is split, and less bad if a load is split.
+    // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
+    // load if possible, to avoid splitting that load.
     bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
     bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
     if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
