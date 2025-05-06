@@ -55,7 +55,7 @@ import static sun.tools.jar.Main.getMsg;
 import static sun.tools.jar.Main.formatMsg;
 import static sun.tools.jar.Main.toBinaryName;
 
-public final class Validator {
+final class Validator {
     /**
      * Regex expression to verify that the Zip Entry file name:
      *  - is not an absolute path
