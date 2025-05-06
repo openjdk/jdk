@@ -693,7 +693,7 @@ instruct vsadd_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
   predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst_src (SaturatingAddV (Binary dst_src src1) v0));
   ins_cost(VEC_COST);
-  format %{ "vsadd_masked $dst_src, $dst_src, $src1" %}
+  format %{ "vsadd_masked $dst_src, $dst_src, $src1, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
@@ -710,7 +710,7 @@ instruct vsaddu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
   predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst_src (SaturatingAddV (Binary dst_src src1) v0));
   ins_cost(VEC_COST);
-  format %{ "vsaddu_masked $dst_src, $dst_src, $src1" %}
+  format %{ "vsaddu_masked $dst_src, $dst_src, $src1, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
@@ -761,7 +761,7 @@ instruct vssub_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
   predicate(n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst_src (SaturatingSubV (Binary dst_src src1) v0));
   ins_cost(VEC_COST);
-  format %{ "vssub_masked $dst_src, $dst_src, $src1" %}
+  format %{ "vssub_masked $dst_src, $dst_src, $src1, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
@@ -778,7 +778,7 @@ instruct vssubu_masked(vReg dst_src, vReg src1, vRegMask_V0 v0) %{
   predicate(n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst_src (SaturatingSubV (Binary dst_src src1) v0));
   ins_cost(VEC_COST);
-  format %{ "vssubu_masked $dst_src, $dst_src, $src1" %}
+  format %{ "vssubu_masked $dst_src, $dst_src, $src1, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(bt), "unsupported type");
