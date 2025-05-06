@@ -234,8 +234,10 @@ void LogTagSet::verify_for_aot_aliases() {
   // LogSelection::translate_aot_tag_aliases() more complicated. We scan all the LogTagSets
   // that are used in the C++ code to make sure we don't have such combinations.
 
-  // Rule: if we have a LogTagSet that starts with cds, then we cannot have another LogTagSet
-  // that starts with aot, where the rest of the tags of the two LogTagSets are the same.
+  // Rules:
+  // [1] The stand-alone Tagset (aot) must not be used.
+  // [2] If we have a LogTagSet that starts with cds, then we cannot have another LogTagSet
+  //     that starts with aot, where the second tag of both LogTagSets are the same.
   //
   // Uncomment one or more of the following lines to test the verification code. All cases are
   // forbidden.
@@ -246,15 +248,14 @@ void LogTagSet::verify_for_aot_aliases() {
   for (LogTagSet* x = first(); x != nullptr; x = x->next()) {
     if (x->tag(0) == LogTag::_cds) {
       for (LogTagSet* y = first(); y != nullptr; y = y->next()) {
-        if (y->tag(0) == LogTag::_aot && x->ntags() == y->ntags()) {
-          bool same = true;
-          for (size_t i = 1; i < x->ntags(); i++) {
-            if (x->tag(i) != y->tag(i)) {
-              same = false;
-              break;
-            }
+        if (y->tag(0) == LogTag::_aot) {
+          bool bad = 0;
+          if (x->ntags() == 1 && y->ntags() == 1) {
+            bad = true;
+          } else if (x->ntags() > 1 && y->ntags() > 1 && x->tag(1) == y->tag(1)) {
+            bad = true;
           }
-          if (same) {
+          if (bad) {
             ResourceMark rm;
             PrintCDSLogsAsAOTLogs = false;
             stringStream ss;

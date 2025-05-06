@@ -68,8 +68,6 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
-  CDS_ONLY(char* injected_copy = nullptr);
-
   // Split string on commas
   for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
@@ -86,24 +84,6 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       *comma_pos = '\0';
     }
 
-#if INCLUDE_CDS
-    if (PrintCDSLogsAsAOTLogs && strncmp(cur, "aot*", 4) == 0 && injected_copy == nullptr) {
-      // Special case: because -Xlog:aot* matches with (unaliased) aot logs, we
-      // need to inject an "cds*" tag as well.
-      //
-      // This is not necessary for -Xlog:aot+mirror*, because this will not
-      // match any aot logs, and the aliasing will be done inside LogSelection::parse().
-
-      size_t len = strlen(cur);
-      injected_copy = (char*)os::malloc(len+10, mtLogging);
-      strcpy(injected_copy + 1, cur);
-      injected_copy[0] = ','; // will be skipped
-      injected_copy[1] = 'c';
-      injected_copy[2] = 'd';
-      injected_copy[3] = 's';
-    }
-#endif
-
     LogSelection selection = LogSelection::parse(cur, errstream);
     if (selection == LogSelection::Invalid) {
       success = false;
@@ -111,18 +91,35 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     }
     _selections[_nselections++] = selection;
 
-    if (comma_pos == nullptr) {
 #if INCLUDE_CDS
-      if (injected_copy != nullptr) {
-        os::free(copy);
-        copy = injected_copy;
-        comma_pos = copy;
-        injected_copy = nullptr;
-      } else
-#endif
-      {
+    if (PrintCDSLogsAsAOTLogs && strncmp(cur, "aot*", 4) == 0) {
+      // Special case: because -Xlog:aot* matches with (unaliased) aot logs, we
+      // need to inject an "cds*" tag as well.
+      //
+      // This is not necessary for -Xlog:aot+mirror*, because this will not
+      // match any aot logs (guarateed by LogTagSet::verify_for_aot_aliases()).
+      // The alias matching will be done inside LogSelection::parse().
+
+      size_t len = strlen(cur);
+      char* alias = (char*)os::malloc(len + 1, mtLogging);
+      strcpy(alias, cur);
+      alias[0] = 'c';
+      alias[1] = 'd';
+      alias[2] = 's';
+
+      selection = LogSelection::parse(alias, errstream);
+      os::free(alias);
+
+      if (selection == LogSelection::Invalid) {
+        success = false;
         break;
       }
+      _selections[_nselections++] = selection;
+    }
+#endif
+
+    if (comma_pos == nullptr) {
+      break;
     }
   }
 
