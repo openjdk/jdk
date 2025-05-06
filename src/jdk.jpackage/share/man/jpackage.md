@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -219,11 +219,34 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
     This option can be used multiple times.
 
+    Value can contain substrings that will be expanded at runtime.
+    Two types of such substrings are supported: environment variables
+    and "APPDIR", "BINDIR", and "ROOTDIR" tokens.
+
+    An expandable substring should be enclosed between the dollar
+    sign character ($) and the first following non-alphanumeric
+    character. Alternatively, it can be enclosed between "${" and "}"
+    substrings.
+
+    Expandable substrings are case-sensitive on Unix and
+    case-insensitive on Windows. No string expansion occurs if the
+    referenced environment variable is undefined.
+
+    Environment variables with names "APPDIR", "BINDIR", and "ROOTDIR"
+    will be ignored, and these expandable substrings will be
+    replaced by values calculated by the app launcher.
+
+    Prefix the dollar sign character with the backslash character (\\)
+    to prevent substring expansion.
+
 <a id="option-java-options">`--java-options` *options*</a>
 
 :   Options to pass to the Java runtime
 
     This option can be used multiple times.
+
+    Value can contain substrings that will be substituted at runtime,
+    such as for the --arguments option.
 
 <a id="option-main-class">`--main-class` *class-name*</a>
 
@@ -661,6 +684,12 @@ jpackage will lookup files by specific names in the resource directory.
 
 :   WiX project file for installer UI
 
+`os-condition.wxf`
+
+:   WiX project file with the condition to block installation on older versions of Windows
+
+    Default resource is *os-condition.wxf*
+
 `wix-conv.xsl`
 
 :   WiX source code converter. Used for converting WiX sources from WiX v3 to v4 schema when WiX v4 or newer is used
@@ -679,6 +708,12 @@ jpackage will lookup files by specific names in the resource directory.
 `<package-name>-post-msi.wsf`
 
 :   A Windows Script File (WSF) to run after building embedded MSI installer for EXE installer
+
+`installer.exe`
+
+:   Executable wrapper for MSI installer
+
+    Default resource is *msiwrapper.exe*
 
 
 ### Resource directory files considered only when running on macOS:

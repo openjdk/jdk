@@ -183,7 +183,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   JavaVM* _shared_library_javavm;
 
   // Id for _shared_library_javavm.
-  int _shared_library_javavm_id;
+  jlong _shared_library_javavm_id;
 
   // Position and link in global list of JVMCI shared library runtimes.
   // The HotSpot heap based runtime will have an id of -1 and the
@@ -280,7 +280,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
 
   // Gets an ID for the JVMCI shared library JavaVM associated with this runtime.
-  int get_shared_library_javavm_id() { return _shared_library_javavm_id; }
+  jlong get_shared_library_javavm_id() { return _shared_library_javavm_id; }
 
   // Copies info about the JVMCI shared library JavaVM associated with this
   // runtime into `info` as follows:

@@ -256,11 +256,11 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
 
   ReservedSpace rs = MemoryReserver::reserve(word_size * BytesPerWord,
                                              Settings::virtual_space_node_reserve_alignment_words() * BytesPerWord,
-                                             os::vm_page_size());
+                                             os::vm_page_size(), mtMetaspace);
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
-  MemTracker::record_virtual_memory_tag(rs.base(), mtMetaspace);
+  MemTracker::record_virtual_memory_tag(rs, mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();
   return new VirtualSpaceNode(rs, true, limiter, reserve_words_counter, commit_words_counter);

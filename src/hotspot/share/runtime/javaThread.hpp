@@ -145,8 +145,8 @@ class JavaThread: public Thread {
   Method*       _callee_target;
 
   // Used to pass back results to the interpreter or generated code running Java code.
-  oop           _vm_result;    // oop result is GC-preserved
-  Metadata*     _vm_result_2;  // non-oop result
+  oop           _vm_result_oop;       // oop result is GC-preserved
+  Metadata*     _vm_result_metadata;  // non-oop result
 
   // See ReduceInitialCardMarks: this holds the precise space interval of
   // the most recent slow path allocation for which compiled code has
@@ -170,10 +170,14 @@ class JavaThread: public Thread {
 
  public:
   void set_monitor_owner_id(int64_t id) {
-    assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
+    ThreadIdentifier::verify_id(id);
     _monitor_owner_id = id;
   }
-  int64_t monitor_owner_id() const { return _monitor_owner_id; }
+  int64_t monitor_owner_id() const {
+    int64_t id = _monitor_owner_id;
+    ThreadIdentifier::verify_id(id);
+    return id;
+  }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
@@ -327,6 +331,7 @@ class JavaThread: public Thread {
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
+  bool                  _is_in_java_upcall;              // JVMTI is doing a Java upcall, so JVMTI events must be hidden
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
@@ -718,13 +723,17 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
+  bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
+  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
+
   bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
   // - is in a VTMS transition (_is_in_VTMS_transition)
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
-  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend; }
+  // - JVMTI is making a Java upcall (_is_in_java_upcall)
+  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend || _is_in_java_upcall; }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
@@ -775,10 +784,10 @@ private:
   void set_callee_target  (Method* x)            { _callee_target   = x; }
 
   // Oop results of vm runtime calls
-  oop  vm_result() const                         { return _vm_result; }
-  void set_vm_result  (oop x)                    { _vm_result   = x; }
+  oop  vm_result_oop() const                     { return _vm_result_oop; }
+  void set_vm_result_oop(oop x)                  { _vm_result_oop   = x; }
 
-  void set_vm_result_2  (Metadata* x)            { _vm_result_2   = x; }
+  void set_vm_result_metadata(Metadata* x)       { _vm_result_metadata = x; }
 
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
@@ -844,8 +853,8 @@ private:
     return byte_offset_of(JavaThread, _anchor);
   }
   static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
-  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
-  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
+  static ByteSize vm_result_oop_offset()         { return byte_offset_of(JavaThread, _vm_result_oop); }
+  static ByteSize vm_result_metadata_offset()    { return byte_offset_of(JavaThread, _vm_result_metadata); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
@@ -934,6 +943,9 @@ private:
     _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
+
+  // Atomic version; invoked by a thread other than the owning thread.
+  bool in_critical_atomic() { return Atomic::load(&_jni_active_critical) > 0; }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the

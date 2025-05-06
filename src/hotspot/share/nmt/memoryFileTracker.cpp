@@ -32,7 +32,7 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
+Deferred<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -44,7 +44,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::RegionData regiondata(sidx, mem_tag);
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
@@ -53,7 +53,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
@@ -126,9 +126,8 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
-  _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
-  if (_tracker == nullptr) return false;
-  new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
+  bool is_detailed_mode = tracking_level == NMT_TrackingLevel::NMT_detail;
+  _tracker.initialize(is_detailed_mode);
   return true;
 }
 
@@ -176,7 +175,7 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   iterate_summary([&](MemTag tag, const VirtualMemory* current) {
-    VirtualMemory* snap = snapshot->by_type(tag);
+    VirtualMemory* snap = snapshot->by_tag(tag);
     // Only account the committed memory.
     snap->commit_memory(current->committed());
   });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,11 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathGroup;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -65,13 +69,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
 
-    public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
-            new StandardBundlerParam<> (
-            "mac.dmg.installerName.suffix",
-            String.class,
-            params -> "",
-            (s, p) -> s);
-
     public Path bundle(Map<String, ? super Object> params,
             Path outdir) throws PackagerException {
         Log.verbose(MessageFormat.format(I18N.getString("message.building-dmg"),
@@ -83,10 +80,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Path appLocation = prepareAppBundle(params);
 
             if (appLocation != null && prepareConfigFiles(appLocation,params)) {
-                Path configScript = getConfig_Script(params);
-                if (IOUtils.exists(configScript)) {
-                    IOUtils.run("bash", configScript);
-                }
+                new ScriptRunner()
+                        .setDirectory(appLocation)
+                        .setResourceCategoryId("resource.post-app-image-script")
+                        .setScriptNameSuffix("post-image")
+                        .setEnvironmentVariable("JpAppImageDir", appLocation.toAbsolutePath().toString())
+                        .run(params);
 
                 return buildDMG(params, appLocation, outdir);
             }
@@ -200,21 +199,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 .setExternal(ICON_ICNS.fetchFrom(params))
                 .saveToFile(getConfig_VolumeIcon(params));
 
-        createResource(null, params)
-                .setCategory(I18N.getString("resource.post-install-script"))
-                .saveToFile(getConfig_Script(params));
-
         prepareLicense(params);
 
         prepareDMGSetupScript(appLocation, params);
 
         return true;
-    }
-
-    // name of post-image script
-    private Path getConfig_Script(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-post-image.sh");
     }
 
     // Location of SetFile utility may be different depending on MacOS version
@@ -276,9 +265,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Files.createDirectories(imagesRoot);
         }
 
-        Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params) +"-tmp.dmg");
+        Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params)
+                + "-tmp.dmg");
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
-                + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
+                + ".dmg");
 
         Path srcFolder = appLocation.getParent();
         if (StandardBundlerParam.isRuntimeInstaller(params)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ public class TestNestmateAttr extends TestScaffold {
 
     TestNestmateAttr (String[] args) {
         super(args);
+        enableIncludeVirtualthreads(); // need to run debug agent with includevirtualthreads=y
     }
 
     public static void main(String[] args) throws Throwable {

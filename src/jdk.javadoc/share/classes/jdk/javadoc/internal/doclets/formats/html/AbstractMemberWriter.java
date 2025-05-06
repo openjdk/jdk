@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,8 @@ public abstract class AbstractMemberWriter {
             Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
-            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel());
+            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel(),
+                    TableOfContents.Level.FIRST);
         }
     }
 
@@ -265,13 +266,10 @@ public abstract class AbstractMemberWriter {
         var inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
 
         for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
-            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
+            if (!utils.isVisible(inheritedClass)) {
                 continue;
             }
             if (Objects.equals(inheritedClass, typeElement)) {
-                continue;
-            }
-            if (utils.hasHiddenTag(inheritedClass)) {
                 continue;
             }
 

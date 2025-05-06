@@ -1353,8 +1353,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
             if (index < 0) {
                 index = -index - 1;
+                permitted.add(index, element);
             }
-            permitted.add(index, element);
         }
 
         public boolean isPermittedSubclass(Symbol csym) {

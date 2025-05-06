@@ -26,6 +26,7 @@
 #include "os_linux.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 #include <malloc.h>
 
@@ -35,7 +36,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
 #ifdef __GLIBC__
   char* buf;
   size_t size;
-  ALLOW_C_FUNCTION(::open_memstream, FILE* stream = ::open_memstream(&buf, &size);)
+  FILE* stream = ::open_memstream(&buf, &size);
   if (stream == nullptr) {
     _output->print_cr("Error: Could not call malloc_info(3)");
     return;
@@ -43,7 +44,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
 
   int err = os::Linux::malloc_info(stream);
   if (err == 0) {
-    ALLOW_C_FUNCTION(::fflush, fflush(stream);)
+    fflush(stream);
     _output->print_raw(buf);
     _output->cr();
   } else if (err == -1) {
@@ -53,8 +54,8 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
   } else {
     ShouldNotReachHere();
   }
-  ALLOW_C_FUNCTION(::fclose, ::fclose(stream);)
-  ALLOW_C_FUNCTION(::free, ::free(buf);)
+  ::fclose(stream);
+  permit_forbidden_function::free(buf);
 #else
   _output->print_cr(malloc_info_unavailable);
 #endif // __GLIBC__

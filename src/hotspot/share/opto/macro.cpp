@@ -225,7 +225,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       if (!ClearArrayNode::step_through(&mem, alloc->_idx, phase)) {
         // Can not bypass initialization of the instance
         // we are looking.
-        debug_only(intptr_t offset;)
+        DEBUG_ONLY(intptr_t offset;)
         assert(alloc == AllocateNode::Ideal_allocation(mem->in(3), phase, offset), "sanity");
         InitializeNode* init = alloc->as_Allocate()->initialization();
         // We are looking for stored value, return Initialize node
@@ -1328,7 +1328,7 @@ void PhaseMacroExpand::expand_allocate_common(
     // No initial test, just fall into next case
     assert(allocation_has_use || !expand_fast_path, "Should already have been handled");
     toobig_false = ctrl;
-    debug_only(slow_region = NodeSentinel);
+    DEBUG_ONLY(slow_region = NodeSentinel);
   }
 
   // If we are here there are several possibilities
@@ -2338,7 +2338,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       subklass = obj_or_subklass;
     } else {
       Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
-      subklass = _igvn.transform(LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
+      subklass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 
     Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, nullptr, _igvn, check->method(), check->bci());
