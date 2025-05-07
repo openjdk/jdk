@@ -108,7 +108,7 @@ bool VerificationType::is_reference_assignable_from(
 
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive()) {
-      bool skip_assignability_check;
+      bool skip_assignability_check = false;
       SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object(), &skip_assignability_check);
