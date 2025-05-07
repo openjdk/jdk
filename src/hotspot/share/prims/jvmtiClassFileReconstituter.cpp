@@ -391,14 +391,14 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   write_attribute_name_index("BootstrapMethods");
 
-  const auto bsm_offs = cpool()->bsm_attribute_offsets();
-  const auto bsm_data = cpool()->bsm_attribute_entries();
+  const Array<u4>* bsm_offs = cpool()->bsm_attribute_offsets();
+  const Array<u2>* bsm_data = cpool()->bsm_attribute_entries();
   int num_bootstrap_methods = bsm_offs->length();
 
   // calculate length of attribute
   u4 length = sizeof(u2); // num_bootstrap_methods
   for (int n = 0; n < num_bootstrap_methods; n++) {
-    auto bsme = cpool()->bsm_attribute_entry(n);
+    BSMAttributeEntry* bsme = cpool()->bsm_attribute_entry(n);
     u2 num_bootstrap_arguments = bsme->argument_count();
     length += sizeof(u2); // bootstrap_method_ref
     length += sizeof(u2); // num_bootstrap_arguments
@@ -409,7 +409,7 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   // write attribute
   write_u2(checked_cast<u2>(num_bootstrap_methods));
   for (int n = 0; n < num_bootstrap_methods; n++) {
-    auto bsme = cpool()->bsm_attribute_entry(n);
+    BSMAttributeEntry* bsme = cpool()->bsm_attribute_entry(n);
     u2 num_bootstrap_arguments = bsme->argument_count();
     write_u2(bsme->bootstrap_method_index());
     write_u2(num_bootstrap_arguments);

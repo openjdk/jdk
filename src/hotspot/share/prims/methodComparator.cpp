@@ -133,8 +133,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
         (old_cp->uncached_signature_ref_at(cpi_old) != new_cp->uncached_signature_ref_at(cpi_new)))
       return false;
 
-    auto bsme_old = old_cp->bootstrap_methods_attribute_entry(cpi_old);
-    auto bsme_new = new_cp->bootstrap_methods_attribute_entry(cpi_new);
+    BSMAttributeEntry* bsme_old = old_cp->bootstrap_methods_attribute_entry(cpi_old);
+    BSMAttributeEntry* bsme_new = new_cp->bootstrap_methods_attribute_entry(cpi_new);
     int bsm_old = bsme_old->bootstrap_method_index();
     int bsm_new = bsme_new->bootstrap_method_index();
     if (!pool_constants_same(bsm_old, bsm_new, old_cp, new_cp))
