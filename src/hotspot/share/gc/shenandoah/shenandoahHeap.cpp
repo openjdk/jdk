@@ -161,7 +161,7 @@ static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
     size = align_up(size, alignment);
   }
 
-  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size);
+  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size, mtGC);
   if (!reserved.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space");
   }
@@ -375,7 +375,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size);
+      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size, mtGC);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -384,7 +384,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
+      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size(), mtGC);
       if (!cset_rs.is_reserved()) {
         vm_exit_during_initialization("Cannot reserve memory for collection set");
       }
