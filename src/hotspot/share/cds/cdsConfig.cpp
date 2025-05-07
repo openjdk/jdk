@@ -411,7 +411,7 @@ void CDSConfig::check_aot_flags() {
 
     // The old "cds" log tags are deprecated, but we keep printing them for now as [cds]
     // for the classic workflow to be backwards compatible with older script. This will be
-    // removed as part of JDK-XXXXXXX.
+    // removed as part of JDK-8356317.
     PrintCDSLogsAsAOTLogs = false;
     return;
   } else {
