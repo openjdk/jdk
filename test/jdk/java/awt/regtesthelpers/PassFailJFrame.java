@@ -149,6 +149,15 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * <p>
  * Before returning from {@code awaitAndCheck}, the framework disposes of
  * all the windows and frames.
+ * <p id="forcePassAndFail">
+ * There are two other static methods available,
+ * {@link #forcePass() forcePass} and {@link #forceFail() forceFail}, which can
+ * be used in semi-automated tests to indicate that the test can be forcefully
+ * Passed/Failed. These methods are not immediately evaluated, but it decrements
+ * a counter and return. The evaluation happens in {@code awaitAndCheck} and
+ * the test will be forcefully Passed/Failed accordingly.
+ * Code examples are given in the corresponding method javadoc.
+ * <p>
  *
  * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
@@ -1310,14 +1319,34 @@ public final class PassFailJFrame {
     }
 
     /**
-     *  Forcibly fail the test.
+     * Forcibly fail the test.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all/any of the conditions for passing the test are not met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/0844745e7bd954a96441365f8010741ec1c29dbf/test/jdk/javax/swing/JScrollPane/AcceleratedWheelScrolling/HorizScrollers.java#L180">{@code
+     * HorizScrollers.java}</a>
      */
     public static void forceFail() {
         forceFail("forceFail called");
     }
 
     /**
-     *  Forcibly fail the test and provide a reason.
+     * Forcibly fail the test and provide a reason.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all/any of the conditions for passing the test are not met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b075aa289dbb9cb80f6937b3349c8d4769/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L86">{@code
+     * SaveFileNameOverrideTest.java}</a>
      *
      * @param reason the reason why the test is failed
      */
