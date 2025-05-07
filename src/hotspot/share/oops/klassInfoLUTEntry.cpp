@@ -335,16 +335,6 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
 #endif // ASSERT
 
-#if INCLUDE_CDS
-klute_raw_t KlassLUTEntry::calculate_klute_with_new_cld_index(unsigned cld_index) const {
-  assert(cld_index < 3, "Sanity");
-  U v(_v.raw);
-  v.common.cld_index = cld_index;
-  return v.raw;
-}
-#endif
-
-
 void KlassLUTEntry::print(outputStream* st) const {
   st->print("%X (Kind: %d Loader: %d)", value(), kind(), loader_index());
 }

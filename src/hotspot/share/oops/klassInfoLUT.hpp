@@ -73,9 +73,8 @@ class ClassLoaderData;
 // without going through the process of initialization. It also refers to that Klass via
 // a narrowKlass value that is the result of a precalculation during dump time (e.g. by
 // accessing obj->klass()->kind() on object that are re-animated from the CDS archive).
-// Since there is no secure way to initialize the KLUT entry for these classes, we (for the
-// moment) allow a form of "self-healing": if the KLUT entry for a class is requested but
-// not yet added, we add it to the KLUT table on the fly. See KlassInfoLUT::late_register_klass().
+// These Klasses we register by scanning the CDS archive after it has been mapped into
+// the Klass encoding range.
 
 class KlassInfoLUT : public AllStatic {
 
@@ -129,10 +128,6 @@ class KlassInfoLUT : public AllStatic {
 
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
   static void log_hit(klute_raw_t klute);
-#endif
-
-#if INCLUDE_CDS
-  static klute_raw_t late_register_klass(narrowKlass nk);
 #endif
 
 public:

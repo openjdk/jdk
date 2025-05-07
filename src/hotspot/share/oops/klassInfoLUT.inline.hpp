@@ -49,16 +49,7 @@ inline void KlassInfoLUT::put(unsigned index, klute_raw_t klute) {
 inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const klute_raw_t klute = at(nk);
-#if 0 // INCLUDE_CDS
-  if (klute == KlassLUTEntry::invalid_entry) {
-    // This branch, and the late_register_klass mechanic, only exists because it is
-    // so difficult to iterate CDS classes after loading CDS archives. See discussion
-    // surrounding 8353225. Hopefully we can remove this in the future.
-    return late_register_klass(nk);
-  }
-#else
   assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
-#endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
   update_hit_stats(klute);

@@ -113,18 +113,9 @@ class typeArrayOopDesc;
 //
 // It is the KLUT table entry initialization value (KLUT is zapped with '-1' on startup).
 //
-// The "invalid" has two different uses:
-// - if CDS is disabled at build time, it simply designates an invalid entry that should never be encountered
-//   at runtime. In other words, when doing a lookup with a narrowKlass value into the KLUT table, one should
-//   always find a valid klute, since a narrowKlass value can only result from a Klass that was loaded, and as
-//   part of Klass creation, the klute table entry is created.
-//
-// - if CDS is enabled at build time: unfortunately, CDS maps in archived Klass structures into memory and these
-//   Klass structures never go through a normal loading process; they just appear and then they are just there.
-//   These may be accessed via narrowKlass values that are the result of a precalculation during CDS archive dump
-//   time.
-//   in that case, an "invalid_entry" can mean a Klass that was loaded from CDS archive and for that no table
-//   entry in the KLUT exists yet. If we encounter such an entry, we generate it on the fly (see KlassInfoLUT::late_register_klass()).
+// The "invalid"  designates an invalid entry that should never be encountered at runtime. When doing a lookup
+// with a narrowKlass value into the KLUT table, one should always find a valid klute, since a narrowKlass value
+// can only result from a Klass that was loaded, and as part of Klass creation, the klute table entry is created.
 //
 // Implementation note: the value -1 (all bits 1) relies on the fact that a KlassKind of 7 (0b111) is invalid. We
 // don't use zero as "invalid entry" since zero would encode a valid Klass.
@@ -278,11 +269,6 @@ public:
   static void print_limits(outputStream* st);
 
   void print(outputStream* st) const;
-
-#if INCLUDE_CDS
-  // Returns a newly calculated klute equal to this but with a different CLD index
-  klute_raw_t calculate_klute_with_new_cld_index(unsigned cld_index) const;
-#endif
 
 }; // KlassInfoLUEntry
 

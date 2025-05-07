@@ -235,41 +235,6 @@ void KlassInfoLUT::scan_klass_range_update_lut(address from, address to) {
   }
 }
 
-// We only tolerate this for CDS:
-// We currently have no simple way to iterate all Klass structures in a CDS/AOT archive
-// before the JVM starts calling methods on oops that refer to these classes. This is because
-// these Klasses don't go through normal construction but are mapped into the address space
-// when the CDS archive is mapped.
-// So it can happen, early during CDS initialization, when CDS revives archived heap objects,
-// that the entry in the KLUT table for this Klass is still uninitialized. If that happens,
-// this function is called where we add the table entry on the fly.
-// Unfortunately, this adds a branch into the very hot oop iteration path, albeit one that
-// would hopefully be mitigated by branch prediction since this should be exceedingly rare.
-klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
-  assert(_initialized, "not initialized");
-  assert(nk != 0, "null narrow Klass - is this class encodable?");
-  const Klass* k = CompressedKlassPointers::decode(nk);
-  assert(k->is_shared(), "Only for CDS classes");
-  // Here we rely on the Klass itself carrying a valid klute already. No need to calculate it.
-  // That klute would have been pre-calculated during CDS dump time when the to-be-dumped Klass
-  // was dynamically constructed.
-  // We just copy that entry into the table slot.
-  const klute_raw_t klute = k->klute();
-  const KlassLUTEntry klutehelper(klute);
-  assert(klutehelper.is_valid(), "Must be a valid klute");
-  put(nk, klutehelper.value());
-  ClassLoaderData* const cld = k->class_loader_data();
-  if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
-    register_cld_if_needed(cld);
-  } else {
-    // Note: cld may still be nullptr; in that case it will be initialized by CDS before the Klass
-    // is used. At that point we may correct the klute entry to account for the new CDS.
-  }
-  DEBUG_ONLY(klutehelper.verify_against_klass(k));
-  log_klass_registration(k, nk, true, klute, "late-registered");
-  return klute;
-}
-
 void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
   // Called when the CLD field inside a Klass is changed by CDS.
   // Recalculates the klute for this Klass (even though strictly speaking we
