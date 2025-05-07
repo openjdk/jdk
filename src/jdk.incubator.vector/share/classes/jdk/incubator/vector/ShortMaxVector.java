@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -857,6 +859,47 @@ final class ShortMaxVector extends ShortVector {
             v.convertShape(VectorOperators.S2I, species, 1)
                     .reinterpretAsInts()
                     .intoArray(a, offset + species.length());
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Short> mask){
+                   VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
+                   Vector<Short> v = toBitsVector();
+                   boolean[] maskBits = mask.toArray();
+                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
+                   v.convertShape(VectorOperators.S2I, species, 0)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset, bo, m);
+                   m = VectorMask.fromArray(species, maskBits, species.length());
+                   v.convertShape(VectorOperators.S2I, species, 1)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset + species.length(), bo, m);
+       }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+                      VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
+                      Vector<Short> v = toBitsVector();
+                      v.convertShape(VectorOperators.S2I, species, 0)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset, bo);
+                      v.convertShape(VectorOperators.S2I, species, 1)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset + species.length(), bo);
+         }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
+        }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Short> m) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
         }
 
         @Override

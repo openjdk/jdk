@@ -24,9 +24,14 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
+
+import static jdk.incubator.vector.VectorIntrinsics.checkFromIndexSize;
 
 abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     static final IntUnaryOperator IDENTITY = i -> i;
@@ -64,6 +69,11 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     abstract AbstractVector<?> toBitsVector0();
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     * @since 19
+     */
+
     @Override
     @ForceInline
     public final int[] toArray() {
@@ -94,6 +104,29 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
             throw checkIndexFailed(indices[vecmask.firstTrue()], length());
         }
         return this;
+    }
+
+    @ForceInline
+    final VectorShuffle<E> fromMemorySegmentTemplate(VectorSpecies<E> vsp, MemorySegment segment,
+            long offset, ByteOrder order) {
+        long memsize = vsp.length() * 4;
+        MemorySegment arraySlice = segment.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        return vsp.shuffleFromArray(indices,0);
+    }
+
+    @ForceInline
+    final VectorShuffle<E> fromMemorySegmentTemplate(VectorSpecies<E> vsp, MemorySegment segment,
+            long offset, ByteOrder order, VectorMask<E> mask) {
+        long memsize = vsp.length() * 4;
+        MemorySegment arraySlice = segment.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        for (int i = 0; i < indices.length; i++) {
+            if (!mask.laneIsSet(i)) {
+                indices[i] = i; // identity
+            }
+        }
+        return vsp.shuffleFromArray(indices,0);
     }
 
     @Override

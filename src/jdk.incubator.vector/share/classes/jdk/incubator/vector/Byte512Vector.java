@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -989,6 +991,61 @@ final class Byte512Vector extends ByteVector {
             v.convertShape(VectorOperators.B2I, species, 3)
                     .reinterpretAsInts()
                     .intoArray(a, offset + species.length() * 3);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Byte> mask){
+                   VectorSpecies<Integer> species = IntVector.SPECIES_512;
+                   Vector<Byte> v = toBitsVector();
+                   boolean[] maskBits = mask.toArray();
+                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
+                   v.convertShape(VectorOperators.B2I, species, 0)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset, bo, m);
+                   m = VectorMask.fromArray(species, maskBits, species.length());
+                   v.convertShape(VectorOperators.B2I, species, 1)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset + species.length(), bo, m);
+                   m = VectorMask.fromArray(species, maskBits, species.length() * 2);
+                   v.convertShape(VectorOperators.B2I, species, 2)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset + species.length() * 2, bo, m);
+                   m = VectorMask.fromArray(species, maskBits, species.length() * 3);
+                   v.convertShape(VectorOperators.B2I, species, 3)
+                           .reinterpretAsInts()
+                           .intoMemorySegment(ms, offset + species.length() * 3, bo, m);
+       }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+                      VectorSpecies<Integer> species = IntVector.SPECIES_512;
+                      Vector<Byte> v = toBitsVector();
+                      v.convertShape(VectorOperators.B2I, species, 0)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset, bo);
+                      v.convertShape(VectorOperators.B2I, species, 1)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset + species.length(), bo);
+                      v.convertShape(VectorOperators.B2I, species, 2)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset + species.length() * 2, bo);
+                      v.convertShape(VectorOperators.B2I, species, 3)
+                              .reinterpretAsInts()
+                              .intoMemorySegment(ms, offset + species.length() * 3, bo);
+         }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
+        }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Byte> m) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
         }
 
         @Override

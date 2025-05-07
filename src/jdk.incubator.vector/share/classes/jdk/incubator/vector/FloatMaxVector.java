@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -838,6 +840,32 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public void intoArray(int[] a, int offset) {
             toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Float> mask){
+                   IntMaxVector bitsVector = toBitsVector();
+                   VectorMask<Integer> m = mask.cast(bitsVector.species());
+                   bitsVector.intoMemorySegment(ms, offset, bo);
+       }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+                      toBitsVector().intoMemorySegment(ms, offset, bo);
+         }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Float> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
+        }
+
+        @Override
+        @ForceInline
+        public VectorShuffle<Float> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Float> m) {
+            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
         }
 
         @Override

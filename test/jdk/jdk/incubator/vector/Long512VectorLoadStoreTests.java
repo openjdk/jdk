@@ -694,6 +694,20 @@ public class Long512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
        }
     }
 
+    @Test
+    static void loadStoreShuffleMemorySegment() {
+        IntUnaryOperator fn = a -> a + 5;
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            var shuffle = VectorShuffle.fromOp(SPECIES, fn);
+            MemorySegment ms = Arena.ofAuto().allocate(SPECIES.length() * SPECIES.elementSize() / 8);
+            shuffle.intoMemorySegment(ms, 0, ByteOrder.nativeOrder());
+
+            int [] a = expectedShuffle(SPECIES.length(), fn);
+            int [] r = ms.toArray(ValueLayout.JAVA_INT, 0);
+            Assert.assertEquals(r, a);
+        }
+    }
+
 
 
 

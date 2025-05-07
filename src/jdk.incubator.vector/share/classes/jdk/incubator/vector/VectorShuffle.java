@@ -25,6 +25,9 @@
 package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Arrays;
 import java.util.function.IntUnaryOperator;
@@ -522,6 +525,44 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      *         {@code offset > a.length - this.length()}
      */
     public abstract void intoArray(int[] a, int offset);
+
+    /**
+     * Stores this shuffle into a {@link MemorySegment} starting at the given offset.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     */
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
+
+    /**
+     * Stores this shuffle into a {@link MemorySegment} starting at the given offset filtering witht he given mask.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param m the mask to filter the shuffle
+     * @param bo the byte order
+     */
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<E> m);
+
+
+    /**
+     * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     * @return a VectorShuffle from the {@link MemorySegment}
+     */
+    public abstract VectorShuffle<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
+
+
+    /**
+     * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     * @param m the mask to filter the shuffle
+     * @return a VectorShuffle from the {@link MemorySegment}
+     */
+    public abstract VectorShuffle<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<E> m);
 
     /**
      * Converts this shuffle into a vector, creating a vector
