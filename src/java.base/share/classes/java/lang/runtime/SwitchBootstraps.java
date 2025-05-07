@@ -546,7 +546,11 @@ public final class SwitchBootstraps {
                 Object caseLabel = caseLabels[idx];
                 cb.labelBinding(caseTargets[idx]);
                 if (caseLabel instanceof Class<?> classLabel) {
-                    if (unconditionalExactnessCheck(selectorType, classLabel)) {
+                    if (isNotValidPair(selectorType, caseLabel)){
+                        cb.goto_(next);
+                        continue;
+                    }
+                    else if (unconditionalExactnessCheck(selectorType, classLabel)) {
                         //nothing - unconditionally use this case
                     } else if (classLabel.isPrimitive()) {
                         if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
@@ -717,6 +721,11 @@ public final class SwitchBootstraps {
         };
     }
 
+    private static boolean isNotValidPair(Class<?> selectorType, Object caseLabel) {
+        return (selectorType == boolean.class && caseLabel != boolean.class && caseLabel != Boolean.class) ||
+               (selectorType != boolean.class && selectorType.isPrimitive() && (caseLabel == boolean.class || caseLabel == Boolean.class));
+    }
+
     /*
      * Construct the method handle that represents the method int typeSwitch(Object, int, BiPredicate, List)
      */
@@ -769,11 +778,12 @@ public final class SwitchBootstraps {
             return true;
         }
         else if (selectorType.equals(targetType) ||
-                ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
-                 (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
-                 (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
-                 (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
-                 (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))))) return true;
+                (targetType.isPrimitive() && selectorType.isPrimitive() &&
+                    ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
+                     (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
+                     (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
+                     (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
+                     (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))))) return true;
         return false;
     }
 
