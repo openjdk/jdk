@@ -418,8 +418,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>The filtering operation returns all matching language tags. It is defined
  * in RFC 4647 as follows:
  * "In filtering, each language range represents the least specific language
- * tag (that is, the language tag with fewest number of subtags) that is an
- * acceptable match. All of the language tags in the matching set of tags will
+ * tag (that is, the language tag with the fewest number of subtags) that is an
+ * acceptable match. All the language tags in the matching set of tags will
  * have an equal or greater number of subtags than the language range. Every
  * non-wildcard subtag in the language range will appear in every one of the
  * matching language tags."
@@ -541,9 +541,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@code true}, those three current language codes are mapped to their
  * backward compatible forms. The property is only read at Java runtime
  * startup and subsequent calls to {@code System.setProperty()} will
- * have no effect.
+ * have no effect. <b>As of Java SE 25, the use of the
+ * {@code java.locale.useOldISOCodes} system property is deprecated.
+ * This backwards compatible behavior will be removed in a future release
+ * of the JDK.</b>
  *
- * <p>The APIs added in 1.7 map between the old and new language codes,
+ * <p>The APIs added in Java SE 7 map between the old and new language codes,
  * maintaining the mapped codes internal to Locale (so that
  * {@code getLanguage} and {@code toString} reflect the mapped
  * code, which depends on the {@code java.locale.useOldISOCodes} system
@@ -3266,9 +3269,7 @@ public final class Locale implements Cloneable, Serializable {
          * or greater than {@code MAX_WEIGHT}
          */
         public LanguageRange(String range, double weight) {
-            if (range == null) {
-                throw new NullPointerException();
-            }
+            Objects.requireNonNull(range);
             if (weight < MIN_WEIGHT || weight > MAX_WEIGHT) {
                 throw new IllegalArgumentException("weight=" + weight);
             }
@@ -3278,8 +3279,8 @@ public final class Locale implements Cloneable, Serializable {
             // Do syntax check.
             boolean isIllFormed = false;
             String[] subtags = range.split("-");
-            if (isSubtagIllFormed(subtags[0], true)
-                || range.endsWith("-")) {
+            if (range.endsWith("-") ||
+                    isSubtagIllFormed(subtags[0], true)) {
                 isIllFormed = true;
             } else {
                 for (int i = 1; i < subtags.length; i++) {
@@ -3496,8 +3497,7 @@ public final class Locale implements Cloneable, Serializable {
             if (h == 0) {
                 h = 17;
                 h = 37*h + range.hashCode();
-                long bitsWeight = Double.doubleToLongBits(weight);
-                h = 37*h + (int)(bitsWeight ^ (bitsWeight >>> 32));
+                h = 37*h + Double.hashCode(weight);
                 if (h != 0) {
                     hash = h;
                 }

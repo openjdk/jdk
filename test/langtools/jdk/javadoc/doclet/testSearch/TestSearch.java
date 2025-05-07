@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808 8248863 8305710 8318082 8347058
+ *      8266808 8248863 8305710 8318082 8347058 8350638 8345555
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -392,20 +392,20 @@ public class TestSearch extends JavadocTester {
     void checkSearchIndex() {
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method(byte[],int,java.lang.String)"}""");
         checkOutput("member-search-index.js", false,
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(RegClass)","u":"method-pkg1.RegClass-"}""",
+               """
+                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--"}""",
-                """
-                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--"}""",
+                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method-byte:A-int-java.lang.String-"}""");
     }
@@ -432,11 +432,10 @@ public class TestSearch extends JavadocTester {
                 """
                     <li><a href="search.html">Search</a></li>""",
                 """
-                    <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off">
-                    <input type="reset" id="reset-search" disabled value="Reset">
-                    </div>""");
+                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
+                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
+                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
+                     value="Reset"></div>""");
     }
 
     void checkSingleIndex() {
@@ -675,8 +674,8 @@ public class TestSearch extends JavadocTester {
                 "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
                 "resource-files/jquery-ui.min.css",
-                "resource-files/x.png",
-                "resource-files/glass.png");
+                "resource-files/x.svg",
+                "resource-files/glass.svg");
     }
 
     void checkSearchJS() {
@@ -797,10 +796,10 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
@@ -835,7 +834,7 @@ public class TestSearch extends JavadocTester {
                 """
                     {"l":"SearchWordWithDescription","h":"pkg1.RegClass.CONSTANT_FIELD_1","d":"search word with desc","u":"pkg1/RegClass.html#SearchWordWithDescription"}""",
                 """
-                    {"l":"Serialized Form","h":"","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
+                    {"l":"Serialized Form","h":"","k":"18","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
                 """
                     {"l":"trailing","h":"pkg.AnotherClass.method(byte[], int, String)","d":"backslash\\\\","u":"pkg/AnotherClass.html#trailing"}]""");
     }

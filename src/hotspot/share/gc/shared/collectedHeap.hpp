@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ protected:
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  debug_only(static void check_for_valid_allocation_state();)
+  DEBUG_ONLY(static void check_for_valid_allocation_state();)
 
  public:
   enum Name {
@@ -435,20 +435,14 @@ protected:
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
 
-  // Print heap information on the given outputStream.
-  virtual void print_on(outputStream* st) const = 0;
-  // The default behavior is to call print_on() on tty.
+  // Print heap information.
+  virtual void print_heap_on(outputStream* st) const = 0;
+
+  // Print additional information about the GC that is not included in print_heap_on().
+  virtual void print_gc_on(outputStream* st) const = 0;
+
+  // The default behavior is to call print_heap_on() and print_gc_on() on tty.
   virtual void print() const;
-
-  // Print more detailed heap information on the given
-  // outputStream. The default behavior is to call print_on(). It is
-  // up to each subclass to override it and add any additional output
-  // it needs.
-  virtual void print_extended_on(outputStream* st) const {
-    print_on(st);
-  }
-
-  virtual void print_on_error(outputStream* st) const;
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;

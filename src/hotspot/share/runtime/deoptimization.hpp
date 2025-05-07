@@ -98,6 +98,7 @@ class Deoptimization : AllStatic {
 #endif
 
     Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
+    Reason_auto_vectorization_check, // compiler generated (speculative) auto vectorization checks failed
 
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry

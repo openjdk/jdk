@@ -83,16 +83,17 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(Rscratch, Roop);
-    lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
-    testbitdi(CR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bne(CR0, slow_int);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(Rscratch, Roop);
+      lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
+      testbitdi(CR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
+      bne(CR0, slow_int);
+    }
+
     // ... and mark it unlocked.
     ori(Rmark, Rmark, markWord::unlocked_value);
 

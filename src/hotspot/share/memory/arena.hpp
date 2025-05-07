@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ class Chunk {
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
+  // Used for Compilation Memory Statistic
+  uint64_t _stamp;
+
 public:
   NONCOPYABLE(Chunk);
 
@@ -66,7 +69,8 @@ public:
     tiny_size  =  256  - slack, // Size of first chunk (tiny)
     init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
     medium_size= 10*K  - slack, // Size of medium-sized chunk
-    size       = 32*K  - slack  // Default size of an Arena chunk (following the first)
+    size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
+    max_default_size = size     // Largest default size
   };
 
   static void chop(Chunk* chunk);                  // Chop this chunk
@@ -81,19 +85,30 @@ public:
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
+
+  void set_stamp(uint64_t v) { _stamp = v; }
+  uint64_t stamp() const     { return _stamp; }
 };
 
+// Arena types (for Compilation Memory Statistic)
 #define DO_ARENA_TAG(FN) \
-  FN(other, Others, Other arenas) \
-  FN(ra, RA, Resource areas) \
-  FN(ha, HA, Handle area) \
-  FN(node, NA, Node arena) \
+  FN(ra,          Resource areas) \
+  FN(node,        C2 Node arena) \
+  FN(comp,        C2 Compile arena) \
+  FN(type,        C2 Type arena) \
+  FN(states,      C2 Matcher States Arena) \
+  FN(reglive,     C2 Register Allocation Live Arenas) \
+  FN(regsplit,    C2 Register Allocation Split Arena) \
+  FN(superword,   C2 SuperWord Arenas) \
+  FN(cienv,       CI Env Arena) \
+  FN(ha,          Handle area) \
+  FN(other,       Other arenas) \
 
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 public:
   enum class Tag: uint8_t {
-#define ARENA_TAG_ENUM(name, str, desc) tag_##name,
+#define ARENA_TAG_ENUM(name, desc) tag_##name,
     DO_ARENA_TAG(ARENA_TAG_ENUM)
 #undef ARENA_TAG_ENUM
     tag_count
@@ -114,7 +129,6 @@ private:
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
-  friend class VMStructs;
 
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
@@ -192,6 +206,7 @@ protected:
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
 
+  MemTag get_mem_tag() const { return _mem_tag; }
   Tag get_tag() const { return _tag; }
 
 private:

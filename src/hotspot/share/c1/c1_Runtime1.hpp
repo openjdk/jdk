@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ enum class C1StubId :int {
 #undef C1_STUB_ID_ENUM_DECLARE
 
 class Runtime1: public AllStatic {
-  friend class VMStructs;
   friend class ArrayCopyStub;
 
 public:
@@ -86,7 +85,7 @@ public:
   // stub generation
  public:
   static CodeBlob*  generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
-  static void       generate_blob_for(BufferBlob* blob, C1StubId id);
+  static bool       generate_blob_for(BufferBlob* blob, C1StubId id);
   static OopMapSet* generate_code_for(C1StubId id, StubAssembler* sasm);
  private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
@@ -131,7 +130,7 @@ public:
 
  public:
   // initialization
-  static void initialize(BufferBlob* blob);
+  static bool initialize(BufferBlob* blob);
   static void initialize_pd();
 
   // return offset in words

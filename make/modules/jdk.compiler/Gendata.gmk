@@ -53,7 +53,6 @@ COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
-    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     #
 
 # TODO: Unify with jdk.javadoc-gendata. Should only compile this once and share.
@@ -61,7 +60,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK), \
     COMPILER := buildjdk, \
     SRC := $(TOPDIR)/make/langtools/src/classes, \
-    INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
+    INCLUDES := build/tools/symbolgenerator, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \

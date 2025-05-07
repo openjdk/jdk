@@ -31,23 +31,13 @@ enum {
   pd_hi_word_offset_in_bytes = BytesPerWord
 };
 
-// explicit rounding operations are required to implement the strictFP mode
-enum {
-  pd_strict_fp_requires_explicit_rounding = LP64_ONLY( false ) NOT_LP64 ( true )
-};
-
-
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map = NOT_LP64(8) LP64_ONLY(16),           // number of registers used during code emission
+  pd_nof_cpu_regs_frame_map = 16,                                  // number of registers used during code emission
   pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of registers used during code emission
   pd_nof_xmm_regs_frame_map = XMMRegister::number_of_registers,    // number of registers used during code emission
 
-#ifdef _LP64
   #define UNALLOCATED 4    // rsp, rbp, r15, r10
-#else
-  #define UNALLOCATED 2    // rsp, rbp
-#endif // LP64
 
   pd_nof_caller_save_cpu_regs_frame_map = pd_nof_cpu_regs_frame_map - UNALLOCATED,  // number of registers killed by calls
   pd_nof_caller_save_fpu_regs_frame_map = pd_nof_fpu_regs_frame_map,  // number of registers killed by calls
@@ -60,9 +50,9 @@ enum {
   pd_nof_fpu_regs_linearscan = pd_nof_fpu_regs_frame_map, // number of registers visible to linear scan
   pd_nof_xmm_regs_linearscan = pd_nof_xmm_regs_frame_map, // number of registers visible to linear scan
   pd_first_cpu_reg = 0,
-  pd_last_cpu_reg = NOT_LP64(5) LP64_ONLY(11),
-  pd_first_byte_reg = NOT_LP64(2) LP64_ONLY(0),
-  pd_last_byte_reg = NOT_LP64(5) LP64_ONLY(11),
+  pd_last_cpu_reg = 11,
+  pd_first_byte_reg = 0,
+  pd_last_byte_reg = 11,
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg =  pd_first_fpu_reg + 7,
   pd_first_xmm_reg = pd_nof_cpu_regs_frame_map + pd_nof_fpu_regs_frame_map,

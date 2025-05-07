@@ -56,6 +56,7 @@ static const struct spa_type_info spa_type_param_buffers[] = {
     { SPA_PARAM_BUFFERS_stride,   SPA_TYPE_Int, SPA_TYPE_INFO_PARAM_BLOCK_INFO_BASE "stride", NULL },
     { SPA_PARAM_BUFFERS_align,    SPA_TYPE_Int, SPA_TYPE_INFO_PARAM_BLOCK_INFO_BASE "align", NULL },
     { SPA_PARAM_BUFFERS_dataType, SPA_TYPE_Int, SPA_TYPE_INFO_PARAM_BLOCK_INFO_BASE "dataType", NULL },
+    { SPA_PARAM_BUFFERS_metaType, SPA_TYPE_Int, SPA_TYPE_INFO_PARAM_BLOCK_INFO_BASE "metaType", NULL },
     { 0, 0, NULL, NULL },
 };
 

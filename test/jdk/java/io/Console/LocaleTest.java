@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @bug 8330276
+ * @bug 8330276 8351435
  * @summary Tests Console methods that have Locale as an argument
  * @library /test/lib
  * @modules jdk.internal.le jdk.localedata
@@ -57,6 +57,7 @@ public class LocaleTest {
         if (args.length == 0) {
             // no arg will launch the child process that actually perform tests
             var pb = ProcessTools.createTestJavaProcessBuilder(
+                    "-Djdk.console=jdk.internal.le",
                     "LocaleTest", "dummy");
             var input = new File(System.getProperty("test.src", "."), "input.txt");
             pb.redirectInput(input);
