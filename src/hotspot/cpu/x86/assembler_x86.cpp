@@ -2558,7 +2558,14 @@ void Assembler::imull(Register dst, Register src, int value) {
 }
 
 void Assembler::eimull(Register dst, Register src, int value, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src->encoding(), value, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, EVEX_32bit, no_flags);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  if (is8bit(value)) {
+    emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
+  } else {
+    emit_int16(0x69, (0xC0 | encode));
+    emit_int32(value);
+  }
 }
 
 void Assembler::imull(Register dst, Address src) {
@@ -12932,27 +12939,6 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   return (((dst_enc & 7) << 3) | (src_enc & 7));
 }
 
-void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int src_enc, int value, VexSimdPrefix pre, VexOpcode opc,
-                                              int size, bool no_flags) {
-  int encode;
-  bool is_prefixq = (size == EVEX_64bit) ? true : false;
-  if (is_demotable(no_flags, dst_enc, src_enc)) {
-    encode = is_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
-  }
-  else {
-    InstructionAttr attributes(AVX_128bit, is_prefixq, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, size);
-    attributes.set_is_evex_instruction();
-    encode = vex_prefix_and_encode(dst_enc, 0, src_enc, pre, opc, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, no_flags);
-  }
-  if (is8bit(value)) {
-    emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
-  } else {
-    emit_int16(0x69, (0xC0 | encode));
-    emit_int32(value);
-  }
-}
-
 void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
                                               int size, int byte1, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit) ? true : false;
@@ -15078,7 +15064,14 @@ void Assembler::imulq(Register dst, Register src, int value) {
 }
 
 void Assembler::eimulq(Register dst, Register src, int value, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src->encoding(), value, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, EVEX_64bit, no_flags);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  if (is8bit(value)) {
+    emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
+  } else {
+    emit_int16(0x69, (0xC0 | encode));
+    emit_int32(value);
+  }
 }
 
 void Assembler::imulq(Register dst, Address src) {

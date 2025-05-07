@@ -812,9 +812,6 @@ private:
   void evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
                                      int size, int byte1, bool no_flags, bool is_map1 = false);
 
-  void evex_opcode_prefix_and_encode(int dst_enc, int src_enc, int value, VexSimdPrefix pre, VexOpcode opc,
-                                     int size, bool no_flags);
-
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
 

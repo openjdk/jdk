@@ -313,7 +313,7 @@
     __ eandl(r21, r21, 268435456, true);                                        //    {NF}and r21d, r21d, 268435456    IID289
     __ eandl(rax, r9, 268435456, true);                                         //    {NF}and eax, r9d, 268435456    IID290
     __ eimull(r13, rdx, 1048576, false);                                        //    {EVEX}imul r13d, edx, 1048576    IID291
-    __ eimull(r15, r15, 16777216, false);                                       //    imul r15d, 16777216    IID292
+    __ eimull(r15, r15, 16777216, false);                                       //    {EVEX}imul r15d, r15d, 16777216    IID292
     __ eimull(rax, r31, 16777216, false);                                       //    {EVEX}imul eax, r31d, 16777216    IID293
     __ eimull(r8, r9, 256, true);                                               //    {NF}imul r8d, r9d, 256    IID294
     __ eimull(r9, r9, 268435456, true);                                         //    {NF}imul r9d, r9d, 268435456    IID295
@@ -772,7 +772,7 @@
     __ eandq(r21, r21, 1048576, true);                                          //    {NF}and r21, r21, 1048576    IID740
     __ eandq(rax, rbx, 1048576, true);                                          //    {NF}and rax, rbx, 1048576    IID741
     __ eimulq(r13, r15, 268435456, false);                                      //    {EVEX}imul r13, r15, 268435456    IID742
-    __ eimulq(r8, r8, 1, false);                                                //    imul r8, 1    IID743
+    __ eimulq(r8, r8, 1, false);                                                //    {EVEX}imul r8, r8, 1    IID743
     __ eimulq(rax, r22, 1, false);                                              //    {EVEX}imul rax, r22, 1    IID744
     __ eimulq(r12, r24, 65536, true);                                           //    {NF}imul r12, r24, 65536    IID745
     __ eimulq(r24, r24, 65536, true);                                           //    {NF}imul r24, r24, 65536    IID746
@@ -1271,7 +1271,7 @@
     0x62, 0xfc, 0x54, 0x14, 0x81, 0xe5, 0x00, 0x00, 0x00, 0x10,                      // IID289
     0x62, 0xd4, 0x7c, 0x1c, 0x81, 0xe1, 0x00, 0x00, 0x00, 0x10,                      // IID290
     0x62, 0x74, 0x7c, 0x08, 0x69, 0xea, 0x00, 0x00, 0x10, 0x00,                      // IID291
-    0x45, 0x69, 0xff, 0x00, 0x00, 0x00, 0x01,                                        // IID292
+    0x62, 0x54, 0x7c, 0x08, 0x69, 0xff, 0x00, 0x00, 0x00, 0x01,                      // IID292
     0x62, 0xdc, 0x7c, 0x08, 0x69, 0xc7, 0x00, 0x00, 0x00, 0x01,                      // IID293
     0x62, 0x54, 0x7c, 0x0c, 0x69, 0xc1, 0x00, 0x01, 0x00, 0x00,                      // IID294
     0x62, 0x54, 0x7c, 0x0c, 0x69, 0xc9, 0x00, 0x00, 0x00, 0x10,                      // IID295
@@ -1728,7 +1728,7 @@
     0x62, 0xfc, 0xd4, 0x14, 0x81, 0xe5, 0x00, 0x00, 0x10, 0x00,                      // IID740
     0x62, 0xf4, 0xfc, 0x1c, 0x81, 0xe3, 0x00, 0x00, 0x10, 0x00,                      // IID741
     0x62, 0x54, 0xfc, 0x08, 0x69, 0xef, 0x00, 0x00, 0x00, 0x10,                      // IID742
-    0x4d, 0x6b, 0xc0, 0x01,                                                          // IID743
+    0x62, 0x54, 0xfc, 0x08, 0x6b, 0xc0, 0x01,                                        // IID743
     0x62, 0xfc, 0xfc, 0x08, 0x6b, 0xc6, 0x01,                                        // IID744
     0x62, 0x5c, 0xfc, 0x0c, 0x69, 0xe0, 0x00, 0x00, 0x01, 0x00,                      // IID745
     0x62, 0x4c, 0xfc, 0x0c, 0x69, 0xc0, 0x00, 0x00, 0x01, 0x00,                      // IID746
@@ -2228,7 +2228,7 @@
     10,   // IID289
     10,   // IID290
     10,   // IID291
-    7,    // IID292
+    10,   // IID292
     10,   // IID293
     10,   // IID294
     10,   // IID295
@@ -2685,7 +2685,7 @@
     10,   // IID740
     10,   // IID741
     10,   // IID742
-    4,    // IID743
+    7,    // IID743
     7,    // IID744
     10,   // IID745
     10,   // IID746

@@ -411,7 +411,7 @@ class RegRegImmNddInstruction(NFInstruction):
         self.demote = ENABLE_DEMOTION
 
     def astr(self):
-        if self.demote:
+        if self.demote and self._aname not in ['imul']:
             ops = [op.cstr() for op in self.operands]
             if ops[0] == ops[1] and (not self.no_flag):
                 return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
