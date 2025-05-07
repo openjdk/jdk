@@ -72,7 +72,7 @@ inline void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* cu
   current->dec_held_monitor_count();
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    LightweightSynchronizer::exit(object, current);
+    LightweightSynchronizer::exit(object, lock, current);
   } else {
     exit_legacy(object, lock, current);
   }

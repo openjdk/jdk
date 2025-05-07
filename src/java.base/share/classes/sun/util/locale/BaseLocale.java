@@ -106,6 +106,12 @@ public final class BaseLocale {
      */
     private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
             .equalsIgnoreCase("true");
+    static {
+        if (OLD_ISO_CODES) {
+            System.err.println("WARNING: The use of the system property \"java.locale.useOldISOCodes\"" +
+                " is deprecated. It will be removed in a future release of the JDK.");
+        }
+    }
 
     private BaseLocale(String language, String script, String region, String variant) {
         this.language = language;

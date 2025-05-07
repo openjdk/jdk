@@ -633,6 +633,8 @@ public final class PassFailJFrame {
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
+        text.setBorder(createTextBorder());
+        text.setCaretPosition(0);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
@@ -687,7 +689,6 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
-        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -701,10 +702,10 @@ public final class PassFailJFrame {
 
         HTMLEditorKit kit = (HTMLEditorKit) text.getEditorKit();
         StyleSheet styles = kit.getStyleSheet();
-        // Reduce the default margins
-        styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
-        // Make the size of code blocks the same as other text
-        styles.addRule("code { font-size: inherit }");
+        // Reduce the list default margins
+        styles.addRule("ol, ul { margin-left-ltr: 30; margin-left-rtl: 30 }");
+        // Make the size of code (and other elements) the same as other text
+        styles.addRule("code, kbd, samp, pre { font-size: inherit }");
 
         return text;
     }
@@ -1293,14 +1294,16 @@ public final class PassFailJFrame {
 
     /**
      * Forcibly pass the test.
-     * <p>The sample usage:
-     * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
-     * </code></pre>
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
+     * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
         latch.countDown();
@@ -1713,7 +1716,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUI(PanelCreator panelCreator) {
             return splitUIRight(panelCreator);
@@ -1730,7 +1733,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIRight(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
@@ -1747,7 +1750,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIBottom(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
@@ -1763,7 +1766,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         private Builder splitUI(PanelCreator panelCreator,
                                 int splitUIOrientation) {

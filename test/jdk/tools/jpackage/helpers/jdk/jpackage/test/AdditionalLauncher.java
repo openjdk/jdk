@@ -22,6 +22,9 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,11 +38,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 public class AdditionalLauncher {
 
@@ -186,21 +186,10 @@ public class AdditionalLauncher {
         return Optional.of(shell[0]).get();
     }
 
-    private void initialize(JPackageCommand cmd) {
-        Path propsFile = TKit.workDir().resolve(name + ".properties");
-        if (Files.exists(propsFile)) {
-            // File with the given name exists, pick another name that
-            // will not reference existing file.
-            try {
-                propsFile = TKit.createTempFile(propsFile);
-                TKit.deleteIfExists(propsFile);
-            } catch (IOException ex) {
-                rethrowUnchecked(ex);
-            }
-        }
+    private void initialize(JPackageCommand cmd) throws IOException {
+        final Path propsFile = TKit.createTempFile(name + ".properties");
 
-        cmd.addArguments("--add-launcher", String.format("%s=%s", name,
-                    propsFile));
+        cmd.addArguments("--add-launcher", String.format("%s=%s", name, propsFile));
 
         List<Map.Entry<String, String>> properties = new ArrayList<>();
         if (defaultArguments != null) {
@@ -331,7 +320,7 @@ public class AdditionalLauncher {
                 TKit.assertTextStream("Comment=" + expectedDescription)
                         .label(String.format("[%s] file", desktopFile))
                         .predicate(String::equals)
-                        .apply(Files.readAllLines(desktopFile).stream());
+                        .apply(Files.readAllLines(desktopFile));
             }
         }
     }
@@ -404,11 +393,9 @@ public class AdditionalLauncher {
         PropertyFile(Path path) throws IOException {
             data = Files.readAllLines(path).stream().map(str -> {
                 return str.split("=", 2);
-            }).collect(
-                    Collectors.toMap(tokens -> tokens[0], tokens -> tokens[1],
-                            (oldValue, newValue) -> {
-                                return newValue;
-                            }));
+            }).collect(toMap(tokens -> tokens[0], tokens -> tokens[1], (oldValue, newValue) -> {
+                return newValue;
+            }));
         }
 
         public boolean isPropertySet(String name) {
@@ -430,11 +417,9 @@ public class AdditionalLauncher {
     }
 
     private static String resolveVariables(JPackageCommand cmd, String str) {
-        var map = Map.of(
-                "$APPDIR", cmd.appLayout().appDirectory(),
-                "$ROOTDIR",
-                cmd.isImagePackageType() ? cmd.outputBundle() : cmd.appInstallationDirectory(),
-                "$BINDIR", cmd.appLayout().launchersDirectory());
+        var map = Stream.of(JPackageCommand.Macro.values()).collect(toMap(x -> {
+            return String.format("$%s", x.name());
+        }, cmd::macroValue));
         for (var e : map.entrySet()) {
             str = str.replaceAll(Pattern.quote(e.getKey()),
                     Matcher.quoteReplacement(e.getValue().toString()));

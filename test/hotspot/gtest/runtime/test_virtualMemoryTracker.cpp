@@ -58,9 +58,9 @@ namespace {
 
 static void diagnostic_print(ReservedMemoryRegion* rmr) {
   CommittedRegionIterator iter = rmr->iterate_committed_regions();
-  LOG("In reserved region " PTR_FORMAT ", size " SIZE_FORMAT_HEX ":", p2i(rmr->base()), rmr->size());
+  LOG("In reserved region " PTR_FORMAT ", size 0x%zx:", p2i(rmr->base()), rmr->size());
   for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
-    LOG("   committed region: " PTR_FORMAT ", size " SIZE_FORMAT_HEX, p2i(region->base()), region->size());
+    LOG("   committed region: " PTR_FORMAT ", size 0x%zx", p2i(region->base()), region->size());
   }
 }
 

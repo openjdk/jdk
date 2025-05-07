@@ -67,12 +67,7 @@ inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key
 static OffsetCompactHashtable<
   const char*, Symbol*,
   symbol_equals_compact_hashtable_entry
-> _shared_table;
-
-static OffsetCompactHashtable<
-  const char*, Symbol*,
-  symbol_equals_compact_hashtable_entry
-> _dynamic_shared_table;
+> _shared_table, _dynamic_shared_table, _shared_table_for_dumping;
 
 // --------------------------------------------------------------------------
 
@@ -572,23 +567,35 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   return sym;
 }
 
-struct SizeFunc : StackObj {
-  size_t operator()(Symbol* value) {
+TableStatistics SymbolTable::get_table_statistics() {
+  static TableStatistics ts;
+  auto sz = [&](Symbol* value) {
     assert(value != nullptr, "expected valid value");
     return (value)->size() * HeapWordSize;
   };
+
+  Thread* jt = Thread::current();
+  SymbolTableHash::StatisticsTask sts(_local_table);
+  if (!sts.prepare(jt)) {
+    return ts;  // return old table statistics
+  }
+  {
+    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, symboltable, perf));
+    while (sts.do_task(jt, sz)) {
+      sts.pause(jt);
+      if (jt->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(jt));
+      }
+      sts.cont(jt);
+    }
+  }
+  ts = sts.done(jt);
+  return ts;
 };
 
-TableStatistics SymbolTable::get_table_statistics() {
-  static TableStatistics ts;
-  SizeFunc sz;
-  ts = _local_table->statistics_get(Thread::current(), sz, ts);
-  return ts;
-}
-
 void SymbolTable::print_table_statistics(outputStream* st) {
-  SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, "SymbolTable");
+  TableStatistics ts = get_table_statistics();
+  ts.print(st, "SymbolTable");
 
   if (!_shared_table.empty()) {
     _shared_table.print_table_statistics(st, "Shared Symbol Table");
@@ -693,39 +700,27 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   }
 }
 
-size_t SymbolTable::estimate_size_for_archive() {
-  if (_items_count > (size_t)max_jint) {
-    fatal("Too many symbols to be archived: %zu", _items_count);
-  }
-  return CompactHashtableWriter::estimate_size(int(_items_count));
-}
-
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
-  if (CDSConfig::is_dumping_static_archive()) {
-    _shared_table.reset();
-    writer.dump(&_shared_table, "symbol");
-  } else {
-    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
-    _dynamic_shared_table.reset();
-    writer.dump(&_dynamic_shared_table, "symbol");
-  }
+  _shared_table_for_dumping.reset();
+  writer.dump(&_shared_table_for_dumping, "symbol");
 }
 
 void SymbolTable::serialize_shared_table_header(SerializeClosure* soc,
                                                 bool is_static_archive) {
   OffsetCompactHashtable<const char*, Symbol*, symbol_equals_compact_hashtable_entry> * table;
-  if (is_static_archive) {
-    table = &_shared_table;
+  if (soc->reading()) {
+    if (is_static_archive) {
+      table = &_shared_table;
+    } else {
+      table = &_dynamic_shared_table;
+    }
   } else {
-    table = &_dynamic_shared_table;
+    table = &_shared_table_for_dumping;
   }
+
   table->serialize_header(soc);
-  if (soc->writing()) {
-    // Sanity. Make sure we don't use the shared table at dump time
-    table->reset();
-  }
 }
 #endif //INCLUDE_CDS
 
