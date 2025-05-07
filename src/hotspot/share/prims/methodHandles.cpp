@@ -1273,7 +1273,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
         case -4:  // bootstrap method
           {
             // re-derive the bsme at each point
-            auto bsme = caller->constants()->bsm_attribute_entry(bsme_index);
+            BSMAttributeEntry* bsme = caller->constants()->bsm_attribute_entry(bsme_index);
             int bsm_index = bsme->bootstrap_method_index();
             pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
             break;
@@ -1302,7 +1302,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
         case -1:  // argument count
           {
             // re-derive the bsme at each point
-            auto bsme = caller->constants()->bsm_attribute_entry(bsme_index);
+            BSMAttributeEntry* bsme = caller->constants()->bsm_attribute_entry(bsme_index);
             int argc = bsme->argument_count();
             jvalue argc_value; argc_value.i = (jint)argc;
             pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
