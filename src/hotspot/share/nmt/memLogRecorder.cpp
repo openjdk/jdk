@@ -145,13 +145,12 @@ void NMT_LogRecorder::get_thread_name(char* buf) {
   if (pthread_main_np()) {
     strcpy(buf, "main");
   } else {
-    fprintf(stderr, "\n\nThread: %p:%p\n", pthread_self(), Thread::current());
-    int err = pthread_getname_np(pthread_self(), buf, MAXTHREADNAMESIZE);
-    fprintf(stderr, "pthread_getname_np: %d:%zu:%s\n", err, strlen(buf), strlen(buf)>0 ? buf:"N/A");
     if (Thread::current() != nullptr) {
-      fprintf(stderr, "Thread::current()->name(): %s\n", Thread::current()->name());
-    } else {
-      fprintf(stderr, "Thread::current()->name(): N/A\n");
+      strncpy(buf, Thread::current()->name(), MAXTHREADNAMESIZE-1);
+      // filter out temp thread names
+      if (strcmp(buf, "Unknown thread") == 0) {
+        buf[0] = 0;
+      }
     }
   }
 #elif defined(LINUX)
@@ -169,10 +168,12 @@ void NMT_LogRecorder::logThreadName() {
     long int tid = os::current_thread_id();
     for (size_t i = 0; i < _threads_names_size; i++) {
       if (_threads_names[i].thread == tid) {
+        // we found the entry in the table
         found = true;
         if (_threads_names[i].name[0] == 0) {
+          // but we don't have the name yet, so try
           NMT_LogRecorder::get_thread_name(_threads_names[i].name);
-          // tty->print(" got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
+          tty->print(" got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
         }
         break;
       }
