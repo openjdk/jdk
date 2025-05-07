@@ -164,8 +164,8 @@ inline void InstanceKlass::do_cld_from_klut_or_klass(oop obj, OopClosureType* cl
                 "must inherit from OopIterateClosure");
   // ... and in that case we can fetch the CLD from the KLUT cld cache instead of letting the closure pull
   // it from Klass. We don't even have to fetch and decode the narrowKlass.
-  const unsigned perma_cld_index = KlassLUTEntry(klute).loader_index();
-  ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);
+  const unsigned cldi = KlassLUTEntry(klute).cld_index();
+  ClassLoaderData* cld = KlassInfoLUT::lookup_cld(cldi);
   if (cld == nullptr) {
     // Rare path
     Klass* const k = obj->klass();

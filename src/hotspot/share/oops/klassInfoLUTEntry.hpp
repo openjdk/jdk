@@ -213,18 +213,18 @@ public:
 
   DEBUG_ONLY(void verify_against_klass(const Klass* k) const;)
 
-  klute_raw_t value() const { return _v.raw; }
+  klute_raw_t value() const     { return _v.raw; }
 
-  inline unsigned kind() const { return _v.common.kind; }
+  inline unsigned kind() const  { return _v.common.kind; }
 
   // returns loader index (0 for unknown)
-  inline int loader_index() const { return _v.common.cld_index; }
+  inline int cld_index() const  { return _v.common.cld_index; }
 
-  bool is_array() const     { return _v.common.kind >= TypeArrayKlassKind; }
-  bool is_instance() const  { return !is_array(); }
+  bool is_array() const         { return _v.common.kind >= TypeArrayKlassKind; }
+  bool is_instance() const      { return !is_array(); }
 
-  bool is_obj_array() const  { return _v.common.kind == ObjArrayKlassKind; }
-  bool is_type_array() const { return _v.common.kind == TypeArrayKlassKind; }
+  bool is_obj_array() const     { return _v.common.kind == ObjArrayKlassKind; }
+  bool is_type_array() const    { return _v.common.kind == TypeArrayKlassKind; }
 
   // Following methods only if IK:
 

@@ -143,7 +143,7 @@ static void log_klass_registration(const Klass* k, narrowKlass nk, bool added_to
   char tmp[1024];
   const KlassLUTEntry klutehelper(klute);
   log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u(%c), klute: " KLUTE_FORMAT ": %s %s%s",
-                  p2i(k), common_loader_names[klutehelper.loader_index()], nk,
+                  p2i(k), common_loader_names[klutehelper.cld_index()], nk,
                   (added_to_table ? '+' : '-'),
                   klute,
                   message,
@@ -380,7 +380,7 @@ void KlassInfoLUT::update_hit_stats(klute_raw_t klute) {
       default: inc_noinfo_IK_other(); break;
     }
   }
-  switch (klutehelper.loader_index()) {
+  switch (klutehelper.cld_index()) {
   case 1: inc_hits_bootloader(); break;
   case 2: inc_hits_sysloader(); break;
   case 3: inc_hits_platformloader(); break;

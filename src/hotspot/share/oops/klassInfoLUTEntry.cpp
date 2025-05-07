@@ -62,7 +62,7 @@ static void read_and_check_omb_values(const OopMapBlock* omb, unsigned& omb_offs
 klute_raw_t KlassLUTEntry::build_from_common(const Klass* k) {
   const int kind = k->kind();
   const ClassLoaderData* const cld = k->class_loader_data();
-  unsigned cld_index = KlassInfoLUT::cld_index_unknown;
+  unsigned cldi = KlassInfoLUT::cld_index_unknown;
 
   if (cld == nullptr) {
 #ifdef INCLUDE_CDS
@@ -72,16 +72,16 @@ klute_raw_t KlassLUTEntry::build_from_common(const Klass* k) {
     // "unknown CLD, look CLD up in Klass directly".
     // Later, when the CLD field in Klass is set in the course of class linking, we
     // will recalculate the klute based on the new CLD.
-    cld_index = KlassInfoLUT::cld_index_unknown;
+    cldi = KlassInfoLUT::cld_index_unknown;
 #else
     fatal("CLD null for Klass " PTR_FORMAT, p2i(k));
 #endif
   } else {
-    cld_index = KlassInfoLUT::index_for_cld(cld);
+    cldi = KlassInfoLUT::index_for_cld(cld);
   }
   U value(0);
   value.common.kind = kind;
-  value.common.cld_index = cld_index;
+  value.common.cld_index = cldi;
 
   return value.raw;
 }
@@ -231,8 +231,8 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   ASSERT_HERE2(our_kind == real_kind, "kind mismatch (%d vs %d)", real_kind, our_kind);
 
   const ClassLoaderData* const real_cld = k->class_loader_data();
-  const unsigned cld_index = loader_index();
-  ASSERT_HERE(cld_index < 4, "invalid loader index");
+  const unsigned cldi = cld_index();
+  ASSERT_HERE(cldi < 4, "invalid loader index");
 
   if (real_cld == nullptr) {
     // With AOT, we can encounter Klasses that have not set their CLD yet. Until that is solved (JDK-8342429),
@@ -240,21 +240,21 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
     constexpr bool tolerate_aot_unlinked_classes = CDS_ONLY(true) NOT_CDS(false);
     if (tolerate_aot_unlinked_classes) {
       // We expect the klute to show "unknown CLD"
-      ASSERT_HERE2(cld_index == KlassInfoLUT::cld_index_unknown,
+      ASSERT_HERE2(cldi == KlassInfoLUT::cld_index_unknown,
                    "for CLD==nullptr cld_index is expected to be %u, was %u",
-                   KlassInfoLUT::cld_index_unknown, cld_index);
+                   KlassInfoLUT::cld_index_unknown, cldi);
     } else {
       ASSERT_HERE(real_cld != nullptr, "Klass CLD is null?");
     }
   } else {
-    const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cld_index);
-    if (cld_index != KlassInfoLUT::cld_index_unknown) {
+    const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cldi);
+    if (cldi != KlassInfoLUT::cld_index_unknown) {
       // We expect to get one of the three permanent class loaders, and for it to match the one in Klass
       ASSERT_HERE2(cld_from_klute->is_permanent_class_loader_data(), "not perma cld (loader_index: %d, CLD: " PTR_FORMAT ")",
-                   cld_index, p2i(cld_from_klute));
+                   cldi, p2i(cld_from_klute));
       ASSERT_HERE2(cld_from_klute == real_cld,
                    "Different CLD (loader_index: %d, real Klass CLD: " PTR_FORMAT ", from klute CLD lookup table: " PTR_FORMAT ")?",
-                   cld_index, p2i(real_cld), p2i(cld_from_klute));
+                   cldi, p2i(real_cld), p2i(cld_from_klute));
     } else {
       // We expect to get a NULL from the CLD lookup table.
       ASSERT_HERE2(cld_from_klute == nullptr, "CLD not null? (" PTR_FORMAT ")", p2i(cld_from_klute));
@@ -336,7 +336,7 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 #endif // ASSERT
 
 void KlassLUTEntry::print(outputStream* st) const {
-  st->print("%X (Kind: %d Loader: %d)", value(), kind(), loader_index());
+  st->print("%X (Kind: %d Loader: %d)", value(), kind(), cld_index());
 }
 
 // Helper function, prints current limits
