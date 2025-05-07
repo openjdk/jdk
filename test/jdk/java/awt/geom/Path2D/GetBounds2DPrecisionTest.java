@@ -189,7 +189,7 @@ public class GetBounds2DPrecisionTest {
         int DIGIT_COUNT = 40;
         String str = decimal.toPlainString();
         if (str.length() >= DIGIT_COUNT) {
-            str = str.substring(0,DIGIT_COUNT-1)+"…";
+            str = str.substring(0,DIGIT_COUNT-1)+"...";
         }
         while(str.length() < DIGIT_COUNT) {
             str = str + " ";
