@@ -2611,11 +2611,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // The remaining part can then be exponentiated faster.  The
         // powers of two will be multiplied back at the end.
         int powersOfTwo = base.getLowestSetBit();
-        long bitsToShiftLong = (long)powersOfTwo * exponent;
-        if (bitsToShiftLong > Integer.MAX_VALUE) {
+        long bitsToShiftLong = (long) powersOfTwo * exponent;
+        int bitsToShift = (int) bitsToShiftLong;
+        if (bitsToShift != bitsToShiftLong) {
             reportOverflow();
         }
-        int bitsToShift = (int)bitsToShiftLong;
 
         // Factor the powers of two out quickly by shifting right.
         base = base.shiftRight(powersOfTwo);
