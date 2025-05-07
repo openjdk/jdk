@@ -40,10 +40,12 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/deoptimization.hpp"
@@ -1248,12 +1250,17 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (0)");
   }
   typeArrayHandle index_info(THREAD, index_info_oop);
-  int bss_index_in_pool = index_info->int_at(1);
+  int bss_index_in_pool  = index_info->length() <= 1 ? -1 : index_info->int_at(1);
   // While we are here, take a quick look at the index info:
-  if (bss_index_in_pool <= 0 ||
-      bss_index_in_pool >= caller->constants()->length() ||
-      index_info->int_at(0)
-      != caller->constants()->bootstrap_argument_count_at(bss_index_in_pool)) {
+  int bsme_index = -1;
+  // FIXME: use a BootstrapInfo record to simplify this logic
+  if (0 < bss_index_in_pool &&
+      bss_index_in_pool < caller->constants()->length() &&
+      caller->constants()->tag_at(bss_index_in_pool).has_bootstrap()) {
+    bsme_index = caller->constants()->bootstrap_methods_attribute_index(bss_index_in_pool);
+  }
+  if (bsme_index < 0 || (caller->constants()->bsm_attribute_entry(bsme_index)->argument_count()
+                         != index_info->int_at(0))) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
   objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
@@ -1265,12 +1272,15 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
         switch (pseudo_index) {
         case -4:  // bootstrap method
           {
-            int bsm_index = caller->constants()->bootstrap_method_ref_index_at(bss_index_in_pool);
+            // re-derive the bsme at each point
+            BSMAttributeEntry* bsme = caller->constants()->bsm_attribute_entry(bsme_index);
+            int bsm_index = bsme->bootstrap_method_index();
             pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
             break;
           }
         case -3:  // name
           {
+            assert(bss_index_in_pool > 0, "");
             Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle str = java_lang_String::create_from_symbol(name, CHECK);
             pseudo_arg = str();
@@ -1278,6 +1288,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -2:  // type
           {
+            assert(bss_index_in_pool > 0, "");
             Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle th;
             if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
@@ -1290,7 +1301,9 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -1:  // argument count
           {
-            int argc = caller->constants()->bootstrap_argument_count_at(bss_index_in_pool);
+            // re-derive the bsme at each point
+            BSMAttributeEntry* bsme = caller->constants()->bsm_attribute_entry(bsme_index);
+            int argc = bsme->argument_count();
             jvalue argc_value; argc_value.i = (jint)argc;
             pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
             break;
@@ -1306,7 +1319,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   }
   Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
   caller->constants()->
-    copy_bootstrap_arguments_at(bss_index_in_pool,
+    copy_bootstrap_arguments_at(bsme_index,
                                 start, end, buf, pos,
                                 (resolve == JNI_TRUE), ifna, CHECK);
 }

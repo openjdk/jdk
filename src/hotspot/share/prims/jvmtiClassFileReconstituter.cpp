@@ -389,14 +389,17 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 //    } bootstrap_methods[num_bootstrap_methods];
 //  }
 void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
-  Array<u2>* operands = cpool()->operands();
   write_attribute_name_index("BootstrapMethods");
-  int num_bootstrap_methods = ConstantPool::operand_array_length(operands);
+
+  const Array<u4>* bsm_offs = cpool()->bsm_attribute_offsets();
+  const Array<u2>* bsm_data = cpool()->bsm_attribute_entries();
+  int num_bootstrap_methods = bsm_offs->length();
 
   // calculate length of attribute
   u4 length = sizeof(u2); // num_bootstrap_methods
   for (int n = 0; n < num_bootstrap_methods; n++) {
-    u2 num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
+    BSMAttributeEntry* bsme = cpool()->bsm_attribute_entry(n);
+    u2 num_bootstrap_arguments = bsme->argument_count();
     length += sizeof(u2); // bootstrap_method_ref
     length += sizeof(u2); // num_bootstrap_arguments
     length += (u4)sizeof(u2) * num_bootstrap_arguments; // bootstrap_arguments[num_bootstrap_arguments]
@@ -406,13 +409,12 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   // write attribute
   write_u2(checked_cast<u2>(num_bootstrap_methods));
   for (int n = 0; n < num_bootstrap_methods; n++) {
-    u2 bootstrap_method_ref = cpool()->operand_bootstrap_method_ref_index_at(n);
-    u2 num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
-    write_u2(bootstrap_method_ref);
+    BSMAttributeEntry* bsme = cpool()->bsm_attribute_entry(n);
+    u2 num_bootstrap_arguments = bsme->argument_count();
+    write_u2(bsme->bootstrap_method_index());
     write_u2(num_bootstrap_arguments);
     for (int arg = 0; arg < num_bootstrap_arguments; arg++) {
-      u2 bootstrap_argument = cpool()->operand_argument_index_at(n, arg);
-      write_u2(bootstrap_argument);
+      write_u2(bsme->argument_index(arg));
     }
   }
 }
@@ -798,7 +800,7 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (type_anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleTypeAnnotations attribute
   }
-  if (cpool()->operands() != nullptr) {
+  if (cpool()->bsm_attribute_count() != 0) {
     ++attr_count;
   }
   if (ik()->nest_host_index() != 0) {
@@ -843,7 +845,7 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->record_components() != nullptr) {
     write_record_attribute();
   }
-  if (cpool()->operands() != nullptr) {
+  if (cpool()->bsm_attribute_count() != 0) {
     write_bootstrapmethod_attribute();
   }
   if (inner_classes_length > 0) {

@@ -821,7 +821,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    Method* adapter = cpool->resolved_indy_entry_at(index)->method();
+    ResolvedIndyEntry* rie = cpool->resolved_indy_entry_at(index);
+    Method* adapter = rie->method();
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);
@@ -830,7 +831,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Fake a method that is equivalent to a declared method.
     ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
-    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index, bc));
+    ciSymbol*        signature = get_symbol(rie->signature(cpool()));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
     const int holder_index = cpool->klass_ref_index_at(index, bc);

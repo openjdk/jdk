@@ -2808,9 +2808,9 @@ void ClassVerifier::verify_invoke_instructions(
     default:
       types = 1 << JVM_CONSTANT_Methodref;
   }
-  verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
+  verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
   Symbol* method_name = cp->uncached_name_ref_at(index);
   Symbol* method_sig = cp->uncached_signature_ref_at(index);
 

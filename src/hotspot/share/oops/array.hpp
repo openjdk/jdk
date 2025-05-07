@@ -126,6 +126,7 @@ protected:
   T    at(int i) const                 { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); return data()[i]; }
   void at_put(const int i, const T& x) { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); data()[i] = x; }
   T*   adr_at(const int i)             { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); return &data()[i]; }
+  const T* adr_at(const int i) const   { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); return &data()[i]; }
   int  find(const T& x)                { return index_of(x); }
 
   T at_acquire(const int i)            { return Atomic::load_acquire(adr_at(i)); }

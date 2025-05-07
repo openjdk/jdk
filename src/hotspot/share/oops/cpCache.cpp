@@ -520,7 +520,8 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        int bsm = cp->bootstrap_method_ref_index_at(cp_index);
+        int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
+        int bsm = cp->bsm_attribute_entry(bsms_attribute_index)->bootstrap_method_index();
         int bsm_ref = cp->method_handle_index_at(bsm);
         Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
         Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
@@ -809,7 +810,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
 
   // Populate entry with resolved information
   assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
-  resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+  resolved_indy_entry_at(index)->fill_in(adapter, has_appendix);
 
   if (log_stream != nullptr) {
     resolved_indy_entry_at(index)->print_on(log_stream);

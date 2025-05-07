@@ -2104,7 +2104,6 @@ void ClassFileParser::copy_method_annotations(ConstMethod* cm,
   }
 }
 
-
 // Note: the parse_method below is big and clunky because all parsing of the code and exceptions
 // attribute is inlined. This is cumbersome to avoid since we inline most of the parts in the
 // Method* to save footprint, so we only know the size of the resulting Method* when the
@@ -3280,57 +3279,56 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
 
   cfs->guarantee_more(attribute_byte_length, CHECK);
 
-  const int attribute_array_length = cfs->get_u2_fast();
+  const u2 num_bootstrap_methods = cfs->get_u2_fast();
 
-  guarantee_property(_max_bootstrap_specifier_index < attribute_array_length,
+  guarantee_property(_max_bootstrap_specifier_index < num_bootstrap_methods,
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
-
   // The attribute contains a counted array of counted tuples of shorts,
-  // represending bootstrap specifiers:
-  //    length*{bootstrap_method_index, argument_count*{argument_index}}
-  const unsigned int operand_count = (attribute_byte_length - (unsigned)sizeof(u2)) / (unsigned)sizeof(u2);
-  // operand_count = number of shorts in attr, except for leading length
+  // representing bootstrap specifiers:
+  //    length*{bootstrap_method_index, argument_count, argument_count*{argument_index}}
+  const u4 attribute_tail_length = attribute_byte_length - static_cast<u4>(sizeof(u2));
+  assert(attribute_tail_length % sizeof(u2) == 0, "");
+  Array<u4>* const offsets =
+    MetadataFactory::new_array<u4>(_loader_data, num_bootstrap_methods, CHECK);
+  Array<u2>* const entries =  // u2 data holding all the BSM attribute entries
+    MetadataFactory::new_array<u2>(_loader_data, attribute_tail_length / sizeof(u2), CHECK);
 
-  // The attribute is copied into a short[] array.
-  // The array begins with a series of short[2] pairs, one for each tuple.
-  const int index_size = (attribute_array_length * 2);
+  // Eagerly assign arrays so they will be deallocated with
+  // the constant pool if there is an error.
+  cp->set_bsm_attribute_offsets(offsets);
+  cp->set_bsm_attribute_entries(entries);
 
-  Array<u2>* const operands =
-    MetadataFactory::new_array<u2>(_loader_data, index_size + operand_count, CHECK);
-
-  // Eagerly assign operands so they will be deallocated with the constant
-  // pool if there is an error.
-  cp->set_operands(operands);
-
-  int operand_fill_index = index_size;
+  int next_entry = 0;
   const int cp_size = cp->length();
 
-  for (int n = 0; n < attribute_array_length; n++) {
-    // Store a 32-bit offset into the header of the operand array.
-    ConstantPool::operand_offset_at_put(operands, n, operand_fill_index);
+  for (int n = 0; n < num_bootstrap_methods; n++) {
+    // Store a 32-bit offset into the array of BSM entry offsets.
+    offsets->at_put(n, next_entry);
 
-    // Read a bootstrap specifier.
+    // Read a bootstrap method attribute entry.
     cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
-    const u2 bootstrap_method_index = cfs->get_u2_fast();
-    const u2 argument_count = cfs->get_u2_fast();
+    const u2 bootstrap_method_ref = cfs->get_u2_fast();
+    const u2 num_bootstrap_arguments = cfs->get_u2_fast();
     guarantee_property(
-      valid_cp_range(bootstrap_method_index, cp_size) &&
-      cp->tag_at(bootstrap_method_index).is_method_handle(),
+      valid_cp_range(bootstrap_method_ref, cp_size) &&
+      cp->tag_at(bootstrap_method_ref).is_method_handle(),
       "bootstrap_method_index %u has bad constant type in class file %s",
-      bootstrap_method_index,
+      bootstrap_method_ref,
       CHECK);
 
-    guarantee_property((operand_fill_index + 1 + argument_count) < operands->length(),
+    guarantee_property((next_entry + 2 + num_bootstrap_arguments) <= entries->length(),
       "Invalid BootstrapMethods num_bootstrap_methods or num_bootstrap_arguments value in class file %s",
       CHECK);
 
-    operands->at_put(operand_fill_index++, bootstrap_method_index);
-    operands->at_put(operand_fill_index++, argument_count);
+    entries->at_put(next_entry, bootstrap_method_ref);
+    next_entry++;
+    entries->at_put(next_entry, num_bootstrap_arguments);
+    next_entry++;
 
-    cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
-    for (int j = 0; j < argument_count; j++) {
+    cfs->guarantee_more(sizeof(u2) * num_bootstrap_arguments, CHECK);  // argv[argc]
+    for (u2 j = 0; j < num_bootstrap_arguments; j++) {
       const u2 argument_index = cfs->get_u2_fast();
       guarantee_property(
         valid_cp_range(argument_index, cp_size) &&
@@ -3338,12 +3336,37 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
         "argument_index %u has bad constant type in class file %s",
         argument_index,
         CHECK);
-      operands->at_put(operand_fill_index++, argument_index);
+      entries->at_put(next_entry, argument_index);
+      next_entry++;
     }
   }
   guarantee_property(current_start + attribute_byte_length == cfs->current(),
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);
+  assert(next_entry == entries->length(), "");
+
+#ifdef ASSERT
+  if (num_bootstrap_methods > 0) {
+    BSMAttributeEntry* bsme = cp->bsm_attribute_entry(0);
+    assert(bsme->bootstrap_method_index() == entries->at(0), "");
+    assert(bsme->argument_count()         == entries->at(1), "");
+    int nexti = (num_bootstrap_methods == 1) ? entries->length() : offsets->at(1);
+    assert(nexti == 2 + bsme->argument_count(), "");
+    if (num_bootstrap_methods > 1) {
+      bsme = cp->bsm_attribute_entry(1);
+      assert(bsme->bootstrap_method_index() == entries->at(nexti+0), "");
+      assert(bsme->argument_count()         == entries->at(nexti+1), "");
+    }
+    int lasti = offsets->at(offsets->length() - 1);
+    bsme = cp->bsm_attribute_entry(num_bootstrap_methods - 1);
+    assert(bsme->bootstrap_method_index() == entries->at(lasti+0), "");
+    assert(bsme->argument_count()         == entries->at(lasti+1), "");
+    int lastu2 = entries->at(entries->length() - 1);
+    int lastac = bsme->argument_count();
+    int expect_lastu2 = (lastac == 0) ? 0 : bsme->argument_index(lastac-1);
+    assert(lastu2 == expect_lastu2, "");
+  }
+#endif
 }
 
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,

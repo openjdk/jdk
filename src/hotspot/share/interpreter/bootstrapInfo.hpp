@@ -34,7 +34,7 @@ class BootstrapInfo : public StackObj {
   constantPoolHandle _pool;     // constant pool containing the bootstrap specifier
   const int   _bss_index;       // index of bootstrap specifier in CP (condy or indy)
   const int   _indy_index;      // internal index of indy call site, or -1 if a condy call
-  const int   _argc;            // number of static arguments
+  int         _bsm_attr_index;  // index in the BootstrapMethods attribute
   Symbol*     _name;            // extracted from JVM_CONSTANT_NameAndType
   Symbol*     _signature;
 
@@ -43,7 +43,7 @@ class BootstrapInfo : public StackObj {
   Handle      _name_arg;        // resolved String
   Handle      _type_arg;        // resolved Class or MethodType
   Handle      _arg_values;      // array of static arguments; null implies either
-                                // uresolved or zero static arguments are specified
+                                // unresolved or zero static arguments are specified
 
   // post-bootstrap resolution state:
   bool        _is_resolved;       // set true when any of the next fields are set
@@ -58,7 +58,7 @@ class BootstrapInfo : public StackObj {
   const constantPoolHandle& pool() const{ return _pool; }
   int bss_index() const                 { return _bss_index; }
   int indy_index() const                { return _indy_index; }
-  int argc() const                      { return _argc; }
+  int bsm_attr_index() const            { return _bsm_attr_index; }
   bool is_method_call() const           { return (_indy_index != -1); }
   Symbol* name() const                  { return _name; }
   Symbol* signature() const             { return _signature; }
@@ -76,10 +76,11 @@ class BootstrapInfo : public StackObj {
   // derived accessors
   InstanceKlass* caller() const         { return _pool->pool_holder(); }
   oop caller_mirror() const             { return caller()->java_mirror(); }
-  int bsms_attr_index() const           { return _pool->bootstrap_methods_attribute_index(_bss_index); }
-  int bsm_index() const                 { return _pool->bootstrap_method_ref_index_at(_bss_index); }
-  //int argc() is eagerly cached in _argc
-  int arg_index(int i) const            { return _pool->bootstrap_argument_index_at(_bss_index, i); }
+  BSMAttributeEntry& bsm_attr() const   { return *_pool->bsm_attribute_entry(_bsm_attr_index); }
+  int bsm_index() const                 { return bsm_attr().bootstrap_method_index(); }
+  int arg_count() const                 { return bsm_attr().argument_count(); }
+  int arg_index(int j) const            { return bsm_attr().argument_index(j); }
+  ResolvedIndyEntry* indy_entry() const;
 
   // If there is evidence this call site was already linked, set the
   // existing linkage data into result, or throw previous exception.
