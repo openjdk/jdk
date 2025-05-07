@@ -184,8 +184,6 @@ ATTRIBUTE_ALIGNED(4) static const juint _D_table[] =
 
 #define __
 
-long long ppp;
-
 void MacroAssembler::generate_libmCbrt() {
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1;
@@ -316,22 +314,9 @@ void MacroAssembler::generate_libmCbrt() {
   __ orrw(rax, rax, rdx);                                                 // rax_5 = rax_4 & rdx_4
   __ fmovd(xmm7, rax);                                                    // xmm7_2 = (double) rax_5
   __ add(rcx, rcx, r9);                                                   // rcx_2 = rcx_1 + r9_4
-
-  // rcx_3 = rcx_2 + r9_4
-  //       = (rcx_0 & 0xf8) + (r9_3 << 8)
-  //       = ((float)xmm7_1 & 0xf8) + ((r9_2 - rax_3 * 3) << 8)
-  //       = ((float)(xmm7_0 >> 44) & 0xf8) + (((r9_1 & 0x7ff) - (rax_2 >> 0x0e) * 3) << 8)
-  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((rax_1 & rdx_2) >> 0x0e) * 3) << 8)
-  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((0x160a & ((rdx_0 & rax_0) & 0x7ff00)) >> 0x0e) * 3) << 8)
-  //       = ((float)(xmm7_0 >> 44) & 0xf8) + ((((r9_0 >> 8) & 0x7ff) - ((0x160a & ((0x7ff00 & rax_0) & 0x7ff00)) >> 0x0e) * 3) << 8)
-  //       = ((float)(xmm7_0 >> 44) & 0xf8) + (((((xmm7_0 >> 44) >> 8) & 0x7ff) - ((0x160a & ((0x7ff00 & (c_farg0 >> 44)) & 0x7ff00)) >> 0x0e) * 3) << 8)
-
   __ shl(xmm7, T2D, xmm7, 52);                                            // xmm7_3[0, 1] = xmm7_2[0, 1] << 52
 
   __ bind(L_2TAG_PACKET_2_0_1);
-  lea(rscratch1, Address((address)&ppp));
-  addmw(Address(rscratch1), 1, rscratch2);
-
   // __ movapd(xmm2, ExternalAddress(coeff_table + 32), r11 /*rscratch*/);
   // __ movapd(xmm0, ExternalAddress(coeff_table + 48), r11 /*rscratch*/);
   __ ldrq(xmm2, ExternalAddress(coeff_table + 32), rscratch1);            // xmm2_2 = (coeff_table[4], coeff_table[5])
