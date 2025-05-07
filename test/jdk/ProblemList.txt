@@ -189,6 +189,9 @@ java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
+java/awt/datatransfer/ClipboardPerformanceTest.java 8029022 windows-all
+java/awt/datatransfer/HTMLTransferConsoleOutputTest.java 8237254 macosx-all
+java/awt/datatransfer/ImageTransferCrashTest.java 8237253 macosx-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
@@ -780,6 +783,8 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 ############################################################################
 
 # jdk_foreign
+
+java/foreign/TestBufferStackStress.java                         8350455 macosx-all
 
 ############################################################################
 # Client manual tests

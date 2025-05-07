@@ -656,7 +656,7 @@ public final class TKit {
     }
 
 
-    public static void assertEquals(String expected, String actual, String msg) {
+    public static void assertEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -668,7 +668,7 @@ public final class TKit {
         traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
-    public static void assertNotEquals(String expected, String actual, String msg) {
+    public static void assertNotEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -760,9 +760,9 @@ public final class TKit {
                 try (var files = Files.list(path)) {
                     boolean actualIsEmpty = files.findFirst().isEmpty();
                     if (isEmptyCheck.get()) {
-                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is an empty directory", path));
                     } else {
-                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
                     }
                 }
             }).run();
@@ -803,18 +803,22 @@ public final class TKit {
     }
 
     public static DirectoryContentVerifier assertDirectoryContent(Path dir) {
-        return new DirectoryContentVerifier(dir);
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.list(dir)) {
+                return files.map(Path::getFileName).collect(toSet());
+            }
+        }).get());
+    }
+
+    public static DirectoryContentVerifier assertDirectoryContentRecursive(Path dir) {
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.walk(dir).skip(1)) {
+                return files.map(dir::relativize).collect(toSet());
+            }
+        }).get());
     }
 
     public static final class DirectoryContentVerifier {
-        public DirectoryContentVerifier(Path baseDir) {
-            this(baseDir, ThrowingSupplier.toSupplier(() -> {
-                try (var files = Files.list(baseDir)) {
-                    return files.map(Path::getFileName).collect(toSet());
-                }
-            }).get());
-        }
-
         public void match(Path ... expected) {
             DirectoryContentVerifier.this.match(Set.of(expected));
         }
