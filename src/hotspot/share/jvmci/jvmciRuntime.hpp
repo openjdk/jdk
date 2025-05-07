@@ -121,6 +121,9 @@ public:
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
   void invalidate_nmethod_mirror(nmethod* nm);
 
+  // Updates the HotSpotNmethod fields after nmethod relocation
+  void relocate_nmethod_mirror(nmethod* nm);
+
   // Gets the mirror from nm's oops table.
   oop get_nmethod_mirror(nmethod* nm, bool phantom_ref);
 
