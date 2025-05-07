@@ -1607,7 +1607,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * algorithms defined in RFCs 5705/8446.
      */
     @Override
-    public SecretKey exportKeyMaterialKey(
+    public SecretKey exportKeyingMaterialKey(
             String label, byte[] context, int length) throws SSLKeyException {
 
         // Global preconditions
@@ -1790,10 +1790,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * algorithms defined in RFCs 5705/8446.
      */
     @Override
-    public byte[] exportKeyMaterialData(
+    public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
         byte[] bytes =
-                exportKeyMaterialKey(label, context, length).getEncoded();
+                exportKeyingMaterialKey(label, context, length).getEncoded();
         if (bytes == null) {
             throw new UnsupportedOperationException(
                     "Exported key material is not extractable");

@@ -30,7 +30,7 @@
  * @summary Add support for exporting TLS Keying Material
  * @library /javax/net/ssl/templates /test/lib
  * @build SSLContextTemplate
- * @run main/othervm TLSKeyExporters
+ * @run main/othervm ExportKeyingMaterialTests
  */
 
 import java.security.Security;
@@ -58,7 +58,7 @@ import static jdk.test.lib.Asserts.*;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class TLSKeyExporters extends SSLContextTemplate {
+public class ExportKeyingMaterialTests extends SSLContextTemplate {
     protected final SSLEngine clientEngine;     // client Engine
     protected final ByteBuffer clientOut;       // write side of clientEngine
     protected final ByteBuffer clientIn;        // read side of clientEngine
@@ -73,7 +73,7 @@ public class TLSKeyExporters extends SSLContextTemplate {
     protected final ByteBuffer cTOs;      // "reliable" transport client->server
     protected final ByteBuffer sTOc;      // "reliable" transport server->client
 
-    protected TLSKeyExporters(String protocol, String ciphersuite)
+    protected ExportKeyingMaterialTests(String protocol, String ciphersuite)
             throws Exception {
         serverEngine = configureServerEngine(
                 createServerSSLContext().createSSLEngine());
@@ -159,43 +159,43 @@ public class TLSKeyExporters extends SSLContextTemplate {
         // in the various key exchange algorithms.
 
         // Use appropriate protocol/ciphersuite combos for TLSv1.3
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.3", "TLS_AES_128_GCM_SHA256").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.3", "TLS_AES_256_GCM_SHA384").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.3", "TLS_CHACHA20_POLY1305_SHA256").runTest();
 
         // Try the various GCM suites for TLSv1.2
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384").runTest();
 
         // Try one TLSv1.2/CBC suite just for grins, the triggers are the same.
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256").runTest();
 
         // Use appropriate protocol/ciphersuite combos.  Some of the 1.2
         // suites (e.g. GCM) can't be used in earlier TLS versions.
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.1", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.1", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1.1", "TLS_RSA_WITH_AES_256_CBC_SHA").runTest();
 
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA").runTest();
-        new TLSKeyExporters(
+        new ExportKeyingMaterialTests(
                 "TLSv1", "TLS_RSA_WITH_AES_256_CBC_SHA").runTest();
 
         try {
-            new TLSKeyExporters(
+            new ExportKeyingMaterialTests(
                     "SSLv3", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
             throw new Exception("SSLv3 export test should not have passed");
         } catch (SSLException e) {
@@ -294,9 +294,9 @@ public class TLSKeyExporters extends SSLContextTemplate {
         random.nextBytes(bytesDiffSize);
 
         // Inputs exactly equal.  Use exportKeyMaterialKey()
-        clientBytes = clientSession.exportKeyMaterialKey("hello",
+        clientBytes = clientSession.exportKeyingMaterialKey("hello",
                 bytes, 128).getEncoded();
-        serverBytes = serverSession.exportKeyMaterialKey("hello",
+        serverBytes = serverSession.exportKeyingMaterialKey("hello",
                 bytes, 128).getEncoded();
         assertEqualsByteArray(clientBytes, serverBytes,
                 "Equal inputs but exporters are not equal");
@@ -306,27 +306,27 @@ public class TLSKeyExporters extends SSLContextTemplate {
         // forbidden.  There is some verbiage about: labels being registered
         // with IANA, must not collide with existing PRF labels, SHOULD use
         // "EXPORTER"/"EXPERIMENTAL" prefixes, etc.
-        clientBytes = clientSession.exportKeyMaterialKey("",
+        clientBytes = clientSession.exportKeyingMaterialKey("",
                 bytes, 128).getEncoded();
-        serverBytes = serverSession.exportKeyMaterialKey("",
+        serverBytes = serverSession.exportKeyingMaterialKey("",
                 bytes, 128).getEncoded();
         assertEqualsByteArray(clientBytes, serverBytes,
                 "Empty label and exporters are equal");
         log("Empty label test passed");
 
         // Different labels, now use exportKeyMaterialData() for coverage
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
-        serverBytes = serverSession.exportKeyMaterialData("goodbye",
+        serverBytes = serverSession.exportKeyingMaterialData("goodbye",
                 bytes, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
                 "Different labels but exporters same");
         log("Different labels test passed");
 
         // Different output sizes
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
-        serverBytes = serverSession.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytes, 127);
         assertEquals(clientBytes.length, 128, "client length != 128");
         assertEquals(serverBytes.length, 127, "server length != 127");
@@ -335,36 +335,36 @@ public class TLSKeyExporters extends SSLContextTemplate {
         log("Different output size test passed");
 
         // Different context values
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
-        serverBytes = serverSession.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytesDiff, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
                 "Different context but exporters same");
         log("Different context test passed");
 
         // Different context sizes
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
-        serverBytes = serverSession.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytesDiffSize, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
                 "Different context sizes but exporters same");
         log("Different context sizes test passed");
 
         // No context, but otherwise the same
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 null, 128);
-        serverBytes = serverSession.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
                 null, 128);
         assertEqualsByteArray(clientBytes, serverBytes,
                 "No context and exporters are not the same");
         log("No context test passed");
 
         // Smaller key size
-        clientBytes = clientSession.exportKeyMaterialData("hello",
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 40);
-        serverBytes = serverSession.exportKeyMaterialData("hello",
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytes, 40);
         assertEqualsByteArray(clientBytes, serverBytes,
                 "Smaller key size should be the same");
@@ -372,14 +372,15 @@ public class TLSKeyExporters extends SSLContextTemplate {
 
         // Check error conditions
         try {
-            clientSession.exportKeyMaterialData(null, bytes, 128);
+            clientSession.exportKeyingMaterialData(null, bytes, 128);
             throw new Exception("null label accepted");
         } catch (NullPointerException e) {
             log("null label test passed");
         }
 
         try {
-            clientSession.exportKeyMaterialData("hello", new byte[1<<16], 128);
+            clientSession.exportKeyingMaterialData("hello",
+                    new byte[1<<16], 128);
             if (!clientSession.getProtocol().equals("TLSv1.3")) {
                 throw new Exception("large context accepted in " +
                         "SSLv3/TLSv1/TLSv1.1/TLSv1.2");
@@ -392,7 +393,7 @@ public class TLSKeyExporters extends SSLContextTemplate {
         }
 
         try {
-            clientSession.exportKeyMaterialData("hello", bytes, -20);
+            clientSession.exportKeyingMaterialData("hello", bytes, -20);
             throw new Exception("negative length accepted");
         } catch (IllegalArgumentException e) {
             log("negative length test passed");

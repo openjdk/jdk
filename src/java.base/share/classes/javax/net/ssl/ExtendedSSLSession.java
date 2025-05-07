@@ -169,9 +169,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * Generate Exported Key Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
-     * Note RFC 5705 calculates different EKM values if {@code context}
-     * is null vs. non-null/empty.  RFC 8446 does not make such a
-     * distinction.
+     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
      * The {@code label} {@code String} will be converted to bytes using
      * the {@link java.nio.charset.StandardCharsets#UTF_8}
@@ -183,9 +183,12 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @spec https://www.rfc-editor.org/info/rfc8446
      *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
      *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}
+     *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
-     *                before the operation begins.
+     *                before the operation begins
      * @param context the context bytes used in the EKM calculation
      * @param length  the number of bytes of EKM material needed
      *
@@ -202,7 +205,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *
      * @since 25
      */
-    public SecretKey exportKeyMaterialKey(
+    public SecretKey exportKeyingMaterialKey(
             String label, byte[] context, int length) throws SSLKeyException {
         throw new UnsupportedOperationException();
     }
@@ -211,9 +214,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * Generate Exported Key Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
-     * Note RFC 5705 calculates different EKM values if {@code context}
-     * is null vs. non-null/empty.  RFC 8446 does not make such a
-     * distinction.
+     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
      * The {@code label} {@code String} will be converted to bytes using
      * the {@link java.nio.charset.StandardCharsets#UTF_8}
@@ -221,7 +224,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * <P>
      * Depending on the chosen underlying key derivation mechanism, the
      * raw bytes might not be extractable/exportable.  In such cases, the
-     * {@link #exportKeyMaterialKey(String, byte[], int)} method should be
+     * {@link #exportKeyingMaterialKey(String, byte[], int)} method should be
      * used instead to access the generated key material.
      *
      * @spec https://www.rfc-editor.org/info/rfc5705
@@ -230,9 +233,12 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @spec https://www.rfc-editor.org/info/rfc8446
      *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
      *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}
+     *
      * @param label   the label bytes used in the EKM calculation
      *                {@code label} will be converted to a {@code byte[]}
-     *                before the operation begins.
+     *                before the operation begins
      * @param context the context bytes used in the EKM calculation
      * @param length  the number of bytes of EKM material needed
      *
@@ -249,7 +255,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         material
      * @since 25
      */
-    public byte[] exportKeyMaterialData(
+    public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
         throw new UnsupportedOperationException();
     }
