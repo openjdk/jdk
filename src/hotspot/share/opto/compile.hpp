@@ -47,6 +47,7 @@
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
 #include "opto/printinlining.hpp"
+#include "utilities/pair.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -384,6 +385,9 @@ class Compile : public Phase {
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
+public:
+  GrowableArray<Pair<node_idx_t, uint>> _peeling_rounds_of_node;
+private:
 #endif
 
 

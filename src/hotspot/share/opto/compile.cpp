@@ -663,6 +663,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
+      NOT_PRODUCT(_peeling_rounds_of_node(comp_arena(), 8, 0, Pair<node_idx_t, uint>(0, 0)) COMMA)
           _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
