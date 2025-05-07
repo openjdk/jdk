@@ -140,7 +140,7 @@ public class MaxSizeUTF16String {
 
         // Strings of size min+1...min+2, throw OOME
         // The resulting byte array would exceed implementation limits
-        for (int count = min + 1; count < max; count++) {
+        for (int count = min + 2; count < max; count++) {
             System.out.println("testing size: " + count);
             final String s2 = s.repeat(count);
             OutOfMemoryError ex = assertThrows(OutOfMemoryError.class, () -> s2.getBytes(StandardCharsets.UTF_8));

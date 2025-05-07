@@ -42,7 +42,11 @@ import java.util.regex.Pattern;
 public class TestVMConfigInHsErrFile {
 
   public static void main(String[] args) throws Exception {
+    testCompactObjectHeaders();
+    testCompressedClassPointers();
+  }
 
+  private static void testCompactObjectHeaders() throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+UnlockExperimentalVMOptions",
@@ -61,12 +65,45 @@ public class TestVMConfigInHsErrFile {
     // extract hs-err file
     File f = HsErrFileUtils.openHsErrFileFromOutput(output);
 
-    ArrayList<Pattern> patterns = new ArrayList<>();
-    patterns.add(Pattern.compile("# A fatal error has been detected.*"));
-    patterns.add(Pattern.compile("# Java VM: .*compact obj headers.*"));
+    Pattern[] expectedPatterns = new Pattern[] {
+      Pattern.compile("# Java VM: .*compact obj headers.*")
+    };
+    Pattern[] notExpectedPatterns = new Pattern[] {
+      Pattern.compile("# Java VM: .*compressed class ptrs.*")
+    };
 
-    HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
+    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
 
   }
 
+  private static void testCompressedClassPointers() throws Exception {
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:-UseCompactObjectHeaders",
+        "-XX:+UseCompressedClassPointers",
+        "-Xmx100M",
+        "-XX:-CreateCoredumpOnCrash",
+        "-XX:ErrorHandlerTest=14",
+        "-version");
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldNotHaveExitValue(0);
+
+    // we should have crashed with a SIGSEGV
+    output.shouldMatch("#.+SIGSEGV.*");
+
+    // extract hs-err file
+    File f = HsErrFileUtils.openHsErrFileFromOutput(output);
+
+    Pattern[] expectedPatterns = new Pattern[] {
+      Pattern.compile("# Java VM: .*compressed class ptrs.*")
+    };
+    Pattern[] notExpectedPatterns = new Pattern[] {
+      Pattern.compile("# Java VM: .*compact obj headers.*")
+    };
+
+    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
+
+  }
 }
