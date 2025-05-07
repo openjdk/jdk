@@ -68,6 +68,9 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest7", generateWithNames());
 
         // Compile the source files.
+        // Hint: if you want to see the generated source code, you can enable
+        //       printing of the source code that the CompileFramework receives,
+        //       with -DCompileFrameworkVerbose=true
         comp.compile();
 
         // Object ret = p.xyz.InnterTest1.main();
@@ -95,15 +98,16 @@ public class TestTutorial {
                 public static void main() {
                     System.out.println("Hello World!");
             """,
-            "int a = ", Integer.valueOf(1), ";\n",
-            "float b = ", Float.valueOf(1.5f), ";\n",
+            "int a = ", 1, ";\n",
+            "float b = ", 1.5f, ";\n",
             // Special Float values are "smartly" formatted!
-            "float nan = ", Float.valueOf(Float.POSITIVE_INFINITY), ";\n",
-            "boolean c = ", Boolean.valueOf(true), ";\n",
+            "float nan = ", Float.POSITIVE_INFINITY, ";\n",
+            "boolean c = ", true, ";\n",
             // Lists of Tokens are also allowed:
             List.of("int ", "d = 5", ";\n"),
-            // That can be great for streaming / mapping over an existing list:
-            Stream.of(3, 5, 7, 11).map(i -> "System.out.println(" + i + ");\n").toList(),
+            // We can also stream / map over an existing list, or one created on
+            // the fly:
+            List.of(3, 5, 7, 11).stream().map(i -> "System.out.println(" + i + ");\n").toList(),
             """
                     System.out.println(a + " " + b + " " + nan + " " + c + " " + d);
                 }

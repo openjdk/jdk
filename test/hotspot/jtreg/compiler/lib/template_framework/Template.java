@@ -80,9 +80,9 @@ import java.util.List;
  * }
  *
  * <p>
- * To get an executable test, we define a class Template, which takes a list of types,
- * and calls the {@code testTemplate} defined above for each type and operator. We use the {@code TestFramework}
- * to call our {@code @Test} methods.
+ * To get an executable test, we define a Template that produces a class body with a main method. The Template
+ * takes a list of types, and calls the {@code testTemplate} defined above for each type and operator. We use
+ * the {@code TestFramework} to call our {@code @Test} methods.
  *
  * <p>
  * {@snippet lang=java :
@@ -121,13 +121,13 @@ import java.util.List;
  *
  * {@snippet lang=java :
  * List<Type> types = List.of(
- *     new Type("byte",   () -> GEN_BYTE.next(),   List.of("+", "-", "*", "&", "|", "^")),
- *     new Type("char",   () -> GEN_CHAR.next(),   List.of("+", "-", "*", "&", "|", "^")),
- *     new Type("short",  () -> GEN_SHORT.next(),  List.of("+", "-", "*", "&", "|", "^")),
- *     new Type("int",    () -> GEN_INT.next(),    List.of("+", "-", "*", "&", "|", "^")),
- *     new Type("long",   () -> GEN_LONG.next(),   List.of("+", "-", "*", "&", "|", "^")),
- *     new Type("float",  () -> GEN_FLOAT.next(),  List.of("+", "-", "*", "/")),
- *     new Type("double", () -> GEN_DOUBLE.next(), List.of("+", "-", "*", "/"))
+ *     new Type("byte",   GEN_BYTE::next,   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("char",   GEN_CHAR::next,   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("short",  GEN_SHORT::next,  List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("int",    GEN_INT::next,    List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("long",   GEN_LONG::next,   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("float",  GEN_FLOAT::next,  List.of("+", "-", "*", "/")),
+ *     new Type("double", GEN_DOUBLE::next, List.of("+", "-", "*", "/"))
  * );
  *
  * // Use the template with one argument, and render it to a String.
@@ -182,6 +182,10 @@ import java.util.List;
  * current code scope with {@link #addName}, and sample from the current or outer scopes with {@link #sampleName}.
  * When generating code, one might want to create {@link Name}s (variables, fields, etc.) in local scope, or
  * in some outer scope with the use of {@link Hook}s.
+ *
+ * <p>
+ * More examples for these functionalities can be found in {@link TestTutorial}, {@link TestSimple}, and
+ * {@link TestAdvanced}.
  */
 public interface Template {
 
