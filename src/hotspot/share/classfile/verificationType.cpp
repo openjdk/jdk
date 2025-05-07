@@ -106,16 +106,19 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
+#if INCLUDE_CDS
     if (CDSConfig::is_dumping_archive()) {
-      if (SystemDictionaryShared::add_verification_constraint(klass,
+      bool skip_assignability_check;
+      SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
-              from.is_object())) {
-        // If add_verification_constraint() returns true, the resolution/check should be
-        // delayed until runtime.
+              from.is_object(), &skip_assignability_check);
+      if (skip_assignability_check) {
+        // We are not able to resolve name() or from.name(). The actual assignability check
+        // will be delayed until runtime.
         return true;
       }
     }
-
+#endif
     return resolve_and_check_assignability(klass, name(), from.name(),
           from_field_is_protected, from.is_array(), from.is_object(), THREAD);
   } else if (is_array() && from.is_array()) {
