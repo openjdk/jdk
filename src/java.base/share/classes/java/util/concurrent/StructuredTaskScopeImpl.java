@@ -44,11 +44,11 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     private final ThreadFlock flock;
 
     // state, only accessed by owner thread
-    private static final int ST_NEW            = 0;
-    private static final int ST_FORKED         = 1;   // subtasks forked, need to join
-    private static final int ST_JOIN_STARTED   = 2;   // join started, can no longer fork
-    private static final int ST_JOIN_COMPLETED = 3;   // join completed
-    private static final int ST_CLOSED         = 4;   // closed
+    private static final int ST_NEW            = 0,
+                             ST_FORKED         = 1,   // subtasks forked, need to join
+                             ST_JOIN_STARTED   = 2,   // join started, can no longer fork
+                             ST_JOIN_COMPLETED = 3,   // join completed
+                             ST_CLOSED         = 4;   // closed
     private int state;
 
     // timer task, only accessed by owner thread
@@ -383,10 +383,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
             String stateAsString = switch (state()) {
                 case UNAVAILABLE -> "[Unavailable]";
                 case SUCCESS     -> "[Completed successfully]";
-                case FAILED      -> {
-                    Throwable ex = ((AltResult) result).exception();
-                    yield "[Failed: " + ex + "]";
-                }
+                case FAILED      -> "[Failed: " + ((AltResult) result).exception() + "]";
             };
             return Objects.toIdentityString(this) + stateAsString;
         }

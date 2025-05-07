@@ -150,8 +150,8 @@ class Joiners {
             }
             return switch (subtask.state()) {
                 case SUCCESS -> subtask.get();
-                case FAILED -> throw subtask.exception();
-                default -> throw new InternalError();
+                case FAILED  -> throw subtask.exception();
+                default      -> throw new InternalError();
             };
         }
     }
