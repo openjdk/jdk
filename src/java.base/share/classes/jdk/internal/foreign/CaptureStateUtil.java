@@ -359,38 +359,28 @@ public final class CaptureStateUtil {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    // This is intentionally an old switch to improve on startup time.
     private static MethodHandle makeHandle(int index) {
-        switch (index) {
-            case NON_NEGATIVE_INT:
-                return MhUtil.findStatic(LOOKUP, "nonNegative",
-                        MethodType.methodType(boolean.class, int.class));
-            case SUCCESS_INT:
-                return MhUtil.findStatic(LOOKUP, "success",
-                        MethodType.methodType(int.class, int.class, MemorySegment.class));
-            case ERROR_INT:
-                return MhUtil.findStatic(LOOKUP, "error",
-                        MethodType.methodType(int.class, MethodHandle.class, int.class, MemorySegment.class));
-            case NON_NEGATIVE_LONG:
-                return MhUtil.findStatic(LOOKUP, "nonNegative",
-                        MethodType.methodType(boolean.class, long.class));
-            case SUCCESS_LONG:
-                return MhUtil.findStatic(LOOKUP, "success",
-                        MethodType.methodType(long.class, long.class, MemorySegment.class));
-            case ERROR_LONG:
-                return MhUtil.findStatic(LOOKUP, "error",
-                        MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
-            case ACQUIRE_ARENA:
-                return MhUtil.findStatic(LOOKUP, "acquireArena",
-                        MethodType.methodType(Arena.class));
-            case ALLOCATE:
-                return MhUtil.findStatic(LOOKUP, "allocate",
-                        MethodType.methodType(MemorySegment.class, Arena.class));
-            case ARENA_CLOSE:
-                return MhUtil.findVirtual(LOOKUP, Arena.class, "close",
-                        MethodType.methodType(void.class));
-        }
-        throw new InternalError("Unknown index: " + index);
+        return switch (index) {
+            case NON_NEGATIVE_INT -> MhUtil.findStatic(LOOKUP, "nonNegative",
+                    MethodType.methodType(boolean.class, int.class));
+            case SUCCESS_INT -> MhUtil.findStatic(LOOKUP, "success",
+                    MethodType.methodType(int.class, int.class, MemorySegment.class));
+            case ERROR_INT -> MhUtil.findStatic(LOOKUP, "error",
+                    MethodType.methodType(int.class, MethodHandle.class, int.class, MemorySegment.class));
+            case NON_NEGATIVE_LONG -> MhUtil.findStatic(LOOKUP, "nonNegative",
+                    MethodType.methodType(boolean.class, long.class));
+            case SUCCESS_LONG -> MhUtil.findStatic(LOOKUP, "success",
+                    MethodType.methodType(long.class, long.class, MemorySegment.class));
+            case ERROR_LONG -> MhUtil.findStatic(LOOKUP, "error",
+                    MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
+            case ACQUIRE_ARENA -> MhUtil.findStatic(LOOKUP, "acquireArena",
+                    MethodType.methodType(Arena.class));
+            case ALLOCATE -> MhUtil.findStatic(LOOKUP, "allocate",
+                    MethodType.methodType(MemorySegment.class, Arena.class));
+            case ARENA_CLOSE -> MhUtil.findVirtual(LOOKUP, Arena.class, "close",
+                    MethodType.methodType(void.class));
+            default -> throw new InternalError("Unknown index: " + index);
+        };
     }
 
 }
