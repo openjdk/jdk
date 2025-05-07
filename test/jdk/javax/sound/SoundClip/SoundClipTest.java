@@ -57,7 +57,6 @@ public class SoundClipTest {
             Thread.sleep(500);
             if (clip.isPlaying()) {
                 playing = true;
-                break;
             }
             waitCount++;
         }
@@ -97,7 +96,8 @@ public class SoundClipTest {
                 result = AudioSystem.getSourceDataLine(null) != null;
             }
         } catch (Exception e) {
-            System.err.println("Exception occurred: "+e);
+            System.err.println("Exception occurred: " + e);
+            e.printStackTrace();
         }
         if (!result) {
             System.err.println("Soundcard does not exist or sound drivers not installed!");

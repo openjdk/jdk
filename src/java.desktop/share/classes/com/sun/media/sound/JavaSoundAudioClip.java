@@ -97,10 +97,6 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         JavaSoundAudioClip clip = new JavaSoundAudioClip();
         try (FileInputStream stream = new FileInputStream(file)) {
             clip.init(stream);
-        } catch (final Exception e) {
-            if (e instanceof IOException) {
-                throw e;
-            }
         }
         return clip;
     }

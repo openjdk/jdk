@@ -36,7 +36,7 @@ import com.sun.media.sound.JavaSoundAudioClip;
  * and for which it has support. This includes midi data.
  * Playing sound requires that the environment grants access to audio devices.
  * Typically this means running the application in a desktop environment.
- *
+ * <p>
  * Multiple {@code SoundClip} items can be playing at the same time, and
  * the resulting sound is mixed together to produce a composite.
  *
@@ -44,16 +44,16 @@ import com.sun.media.sound.JavaSoundAudioClip;
  */
 public final class SoundClip {
 
-    private JavaSoundAudioClip clip;
+    private final JavaSoundAudioClip clip;
 
     /**
-     * Create a {@code SoundClip} instance which will play a clip from the supplied file.
+     * Creates a {@code SoundClip} instance which will play a clip from the supplied file.
      *
      * If the file does not contain recognizable and supported sound data, or
      * if the implementation does not find a suitable output device for the data,
      * playing the clip will be a no-op.
      *
-     * @param file from which to obtain the sound data
+     * @param file the file from which to obtain the sound data
      * @return a {@code SoundClip}
      * @throws IllegalArgumentException if {@code file} is {@code null}
      * @throws IOException if there is an error reading from {@code file}
@@ -65,29 +65,24 @@ public final class SoundClip {
         return new SoundClip(file);
     }
 
-    private SoundClip() {
-    }
-
     private SoundClip(File file) throws IOException {
         this.clip = JavaSoundAudioClip.create(file);
     }
 
     /**
-     * Returns whether this is a playable sound clip.
+     * {@return whether this is a playable sound clip}
+     * <p>
      * A value of {@code false} means that calling any of the other methods
-     * of this class is a no-op
-     * @return whether there is playable sound data
+     * of this class is a no-op.
      */
     public boolean canPlay() {
         return clip.canPlay();
     }
 
     /**
-     * Returns whether sound is currently playing.
-     *
-     * @return whether sound is currently playing
+     * {@return whether sound is currently playing}
      */
-    public boolean isPlaying() {
+    public synchronized boolean isPlaying() {
         return clip.isPlaying();
     }
 

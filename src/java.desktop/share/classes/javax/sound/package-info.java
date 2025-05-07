@@ -27,9 +27,9 @@
  * Provides interfaces and classes for the Java Sound API.
  * The API is divided into sub-packages.
  * <p>
- * Capture, processing and playback of sampled audio data is under {@link javax.sound.sampled}
+ * Capture, processing and playback of sampled audio data is under {@link javax.sound.sampled}.
  * <p>
- * Sequencing, and synthesis of MIDI (Musical Instrument Digital Interface) data is under {@link javax.sound.midi}
+ * Sequencing, and synthesis of MIDI (Musical Instrument Digital Interface) data is under {@link javax.sound.midi}.
  *
  * <h2>Related Documentation</h2>
  * For more information on using Java Sound see:
