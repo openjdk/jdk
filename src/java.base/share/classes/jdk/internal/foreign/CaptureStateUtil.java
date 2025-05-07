@@ -211,7 +211,7 @@ public final class CaptureStateUtil {
             perm[i] = i;
         }
         // Last takes first
-        perm[target.type().parameterCount()] = 0;
+        perm[perm.length - 1] = 0;
         // Deduplicate the first and last coordinate and only use the first one.
         // (C0=MemorySegment, C1-Cn)(int|long)
         innerAdapted = MethodHandles.permuteArguments(innerAdapted, target.type(), perm);
