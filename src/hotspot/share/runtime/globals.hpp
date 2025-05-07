@@ -703,7 +703,7 @@ const int ObjectAlignmentInBytes = 8;
           "Print the class loader data graph at exit")                      \
                                                                             \
   product(bool, PrintVMInfoAtExit, false, DIAGNOSTIC,                       \
-          "Executes the VM.info diagnostic command at exit")            \
+          "Executes the VM.info diagnostic command at exit")                \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
