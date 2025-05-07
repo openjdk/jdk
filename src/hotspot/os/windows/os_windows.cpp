@@ -4610,6 +4610,39 @@ static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* n
   }
 }
 
+// This method checks if a wide path is actually a symbolic link
+static bool is_symbolic_link(const wchar_t* wide_path)
+{
+  WIN32_FIND_DATAW fd;
+  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+  return fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+}
+
+// This method dereferences a symbolic link
+static WCHAR* get_path_to_target(const wchar_t* wide_path)
+{
+  HANDLE hFile;
+
+  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+  const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
+    FILE_NAME_NORMALIZED);
+
+  if (target_path_size == 0)
+  {
+    errno = ::GetLastError();
+    return nullptr;
+  }
+
+  WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size + 1, mtInternal);
+
+  ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size + 1),
+    FILE_NAME_NORMALIZED);
+
+  return path_to_target;
+}
+
 // Returns the given path as an absolute wide path in unc format. The returned path is null
 // on error (with err being set accordingly) and should be freed via os::free() otherwise.
 // additional_space is the size of space, in wchar_t, the function will additionally add to
@@ -4678,48 +4711,24 @@ int os::stat(const char *path, struct stat *sbuf) {
     return -1;
   }
 
-  // check if it is a symbolic link
-  //============================================
-  WIN32_FIND_DATAW fd;
-  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
 
-  if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
+  if (is_symlink)
   {
-    // this is a symlink -> file data should be read from target, not from link
-    HANDLE hFile;
-
-    hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
-      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-
-    const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
-      FILE_NAME_NORMALIZED);
-
-    if (target_path_size == 0)
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr)
     {
-      errno = ::GetLastError();
+      // it is a symbolic link, but we failed to resolve it
+      errno = err;
       return -1;
     }
-
-    WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size + 1, mtInternal);
-
-    ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size+1),
-      FILE_NAME_NORMALIZED);
-
-    FREE_C_HEAP_ARRAY(WCHAR, wide_path);
-
-    wide_path = NEW_C_HEAP_ARRAY(WCHAR, target_path_size + 1, mtInternal);
-
-    memcpy(wide_path, path_to_target, target_path_size + 1);
-
-    int n = 1;
   }
 
-
-  //============================================
-
   WIN32_FILE_ATTRIBUTE_DATA file_data;;
-  BOOL bret = ::GetFileAttributesExW(wide_path, GetFileExInfoStandard, &file_data);
+  BOOL bret = ::GetFileAttributesExW(is_symlink && path_to_target != nullptr ? path_to_target : wide_path, GetFileExInfoStandard, &file_data);
   os::free(wide_path);
+  os::free(path_to_target);
 
   if (!bret) {
     errno = ::GetLastError();
@@ -4910,8 +4919,24 @@ int os::open(const char *path, int oflag, int mode) {
     errno = err;
     return -1;
   }
-  int fd = ::_wopen(wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
+
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
+
+  if (is_symlink)
+  {
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr)
+    {
+      // it is a symbolic link, but we failed to resolve it
+      errno = err;
+      return -1;
+    }
+  }
+
+  int fd = ::_wopen(is_symlink && path_to_target != nullptr ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
   os::free(wide_path);
+  os::free(path_to_target);
 
   if (fd == -1) {
     errno = ::GetLastError();

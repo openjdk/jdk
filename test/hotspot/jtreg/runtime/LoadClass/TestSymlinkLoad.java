@@ -56,38 +56,41 @@ public class TestSymlinkLoad {
         String bootCP = "-Xbootclasspath/a:" + destDir.toString();
 
         String className = "Hello";
-        /*
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                bootCP, "-XX:+PauseAtStartup", className);
 
+        // try to load a class itself directly, i.e. not via a symlink
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                bootCP, className);
+
+        // make sure it runs as expected
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
-                .shouldHaveExitValue(0);*/
+                .shouldHaveExitValue(0);
 
+        // create a symlink to the classfile in a subdir with a given name
         Path classFile = Path.of(destDir + File.separator + className + ".class");
+        final String subdir = "remote";
+        createLinkInSeparateFolder(destDir, subdir, classFile, className);
 
-        String classLinkName = "Hello_link";
-        Path link = createLink(destDir, classFile, classLinkName);
+        // try to load class via its symlink, which is in a different directory
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                bootCP + File.separator + subdir, className);
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello World")
+                .shouldHaveExitValue(0);
 
-
-        // try to load class via its symlink
-        ProcessBuilder pb2 = ProcessTools.createLimitedTestJavaProcessBuilder(
-                bootCP, "-XX:+PauseAtStartup", classLinkName);
-        OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
-        output2.shouldHaveExitValue(0);
-
-
-
-        int n = 1;
     }
 
-    public static Path createLink(final Path destDir, final Path target, final String classLinkName) throws IOException {
-        Path link = Paths.get(destDir + File.separator, classLinkName + ".class");
+    public static void createLinkInSeparateFolder(final Path destDir, final String subdir, final Path target, final String className) throws IOException {
+        final String pathToFolderForSymlink = destDir + File.separator + subdir + File.separator;
+        File theDir = new File(pathToFolderForSymlink);
+        if (!theDir.exists()){
+            theDir.mkdirs();
+        }
+        Path link = Paths.get(pathToFolderForSymlink, className + ".class");
         if (Files.exists(link)) {
             Files.delete(link);
         }
         Files.createSymbolicLink(link, target);
-        return link;
     }
 
 }
