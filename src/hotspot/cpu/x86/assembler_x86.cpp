@@ -2559,9 +2559,9 @@ void Assembler::imull(Register dst, Register src, int value) {
 
 void Assembler::eimull(Register dst, Register src, int value, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
   if (is8bit(value)) {
-    emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
+    emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
   } else {
     emit_int16(0x69, (0xC0 | encode));
     emit_int32(value);
