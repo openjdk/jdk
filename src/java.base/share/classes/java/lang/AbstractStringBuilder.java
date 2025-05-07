@@ -318,6 +318,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return the new buffer, the caller is responsible for updates to the coder
      */
     private static byte[] inflateToUTF16(byte[] value, int count) {
+        assert count <= value.length : "count > value.length";
         byte[] newValue = StringUTF16.newBytesFor(value.length);
         StringLatin1.inflate(value, 0, newValue, 0, count);
         return newValue;
@@ -1909,7 +1910,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param coder the original buffer coder
      * @param count the count of characters in the original buffer
      * @param index the insertion point
-     * @param s char[] array to insert from
+     * @param s CharSequence to insert from
      * @param off offset of the first character
      * @param end the offset of the last character (exclusive)
      */
@@ -1961,8 +1962,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * {@return buffer with new characters appended, possibly inflated}
-     * The buffer may need to be inflated if any character does not fit;
-     * if the returned buffer is different then passed in, the new coder is UTF16.
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
      * The caller is responsible for updating the count.
      * @param value the current buffer
      * @param coder the coder of the buffer
@@ -1995,8 +1998,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * {@return buffer with new characters appended, possibly inflated}
-     * The buffer may need to be inflated if any character does not fit;
-     * if the returned buffer is different then passed in, the new coder is UTF16.
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
      * The caller is responsible for updating the count.
      * @param value the current buffer
      * @param coder the coder of the buffer
@@ -2033,13 +2038,15 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * {@return buffer with new characters appended, possibly inflated}
-     * The buffer may need to be inflated if any character does not fit;
-     * if the returned buffer is different then passed in, the new coder is UTF16.
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
      * The caller is responsible for updating the count.
      * @param value the current buffer
      * @param coder the coder of the buffer
      * @param count the character count
-     * @param s a string
+     * @param s CharSequence to append characters from
      * @param off the offset of the first character to append
      * @param end end last (exclusive) character to append
      */
