@@ -138,7 +138,7 @@ public class TestAdvanced {
 
             """,
             // Call the testTemplate for each type and operator, generating a
-            // list of list of TemplateWithArgs:
+            // list of lists of TemplateWithArgs:
             types.stream().map((Type type) ->
                 type.operators().stream().map((String operator) ->
                     testTemplate.withArgs(type.name(), operator, type.generator())).toList()
@@ -148,7 +148,7 @@ public class TestAdvanced {
             """
         ));
 
-        // For each type, we chose a list of operators that do not throw exceptions.
+        // For each type, we choose a list of operators that do not throw exceptions.
         List<Type> types = List.of(
             new Type("byte",   () -> GEN_BYTE.next(),   List.of("+", "-", "*", "&", "|", "^")),
             new Type("char",   () -> GEN_CHAR.next(),   List.of("+", "-", "*", "&", "|", "^")),
@@ -159,7 +159,7 @@ public class TestAdvanced {
             new Type("double", () -> GEN_DOUBLE.next(), List.of("+", "-", "*", "/"))
         );
 
-        // Use the template with one arguments, and render it to a String.
+        // Use the template with one argument and render it to a String.
         return classTemplate.withArgs(types).render();
     }
 }

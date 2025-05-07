@@ -126,7 +126,7 @@ import java.util.List;
  *     new Type("double", () -> GEN_DOUBLE.next(), List.of("+", "-", "*", "/"))
  * );
  *
- * // Use the template with one arguments, and render it to a String.
+ * // Use the template with one argument, and render it to a String.
  * return classTemplate.withArgs(types).render();
  * }
  *
@@ -425,7 +425,7 @@ public interface Template {
      * ));
      * }
      *
-     * @param tokens A list of tokens, which can be {@link String}s,boxed primitive types
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (e.g. {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
      * @return The {@link TemplateBody} which captures the list of validated {@link Token}s.
@@ -489,9 +489,9 @@ public interface Template {
      * {@snippet lang=java :
      * var template = Template.make("a", (Integer a) -> let("b", a * 2, (Integer b) -> body(
      *     """
-     *     System.out.prinln("Use a and b with hashtag replacement: #a and #b");
+     *     System.out.println("Use a and b with hashtag replacement: #a and #b");
      *     """,
-     *     "System.out.println(\"Use a and b as capture variables:\" + a + " and " + b + ");\n"
+     *     "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
      * )));
      * }
      *
@@ -536,7 +536,7 @@ public interface Template {
      *     let("fuel", fuel()),
      *     """
      *     System.out.println("Currently at depth #depth with fuel #fuel");
-     *     """
+     *     """,
      *     (fuel() > 0) ? binding.get().withArgs(depth + 1)
      *                    "// terminate\n"
      * ));
