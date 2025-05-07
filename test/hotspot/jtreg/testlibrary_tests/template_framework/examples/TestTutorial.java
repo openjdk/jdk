@@ -82,11 +82,11 @@ public class TestTutorial {
 
     // This example shows the use of various Tokens.
     public static String generateWithListOfTokens() {
-        // A Template is essencially a function / lambda that produces a
+        // A Template is essentially a function / lambda that produces a
         // token body, which is a list of Tokens that are concatenated.
         var templateClass = Template.make(() -> body(
             // The "body" method is filled by a sequence of "Tokens".
-            // This can be Strings and multi-line Strings, but also
+            // These can be Strings and multi-line Strings, but also
             // boxed primitives.
             """
             package p.xyz;
@@ -103,7 +103,7 @@ public class TestTutorial {
             // Lists of Tokens are also allowed:
             List.of("int ", "d = 5", ";\n"),
             // That can be great for streaming / mapping over an existing list:
-            List.of(3, 5, 7, 11).stream().map(i -> "System.out.println(" + i + ");\n").toList(),
+            Stream.of(3, 5, 7, 11).map(i -> "System.out.println(" + i + ");\n").toList(),
             """
                     System.out.println(a + " " + b + " " + nan + " " + c + " " + d);
                 }

@@ -47,14 +47,14 @@ import java.util.List;
  * of tokens that are concatenated (i.e. rendered) to a String. The Templates can have "holes", which are
  * filled (replaced) by different values at each Template instantiation. For example, these "holes" can
  * be filled with different types, operators or constants. Templates can also be nested, allowing a modular
- * use of the Templates.
+ * use of Templates.
  *
  * <p>
  * <strong>Example:</strong>
- * The following are snippets from the example test {@code TestAdvanced.java}.
+ * The following snippets are from the example test {@code TestAdvanced.java}.
  * First, we define a template that generates a {@code @Test} method for a given type, operator and
  * constant generator. We define two constants {@code con1} and {@code con2}, and then use a multiline
- * string with hashtag {@code #} "holes" that are then replaced by the template arguments and the
+ * string with hashtags {@code #} (i.e. "holes")  that are then replaced by the template arguments and the
  * {@link #let} definitions.
  *
  * <p>
@@ -81,7 +81,7 @@ import java.util.List;
  *
  * <p>
  * To get an executable test, we define a class Template, which takes a list of types,
- * and calls the test template for each type and operator. We use the {@code TestFramework}
+ * and calls the {@code testTemplate} defined above for each type and operator. We use the {@code TestFramework}
  * to call our {@code @Test} methods.
  *
  * <p>
@@ -105,7 +105,7 @@ import java.util.List;
  *
  *     """,
  *     // Call the testTemplate for each type and operator, generating a
- *     // list of list of TemplateWithArgs:
+ *     // list of lists of TemplateWithArgs:
  *     types.stream().map((Type type) ->
  *         type.operators().stream().map((String operator) ->
  *             testTemplate.withArgs(type.name(), operator, type.generator())).toList()
@@ -168,19 +168,19 @@ import java.util.List;
  * a method, one can reach out to the scope of the class, and insert a new field, or define a utility method.
  *
  * <p>
- * A {@link TemplateBinding} allows the recurisve use of {@link Template}s. With the indirection of such a binding,
+ * A {@link TemplateBinding} allows the recursive use of {@link Template}s. With the indirection of such a binding,
  * a {@link Template} can reference itself. To ensure the termination of recursion, the templates are rendered
  * with a certain amount of {@link #fuel}, which is decreased at each {@link Template} nesting by a certain amount
  * (can be changed with {@link #setFuelCost}). Recursive templates are supposed to terminate once the {@link #fuel}
- * is depleated (i.e. reaches zero).
+ * is depleted (i.e. reaches zero).
  *
  * <p>
  * Code generation often involves defining fields and variables, which are then available inside a defined
  * scope, and can be sampled in any nested scope. To allow the use of names for multiple applications (e.g.
- * fields, variables, methods, etc), we define a {@link Name}, which captures the {@link String} representation
+ * fields, variables, methods, etc.), we define a {@link Name}, which captures the {@link String} representation
  * to be used in code, as well as its type and if it is mutable. One can add such a {@link Name} to the
  * current code scope with {@link #addName}, and sample from the current or outer scopes with {@link #sampleName}.
- * When generating code, one might want to create {@link Name}s (variables, fields, etc) in local scope, or
+ * When generating code, one might want to create {@link Name}s (variables, fields, etc.) in local scope, or
  * in some outer scope with the use of {@link Hook}s.
  */
 public interface Template {
