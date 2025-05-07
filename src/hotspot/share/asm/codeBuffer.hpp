@@ -89,6 +89,7 @@ public:
 // They are filled concurrently, and concatenated at the end.
 class CodeSection {
   friend class CodeBuffer;
+  friend class AOTCodeReader;
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
 
@@ -283,7 +284,7 @@ class CodeSection {
 
 #ifndef PRODUCT
   void decode();
-  void print(const char* name);
+  void print_on(outputStream* st, const char* name);
 #endif //PRODUCT
 };
 
@@ -386,6 +387,7 @@ typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
 class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   friend class CodeSection;
   friend class StubCodeGenerator;
+  friend class AOTCodeReader;
 
  private:
   // CodeBuffers must be allocated on the stack except for a single
@@ -742,7 +744,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Printing / Decoding
   // decodes from decode_begin() to code_end() and sets decode_begin to end
   void    decode();
-  void    print();
+  void    print_on(outputStream* st);
 #endif
   // Directly disassemble code buffer.
   void    decode(address start, address end);

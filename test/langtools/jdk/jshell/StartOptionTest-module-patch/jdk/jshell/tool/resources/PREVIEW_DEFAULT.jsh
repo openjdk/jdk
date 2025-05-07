@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,8 @@
  * questions.
  */
 
-import java.io.IOException;
-
-import static java.io.IO.readln;
-
-public class Input {
-
-    public static void main(String[] args) throws IOException {
-        switch (args[0]) {
-            case "0" -> System.out.print(readln(null));
-            case "1" -> System.out.print(readln(args[1]));
-            case "2" -> System.out.print(readln());
-            default -> throw new AssertionError("Unknown command: " + args[0]);
-        }
-    }
+//a patched version of PREVIEW_DEFAULT.jsh, used to verify the correct resource
+//is selected when needed:
+void sayHello() {
+    System.out.println("Hello!");
 }

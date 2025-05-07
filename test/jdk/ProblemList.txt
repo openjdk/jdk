@@ -786,6 +786,8 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 
 # jdk_foreign
 
+java/foreign/TestBufferStackStress.java                         8350455 macosx-all
+
 ############################################################################
 # Client manual tests
 

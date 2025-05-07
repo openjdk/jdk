@@ -32,22 +32,22 @@
 
 #include <limits>
 
-struct ZTestEntryCompare {
+struct ZRBTestEntryCompare {
   int operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b);
   int operator()(int key, const ZIntrusiveRBTreeNode* entry);
 };
 
-class ZTestEntry : public ArenaObj {
-  friend class ZIntrusiveRBTree<int, ZTestEntryCompare>;
+class ZRBTestEntry : public ArenaObj {
+  friend class ZIntrusiveRBTree<int, ZRBTestEntryCompare>;
 
 public:
-  using ZTree = ZIntrusiveRBTree<int, ZTestEntryCompare>;
+  using ZTree = ZIntrusiveRBTree<int, ZRBTestEntryCompare>;
 private:
   const int   _id;
   ZIntrusiveRBTreeNode _node;
 
 public:
-  ZTestEntry(int id)
+  ZRBTestEntry(int id)
     : _id(id),
       _node() {}
 
@@ -55,26 +55,26 @@ public:
     return _id;
   }
 
-  static ZIntrusiveRBTreeNode* cast_to_inner(ZTestEntry* element) {
+  static ZIntrusiveRBTreeNode* cast_to_inner(ZRBTestEntry* element) {
     return &element->_node;
   }
-  static const ZTestEntry* cast_to_outer(const ZIntrusiveRBTreeNode* node) {
-    return (ZTestEntry*)((uintptr_t)node - offset_of(ZTestEntry, _node));
+  static const ZRBTestEntry* cast_to_outer(const ZIntrusiveRBTreeNode* node) {
+    return (ZRBTestEntry*)((uintptr_t)node - offset_of(ZRBTestEntry, _node));
   }
 
 };
 
-int ZTestEntryCompare::operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b) {
-  return ZTestEntry::cast_to_outer(a)->id() - ZTestEntry::cast_to_outer(b)->id();
+int ZRBTestEntryCompare::operator()(const ZIntrusiveRBTreeNode* a, const ZIntrusiveRBTreeNode* b) {
+  return ZRBTestEntry::cast_to_outer(a)->id() - ZRBTestEntry::cast_to_outer(b)->id();
 }
-int ZTestEntryCompare::operator()(int key, const ZIntrusiveRBTreeNode* entry) {
-  return key - ZTestEntry::cast_to_outer(entry)->id();
+int ZRBTestEntryCompare::operator()(int key, const ZIntrusiveRBTreeNode* entry) {
+  return key - ZRBTestEntry::cast_to_outer(entry)->id();
 }
 
 class ZTreeTest : public ZTest {
 public:
-  void shuffle_array(ZTestEntry** beg, ZTestEntry** end);
-  void reverse_array(ZTestEntry** beg, ZTestEntry** end);
+  void shuffle_array(ZRBTestEntry** beg, ZRBTestEntry** end);
+  void reverse_array(ZRBTestEntry** beg, ZRBTestEntry** end);
 };
 
 class ResettableArena : public Arena {
@@ -96,10 +96,10 @@ TEST_F(ZTreeTest, test_random) {
   constexpr size_t sizes[] = {1, 2, 4, 8, 16, 1024, 1024 * 1024};
   constexpr size_t num_sizes = ARRAY_SIZE(sizes);
   constexpr size_t iterations_multiplier = 4;
-  constexpr size_t max_allocation_size = sizes[num_sizes - 1] * iterations_multiplier * sizeof(ZTestEntry);
+  constexpr size_t max_allocation_size = sizes[num_sizes - 1] * iterations_multiplier * sizeof(ZRBTestEntry);
   ResettableArena arena{MemTag::mtTest, Arena::Tag::tag_other, max_allocation_size};
   for (size_t s : sizes) {
-    ZTestEntry::ZTree tree;
+    ZRBTestEntry::ZTree tree;
     const size_t num_iterations = s * iterations_multiplier;
     for (size_t i = 0; i < num_iterations; i++) {
       if (i % s == 0) {
@@ -113,7 +113,7 @@ TEST_F(ZTreeTest, test_random) {
           // Replace
           if (i % 4 == 0) {
             // Replace with new
-            tree.replace(ZTestEntry::cast_to_inner(new (&arena) ZTestEntry(id)), cursor);
+            tree.replace(ZRBTestEntry::cast_to_inner(new (&arena) ZRBTestEntry(id)), cursor);
           } else {
             // Replace with same
             tree.replace(cursor.node(), cursor);
@@ -124,7 +124,7 @@ TEST_F(ZTreeTest, test_random) {
         }
       } else {
         // Insert
-        tree.insert(ZTestEntry::cast_to_inner(new (&arena) ZTestEntry(id)), cursor);
+        tree.insert(ZRBTestEntry::cast_to_inner(new (&arena) ZRBTestEntry(id)), cursor);
       }
     }
     tree.verify_tree();
@@ -132,13 +132,13 @@ TEST_F(ZTreeTest, test_random) {
   }
 }
 
-void ZTreeTest::reverse_array(ZTestEntry** beg, ZTestEntry** end) {
+void ZTreeTest::reverse_array(ZRBTestEntry** beg, ZRBTestEntry** end) {
   if (beg == end) {
     return;
   }
 
-  ZTestEntry** first = beg;
-  ZTestEntry** last = end - 1;
+  ZRBTestEntry** first = beg;
+  ZRBTestEntry** last = end - 1;
   while (first < last) {
     ::swap(*first, *last);
     first++;
@@ -146,12 +146,12 @@ void ZTreeTest::reverse_array(ZTestEntry** beg, ZTestEntry** end) {
   }
 }
 
-void ZTreeTest::shuffle_array(ZTestEntry** beg, ZTestEntry** end) {
+void ZTreeTest::shuffle_array(ZRBTestEntry** beg, ZRBTestEntry** end) {
   if (beg == end) {
     return;
   }
 
-  for (ZTestEntry** first = beg + 1; first != end; first++) {
+  for (ZRBTestEntry** first = beg + 1; first != end; first++) {
     const ptrdiff_t distance = first - beg;
     ASSERT_GE(distance, 0);
     const ptrdiff_t random_index = random() % (distance + 1);
@@ -162,51 +162,51 @@ void ZTreeTest::shuffle_array(ZTestEntry** beg, ZTestEntry** end) {
 TEST_F(ZTreeTest, test_insert) {
   Arena arena(MemTag::mtTest);
   constexpr size_t num_entries = 1024;
-  ZTestEntry* forward[num_entries]{};
-  ZTestEntry* reverse[num_entries]{};
-  ZTestEntry* shuffle[num_entries]{};
+  ZRBTestEntry* forward[num_entries]{};
+  ZRBTestEntry* reverse[num_entries]{};
+  ZRBTestEntry* shuffle[num_entries]{};
   for (size_t i = 0; i < num_entries; i++) {
     const int id = static_cast<int>(i);
-    forward[i] = new (&arena) ZTestEntry(id);
-    reverse[i] = new (&arena) ZTestEntry(id);
-    shuffle[i] = new (&arena) ZTestEntry(id);
+    forward[i] = new (&arena) ZRBTestEntry(id);
+    reverse[i] = new (&arena) ZRBTestEntry(id);
+    shuffle[i] = new (&arena) ZRBTestEntry(id);
   }
   reverse_array(reverse, reverse + num_entries);
   shuffle_array(shuffle, shuffle + num_entries);
 
-  ZTestEntry::ZTree forward_tree;
+  ZRBTestEntry::ZTree forward_tree;
   auto cursor = forward_tree.root_cursor();
   for (size_t i = 0; i < num_entries; i++) {
     ASSERT_TRUE(cursor.is_valid());
     ASSERT_FALSE(cursor.found());
-    ZIntrusiveRBTreeNode* const new_node = ZTestEntry::cast_to_inner(forward[i]);
+    ZIntrusiveRBTreeNode* const new_node = ZRBTestEntry::cast_to_inner(forward[i]);
     forward_tree.insert(new_node, cursor);
     cursor = forward_tree.next_cursor(new_node);
   }
   forward_tree.verify_tree();
 
-  ZTestEntry::ZTree reverse_tree;
+  ZRBTestEntry::ZTree reverse_tree;
   cursor = reverse_tree.root_cursor();
   for (size_t i = 0; i < num_entries; i++) {
     ASSERT_TRUE(cursor.is_valid());
     ASSERT_FALSE(cursor.found());
-    ZIntrusiveRBTreeNode* const new_node = ZTestEntry::cast_to_inner(reverse[i]);
+    ZIntrusiveRBTreeNode* const new_node = ZRBTestEntry::cast_to_inner(reverse[i]);
     reverse_tree.insert(new_node, cursor);
     cursor = reverse_tree.prev_cursor(new_node);
   }
   reverse_tree.verify_tree();
 
-  ZTestEntry::ZTree shuffle_tree;
+  ZRBTestEntry::ZTree shuffle_tree;
   for (size_t i = 0; i < num_entries; i++) {
     cursor = shuffle_tree.find(reverse[i]->id());
     ASSERT_TRUE(cursor.is_valid());
     ASSERT_FALSE(cursor.found());
-    ZIntrusiveRBTreeNode* const new_node = ZTestEntry::cast_to_inner(reverse[i]);
+    ZIntrusiveRBTreeNode* const new_node = ZRBTestEntry::cast_to_inner(reverse[i]);
     shuffle_tree.insert(new_node, cursor);
   }
   shuffle_tree.verify_tree();
 
-  ZTestEntryCompare compare_fn;
+  ZRBTestEntryCompare compare_fn;
   const ZIntrusiveRBTreeNode* forward_node = forward_tree.first();
   const ZIntrusiveRBTreeNode* reverse_node = reverse_tree.first();
   const ZIntrusiveRBTreeNode* shuffle_node = shuffle_tree.first();
@@ -240,13 +240,13 @@ TEST_F(ZTreeTest, test_insert) {
 TEST_F(ZTreeTest, test_replace) {
   Arena arena(MemTag::mtTest);
   constexpr size_t num_entries = 1024;
-  ZTestEntry::ZTree tree;
+  ZRBTestEntry::ZTree tree;
   auto cursor = tree.root_cursor();
   for (size_t i = 0; i < num_entries; i++) {
     ASSERT_TRUE(cursor.is_valid());
     ASSERT_FALSE(cursor.found());
     const int id = static_cast<int>(i) * 2 + 1;
-    ZIntrusiveRBTreeNode* const new_node = ZTestEntry::cast_to_inner(new (&arena) ZTestEntry(id));
+    ZIntrusiveRBTreeNode* const new_node = ZRBTestEntry::cast_to_inner(new (&arena) ZRBTestEntry(id));
     tree.insert(new_node, cursor);
     cursor = tree.next_cursor(new_node);
   }
@@ -261,14 +261,14 @@ TEST_F(ZTreeTest, test_replace) {
     switch (i++ % 4) {
       case 0: {
         // Decrement
-        ZTestEntry* new_entry = new (&arena) ZTestEntry(ZTestEntry::cast_to_outer(&node)->id() - 1);
-        it.replace(ZTestEntry::cast_to_inner(new_entry));
+        ZRBTestEntry* new_entry = new (&arena) ZRBTestEntry(ZRBTestEntry::cast_to_outer(&node)->id() - 1);
+        it.replace(ZRBTestEntry::cast_to_inner(new_entry));
       } break;
       case 1: break;
       case 2: {
         // Increment
-        ZTestEntry* new_entry = new (&arena) ZTestEntry(ZTestEntry::cast_to_outer(&node)->id() + 1);
-        it.replace(ZTestEntry::cast_to_inner(new_entry));
+        ZRBTestEntry* new_entry = new (&arena) ZRBTestEntry(ZRBTestEntry::cast_to_outer(&node)->id() + 1);
+        it.replace(ZRBTestEntry::cast_to_inner(new_entry));
       } break;
       case 3: break;
       default:
@@ -279,7 +279,7 @@ TEST_F(ZTreeTest, test_replace) {
 
   int last_id = std::numeric_limits<int>::min();
   for (auto& node : tree) {
-    int id = ZTestEntry::cast_to_outer(&node)->id();
+    int id = ZRBTestEntry::cast_to_outer(&node)->id();
     ASSERT_LT(last_id, id);
     last_id = id;
   }
@@ -287,7 +287,7 @@ TEST_F(ZTreeTest, test_replace) {
 
   last_id = std::numeric_limits<int>::min();
   for (auto it = tree.begin(), end = tree.end(); it != end; ++it) {
-    int id = ZTestEntry::cast_to_outer(&*it)->id();
+    int id = ZRBTestEntry::cast_to_outer(&*it)->id();
     ASSERT_LT(last_id, id);
     last_id = id;
   }
@@ -295,7 +295,7 @@ TEST_F(ZTreeTest, test_replace) {
 
   last_id = std::numeric_limits<int>::min();
   for (auto it = tree.cbegin(), end = tree.cend(); it != end; ++it) {
-    int id = ZTestEntry::cast_to_outer(&*it)->id();
+    int id = ZRBTestEntry::cast_to_outer(&*it)->id();
     ASSERT_LT(last_id, id);
     last_id = id;
   }
@@ -303,7 +303,7 @@ TEST_F(ZTreeTest, test_replace) {
 
   last_id = std::numeric_limits<int>::max();
   for (auto it = tree.rbegin(), end = tree.rend(); it != end; ++it) {
-    int id = ZTestEntry::cast_to_outer(&*it)->id();
+    int id = ZRBTestEntry::cast_to_outer(&*it)->id();
     ASSERT_GT(last_id, id);
     last_id = id;
   }
@@ -311,7 +311,7 @@ TEST_F(ZTreeTest, test_replace) {
 
   last_id = std::numeric_limits<int>::max();
   for (auto it = tree.crbegin(), end = tree.crend(); it != end; ++it) {
-    int id = ZTestEntry::cast_to_outer(&*it)->id();
+    int id = ZRBTestEntry::cast_to_outer(&*it)->id();
     ASSERT_GT(last_id, id);
     last_id = id;
   }
@@ -321,19 +321,19 @@ TEST_F(ZTreeTest, test_replace) {
 TEST_F(ZTreeTest, test_remove) {
   Arena arena(MemTag::mtTest);
   constexpr int num_entries = 1024;
-  ZTestEntry::ZTree tree;
+  ZRBTestEntry::ZTree tree;
   int id = 0;
-  tree.insert(ZTestEntry::cast_to_inner(new (&arena) ZTestEntry(++id)), tree.root_cursor());
+  tree.insert(ZRBTestEntry::cast_to_inner(new (&arena) ZRBTestEntry(++id)), tree.root_cursor());
   for (auto& node : tree) {
-    if (ZTestEntry::cast_to_outer(&node)->id() == num_entries) {
+    if (ZRBTestEntry::cast_to_outer(&node)->id() == num_entries) {
       break;
     }
     auto cursor = tree.next_cursor(&node);
-    ZIntrusiveRBTreeNode* const new_node = ZTestEntry::cast_to_inner(new (&arena) ZTestEntry(++id));
+    ZIntrusiveRBTreeNode* const new_node = ZRBTestEntry::cast_to_inner(new (&arena) ZRBTestEntry(++id));
     tree.insert(new_node, cursor);
   }
   tree.verify_tree();
-  ASSERT_EQ(ZTestEntry::cast_to_outer(tree.last())->id(), num_entries);
+  ASSERT_EQ(ZRBTestEntry::cast_to_outer(tree.last())->id(), num_entries);
 
   int i = 0;
   int removed = 0;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,4 +21,23 @@
 # questions.
 #
 
-exclusiveAccess.dirs=.
+# This script doesn't verify any output strings, it's only used to simulate tty
+
+set stty_init "rows 24 cols 80"
+set timeout -1
+
+# Use `-noecho` below, otherwise, expect will output the expanded "spawn ..."
+# command, which will interfere with asserting output from the java test
+# counterpart
+
+spawn -noecho {*}$argv
+
+expect {
+    eof {
+        exit 0
+    }
+    timeout {
+        puts "timeout"
+        exit 1
+    }
+}
