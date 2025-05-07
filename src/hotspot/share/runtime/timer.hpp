@@ -65,6 +65,7 @@ class TimeStamp {
   // (must not be in a cleared state:  must have been previously updated)
   double seconds() const;
   jlong milliseconds() const;
+  jlong microseconds() const;
   // ticks elapsed between VM start and last update
   jlong ticks() const { return _counter; }
   // ticks elapsed since last update

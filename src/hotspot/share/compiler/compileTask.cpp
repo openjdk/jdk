@@ -225,7 +225,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
                              jlong time_created, jlong time_started, jlong time_finished) {
   if (!short_form) {
     // Print current time
-    st->print(UINT64_FORMAT_W(7) " ", (uint64_t) tty->time_stamp().milliseconds());
+    st->print(UINT64_FORMAT_W(10) " ", (uint64_t) tty->time_stamp().microseconds());
     // Time spent before the compilation started
     if (time_created != 0 && time_started != 0) {
       st->print("%7.0f ", TimeHelper::counter_to_micros(time_started - time_created));
@@ -292,14 +292,14 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 
 void CompileTask::print_legend_on(outputStream* st) {
   // Matches to format in CompileTask::print_impl above.
-  st->print_cr(" (T)  Elapsed time since JVM start, ms");
+  st->print_cr(" (T)  Elapsed time since JVM start, us");
   st->print_cr(" (Q)  Time spent in queueing, us");
   st->print_cr(" (C)  Time spent in compilation, us");
   st->print_cr(" (ID) Compile task ID");
   st->print_cr(" (AT) Compile task attributes: %% = OSR, s = synchronized, ! = has exception handler, b = blocking, n = native");
   st->print_cr(" (L)  Compile level");
   st->cr();
-  st->print_cr("%7s %7s %7s %5s %5s %3s    %s", "T", "Q", "C", "ID", "AT", "L", "METHOD");
+  st->print_cr("%10s %7s %7s %5s %5s %3s    %s", "T", "Q", "C", "ID", "AT", "L", "METHOD");
 }
 
 void CompileTask::maybe_print_legend() {

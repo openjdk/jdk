@@ -112,6 +112,12 @@ jlong TimeStamp::milliseconds() const {
   return (jlong)TimeHelper::counter_to_millis(new_count - _counter);
 }
 
+jlong TimeStamp::microseconds() const {
+  assert(is_updated(), "must not be clear");
+  jlong new_count = os::elapsed_counter();
+  return (jlong)TimeHelper::counter_to_micros(new_count - _counter);
+}
+
 jlong TimeStamp::ticks_since_update() const {
   assert(is_updated(), "must not be clear");
   return os::elapsed_counter() - _counter;
