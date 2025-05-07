@@ -1507,10 +1507,8 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
 #endif
 
   for (;;) {
-    assert(has_owner(current), "invariant");
-
     // If there is a successor we should release the lock as soon as
-    // posible, so that the successor can aquire the look. If there is
+    // possible, so that the successor can acquire the lock. If there is
     // no successor, we might need to wake up a waiting thread.
     if (!has_successor()) {
       ObjectWaiter* w = Atomic::load(&_entry_list);
