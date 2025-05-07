@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8355065
+ * @bug 8356441
  * @summary Recursive formatting in RichDiagnosticFormatter
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.main jdk.compiler/com.sun.tools.javac.api

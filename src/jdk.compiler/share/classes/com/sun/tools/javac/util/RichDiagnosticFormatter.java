@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 import com.sun.tools.javac.code.Printer;
