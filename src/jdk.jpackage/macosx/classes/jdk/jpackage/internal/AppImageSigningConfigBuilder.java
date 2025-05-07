@@ -71,7 +71,7 @@ final class AppImageSigningConfigBuilder {
             return identityCfg.map(cfg -> {
                 return new AppImageSigningConfig.Stub(cfg.identity(), signingIdentifierPrefix,
                         validatedEntitlements, cfg.keychain().map(Keychain::name),
-                        Optional.ofNullable(entitlementsResourceName).orElse("sandbox.plist"));
+                        Optional.ofNullable(entitlementsResourceName).orElse("entitlements.plist"));
             });
         }
     }

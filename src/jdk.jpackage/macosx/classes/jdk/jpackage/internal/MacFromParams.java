@@ -144,7 +144,7 @@ final class MacFromParams {
 
             final var signingBuilder = new AppImageSigningConfigBuilder(signingIdentityBuilder);
             if (appStore) {
-                signingBuilder.entitlementsResourceName("entitlements.plist");
+                signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
             app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentifierPrefix);

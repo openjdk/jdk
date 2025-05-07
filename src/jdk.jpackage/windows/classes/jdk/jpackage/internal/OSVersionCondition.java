@@ -56,9 +56,9 @@ record OSVersionCondition(WindowsVersion version) {
 
         final var appImageLayout = app.imageLayout().resolveAt(env.appImageDir());
 
-        app.mainLauncher().ifPresent(mainLauncher -> {
-            ((ApplicationLayout)appImageLayout).launchersDirectory().resolve(mainLauncher.executableNameWithSuffix());
-        });
+        app.mainLauncher().map(mainLauncher -> {
+            return ((ApplicationLayout)appImageLayout).launchersDirectory().resolve(mainLauncher.executableNameWithSuffix());
+        }).ifPresent(executables::add);
 
         executables.add(appImageLayout.runtimeDirectory().resolve("bin\\java.dll"));
 
