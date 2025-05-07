@@ -115,9 +115,11 @@
           "The configuration file written by -XX:AOTMode=record, and "      \
           "loaded by -XX:AOTMode=create. This file contains profiling data "\
           "for deciding what contents should be added to AOTCache. ")       \
+          constraint(AOTConfigurationConstraintFunc, AtParse)               \
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+          constraint(AOTCacheConstraintFunc, AtParse)                       \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
