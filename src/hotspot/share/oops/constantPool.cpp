@@ -2029,7 +2029,7 @@ int ConstantPool::find_matching_bsme(int pattern_i,
     }
   }
   return -1;  // bootstrap specifier data not found; return unused index (-1)
-} // end find_matching_bsme()
+}
 
 
 #ifndef PRODUCT
