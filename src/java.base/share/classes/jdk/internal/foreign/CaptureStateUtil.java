@@ -115,10 +115,9 @@ public final class CaptureStateUtil {
 
         @Override
         public boolean equals(Object obj) {
-            // Don't use a record pattern to save on startup time
-            return obj instanceof BasicKey that &&
-                    returnType.equals(that.returnType) &&
-                    stateName.equals(that.stateName);
+            return obj instanceof BasicKey(Class<?> oReturnType, String oStateName)
+                    && returnType.equals(oReturnType)
+                    && stateName.equals(oStateName);
         }
     }
 
