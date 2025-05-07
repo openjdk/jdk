@@ -47,7 +47,7 @@ public class GifEmptyBackgroundTest {
         BufferedImage[] frames = getFrames(srcURL, 4);
 
         if (new Color(frames[3].getRGB(20, 20), true).getAlpha() != 0) {
-            throw new Error("See System.err for details");
+            throw new Error("The pixel at (20, 20) should be transparent.");
         }
     }
 
