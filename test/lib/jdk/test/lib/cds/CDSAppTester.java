@@ -51,7 +51,15 @@ abstract public class CDSAppTester {
     private final String tempBaseArchiveFile;
     private int numProductionRuns = 0;
     private String whiteBoxJar = null;
+    private boolean inOneStepTraining = false;
 
+    /**
+     * All files created in the CDS/AOT workflow will be name + extension. E.g.
+     * - name.aot
+     * - name.aotconfig
+     * - name.classlist
+     * - name.jsa
+     */
     public CDSAppTester(String name) {
         if (CDSTestUtils.DYNAMIC_DUMP) {
             throw new SkippedException("Tests based on CDSAppTester should be excluded when -Dtest.dynamic.cds.archive is specified");
@@ -59,24 +67,30 @@ abstract public class CDSAppTester {
 
         this.name = name;
         classListFile = name() + ".classlist";
-        classListFileLog = classListFile + ".log";
+        classListFileLog = logFileName(classListFile);
         aotConfigurationFile = name() + ".aotconfig";
-        aotConfigurationFileLog = aotConfigurationFile + ".log";
+        aotConfigurationFileLog = logFileName(aotConfigurationFile);
         staticArchiveFile = name() + ".static.jsa";
-        staticArchiveFileLog = staticArchiveFile + ".log";
+        staticArchiveFileLog = logFileName(staticArchiveFile);
         aotCacheFile = name() + ".aot";
-        aotCacheFileLog = aotCacheFile + ".log";
+        aotCacheFileLog = logFileName(aotCacheFile);;
         dynamicArchiveFile = name() + ".dynamic.jsa";
-        dynamicArchiveFileLog = dynamicArchiveFile + ".log";
+        dynamicArchiveFileLog = logFileName(dynamicArchiveFile);
         tempBaseArchiveFile = name() + ".temp-base.jsa";
     }
 
     private String productionRunLog() {
         if (numProductionRuns == 0) {
-            return name() + ".production.log";
+            return logFileName(name() + ".production");
         } else {
-            return name() + ".production." + numProductionRuns + ".log";
+            return logFileName(name() + ".production." + numProductionRuns);
         }
+    }
+
+    private static String logFileName(String file) {
+        file = file.replace("\"", "%22");
+        file = file.replace("'", "%27");
+        return file + ".log";
     }
 
     private enum Workflow {
@@ -249,6 +263,22 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
     }
 
+    private OutputAnalyzer createAOTCacheOneStep() throws Exception {
+        RunMode runMode = RunMode.TRAINING;
+        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
+                                                   "-XX:AOTMode=record",
+                                                   "-XX:AOTCacheOutput=" + aotCacheFile,
+                                                   logToFile(aotCacheFileLog,
+                                                             "class+load=debug",
+                                                             "cds=debug",
+                                                             "cds+class=debug"));
+        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+        OutputAnalyzer out =  executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
+        listOutputFile(aotCacheFileLog + ".0"); // the log file for the training run
+        return out;
+    }
+
     private OutputAnalyzer createClassList() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
@@ -389,14 +419,14 @@ abstract public class CDSAppTester {
     }
 
     public void run(String... args) throws Exception {
-        String err = "Must have exactly one command line argument of the following: ";
+        String err = "Must have at least one command line argument of the following: ";
         String prefix = "";
         for (Workflow wf : Workflow.values()) {
             err += prefix;
             err += wf;
             prefix = ", ";
         }
-        if (args.length != 1) {
+        if (args.length < 1) {
             throw new RuntimeException(err);
         } else {
             if (args[0].equals("STATIC")) {
@@ -404,7 +434,7 @@ abstract public class CDSAppTester {
             } else if (args[0].equals("DYNAMIC")) {
                 runDynamicWorkflow();
             } else if (args[0].equals("AOT")) {
-                runAOTWorkflow();
+                runAOTWorkflow(args);
             } else {
                 throw new RuntimeException(err);
             }
@@ -425,10 +455,19 @@ abstract public class CDSAppTester {
     }
 
     // See JEP 483
-    public void runAOTWorkflow() throws Exception {
+    public void runAOTWorkflow(String... args) throws Exception {
         this.workflow = Workflow.AOT;
-        recordAOTConfiguration();
-        createAOTCache();
+        if (args.length > 1 && args[1].equals("--onestep-training")) {
+            try {
+                inOneStepTraining = true;
+                createAOTCacheOneStep();
+            } finally {
+                inOneStepTraining = false;
+            }
+        } else {
+            recordAOTConfiguration();
+            createAOTCache();
+        }
         productionRun();
     }
 }
