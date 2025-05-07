@@ -84,7 +84,9 @@ public:
   size_t tlab_used() const;
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc() const;
-  void update_tlab_usage(size_t used);
+
+  void increment_tlab_used();
+  void reset_tlab_used();
 
   bool is_in(uintptr_t addr) const;
   bool is_in_page_relaxed(const ZPage* page, zaddress addr) const;

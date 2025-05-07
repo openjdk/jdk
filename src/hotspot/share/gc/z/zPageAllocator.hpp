@@ -159,7 +159,6 @@ private:
   const size_t                _min_capacity;
   const size_t                _max_capacity;
   volatile size_t             _used;
-  volatile size_t             _used_eden;
   volatile size_t             _used_generations[2];
   struct {
     size_t _used_high;
@@ -233,9 +232,6 @@ private:
   void increase_used(size_t size);
   void decrease_used(size_t size);
 
-  void increase_used_eden(size_t size);
-  void reset_used_eden();
-
   void notify_out_of_memory();
   void restart_gc() const;
 
@@ -260,7 +256,6 @@ public:
   size_t current_max_capacity() const;
   size_t capacity() const;
   size_t used() const;
-  size_t used_eden() const;
   size_t used_generation(ZGenerationId id) const;
   size_t unused() const;
 

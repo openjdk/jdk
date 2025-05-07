@@ -837,8 +837,8 @@ void ZGenerationYoung::mark_start() {
   // Change good colors
   flip_mark_start();
 
-  // Update TLAB usage
-  ZHeap::heap()->update_tlab_usage(_page_allocator->used_eden());
+  // Reset TLAB usage
+  ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();

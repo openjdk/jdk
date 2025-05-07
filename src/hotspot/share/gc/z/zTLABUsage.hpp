@@ -40,12 +40,14 @@
 
 class ZTLABUsage {
 private:
-  TruncatedSeq _used_history;
+  volatile size_t _used;
+  TruncatedSeq    _used_history;
 
 public:
   ZTLABUsage();
 
-  void update(size_t used);
+  void add(size_t size);
+  void reset();
 
   size_t used() const;
   size_t capacity() const;
