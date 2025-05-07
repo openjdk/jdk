@@ -544,7 +544,7 @@ public class Log extends AbstractLog {
         private void initOptions(Options options) {
             this.dumpOnError = options.isSet(DOE);
             this.promptOnError = options.isSet(PROMPT);
-            this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+            this.emitWarnings = options.isUnset(NOWARN);
             this.suppressNotes = options.isSet("suppressNotes");
             this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
             this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());

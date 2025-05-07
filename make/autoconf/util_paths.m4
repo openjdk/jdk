@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,6 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 # it need to be in the PATH.
 # $1: The name of the variable to fix
 # $2: Where to look for the command (replaces $PATH)
-# $3: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 [
   input="[$]$1"
@@ -282,10 +281,6 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       fi
     fi
 
-    if test "x$3" = xNOFIXPATH; then
-      fixpath_prefix=""
-    fi
-
     # Now join together the path and the arguments once again
     new_complete="$fixpath_prefix$new_path$arguments"
     $1="$new_complete"
@@ -379,7 +374,6 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
-# $4: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_LOOKUP_PROGS],
 [
   UTIL_SETUP_TOOL($1, [
@@ -421,10 +415,8 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
 
             # If we have FIXPATH enabled, strip all instances of it and prepend
             # a single one, to avoid double fixpath prefixing.
-            if test "x$4" != xNOFIXPATH; then
-              [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
-                result="\$FIXPATH ${result#"$FIXPATH "}"
-              fi
+            [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
+              result="\$FIXPATH ${result#"$FIXPATH "}"
             fi
             AC_MSG_RESULT([$result])
             break 2;
@@ -513,6 +505,24 @@ AC_DEFUN([UTIL_ADD_FIXPATH],
   if test "x$FIXPATH" != x; then
     $1="$FIXPATH [$]$1"
   fi
+])
+
+################################################################################
+# Return a path to the executable binary from a command line, stripping away
+# any FIXPATH prefix or arguments. The resulting value can be checked for
+# existence using "test -e". The result is returned in a variable named
+# "$1_EXECUTABLE".
+#
+# $1: variable describing the command to get the binary for
+AC_DEFUN([UTIL_GET_EXECUTABLE],
+[
+  # Strip the FIXPATH prefix, if any
+  fixpath_stripped="[$]$1"
+  [ if [[ $FIXPATH != "" && $fixpath_stripped =~ ^"$FIXPATH " ]]; then ]
+      fixpath_stripped="${fixpath_stripped#"$FIXPATH "}"
+  fi
+  # Remove any arguments following the binary
+  $1_EXECUTABLE="${fixpath_stripped%% *}"
 ])
 
 ################################################################################
