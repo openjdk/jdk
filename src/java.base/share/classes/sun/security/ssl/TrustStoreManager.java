@@ -130,7 +130,7 @@ final class TrustStoreManager {
                     "javax.net.ssl.trustStoreType",
                     KeyStore.getDefaultType());
             String storePropProvider = System.getProperty(
-                    "javax.net.ssl.trustStoreProvider", "");
+                    "javax.net.ssl.trustStoreProvider", "unspecified");
             String storePropPassword = System.getProperty(
                     "javax.net.ssl.trustStorePassword", "");
 
