@@ -297,6 +297,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     } else {
       log_debug(os, container)("Can't read %s, %s", controllers_file, os::strerror(errno));
       *flags = INVALID_CGROUPS_V2;
+      fclose(controllers);
       return false;
     }
     for (int i = 0; i < CG_INFO_LENGTH; i++) {
