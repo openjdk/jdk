@@ -730,6 +730,7 @@ class GifFrame {
                 // clear saved_image using transparent pixels
                 // this will be used as the background in the next display
                 if( decoder.saved_image != null ) {
+                    tpix = (byte) decoder.saved_model.getTransparentPixel();
                     for( int i = 0; i < global_width * global_height; i ++ )
                         decoder.saved_image[i] = tpix;
                 }
