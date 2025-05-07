@@ -25,6 +25,7 @@
 
 package jdk.internal.lang.stable;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -33,6 +34,8 @@ import jdk.internal.vm.annotation.ForceInline;
 import sun.reflect.misc.ReflectUtil;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -196,6 +199,15 @@ import java.util.function.ToLongFunction;
         }
     }
  * }
+ * There is a convenience method for this idiomatic case that looks like this:
+ * {@snippet lang=java:
+
+        private static final ToIntFunction<MhFoo> HASH_UPDATER =
+                StableFieldUpdater.ofInt(MethodHandles.lookup(), "hash", "hashCodeFor"));
+ * }
+ * This will use the provided {@link MethodHandles#lookup()} to look up the field
+ * {@code hash} and also use the same lookup to look up a static method that takes
+ * a {@code MhFoo} and returns an {@code int}.
  *
  * The provided {@code underlying} function must not recurse or the result of the
  * operation is unspecified.
@@ -205,6 +217,37 @@ public final class StableFieldUpdater {
     private StableFieldUpdater() {}
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    /**
+     * {@return a function that lazily sets the field named {@code fieldName} by invoking
+     *          the static method in the {@link MethodHandles.Lookup#lookupClass()}
+     *          named {@code staticUnderlyingMethodName} if the field was not previously
+     *          set. Otherwise, the function returns the set field value}
+     * <p>
+     * If the {@code staticUnderlyingMethodName} returns zero, the value is replaced with
+     * {@code -1} which is then stored in the field with the provided {@code fieldName}.
+     *
+     * @param lookup                     used to reflectively lookup entities
+     * @param fieldName                  the name of the lazily set field (of type {@code int})
+     * @param staticUnderlyingMethodName the name of the method to invoke when computing
+     *                                   the hash value (invoked at most once)
+     * @param <T>                        target type
+     * @throws NullPointerException     if any of the provided parameters are {@code null}
+     * @throws IllegalArgumentException if no {@code int} field can be found using the
+     *                                  provided {@code lookup} and {@code fieldName}
+     * @throws IllegalArgumentException if no {@code int} function can be found using the
+     *                                  provided {@code lookup} and
+     *                                  {@code staticUnderlyingMethodName} where the
+     *                                  single method parameter is of type {@code T}.
+     */
+    public static <T> ToIntFunction<T> ofInt(MethodHandles.Lookup lookup,
+                                             String fieldName,
+                                             String staticUnderlyingMethodName) {
+        return ofInt(
+                MhUtil.findVarHandle(lookup, fieldName, int.class),
+                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(int.class, lookup.lookupClass())),
+                -1);
+    }
 
     public static <T> ToIntFunction<T> ofInt(VarHandle accessor,
                                              MethodHandle underlying,
@@ -227,6 +270,37 @@ public final class StableFieldUpdater {
 
         final long offset = offset(holderType, fieldName, int.class, Reflection.getCallerClass());
         return new StableIntFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+    }
+
+    /**
+     * {@return a function that lazily sets the field named {@code fieldName} by invoking
+     *          the static method in the {@link MethodHandles.Lookup#lookupClass()}
+     *          named {@code staticUnderlyingMethodName} if the field was not previously
+     *          set. Otherwise, the function returns the set field value}
+     * <p>
+     * If the {@code staticUnderlyingMethodName} returns zero, the value is replaced with
+     * {@code 1L<<32} which is then stored in the field with the provided {@code fieldName}.
+     *
+     * @param lookup                     used to reflectively lookup entities
+     * @param fieldName                  the name of the lazily set field (of type {@code long})
+     * @param staticUnderlyingMethodName the name of the method to invoke when computing
+     *                                   the hash value (invoked at most once)
+     * @param <T>                        target type
+     * @throws NullPointerException      if any of the provided parameters are {@code null}
+     * @throws IllegalArgumentException  if no {@code int} field can be found using the
+     *                                   provided {@code lookup} and {@code fieldName}
+     * @throws IllegalArgumentException if no {@code long} function can be found using the
+     *                                  provided {@code lookup} and
+     *                                  {@code staticUnderlyingMethodName} where the
+     *                                  single method parameter is of type {@code T}.
+     */
+    public static <T> ToLongFunction<T> ofLong(MethodHandles.Lookup lookup,
+                                               String fieldName,
+                                               String staticUnderlyingMethodName) {
+        return ofLong(
+                MhUtil.findVarHandle(lookup, fieldName, long.class),
+                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(long.class, lookup.lookupClass())),
+                1L << 31);
     }
 
     public static <T> ToLongFunction<T> ofLong(VarHandle accessor,

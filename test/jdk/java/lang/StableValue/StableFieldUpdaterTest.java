@@ -195,6 +195,37 @@ final class StableFieldUpdaterTest {
 
     }
 
+    static final class SimpleMhFoo implements HasHashField {
+
+        private static final ToIntFunction<SimpleMhFoo> UPDATER =
+                StableFieldUpdater.ofInt(MethodHandles.lookup(), "hash", "computeHash");
+        
+        private final String string;
+
+        int hash;
+        long dummy;
+
+        public SimpleMhFoo(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public int hashCode() {
+            return UPDATER.applyAsInt(this);
+        }
+
+        @Override
+        public long hash() {
+            return hash;
+        }
+
+        // Used reflectively
+        private static int computeHash(SimpleMhFoo target) {
+            return target.string.hashCode();
+        }
+
+    }
+
     static final class LongMhFoo implements HasHashField {
 
         private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(long.class));
@@ -238,7 +269,8 @@ final class StableFieldUpdaterTest {
                 LongFoo::new,
                 MhFoo::new,
                 LongMhFoo::new,
-                InheritingFoo::new
+                InheritingFoo::new,
+                SimpleMhFoo::new
         );
     }
 
