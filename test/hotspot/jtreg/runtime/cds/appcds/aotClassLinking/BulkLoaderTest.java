@@ -137,7 +137,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load,cds+class=debug",
+                "-Xlog:cds,aot+load,cds+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
