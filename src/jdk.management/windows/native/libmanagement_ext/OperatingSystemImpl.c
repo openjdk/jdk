@@ -50,8 +50,7 @@
 #include <process.h>
 #pragma warning(pop)
 
-#include <sys/types.h>
-#include <sys/timeb.h>
+#include <sysinfoapi.h>
 
 typedef unsigned __int32 juint;
 typedef unsigned __int64 julong;
@@ -994,9 +993,7 @@ bindPdhFunctionPointers(HMODULE h) {
  */
 static int
 getPerformanceData(UpdateQueryP query, HCOUNTER c, PDH_FMT_COUNTERVALUE* value, DWORD format) {
-    struct _timeb t;
-    _ftime_s(&t);
-    uint64_t now = (t.time * 1000) + t.millitm;
+    uint64_t now = GetTickCount64();
 
     /*
      * Need to limit how often we update the query
