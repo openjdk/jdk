@@ -24,12 +24,18 @@
 /* @test
  * @summary Basic tests for StableFieldUpdater implementations
  * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.invoke
  * @run junit StableFieldUpdaterTest
  */
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.lang.stable.StableFieldUpdater;
 import org.junit.jupiter.api.Test;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.util.function.ToIntFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +58,15 @@ final class StableFieldUpdaterTest {
     @Test
     void foo() {
         var foo = new Foo(STRING);
+        assertEquals(0, foo.hash);
+        assertEquals(STRING.hashCode(), foo.hashCode());
+        assertEquals(STRING.hashCode(), foo.hash);
+
+    }
+
+    @Test
+    void mhFoo() {
+        var foo = new MhFoo(STRING);
         assertEquals(0, foo.hash);
         assertEquals(STRING.hashCode(), foo.hashCode());
         assertEquals(STRING.hashCode(), foo.hash);
@@ -129,5 +144,30 @@ final class StableFieldUpdaterTest {
         }
     }
 
+    static final class MhFoo {
+
+        private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(int.class));
+
+        private static final ToIntFunction<MhFoo> UPDATER =
+                StableFieldUpdater.ofInt(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", int.class), HASH_MH, ZERO_REPLACEMENT);
+        private final String string;
+
+        int hash;
+        long dummy;
+
+        public MhFoo(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public int hashCode() {
+            return UPDATER.applyAsInt(this);
+        }
+
+        public int hash0() {
+            return string.hashCode();
+        }
+
+    }
 
 }

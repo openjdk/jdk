@@ -32,6 +32,10 @@ import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.reflect.misc.ReflectUtil;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
@@ -152,6 +156,24 @@ public final class StableFieldUpdater {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    public static <T> ToIntFunction<T> ofInt(VarHandle accessor,
+                                             MethodHandle underlying,
+                                             int zeroReplacement) {
+        Objects.requireNonNull(accessor);
+        Objects.requireNonNull(underlying);
+
+        if (accessor.varType() != int.class) {
+            throw new IllegalArgumentException("Illegal accessor: " + accessor);
+        }
+        if (underlying.type().returnType() != int.class || underlying.type().parameterCount() != 1) {
+            throw new IllegalArgumentException("Illegal underlying function: " + underlying);
+        }
+        if (!underlying.type().parameterType(0).equals(Object.class)) {
+            underlying = underlying.asType(underlying.type().changeParameterType(0, Object.class));
+        }
+        return new StableIntFieldUpdaterVarHandle<>(accessor, underlying, zeroReplacement);
+    }
+
     @CallerSensitive
     public static <T> ToIntFunction<T> ofInt(Class<T> holderType,
                                              String fieldName,
@@ -246,6 +268,39 @@ public final class StableFieldUpdater {
                             v = zeroReplacement;
                         }
                         UNSAFE.putIntRelease(t, offset, v);
+                    }
+                }
+            }
+            return v;
+        }
+    }
+
+
+    private record StableIntFieldUpdaterVarHandle<T>(VarHandle accessor,
+                                                     MethodHandle underlying,
+                                                     int zeroReplacement) implements ToIntFunction<T> {
+
+        @ForceInline
+        @Override
+        public int applyAsInt(T t) {
+            // Plain semantics suffice here as we are not dealing with a reference (for
+            // a reference, the internal state initialization can be reordered with
+            // other store ops). JLS (24) 17.4 states that 64-bit fields tear under
+            // plain memory semantics. But, `int` is 32-bit.
+            int v = (int) accessor.get(t);
+            if (v == 0) {
+                synchronized (t) {
+                    v = (int) accessor.getAcquire(t);
+                    if (v == 0) {
+                        try {
+                            v = (int) underlying.invokeExact(t);
+                        } catch (Throwable e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (v == 0) {
+                            v = zeroReplacement;
+                        }
+                        accessor.setRelease(t, v);
                     }
                 }
             }
