@@ -146,13 +146,15 @@ public class PostImageScriptTest {
                     final Path runtimeBinDir = runtimeDir.resolve("bin");
 
                     if (TKit.isWindows()) {
-                        JPackageUserScript.POST_IMAGE.create(cmd, List.of(
-                                WinGlobals.JS_SHELL.expr(),
-                                WinGlobals.JS_FS.expr(),
+                        final List<String> script = new ArrayList<>();
+                        script.addAll(WinGlobals.JS_SHELL.expr());
+                        script.addAll(WinGlobals.JS_FS.expr());
+                        script.addAll(List.of(
                                 "WScript.Echo('PWD: ' + fs.GetFolder(shell.CurrentDirectory).Path)",
                                 String.format("WScript.Echo('Probe directory: %s')", runtimeBinDir),
                                 String.format("fs.GetFolder('%s')", runtimeBinDir.toString().replace('\\', '/'))
                         ));
+                        JPackageUserScript.POST_IMAGE.create(cmd, script);
                     } else {
                         JPackageUserScript.POST_IMAGE.create(cmd, List.of(
                                 "set -e",
