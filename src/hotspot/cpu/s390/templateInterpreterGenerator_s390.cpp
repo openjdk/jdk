@@ -637,6 +637,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   Register sp_before_i2c_extension = Z_bcp;
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ z_lg(sp_before_i2c_extension, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  __ z_slag(sp_before_i2c_extension, sp_before_i2c_extension, Interpreter::logStackElementSize);
+  __ z_agr(sp_before_i2c_extension, Z_fp);
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
