@@ -449,7 +449,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
         if (key instanceof PBEKey pbeKey) {
             // make sure key info matches key type
-            KeyInfo ki = getKeyInfo(keyAlgo);
+            KeyInfo ki = (keyAlgo == svcAlgo ? si : getKeyInfo(keyAlgo));
             if (ki instanceof PBEKeyInfo pbeKi) {
                 PBEKeySpec keySpec = getPbeKeySpec(pbeKey);
                 try {
