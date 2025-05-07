@@ -24,13 +24,17 @@
 /* @test
  * @summary Basic tests for StableFieldUpdaterExampleTest examples in javadoc
  * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.invoke
  * @run junit StableFieldUpdaterExampleTest
  */
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.lang.stable.StableFieldUpdater;
 import org.junit.jupiter.api.Test;
 
 import java.lang.Override;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -146,7 +150,7 @@ final class StableFieldUpdaterExampleTest {
 
         private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
                 StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
-                        l -> (l.bar == null && l.baz == null) ? 0 : Objects.hash(l.bar, l.baz), 1L << 32);
+                        LazySpecifiedFoo::hashCodeFor, 1L << 32);
 
         @Stable
         private long hash;
@@ -166,6 +170,52 @@ final class StableFieldUpdaterExampleTest {
         @Override
         public int hashCode() {
             return (int) HASH_UPDATER.applyAsLong(this);
+        }
+
+        static long hashCodeFor(LazySpecifiedFoo foo) {
+            return (foo.bar == null && foo.baz == null) ? 0 : Objects.hash(foo.bar, foo.baz);
+        }
+
+    }
+
+    static
+
+    public final class MhFoo {
+
+        private final Bar bar;
+        private final Baz baz;
+
+        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+        private static final ToIntFunction<MhFoo> HASH_UPDATER =
+                StableFieldUpdater.ofInt(
+                        MhUtil.findVarHandle(LOOKUP, "hash", int.class),
+                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)),
+                        -1);
+
+        @Stable
+        private int hash;
+
+        public MhFoo(Bar bar, Baz baz) {
+            this.bar = bar;
+            this.baz = baz;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Foo that
+                    && Objects.equals(this.bar, that.bar)
+                    && Objects.equals(this.baz, that.baz);
+        }
+
+        @Override
+        public int hashCode() {
+            return HASH_UPDATER.applyAsInt(this);
+        }
+
+        // Used reflectively
+        static int hashCodeFor(MhFoo foo) {
+            return Objects.hash(foo.bar, foo.baz);
         }
     }
 
