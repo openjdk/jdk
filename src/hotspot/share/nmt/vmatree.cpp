@@ -84,6 +84,20 @@ VMATree::StateType VMATree::get_new_state(const StateType ex, const RequestInfo&
   return result[op][state_to_index(ex)];
 }
 
+MemTag VMATree::get_new_tag(const MemTag ex, const RequestInfo& req) const {
+  switch(req.op) {
+    case StateType::Released:
+      return mtNone;
+    case StateType::Reserved:
+      return req.use_tag_inplace ? ex : req.tag;
+    case StateType::Committed:
+      return req.use_tag_inplace ? ex : req.tag;
+    default:
+      break;
+  }
+  return mtNone;
+}
+
 void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
                                    const MemTag t1,
                                    const StateType& ex,
@@ -115,7 +129,7 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
                                       };
   SingleDiff::delta commit[4][3*2] = {// Rl    Rs     C
                                         {0,0,  0,0, -a,0 },    // op == Release
-                                        {0,a,  0,a, -a,0 },    // op == Reserve
+                                        {0,0,  0,0, -a,0 },    // op == Reserve
                                         {0,a,  0,a, -a,a },    // op == Commit
                                         {0,0,  0,0, -a,0 }     // op == Uncommit
                                      };
@@ -146,7 +160,7 @@ void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req
   SIndex    existing_commit_callstack   = exSt.committed_stack();
 
   StateType new_state                   = get_new_state(existing_state, req);
-  MemTag    new_tag                     = req.use_tag_inplace ? n1->val().out.mem_tag() : req.tag;
+  MemTag    new_tag                     = get_new_tag(n1->val().out.mem_tag(), req);
   SIndex    new_reserve_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
   SIndex    new_commit_callstack        = get_new_commit_callstack(existing_commit_callstack, existing_state, req);
 

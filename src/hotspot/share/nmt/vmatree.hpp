@@ -97,6 +97,16 @@ private:
 
   public:
     IntervalState() : type_tag{0,0}, _reserved_stack(NativeCallStackStorage::invalid), _committed_stack(NativeCallStackStorage::invalid) {}
+    IntervalState(const StateType type,
+                  const MemTag mt,
+                  const NativeCallStackStorage::StackIndex res_stack,
+                  const NativeCallStackStorage::StackIndex com_stack) {
+      assert(!(type == StateType::Released) || mt == mtNone, "Released state-type must have memory tag mtNone");
+      type_tag[0] = static_cast<uint8_t>(type);
+      type_tag[1] = static_cast<uint8_t>(mt);
+      _reserved_stack = res_stack;
+      _committed_stack = com_stack;
+    }
     IntervalState(const StateType type, const RegionData data) {
       assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
@@ -206,20 +216,6 @@ private:
       return state.in;
     }
   };
-  struct RequestInfo {
-    position A, B;
-    StateType op;
-    MemTag tag;
-    SIndex callstack;
-    bool use_tag_inplace;
-    int op_to_index() const {
-      return
-            op == StateType::Released ? 0 :
-            op == StateType::Reserved && !use_tag_inplace ? 1 :
-            op == StateType::Committed ? 2 :
-            op == StateType::Reserved && use_tag_inplace ? 3 : -1;
-    }
-  };
 
 public:
   VMATree() : _tree() {}
@@ -250,9 +246,25 @@ public:
 #endif
   };
 
+  struct RequestInfo {
+    position A, B;
+    StateType op;
+    MemTag tag;
+    SIndex callstack;
+    bool use_tag_inplace;
+    int op_to_index() const {
+      return
+            op == StateType::Released ? 0 :
+            op == StateType::Reserved && !use_tag_inplace ? 1 :
+            op == StateType::Committed ? 2 :
+            op == StateType::Reserved && use_tag_inplace ? 3 : -1;
+    }
+  };
+
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
   StateType get_new_state(const StateType existinting_state, const RequestInfo& req) const;
+  MemTag get_new_tag(const MemTag existinting_tag, const RequestInfo& req) const;
   SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   SIndex get_new_commit_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   void compute_summary_diff(const SingleDiff::delta region_size, const MemTag t1, const StateType& ex, const RequestInfo& req, const MemTag new_tag, SummaryDiff& diff) const;

@@ -184,6 +184,46 @@ public:
     NativeCallStackStorage::StackIndex com_si[NodeCount + 1];
   };
 
+  using State = VMATree::StateType;
+  using SIndex = VMATree::SIndex;
+  enum OpType { Rel, Res, Com, ComF, Uncom };
+
+  struct UpdateCallInfo {
+    VMATree::IntervalState ex_st;
+    VMATree::RequestInfo req;
+    VMATree::IntervalState new_st;
+    int reserve[2], commit[2];
+  };
+
+  void call_update_region(const UpdateCallInfo upd) {
+    VMATree::TreapNode n1{upd.req.A, {}, 0}, n2{upd.req.B, {}, 0};
+    n1.val().out= upd.ex_st;
+    n2.val().in = n1.val().out;
+    Tree tree;
+    VMATree::SummaryDiff diff;
+    tree.update_region(&n1, &n2, upd.req, diff);
+    int from = NMTUtil::tag_to_index(upd.ex_st.mem_tag());
+    int   to = NMTUtil::tag_to_index(upd.new_st.mem_tag());
+    stringStream ss;
+    ss.print("Ex. State: %d, op: %d, use-tag:%d, from==to: %d",
+             (int)upd.ex_st.type(), (int)upd.req.op_to_index(), upd.req.use_tag_inplace, from == to);
+    const char* failed_case = ss.base();
+    EXPECT_EQ(n1.val().out.type(), upd.new_st.type()) << failed_case;
+    EXPECT_EQ(n1.val().out.mem_tag(), upd.new_st.mem_tag()) << failed_case;
+    EXPECT_EQ(n1.val().out.reserved_stack(), upd.new_st.reserved_stack()) << failed_case;
+    EXPECT_EQ(n1.val().out.committed_stack(), upd.new_st.committed_stack()) << failed_case;
+
+    if (from == to) {
+      EXPECT_EQ(diff.tag[from].reserve, upd.reserve[0] + upd.reserve[1]) << failed_case;
+      EXPECT_EQ(diff.tag[from].commit, upd.commit[0] + upd.commit[1]) << failed_case;
+    } else {
+      EXPECT_EQ(diff.tag[from].reserve, upd.reserve[0]) << failed_case;
+      EXPECT_EQ(diff.tag[from].commit, upd.commit[0]) << failed_case;
+      EXPECT_EQ(diff.tag[to].reserve, upd.reserve[1]) << failed_case;
+      EXPECT_EQ(diff.tag[to].commit, upd.commit[1]) << failed_case;
+    }
+  }
+
   template<int N>
   void create_tree(Tree& tree, ExpectedTree<N>& et) {
     using SIndex = NativeCallStackStorage::StackIndex;
@@ -2701,4 +2741,48 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows19to23) {
     check_tree(tree, et, __LINE__);
   }
 
+}
+
+TEST_VM_F(NMTVMATreeTest, UpdateRegionTest) {
+  using State = VMATree::StateType;
+  using SIndex = VMATree::SIndex;
+  SIndex ES = NativeCallStackStorage::invalid;
+  SIndex s0 = si[0];
+  SIndex s1 = si[1];
+  SIndex s2 = si[2];
+
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
+  const int a = 100;
+  const MemTag ReqTag = mtTest;
+  const VMATree::RequestInfo       ReleaseRequest{0, a, Rl, mtNone, ES, false};
+  const VMATree::RequestInfo       ReserveRequest{0, a, Rs, ReqTag, s2, false};
+  const VMATree::RequestInfo        CommitRequest{0, a,  C, ReqTag, s2, false};
+  const VMATree::RequestInfo      UncommitRequest{0, a, Rs, mtNone, ES, true};
+  const VMATree::RequestInfo CopyTagCommitRequest{0, a,  C, ReqTag, s2, true};
+                              //  existing state           request              expected state     expected diff
+                              // st   tag    stacks                           st   tag    stacks   reserve commit
+                              // --  ------  ------  ----------------------   --  ------  ------   ------  -----
+  UpdateCallInfo  call_info[]={{{Rl, mtNone, ES, ES},        ReleaseRequest, {Rl, mtNone, ES, ES}, {0,  0}, {0,  0}},
+                               {{Rl, mtNone, ES, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  a}, {0,  0}},
+                               {{Rl, mtNone, ES, ES},         CommitRequest, { C, ReqTag, s2, s2}, {0,  a}, {0,  a}},
+                               {{Rl, mtNone, ES, ES},  CopyTagCommitRequest, { C, mtNone, s2, s2}, {0,  a}, {0,  a}},
+                               {{Rl, mtNone, ES, ES},       UncommitRequest, {Rl, mtNone, ES, ES}, {0,  0}, {0,  0}},
+                               {{Rs,   mtGC, s0, ES},        ReleaseRequest, {Rl, mtNone, ES, ES}, {-a, 0}, {0,  0}},
+                               {{Rs,   mtGC, s0, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {-a, a}, {0,  0}}, // diff tag
+                               {{Rs, mtTest, s0, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  0}, {0,  0}}, // same tag
+                               {{Rs,   mtGC, s0, ES},         CommitRequest, { C, ReqTag, s0, s2}, {0,  0}, {0,  a}},
+                               {{Rs,   mtGC, s0, ES},  CopyTagCommitRequest, { C,   mtGC, s0, s2}, {0,  0}, {0,  a}},
+                               {{Rs,   mtGC, s0, ES},       UncommitRequest, {Rs,   mtGC, s0, ES}, {0,  0}, {0,  0}},
+                               {{ C,   mtGC, s0, s1},        ReleaseRequest, {Rl, mtNone, ES, ES}, {-a, 0}, {-a, 0}},
+                               {{ C,   mtGC, s0, s1},        ReserveRequest, {Rs, ReqTag, s2, ES}, {-a, a}, {-a, 0}}, // diff tag
+                               {{ C, mtTest, s0, s1},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  0}, {-a, 0}}, // same tag
+                               {{ C,   mtGC, s0, s1},         CommitRequest, { C, ReqTag, s0, s2}, {0,  0}, {-a, a}},
+                               {{ C,   mtGC, s0, s1},  CopyTagCommitRequest, { C,   mtGC, s0, s2}, {0,  0}, {-a, a}},
+                               {{ C,   mtGC, s0, s1},       UncommitRequest, {Rs,   mtGC, s0, ES}, {0,  0}, {-a, 0}}
+                              };
+  for (auto ci : call_info) {
+    call_update_region(ci);
+  }
 }
