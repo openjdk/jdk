@@ -337,9 +337,8 @@ define SetupJavaCompilationBody
   ifneq ($$($1_EXCLUDE_PATTERNS), )
     # We must not match the exclude pattern against the src roots, so first
     # strip the src prefixes from the absolute file paths in SRCS.
-    $1_SRCS_WITHOUT_ROOTS := $$($1_SRCS)
-    $$(foreach i, $$($1_SRC), $$(eval $1_SRCS_WITHOUT_ROOTS := $$(patsubst \
-        $$i/%,%, $$($1_SRCS_WITHOUT_ROOTS))))
+    $1_SRCS_WITHOUT_ROOTS := $$(foreach i, $$($1_SRC), \
+        $$(patsubst $$i/%,%, $$(filter $$i/%, $$($1_SRCS))))
     $1_EXCLUDE_PATTERNS_WITHOUT_ROOTS := $$(call containing, \
         $$($1_EXCLUDE_PATTERNS), $$($1_SRCS_WITHOUT_ROOTS))
     # The add back all possible src prefixes; this will generate more paths
