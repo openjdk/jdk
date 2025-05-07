@@ -22,7 +22,7 @@
  *
  */
 
-// This class should fail with the new verifier will be verified by the old verifier.
+// This class should be rejected by the new verifier, but will be accepted by the old verifier.
 
 class VerifierFailOver_Helper {
   0xCAFEBABE;
