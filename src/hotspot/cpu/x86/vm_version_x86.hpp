@@ -455,7 +455,7 @@ protected:
     friend class JVMCIVMStructs;
 
    private:
-    uint64_t _features_bitmap[2]; // tracks up to 128 features
+    uint64_t _features_bitmap[(MAX_CPU_FEATURES >> 6) + 1];
 
     STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte > MAX_CPU_FEATURES);
 
