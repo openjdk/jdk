@@ -89,7 +89,7 @@ class MemTracker : AllStatic {
     if (enabled()) {
       ptr = MallocTracker::record_malloc(mem_base, size, mem_tag, stack, old_base);
     }
-    NMT_MemoryLogRecorder::record_malloc(mem_tag, size, mem_base, &stack, old_base);
+    NMT_MemoryLogRecorder::record_alloc(mem_tag, size, mem_base, &stack, old_base);
     return ptr;
   }
 

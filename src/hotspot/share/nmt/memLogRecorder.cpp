@@ -165,13 +165,13 @@ void NMT_LogRecorder::logThreadName() {
         found = true;
         if (_threads_names[i].name[0] == 0) {
           NMT_LogRecorder::get_thread_name(_threads_names[i].name);
-          // fprintf(stderr, " got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
+          // tty->print(" got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
         }
         break;
       }
     }
     if (!found) {
-      // fprintf(stderr, " added:%6ld:%lx [%6zu]\n", tid, tid, _threads_names_size);
+      // tty->print(" added:%6ld:%lx [%6zu]\n", tid, tid, _threads_names_size);
       size_t i = _threads_names_size-1;
       _threads_names[i].thread = tid;
       _threads_names[i].name[0] = 0;
@@ -216,21 +216,21 @@ static int _prepare_log_file(const char* pattern, const char* default_pattern) {
 
 static void _write_and_check(int fd, const void *buf, size_t count) {
   if (!IS_VALID_FD(fd)) {
-    fprintf(stderr, "write_and_check(%d) ERROR\n", fd);
+    tty->print("write_and_check(%d) ERROR\n", fd);
     //assert(false, "fd: %d", fd);
   }
   errno = 0;
   ssize_t written = (ssize_t)::write(fd, buf, count);
   if ((long)written != (long)count) {
     int e = errno;
-    fprintf(stderr, "write_and_check(%d) ERROR:[%s]\n", fd, os::strerror(e));
+    tty->print("write_and_check(%d) ERROR:[%s]\n", fd, os::strerror(e));
     //assert((long)written != (long)count, "written != count [%ld,%ld]", (long)written, (long)count);
   }
 }
 
 static int _close_and_check(int fd) {
   if (!IS_VALID_FD(fd)) {
-    fprintf(stderr, "close_and_check(%d) ERROR\n", fd);
+    tty->print("close_and_check(%d) ERROR\n", fd);
     return fd;
   }
   if (fd > STDERR_FILENO) {
@@ -238,7 +238,7 @@ static int _close_and_check(int fd) {
     int status = close(fd);
     if (status != 0) {
       int e = errno;
-      fprintf(stderr, "ERROR:[%s]\n", os::strerror(e));
+      tty->print("ERROR:[%s]\n", os::strerror(e));
       assert(status != 0, "close(%d) returned %d", fd, status);
       return fd;
     } else {
@@ -302,7 +302,7 @@ static file_info _open_file_and_read(const char* pattern, const char* path, int 
 }
 
 void NMT_MemoryLogRecorder::initialize(long int limit) {
-  // fprintf(stderr, "> NMT_MemoryLogRecorder::initialize(%ld, %ld)\n", limit, sizeof(Entry));
+  // tty->print("> NMT_MemoryLogRecorder::initialize(%ld, %ld)\n", limit, sizeof(Entry));
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
   recorder->init();
   NMTRecorder_Locker locker;
@@ -319,33 +319,33 @@ void NMT_MemoryLogRecorder::initialize(long int limit) {
 
 void NMT_MemoryLogRecorder::finish(void) {
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
-  // fprintf(stderr, "NMT_MemoryLogRecorder::finish() %p\n", NMT_MemoryLogRecorder::instance());
+  // tty->print("NMT_MemoryLogRecorder::finish() %p\n", NMT_MemoryLogRecorder::instance());
   if (!recorder->done()) {
     NMTRecorder_Locker locker;
 
     volatile int log_fd = recorder->_log_fd;
     recorder->_log_fd = -1;
-    // fprintf(stderr, " log_fd:%d\n", log_fd);
+    // tty->print(" log_fd:%d\n", log_fd);
     log_fd = _close_and_check(log_fd);
-    // fprintf(stderr, " log_fd:%d\n", log_fd);
+    // tty->print(" log_fd:%d\n", log_fd);
 
     int threads_fd = _prepare_log_file(nullptr, THREADS_LOG_FILE);
-    // fprintf(stderr, " threads_fd:%d\n", threads_fd);
+    // tty->print(" threads_fd:%d\n", threads_fd);
     if (threads_fd != -1) {
       _write_and_check(threads_fd, recorder->_threads_names, (recorder->_threads_names_size-1)*sizeof(thread_name_info));
       threads_fd = _close_and_check(threads_fd);
-      // fprintf(stderr, " threads_fd:%d\n", threads_fd);
+      // tty->print(" threads_fd:%d\n", threads_fd);
     }
 
     int info_fd = _prepare_log_file(nullptr, INFO_LOG_FILE);
-    // fprintf(stderr, " info_fd:%d\n", info_fd);
+    // tty->print(" info_fd:%d\n", info_fd);
     if (info_fd != -1) {
       size_t level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
       _write_and_check(info_fd, &level, sizeof(level));
       size_t overhead = MemTracker::overhead_per_malloc();
       _write_and_check(info_fd, &overhead, sizeof(overhead));
       info_fd = _close_and_check(info_fd);
-      // fprintf(stderr, " info_fd:%d\n", info_fd);
+      // tty->print(" info_fd:%d\n", info_fd);
     }
 
     recorder->_done = true;
@@ -354,7 +354,7 @@ void NMT_MemoryLogRecorder::finish(void) {
 }
 
 void NMT_MemoryLogRecorder::replay(const int pid) {
-  // fprintf(stderr, "NMT_MemoryLogRecorder::replay(%d)\n", pid);
+  // tty->print("NMT_MemoryLogRecorder::replay(%d)\n", pid);
   static const char *path = ".";
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
 
@@ -445,7 +445,7 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
             break;
           }
           if (mem_tag == mtNone) {
-            fprintf(stderr, "REALLOC?\n");
+            tty->print("REALLOC?\n");
           }
         }
       } else if (IS_MALLOC(e)) {
@@ -460,7 +460,7 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
           actual = (long int)e->actual;
           pointers[i] = ptr;
           if (mem_tag == mtNone) {
-            fprintf(stderr, "MALLOC?\n");
+            tty->print("MALLOC?\n");
           }
       } else if (IS_FREE(e)) {
         // the recorded "free" was captured in a different process,
@@ -484,10 +484,10 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
           }
         }
         if (mem_tag == mtNone) {
-          fprintf(stderr, "FREE?\n");
+          tty->print("FREE?\n");
         }
       } else {
-        fprintf(stderr, "HUH?\n");
+        tty->print("HUH?\n");
         os::exit(-1);
       }
       requestedTotal += requested;
@@ -511,7 +511,7 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
     _write_and_check(benchmark_log_fd, &actual, sizeof(actual));
     char type = (IS_MALLOC(e) * 1) | (IS_REALLOC(e) * 2) | (IS_FREE(e) * 4);
     _write_and_check(benchmark_log_fd, &type, sizeof(type));
-    // fprintf(stderr, " %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALLOC(e), IS_REALLOC(e), IS_FREE(e));
+    // tty->print(" %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALLOC(e), IS_REALLOC(e), IS_FREE(e));
   }
 
   // present the results
@@ -523,15 +523,15 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
   }
   long int overhead_malloc = actualTotal - requestedTotal - overhead_NMT;
   double overheadPercentage_malloc = 100.0 * (double)overhead_malloc / (double)requestedTotal;
-  fprintf(stderr, "\n\n\nmalloc summary [recorded NMT mode \"%s\"]:\n\n", NMTUtil::tracking_level_to_string(recorded_nmt_level));
-  fprintf(stderr, "time:" LD_FORMAT "[ns]\n", nanoseconds);
+  tty->print("\n\n\nmalloc summary [recorded NMT mode \"%s\"]:\n\n", NMTUtil::tracking_level_to_string(recorded_nmt_level));
+  tty->print("time:" LD_FORMAT "[ns]\n", nanoseconds);
   if (!timeOnly) {
     double overheadPercentage_NMT = 100.0 * (double)overhead_NMT / (double)requestedTotal;
-    fprintf(stderr, "[samples:" LD_FORMAT "] [NMT headers:" LD_FORMAT "]\n", count, headers);
-    fprintf(stderr, "[malloc#:" LD_FORMAT "] [realloc#:" LD_FORMAT "] [free#:" LD_FORMAT "]\n", countMalloc, countRealloc, countFree);
-    fprintf(stderr, "memory requested:" LD_FORMAT " bytes, allocated:" LD_FORMAT " bytes\n", requestedTotal, actualTotal);
-    fprintf(stderr, "malloc overhead:" LD_FORMAT " bytes [%2.2f%%], NMT headers overhead:" LD_FORMAT " bytes [%2.2f%%]\n", overhead_malloc, overheadPercentage_malloc, overhead_NMT, overheadPercentage_NMT);
-    fprintf(stderr, "\n");
+    tty->print("[samples:" LD_FORMAT "] [NMT headers:" LD_FORMAT "]\n", count, headers);
+    tty->print("[malloc#:" LD_FORMAT "] [realloc#:" LD_FORMAT "] [free#:" LD_FORMAT "]\n", countMalloc, countRealloc, countFree);
+    tty->print("memory requested:" LD_FORMAT " bytes, allocated:" LD_FORMAT " bytes\n", requestedTotal, actualTotal);
+    tty->print("malloc overhead:" LD_FORMAT " bytes [%2.2f%%], NMT headers overhead:" LD_FORMAT " bytes [%2.2f%%]\n", overhead_malloc, overheadPercentage_malloc, overhead_NMT, overheadPercentage_NMT);
+    tty->print("\n");
   }
 
   // clean up
@@ -567,7 +567,7 @@ void NMT_MemoryLogRecorder::_record(MemTag mem_tag, size_t requested, address pt
       entry.thread = os::current_thread_id();
       entry.ptr = ptr;
       entry.old = old;
-      // fprintf(stderr, "record %p:%zu:%p\n", ptr, requested, old);fflush(stderr);
+      // tty->print("record %p:%zu:%p\n", ptr, requested, old);fflush(stderr);
       entry.requested = requested;
       entry.actual = 0;
       if (entry.requested > 0) {
@@ -605,31 +605,31 @@ void NMT_MemoryLogRecorder::record_free(void *ptr) {
   }
 }
 
-void NMT_MemoryLogRecorder::record_malloc(MemTag mem_tag, size_t requested, void* ptr, const NativeCallStack *stack, void* old) {
+void NMT_MemoryLogRecorder::record_alloc(MemTag mem_tag, size_t requested, void* ptr, const NativeCallStack *stack, void* old) {
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
   if (!recorder->done()) {
-    address resolved_ptr = (address)old;
+    address old_resolved_ptr = (address)old;
     if (old != nullptr) {
       if (MemTracker::enabled()) {
-        resolved_ptr = (address)old - NMT_HEADER_SIZE;
+        old_resolved_ptr = (address)old - NMT_HEADER_SIZE;
       }
     }
-    NMT_MemoryLogRecorder::_record(mem_tag, requested, (address)ptr, resolved_ptr, stack);
+    NMT_MemoryLogRecorder::_record(mem_tag, requested, (address)ptr, old_resolved_ptr, stack);
   }
 }
 
 void NMT_MemoryLogRecorder::print(Entry *e) {
   if (e == nullptr) {
-    fprintf(stderr, "nullptr\n");
+    tty->print("nullptr\n");
   } else {
     if (IS_FREE(e)) {
-      fprintf(stderr, "           FREE: ");
+      tty->print("           FREE: ");
     } else if (IS_REALLOC(e)) {
-      fprintf(stderr, "        REALLOC: ");
+      tty->print("        REALLOC: ");
     } else if (IS_MALLOC(e)) {
-      fprintf(stderr, "         MALLOC: ");
+      tty->print("         MALLOC: ");
     }
-    fprintf(stderr, "time:%15ld, thread:%6ld, ptr:%14p, old:%14p, requested:%8ld, actual:%8ld, mem_tag:%s\n", e->time, e->thread, e->ptr, e->old, e->requested, e->actual, NMTUtil::tag_to_name(NMTUtil::index_to_tag((int)e->mem_tag)));
+    tty->print("time:%15ld, thread:%6ld, ptr:%14p, old:%14p, requested:%8ld, actual:%8ld, mem_tag:%s\n", e->time, e->thread, e->ptr, e->old, e->requested, e->actual, NMTUtil::tag_to_name(NMTUtil::index_to_tag((int)e->mem_tag)));
   }
 }
 
@@ -647,7 +647,7 @@ void NMT_MemoryLogRecorder::print(Entry *e) {
 //}
 
 void NMT_VirtualMemoryLogRecorder::initialize(long int limit) {
-  // fprintf(stderr, "> NMT_VirtualMemoryLogRecorder::initialize(%ld, %ld)\n", limit, sizeof(Entry));
+  // tty->print("> NMT_VirtualMemoryLogRecorder::initialize(%ld, %ld)\n", limit, sizeof(Entry));
   NMTRecorder_Locker locker;
   NMT_VirtualMemoryLogRecorder *recorder = NMT_VirtualMemoryLogRecorder::instance();
   recorder->init();
@@ -668,7 +668,7 @@ void NMT_VirtualMemoryLogRecorder::finish(void) {
   if (!recorder->done()) {
       volatile int log_fd = recorder->_log_fd;
       recorder->_log_fd = -1;
-      // fprintf(stderr, " log_fd:%d\n", log_fd);
+      // tty->print(" log_fd:%d\n", log_fd);
       log_fd = _close_and_check(log_fd);
   }
 
@@ -685,7 +685,7 @@ void NMT_VirtualMemoryLogRecorder::finish(void) {
 }
 
 void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
-  // fprintf(stderr, "NMT_VirtualMemoryLogRecorder::replay(%d)\n", pid);
+  // tty->print("NMT_VirtualMemoryLogRecorder::replay(%d)\n", pid);
   static const char *path = ".";
 
   // open records file for reading the virtual memory allocations to "play back"
@@ -717,42 +717,42 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
     {
       switch (e->type) {
         case NMT_VirtualMemoryLogRecorder::Type::RESERVE:
-          // fprintf(stderr, "[record_virtual_memory_reserve(%p, %ld, %p, %hhu)\n", e->ptr, e->size, &stack, mem_tag);fflush(stderr);
+          // tty->print("[record_virtual_memory_reserve(%p, %ld, %p, %hhu)\n", e->ptr, e->size, &stack, mem_tag);fflush(stderr);
           MemTracker::record_virtual_memory_reserve(e->ptr, e->size, stack, mem_tag);
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::RELEASE:
-          // fprintf(stderr, "[record_virtual_memory_release(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
+          // tty->print("[record_virtual_memory_release(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
           MemTracker::record_virtual_memory_release(e->ptr, e->size);
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::UNCOMMIT:
-          // fprintf(stderr, "<record_virtual_memory_uncommit(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
+          // tty->print("<record_virtual_memory_uncommit(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
           MemTracker::record_virtual_memory_uncommit(e->ptr, e->size);
-          // fprintf(stderr, ">\n");fflush(stderr);
+          // tty->print(">\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::RESERVE_AND_COMMIT:
-          // fprintf(stderr, "[MemTracker::record_virtual_memory_reserve_and_commit\n");
+          // tty->print("[MemTracker::record_virtual_memory_reserve_and_commit\n");
           MemTracker::record_virtual_memory_reserve_and_commit(e->ptr, e->size, stack, mem_tag);
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::COMMIT:
-          // fprintf(stderr, "[record_virtual_memory_commit(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
+          // tty->print("[record_virtual_memory_commit(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
           MemTracker::record_virtual_memory_commit(e->ptr, e->size, stack);
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::SPLIT_RESERVED:
-          // fprintf(stderr, "[MemTracker::record_virtual_memory_split_reserved\n");
+          // tty->print("[MemTracker::record_virtual_memory_split_reserved\n");
           MemTracker::record_virtual_memory_split_reserved(e->ptr, e->size, e->size_split, mem_tag, NMTUtil::index_to_tag((int)e->mem_tag_split));
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         case NMT_VirtualMemoryLogRecorder::Type::TAG:
-          // fprintf(stderr, "[record_virtual_memory_type(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
+          // tty->print("[record_virtual_memory_type(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
           MemTracker::record_virtual_memory_tag(e->ptr, e->size, mem_tag);
-          // fprintf(stderr, "]\n");fflush(stderr);
+          // tty->print("]\n");fflush(stderr);
           break;
         default:
-          fprintf(stderr, "HUH?\n");
+          tty->print("HUH?\n");
           os::exit(-1);
           break;
       }
@@ -761,19 +761,9 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
     long int duration = (start > 0) ? (end - start) : 0;
     total += duration;
   }
-  fprintf(stderr, "\n\n\nVirtualMemoryTracker summary:\n\n\n");
-  fprintf(stderr, "time:" LD_FORMAT "[ns] [samples:" LD_FORMAT "]\n", total, count);
-//    if (count > 0) {
-//      nullStream bench_null;
-//      total = 0;
-//      for (off_t l = 0; l < 1; l++) {
-//        long int start = os::javaTimeNanos();
-//        VirtualMemoryTracker::Instance::print_self(tty);
-//        long int end = os::javaTimeNanos();
-//        long int duration = (start > 0) ? (end - start) : 0;
-//        total += duration;
-//      }
-//    }
+  tty->print("\n\n\nVirtualMemoryTracker summary:\n\n\n");
+  tty->print("time:" LD_FORMAT "[ns] [samples:" LD_FORMAT "]\n", total, count);
+
 
   _close_and_check(records_fi.fd);
 
@@ -781,8 +771,8 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
 }
 
 void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type type, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack) {
-//  fprintf(stderr, "NMT_VirtualMemoryLogRecorder::record (%s, %hhu, %hhu, %ld, %ld, %p, %p)\n",
-//          type_to_name(type), mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
+//  tty->print("NMT_VirtualMemoryLogRecorder::record (%d, %hhu, %hhu, %ld, %ld, %p, %p)\n",
+//          type, mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
   NMT_VirtualMemoryLogRecorder *recorder = NMT_VirtualMemoryLogRecorder::instance();
   if (!recorder->done()) {
     NMTRecorder_Locker locker;
@@ -810,7 +800,7 @@ void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type ty
           entry.stack[i] = stack->get_frame(i);
         }
       }
-      // fprintf(stderr, "recorder->_log_fd: %d\n", recorder->_log_fd);
+      // tty->print("recorder->_log_fd: %d\n", recorder->_log_fd);
       if (recorder->_log_fd != -1) {
         _write_and_check(recorder->_log_fd, &entry, sizeof(Entry));
       }
