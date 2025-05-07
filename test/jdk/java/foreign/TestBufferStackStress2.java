@@ -66,7 +66,7 @@ final class TestBufferStackStress2 {
         // If the VM is configured such that the main thread is virtual,
         // this stress test will not work as the main thread is always alive causing
         // us to wait forever for contraction.
-        // Hence, we will skipp this test if the main thread is virtual.
+        // Hence, we will skip this test if the main thread is virtual.
         if (Thread.currentThread().isVirtual()) {
             System.out.println("Skipped because the main thread is a virtual thread");
             return;
