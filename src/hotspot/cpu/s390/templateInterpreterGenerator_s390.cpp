@@ -1175,15 +1175,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->esp = Z_esp = z_ijava_state->monitors;
   __ add2reg(Z_esp, -frame::z_ijava_state_size, fp);
 
-  __ z_ldgr(Z_F1, Z_R1); // this could be removed, we are presering Z_R1 for handling locals,
-                         // Once that PR merges this could be changed. In between anyway we are not
-                         // in need for Z_R1's original content.
-
-  __ z_sgrk(Z_R1, Z_esp, fp);
-  __ z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
-  __ z_stg(Z_R1, _z_ijava_state_neg(monitors), fp);
-
-  __ z_lgdr(Z_R1, Z_F1);
+  __ z_sgrk(Z_R0, Z_esp, fp);
+  __ z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  __ z_stg(Z_R0, _z_ijava_state_neg(monitors), fp);
 
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
   __ z_stg(Z_esp, _z_ijava_state_neg(esp), fp);
