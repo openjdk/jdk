@@ -145,15 +145,15 @@ public class TestTemplate {
         // Lists get flattened into the body.
         var template = Template.make(() -> body(
             "start ",
-            Integer.valueOf(1),
-            Long.valueOf(2),
-            Double.valueOf(3.4),
-            Float.valueOf(5.6f),
+            Integer.valueOf(1), 1,
+            Long.valueOf(2), 2L,
+            Double.valueOf(3.4), 3.4,
+            Float.valueOf(5.6f), 5.6f,
             List.of(" ", 1, " and ", 2),
             " end"
         ));
         String code = template.withArgs().render();
-        checkEQ(code, "start 12L3.45.6f 1 and 2 end");
+        checkEQ(code, "start 112L2L3.43.45.6f5.6f 1 and 2 end");
     }
 
     public static void testWithOneArguments() {

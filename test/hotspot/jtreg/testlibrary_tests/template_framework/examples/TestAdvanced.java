@@ -150,13 +150,13 @@ public class TestAdvanced {
 
         // For each type, we choose a list of operators that do not throw exceptions.
         List<Type> types = List.of(
-            new Type("byte",   () -> GEN_BYTE.next(),   List.of("+", "-", "*", "&", "|", "^")),
-            new Type("char",   () -> GEN_CHAR.next(),   List.of("+", "-", "*", "&", "|", "^")),
-            new Type("short",  () -> GEN_SHORT.next(),  List.of("+", "-", "*", "&", "|", "^")),
-            new Type("int",    () -> GEN_INT.next(),    List.of("+", "-", "*", "&", "|", "^")),
-            new Type("long",   () -> GEN_LONG.next(),   List.of("+", "-", "*", "&", "|", "^")),
-            new Type("float",  () -> GEN_FLOAT.next(),  List.of("+", "-", "*", "/")),
-            new Type("double", () -> GEN_DOUBLE.next(), List.of("+", "-", "*", "/"))
+            new Type("byte",   GEN_BYTE::next,   List.of("+", "-", "*", "&", "|", "^")),
+            new Type("char",   GEN_CHAR::next,   List.of("+", "-", "*", "&", "|", "^")),
+            new Type("short",  GEN_SHORT::next,  List.of("+", "-", "*", "&", "|", "^")),
+            new Type("int",    GEN_INT::next,    List.of("+", "-", "*", "&", "|", "^")),
+            new Type("long",   GEN_LONG::next,   List.of("+", "-", "*", "&", "|", "^")),
+            new Type("float",  GEN_FLOAT::next,  List.of("+", "-", "*", "/")),
+            new Type("double", GEN_DOUBLE::next, List.of("+", "-", "*", "/"))
         );
 
         // Use the template with one argument and render it to a String.

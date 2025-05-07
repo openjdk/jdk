@@ -57,6 +57,7 @@ import java.util.List;
  * string with hashtag {@code #} "holes" that are then replaced by the template arguments and the
  * {@link #let} definitions.
  *
+ * <p>
  * {@snippet lang=java :
  * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> body(
  *     let("con1", generator.next()),
@@ -78,10 +79,12 @@ import java.util.List;
  * ));
  * }
  *
+ * <p>
  * To get an executable test, we define a class Template, which takes a list of types,
  * and calls the test template for each type and operator. We use the {@code TestFramework}
  * to call our {@code @Test} methods.
  *
+ * <p>
  * {@snippet lang=java :
  * var classTemplate = Template.make("types", (List<Type> types) -> body(
  *     let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
@@ -113,6 +116,7 @@ import java.util.List;
  * ));
  * }
  *
+ * <p>
  * Finally, we generate the list of types, and pass it to the class template:
  *
  * {@snippet lang=java :
@@ -130,6 +134,7 @@ import java.util.List;
  * return classTemplate.withArgs(types).render();
  * }
  *
+ * <p>
  * Once we rendered the source code to a String, we can compile it with the {@code CompileFramework}.
  *
  * <p>
@@ -411,15 +416,15 @@ public interface Template {
 
     /**
      * Creates a {@link TemplateBody} from a list of tokens, which can be {@link String}s,
-     * boxed primitive types (e.g. {@link Integer}), any {@link Token}, or {@link List}s
-     * of any of these.
+     * boxed primitive types (e.g. {@link Integer} or auto-boxed {@code int}), any {@link Token},
+     * or {@link List}s of any of these.
      *
      * {@snippet lang=java :
      * var template = Template.make(() -> body(
      *     """
      *     Multi-line string
      *     """,
-     *     "normal string ", Integer.valueOf(3), Float.valueOf(1.5f),
+     *     "normal string ", Integer.valueOf(3), 3, Float.valueOf(1.5f), 1.5f,
      *     List.of("abc", "def"),
      *     nestedTemplate.withArgs(42)
      * ));
