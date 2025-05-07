@@ -185,7 +185,7 @@ class NMT_MemoryLogRecorder : public NMT_LogRecorder {
 public:
   static void record_free(void *ptr) { // TODO
   }
-  static void record_malloc(MemTag mem_tag, size_t requested, void* ptr, const NativeCallStack *stack, void* old = nullptr) { // TODO
+  static void recordmalloc(MemTag mem_tag, size_t requested, void* ptr, const NativeCallStack *stack, void* old = nullptr) { // TODO
   }
 };
 

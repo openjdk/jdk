@@ -145,7 +145,14 @@ void NMT_LogRecorder::get_thread_name(char* buf) {
   if (pthread_main_np()) {
     strcpy(buf, "main");
   } else {
-    pthread_getname_np(pthread_self(), buf, MAXTHREADNAMESIZE);
+    fprintf(stderr, "\n\nThread: %p:%p\n", pthread_self(), Thread::current());
+    int err = pthread_getname_np(pthread_self(), buf, MAXTHREADNAMESIZE);
+    fprintf(stderr, "pthread_getname_np: %d:%zu:%s\n", err, strlen(buf), strlen(buf)>0 ? buf:"N/A");
+    if (Thread::current() != nullptr) {
+      fprintf(stderr, "Thread::current()->name(): %s\n", Thread::current()->name());
+    } else {
+      fprintf(stderr, "Thread::current()->name(): N/A\n");
+    }
   }
 #elif defined(LINUX)
   pthread_getname_np(pthread_self(), buf, MAXTHREADNAMESIZE);
