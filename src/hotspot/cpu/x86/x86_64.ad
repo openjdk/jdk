@@ -6270,10 +6270,10 @@ instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6298,14 +6298,14 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 // and parity flag bit is set if any of the operand is a NaN.
 instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveI (Binary cop cr) (Binary src2 src1)));
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6585,10 +6585,10 @@ instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP s
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6611,14 +6611,14 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 
 instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveP (Binary cop cr) (Binary src2 src1)));
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6784,10 +6784,10 @@ instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL s
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6810,14 +6810,14 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 
 instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveL (Binary cop cr) (Binary src2 src1)));
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
