@@ -136,11 +136,11 @@ private:
     long int mem_tag_split;
     size_t size;
     size_t size_split;
-    int type;
+    int operation;
   };
 
 public:
-  enum Type {
+  enum MemoryOperation {
     RESERVE,
     RELEASE,
     UNCOMMIT,
@@ -166,7 +166,7 @@ public:
   static void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag);
 
 private:
-  static void _record(NMT_VirtualMemoryLogRecorder::Type type, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack);
+  static void _record(NMT_VirtualMemoryLogRecorder::MemoryOperation operation, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack);
 };
 
 #else // defined(LINUX) || defined(__APPLE__)

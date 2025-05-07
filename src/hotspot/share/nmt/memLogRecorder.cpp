@@ -633,19 +633,6 @@ void NMT_MemoryLogRecorder::print(Entry *e) {
   }
 }
 
-//static inline const char* type_to_name(NMT_VirtualMemoryLogRecorder::Type type) {
-//  switch (type) {
-//    case NMT_VirtualMemoryLogRecorder::Type::RESERVE: return "RESERVE"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::RELEASE: return "RELEASE"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::UNCOMMIT: return "UNCOMMIT"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::RESERVE_AND_COMMIT: return "RESERVE_AND_COMMIT"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::COMMIT: return "COMMIT"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::SPLIT_RESERVED: return "SPLIT_RESERVED"; break;
-//    case NMT_VirtualMemoryLogRecorder::Type::TAG: return "TAG"; break;
-//    default: break;
-//  }
-//}
-
 void NMT_VirtualMemoryLogRecorder::initialize(long int limit) {
   // tty->print("> NMT_VirtualMemoryLogRecorder::initialize(%ld, %ld)\n", limit, sizeof(Entry));
   NMTRecorder_Locker locker;
@@ -715,38 +702,38 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
     //VirtualMemoryTracker::initialize(NMTUtil::parse_tracking_level(NativeMemoryTracking));
     long int start = os::javaTimeNanos();
     {
-      switch (e->type) {
-        case NMT_VirtualMemoryLogRecorder::Type::RESERVE:
+      switch (e->operation) {
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::RESERVE:
           // tty->print("[record_virtual_memory_reserve(%p, %ld, %p, %hhu)\n", e->ptr, e->size, &stack, mem_tag);fflush(stderr);
           MemTracker::record_virtual_memory_reserve(e->ptr, e->size, stack, mem_tag);
           // tty->print("]\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::RELEASE:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::RELEASE:
           // tty->print("[record_virtual_memory_release(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
           MemTracker::record_virtual_memory_release(e->ptr, e->size);
           // tty->print("]\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::UNCOMMIT:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::UNCOMMIT:
           // tty->print("<record_virtual_memory_uncommit(%p, %ld)\n", e->ptr, e->size);fflush(stderr);
           MemTracker::record_virtual_memory_uncommit(e->ptr, e->size);
           // tty->print(">\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::RESERVE_AND_COMMIT:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::RESERVE_AND_COMMIT:
           // tty->print("[MemTracker::record_virtual_memory_reserve_and_commit\n");
           MemTracker::record_virtual_memory_reserve_and_commit(e->ptr, e->size, stack, mem_tag);
           // tty->print("]\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::COMMIT:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::COMMIT:
           // tty->print("[record_virtual_memory_commit(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
           MemTracker::record_virtual_memory_commit(e->ptr, e->size, stack);
           // tty->print("]\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::SPLIT_RESERVED:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::SPLIT_RESERVED:
           // tty->print("[MemTracker::record_virtual_memory_split_reserved\n");
           MemTracker::record_virtual_memory_split_reserved(e->ptr, e->size, e->size_split, mem_tag, NMTUtil::index_to_tag((int)e->mem_tag_split));
           // tty->print("]\n");fflush(stderr);
           break;
-        case NMT_VirtualMemoryLogRecorder::Type::TAG:
+        case NMT_VirtualMemoryLogRecorder::MemoryOperation::TAG:
           // tty->print("[record_virtual_memory_type(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
           MemTracker::record_virtual_memory_tag(e->ptr, e->size, mem_tag);
           // tty->print("]\n");fflush(stderr);
@@ -770,16 +757,16 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
   os::exit(0);
 }
 
-void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type type, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack) {
+void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::MemoryOperation operation, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack) {
 //  tty->print("NMT_VirtualMemoryLogRecorder::record (%d, %hhu, %hhu, %ld, %ld, %p, %p)\n",
-//          type, mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
+//          operation, mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
   NMT_VirtualMemoryLogRecorder *recorder = NMT_VirtualMemoryLogRecorder::instance();
   if (!recorder->done()) {
     NMTRecorder_Locker locker;
     volatile long int count = recorder->_count++;
     if (count < recorder->_limit) {
       Entry entry;
-      entry.type = type;
+      entry.operation = operation;
       entry.time = count;
       if (MemTracker::is_initialized())
       {
@@ -811,31 +798,31 @@ void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type ty
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack, MemTag mem_tag) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::RESERVE, mem_tag, mtNone, size, 0, (address)addr, &stack);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::RESERVE, mem_tag, mtNone, size, 0, (address)addr, &stack);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_release(address addr, size_t size) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::RELEASE, mtNone, mtNone, size, 0, (address)addr, nullptr);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::RELEASE, mtNone, mtNone, size, 0, (address)addr, nullptr);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_uncommit(address addr, size_t size) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::UNCOMMIT, mtNone, mtNone, size, 0, (address)addr, nullptr);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::UNCOMMIT, mtNone, mtNone, size, 0, (address)addr, nullptr);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_reserve_and_commit(void* addr, size_t size, const NativeCallStack& stack, MemTag mem_tag) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::RESERVE_AND_COMMIT, mem_tag, mtNone, size, 0, (address)addr, &stack);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::RESERVE_AND_COMMIT, mem_tag, mtNone, size, 0, (address)addr, &stack);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_commit(void* addr, size_t size, const NativeCallStack& stack) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::COMMIT, mtNone, mtNone, size, 0, (address)addr, &stack);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::COMMIT, mtNone, mtNone, size, 0, (address)addr, &stack);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::SPLIT_RESERVED, mem_tag, split_mem_tag, size, split, (address)addr, nullptr);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::SPLIT_RESERVED, mem_tag, split_mem_tag, size, split, (address)addr, nullptr);
 }
 
 void NMT_VirtualMemoryLogRecorder::record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::TAG, mem_tag, mtNone, size, 0, (address)addr, nullptr);
+  NMT_VirtualMemoryLogRecorder::_record(MemoryOperation::TAG, mem_tag, mtNone, size, 0, (address)addr, nullptr);
 }
 
 #else
