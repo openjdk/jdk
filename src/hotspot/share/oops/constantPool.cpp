@@ -1995,25 +1995,27 @@ bool ConstantPool::compare_bsme_to(int idx1, const constantPoolHandle& cp2, int 
   BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = e1->bootstrap_method_index();
   int k2 = e2->bootstrap_method_index();
-  bool match = compare_entry_to(k1, cp2, k2);
 
+  bool match = compare_entry_to(k1, cp2, k2);
   if (!match) {
     return false;
   }
+
   int argc = e1->argument_count();
-  if (argc == e2->argument_count()) {
-    for (int j = 0; j < argc; j++) {
-      k1 = e1->argument_index(j);
-      k2 = e2->argument_index(j);
-      match = compare_entry_to(k1, cp2, k2);
-      if (!match) {
-        return false;
-      }
-    }
-    return true;           // got through loop; all elements equal
+  if (argc != e2->argument_count()) {
+    return false;
   }
-  return false;
-} // end compare_bsme_to()
+
+  for (int j = 0; j < argc; j++) {
+    k1 = e1->argument_index(j);
+    k2 = e2->argument_index(j);
+    match = compare_entry_to(k1, cp2, k2);
+    if (!match) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // Search constant pool search_cp for a BSM attribute entry that matches
 // this constant pool's BSM attribute entry at pattern_i index.
