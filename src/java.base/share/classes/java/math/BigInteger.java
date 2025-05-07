@@ -2604,6 +2604,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return this;
 
         BigInteger base = this.abs();
+        final boolean negative = signum < 0 && (exponent & 1) == 1;
 
         // Factor out powers of two from the base, as the exponentiation of
         // these can be done by left shifts only.
@@ -2616,29 +2617,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
         int bitsToShift = (int)bitsToShiftLong;
 
-        int remainingBits;
-
-        // Factor the powers of two out quickly by shifting right, if needed.
-        if (powersOfTwo > 0) {
-            base = base.shiftRight(powersOfTwo);
-            remainingBits = base.bitLength();
-            if (remainingBits == 1) {  // Nothing left but +/- 1?
-                if (signum < 0 && (exponent&1) == 1) {
-                    return NEGATIVE_ONE.shiftLeft(bitsToShift);
-                } else {
-                    return ONE.shiftLeft(bitsToShift);
-                }
-            }
-        } else {
-            remainingBits = base.bitLength();
-            if (remainingBits == 1) { // Nothing left but +/- 1?
-                if (signum < 0  && (exponent&1) == 1) {
-                    return NEGATIVE_ONE;
-                } else {
-                    return ONE;
-                }
-            }
-        }
+        // Factor the powers of two out quickly by shifting right.
+        base = base.shiftRight(powersOfTwo);
+        int remainingBits = base.bitLength();
+        if (remainingBits == 1) // Nothing left but +/- 1?
+            return (negative ? NEGATIVE_ONE : ONE).shiftLeft(bitsToShift);
 
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
@@ -2649,17 +2632,15 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
         if (scaleFactor <= Long.SIZE) {
             // Small number algorithm.  Everything fits into an unsigned long.
-            int newSign = (signum < 0 && (exponent & 1) == 1 ? -1 : 1);
-            long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
+            final int newSign = negative ? -1 : 1;
+            final long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
-            return powersOfTwo == 0
-                    ? new BigInteger(result, newSign)
-                    : (bitsToShift + scaleFactor <= Long.SIZE  // Fits in long?
-                            ? new BigInteger(result << bitsToShift, newSign)
-                            : new BigInteger(result, newSign).shiftLeft(bitsToShift));
+            return bitsToShift + scaleFactor <= Long.SIZE  // Fits in long?
+                    ? new BigInteger(result << bitsToShift, newSign)
+                    : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         } else {
-            if ((((bitLength() - 1L) * exponent) >>> 5) + 1L > MAX_MAG_LENGTH) {
+            if (((bitLength() - 1L) * exponent) >= (long) MAX_MAG_LENGTH << 5) {
                 reportOverflow();
             }
 
@@ -2681,15 +2662,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             // Multiply back the (exponentiated) powers of two (quickly,
             // by shifting left)
-            if (powersOfTwo > 0) {
-                answer = answer.shiftLeft(bitsToShift);
-            }
-
-            if (signum < 0 && (exponent&1) == 1) {
-                return answer.negate();
-            } else {
-                return answer;
-            }
+            answer = answer.shiftLeft(bitsToShift);
+            return negative ? answer.negate() : answer;
         }
     }
 
@@ -2698,7 +2672,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Assumes {@code x != 0 && x^n < 2^Long.SIZE}.
      */
     static long unsignedLongPow(long x, int n) {
-        if (x == 1L)
+        if (x == 1L || n == 0)
             return 1L;
 
         if (x == 2L)
@@ -2709,13 +2683,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * Thus, the loop body executes at most 5 times.
          */
         long pow = 1L;
-        for (; n != 0; n >>>= 1) {
+        for (; n != 1; n >>>= 1) {
             if ((n & 1) != 0)
                 pow *= x;
 
             x *= x;
         }
-        return pow;
+        return pow * x;
     }
 
     /**

@@ -55,21 +55,13 @@ public class BigIntegerPow {
 
     private BigInteger[] xsArray, sArray, mArray, lArray, xlArray;
     private int xsExp, sExp, mExp, lExp, xlExp;
+    private int[] randomExps;
     private static final int TESTSIZE = 1;
 
     /*
      * You can run this test via the command line:
-     *    $ mvn clean install
-     *    $ java -jar target/benchmarks.jar BigIntegerPow -prof gc
+     *    $ make test TEST="micro:java.math.BigIntegerPow" MICRO="OPTIONS=-prof gc"
      */
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
-                .include(BigIntegerPow.class.getSimpleName())
-                .addProfiler(GCProfiler.class)
-                .build();
-
-        new Runner(opt).run();
-    }
 
     @Setup
     public void setup() {
@@ -101,12 +93,14 @@ public class BigIntegerPow {
          * in size
          */
 
+        randomExps = new int[TESTSIZE];
         for (int i = 0; i < TESTSIZE; i++) {
             xsArray[i] = new BigInteger(64, r);
             sArray[i] = new BigInteger(256, r);
             mArray[i] = new BigInteger(1024, r);
             lArray[i] = new BigInteger(4096, r);
             xlArray[i] = new BigInteger(16384, r);
+            randomExps[i] = r.nextInt(1 << 12);
         }
     }
 
@@ -114,8 +108,17 @@ public class BigIntegerPow {
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
     public void testPowXS(Blackhole bh) {
-        for (BigInteger s : xsArray) {
-            bh.consume(s.pow(xsExp));
+        for (BigInteger xs : xsArray) {
+            bh.consume(xs.pow(xsExp));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testPowXSRandomExps(Blackhole bh) {
+        int i = 0;
+        for (BigInteger xs : xsArray) {
+            bh.consume(xs.pow(randomExps[i++]));
         }
     }
 
@@ -128,12 +131,30 @@ public class BigIntegerPow {
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testPowSRandomExps(Blackhole bh) {
+        int i = 0;
+        for (BigInteger s : sArray) {
+            bh.consume(s.pow(randomExps[i++]));
+        }
+    }
+
     /** Test BigInteger.pow() with numbers long at most 1024 bits */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
     public void testPowM(Blackhole bh) {
-        for (BigInteger s : mArray) {
-            bh.consume(s.pow(mExp));
+        for (BigInteger m : mArray) {
+            bh.consume(m.pow(mExp));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testPowMRandomExps(Blackhole bh) {
+        int i = 0;
+        for (BigInteger m : mArray) {
+            bh.consume(m.pow(randomExps[i++]));
         }
     }
 
@@ -141,8 +162,17 @@ public class BigIntegerPow {
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
     public void testPowL(Blackhole bh) {
-        for (BigInteger s : lArray) {
-            bh.consume(s.pow(lExp));
+        for (BigInteger l : lArray) {
+            bh.consume(l.pow(lExp));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testPowLRandomExps(Blackhole bh) {
+        int i = 0;
+        for (BigInteger l : lArray) {
+            bh.consume(l.pow(randomExps[i++]));
         }
     }
 
@@ -150,8 +180,17 @@ public class BigIntegerPow {
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
     public void testPowXL(Blackhole bh) {
-        for (BigInteger s : xlArray) {
-            bh.consume(s.pow(xlExp));
+        for (BigInteger xl : xlArray) {
+            bh.consume(xl.pow(xlExp));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testPowXLRandomExps(Blackhole bh) {
+        int i = 0;
+        for (BigInteger xl : xlArray) {
+            bh.consume(xl.pow(randomExps[i++]));
         }
     }
 }
