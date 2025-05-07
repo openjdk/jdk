@@ -141,7 +141,7 @@ import java.util.List;
  * String Templates to inject these arguments into the strings. But since String Templates are not (yet) available,
  * the {@link Template}s provide <strong>hashtag replacements</strong> in the Strings: the {@link Template} argument
  * names are captured, and the argument values automatically replace any {@code "#name"} in the Strings. See the
- * different overloads of {@link #make} for examples. Additional hashtag replacements can be defined 
+ * different overloads of {@link #make} for examples. Additional hashtag replacements can be defined
  * with {@link #let}.
  *
  * <p>
