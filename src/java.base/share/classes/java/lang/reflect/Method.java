@@ -93,7 +93,7 @@ public final class Method extends Executable {
     private Method root;
     private transient volatile MethodRepository genericInfo;
     private @Stable MethodAccessor methodAccessor;
-
+    // End shared states
     private int hash; // not shared right now, eligible if expensive
 
     // Generics infrastructure
@@ -364,7 +364,7 @@ public final class Method extends Executable {
 
         if (hc == 0) {
             hc = hash = getDeclaringClass().getName().hashCode() ^ getName()
-                    .hashCode();
+                .hashCode();
         }
         return hc;
     }

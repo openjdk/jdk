@@ -40,7 +40,6 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
 import java.nio.file.Path;
 import java.text.Normalizer;
-
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.UTF_8;
