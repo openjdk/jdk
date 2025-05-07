@@ -43,8 +43,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 import javax.security.auth.DestroyFailedException;
@@ -1646,7 +1648,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             try {
                 // Use the ciphersuite's hashAlg for these calcs.
                 HashAlg hashAlg = cipherSuite.hashAlg;
-                HKDF hkdf = new HKDF(hashAlg.name);
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
 
                 // First calculate the inner Derive-Secret(Secret, label, "")
                 MessageDigest md;
@@ -1670,8 +1672,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // ...then the "inner" HKDF-Expand-Label() to get the
                 // derivedSecret that is used as the Secret in the "outer"
                 // HKDF-Expand-Label().
-                SecretKey derivedSecret = hkdf.expand(exporterMasterSecret,
-                        hkdfInfo, hashAlg.hashLength, "DerivedSecret");;
+                SecretKey derivedSecret = hkdf.deriveKey("DerivedSecret",
+                        HKDFParameterSpec.expandOnly(exporterMasterSecret,
+                        hkdfInfo, hashAlg.hashLength));
                 try {
                     // Now do the "outer" HKDF-Expand-Label.
                     //     HKDF-Expand-Label(derivedSecret, "exporter",
@@ -1688,8 +1691,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                             hash, length);
 
                     // ...now the final expand.
-                    SecretKey key = hkdf.expand(derivedSecret, hkdfInfo, length,
-                            label);
+                    SecretKey key = hkdf.deriveKey(label,
+                            HKDFParameterSpec.expandOnly(derivedSecret,
+                                    hkdfInfo, length));
                     return key;
                 } finally {
                     // Best effort
