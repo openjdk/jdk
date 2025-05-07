@@ -1375,7 +1375,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 
   jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
-	$(call ExecuteWithLog, $(JCOV_SUPPORT_DIR)/run-jcov-repgen,
+	$(call ExecuteWithLog, $(JCOV_SUPPORT_DIR)/run-jcov-repgen, \
 	    $(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
