@@ -87,7 +87,7 @@ class MemTracker : AllStatic {
     assert(mem_base != nullptr, "caller should handle null");
     void* ptr = mem_base;
     if (enabled()) {
-      ptr = MallocTracker::record_malloc(mem_base, size, mem_tag, stack, old_base);
+      ptr = MallocTracker::record_malloc(mem_base, size, mem_tag, stack);
     }
     NMT_MemoryLogRecorder::record_alloc(mem_tag, size, mem_base, &stack, old_base);
     return ptr;
