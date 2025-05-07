@@ -425,7 +425,7 @@ void CDSConfig::check_aot_flags() {
   }
 
   // At least one AOT flag has been used
- _new_aot_flags_used = true;
+  _new_aot_flags_used = true;
 
   if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
     check_aotmode_auto_or_on();
@@ -487,6 +487,10 @@ void CDSConfig::check_aotmode_record() {
   bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
   bool has_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
 
+  if (!has_output && !has_config) {
+      vm_exit_during_initialization("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
+  }
+
   if (has_output) {
     _is_single_command_training = true;
     substitute_aot_filename(FLAG_MEMBER_ENUM(AOTCacheOutput));
@@ -498,10 +502,6 @@ void CDSConfig::check_aotmode_record() {
       FLAG_SET_ERGO(AOTConfiguration, temp);
       FreeHeap(temp);
       _has_temp_aot_config_file = true;
-    }
-  } else {
-    if (!has_config) {
-      vm_exit_during_initialization("-XX:AOTMode=record cannot be used without setting AOTCacheOutput or AOTConfiguration");
     }
   }
 
@@ -523,7 +523,7 @@ void CDSConfig::check_aotmode_record() {
 
 void CDSConfig::check_aotmode_create() {
   if (FLAG_IS_DEFAULT(AOTConfiguration)) {
-    vm_exit_during_initialization("-XX:AOTMode=create cannot be used without setting AOTConfiguration");
+    vm_exit_during_initialization("AOTConfiguration must be specified when using -XX:AOTMode=create");
   }
 
   bool has_cache = !FLAG_IS_DEFAULT(AOTCache);

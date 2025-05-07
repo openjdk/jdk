@@ -275,14 +275,14 @@ public class AOTFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("-XX:AOTMode=record cannot be used without setting AOTCacheOutput or AOTConfiguration");
+        out.shouldContain("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("-XX:AOTMode=create cannot be used without setting AOTConfiguration");
+        out.shouldContain("AOTConfiguration must be specified when using -XX:AOTMode=create");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------

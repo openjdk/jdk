@@ -30,7 +30,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver JavaAOTOptions
+ * @run driver JavaAOTOptionsEnvVar
  */
 
 import java.io.File;
@@ -41,7 +41,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class JavaAOTOptions {
+public class JavaAOTOptionsEnvVar {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
     static String aotConfigFile = "hello.aotconfig";
     static String aotCacheFile = "hello.aot";

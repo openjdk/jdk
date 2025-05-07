@@ -3060,7 +3060,7 @@ jint Arguments::parse_java_tool_options_environment_variable(ScopedVMInitArgs* a
 static JavaVMOption* get_last_aotmode_arg(const JavaVMInitArgs* args) {
   for (int index = args->nOptions - 1; index >= 0; index--) {
     JavaVMOption* option = args->options + index;
-    if (strncmp(option->optionString, "-XX:AOTMode=", 12) == 0) {
+    if (strstr(option->optionString, "-XX:AOTMode=") == option->optionString) {
       return option;
     }
   }
@@ -3596,7 +3596,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   for (int index = 0; index < cur_java_aot_options_args->nOptions; index++) {
     JavaVMOption* option = cur_java_aot_options_args->options + index;
     const char* optionString = option->optionString;
-    if (strncmp(optionString, "-XX:AOTMode=", 12) == 0 &&
+    if (strstr(optionString, "-XX:AOTMode=") == optionString &&
         strcmp(optionString, "-XX:AOTMode=create") != 0) {
       jio_fprintf(defaultStream::error_stream(),
                   "Option %s cannot be specified in JAVA_AOT_OPTIONS\n", optionString);
