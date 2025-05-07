@@ -203,11 +203,14 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 // Also begin is one past last monitor.
 
 inline intptr_t* frame::interpreter_frame_top_frame_sp() {
-  return (intptr_t*)ijava_state()->top_frame_sp;
+  intptr_t n = *addr_at(_z_ijava_idx(top_frame_sp));
+  return &fp()[n]; // return relativized locals
 }
 
 inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
-  ijava_state()->top_frame_sp = (intptr_t) top_frame_sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized top_frame_sp
+  ijava_state()->top_frame_sp = (intptr_t) (top_frame_sp - fp());
 }
 
 inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp) {

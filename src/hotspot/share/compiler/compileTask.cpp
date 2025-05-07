@@ -306,7 +306,7 @@ void CompileTask::maybe_print_legend() {
   if (PrintCompilation) {
     print_legend_on(tty);
   }
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_legend_on(&ls);
@@ -500,8 +500,8 @@ void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult 
   }
 }
 
-void CompileTask::print_ul(const char* msg) {
-  LogTarget(Debug, jit, compilation) lt;
+void CompileTask::print_ul(const char* msg){
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_impl(&ls, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
@@ -512,7 +512,7 @@ void CompileTask::print_ul(const char* msg) {
 }
 
 void CompileTask::print_ul(const nmethod* nm, const char* msg) {
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_impl(&ls, nm->method(), nm->compile_id(), nm->comp_level(),
