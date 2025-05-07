@@ -1343,12 +1343,14 @@ TARGETS += run-all-tests pre-run-test post-run-test run-test-report run-test
 
 ifeq ($(TEST_OPTS_JCOV), true)
 
+  JCOV_VM_OPTS := -Xmx4g -Djdk.xml.totalEntitySizeLimit=0 -Djdk.xml.maxGeneralEntitySizeLimit=0
+
   jcov-do-start-grabber:
 	$(call MakeDir, $(JCOV_OUTPUT_DIR))
 	if $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -status 1>/dev/null 2>&1 ; then \
 	  $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600 ; \
 	fi
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
@@ -1368,7 +1370,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 
   jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
@@ -1392,7 +1394,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
     jcov-gen-diffcoverage: jcov-stop-grabber
 	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
 	$(DIFF_COMMAND)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar \
 	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
 	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
 	    $(JCOV_DIFF_COVERAGE_REPORT)

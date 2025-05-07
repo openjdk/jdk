@@ -698,8 +698,8 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
-  bool java_suspend();
-  bool java_resume();
+  bool java_suspend(bool register_vthread_SR);
+  bool java_resume(bool register_vthread_SR);
   bool is_suspended()     { return _handshake.is_suspended(); }
 
   // Check for async exception in addition to safepoint.
@@ -710,11 +710,11 @@ private:
   void wait_for_object_deoptimization();
 
 #if INCLUDE_JVMTI
-  inline void set_carrier_thread_suspended();
-  inline void clear_carrier_thread_suspended();
+  inline bool set_carrier_thread_suspended();
+  inline bool clear_carrier_thread_suspended();
 
   bool is_carrier_thread_suspended() const {
-    return _carrier_thread_suspended;
+    return Atomic::load(&_carrier_thread_suspended);
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }

@@ -25,6 +25,7 @@
    @bug 4039597
    @summary Check that pathnames containing double-byte characters are not
             corrupted by win32 path processing
+   @requires (os.family == "windows")
    @author Mark Reinhold
    @library /test/lib
 */
@@ -52,7 +53,6 @@ public class SJIS {
 
         /* This test is only valid on win32 systems
            that use the SJIS encoding */
-        if (File.separatorChar != '\\') return;
         String enc = System.getProperty("native.encoding");
         if ((enc == null) || !enc.equals("MS932")) {
             throw new SkippedException(
