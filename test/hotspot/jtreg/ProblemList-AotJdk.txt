@@ -3,6 +3,7 @@ runtime/NMT/NMTWithCDS.java                           0000000 generic-all
 runtime/symbols/TestSharedArchiveConfigFile.java      0000000 generic-all
 
 gc/arguments/TestSerialHeapSizeFlags.java             0000000 generic-all
+gc/arguments/TestCompressedClassFlags.java            0000000 generic-all
 gc/TestAllocateHeapAtMultiple.java                    0000000 generic-all
 gc/TestAllocateHeapAt.java                            0000000 generic-all
 

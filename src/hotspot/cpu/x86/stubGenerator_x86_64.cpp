@@ -339,7 +339,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
     __ jcc(Assembler::equal, L1);
     __ stop("StubRoutines::call_stub: r15_thread is corrupted");
     __ bind(L1);
-    __ get_thread(rbx);
+    __ get_thread_slow(rbx);
     __ cmpptr(r15_thread, thread);
     __ jcc(Assembler::equal, L2);
     __ stop("StubRoutines::call_stub: r15_thread is modified by call");
@@ -426,7 +426,7 @@ address StubGenerator::generate_catch_exception() {
     __ jcc(Assembler::equal, L1);
     __ stop("StubRoutines::catch_exception: r15_thread is corrupted");
     __ bind(L1);
-    __ get_thread(rbx);
+    __ get_thread_slow(rbx);
     __ cmpptr(r15_thread, thread);
     __ jcc(Assembler::equal, L2);
     __ stop("StubRoutines::catch_exception: r15_thread is modified by call");
@@ -1313,7 +1313,7 @@ void StubGenerator::setup_arg_regs_using_thread(int nargs) {
     __ mov(rax, r9);       // r9 is also saved_r15
   }
   __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
-  __ get_thread(r15_thread);
+  __ get_thread_slow(r15_thread);
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
          "unexpected argument registers");
   __ movptr(Address(r15_thread, in_bytes(JavaThread::windows_saved_rdi_offset())), rdi);
@@ -1337,7 +1337,7 @@ void StubGenerator::restore_arg_regs_using_thread() {
   assert(_regs_in_thread, "wrong call to restore_arg_regs");
   const Register saved_r15 = r9;
 #ifdef _WIN64
-  __ get_thread(r15_thread);
+  __ get_thread_slow(r15_thread);
   __ movptr(rsi, Address(r15_thread, in_bytes(JavaThread::windows_saved_rsi_offset())));
   __ movptr(rdi, Address(r15_thread, in_bytes(JavaThread::windows_saved_rdi_offset())));
   __ mov(r15, saved_r15);  // r15 is callee saved and needs to be restored
@@ -3974,14 +3974,14 @@ address StubGenerator::generate_upcall_stub_load_target() {
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  __ resolve_global_jobject(j_rarg0, r15_thread, rscratch1);
+  __ resolve_global_jobject(j_rarg0, rscratch1);
     // Load target method from receiver
   __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
   __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
   __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
   __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
                     Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
-                    noreg, noreg);
+                    noreg);
   __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
 
   __ ret(0);
@@ -4204,6 +4204,8 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
+  generate_dilithium_stubs();
+
   generate_sha3_stubs();
 
   // data cache line writeback
@@ -4328,70 +4330,6 @@ void StubGenerator::generate_compiler_stubs() {
 
       snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
-    }
-  }
-
-  // Get svml stub routine addresses
-  void *libjsvml = nullptr;
-  char ebuf[1024];
-  char dll_name[JVM_MAXPATHLEN];
-  if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "jsvml")) {
-    libjsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
-  }
-  if (libjsvml != nullptr) {
-    // SVML method naming convention
-    //   All the methods are named as __jsvml_op<T><N>_ha_<VV>
-    //   Where:
-    //      ha stands for high accuracy
-    //      <T> is optional to indicate float/double
-    //              Set to f for vector float operation
-    //              Omitted for vector double operation
-    //      <N> is the number of elements in the vector
-    //              1, 2, 4, 8, 16
-    //              e.g. 128 bit float vector has 4 float elements
-    //      <VV> indicates the avx/sse level:
-    //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
-    //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
-    //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
-
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "jsvml" JNI_LIB_SUFFIX, p2i(libjsvml));
-    if (UseAVX > 2) {
-      for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-        int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-        if ((!VM_Version::supports_avx512dq()) &&
-            (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
-          continue;
-        }
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::mathname[op]);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::mathname[op]);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
-      }
-    }
-    const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
-    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-      if (vop == VectorSupport::VECTOR_OP_POW) {
-        continue;
-      }
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
   }
 

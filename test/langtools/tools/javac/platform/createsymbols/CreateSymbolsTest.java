@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  *          jdk.compiler/com.sun.tools.javac.jvm
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
  * @clean *
  * @run main/othervm CreateSymbolsTest
  */
@@ -107,8 +106,7 @@ public class CreateSymbolsTest {
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
-                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED"),
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"),
                                       null,
                                       fm.getJavaFileObjectsFromPaths(files)
                                     ).call();

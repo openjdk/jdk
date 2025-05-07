@@ -30,7 +30,6 @@
 #include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
-class JfrCheckpointWriter;
 class JfrChunkWriter;
 
 class JfrStackTraceRepository : public JfrCHeapObj {
@@ -52,6 +51,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
   JfrStackTraceRepository();
   static JfrStackTraceRepository& instance();
+  static JfrStackTraceRepository& leak_profiler_instance();
   static JfrStackTraceRepository* create();
   static void destroy();
   bool initialize();
@@ -63,6 +63,9 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
   static void clear_leak_profiler();
+
+  template <typename Callback>
+  static void iterate_leakprofiler(Callback& cb);
 
   static traceid next_id();
 

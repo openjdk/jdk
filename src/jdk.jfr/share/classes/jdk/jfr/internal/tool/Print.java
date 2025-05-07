@@ -49,7 +49,7 @@ final class Print extends Command {
     @Override
     public List<String> getOptionSyntax() {
         List<String> list = new ArrayList<>();
-        list.add("[--xml|--json]");
+        list.add("[--xml|--json|--exact]");
         list.add("[--categories <filter>]");
         list.add("[--events <filter>]");
         list.add("[--stack-depth <depth>]");
@@ -73,6 +73,8 @@ final class Print extends Command {
         stream.println();
         stream.println("  --json                  Print recording in JSON format");
         stream.println();
+        stream.println("  --exact                 Pretty-print numbers and timestamps with full precision.");
+        stream.println();
         stream.println("  --categories <filter>   Select events matching a category name.");
         stream.println("                          The filter is a comma-separated list of names,");
         stream.println("                          simple and/or qualified, and/or quoted glob patterns");
@@ -95,7 +97,7 @@ final class Print extends Command {
         char q = quoteCharacter();
         stream.println(" jfr print --categories " + q + "GC,JVM,Java*" + q + " recording.jfr");
         stream.println();
-        stream.println(" jfr print --events "+ q + "jdk.*" + q +" --stack-depth 64 recording.jfr");
+        stream.println(" jfr print --exact --events "+ q + "jdk.*" + q +" --stack-depth 64 recording.jfr");
         stream.println();
         stream.println(" jfr print --json --events CPULoad recording.jfr");
     }
@@ -140,6 +142,9 @@ final class Print extends Command {
                     throw new UserSyntaxException("not a valid value for --stack-depth");
                 }
             }
+            if (acceptFormatterOption(options, eventWriter, "--exact")) {
+                eventWriter = new PrettyWriter(pw, true);;
+            }
             if (acceptFormatterOption(options, eventWriter, "--json")) {
                 eventWriter = new JSONWriter(pw);
             }
@@ -155,7 +160,7 @@ final class Print extends Command {
             optionCount = options.size();
         }
         if (eventWriter == null) {
-            eventWriter = new PrettyWriter(pw); // default to pretty printer
+            eventWriter = new PrettyWriter(pw, false); // default to pretty printer
         }
         eventWriter.setStackDepth(stackDepth);
         if (!eventFilters.isEmpty()) {
