@@ -99,6 +99,7 @@ final class StableFieldUpdaterTest {
         public Foo(String string) {
             this.string = string;
         }
+
         @Override
         public int hashCode() {
             return UPDATER.applyAsInt(this);
@@ -122,9 +123,10 @@ final class StableFieldUpdaterTest {
         public LongFoo(String string) {
             this.string = string;
         }
+
         @Override
         public int hashCode() {
-            return (int)UPDATER.applyAsLong(this);
+            return (int) UPDATER.applyAsLong(this);
         }
 
         @Override
@@ -199,7 +201,7 @@ final class StableFieldUpdaterTest {
 
         private static final ToIntFunction<SimpleMhFoo> UPDATER =
                 StableFieldUpdater.ofInt(MethodHandles.lookup(), "hash", "computeHash");
-        
+
         private final String string;
 
         int hash;
@@ -243,7 +245,7 @@ final class StableFieldUpdaterTest {
 
         @Override
         public int hashCode() {
-            return (int)UPDATER.applyAsLong(this);
+            return (int) UPDATER.applyAsLong(this);
         }
 
         public long hash0() {
