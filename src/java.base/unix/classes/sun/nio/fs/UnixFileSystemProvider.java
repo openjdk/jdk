@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,14 +248,24 @@ public abstract class UnixFileSystemProvider
     boolean implDelete(Path obj, boolean failIfNotExists) throws IOException {
         UnixPath file = UnixPath.toUnixPath(obj);
 
-        // need file attributes to know if file is directory
-        UnixFileAttributes attrs = null;
+        boolean isDirectory = false;
         try {
-            attrs = UnixFileAttributes.get(file, false);
-            if (attrs.isDirectory()) {
-                rmdir(file);
-            } else {
+            try {
+                // assume the common case that the file is a regular file
                 unlink(file);
+            } catch (UnixException e) {
+                // check whether the file is a directory
+                if (e.errno() == EISDIR ||
+                    UnixFileAttributes.get(file, false).isDirectory())
+                    isDirectory = true;
+
+                // if the file is a directory then try rmdir, otherwise
+                // re-throw and let the exception be handled below
+                if (isDirectory) {
+                    rmdir(file);
+                } else {
+                    throw e;
+                }
             }
             return true;
         } catch (UnixException x) {
@@ -264,7 +274,7 @@ public abstract class UnixFileSystemProvider
                 return false;
 
             // DirectoryNotEmptyException if not empty
-            if (attrs != null && attrs.isDirectory() &&
+            if (isDirectory &&
                 (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
                 throw new DirectoryNotEmptyException(file.getPathForExceptionMessage());
 
