@@ -745,8 +745,8 @@ class MacroAssembler: public Assembler {
   void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
 
   // Read vm result from thread: oop_result = R16_thread->result;
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register metadata_result);
+  void get_vm_result_oop(Register oop_result);
+  void get_vm_result_metadata(Register metadata_result);
 
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
@@ -802,6 +802,7 @@ class MacroAssembler: public Assembler {
   inline void decode_heap_oop(Register d);
 
   // Load/Store klass oop from klass field. Compress.
+  void load_klass_no_decode(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
   void cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2);

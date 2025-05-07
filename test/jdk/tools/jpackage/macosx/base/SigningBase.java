@@ -22,15 +22,141 @@
  */
 
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-
+import java.util.Objects;
+import java.util.stream.Stream;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
+import jdk.jpackage.test.MacSign.ResolvedKeychain;
+import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.Executor.Result;
+
+
+/*
+ * @test
+ * @summary Setup the environment for jpackage macos signing tests.
+ *          Creates required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.MacSignTests == "setup")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.setUp
+ */
+
+/*
+ * @test
+ * @summary Tear down the environment for jpackage macos signing tests.
+ *          Deletes required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.MacSignTests == "teardown")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.tearDown
+ */
 
 public class SigningBase {
+
+    public enum StandardCertificateRequest {
+        CODESIGN(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN_COPY(cert().days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        PKG(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        PKG_COPY(cert().type(CertificateType.INSTALLER).days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        PKG_UNICODE(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        CODESIGN_EXPIRED(cert().expired().userName("expired jpackage test")),
+        PKG_EXPIRED(cert().expired().type(CertificateType.INSTALLER).userName("expired jpackage test"));
+
+        StandardCertificateRequest(CertificateRequest.Builder specBuilder) {
+            this.spec = specBuilder.create();
+        }
+
+        public CertificateRequest spec() {
+            return spec;
+        }
+
+        private static CertificateRequest.Builder cert() {
+            return new CertificateRequest.Builder();
+        }
+
+        private final CertificateRequest spec;
+    }
+
+    public enum StandardKeychain {
+        MAIN(DEFAULT_KEYCHAIN,
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_UNICODE,
+                StandardCertificateRequest.PKG_UNICODE),
+        EXPIRED("jpackagerTest-expired.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_EXPIRED,
+                StandardCertificateRequest.PKG_EXPIRED),
+        DUPLICATE("jpackagerTest-duplicate.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_COPY,
+                StandardCertificateRequest.PKG_COPY);
+
+        StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
+            this(keychainName, certs[0].spec(), Stream.of(certs).skip(1).map(StandardCertificateRequest::spec).toArray(CertificateRequest[]::new));
+        }
+
+        StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
+            final var builder = keychain(keychainName).addCert(cert);
+            List.of(otherCerts).forEach(builder::addCert);
+            this.spec = new ResolvedKeychain(builder.create());
+        }
+
+        public KeychainWithCertsSpec spec() {
+            return spec.spec();
+        }
+
+        public X509Certificate mapCertificateRequest(CertificateRequest certRequest) {
+            return Objects.requireNonNull(spec.mapCertificateRequests().get(certRequest));
+        }
+
+        private static KeychainWithCertsSpec.Builder keychain(String name) {
+            return new KeychainWithCertsSpec.Builder().name(name);
+        }
+
+        private static CertificateRequest.Builder cert() {
+            return new CertificateRequest.Builder();
+        }
+
+        private static List<KeychainWithCertsSpec> signingEnv() {
+            return Stream.of(values()).map(StandardKeychain::spec).toList();
+        }
+
+        private final ResolvedKeychain spec;
+    }
+
+    public static void setUp() {
+        MacSign.setUp(StandardKeychain.signingEnv());
+    }
+
+    public static void tearDown() {
+        MacSign.tearDown(StandardKeychain.signingEnv());
+    }
+
+    public static void verifySignTestEnvReady() {
+        if (!Inner.SIGN_ENV_READY) {
+            TKit.throwSkippedException(new IllegalStateException("Misconfigured signing test environment"));
+        }
+    }
+
+    private final class Inner {
+        private static final boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
+    }
 
     enum CertIndex {
         ASCII_INDEX(0),
@@ -97,140 +223,13 @@ public class SigningBase {
         return DEFAULT_KEYCHAIN;
     }
 
-    // Note: It is not clear if we can combine "--verify" and "--display", so
-    // we testing them separately. Since JDK-8298488 unsigned app images are
-    // actually signed with adhoc signature and it will pass "--verify", so in
-    // addition we will check certificate name which was used to sign.
-    private static enum CodesignCheckType {
-        VERIFY, // Runs codesign with "--verify" to check signature and 0 exit code
-        VERIFY_UNSIGNED, // Runs codesign with "--verify" to check signature and 1 exit code
-        DISPLAY // Runs codesign with "--display --verbose=4" to get info about signature
-    };
-
-    private static void checkString(List<String> result, String lookupString) {
-        TKit.assertTextStream(lookupString).predicate(
-                (line, what) -> line.trim().contains(what)).apply(result.stream());
-    }
-
-    @SuppressWarnings("fallthrough")
-    private static List<String> codesignResult(Path target, CodesignCheckType type) {
-        int exitCode = 0;
-        Executor executor = new Executor().setExecutable("/usr/bin/codesign");
-        switch (type) {
-            case VERIFY_UNSIGNED:
-                exitCode = 1;
-            case VERIFY:
-                executor.addArguments("--verify", "--deep", "--strict",
-                                      "--verbose=2", target.toString());
-                break;
-            case DISPLAY:
-                executor.addArguments("--display", "--verbose=4", target.toString());
-                break;
-            default:
-                TKit.error("Unknown CodesignCheckType: " + type);
-                break;
-        }
-        return executor.saveOutput().execute(exitCode).getOutput();
-    }
-
-    private static void verifyCodesignResult(List<String> result, Path target,
-            boolean signed, CodesignCheckType type, int certIndex) {
-        result.stream().forEachOrdered(TKit::trace);
-        String lookupString;
-        switch (type) {
-            case VERIFY:
-                lookupString = target.toString() + ": valid on disk";
-                checkString(result, lookupString);
-                lookupString = target.toString() + ": satisfies its Designated Requirement";
-                checkString(result, lookupString);
-                break;
-            case VERIFY_UNSIGNED:
-                lookupString = target.toString() + ": code object is not signed at all";
-                checkString(result, lookupString);
-                break;
-            case DISPLAY:
-                if (signed) {
-                    lookupString = "Authority=" + getAppCert(certIndex);
-                } else {
-                    lookupString = "Signature=adhoc";
-                }
-                checkString(result, lookupString);
-                break;
-            default:
-                TKit.error("Unknown CodesignCheckType: " + type);
-                break;
-        }
-    }
-
-    private static Result spctlResult(Path target, String type) {
-        Result result = new Executor()
-                .setExecutable("/usr/sbin/spctl")
-                .addArguments("-vvv", "--assess", "--type", type,
-                        target.toString())
-                .saveOutput()
-                .executeWithoutExitCodeCheck();
-
-        // allow exit code 3 for not being notarized
-        if (result.getExitCode() != 3) {
-            result.assertExitCodeIsZero();
-        }
-        return result;
-    }
-
-    private static void verifySpctlResult(List<String> output, Path target,
-            String type, int exitCode, int certIndex) {
-        output.stream().forEachOrdered(TKit::trace);
-        String lookupString;
-
-        if (exitCode == 0) {
-            lookupString = target.toString() + ": accepted";
-            checkString(output, lookupString);
-        } else if (exitCode == 3) {
-            // allow failure purely for not being notarized
-            lookupString = target.toString() + ": rejected";
-            checkString(output, lookupString);
-        }
-
-        if (type.equals("install")) {
-            lookupString = "origin=" + getInstallerCert(certIndex);
-        } else {
-            lookupString = "origin=" + getAppCert(certIndex);
-        }
-        checkString(output, lookupString);
-    }
-
-    private static List<String> pkgutilResult(Path target, boolean signed) {
-        List<String> result = new Executor()
-                .setExecutable("/usr/sbin/pkgutil")
-                .addArguments("--check-signature",
-                        target.toString())
-                .saveOutput()
-                .execute(signed ? 0 : 1)
-                .getOutput();
-
-        return result;
-    }
-
-    private static void verifyPkgutilResult(List<String> result, boolean signed,
-                                            int certIndex) {
-        result.stream().forEachOrdered(TKit::trace);
-        if (signed) {
-            String lookupString = "Status: signed by";
-            checkString(result, lookupString);
-            lookupString = "1. " + getInstallerCert(certIndex);
-            checkString(result, lookupString);
-        } else {
-            String lookupString = "Status: no signature";
-            checkString(result, lookupString);
-        }
-    }
-
     public static void verifyCodesign(Path target, boolean signed, int certIndex) {
-        List<String> result = codesignResult(target, CodesignCheckType.VERIFY);
-        verifyCodesignResult(result, target, signed, CodesignCheckType.VERIFY, certIndex);
-
-        result = codesignResult(target, CodesignCheckType.DISPLAY);
-        verifyCodesignResult(result, target, signed, CodesignCheckType.DISPLAY, certIndex);
+        if (signed) {
+            final var certRequest = getCertRequest(certIndex);
+            MacSignVerify.assertSigned(target, certRequest);
+        } else {
+            MacSignVerify.assertAdhocSigned(target);
+        }
     }
 
     // Since we no longer have unsigned app image, but we need to check
@@ -239,23 +238,45 @@ public class SigningBase {
     // Should not be used to validated anything else.
     public static void verifyDMG(Path target) {
         if (!target.toString().toLowerCase().endsWith(".dmg")) {
-            TKit.error("Unexpected target: " + target);
+            throw new IllegalArgumentException("Unexpected target: " + target);
         }
 
-        List<String> result = codesignResult(target, CodesignCheckType.VERIFY_UNSIGNED);
-        verifyCodesignResult(result, target, false, CodesignCheckType.VERIFY_UNSIGNED, -1);
+        MacSignVerify.assertUnsigned(target);
     }
 
     public static void verifySpctl(Path target, String type, int certIndex) {
-        Result result = spctlResult(target, type);
-        List<String> output = result.getOutput();
+        final var standardCertIndex = Stream.of(CertIndex.values()).filter(v -> {
+            return v.value() == certIndex;
+        }).findFirst().orElseThrow();
 
-        verifySpctlResult(output, target, type, result.getExitCode(), certIndex);
+        final var standardType = Stream.of(MacSignVerify.SpctlType.values()).filter(v -> {
+            return v.value().equals(type);
+        }).findFirst().orElseThrow();
+
+        final String expectedSignOrigin;
+        if (standardCertIndex == CertIndex.INVALID_INDEX) {
+            expectedSignOrigin = null;
+        } else if (standardType == MacSignVerify.SpctlType.EXEC) {
+            expectedSignOrigin = getCertRequest(certIndex).name();
+        } else if (standardType == MacSignVerify.SpctlType.INSTALL) {
+            expectedSignOrigin = getPkgCertRequest(certIndex).name();
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        final var signOrigin = MacSignVerify.findSpctlSignOrigin(standardType, target).orElse(null);
+
+        TKit.assertEquals(signOrigin, expectedSignOrigin,
+                String.format("Check [%s] has sign origin as expected", target));
     }
 
     public static void verifyPkgutil(Path target, boolean signed, int certIndex) {
-        List<String> result = pkgutilResult(target, signed);
-        verifyPkgutilResult(result, signed, certIndex);
+        if (signed) {
+            final var certRequest = getPkgCertRequest(certIndex);
+            MacSignVerify.assertPkgSigned(target, certRequest, StandardKeychain.MAIN.mapCertificateRequest(certRequest));
+        } else {
+            MacSignVerify.assertUnsigned(target);
+        }
     }
 
     public static void verifyAppImageSignature(JPackageCommand appImageCmd,
@@ -276,4 +297,31 @@ public class SigningBase {
         }
     }
 
+    private static CertificateRequest getCertRequest(int certIndex) {
+        switch (CertIndex.values()[certIndex]) {
+            case ASCII_INDEX -> {
+                return StandardCertificateRequest.CODESIGN.spec();
+            }
+            case UNICODE_INDEX -> {
+                return StandardCertificateRequest.CODESIGN_UNICODE.spec();
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    private static CertificateRequest getPkgCertRequest(int certIndex) {
+        switch (CertIndex.values()[certIndex]) {
+            case ASCII_INDEX -> {
+                return StandardCertificateRequest.PKG.spec();
+            }
+            case UNICODE_INDEX -> {
+                return StandardCertificateRequest.PKG_UNICODE.spec();
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
 }

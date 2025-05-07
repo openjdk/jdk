@@ -63,6 +63,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
         String topArchiveMsg = "The top archive failed to load";
         String mismatchMsg = "shared class paths mismatch";
         String hintMsg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
+        String errMsg = "An error has occurred while processing the shared archive file.";
 
         // ... but try to load the top archive using "-cp WrongJar.jar".
         // Use -Xshare:auto so top archive can fail after base archive has succeeded,
@@ -75,7 +76,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "-cp", wrongJar, mainClass,
                 "assertShared:java.lang.Object",  // base archive still useable
                 "assertNotShared:GenericTestApp") // but top archive is not useable
-          .assertNormalExit(topArchiveMsg);
+          .assertNormalExit(topArchiveMsg, errMsg);
 
         // Turn off all CDS logging, the "shared class paths mismatch" warning
         // message should still be there.
@@ -84,7 +85,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "-cp", wrongJar, mainClass,
                 "assertShared:java.lang.Object",  // base archive still useable
                 "assertNotShared:GenericTestApp") // but top archive is not useable
-          .assertNormalExit(topArchiveMsg, mismatchMsg, hintMsg);
+          .assertNormalExit(topArchiveMsg, mismatchMsg, hintMsg, errMsg);
 
         // Enable class+path logging and run with -Xshare:on, the mismatchMsg
         // should be there, the hintMsg should NOT be there.
@@ -96,6 +97,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "assertNotShared:GenericTestApp") // but top archive is not useable
           .assertAbnormalExit( output -> {
             output.shouldContain(mismatchMsg)
+                  .shouldContain(errMsg)
                   .shouldNotContain(hintMsg);
           });
 
@@ -111,6 +113,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "assertNotShared:GenericTestApp") // but top archive is not useable
           .assertNormalExit(output -> {
               output.shouldContain(topArchiveMsg);
+              output.shouldContain(errMsg);
               output.shouldMatch("This file is not the one used while building the shared archive file:.*GenericTestApp.jar");
               output.shouldMatch(".warning..cds.*GenericTestApp.jar.*timestamp has changed");});
     }

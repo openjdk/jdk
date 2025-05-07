@@ -34,6 +34,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferred.hpp"
 
 // The MemoryFileTracker tracks memory of 'memory files',
 // storage with its own memory space separate from the process.
@@ -91,7 +92,7 @@ public:
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
   class Instance : public AllStatic {
-    static MemoryFileTracker* _tracker;
+    static Deferred<MemoryFileTracker> _tracker;
 
   public:
 

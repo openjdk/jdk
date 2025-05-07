@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,6 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
 import com.sun.org.apache.xerces.internal.util.URI;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -64,6 +63,7 @@ import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLLimitAnalyzer;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.InputSource;
 
 
@@ -94,7 +94,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Nov 2024
+ * @LastModified: Apr 2025
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 

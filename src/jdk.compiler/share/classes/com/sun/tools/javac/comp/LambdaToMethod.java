@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,6 +462,10 @@ public class LambdaToMethod extends TreeTranslator {
         ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<>();
 
         for (Attribute.TypeCompound tc : source.get()) {
+            if (tc.hasUnknownPosition()) {
+                // Handle container annotations
+                tc.tryFixPosition();
+            }
             if (tc.position.onLambda == tree) {
                 lambdaTypeAnnos.append(tc);
             } else {

@@ -108,6 +108,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
  public:
   static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = nullptr);
   static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = nullptr);
+  static void write_simplified_vthread_checkpoint(traceid vtid);
   size_t flush_type_set();
 
   friend class Jfr;

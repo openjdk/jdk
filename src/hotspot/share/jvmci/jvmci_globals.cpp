@@ -144,8 +144,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(UseMulAddIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomeryMultiplyIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomerySquareIntrinsic)
-  JVMCI_FLAG_CHECKED(UseVectorStubs)
 #endif // !COMPILER2
+       //
+  JVMCI_FLAG_CHECKED(UseVectorStubs)
 
 #ifndef PRODUCT
 #define JVMCI_CHECK4(type, name, value, ...) assert(name##checked, #name " flag not checked");
@@ -228,7 +229,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graa
 }
 
 bool JVMCIGlobals::gc_supports_jvmci() {
-  return UseSerialGC || UseParallelGC || UseG1GC || UseZGC || UseEpsilonGC;
+  return UseSerialGC || UseParallelGC || UseG1GC || UseZGC || UseShenandoahGC || UseEpsilonGC;
 }
 
 void JVMCIGlobals::check_jvmci_supported_gc() {
