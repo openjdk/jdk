@@ -159,8 +159,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
 template <typename T, class OopClosureType>
 inline void InstanceKlass::do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klute) {
   // Call closure->do_cld. The underlying assumption here is that if a closure subscribes via do_metadata(),
-  // it is really interested in the CLD instead of the Klass (does a do_cld(klass->class_loader_data()).
-  // That is true for all Closures that derive from OopIterateClosure.
+  // it is interested in the CLD. That is true for all Closures that derive from OopIterateClosure.
   static_assert(std::is_base_of<OopIterateClosure, OopClosureType>::value,
                 "must inherit from OopIterateClosure");
   // ... and in that case we can fetch the CLD from the KLUT cld cache instead of letting the closure pull

@@ -782,12 +782,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     // Every archived Klass must carry a valid klute. That is because every archived Klass
     // would have been created via the usual dynamic class loading or - generation, which should
     // have registered the Klass with klut.
-#ifdef ASSERT
-    // We can, unfortunately, encounter classes that are not linked yet at this point.
-    // Hopefully this will be resolved with JDK-8342429.
-    constexpr bool tolerate_aot_unlinked_classes = true;
-    KlassLUTEntry(k->klute()).verify_against_klass(k, tolerate_aot_unlinked_classes);
-#endif
+    DEBUG_ONLY(KlassLUTEntry(k->klute()).verify_against_klass(k));
   }
 
   for (int i = 0; i < klasses()->length(); i++) {

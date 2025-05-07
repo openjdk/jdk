@@ -49,13 +49,13 @@ inline void KlassInfoLUT::put(unsigned index, klute_raw_t klute) {
 inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const klute_raw_t klute = at(nk);
-#if INCLUDE_CDS
-//  if (klute == KlassLUTEntry::invalid_entry) {
-//    // This branch, and the late_register_klass mechanic, only exists because it is
-//    // so difficult to iterate CDS classes after loading CDS archives. See discussion
-//    // surrounding 8353225. Hopefully we can remove this in the future.
-//    return late_register_klass(nk);
-//  }
+#if 0 // INCLUDE_CDS
+  if (klute == KlassLUTEntry::invalid_entry) {
+    // This branch, and the late_register_klass mechanic, only exists because it is
+    // so difficult to iterate CDS classes after loading CDS archives. See discussion
+    // surrounding 8353225. Hopefully we can remove this in the future.
+    return late_register_klass(nk);
+  }
 #else
   assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
 #endif
@@ -71,11 +71,10 @@ inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   return klute;
 }
 
-ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(int index) {
-  assert(index >= 0 && index <= 3, "Sanity");
+ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(unsigned index) {
+  assert(index <= 3, "Sanity");
   ClassLoaderData* cld = _common_loaders[index];
-  // Because of AOT, we can now encounter objects of Klasses that are not fully linked yet
-  // assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);
+  assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);
   return cld;
 }
 

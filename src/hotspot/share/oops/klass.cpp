@@ -823,6 +823,7 @@ void Klass::remove_unshareable_info() {
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
   set_is_shared();
+  KlassInfoLUT::shared_klass_cld_changed(this);
 
   // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
   // Even though the bitmaps always match, the canonical order of elements in the table

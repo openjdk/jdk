@@ -83,10 +83,11 @@ class KlassInfoLUT : public AllStatic {
   static unsigned _max_entries;
   static klute_raw_t* _table;
   static bool _initialized;
-  static inline unsigned max_entries() { return _max_entries; }
+  static inline unsigned max_entries()  { return _max_entries; }
   static inline klute_raw_t at(unsigned index);
   static inline void put(unsigned index, klute_raw_t klute);
   static void allocate_lookup_table();
+  static bool uses_lookup_table()       { return _table != nullptr; }
 
   // Klass registration statistics. These are not expensive and therefore
   // we carry them always.
@@ -134,8 +135,6 @@ class KlassInfoLUT : public AllStatic {
   static klute_raw_t late_register_klass(narrowKlass nk);
 #endif
 
-  static bool use_lookup_table() { return _table != nullptr; }
-
 public:
 
   static void initialize();
@@ -143,13 +142,14 @@ public:
   static klute_raw_t register_klass(const Klass* k);
   static inline klute_raw_t lookup(narrowKlass k);
 
-  static void scan_klass_range_update_lut(address from, address to);
-
   // ClassLoaderData handling
+  static constexpr unsigned cld_index_unknown = 0;
+  static unsigned index_for_cld(const ClassLoaderData* cld);
+  static inline ClassLoaderData* lookup_cld(unsigned index);
   static void register_cld_if_needed(ClassLoaderData* cld);
-  static int index_for_cld(const ClassLoaderData* cld);
-  static inline ClassLoaderData* lookup_cld(int index);
+
 #if INCLUDE_CDS
+  static void scan_klass_range_update_lut(address from, address to);
   static void shared_klass_cld_changed(Klass* k);
 #endif
 

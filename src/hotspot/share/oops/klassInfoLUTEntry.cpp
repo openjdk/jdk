@@ -32,6 +32,7 @@
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/klassKind.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 // See klass.hpp
 union LayoutHelperHelper {
@@ -58,26 +59,44 @@ static void read_and_check_omb_values(const OopMapBlock* omb, unsigned& omb_offs
   omb_count = count;
 }
 
+klute_raw_t KlassLUTEntry::build_from_common(const Klass* k) {
+  const int kind = k->kind();
+  const ClassLoaderData* const cld = k->class_loader_data();
+  unsigned cld_index = KlassInfoLUT::cld_index_unknown;
+
+  if (cld == nullptr) {
+#ifdef INCLUDE_CDS
+    // Unfortunately, due to AOT delayed class linking (see JDK-8342429), we can
+    // encounter Klass that are unlinked and their CLD field is still nullptr.
+    // Until JDK-8342429 we accept that and treat it the same as non-permanent CLDs:
+    // "unknown CLD, look CLD up in Klass directly".
+    // Later, when the CLD field in Klass is set in the course of class linking, we
+    // will recalculate the klute based on the new CLD.
+    cld_index = KlassInfoLUT::cld_index_unknown;
+#else
+    fatal("CLD null for Klass " PTR_FORMAT, p2i(k));
+#endif
+  } else {
+    cld_index = KlassInfoLUT::index_for_cld(cld);
+  }
+  U value(0);
+  value.common.kind = kind;
+  value.common.cld_index = cld_index;
+
+  return value.raw;
+}
+
 klute_raw_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_encodable_reason) {
 
   assert(ik->is_instance_klass(), "sanity");
 
-  const int kind = ik->kind();
-  const int lh = ik->layout_helper();
-  assert(ik->class_loader_data() != nullptr, "no associated class loader?");
-  const int cld_index = KlassInfoLUT::index_for_cld(ik->class_loader_data());
-
-  U value(0);
-
-  // Set common bits, these are always present
-  assert(kind < 0b111, "sanity");
-  value.common.kind = kind;
-  value.common.loader = cld_index;
+  U value(build_from_common(ik));
 
   // We may not be able to encode the IK-specific info; if we can't, those bits are left zero
   // and we return an error string for logging
   #define NOPE(s) { not_encodable_reason = s; return value.raw; }
 
+  const int lh = ik->layout_helper();
   if (Klass::layout_helper_needs_slow_path(lh)) {
     if (ik->is_abstract() || ik->is_interface()) {
       NOPE("klass is abstract or interface");
@@ -145,24 +164,21 @@ klute_raw_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
   assert(ak->is_array_klass(), "sanity");
 
-  const int kind = ak->kind();
-  const int lh = ak->layout_helper();
-  const int cld_index = KlassInfoLUT::index_for_cld(ak->class_loader_data());
+  U value(build_from_common(ak));
 
+
+  const int lh = ak->layout_helper();
   assert(Klass::layout_helper_is_objArray(lh) || Klass::layout_helper_is_typeArray(lh), "unexpected");
 
   LayoutHelperHelper lhu = { (unsigned) lh };
-  U value(0);
-  value.common.kind = kind;
-  value.common.loader = cld_index;
 
   assert(lhu.bytes.lh_esz <= 3, "Sanity (%X)", lh);
   value.ake.l2esz = lhu.bytes.lh_esz;
 
   assert(lhu.bytes.lh_hsz >= 12 && lhu.bytes.lh_hsz <= 24, "Sanity");
   value.ake.hsz = lhu.bytes.lh_hsz;
-  return value.raw;
 
+  return value.raw;
 }
 
 klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
@@ -183,7 +199,7 @@ klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
 }
 
 #ifdef ASSERT
-void KlassLUTEntry::verify_against_klass(const Klass* k, bool tolerate_aot_unlinked_classes) const {
+void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
 #define PREAMBLE_FORMAT               "Klass: " PTR_FORMAT "(%s), klute " KLUTE_FORMAT ": "
 #define PREAMBLE_ARGS                 p2i(k), k->external_name(), _v.raw
@@ -217,13 +233,22 @@ void KlassLUTEntry::verify_against_klass(const Klass* k, bool tolerate_aot_unlin
   const ClassLoaderData* const real_cld = k->class_loader_data();
   const unsigned cld_index = loader_index();
   ASSERT_HERE(cld_index < 4, "invalid loader index");
-  // With AOT, we can encounter Klasses that have not set their CLD yet. Until that is solved (JDK-8342429),
-  // work around this problem. Dealing with unlinked classes is very frustrating.
-  const bool skip_cld_check = (real_cld == nullptr) && tolerate_aot_unlinked_classes;
-  if (!skip_cld_check) {
-    ASSERT_HERE(real_cld != nullptr, "Klass CLD is null?");
+
+  if (real_cld == nullptr) {
+    // With AOT, we can encounter Klasses that have not set their CLD yet. Until that is solved (JDK-8342429),
+    // work around this problem.
+    constexpr bool tolerate_aot_unlinked_classes = CDS_ONLY(true) NOT_CDS(false);
+    if (tolerate_aot_unlinked_classes) {
+      // We expect the klute to show "unknown CLD"
+      ASSERT_HERE2(cld_index == KlassInfoLUT::cld_index_unknown,
+                   "for CLD==nullptr cld_index is expected to be %u, was %u",
+                   KlassInfoLUT::cld_index_unknown, cld_index);
+    } else {
+      ASSERT_HERE(real_cld != nullptr, "Klass CLD is null?");
+    }
+  } else {
     const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cld_index);
-    if (cld_index > 0) {
+    if (cld_index != KlassInfoLUT::cld_index_unknown) {
       // We expect to get one of the three permanent class loaders, and for it to match the one in Klass
       ASSERT_HERE2(cld_from_klute->is_permanent_class_loader_data(), "not perma cld (loader_index: %d, CLD: " PTR_FORMAT ")",
                    cld_index, p2i(cld_from_klute));
@@ -241,15 +266,13 @@ void KlassLUTEntry::verify_against_klass(const Klass* k, bool tolerate_aot_unlin
   }
 
   if (k->is_array_klass()) {
-
-    // compare our (truncated) lh with the real one
+    // compare klute information with the information from the layouthelper
     const LayoutHelperHelper lhu = { (unsigned) real_lh };
     ASSERT_HERE2(lhu.bytes.lh_esz == ak_log2_elem_size() &&
                  lhu.bytes.lh_hsz == ak_first_element_offset_in_bytes() &&
                  ( (lhu.bytes.lh_tag == 0xC0 && real_kind == TypeArrayKlassKind) ||
                  (lhu.bytes.lh_tag == 0x80 && real_kind == ObjArrayKlassKind) ),
                  "layouthelper mismatch (lh from Klass: 0x%x", real_lh);
-
   } else {
 
     ASSERT_HERE(k->is_instance_klass(), "unexpected");
@@ -311,6 +334,16 @@ void KlassLUTEntry::verify_against_klass(const Klass* k, bool tolerate_aot_unlin
 } // KlassLUTEntry::verify_against
 
 #endif // ASSERT
+
+#if INCLUDE_CDS
+klute_raw_t KlassLUTEntry::calculate_klute_with_new_cld_index(unsigned cld_index) const {
+  assert(cld_index < 3, "Sanity");
+  U v(_v.raw);
+  v.common.cld_index = cld_index;
+  return v.raw;
+}
+#endif
+
 
 void KlassLUTEntry::print(outputStream* st) const {
   st->print("%X (Kind: %d Loader: %d)", value(), kind(), loader_index());

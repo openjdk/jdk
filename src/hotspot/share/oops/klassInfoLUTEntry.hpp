@@ -137,15 +137,15 @@ class KlassLUTEntry {
 
   // All valid entries:  KKKB ---- ---- ---- ---- ---- ---- ----
   static constexpr int bits_kind       = 3;
-  static constexpr int bits_loader     = 2;
-  static constexpr int bits_common     = bits_kind + bits_loader;
+  static constexpr int bits_cld_index  = 2;
+  static constexpr int bits_common     = bits_kind + bits_cld_index;
   static constexpr int bits_specific   = bits_total - bits_common;
 
   // Bits valid for all entries, regardless of Klass kind
   struct KE {
     // lsb
     unsigned kind_specific_bits : bits_specific;
-    unsigned loader             : bits_loader;
+    unsigned cld_index          : bits_cld_index;
     unsigned kind               : bits_kind;
     // msb
   };
@@ -197,6 +197,7 @@ class KlassLUTEntry {
   static constexpr size_t ik_omb_offset_2_limit = nth_bit(bits_ik_omb_offset_2);
   static constexpr size_t ik_omb_count_2_limit = nth_bit(bits_ik_omb_count_2);
 
+  static klute_raw_t build_from_common(const Klass* k);
   static klute_raw_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
   static klute_raw_t build_from_ak(const ArrayKlass* k);
 
@@ -214,20 +215,19 @@ public:
   // an error somewhere.
   bool is_valid() const   { return _v.raw != invalid_entry; }
 
+  // Given a Klass, construct a klute from it.
   static klute_raw_t build_from_klass(const Klass* k);
 
   bool is_valid_for_klass(const Klass* k) const;
 
-#ifdef ASSERT
-  void verify_against_klass(const Klass* k, bool tolerate_aot_unlinked_classes) const;
-#endif // ASSERT
+  DEBUG_ONLY(void verify_against_klass(const Klass* k) const;)
 
   klute_raw_t value() const { return _v.raw; }
 
   inline unsigned kind() const { return _v.common.kind; }
 
   // returns loader index (0 for unknown)
-  inline int loader_index() const { return _v.common.loader; }
+  inline int loader_index() const { return _v.common.cld_index; }
 
   bool is_array() const     { return _v.common.kind >= TypeArrayKlassKind; }
   bool is_instance() const  { return !is_array(); }
@@ -278,6 +278,11 @@ public:
   static void print_limits(outputStream* st);
 
   void print(outputStream* st) const;
+
+#if INCLUDE_CDS
+  // Returns a newly calculated klute equal to this but with a different CLD index
+  klute_raw_t calculate_klute_with_new_cld_index(unsigned cld_index) const;
+#endif
 
 }; // KlassInfoLUEntry
 

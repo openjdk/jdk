@@ -88,8 +88,19 @@ static const char* common_loader_names[4] = { "other", "boot", "app", "platform"
 
 void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
 
+#ifdef INCLUDE_CDS
+  // Unfortunately, due to AOT delayed class linking (see JDK-8342429), we can
+  // encounter Klass that are unlinked and their CLD field is still nullptr.
+  // Until JDK-8342429 we must accept that.
+  if (cld == nullptr) {
+    return;
+  }
+#else
+  assert(cld != nullptr, "CLD null");
+#endif
+
   // We remember CLDs for the three permanent class loaders in a lookup array.
-  int index = -1;
+  unsigned index = 0;
   if (cld->is_permanent_class_loader_data()) {
     if (cld->is_the_null_class_loader_data()) {
       index = 1;
@@ -100,7 +111,7 @@ void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
     }
   }
 
-  if (index == -1) {
+  if (index == 0) {
     return;
   }
 
@@ -117,14 +128,14 @@ void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
   assert(old_cld == cld || old_cld == nullptr, "Different CLD??");
 }
 
-int KlassInfoLUT::index_for_cld(const ClassLoaderData* cld) {
-  assert(cld != nullptr, "must not be null");
+unsigned KlassInfoLUT::index_for_cld(const ClassLoaderData* cld) {
+  assert(cld != nullptr, "CLD null?");
   for (int i = 1; i <= 3; i++) {
     if (cld == _common_loaders[i]) {
       return i;
     }
   }
-  return 0;
+  return cld_index_unknown;
 }
 
 static void log_klass_registration(const Klass* k, narrowKlass nk, bool added_to_table,
@@ -144,7 +155,6 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 
   // First register the CLD in case we did not already do that
   ClassLoaderData* const cld = k->class_loader_data();
-  assert(cld != nullptr, "Require CLD");
   register_cld_if_needed(cld);
 
   // We calculate the klute that will be stored into the Klass.
@@ -152,7 +162,7 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
   // We also add the klute to the lookup table iff we use a lookup table (we do if COH is enabled)
   // and if the Klass is in the narrowKlass encoding range. Interfaces and abstract classes are
   // not put there anymore since we don't need narrowKlass lookup for them.
-  const bool add_to_table =  use_lookup_table() ? CompressedKlassPointers::is_encodable(k) : false;
+  const bool add_to_table =  uses_lookup_table() ? CompressedKlassPointers::is_encodable(k) : false;
   const narrowKlass nk = add_to_table ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
   // Calculate klute from Klass properties and update the table value.
@@ -163,7 +173,8 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
   log_klass_registration(k, nk, add_to_table, klute, "registered");
 
 #ifdef ASSERT
-  KlassLUTEntry(klute).verify_against_klass(k, false /* tolerate_aot_unlinked_classes */);
+  // Until See JDK-8342429 is solved
+  KlassLUTEntry(klute).verify_against_klass(k);
   if (add_to_table) {
     KlassLUTEntry e2(at(nk));
     assert(e2.value() == klute, "sanity");
@@ -188,7 +199,7 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 
 void KlassInfoLUT::scan_klass_range_update_lut(address from, address to) {
   assert(_initialized, "not initialized");
-  if (use_lookup_table()) {
+  if (uses_lookup_table()) {
     log_info(klut)("Scanning CDS klass range: " RANGE2FMT, RANGE2FMTARGS(from, to));
     const size_t stepsize = CompressedKlassPointers::klass_alignment_in_bytes();
     assert(stepsize >= K, "only for COH and large alignments");
@@ -208,11 +219,11 @@ void KlassInfoLUT::scan_klass_range_update_lut(address from, address to) {
       if (klute == KlassLUTEntry::invalid_entry) {
         continue;
       }
-      // Above checks may of course, rarely, give false positives. That is absolutely fine: we
-      // then copy a "klute" from a "Klass" to the table that really isn't either klute nor Klass.
+      // Above checks may of course, very rarely, result in false positives (locations wrongly
+      // identified as Klass locations). That is absolutely fine: we then copy a "klute" from
+      // that "Klass" to the table that really isn't either klute nor Klass.
       // Since that slot is not used anyway by a real Klass, nothing bad will happen.
-      // OTOH, *missing* to add a klute for a Klass that really exists would be really bad. Hence,
-      // err on the plus side.
+      // OTOH, *missing* to add a klute for a Klass that exists would be really bad.
       const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(candidate));
       put(nk, klute);
       log_info(klut)("Suspected Klass found at " PTR_FORMAT "; adding nk %u, klute: " KLUTE_FORMAT,
@@ -254,25 +265,36 @@ klute_raw_t KlassInfoLUT::late_register_klass(narrowKlass nk) {
     // Note: cld may still be nullptr; in that case it will be initialized by CDS before the Klass
     // is used. At that point we may correct the klute entry to account for the new CDS.
   }
-  DEBUG_ONLY(klutehelper.verify_against_klass(k, (cld != nullptr) /* tolerate_aot_unlinked_classes */));
+  DEBUG_ONLY(klutehelper.verify_against_klass(k));
   log_klass_registration(k, nk, true, klute, "late-registered");
   return klute;
 }
 
 void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
-  // Called when a shared class gets its ClassLoaderData restored after being loaded.
-  // The function makes sure that the CLD bits in the Klass' klute match the new
-  // ClassLoaderData.
-  const klute_raw_t klute = k->klute();
-  ClassLoaderData* cld = k->class_loader_data();
-  assert(cld != nullptr, "must be");
-  register_cld_if_needed(cld);
-  const int cld_index = index_for_cld(cld);
-  if (KlassLUTEntry(klute).loader_index() != cld_index) {
-    // for simplicity, just recalculate the klute and update the table.
-    log_debug(klut)("Re-registering Klass after CLD change");
-    k->register_with_klut();
+  // Called when the CLD field inside a Klass is changed by CDS.
+  // Recalculates the klute for this Klass (even though strictly speaking we
+  // only need to update the CLD index in the klute).
+  //
+  // This is necessary to prevent the klute and the Klass being out of sync.
+  //
+  // Two cases:
+  // - when the CLD is set to nullptr in the process of archive dumping (remove_unshareable_info),
+  //   we set the klute.cld_index to 0 aka "unknown CLD". Any oop iteration over an object with a
+  //   klute.cld_index of 0 will then retrieve the CLD from the Klass directly.
+  // - when the CLD is restored after the archive has been loaded, klute.cld_index is set to
+  //   the value corresponding to that CLD.
+  assert(k->is_shared(), "Only for CDS classes");
+  const klute_raw_t oldklute = k->klute();
+  k->register_with_klut(); // re-register
+  const klute_raw_t newklute = k->klute();
+  if (uses_lookup_table() && CompressedKlassPointers::is_encodable(k)) {
+    const narrowKlass nk = CompressedKlassPointers::encode(k);
+    put(nk, newklute);
   }
+
+  log_debug(klut)("Updated klute for Klass " PTR_FORMAT " (%s) after CLD change:"
+                  "old: " KLUTE_FORMAT ", new: " KLUTE_FORMAT,
+                  p2i(k), k->external_name(), oldklute, newklute);
 }
 #endif // INCLUDE_CDS
 
@@ -292,7 +314,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
 
   st->print_cr("KLUT statistics:");
 
-  if (use_lookup_table()) {
+  if (uses_lookup_table()) {
     st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(klute_raw_t));
   }
 
@@ -348,7 +370,7 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
   );
 #endif // KLUT_ENABLE_EXPENSIVE_STATS
 
-  if (use_lookup_table()) {
+  if (uses_lookup_table()) {
     // Hit density per cacheline distribution (How well are narrow Klass IDs clustered to give us good local density)
     constexpr int chacheline_size = 64;
     constexpr int slots_per_cacheline = chacheline_size / sizeof(KlassLUTEntry);

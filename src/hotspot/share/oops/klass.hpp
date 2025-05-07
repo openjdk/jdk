@@ -220,7 +220,7 @@ protected:
   enum class PrivateLookupMode  { find, skip };
 
   // Klute handling
-  klute_raw_t klute() const { return _klute; }
+  klute_raw_t klute() const     { return _klute; }
   void register_with_klut();
 
   virtual bool is_klass() const { return true; }
