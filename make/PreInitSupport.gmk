@@ -250,10 +250,7 @@ endef
 # Param 1: FORCE = force generation of main-targets.gmk or LAZY = do not force.
 # Param 2: The SPEC file to use.
 define DefineMainTargets
-
-  # We need to include the given SPEC file to setup TOPDIR properly
   SPEC_FILE := $(strip $2)
-  -include $$(SPEC_FILE)
 
   # We will start by making sure the main-targets.gmk file is removed, if
   # make has not been restarted. By the -include, we will trigger the
@@ -272,10 +269,10 @@ define DefineMainTargets
   $$(main_targets_file):
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
-	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) )
+	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR))
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
-	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) NO_RECIPES=true \
+	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR) NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
 
