@@ -43,6 +43,11 @@
 // The following is a AWT convention?
 #define PREFERENCES_TAG  42
 
+// Custom event that is provided by AWT to allow libraries like
+// JavaFX to forward native events to AWT even if AWT runs in 
+// embedded mode.
+static NSString* awtEmbeddedEvent = @"AWTEmbeddedEvent";
+
 static void addMenuItem(NSMenuItem* menuItem, NSInteger index) {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -126,11 +131,13 @@ AWT_ASSERT_APPKIT_THREAD;
         }
     }
 
-    // Register embedded event listener
-    NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
-    Class clz = [ApplicationDelegate class];
-    [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:@"EmbeddedEvent" object:nil];
-
+    if (!isApplicationOwner) {
+        // Register embedded event listener
+        NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
+        Class clz = [ApplicationDelegate class];
+        [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:awtEmbeddedEvent object:nil];
+    }
+    
     checked = YES;
     if (!shouldInstall) {
         [ThreadUtilities setApplicationOwner:NO];
@@ -299,7 +306,7 @@ static jclass sjc_AppEventHandler = NULL;
     if (!fHandlesURLTypes) return;
 
     NSString *url = [[openURLEvent paramDescriptorForKeyword:keyDirectObject] stringValue];
-    [self _openURL:url];
+    [ApplicationDelegate _openURL:url];
 
     [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
 }
@@ -489,7 +496,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     if ([name isEqualToString:@"openURL"]) {
         NSString *url = notification.userInfo[@"url"];
-        [self _openURL:url];
+        [ApplicationDelegate _openURL:url];
     }
 }
 
