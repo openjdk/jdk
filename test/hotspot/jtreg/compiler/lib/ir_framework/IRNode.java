@@ -2511,6 +2511,16 @@ public class IRNode {
         machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
     }
 
+    public static final String FMA_F = PREFIX + "FMA_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_F, "FmaF");
+    }
+
+    public static final String FMA_D = PREFIX + "FMA_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_D, "FmaD");
+    }
+
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;
     static {
         machOnlyNameRegex(VFMLA, "vfmla");
