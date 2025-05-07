@@ -114,7 +114,7 @@ on where and how to check out the source code.
       is especially important if your user name contains spaces and/or mixed
       upper and lower case letters.
 
-    Failure to follow this procedure might result in hard-to-debug build
+    Failure to follow these procedures might result in hard-to-debug build
     problems.
 
   * You need to install a git client. You have two choices, Cygwin git or Git
