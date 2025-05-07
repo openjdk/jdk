@@ -2106,22 +2106,22 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
-            public int countPositives(byte[] bytes, int offset, int length) {
+            public int uncheckedCountPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
+            public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
-            public char getUTF16Char(byte[] bytes, int index) {
+            public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public void putCharUTF16(byte[] bytes, int index, int ch) {
+            public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+            public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
 
@@ -2133,15 +2133,15 @@ public final class System {
                 return String.getBytesUTF8NoRepl(s);
             }
 
-            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
             }
 

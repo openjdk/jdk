@@ -83,7 +83,7 @@ public class US_ASCII
             int dl = doff + dst.limit();
 
             // ASCII only loop
-            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
             src.position(sp - soff);
@@ -159,7 +159,7 @@ public class US_ASCII
             assert (dp <= dl);
             dp = (dp <= dl ? dp : dl);
 
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 

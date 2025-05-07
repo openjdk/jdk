@@ -168,16 +168,16 @@ public final class HexDigits {
     public static int getCharsUTF16(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
             int pair = (int) DIGITS[((int) value) & 0xFF];
-            JLA.putCharUTF16(buffer, --index, pair >> 8);
-            JLA.putCharUTF16(buffer, --index, pair & 0xFF);
+            JLA.uncheckedPutCharUTF16(buffer, --index, pair >> 8);
+            JLA.uncheckedPutCharUTF16(buffer, --index, pair & 0xFF);
             value >>>= 8;
         }
 
         int digits = DIGITS[(int) (value & 0xFF)];
-        JLA.putCharUTF16(buffer, --index, (byte) (digits >> 8));
+        JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits >> 8));
 
         if (0xF < value) {
-            JLA.putCharUTF16(buffer, --index, (byte) (digits & 0xFF));
+            JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits & 0xFF));
         }
 
         return index;

@@ -299,7 +299,7 @@ public interface JavaLangAccess {
      * <p>
      * <b>WARNING: This method does not perform any bound checks.</b>
      */
-    int countPositives(byte[] ba, int off, int len);
+    int uncheckedCountPositives(byte[] ba, int off, int len);
 
     /**
      * Count the number of leading non-zero ascii chars in the String.
@@ -319,7 +319,7 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
      * Encode the given string into a sequence of bytes using the specified
@@ -336,7 +336,7 @@ public interface JavaLangAccess {
      * @return the encoded bytes
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Returns a new string by decoding from the given UTF-8 bytes array.
@@ -358,7 +358,7 @@ public interface JavaLangAccess {
      * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
      * @return the char value
      */
-    char getUTF16Char(byte[] bytes, int index);
+    char uncheckedGetUTF16Char(byte[] bytes, int index);
 
     /**
      * Put the {@code ch} at {@code index} in a {@code byte[]} in internal
@@ -369,7 +369,7 @@ public interface JavaLangAccess {
      * @param bytes the UTF-16 encoded bytes
      * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
      */
-    void putCharUTF16(byte[] bytes, int index, int ch);
+    void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
      * Encode the given string into a sequence of bytes using utf8.
@@ -386,7 +386,7 @@ public interface JavaLangAccess {
      * <p>
      * <b>WARNING: This method does not perform any bound checks.</b>
      */
-    void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination
@@ -396,7 +396,7 @@ public interface JavaLangAccess {
      *
      * @return the number of bytes successfully decoded, at most len
      */
-    int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+    int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Returns the initial `System.in` to determine if it is replaced
@@ -418,7 +418,7 @@ public interface JavaLangAccess {
      *
      * @return the number of bytes successfully encoded, or 0 if none
      */
-    int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable
@@ -455,7 +455,7 @@ public interface JavaLangAccess {
      * Creates helper for string concatenation.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
-     * ownership of the string array to the callee</b>, since the later will not
+     * ownership of the string array to the callee</b>, since the latter will not
      * make a copy.
      */
     Object stringConcat1(String[] constants);

@@ -126,7 +126,7 @@ class UnixPath implements Path {
     private static byte[] encode(UnixFileSystem fs, String input) {
         input = fs.normalizeNativePath(input);
         try {
-            return JLA.getBytesNoRepl(input, Util.jnuEncoding());
+            return JLA.uncheckedGetBytesNoRepl(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
             throw new InvalidPathException(input,
                 "Malformed input or input contains unmappable characters");

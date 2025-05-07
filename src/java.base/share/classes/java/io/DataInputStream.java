@@ -595,11 +595,11 @@ loop:   while (true) {
         int chararr_count=0;
 
         in.readFully(bytearr, 0, utflen);
-        int ascii = JLA.countPositives(bytearr, 0, utflen);
+        int ascii = JLA.uncheckedCountPositives(bytearr, 0, utflen);
         if (ascii == utflen) {
             String str;
             if (trusted) {
-                str = JLA.newStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
+                str = JLA.uncheckedNewStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
             } else {
                 str = new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
             }
@@ -621,7 +621,7 @@ loop:   while (true) {
         }
 
         if (ascii != 0) {
-            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, ascii);
+            JLA.uncheckedInflateBytesToChars(bytearr, 0, chararr, 0, ascii);
             count += ascii;
             chararr_count += ascii;
         }
