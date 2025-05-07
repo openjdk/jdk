@@ -25,7 +25,7 @@
  * @test
  * @bug 8356087
  * @summary Ensure P11Mac using SHA message digests can be initialized with
- *     any secret keys
+ *     secret keys with unrecognized algorithms
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm InitMacWithAnyKey
