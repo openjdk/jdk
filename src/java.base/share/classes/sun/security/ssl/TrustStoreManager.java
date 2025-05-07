@@ -112,7 +112,7 @@ final class TrustStoreManager {
                 SSLLogger.fine(
                     "trustStore is: " + storeName + "\n" +
                     "trustStore type is: " + storeType + "\n" +
-                    "trustStore provider is: " + storeProvider + "\n" +
+                    "trustStore provider is: " + (storeProvider == null ? "unspecified" : storeProvider) + "\n" +
                     "the last modified time is: " + (new Date(lastModified)));
             }
         }
@@ -130,7 +130,7 @@ final class TrustStoreManager {
                     "javax.net.ssl.trustStoreType",
                     KeyStore.getDefaultType());
             String storePropProvider = System.getProperty(
-                    "javax.net.ssl.trustStoreProvider", "unspecified");
+                    "javax.net.ssl.trustStoreProvider", "");
             String storePropPassword = System.getProperty(
                     "javax.net.ssl.trustStorePassword", "");
 
