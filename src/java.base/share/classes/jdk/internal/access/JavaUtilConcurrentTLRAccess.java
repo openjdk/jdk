@@ -27,4 +27,6 @@ package jdk.internal.access;
 
 public interface JavaUtilConcurrentTLRAccess {
     int nextSecondaryThreadLocalRandomSeed();
+    int getThreadLocalRandomProbe();
+    int advanceThreadLocalRandomProbe(int r);
 }

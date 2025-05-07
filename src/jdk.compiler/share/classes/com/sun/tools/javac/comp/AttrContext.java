@@ -80,9 +80,9 @@ public class AttrContext {
     boolean isAnonymousDiamond = false;
 
     /**
-     *  Is this an attribution environment for an instance creation expression?
+     *  Is this an attribution environment for an anonymous instance creation expression?
      */
-    boolean isNewClass = false;
+    boolean isAnonymousNewClass = false;
 
     /** Indicate if the type being visited is a service implementation
      */
@@ -149,7 +149,7 @@ public class AttrContext {
         info.isSerializableLambda = isSerializableLambda;
         info.attributionMode = attributionMode;
         info.isAnonymousDiamond = isAnonymousDiamond;
-        info.isNewClass = isNewClass;
+        info.isAnonymousNewClass = isAnonymousNewClass;
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
         info.allowProtectedAccess = allowProtectedAccess;

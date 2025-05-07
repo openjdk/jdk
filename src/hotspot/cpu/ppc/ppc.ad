@@ -9537,28 +9537,6 @@ instruct sqrtF_reg(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct roundDouble_nop(regD dst) %{
-  match(Set dst (RoundDouble dst));
-  ins_cost(0);
-
-  format %{ " -- \t// RoundDouble not needed - empty" %}
-  size(0);
-  // PPC results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode( /*empty*/ );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct roundFloat_nop(regF dst) %{
-  match(Set dst (RoundFloat dst));
-  ins_cost(0);
-
-  format %{ " -- \t// RoundFloat not needed - empty" %}
-  size(0);
-  // PPC results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode( /*empty*/ );
-  ins_pipe(pipe_class_default);
-%}
-
 
 // Multiply-Accumulate
 // src1 * src2 + src3
@@ -14721,7 +14699,8 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(pipe_class_default);

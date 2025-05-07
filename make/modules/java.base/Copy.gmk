@@ -99,7 +99,7 @@ JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
 define print-cfg-line
 	$(call LogInfo, Adding -$1 $2 to jvm.cfg)
-	$(PRINTF) -- "-$1 $2\n" >> $@ $(NEWLINE)
+	$(ECHO) "-$1 $2" >> $@ $(NEWLINE)
 endef
 
 $(JVMCFG): $(call DependOnVariable, ORDERED_CFG_VARIANTS)

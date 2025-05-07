@@ -368,6 +368,8 @@ public:
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
 
+  Node* uncasted_init_trip(bool uncasted);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -985,6 +987,8 @@ private:
     return ctrl;
   }
 
+  void cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
+
 #ifdef ASSERT
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
@@ -1005,11 +1009,12 @@ private:
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                         CountedLoopNode* target_loop_head,
-                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
-  void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool kill_old_template);
+  void rewire_old_target_loop_entry_dependency_to_new_entry(CountedLoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
@@ -1363,7 +1368,7 @@ public:
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
@@ -1590,8 +1595,6 @@ public:
 
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
-
-  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
 
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.

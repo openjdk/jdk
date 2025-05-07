@@ -2220,13 +2220,13 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled Loop ");
+      st->print("Profiled_Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
       st->print("Auto_Vectorization_Check ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop Limit Check ");
+      st->print("Loop_Limit_Check ");
       break;
     case Deoptimization::DeoptReason::Reason_short_running_loop:
       st->print("Short_Running_Loop ");

@@ -291,6 +291,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
       TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+      if test "x$TOOLCHAIN_VERSION" = "x16" || test "x$TOOLCHAIN_VERSION" = "x16.1" ; then
+        AC_MSG_NOTICE([Xcode $TOOLCHAIN_VERSION has a compiler bug that causes the build to fail.])
+        AC_MSG_NOTICE([Please use Xcode 16.2 or later, or a version prior to 16.])
+        AC_MSG_ERROR([Compiler version is not supported.])
+      fi
     fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
@@ -622,7 +627,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     LDCXX="$CXX"
     # Force use of lld, since that is what we expect when setting flags later on
     if test "x$TOOLCHAIN_TYPE" = xclang; then
-      if test "x$OPENJDK_BUILD_OS" != "xmacosx"; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
         LD="$LD -fuse-ld=lld"
         LDCXX="$LDCXX -fuse-ld=lld"
       fi
