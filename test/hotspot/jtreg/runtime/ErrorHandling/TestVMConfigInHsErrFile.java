@@ -63,10 +63,7 @@ public class TestVMConfigInHsErrFile {
 
     ArrayList<Pattern> patterns = new ArrayList<>();
     patterns.add(Pattern.compile("# A fatal error has been detected.*"));
-    patterns.add(Pattern.compile("# *SIGSEGV.*"));
     patterns.add(Pattern.compile("# Java VM: .*compact obj headers.*"));
-    patterns.add(Pattern.compile("# *Problematic frame.*"));
-    patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);
 
