@@ -311,7 +311,7 @@ public interface JavaLangAccess {
      * using the specified {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
-     * ownership of the byte array to the callee</b>, since the later will not
+     * ownership of the byte array to the callee</b>, since the latter will not
      * make a copy.
      *
      * @param bytes the byte array source
