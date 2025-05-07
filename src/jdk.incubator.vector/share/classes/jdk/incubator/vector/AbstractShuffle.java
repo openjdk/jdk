@@ -106,28 +106,6 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         return this;
     }
 
-    @ForceInline
-    final VectorShuffle<E> fromMemorySegmentTemplate(VectorSpecies<E> vsp, MemorySegment segment,
-            long offset, ByteOrder order) {
-        long memsize = vsp.length() * 4;
-        MemorySegment arraySlice = segment.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
-        return vsp.shuffleFromArray(indices,0);
-    }
-
-    @ForceInline
-    final VectorShuffle<E> fromMemorySegmentTemplate(VectorSpecies<E> vsp, MemorySegment segment,
-            long offset, ByteOrder order, VectorMask<E> mask) {
-        long memsize = vsp.length() * 4;
-        MemorySegment arraySlice = segment.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
-        for (int i = 0; i < indices.length; i++) {
-            if (!mask.laneIsSet(i)) {
-                indices[i] = i; // identity
-            }
-        }
-        return vsp.shuffleFromArray(indices,0);
-    }
 
     @Override
     @ForceInline

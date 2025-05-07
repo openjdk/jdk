@@ -872,18 +872,6 @@ final class Int64Vector extends IntVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Integer> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Integer> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Integer> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Int64Mask laneIsValid() {
             return (Int64Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

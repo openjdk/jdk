@@ -27,6 +27,7 @@ package jdk.incubator.vector;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Arrays;
@@ -535,7 +536,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
     public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 
     /**
-     * Stores this shuffle into a {@link MemorySegment} starting at the given offset filtering witht he given mask.
+     * Stores this shuffle into a {@link MemorySegment} starting at the given offset filtering with the given mask.
      * @param ms the memory segment
      * @param offset the offset into the segment
      * @param m the mask to filter the shuffle
@@ -546,24 +547,45 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
 
     /**
      * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
-     * @param ms the memory segment
+     * @param vsp the {@link VectorSpecies} corresponding to the shuffle
+     * @param segment the memory segment
      * @param offset the offset into the segment
-     * @param bo the byte order
+     * @param order the byte order
+     * @param <E> the boxed element type
      * @return a VectorShuffle from the {@link MemorySegment}
      */
-    public abstract VectorShuffle<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
-
+    @ForceInline
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> vsp, MemorySegment segment,
+                                                                   long offset, ByteOrder order) {
+        long memsize = vsp.length() * 4;
+        MemorySegment arraySlice = segment.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        return vsp.shuffleFromArray(indices,0);
+    }
 
     /**
      * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
-     * @param ms the memory segment
+     * @param vsp the {@link VectorSpecies} corresponding to the shuffle
+     * @param segment the memory segment
      * @param offset the offset into the segment
-     * @param bo the byte order
-     * @param m the mask to filter the shuffle
+     * @param order the byte order
+     * @param mask the mask to filter the shuffle
+     * @param <E> the boxed element type
      * @return a VectorShuffle from the {@link MemorySegment}
      */
-    public abstract VectorShuffle<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<E> m);
-
+    @ForceInline
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> vsp, MemorySegment segment,
+                                                     long offset, ByteOrder order, VectorMask<E> mask) {
+        long memsize = vsp.length() * 4;
+        MemorySegment arraySlice = segment.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        for (int i = 0; i < indices.length; i++) {
+            if (!mask.laneIsSet(i)) {
+                indices[i] = i; // identity
+            }
+        }
+        return vsp.shuffleFromArray(indices,0);
+    }
     /**
      * Converts this shuffle into a vector, creating a vector
      * of integral values corresponding to the lane source

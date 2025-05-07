@@ -948,18 +948,6 @@ final class Double128Vector extends DoubleVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Double> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Double> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Double> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Double128Mask laneIsValid() {
             return (Double128Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

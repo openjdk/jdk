@@ -898,18 +898,6 @@ final class Short64Vector extends ShortVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Short> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Short64Mask laneIsValid() {
             return (Short64Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

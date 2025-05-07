@@ -942,18 +942,6 @@ final class Byte128Vector extends ByteVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Byte> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Byte128Mask laneIsValid() {
             return (Byte128Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

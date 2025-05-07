@@ -873,18 +873,6 @@ final class Float256Vector extends FloatVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Float> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Float> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Float> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Float256Mask laneIsValid() {
             return (Float256Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

@@ -954,18 +954,6 @@ final class Short512Vector extends ShortVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Short> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Short> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Short512Mask laneIsValid() {
             return (Short512Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

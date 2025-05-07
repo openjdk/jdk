@@ -912,18 +912,6 @@ final class ByteMaxVector extends ByteVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Byte> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Byte> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final ByteMaxMask laneIsValid() {
             return (ByteMaxMask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());

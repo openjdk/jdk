@@ -961,18 +961,6 @@ final class Long512Vector extends LongVector {
 
         @Override
         @ForceInline
-        public VectorShuffle<Long> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo);
-        }
-
-        @Override
-        @ForceInline
-        public VectorShuffle<Long> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Long> m) {
-            return fromMemorySegmentTemplate(vspecies(), ms, offset, bo, m);
-        }
-
-        @Override
-        @ForceInline
         public final Long512Mask laneIsValid() {
             return (Long512Mask) toBitsVector().compare(VectorOperators.GE, 0)
                     .cast(vspecies());
