@@ -44,7 +44,7 @@
 #define PREFERENCES_TAG  42
 
 // Custom event that is provided by AWT to allow libraries like
-// JavaFX to forward native events to AWT even if AWT runs in 
+// JavaFX to forward native events to AWT even if AWT runs in
 // embedded mode.
 static NSString* awtEmbeddedEvent = @"AWTEmbeddedEvent";
 
@@ -137,7 +137,7 @@ AWT_ASSERT_APPKIT_THREAD;
         Class clz = [ApplicationDelegate class];
         [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:awtEmbeddedEvent object:nil];
     }
-    
+
     checked = YES;
     if (!shouldInstall) {
         [ThreadUtilities setApplicationOwner:NO];
