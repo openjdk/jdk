@@ -123,7 +123,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
     }
-    thread->set_interp_only_mode(0);
+    thread->set_interp_only_mode(false);
   }
 }
 
@@ -778,7 +778,7 @@ void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
   _seen_interp_only_mode = true;
-  _thread->set_interp_only_mode();
+  _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }
 
@@ -788,7 +788,7 @@ void JvmtiThreadState::leave_interp_only_mode() {
     // Unmounted virtual thread updates the saved value.
     _saved_interp_only_mode = 0;
   } else {
-    _thread->clear_interp_only_mode();
+    _thread->set_interp_only_mode(false);
   }
 }
 

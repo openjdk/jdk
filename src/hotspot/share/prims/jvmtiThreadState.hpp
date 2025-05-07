@@ -191,6 +191,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
   bool              _top_frame_is_exiting;
+  bool              _saved_interp_only_mode;
   int               _hide_level;
 
  public:
@@ -211,7 +212,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // This is only valid when is_interp_only_mode() returns true
   int               _cur_stack_depth;
-  int               _saved_interp_only_mode;
 
   JvmtiThreadEventEnable _thread_event_enable;
 
@@ -273,7 +273,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {
-    return _thread == nullptr ?  _saved_interp_only_mode != 0 : _thread->is_interp_only_mode();
+    return _thread == nullptr ? _saved_interp_only_mode : _thread->is_interp_only_mode();
   }
   void enter_interp_only_mode();
   void leave_interp_only_mode();

@@ -144,13 +144,13 @@ inline void JvmtiThreadState::unbind_from(JvmtiThreadState* state, JavaThread* t
     return;
   }
   // Save thread's interp_only_mode.
-  state->_saved_interp_only_mode = thread->get_interp_only_mode();
+  state->_saved_interp_only_mode = thread->is_interp_only_mode();
   state->set_thread(nullptr);  // Make sure stale _thread value is never used.
 }
 
 inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* thread) {
   // Restore thread's interp_only_mode.
-  thread->set_interp_only_mode(state == nullptr ? 0 : state->_saved_interp_only_mode);
+  thread->set_interp_only_mode(state != nullptr && state->_saved_interp_only_mode);
 
   // Make continuation notice the interp_only_mode change.
   Continuation::set_cont_fastpath_thread_state(thread);
