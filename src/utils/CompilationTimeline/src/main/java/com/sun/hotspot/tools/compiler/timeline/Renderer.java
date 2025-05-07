@@ -16,6 +16,7 @@ public class Renderer {
 
     static final int SLOT_HEIGHT = 25;
     static final int LINE_HEIGHT = 20;
+    static final int PIX_PER_MS = 10; // 1px per 100us
 
     final int WIDTH;
     final int HEIGHT;
@@ -26,7 +27,7 @@ public class Renderer {
         for (Event event : events) {
             endTime = Math.max(endTime, event.timeFinished());
         }
-        WIDTH = (int) (endTime / 100); // 1px per 100us
+        WIDTH = (int) (endTime * PIX_PER_MS / 1000);
 
         Slots slots = new Slots();
         int maxSlots = 0;
@@ -39,7 +40,7 @@ public class Renderer {
             maxSlots = Math.max(maxSlots, slot);
         }
 
-        HEIGHT = maxSlots * SLOT_HEIGHT;
+        HEIGHT = maxSlots * SLOT_HEIGHT + 80;
     }
 
     private int mapTime(long time) {
@@ -49,11 +50,11 @@ public class Renderer {
     private Color mapLevel(int level) {
         switch (level) {
             case 0:
-                return Color.BLUE;
+                return Color.BLACK;
             case 1:
-                return Color.GREEN;
+                return Color.GREEN.darker();
             case 2:
-                return Color.YELLOW;
+                return Color.BLUE;
             case 3:
                 return Color.ORANGE;
             case 4:
@@ -70,6 +71,16 @@ public class Renderer {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH, HEIGHT);
 
+        // Render grid
+
+        g.setBackground(Color.LIGHT_GRAY);
+        g.setColor(Color.LIGHT_GRAY);
+        for (int ms = 0; ms < WIDTH / PIX_PER_MS; ms += 10) {
+            int x = mapTime(ms * 1000);
+            g.drawLine(x, 0, x, HEIGHT);
+            g.drawString(ms + "ms", x + 10, HEIGHT - 10);
+        }
+
         Font font = new Font("Serif", Font.PLAIN, 12);
         g.setFont(font);
         FontMetrics metrics = g.getFontMetrics(font);
@@ -85,17 +96,21 @@ public class Renderer {
 
             int slot = slots.claim(timeCreated, timeFinished);
 
-            g.setBackground(Color.LIGHT_GRAY);
-            g.setColor(Color.LIGHT_GRAY);
+            Color compileColor = mapLevel(event.level());
+
+            g.setBackground(Color.GRAY);
+            g.setColor(Color.GRAY);
+
             int queueDur = mapTime(timeStarted) - mapTime(timeCreated);
             queueDur = Math.max(1, queueDur);
-            g.fillRect(mapTime(timeCreated), slot*SLOT_HEIGHT, queueDur, LINE_HEIGHT);
+            g.fillRect(mapTime(timeCreated), 10 + slot*SLOT_HEIGHT + (LINE_HEIGHT / 3), queueDur, LINE_HEIGHT / 3);
 
-            g.setBackground(mapLevel(event.level()));
-            g.setColor(mapLevel(event.level()));
+            g.setBackground(compileColor);
+            g.setColor(compileColor);
+
             int compDur = mapTime(timeFinished) - mapTime(timeStarted);
             compDur = Math.max(1, compDur);
-            g.fillRect(mapTime(timeStarted), slot*SLOT_HEIGHT, compDur, LINE_HEIGHT);
+            g.fillRect(mapTime(timeStarted), 10 + slot*SLOT_HEIGHT, compDur, LINE_HEIGHT);
 
 //            g.setBackground(Color.WHITE);
 //            g.setColor(Color.BLACK);
@@ -113,7 +128,7 @@ public class Renderer {
         List<Slot> slots = new ArrayList<>();
         int claim(long startTime, long endTime) {
             for (Slot slot : slots) {
-                if (slot.finishTime + 500 < startTime) {
+                if (slot.finishTime + 100 < startTime) {
                     // Take this one.
                     slot.finishTime = endTime;
                     return slot.id;

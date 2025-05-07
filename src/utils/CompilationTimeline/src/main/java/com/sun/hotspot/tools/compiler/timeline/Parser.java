@@ -42,7 +42,8 @@ public class Parser {
         }
 
 //        events.sort(Comparator.comparingInt(Event::level).thenComparing(Event::timeCreated));
-        events.sort(Comparator.comparingLong(Event::timeCreated));
+        events.sort(Comparator.comparingLong(Event::timeStarted));
+        //events.sort(Comparator.comparingLong(Event::timeCreated));
 
         System.out.println(events);
 
