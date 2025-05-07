@@ -21,6 +21,10 @@
  * questions.
  */
 
+import static jdk.internal.util.OperatingSystem.LINUX;
+import static jdk.internal.util.OperatingSystem.MACOS;
+import static java.util.stream.Collectors.joining;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,10 +35,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
-import static jdk.internal.util.OperatingSystem.MACOS;
-import static jdk.internal.util.OperatingSystem.LINUX;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
