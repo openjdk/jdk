@@ -24,6 +24,7 @@
  */
 package sun.security.ssl;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
@@ -1670,32 +1671,39 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // derivedSecret that is used as the Secret in the "outer"
                 // HKDF-Expand-Label().
                 SecretKey derivedSecret = hkdf.expand(exporterMasterSecret,
-                        hkdfInfo, hashAlg.hashLength, "DerivedSecret");
-
-                // Now do the "outer" HKDF-Expand-Label.
-                //     HKDF-Expand-Label(derivedSecret, "exporter",
-                //         Hash(context_value), key_length)
-
-                // If a context was supplied, use it, otherwise, use the
-                // previous hashed value of ""...
-                byte[] hash = ((context.length > 0) ?
-                        md.digest(context): emptyHash);
-
-                // ...now the hkdfInfo...
-                hkdfInfo = SSLSecretDerivation.createHkdfInfo(("tls13 " +
-                        "exporter").getBytes(StandardCharsets.UTF_8), hash,
-                        length);
-
-                // ...now the final expand.
-                SecretKey key = hkdf.expand(derivedSecret, hkdfInfo, length,
-                        label);
+                        hkdfInfo, hashAlg.hashLength, "DerivedSecret");;
                 try {
+                    // Now do the "outer" HKDF-Expand-Label.
+                    //     HKDF-Expand-Label(derivedSecret, "exporter",
+                    //         Hash(context_value), key_length)
+
+                    // If a context was supplied, use it, otherwise, use the
+                    // previous hashed value of ""...
+                    byte[] hash = ((context.length > 0) ?
+                            md.digest(context) : emptyHash);
+
+                    // ...now the hkdfInfo...
+                    hkdfInfo = SSLSecretDerivation.createHkdfInfo(
+                            ("tls13 exporter").getBytes(StandardCharsets.UTF_8),
+                            hash, length);
+
+                    // ...now the final expand.
+                    SecretKey key = hkdf.expand(derivedSecret, hkdfInfo, length,
+                            label);
+                    return key;
+                } finally {
                     // Best effort
-                    derivedSecret.destroy();
-                } catch (DestroyFailedException e) {
-                    // swallow
+                    if (derivedSecret instanceof SecretKeySpec s) {
+                        SharedSecrets.getJavaxCryptoSpecAccess()
+                                .clearSecretKeySpec(s);
+                    } else  {
+                        try {
+                            derivedSecret.destroy();
+                        } catch (DestroyFailedException e) {
+                            // swallow
+                        }
+                    }
                 }
-                return key;
             } catch (Exception e) {
                 // For whatever reason, we couldn't generate.  Wrap and return.
                 throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
