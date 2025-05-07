@@ -157,6 +157,25 @@ void Thread::initialize_tlab() {
   }
 }
 
+void Thread::retire_tlab(ThreadLocalAllocStats* stats) {
+  // Sampling and serviceability support
+  if (tlab().end() != nullptr) {
+    incr_allocated_bytes(tlab().used_bytes());
+    heap_sampler().retire_tlab(tlab().top());
+  }
+
+  // Retire the TLAB
+  tlab().retire(stats);
+}
+
+void Thread::fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size) {
+  // Thread allocation sampling support
+  heap_sampler().set_tlab_top_at_sample_start(start);
+
+  // Fill the TLAB
+  tlab().fill(start, start + pre_reserved, new_size);
+}
+
 void Thread::initialize_thread_current() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == nullptr, "Thread::current already initialized");
