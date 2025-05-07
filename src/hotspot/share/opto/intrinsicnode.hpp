@@ -198,6 +198,7 @@ class EncodeISOArrayNode: public Node {
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual uint size_of() const { return sizeof(EncodeISOArrayNode); }
 };
 
 //-------------------------------DigitNode----------------------------------------

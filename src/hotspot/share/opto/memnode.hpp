@@ -1089,6 +1089,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
   bool is_large() const { return _is_large; }
+  virtual uint size_of() const { return sizeof(ClearArrayNode); }
 
   // Clear the given area of an object or array.
   // The start offset must always be aligned mod BytesPerInt.
