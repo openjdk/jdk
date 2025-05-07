@@ -2179,7 +2179,7 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
     case Deoptimization::Reason_profile_predicate:
     case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
-    case Deoptimization::Reason_short_running_loop:
+    case Deoptimization::Reason_short_running_long_loop:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
@@ -2228,8 +2228,8 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
       st->print("Loop_Limit_Check ");
       break;
-    case Deoptimization::DeoptReason::Reason_short_running_loop:
-      st->print("Short_Running_Loop ");
+    case Deoptimization::DeoptReason::Reason_short_running_long_loop:
+      st->print("Short_Running_Long_Loop ");
       break;
     default:
       fatal("unknown kind");

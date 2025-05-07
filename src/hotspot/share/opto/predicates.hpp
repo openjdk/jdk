@@ -786,7 +786,7 @@ class PredicateIterator : public StackObj {
       PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
       current_node = loop_predicate_iterator.for_each(predicate_visitor);
     }
-    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_loop);
+    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
     return short_running_loop_predicate_iterator.for_each(predicate_visitor);
   }
 };
@@ -968,7 +968,7 @@ class Predicates : public StackObj {
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
         _short_running_loop_predicate_block(_loop_predicate_block.entry(),
-                                            Deoptimization::Reason_short_running_loop),
+                                            Deoptimization::Reason_short_running_long_loop),
         _entry(_short_running_loop_predicate_block.entry()) {}
   NONCOPYABLE(Predicates);
 

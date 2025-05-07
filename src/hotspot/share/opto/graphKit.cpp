@@ -4052,7 +4052,7 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
 void GraphKit::add_parse_predicates(int nargs) {
   // Will narrow the limit down with a cast node. Predicates added later may depend on the cast so should be last when
   // starting from the loop.
-  add_parse_predicate(Deoptimization::Reason_short_running_loop, nargs);
+  add_parse_predicate(Deoptimization::Reason_short_running_long_loop, nargs);
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, nargs);
     if (UseProfiledLoopPredicate) {

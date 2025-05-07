@@ -126,7 +126,7 @@ bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
-          deopt_reason == Deoptimization::Reason_short_running_loop ||
+          deopt_reason == Deoptimization::Reason_short_running_long_loop ||
           deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
           deopt_reason == Deoptimization::Reason_predicate ||
           deopt_reason == Deoptimization::Reason_profile_predicate);

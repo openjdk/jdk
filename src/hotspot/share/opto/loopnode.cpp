@@ -1091,7 +1091,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (safepoint != nullptr) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
-    add_parse_predicate(Deoptimization::Reason_short_running_loop, inner_head, outer_ilt, cloned_sfpt);
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
       if (UseProfiledLoopPredicate) {
@@ -1245,7 +1245,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     Node* bol = new BoolNode(cmp_limit, BoolTest::le);
     Node* new_predicate_proj = create_new_if_for_predicate(short_running_loop_predicate_proj,
                                                            nullptr,
-                                                           Deoptimization::Reason_short_running_loop,
+                                                           Deoptimization::Reason_short_running_long_loop,
                                                            Op_If);
     Node* iff = new_predicate_proj->in(0);
     _igvn.replace_input_of(iff, 1, bol);
@@ -1261,7 +1261,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     // for this loop
     if (TraceLoopLimitCheck) {
       tty->print_cr("Short Loop Check generated:");
-      debug_only(bol->dump(2);)
+      DEBUG_ONLY(bol->dump(2);)
     }
 #endif
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);

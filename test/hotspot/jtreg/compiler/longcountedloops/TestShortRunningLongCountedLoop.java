@@ -42,6 +42,9 @@ public class TestShortRunningLongCountedLoop {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
+        // IR rules expect a single loop so disable unrolling
+        // IR rules expect strip mined loop to be enabled
+        // testIntLoopUnknownBoundsShortUnswitchedLoop and testLongLoopUnknownBoundsShortUnswitchedLoop need -XX:-UseProfiledLoopPredicate
         TestFramework.runWithFlags("-XX:LoopMaxUnroll=0", "-XX:LoopStripMiningIter=1000", "-XX:+UseCountedLoopSafepoints", "-XX:-UseProfiledLoopPredicate");
     }
 

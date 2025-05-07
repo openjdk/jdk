@@ -730,7 +730,7 @@
   declare_constant(Deoptimization::Reason_constraint)                     \
   declare_constant(Deoptimization::Reason_div0_check)                     \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
-  declare_constant(Deoptimization::Reason_short_running_loop)             \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_type_checked_inlining)          \
   declare_constant(Deoptimization::Reason_optimized_type_check)           \
