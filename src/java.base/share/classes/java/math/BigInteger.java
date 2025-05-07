@@ -2610,23 +2610,23 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // these can be done by left shifts only.
         // The remaining part can then be exponentiated faster.  The
         // powers of two will be multiplied back at the end.
-        int powersOfTwo = base.getLowestSetBit();
-        long bitsToShiftLong = (long) powersOfTwo * exponent;
-        int bitsToShift = (int) bitsToShiftLong;
+        final int powersOfTwo = base.getLowestSetBit();
+        final long bitsToShiftLong = (long) powersOfTwo * exponent;
+        final int bitsToShift = (int) bitsToShiftLong;
         if (bitsToShift != bitsToShiftLong) {
             reportOverflow();
         }
 
         // Factor the powers of two out quickly by shifting right.
         base = base.shiftRight(powersOfTwo);
-        int remainingBits = base.bitLength();
+        final int remainingBits = base.bitLength();
         if (remainingBits == 1) // Nothing left but +/- 1?
             return (negative ? NEGATIVE_ONE : ONE).shiftLeft(bitsToShift);
 
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
         // of how big the result can be, and which algorithm to use.
-        long scaleFactor = (long)remainingBits * exponent;
+        final long scaleFactor = (long)remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
         // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
@@ -2640,7 +2640,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     ? new BigInteger(result << bitsToShift, newSign)
                     : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         } else {
-            if ((bitLength() - 1L) * exponent >= (long) MAX_MAG_LENGTH << 5) {
+            if ((bitLength() - 1L) * exponent >= Integer.MAX_VALUE) {
                 reportOverflow();
             }
 
@@ -2652,6 +2652,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             final int expZeros = Integer.numberOfLeadingZeros(exponent);
             int workingExp = exponent << expZeros;
             // Perform exponentiation using repeated squaring trick
+            // The loop relies on this invariant:
+            // base^exponent == answer^(2^expLen) * base^(exponent & (2^expLen - 1))
             for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
                 answer = answer.multiply(answer);
                 if (workingExp < 0) // leading bit is set

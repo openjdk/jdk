@@ -53,10 +53,34 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class BigIntegerPow {
 
-    private BigInteger[] xsArray, sArray, mArray, lArray, xlArray;
-    private int xsExp, sExp, mExp, lExp, xlExp;
-    private int[] randomExps;
     private static final int TESTSIZE = 1;
+
+    private int xsExp = (1 << 20) - 1;
+    private BigInteger[] xsArray = new BigInteger[TESTSIZE]; /*
+     * Each array entry is atmost 64 bits
+     * in size
+     */
+    private int sExp = (1 << 18) - 1;
+    private BigInteger[] sArray = new BigInteger[TESTSIZE]; /*
+     * Each array entry is atmost 256 bits
+     * in size
+     */
+    private int mExp = (1 << 16) - 1;
+    private BigInteger[] mArray = new BigInteger[TESTSIZE]; /*
+     * Each array entry is atmost 1024 bits
+     * in size
+     */
+    private int lExp = (1 << 14) - 1;
+    private BigInteger[] lArray = new BigInteger[TESTSIZE]; /*
+     * Each array entry is atmost 4096 bits
+     * in size
+     */
+    private int xlExp = (1 << 12) - 1;
+    private BigInteger[] xlArray = new BigInteger[TESTSIZE]; /*
+     * Each array entry is atmost 16384 bits
+     * in size
+     */
+    private int[] randomExps;
 
     /*
      * You can run this test via the command line:
@@ -66,32 +90,6 @@ public class BigIntegerPow {
     @Setup
     public void setup() {
         Random r = new Random(1123);
-
-        xsExp = (1 << 20) - 1;
-        xsArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 64 bits
-         * in size
-         */
-        sExp = (1 << 18) - 1;
-        sArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 256 bits
-         * in size
-         */
-        mExp = (1 << 16) - 1;
-        mArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 1024 bits
-         * in size
-         */
-        lExp = (1 << 14) - 1;
-        lArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 4096 bits
-         * in size
-         */
-        xlExp = (1 << 12) - 1;
-        xlArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 16384 bits
-         * in size
-         */
 
         randomExps = new int[TESTSIZE];
         for (int i = 0; i < TESTSIZE; i++) {
