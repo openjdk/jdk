@@ -51,7 +51,7 @@ abstract class UnixDispatcher extends NativeDispatcher {
     static native void init();
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
         init();
     }
 }

@@ -265,7 +265,7 @@ class InheritedChannel {
     private static native boolean isConnected(int fd);
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
         initIDs();
     }
 }

@@ -232,7 +232,7 @@ class WEPollSelectorImpl extends SelectorImpl {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
                 try {
-                    IOUtil.write1(fd1Val, (byte) 0);
+                    NIOUtil.write1(fd1Val, (byte) 0);
                 } catch (IOException ioe) {
                     throw new InternalError(ioe);
                 }
@@ -244,7 +244,7 @@ class WEPollSelectorImpl extends SelectorImpl {
 
     private void clearInterrupt() throws IOException {
         synchronized (interruptLock) {
-            IOUtil.drain(fd0Val);
+            NIOUtil.drain(fd0Val);
             interruptTriggered = false;
         }
     }

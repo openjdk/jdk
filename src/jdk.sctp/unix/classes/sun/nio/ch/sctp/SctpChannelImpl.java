@@ -61,6 +61,7 @@ import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.NativeThread;
 import sun.nio.ch.Net;
+import sun.nio.ch.NIOUtil;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.Util;
@@ -531,7 +532,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
-        IOUtil.configureBlocking(fd, block);
+        NIOUtil.configureBlocking(fd, block);
     }
 
     @Override
@@ -1084,7 +1085,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
-        IOUtil.load();   /* loads nio & net native libraries */
+        NIOUtil.load();   /* loads nio & net native libraries */
         System.loadLibrary("sctp");
         initIDs();
     }
