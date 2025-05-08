@@ -128,6 +128,8 @@ public:
   void reset_for_reuse(uint n_threads);
   // Same as above but task name is set to new task name.
   void reset_for_reuse(uint n_threads, const char* termination_event_name);
+  // Get termination event name
+  const char* termination_event_name();
   // Set termination event name
   void set_termination_event_name(const char* termination_event_name);
 };

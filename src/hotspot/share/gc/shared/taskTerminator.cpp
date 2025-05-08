@@ -109,6 +109,10 @@ void TaskTerminator::reset_for_reuse(uint n_threads, const char* termination_eve
   _termination_event_name = termination_event_name;
 }
 
+const char* TaskTerminator::termination_event_name() {
+  return _termination_event_name;
+}
+
 void TaskTerminator::set_termination_event_name(const char* termination_event_name) {
   _termination_event_name = termination_event_name;
 }
