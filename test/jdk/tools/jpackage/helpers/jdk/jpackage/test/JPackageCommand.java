@@ -32,6 +32,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -720,7 +721,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return validateOutput(validator::apply);
     }
 
-    public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
+    public JPackageCommand validateOutput(Consumer<Iterator<String>> validator) {
         Objects.requireNonNull(validator);
         saveConsoleOutput(true);
         outputValidators.add(validator);
@@ -762,7 +763,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         // Will look up the given errors in the order they are specified.
         Stream.of(str).map(this::getValue)
                 .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier::andThen).ifPresent(this::validateOutput);
+                .reduce(TKit.TextStreamVerifier.group(),
+                        TKit.TextStreamVerifier.Group::add,
+                        TKit.TextStreamVerifier.Group::add).tryCreate().ifPresent(this::validateOutput);
         return this;
     }
 
@@ -846,7 +849,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .execute(expectedExitCode);
 
         for (final var outputValidator: outputValidators) {
-            outputValidator.accept(result.getOutput().stream());
+            outputValidator.accept(result.getOutput().iterator());
         }
 
         if (result.exitCode() == 0) {
@@ -1005,9 +1008,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
         if (!expectAppImageFile()) {
-            assertFileInAppImage(lookupPath, null);
+            assertFileNotInAppImage(lookupPath);
         } else {
-            assertFileInAppImage(lookupPath, lookupPath);
+            assertFileInAppImage(lookupPath);
 
             if (TKit.isOSX()) {
                 final Path rootDir = isImagePackageType() ? outputBundle() :
@@ -1032,22 +1035,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         final Path lookupPath = PackageFile.getPathInAppImage(Path.of(""));
 
         if (isRuntime() || isImagePackageType() || TKit.isLinux()) {
-            assertFileInAppImage(lookupPath, null);
+            assertFileNotInAppImage(lookupPath);
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
                 String appImage = getArgumentValue("--app-image");
                 if (AppImageFile.load(Path.of(appImage)).macSigned()) {
-                    assertFileInAppImage(lookupPath, null);
+                    assertFileNotInAppImage(lookupPath);
                 } else {
-                    assertFileInAppImage(lookupPath, lookupPath);
+                    assertFileInAppImage(lookupPath);
                 }
             } else {
-                assertFileInAppImage(lookupPath, lookupPath);
+                assertFileInAppImage(lookupPath);
             }
         }
     }
 
+    public void assertFileInAppImage(Path expectedPath) {
+        assertFileInAppImage(expectedPath.getFileName(), expectedPath);
+    }
+
+    public void assertFileNotInAppImage(Path filename) {
+        assertFileInAppImage(filename, null);
+    }
+
     private void assertFileInAppImage(Path filename, Path expectedPath) {
+        if (expectedPath != null) {
+            if (expectedPath.isAbsolute()) {
+                throw new IllegalArgumentException();
+            }
+            if (!expectedPath.getFileName().equals(filename.getFileName())) {
+                throw new IllegalArgumentException();
+            }
+        }
+
         if (filename.getNameCount() > 1) {
             assertFileInAppImage(filename.getFileName(), expectedPath);
             return;
@@ -1299,7 +1319,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path executeInDirectory;
     private Path winMsiLogFile;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
-    private List<Consumer<Stream<String>>> outputValidators = new ArrayList<>();
+    private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(

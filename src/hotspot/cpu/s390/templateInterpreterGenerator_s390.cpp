@@ -637,6 +637,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   Register sp_before_i2c_extension = Z_bcp;
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ z_lg(sp_before_i2c_extension, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  __ z_slag(sp_before_i2c_extension, sp_before_i2c_extension, Interpreter::logStackElementSize);
+  __ z_agr(sp_before_i2c_extension, Z_fp);
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
@@ -1134,7 +1136,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);

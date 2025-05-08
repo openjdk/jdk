@@ -62,7 +62,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * therefore methods, which is using this id should be ready to it.
      */
     private volatile int screen;
-    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap = Collections.synchronizedMap(new HashMap<>());
+    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap =
+            Collections.synchronizedMap(new HashMap<>());
 
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
@@ -95,7 +96,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public SurfaceManager.ProxyCache getProxyCacheFor(SurfaceType st) {
-        return x11ProxyCacheMap.computeIfAbsent(st, unused -> new SurfaceManager.ProxyCache());
+        return x11ProxyCacheMap.computeIfAbsent(st,
+                unused -> new SurfaceManager.ProxyCache());
     }
 
     /**

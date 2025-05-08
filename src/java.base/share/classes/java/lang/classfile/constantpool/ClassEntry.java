@@ -104,8 +104,22 @@ public sealed interface ClassEntry
      * returned descriptor is never {@linkplain ClassDesc#isPrimitive()
      * primitive}.
      *
+     * @apiNote
+     * If only symbol equivalence is desired, {@link #matches(ClassDesc)
+     * matches} should be used.  It requires reduced parsing and can
+     * improve {@code class} file reading performance.
+     *
      * @see ConstantPoolBuilder#classEntry(ClassDesc)
      *      ConstantPoolBuilder::classEntry(ClassDesc)
      */
     ClassDesc asSymbol();
+
+    /**
+     * {@return whether this entry describes the given reference type}  Returns
+     * {@code false} if {@code desc} is primitive.
+     *
+     * @param desc the reference type
+     * @since 25
+     */
+    boolean matches(ClassDesc desc);
 }
