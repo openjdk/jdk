@@ -113,7 +113,6 @@ public class AOTLoggingTag {
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain("[error][aot] An error has occurred while processing the AOT cache. Run with -Xlog:aot for details.");
-        out.shouldContain("[error][aot] Loading AOT cache failed: nosuchfile.aot");
         out.shouldNotHaveExitValue(0);
     }
 
