@@ -28,6 +28,59 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+
+// Semantics
+// This tree is used to store and track the state of virtual memory regions.
+// The nodes in the tree are key-value pairs where key is the memory address and the value is the State of the memory regions.
+// State of a region describes whether the region is released, reserved or committed, which MemTag it has and where in
+// Hotspot (using call-stacks) it is reserved or committed.
+// Each node holds the State of the regions to its left and right. Each memory region is described by two
+// memory addresses for its start and end.
+// For example, to describe the region that starts at memory address 0xA000 with size 0x1000, there will be two nodes
+// with the keys 0xA000 (node A) and 0xB000 (node B) in the tree. The value of the key-value pairs of node A and
+// node B describe the region's State, using right of A and left of B (<--left--A--right-->.....<--left--B--right-->...).
+//
+// Virtual memory can be reserved, committed, uncommitted and released. During these operations, the tree should handle the
+// changes needed for the affected regions in the tree. For each operation a request
+// (<from-address, to-address, operation, tag, call-stack, which-tag-to-use >) is sent to the tree to handle.
+//
+// The expected changes are described here for each operation:
+//
+// ### Reserve a region
+// When a region is reserved, all the overlapping regions in the tree should:
+//   - be marked as Reserved
+//   - take MemTag of the operation
+//   - store call-stack of the request to the reserve call-stack
+//   - clear commit call-stack
+//
+// ### Commit a region
+// When a region is committed, all the overlapping regions in the tree should:
+//   - be marked as Committed
+//   - take MemTag of the operation or MemTag of the existing region, depends on which-tag-to-use in the request
+//   - if the region is in Released state
+//     - mark the region as both Reserved and Committed
+//     - store the call-stack of the request to the reserve call-stack
+//   - store the call-stack of the request to the commit call-stack
+//
+// ### Uncommit a region
+// When a region is uncommitted, all the overlapping regions in the tree should:
+//   - be ignored if the region is in Released state
+//   - be marked as Reserved
+//   - not change the MemTag
+//   - not change the reserve call-stack
+//   - clear commit call-stack
+//
+// ### Release a region
+// When a region is released, all the overlapping regions in the tree should:
+//   - be marked as Released
+//   - set the MemTag to mtNone
+//   - clear both reserve and commit call-stack
+//
+// ---  Accounting
+// After each operation, the tree should be able to report how much memory is reserved or committed per MemTag.
+// So for each region that changes to a new State, the report should contain (separately for each tag) the amount
+// of reserve and commit that are changed (increased or decreased) due to the operation.
+
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::invalid, mtNone};
 
 const char* VMATree::statetype_strings[3] = {
