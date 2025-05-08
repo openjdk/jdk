@@ -32,6 +32,7 @@
  * @run driver TestSymlinkLoad
  */
 
+import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -69,7 +70,8 @@ public class TestSymlinkLoad {
         // create a symlink to the classfile in a subdir with a given name
         Path classFile = Path.of(destDir + File.separator + className + ".class");
         final String subdir = "remote";
-        createLinkInSeparateFolder(destDir, subdir, classFile, className);
+        final String pathToFolderForSymlink = destDir + File.separator + subdir + File.separator;
+        createLinkInSeparateFolder(pathToFolderForSymlink, classFile, className);
 
         // try to load class via its symlink, which is in a different directory
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -78,10 +80,11 @@ public class TestSymlinkLoad {
         output.shouldContain("Hello World")
                 .shouldHaveExitValue(0);
 
+        // remove the subdir
+        FileUtils.deleteFileTreeWithRetry(Path.of(pathToFolderForSymlink));
     }
 
-    public static void createLinkInSeparateFolder(final Path destDir, final String subdir, final Path target, final String className) throws IOException {
-        final String pathToFolderForSymlink = destDir + File.separator + subdir + File.separator;
+    public static void createLinkInSeparateFolder( final String pathToFolderForSymlink, final Path target, final String className) throws IOException {
         File theDir = new File(pathToFolderForSymlink);
         if (!theDir.exists()){
             theDir.mkdirs();
