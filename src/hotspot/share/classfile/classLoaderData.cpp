@@ -145,7 +145,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _handles(),
   _klasses(nullptr), _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr), _dictionary(nullptr),
   _jmethod_ids(nullptr),
-  _deallocate_list(nullptr),
+  _deallocate_list(0, mtClass),
   _next(nullptr),
   _unloading_next(nullptr),
   _class_loader_klass(nullptr), _name(nullptr), _name_and_id(nullptr) {
@@ -751,11 +751,6 @@ ClassLoaderData::~ClassLoaderData() {
   // Delete lock
   delete _metaspace_lock;
 
-  // Delete free list
-  if (_deallocate_list != nullptr) {
-    delete _deallocate_list;
-  }
-
   // Decrement refcounts of Symbols if created.
   if (_name != nullptr) {
     _name->decrement_refcount();
@@ -853,10 +848,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   // Metadata in shared region isn't deleted.
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-    if (_deallocate_list == nullptr) {
-      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
-    }
-    _deallocate_list->append_if_missing(m);
+    _deallocate_list.append_if_missing(m);
     ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
@@ -869,14 +861,12 @@ void ClassLoaderData::free_deallocate_list() {
   // safepoint cleanup time.
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   assert(!is_unloading(), "only called for ClassLoaderData that are not unloading");
-  if (_deallocate_list == nullptr) {
-    return;
-  }
+
   // Go backwards because this removes entries that are freed.
-  for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
-    Metadata* m = _deallocate_list->at(i);
+  for (int i = _deallocate_list.length() - 1; i >= 0; i--) {
+    Metadata* m = _deallocate_list.at(i);
     if (!m->on_stack()) {
-      _deallocate_list->remove_at(i);
+      _deallocate_list.remove_at(i);
       // There are only three types of metadata that we deallocate directly.
       // Cast them so they can be used by the template function.
       if (m->is_method()) {
@@ -908,13 +898,10 @@ void ClassLoaderData::free_deallocate_list() {
 void ClassLoaderData::free_deallocate_list_C_heap_structures() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(is_unloading(), "only called for ClassLoaderData that are unloading");
-  if (_deallocate_list == nullptr) {
-    return;
-  }
   // Go backwards because this removes entries that are freed.
-  for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
-    Metadata* m = _deallocate_list->at(i);
-    _deallocate_list->remove_at(i);
+  for (int i = _deallocate_list.length() - 1; i >= 0; i--) {
+    Metadata* m = _deallocate_list.at(i);
+    _deallocate_list.remove_at(i);
     if (m->is_constantPool()) {
       ((ConstantPool*)m)->release_C_heap_structures();
     } else if (m->is_klass()) {
@@ -1041,7 +1028,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
     Method::print_jmethod_ids_count(this, out);
     out->print_cr("");
   }
-  out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
+  out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(&_deallocate_list));
   out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
 }
 #endif // PRODUCT
@@ -1089,12 +1076,10 @@ void ClassLoaderData::verify() {
     _modules->verify();
   }
 
-  if (_deallocate_list != nullptr) {
-    for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
-      Metadata* m = _deallocate_list->at(i);
-      if (m->is_klass()) {
-        ((Klass*)m)->verify();
-      }
+  for (int i = _deallocate_list.length() - 1; i >= 0; i--) {
+    Metadata* m = _deallocate_list.at(i);
+    if (m->is_klass()) {
+      ((Klass*)m)->verify();
     }
   }
 

@@ -150,7 +150,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // Metadata to be deallocated when it's safe at class unloading, when
   // this class loader isn't unloaded itself.
-  GrowableArray<Metadata*>*      _deallocate_list;
+  GrowableArray<Metadata*>      _deallocate_list;
 
   // Support for walking class loader data objects
   //
