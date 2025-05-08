@@ -763,8 +763,6 @@ ClassLoaderData::~ClassLoaderData() {
   if (_name_and_id != nullptr) {
     _name_and_id->decrement_refcount();
   }
-
-memset((char*)this, 0x17, sizeof(ClassLoaderData));
 }
 
 // Returns true if this class loader data is for the app class loader

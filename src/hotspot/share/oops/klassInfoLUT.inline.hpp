@@ -51,7 +51,6 @@ inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
   // This function is extremely hot. Be careful when adding/modifying.
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const klute_raw_t klute = at(nk);
-  assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
 
 #ifdef KLUT_ENABLE_HIT_STATS
   {

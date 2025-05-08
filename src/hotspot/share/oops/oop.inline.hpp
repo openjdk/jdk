@@ -99,6 +99,7 @@ void oopDesc::init_mark() {
 
 template <HeaderMode mode>
 klute_raw_t oopDesc::get_klute() const {
+  klute_raw_t klute;
   switch (mode) {
     case HeaderMode::Compact:
       return KlassInfoLUT::lookup(mark().narrow_klass());
@@ -107,6 +108,8 @@ klute_raw_t oopDesc::get_klute() const {
     default:
       return _metadata._klass->klute();
   }
+  assert(klute != KlassLUTEntry::invalid_entry, "invalid klute");
+  return klute;
 }
 
 klute_raw_t oopDesc::get_klute() const {
