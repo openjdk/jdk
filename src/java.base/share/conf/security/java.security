@@ -1549,3 +1549,106 @@ jdk.tls.alpnCharset=ISO_8859_1
 # security property value defined here.
 #
 #jdk.security.krb5.name.case.sensitive=false
+
+#
+# Security Providers Filter (JEP TBD)
+#
+# This filter can be used to constrain which services, implemented by installed
+# security providers, are available for use in the getInstance JCA APIs (Cipher,
+# Signature, Mac, KeyFactory, etc). Services filtering is independent of other
+# mechanisms such as jdk.tls.disabledAlgorithms, jdk.jar.disabledAlgorithms and
+# jdk.certpath.disabledAlgorithms.
+#
+# The scope of this filter includes services implemented by statically installed
+# security providers (security.provider.<n> security properties) and dynamically
+# installed ones (java.security.Security::addProvider API). No distinctions are
+# made between OpenJDK and third-party security providers.
+#
+# If the system property jdk.security.providers.filter is set, it supersedes
+# the security one defined here. If any of these properties is set at run time,
+# the filter could be initialized already and the new value will not take effect
+# until the JVM is relaunched. When a filter is not set or is set to the empty
+# string, filtering is disabled: all services are allowed.
+#
+# A service is typically evaluated against the filter at provider registration
+# time (java.security.Provider ::put or ::putService APIs). In special cases, when
+# a provider overrides java.security.Provider ::getService or ::getServices APIs to
+# return unregistered services, filter evaluation is deferred until its first use.
+# Services are identifiable as a combination of a security provider, a service type
+# and an algorithm name. Optionally, an algorithm alias can be used to replace the
+# algorithm name. A filter is made of a sequence of patterns that identify a service
+# according to a matching criteria (as we shall see later) and indicate an action:
+# allow or deny the service under evaluation.
+#
+# The filter syntax is as follows:
+#
+# pattern-1; pattern-2; ...; pattern-n
+#
+# Each pattern in the sequence can be optionally prefixed by a '!' character (e.g.
+# " ! pattern-1 "). White spaces between patterns, pattern prefixes ('!') and pattern
+# separators (';') are not significant. A service is evaluated against the filter
+# from left to right. If a service matches one of the patterns in the sequence, an
+# authorization decision is made: if the pattern is prefixed by a '!' character, the
+# decision is to deny it; otherwise, the decision is to allow it. If none of the
+# patterns match, the default decision is to deny the service. Once a decision is
+# made, remaining patterns are not considered.
+#
+# Each pattern's syntax has one of the following forms:
+#
+# 1) security-provider
+# 2) security-provider.service-type
+# 3.a) security-provider.service-type.algorithm-name
+# 3.b) security-provider.service-type.algorithm-alias
+# 3.c) security-provider.Cipher.transformation
+# 3.d) security-provider.Cipher.transformation-alias
+#
+# In form #1, a security provider name equal to security-provider is enough for a
+# match to be successful. In form #2, the service type must also be equal to
+# service-type. In form #3.a, the service algorithm must also be equal to
+# algorithm-name. In form #3.b, it is enough that one of the service aliases matches
+# algorithm-alias, in addition to the requirements for form #2. Form #3.c is similar
+# to form #3.a but applies to cipher transformations with multiple components
+# (algorithm/mode/padding). Form #3.d is equivalent to #3.c but looks for a
+# transformation alias match (algorithm-alias/mode/padding). In all cases, pattern and
+# service names must have valid characters and cannot be empty. Pattern matching is
+# always case insensitive.
+#
+# Characters '\n' and '\0' are not valid in a pattern. The character '.' is used as a
+# separator between different levels: security provider, service type, algorithm name or
+# algorithm alias. The following characters, when part of one of the listed levels, must
+# be escaped by prepending a '\' character: '!', '*', ' ' (white space), '.', ';', '\',
+# ':' and ','. Escaping any other character has no effect other than silently discarding
+# the '\' character.
+#
+# The aforementioned escaping rules apply to the filter value as read in the
+# java.security.Security::getProperty and java.lang.System::getProperty APIs:
+# additional escaping might be needed depending on how the filter value is passed. For
+# example, security properties require '\' characters to be escaped. Thus, to match a
+# provider whose name is abc\123, a pattern must be escaped as abc\\\\123 if passed as a
+# security property.
+#
+# In addition to character escape sequences, pattern names can contain '*' wildcards to
+# imply zero or more repetitions of any character. Wildcards behave in greedy mode, trying
+# to consume as many characters as possible and backing off if necessary.
+#
+# When a service has aliases, its algorithm name and each of the aliases are independently
+# evaluated against the filter. Notice that the security provider and service type for each
+# of these evaluations are the same. From the set of authorization decisions obtained —which
+# can potentially be contradictory—, the one made by the left-most pattern in the filter has
+# the highest priority and is finally effective. This strategy would be equivalent to
+# modifying the evaluation of a service against each pattern so that each alias is tried
+# (besides the algorithm name) and stopping if a decision is made for one of them.
+#
+# For troubleshooting, it is possible to enable filter debugging logs with the system
+# property java.security.debug=jca and look for messages prefixed by ProvidersFilter. To list
+# services allowed and not allowed by a filter for each installed security provider, run java
+# with the argument -XshowSettings:security:providers. When a filter value is syntactically
+# invalid, the exception message thrown points to the exact location in the pattern that could
+# not be parsed.
+#
+# Example
+#
+# Enable all services except those involving the algorithms MD2 or MD5:
+# jdk.security.providers.filter=!*.*.*MD2*; !*.*.*MD5*; *
+#
+#jdk.security.providers.filter=
