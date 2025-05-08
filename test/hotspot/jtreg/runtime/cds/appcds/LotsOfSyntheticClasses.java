@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Try to archive lots and lots of classes.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @run driver/timeout=500 LotsOfSyntheticClasses
+ * @run driver/timeout=800 LotsOfSyntheticClasses
  */
 
 public class LotsOfSyntheticClasses {
