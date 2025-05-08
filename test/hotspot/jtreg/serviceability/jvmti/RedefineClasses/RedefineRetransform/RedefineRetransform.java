@@ -27,10 +27,8 @@
  * @bug 7124710
  *
  * @requires vm.jvmti
- * @library /testlibrary/asm
  * @library /test/lib
  *
- * @compile --release 21 RedefineRetransform.java
  * @comment main/othervm/native -Xlog:redefine*=trace -agentlib:RedefineRetransform RedefineRetransform
  * @run main/othervm/native -agentlib:RedefineRetransform RedefineRetransform 1
  * @run main/othervm/native -agentlib:RedefineRetransform RedefineRetransform 2
@@ -43,13 +41,15 @@
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.constant.ClassDesc;
+import java.util.NoSuchElementException;
 
 /*
  * The test verifies that after interleaved RedefineClasses/RetransformClasses calls
@@ -82,67 +82,30 @@ public class RedefineRetransform {
     // Class bytes for initial TestClass (ClassVersion == 0).
     private static byte[] initialClassBytes;
 
-    private static class VersionScanner extends ClassVisitor {
-        private Integer detectedVersion;
-        private Integer versionToSet;
-        // to get version
-        public VersionScanner() {
-            super(Opcodes.ASM7);
-        }
-        // to set version
-        public VersionScanner(int verToSet, ClassVisitor classVisitor) {
-            super(Opcodes.ASM7, classVisitor);
-            versionToSet = verToSet;
-        }
-
-        public int detectedVersion() {
-            if (detectedVersion == null) {
-                throw new RuntimeException("Version not detected");
-            }
-            return detectedVersion;
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-            //log("visitAnnotation: descr = '" + descriptor + "', visible = " + visible);
-            if (Type.getDescriptor(ClassVersion.class).equals(descriptor)) {
-                return new AnnotationVisitor(Opcodes.ASM7, super.visitAnnotation(descriptor, visible)) {
-                    @Override
-                    public void visit(String name, Object value) {
-                        //log("visit: name = '" + name + "', value = " + value
-                        //        + " (" + (value == null ? "N/A" : value.getClass()) + ")");
-                        if ("value".equals(name) && value instanceof Integer intValue) {
-                            detectedVersion = intValue;
-                            if (versionToSet != null) {
-                                //log("replace with " + versionToSet);
-                                value = versionToSet;
-                            }
-                        }
-                        super.visit(name, value);
-                    }
-                };
-            }
-            return super.visitAnnotation(descriptor, visible);
-        }
-    }
+    private static final ClassDesc CD_ClassVersion = ClassVersion.class.describeConstable().orElseThrow();
 
     // Generates TestClass class bytes with the specified ClassVersion value.
     private static byte[] getClassBytes(int ver) {
         if (ver < 0) {
             return null;
         }
-        ClassWriter cw = new ClassWriter(0);
-        ClassReader cr = new ClassReader(initialClassBytes);
-        cr.accept(new VersionScanner(ver, cw), 0);
-        return cw.toByteArray();
+        return ClassFile.of().transformClass(ClassFile.of().parse(initialClassBytes),
+                // overwrites previously passed RVAA
+                ClassTransform.endHandler(clb -> clb.with(RuntimeVisibleAnnotationsAttribute
+                        .of(Annotation.of(CD_ClassVersion, AnnotationElement.ofInt("value", ver))))));
     }
 
     // Extracts ClassVersion values from the provided class bytes.
     private static int getClassBytesVersion(byte[] classBytes) {
-        ClassReader cr = new ClassReader(classBytes);
-        VersionScanner scanner = new VersionScanner();
-        cr.accept(scanner, 0);
-        return scanner.detectedVersion();
+        var cm = ClassFile.of().parse(classBytes);
+        var rvaa = cm.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
+        var elements = rvaa.annotations().stream().filter(anno -> anno.className().isFieldType(CD_ClassVersion)).findFirst().orElseThrow().elements();
+        if (elements.size() != 1)
+            throw new NoSuchElementException();
+        var element = elements.getFirst();
+        if (!element.name().equalsString("value") || !(element.value() instanceof AnnotationValue.OfInt intVal))
+            throw new NoSuchElementException();
+        return intVal.intValue();
     }
 
     static void init() {
