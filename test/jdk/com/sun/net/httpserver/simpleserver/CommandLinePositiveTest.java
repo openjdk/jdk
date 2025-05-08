@@ -125,7 +125,7 @@ public class CommandLinePositiveTest {
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", "-p", "0", opt, rootDir)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + ROOT_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + rootDir + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 

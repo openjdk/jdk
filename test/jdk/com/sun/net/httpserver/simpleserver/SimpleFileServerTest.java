@@ -668,14 +668,6 @@ public class SimpleFileServerTest {
     @Test
     public void testIllegalPath() throws Exception {
         var addr = LOOPBACK_ADDR;
-        {   // not absolute
-            Path p = Path.of(".");
-            assert Files.isDirectory(p);
-            assert Files.exists(p);
-            assert !p.isAbsolute();
-            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
-            assertTrue(iae.getMessage().contains("is not absolute"));
-        }
         {   // not a directory
             Path p = Files.createFile(TEST_DIR.resolve("aFile"));
             assert !Files.isDirectory(p);

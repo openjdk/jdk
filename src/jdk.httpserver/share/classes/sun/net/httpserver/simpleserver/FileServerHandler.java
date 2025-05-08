@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,12 @@ import com.sun.net.httpserver.HttpHandlers;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * A basic HTTP file server handler for static content.
- *
- * <p> Must be given an absolute pathname to the directory to be served.
- * Supports only HEAD and GET requests. Directory listings and files can be
- * served, content types are supported on a best-guess basis.
+ * A basic {@linkplain HttpHandler HTTP handler} for static content.
+ * <p>
+ * Only {@code HEAD} and {@code GET} requests are supported.
+ * Directory listings and files can be served.
+ * Content types are supported on a best-guess basis.
+ * </p>
  */
 public final class FileServerHandler implements HttpHandler {
 
@@ -65,18 +66,32 @@ public final class FileServerHandler implements HttpHandler {
     private final Logger logger;
 
     private FileServerHandler(Path root, UnaryOperator<String> mimeTable) {
-        root = root.normalize();
-        if (!Files.exists(root))
-            throw new IllegalArgumentException("Path does not exist: " + root);
-        if (!root.isAbsolute())
-            throw new IllegalArgumentException("Path is not absolute: " + root);
-        if (!Files.isDirectory(root))
-            throw new IllegalArgumentException("Path is not a directory: " + root);
-        if (!Files.isReadable(root))
-            throw new IllegalArgumentException("Path is not readable: " + root);
-        this.root = root;
+        this.root = readRoot(root);
         this.mimeTable = mimeTable;
         this.logger = System.getLogger("com.sun.net.httpserver");
+    }
+
+    private static Path readRoot(Path root) {
+        // `toRealPath()` invocation below already checks if file exists, though
+        // there is no way to figure out if it fails due to a non-existent file.
+        // Hence, checking the existence here first to deliver the user a more
+        // descriptive message.
+        if (!Files.exists(root)) {
+            throw new IllegalArgumentException("Path does not exist: " + root);
+        }
+        Path realRoot;
+        try {
+            realRoot = root.toRealPath();
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Path is invalid: " + root, exception);
+        }
+        if (!Files.isDirectory(realRoot)) {
+            throw new IllegalArgumentException("Path is not a directory: " + realRoot);
+        }
+        if (!Files.isReadable(realRoot)) {
+            throw new IllegalArgumentException("Path is not readable: " + realRoot);
+        }
+        return realRoot;
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
@@ -211,7 +226,6 @@ public final class FileServerHandler implements HttpHandler {
 
     private Path mapToPath(HttpExchange exchange, Path root) {
         try {
-            assert root.isAbsolute() && Files.isDirectory(root);  // checked during creation
             String uriPath = relativeRequestPath(exchange);
             String[] pathSegment = uriPath.split("/");
 
