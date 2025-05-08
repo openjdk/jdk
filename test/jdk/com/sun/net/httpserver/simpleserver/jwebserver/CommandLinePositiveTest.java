@@ -52,19 +52,37 @@ public class CommandLinePositiveTest {
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
-    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
-    static final Path TEST_DIR = CWD.resolve("CommandLinePositiveTest");
-    static final Path TEST_FILE = TEST_DIR.resolve("file.txt");
-    static final String TEST_DIR_STR = TEST_DIR.toString();
+
+    /**
+     * The <b>normalized absolute</b> path to the current working directory
+     * where
+     * <ol>
+     * <li>the web server process will be started in,</li>
+     * <li>and hence, unless given an explicit content root directory, the web
+     * server will be serving from.</li>
+     * </ol>
+     */
+    private static final Path CWD = Path.of(".").normalize().toAbsolutePath();
+
+    private static final String CWD_STR = CWD.toString();
+
+    /**
+     * The <b>normalized absolute</b> path to the web server content root
+     * directory, if one needs to be provided explicitly.
+     */
+    private static final Path ROOT_DIR = Path.of("www").normalize().toAbsolutePath();
+
+    private static final String ROOT_DIR_STR = ROOT_DIR.toString();
+
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeTest
     public void setup() throws IOException {
-        if (Files.exists(TEST_DIR)) {
-            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        if (Files.exists(ROOT_DIR)) {
+            FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }
-        Files.createDirectories(TEST_DIR);
-        Files.createFile(TEST_FILE);
+        Files.createDirectories(ROOT_DIR);
+        Files.createFile(ROOT_DIR.resolve("file.txt"));
     }
 
     static final int SIGTERM = 15;
@@ -83,12 +101,23 @@ public class CommandLinePositiveTest {
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @Test(dataProvider = "directoryOptions")
-    public void testDirectory(String opt) throws Throwable {
-        out.println("\n--- testDirectory, opt=\"%s\" ".formatted(opt));
-        simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, TEST_DIR_STR)
+    public void testAbsDirectory(String opt) throws Throwable {
+        out.printf("\n--- testAbsDirectory, opt=\"%s\"%n", opt);
+        testDirectory(opt, ROOT_DIR_STR);
+    }
+
+    @Test(dataProvider = "directoryOptions")
+    public void testRelDirectory(String opt) throws Throwable {
+        out.printf("\n--- testRelDirectory, opt=\"%s\"%n", opt);
+        Path rootRelDir = CWD.relativize(ROOT_DIR);
+        testDirectory(opt, rootRelDir.toString());
+    }
+
+    private static void testDirectory(String opt, String rootDir) throws Throwable {
+        simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, rootDir)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + ROOT_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
@@ -101,7 +130,7 @@ public class CommandLinePositiveTest {
         simpleserver(JWEBSERVER, LOCALE_OPT, opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
@@ -155,12 +184,12 @@ public class CommandLinePositiveTest {
         out.println("\n--- testBindAllInterfaces, opt=\"%s\" ".formatted(opt));
         simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, "0.0.0.0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
         if (IPSupport.hasIPv6()) {
             simpleserver(JWEBSERVER, LOCALE_OPT, opt, "::0")
                     .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                    .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
+                    .shouldContain("Serving " + CWD_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                     .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
         }
     }
@@ -170,7 +199,7 @@ public class CommandLinePositiveTest {
         out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
         simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
 
     }
@@ -178,10 +207,10 @@ public class CommandLinePositiveTest {
     @Test(dataProvider = "directoryOptions")
     public void testLastOneWinsDirectory(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
-        simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, TEST_DIR_STR, opt, TEST_DIR_STR)
+        simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, CWD_STR, opt, CWD_STR)
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
@@ -194,7 +223,7 @@ public class CommandLinePositiveTest {
         simpleserver(JWEBSERVER, LOCALE_OPT, "-p", "0", opt, "none", opt, "verbose")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
@@ -204,14 +233,14 @@ public class CommandLinePositiveTest {
         simpleserver(JWEBSERVER, LOCALE_OPT, opt, "-999", opt, "0")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
+                .shouldContain("Serving " + CWD_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
     @AfterTest
     public void teardown() throws IOException {
-        if (Files.exists(TEST_DIR)) {
-            FileUtils.deleteFileTreeWithRetry(TEST_DIR);
+        if (Files.exists(ROOT_DIR)) {
+            FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }
     }
 
@@ -247,7 +276,7 @@ public class CommandLinePositiveTest {
         StringBuffer sb = new StringBuffer();  // stdout & stderr
         // start the process and await the waitForLine before returning
         var p = ProcessTools.startProcess("simpleserver",
-                new ProcessBuilder(args).directory(TEST_DIR.toFile()),
+                new ProcessBuilder(args),
                 line -> sb.append(line + "\n"),
                 line -> line.startsWith(waitForLine.value),
                 30,  // suitably high default timeout, not expected to timeout
