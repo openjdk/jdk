@@ -3976,7 +3976,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
+     * @param newValue the maximum number of integer digits to be shown.
      * @see #getMaximumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -3992,7 +3993,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
+     * @param newValue the minimum number of integer digits to be shown.
      * @see #getMinimumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4008,7 +4010,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
+     * @param newValue the maximum number of fraction digits to be shown.
      * @see #getMaximumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4024,7 +4027,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
+     * @param newValue the minimum number of fraction digits to be shown.
      * @see #getMinimumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4040,7 +4044,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>Unlike the other digit limits, {@code maximumIntegerDigits} is not
      * updated by {@code DecimalFormats} created or updated with a string pattern.
      * @see #setMaximumIntegerDigits
@@ -4053,7 +4057,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * @see #setMinimumIntegerDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4063,7 +4067,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * @see #setMaximumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4073,7 +4077,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * @see #setMinimumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */

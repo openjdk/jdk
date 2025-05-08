@@ -933,14 +933,11 @@ public abstract class NumberFormat extends Format  {
      * {@code minimumIntegerDigits}. If the new value for {@code
      * maximumIntegerDigits} is less than the current value of
      * {@code minimumIntegerDigits}, then {@code minimumIntegerDigits} will
-     * also be set to the new value.
+     * also be set to the new value. Negative input values are replaced with 0.
      *
-     * @implNote
-     * A concrete subclass may enforce an upper limit to this value appropriate
-     * to the numeric type being formatted.
-     *
-     * @param newValue the maximum number of integer digits to be shown; if
-     * less than zero, then zero is used.
+     * @param newValue the maximum number of integer digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMaximumIntegerDigits
      */
     public void setMaximumIntegerDigits(int newValue) {
@@ -966,14 +963,12 @@ public abstract class NumberFormat extends Format  {
      * number during formatting. {@code minimumIntegerDigits} must be &le;
      * {@code maximumIntegerDigits}. If the new value for {@code minimumIntegerDigits}
      * exceeds the current value of {@code maximumIntegerDigits}, then {@code
-     * maximumIntegerDigits} will also be set to the new value.
+     * maximumIntegerDigits} will also be set to the new value. Negative input
+     * values are replaced with 0.
      *
-     * @implNote
-     * A subclass may enforce an upper limit to this value appropriate
-     * to the numeric type being formatted.
-     *
-     * @param newValue the minimum number of integer digits to be shown; if
-     * less than zero, then zero is used.
+     * @param newValue the minimum number of integer digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMinimumIntegerDigits
      */
     public void setMinimumIntegerDigits(int newValue) {
@@ -999,14 +994,12 @@ public abstract class NumberFormat extends Format  {
      * number during formatting. {@code maximumFractionDigits} must be &ge;
      * {@code minimumFractionDigits}. If the new value for {@code maximumFractionDigits}
      * is less than the current value of {@code minimumFractionDigits}, then
-     * {@code minimumFractionDigits} will also be set to the new value.
+     * {@code minimumFractionDigits} will also be set to the new value. Negative
+     * input values are replaced with 0.
      *
-     * @implNote
-     * A subclass may enforce an upper limit to this value appropriate
-     * to the numeric type being formatted.
-     *
-     * @param newValue the maximum number of fraction digits to be shown; if
-     * less than zero, then zero is used.
+     * @param newValue the maximum number of fraction digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMaximumFractionDigits
      */
     public void setMaximumFractionDigits(int newValue) {
@@ -1033,14 +1026,11 @@ public abstract class NumberFormat extends Format  {
      * {@code maximumFractionDigits}. If the new value for {@code
      * minimumFractionDigits} exceeds the current value of {@code
      * maximumFractionDigits}, then {@code maximumFractionDigits} will also be
-     * set to the new value.
+     * set to the new value. Negative input values are replaced with 0.
      *
-     * @implNote
-     * A concrete subclass may enforce an upper limit to this value
-     * appropriate to the numeric type being formatted.
-     *
-     * @param newValue the minimum number of fraction digits to be shown; if
-     * less than zero, then zero is used.
+     * @param newValue the minimum number of fraction digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMinimumFractionDigits
      */
     public void setMinimumFractionDigits(int newValue) {

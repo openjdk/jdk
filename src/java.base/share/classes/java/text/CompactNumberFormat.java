@@ -2169,9 +2169,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
      * 309, then the maximum integer digits count is set to 309.
+     * @param newValue the maximum number of integer digits to be shown.
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -2189,9 +2190,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
      * 309, then the minimum integer digits count is set to 309.
+     * @param newValue the minimum number of integer digits to be shown.
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -2209,9 +2211,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
      * 340, then the minimum fraction digits count is set to 340.
+     * @param newValue the minimum number of fraction digits to be shown.
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -2230,9 +2233,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
      * 340, then the maximum fraction digits count is set to 340.
+     * @param newValue the maximum number of fraction digits to be shown.
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
