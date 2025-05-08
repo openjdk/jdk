@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 8238358 8247444
- * @run testng/othervm UnreflectTest
  * @summary Test Lookup::unreflectSetter and Lookup::unreflectVarHandle on
  *          trusted final fields (declared in hidden classes and records)
+ * @run junit/othervm --enable-final-field-mutation=ALL-UNNAMED -DwriteAccess=true UnreflectTest
+ * @run junit/othervm --illegal-final-field-mutation=deny -DwriteAccess=false UnreflectTest
  */
 
 import java.io.IOException;
@@ -38,25 +39,25 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class UnreflectTest {
-    static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    static final Class<?> hiddenClass = defineHiddenClass();
-    private static Class<?> defineHiddenClass() {
+class UnreflectTest {
+    static Class<?> hiddenClass;
+    static boolean writeAccess;
+
+    @BeforeAll
+    static void setup() throws Exception {
         String classes = System.getProperty("test.classes");
-        Path cf = Paths.get(classes, "Fields.class");
-        try {
-            byte[] bytes = Files.readAllBytes(cf);
-            return MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        Path cf = Path.of(classes, "Fields.class");
+        byte[] bytes = Files.readAllBytes(cf);
+        hiddenClass = MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
+
+        String s = System.getProperty("writeAccess");
+        assertNotNull(s);
+        writeAccess = Boolean.valueOf(s);
     }
 
     /*
@@ -64,7 +65,7 @@ public class UnreflectTest {
      * can write the value of a non-static final field in a normal class
      */
     @Test
-    public void testFieldsInNormalClass() throws Throwable {
+    void testFieldsInNormalClass() throws Throwable {
         // despite the name "HiddenClass", this class is loaded by the
         // class loader as non-hidden class
         Class<?> c = Fields.class;
@@ -72,7 +73,11 @@ public class UnreflectTest {
         assertFalse(c.isHidden());
         readOnlyAccessibleObject(c, "STATIC_FINAL", null, true);
         readWriteAccessibleObject(c, "STATIC_NON_FINAL", null, false);
-        readWriteAccessibleObject(c, "FINAL", o, true);
+        if (writeAccess) {
+            readWriteAccessibleObject(c, "FINAL", o, true);
+        } else {
+            readOnlyAccessibleObject(c, "FINAL", o, true);
+        }
         readWriteAccessibleObject(c, "NON_FINAL", o, false);
     }
 
@@ -81,7 +86,7 @@ public class UnreflectTest {
      * has NO write the value of a non-static final field in a hidden class
      */
     @Test
-    public void testFieldsInHiddenClass() throws Throwable {
+    void testFieldsInHiddenClass() throws Throwable {
         assertTrue(hiddenClass.isHidden());
         Object o = hiddenClass.newInstance();
         readOnlyAccessibleObject(hiddenClass, "STATIC_FINAL", null, true);
@@ -99,7 +104,8 @@ public class UnreflectTest {
      * Test Lookup::unreflectSetter and Lookup::unreflectVarHandle that
      * cannot write the value of a non-static final field in a record class
      */
-    public void testFieldsInRecordClass() throws Throwable {
+    @Test
+    void testFieldsInRecordClass() throws Throwable {
         assertTrue(TestRecord.class.isRecord());
         Object o = new TestRecord(1);
         readOnlyAccessibleObject(TestRecord.class, "STATIC_FINAL", null, true);
@@ -121,16 +127,12 @@ public class UnreflectTest {
         assertTrue(f.trySetAccessible());
 
         // Field object with read-only access
-        MethodHandle mh = LOOKUP.unreflectGetter(f);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle mh = lookup.unreflectGetter(f);
         Object value = Modifier.isStatic(modifier) ? mh.invoke() : mh.invoke(o);
         assertTrue(value == f.get(o));
-        try {
-            LOOKUP.unreflectSetter(f);
-            assertTrue(false, "should fail to unreflect a setter for " + name);
-        } catch (IllegalAccessException e) {
-        }
-
-        VarHandle vh = LOOKUP.unreflectVarHandle(f);
+        assertThrows(IllegalAccessException.class, () -> lookup.unreflectSetter(f));
+        VarHandle vh = lookup.unreflectVarHandle(f);
         if (isFinal) {
             assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
         } else {
@@ -163,7 +165,7 @@ public class UnreflectTest {
             throw e;
         }
 
-        VarHandle vh = LOOKUP.unreflectVarHandle(f);
+        VarHandle vh = MethodHandles.lookup().unreflectVarHandle(f);
         if (isFinal) {
             assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
         } else {

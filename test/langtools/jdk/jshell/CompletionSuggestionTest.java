@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng CompletionSuggestionTest
+ * @run testng/othervm CompletionSuggestionTest
  */
 
 import java.io.IOException;

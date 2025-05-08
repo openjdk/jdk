@@ -37,6 +37,7 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
@@ -114,6 +115,10 @@ public final class Module implements AnnotatedElement {
     // memory semantics that preserves ordering and visibility across threads.
     @Stable
     private boolean enableNativeAccess;
+
+    // true if this module is allowed to mutate final instance fields
+    @Stable
+    private boolean enableFinalMutation;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -262,7 +267,6 @@ public final class Module implements AnnotatedElement {
      * in the outer Module class as that would create a circular initializer dependency.
      */
     private static final class EnableNativeAccess {
-
         private EnableNativeAccess() {}
 
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -331,10 +335,50 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
-     * Update all unnamed modules to allow access to restricted methods.
+     * Enable code in all unnamed modules to access restricted methods.
      */
-    static void implAddEnableNativeAccessToAllUnnamed() {
+    static void addEnableNativeAccessToAllUnnamed() {
         EnableNativeAccess.trySetEnableNativeAccess(ALL_UNNAMED_MODULE);
+    }
+
+    /**
+     * This class exists to avoid using Unsafe during early initialization of Module.
+     */
+    private static final class EnableFinalMutation {
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        private static final long ENABLE_FINAL_MUTATION_OFFSET =
+                UNSAFE.objectFieldOffset(Module.class, "enableFinalMutation");
+
+        private static boolean isEnableFinalMutation(Module module) {
+            return UNSAFE.getBooleanVolatile(module, ENABLE_FINAL_MUTATION_OFFSET);
+        }
+
+        private static boolean tryEnableFinalMutation(Module module) {
+            return UNSAFE.compareAndSetBoolean(module, ENABLE_FINAL_MUTATION_OFFSET, false, true);
+        }
+    }
+
+    /**
+     * Enable code in all unnamed modules to mutate final instance fields.
+     */
+    static void addEnableFinalMutationToAllUnnamed() {
+        EnableFinalMutation.tryEnableFinalMutation(ALL_UNNAMED_MODULE);
+    }
+
+    /**
+     * Enable code in this named module to mutate final instance fields.
+     */
+    boolean tryEnableFinalMutation() {
+        Module m = isNamed() ? this : ALL_UNNAMED_MODULE;
+        return EnableFinalMutation.tryEnableFinalMutation(m);
+    }
+
+    /**
+     * Return true if code in this module is allowed to mutate final instance fields.
+     */
+    boolean isFinalMutationEnabled() {
+        Module m = isNamed() ? this : ALL_UNNAMED_MODULE;
+        return EnableFinalMutation.isEnableFinalMutation(m);
     }
 
     // --
@@ -718,6 +762,31 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
+     * Returns {@code true} if this module statically opens a package to the given module.
+     * If the package is opened to the given module via {@code addOpens} then this method
+     * returns {@code false}.
+     */
+    boolean isStaticallyOpened(String pn, Module other) {
+        // all packages in unnamed modules are open
+        if (!isNamed())
+            return true;
+
+        // all packages are open to self
+        if (other == this && descriptor.packages().contains(pn))
+            return true;
+
+        // all packages in open and automatic modules are open
+        if (descriptor.isOpen() || descriptor.isAutomatic())
+            return descriptor.packages().contains(pn);
+
+        // opened via module descriptor
+        if (isExplicitlyExportedOrOpened(pn, other, true))
+            return true;
+
+        return false;
+    }
+
+    /**
      * Returns {@code true} if this module exports or opens a package to
      * the given module via its module declaration or CLI options.
      */
@@ -860,20 +929,26 @@ public final class Module implements AnnotatedElement {
             if (caller != this) {
                 throw new IllegalCallerException(caller + " != " + this);
             }
-            implAddExportsOrOpens(pn, other, /*open*/false, /*syncVM*/true);
+            implAddReflectivelyExports(pn, other);
         }
 
         return this;
     }
 
     /**
-     * If this module has <em>opened</em> a package to at least the caller
-     * module then update this module to open the package to the given module.
-     * Opening a package with this method allows all types in the package,
+     * If this module has <em>opened</em> the given package to at least the caller
+     * module, then update this module to also open the package to the given module.
+     *
+     * <p> Opening a package with this method allows all types in the package,
      * and all their members, not just public types and their public members,
-     * to be reflected on by the given module when using APIs that support
-     * private access or a way to bypass or suppress default Java language
+     * to be reflected on by the given module when using APIs that either support
+     * private access or provide a way to bypass or suppress Java language
      * access control checks.
+     *
+     * <p> Opening a package with this method does not allow the given module
+     * to {@linkplain Field#set(Object, Object) reflectively set} a final field
+     * in the package, or {@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)
+     * obtain a method handle with write access} to a final field in the package.
      *
      * <p> This method has no effect if the package is already <em>open</em>
      * to the given module. </p>
@@ -913,7 +988,7 @@ public final class Module implements AnnotatedElement {
             Module caller = getCallerModule(Reflection.getCallerClass());
             if (caller != this && (caller == null || !isOpen(pn, caller)))
                 throw new IllegalCallerException(pn + " is not open to " + caller);
-            implAddExportsOrOpens(pn, other, /*open*/true, /*syncVM*/true);
+            implAddReflectivelyOpens(pn, other);
         }
 
         return this;
@@ -923,10 +998,10 @@ public final class Module implements AnnotatedElement {
     /**
      * Updates this module to export a package unconditionally.
      *
-     * @apiNote This method is for JDK tests only.
+     * @apiNote Used by Proxy and other dynamic modules.
      */
     void implAddExports(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true, true);
     }
 
     /**
@@ -935,16 +1010,17 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by Instrumentation::redefineModule and --add-exports
      */
     void implAddExports(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, false, true);
+        implAddExportsOrOpens(pn, other, false, VM.isBooted(), true);
     }
 
     /**
      * Updates this module to export a package to all unnamed modules.
      *
-     * @apiNote Used by the --add-exports command line option.
+     * @apiNote Used by the --add-exports command line option and the launcher when
+     * an executable JAR file has the "Add-Exports" attribute in its main manifest.
      */
     void implAddExportsToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, false, true);
     }
 
     /**
@@ -954,7 +1030,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn) {
-        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, true, false);
     }
 
     /**
@@ -964,7 +1040,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn, Module other) {
-        implAddExportsOrOpens(pn.replace('/', '.'), other, false, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), other, false, true, false);
     }
 
     /**
@@ -973,7 +1049,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for JDK tests only.
      */
     void implAddOpens(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true, true);
     }
 
     /**
@@ -982,26 +1058,39 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by Instrumentation::redefineModule and --add-opens
      */
     void implAddOpens(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, true, true);
+        implAddExportsOrOpens(pn, other, true, VM.isBooted(), true);
     }
 
     /**
      * Updates this module to open a package to all unnamed modules.
      *
-     * @apiNote Used by the --add-opens command line option.
+     * @apiNote Used by the --add-opens command line option and the launcher when
+     * an executable JAR file has the "Add-Opens" attribute in its main manifest.
      */
     void implAddOpensToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, false, true);
+    }
+
+    private void implAddReflectivelyExports(String pn, Module other) {
+        implAddExportsOrOpens(pn, other, false, true, true);
+    }
+
+    private void implAddReflectivelyOpens(String pn, Module other) {
+        implAddExportsOrOpens(pn, other, true, true, true);
     }
 
     /**
      * Updates a module to export or open a module to another module.
-     *
-     * If {@code syncVM} is {@code true} then the VM is notified.
+     * @param pn package name
+     * @param other the module to export/open the package to
+     * @param open true to open, false to export
+     * @param reflectively true if exported/opened reflectively
+     * @param syncVM true to update the VM
      */
     private void implAddExportsOrOpens(String pn,
                                        Module other,
                                        boolean open,
+                                       boolean reflectively,
                                        boolean syncVM) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(pn);
@@ -1031,7 +1120,7 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        if (VM.isBooted()) {
+        if (reflectively) {
             // add package name to ReflectionData.exports if absent
             Map<String, Boolean> map = ReflectionData.exports
                 .computeIfAbsent(this, other,

@@ -26,6 +26,11 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.VM;
+import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.module.ModuleBootstrap.IllegalFinalFieldMutation;
+import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
@@ -36,6 +41,8 @@ import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ClassScope;
 import java.lang.annotation.Annotation;
+import java.net.URL;
+import java.security.CodeSource;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
@@ -165,6 +172,27 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * <p>If this reflected object represents a non-final field, and this method is
+     * used to enable access, then both <em>{@linkplain #get(Object) read}</em>
+     * and <em>{@linkplain #set(Object, Object) write}</em> access to the field
+     * are enabled.
+     *
+     * <p>If this reflected object represents a <em>non-modifiable</em> final field
+     * then enabling access only enables read access. Any attempt to {@linkplain
+     * #set(Object, Object) set} the field value throws an {@code
+     * IllegalAccessException}. The following fields are non-modifiable:
+     * <ul>
+     * <li>static final fields declared in any class or interface</li>
+     * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
+     * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
+     * </ul>
+     * <p>If this reflected object represents a non-static final field in a class that
+     * is not a record class or hidden class, then enabling access will enable read
+     * access. Whether write access is allowed or not is checked when attempting to
+     * {@linkplain #set(Object, Object) set} the field value.
+     *
      * @throws InaccessibleObjectException {@inheritDoc}
      */
     @Override
@@ -765,15 +793,38 @@ class Field extends AccessibleObject implements Member {
      * <p>If the underlying field is final, this {@code Field} object has
      * <em>write</em> access if and only if the following conditions are met:
      * <ul>
-     * <li>{@link #setAccessible(boolean) setAccessible(true)} has succeeded for
-     *     this {@code Field} object;</li>
-     * <li>the field is non-static; and</li>
-     * <li>the field's declaring class is not a {@linkplain Class#isHidden()
-     *     hidden class}; and</li>
+     * <li>{@link #setAccessible(boolean) setAccessible(true)} has succeeded for this
+     *     {@code Field} object; and</li>
+     * <li><a href="doc-files/MutationMethods.html">final field mutation is enabled</a>
+     *     for the caller's module; and</li>
+     * <li>the field's {@linkplain #getDeclaringClass() declaring class} {@code D} is
+     *     in a package that is {@linkplain Module#isOpen(String, Module) open} to the
+     *     caller's module. This condition is not met if the module containing
+     *     {@code D} has been {@linkplain Module#addOpens(String, Module) updated}
+     *     to open the package to the caller module; and </li>
      * <li>the field's declaring class is not a {@linkplain Class#isRecord()
-     *     record class}.</li>
+     *     record class}; and </li>
+     * <li>the field's declaring class is not a {@linkplain Class#isHidden()
+     *     hidden class}; and </li>
+     * <li>the field is non-static. </li>
      * </ul>
-     * If any of the above checks is not met, this method throws an
+     *
+     * <p>This method may be called by <a href="{@docRoot}/../specs/jni/index.html">
+     * JNI code</a> with no caller class on the stack. In that case, and when the
+     * underlying field is final, this {@code Field} object has <em>write</em> access
+     * if and only if the following conditions are met:
+     * <ul>
+     * <li>{@code setAccessible(true)} has succeeded for this {@code Field} object; and</li>
+     * <li>final field mutation is enabled for the unnamed module; and</li>
+     * <li>the field is declared {@code public} and its declaring class is {@code
+     *     public} in a package that is {@linkplain Module#isExported(String) exported}
+     *     to all modules; and</li>
+     * <li>the field's declaring class is not a record class; and </li>
+     * <li>the field's declaring class is not a hidden class; and </li>
+     * <li>the field is non-static. </li>
+     * </ul>
+     *
+     * <p>If any of the above conditions is not met, this method throws an
      * {@code IllegalAccessException}.
      *
      * <p> Setting a final field in this way
@@ -818,6 +869,8 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     *
+     * @see <a href="doc-files/MutationMethods.html">Mutation methods</a>
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -829,6 +882,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().set(obj, value);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().set(obj, value);
         }
     }
@@ -868,6 +924,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setBoolean(obj, z);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setBoolean(obj, z);
         }
     }
@@ -907,6 +966,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setByte(obj, b);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setByte(obj, b);
         }
     }
@@ -946,6 +1008,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setChar(obj, c);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setChar(obj, c);
         }
     }
@@ -985,6 +1050,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setShort(obj, s);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setShort(obj, s);
         }
     }
@@ -1024,6 +1092,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setInt(obj, i);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setInt(obj, i);
         }
     }
@@ -1063,6 +1134,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setLong(obj, l);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setLong(obj, l);
         }
     }
@@ -1102,6 +1176,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setFloat(obj, f);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setFloat(obj, f);
         }
     }
@@ -1141,6 +1218,9 @@ class Field extends AccessibleObject implements Member {
             checkAccess(caller, obj);
             getFieldAccessor().setDouble(obj, d);
         } else {
+            if (isFinalInstanceInNormalClass() && obj != null) {
+                checkAllowedToSetFinal(Reflection.getCallerClass());
+            }
             getOverrideFieldAccessor().setDouble(obj, d);
         }
     }
@@ -1304,5 +1384,181 @@ class Field extends AccessibleObject implements Member {
                                                        getDeclaringClass(),
                                                        getGenericType(),
                                                        TypeAnnotation.TypeAnnotationTarget.FIELD);
-}
+    }
+
+    /**
+     * Return true if this field is a final instance field in a class that is not a
+     * record class or hidden class.
+     */
+    @ForceInline
+    private boolean isFinalInstanceInNormalClass() {
+        return Modifier.isFinal(modifiers)
+                && !Modifier.isStatic(modifiers)
+                && !clazz.isRecord()
+                && !clazz.isHidden();
+    }
+
+    /**
+     * Check that the caller is allowed to mutate a final instance field in a class that
+     * is not a record class or hidden class.
+     * @throws IllegalAccessException if not allowed
+     */
+    private void checkAllowedToSetFinal(Class<?> caller) throws IllegalAccessException {
+        checkAllowedToSetFinal(caller, false);
+    }
+
+    /**
+     * Check that the caller is allowed to unreflect for mutation a final instance field
+     * in a class that is not a record class or hidden class.
+     * @throws IllegalAccessException if not allowed
+     */
+    void checkAllowedToUnreflectFinalSetter(Class<?> caller) throws IllegalAccessException {
+        checkAllowedToSetFinal(Objects.requireNonNull(caller), true);
+    }
+
+    /**
+     * Checks that the caller is allowed to set or unreflect this final instance field.
+     * This method is not performance critical, mutating final fields should be rare.
+     * @throws IllegalAccessException if not allowed
+     */
+    private void checkAllowedToSetFinal(Class<?> caller, boolean unreflect) throws IllegalAccessException {
+        assert isFinalInstanceInNormalClass();
+
+        // Check that package is open to caller.
+        final Module moduleToCheck;
+        if (caller != null) {
+            if (!Modules.isStaticallyOpened(clazz.getModule(),
+                                            clazz.getPackageName(),
+                                            caller.getModule())) {
+                throw new IllegalAccessException(notOpenToCallerMessage(caller, unreflect));
+            }
+            moduleToCheck = caller.getModule();
+        } else {
+            // No Java caller, only allowed if field is public in exported package
+            if (!Reflection.verifyPublicMemberAccess(clazz, modifiers)) {
+                throw new IllegalAccessException(notAccessibleToNoCallerMessage(unreflect));
+            }
+            moduleToCheck = ClassLoaders.appClassLoader().getUnnamedModule();
+        }
+
+        // check if illegal final field mutation is allowed or enabled for the module
+        var mode = ModuleBootstrap.illegalFinalFieldMutation();
+        if (mode == IllegalFinalFieldMutation.ALLOW
+                || Modules.isFinalMutationEnabled(moduleToCheck)) {
+            return;
+        }
+
+        switch (mode) {
+            case WARN ->  {
+                // first mutation prints warning
+                if (Modules.tryEnableFinalMutation(moduleToCheck)) {
+                    String warningMsg = finalFieldMutationWarning(caller, unreflect);
+                    String targetModule = (caller != null && moduleToCheck.isNamed())
+                            ? moduleToCheck.getName()
+                            : "ALL-UNNAMED";
+                    VM.initialErr().printf("""
+                            WARNING: %s
+                            WARNING: Use --enable-final-field-mutation=%s to avoid a warning
+                            WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled";
+                            """, warningMsg, targetModule);
+                }
+            }
+            case DEBUG -> {
+                // print warning and stack trace
+                var sb = new StringBuilder(finalFieldMutationWarning(caller, unreflect));
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                        .forEach(sf -> {
+                            sb.append(System.lineSeparator()).append("\tat " + sf);
+                        });
+                VM.initialErr().println(sb);
+            }
+            case DENY -> {
+                throw new IllegalAccessException(callerNotAllowedToMutateMessage(caller, unreflect));
+            }
+            default -> {
+                assert false;
+            }
+        }
+    }
+
+    /**
+     * Returns the warning message to print when this final field is mutated by
+     * the given possibly-null caller.
+     */
+    private String finalFieldMutationWarning(Class<?> caller, boolean unreflect) {
+        assert Modifier.isFinal(modifiers);
+        String source;
+        if (caller != null) {
+            source = caller + " in " + caller.getModule();
+            CodeSource cs = caller.getProtectionDomain().getCodeSource();
+            if (cs != null) {
+                URL url = cs.getLocation();
+                if (url != null) {
+                    source += " (" + url + ")";
+                }
+            }
+        } else {
+            source = "JNI attached thread with no caller frame";
+        }
+        return String.format("Final field %s in %s has been %s by %s",
+                name,
+                clazz,
+                (unreflect) ? "unreflected for mutation" : "mutated reflectively",
+                source);
+    }
+
+    /**
+     * Returns the message for an IllegalAccessException when a final field cannot be
+     * mutated because the declaring class is in a package that is not open to caller.
+     */
+    private String notOpenToCallerMessage(Class<?> caller, boolean unreflect) {
+        return String.format("%s, %s does not explicitly open package %s to %s",
+                cannotSetFieldMessage(caller, unreflect),
+                clazz.getModule(),
+                clazz.getPackageName(),
+                caller.getModule());
+    }
+
+    /**
+     * Returns the exception message for the IllegalAccessException when this
+     * final field cannot be mutated because the caller module is not allowed
+     * to mutate final fields.
+     */
+    private String callerNotAllowedToMutateMessage(Class<?> caller, boolean unreflect) {
+        if (caller != null) {
+            return String.format("%s, %s is not allowed to mutate final fields",
+                    cannotSetFieldMessage(caller, unreflect),
+                    caller.getModule());
+        } else {
+            return notAccessibleToNoCallerMessage(unreflect);
+        }
+    }
+
+    /**
+     * Returns the message for an IllegalAccessException when a field is not
+     * accessible to a JNI attached thread.
+     */
+    private String notAccessibleToNoCallerMessage(boolean unreflect) {
+        return cannotSetFieldMessage("JNI attached thread with no caller frame cannot", unreflect);
+    }
+
+    /**
+     * Returns a message to indicate that the caller cannot set/unreflect this final field.
+     */
+    private String cannotSetFieldMessage(Class<?> caller, boolean unreflect) {
+        return cannotSetFieldMessage(caller + " (in " + caller.getModule() + ") cannot", unreflect);
+    }
+
+    /**
+     * Returns a message to indicate that a field cannot be set/unreflected.
+     */
+    private String cannotSetFieldMessage(String prefix, boolean unreflect) {
+        if (unreflect) {
+            return prefix + " unreflect final field " + clazz.getName() + "." + name
+                    + " (in " + clazz.getModule() + ") for mutation";
+        } else {
+            return prefix + " set final field " + clazz.getName() + "." + name
+                    + " (in " + clazz.getModule() + ")";
+        }
+    }
 }
