@@ -121,7 +121,7 @@ public final class NativeLibraries {
                 if (loadLibraryOnlyIfPresent && !file.exists()) {
                     return null;
                 }
-                name = file.getAbsolutePath();
+                name = file.getCanonicalPath() + ClassLoaderHelper.nativeLoaderFileNameSuffix();
             } catch (IOException e) {
                 return null;
             }
