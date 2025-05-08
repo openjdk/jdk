@@ -784,7 +784,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   Node_List non_early_stores(area);
 
   // Whether we must raise the LCA after the main worklist loop below.
-  bool must_raise_LCA = false;
+  bool must_raise_LCA_above_marks = false;
 
   // The input load uses some memory state (initial_mem).
   Node* initial_mem = load->in(MemNode::Memory);
@@ -1006,7 +1006,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
           if (pred_block != early) {
             // Lazily set the LCA mark
             pred_block->set_raise_LCA_mark(load_index);
-            must_raise_LCA = true;
+            must_raise_LCA_above_marks = true;
           } else /* if (pred_block == early) */ {
             // We know already now that we must raise LCA all the way to early.
             LCA = early;
@@ -1028,7 +1028,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
         continue;
       }
       use_mem_state_block->set_raise_LCA_mark(load_index);
-      must_raise_LCA = true;
+      must_raise_LCA_above_marks = true;
       non_early_stores.push(use_mem_state);
     } else /* if (use_mem_state_block == early) */ {
       // We found an anti-dependent store in the load's 'early' block.
@@ -1059,7 +1059,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   // we must raise the LCA above the blocks for all the anti-dependent stores
   // and above the predecessor blocks of anti-dependent memory Phis we reached
   // during the search.
-  if (must_raise_LCA) {
+  if (must_raise_LCA_above_marks) {
     LCA = raise_LCA_above_marks(LCA, load->_idx, early, this);
   }
 
