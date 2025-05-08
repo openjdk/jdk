@@ -39,17 +39,52 @@ class ZMappedCache {
   friend class ZMappedCacheEntry;
 
 private:
-  struct EntryCompare {
-    static int cmp(zoffset a, const IntrusiveRBNode* b);
-    static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
+  class Tree {
+  private:
+    struct EntryCompare {
+      static int cmp(zoffset a, const IntrusiveRBNode* b);
+      static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
+    };
+
+  public:
+    using InternalTree = IntrusiveRBTree<zoffset, EntryCompare>;
+    using Cursor       = InternalTree::Cursor;
+    using Node         = IntrusiveRBNode;
+
+  private:
+    InternalTree _tree;
+    Node*        _left_most;
+    Node*        _right_most;
+
+    void verify() const;
+    void verify_left_most() const;
+    void verify_right_most() const;
+
+  public:
+    Tree();
+
+    void insert(Node* node, const Cursor& cursor);
+    void remove(Node* node, const Cursor& cursor);
+    void replace(Node* old_node, Node* new_node, const Cursor& cursor);
+
+    size_t size() const;
+
+    Cursor cursor(zoffset offset);
+    Cursor cursor(const Node* node);
+    Cursor next(const Cursor& node_cursor);
+
+    const Node* left_most() const;
+    Node* left_most();
+
+    const Node* right_most() const;
+    Node* right_most();
   };
 
   struct ZSizeClassListNode {
     ZListNode<ZSizeClassListNode> _node;
   };
 
-  using Tree              = IntrusiveRBTree<zoffset, EntryCompare>;
-  using TreeNode          = IntrusiveRBNode;
+  using TreeNode          = Tree::Node;
   using SizeClassList     = ZList<ZSizeClassListNode>;
   using SizeClassListNode = ZSizeClassListNode;
 
@@ -60,8 +95,6 @@ private:
   static constexpr int NumSizeClasses = MaxSizeClassShift - MinSizeClassShift + 1;
 
   Tree          _tree;
-  TreeNode*     _left_most;
-  TreeNode*     _right_most;
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
   size_t        _min;
@@ -69,20 +102,10 @@ private:
   static int size_class_index(size_t size);
   static int guaranteed_size_class_index(size_t size);
 
-  void tree_insert(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
-  void tree_remove(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
-  void tree_replace(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
-  void tree_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem);
-
-  void verify() const;
-
-  void verify_left_most() const;
-  const TreeNode* left_most() const;
-  TreeNode* left_most();
-
-  void verify_right_most() const;
-  const TreeNode* right_most() const;
-  TreeNode* right_most();
+  void cache_insert(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
+  void cache_remove(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
+  void cache_replace(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
+  void cache_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem);
 
   enum class RemovalStrategy {
     LowestAddress,
