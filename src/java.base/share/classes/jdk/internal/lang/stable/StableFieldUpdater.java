@@ -86,7 +86,7 @@ import java.util.function.ToLongFunction;
  *
  *         private static final ToIntFunction<LazyFoo> HASH_UPDATER =
  *                 StableFieldUpdater.ofInt(LazyFoo.class, "hash",
- *                         l -> Objects.hash(l.bar, l.baz), -1);
+ *                         l -> Objects.hash(l.bar, l.baz));
  *
  *         @Stable
  *         private int hash;
@@ -120,41 +120,41 @@ import java.util.function.ToLongFunction;
  * {@code 1 << 32} can be used as a token for zero (as the lower 32 bits are zero) and
  * then just cast to an {@code int} as shown in this example:
  *
- * {@snippet lang=java:
-        public final class LazySpecifiedFoo {
-
-        private final Bar bar;
-        private final Baz baz;
-
-        private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
-                StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
-                        LazySpecifiedFoo::hashCodeFor, 1L << 32);
-
-        @Stable
-        private long hash;
-
-        public LazySpecifiedFoo(Bar bar, Baz baz) {
-            this.bar = bar;
-            this.baz = baz;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-             return (o instanceof Foo that)
-                     && Objects.equals(this.bar, that.bar)
-                     && Objects.equals(this.baz, that.baz);
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) HASH_UPDATER.applyAsLong(this);
-        }
-
-        static long hashCodeFor(LazySpecifiedFoo foo) {
-            return Objects.hash(foo.bar, foo.baz);
-        }
-    }
- * }
+ * {@snippet lang = java:
+ *     public final class LazySpecifiedFoo {
+ *
+ *         private final Bar bar;
+ *         private final Baz baz;
+ *
+ *         private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
+ *                 StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
+ *                 StableFieldUpdater.replaceLongZero(LazySpecifiedFoo::hashCodeFor, 1L << 32));
+ *
+ *         @Stable
+ *         private long hash;
+ *
+ *         public LazySpecifiedFoo(Bar bar, Baz baz) {
+ *             this.bar = bar;
+ *             this.baz = baz;
+ *         }
+ *
+ *         @Override
+ *         public boolean equals(Object o) {
+ *             return (o instanceof Foo that)
+ *                     && Objects.equals(this.bar, that.bar)
+ *                     && Objects.equals(this.baz, that.baz);
+ *         }
+ *
+ *         @Override
+ *         public int hashCode() {
+ *             return (int) HASH_UPDATER.applyAsLong(this);
+ *         }
+ *
+ *         static long hashCodeFor(LazySpecifiedFoo foo) {
+ *             return Objects.hash(foo.bar, foo.baz);
+ *         }
+ *     }
+ *}
  * The example above also features a static method {@code hashCodeFor()} that acts as
  * the underlying hash function. This method can reside in another class.
  * <p>
@@ -172,8 +172,7 @@ import java.util.function.ToLongFunction;
         private static final ToIntFunction<MhFoo> HASH_UPDATER =
                 StableFieldUpdater.ofInt(
                         MhUtil.findVarHandle(LOOKUP, "hash", int.class),
-                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)),
-                        -1);
+                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)));
 
         @Stable
         private int hash;
@@ -201,7 +200,7 @@ import java.util.function.ToLongFunction;
         }
     }
  * }
- * There is a convenience method for this idiomatic case that looks like this:
+ * There is a convenience method for the idiomatic case above that looks like this:
  * {@snippet lang=java:
 
         private static final ToIntFunction<MhFoo> HASH_UPDATER =
@@ -213,6 +212,9 @@ import java.util.function.ToLongFunction;
  *
  * The provided {@code underlying} function must not recurse or the result of the
  * operation is unspecified.
+ * <p>
+ * If a reference value of {@code null} is used as a parameter in any of the methods
+ * in this class, a {@link NullPointerException} is thrown.
  */
 public final class StableFieldUpdater {
 
@@ -248,30 +250,27 @@ public final class StableFieldUpdater {
                                              String staticUnderlyingMethodName) {
         return ofInt(
                 MhUtil.findVarHandle(lookup, fieldName, int.class),
-                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(int.class, lookup.lookupClass())),
-                -1);
+                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(int.class, lookup.lookupClass())));
     }
 
     public static <T> ToIntFunction<T> ofInt(VarHandle accessor,
-                                             MethodHandle underlying,
-                                             int zeroReplacement) {
+                                             MethodHandle underlying) {
         check(accessor, int.class);
         var adaptedUnderlying = checkAndAdapt(underlying, int.class);
 
-        return new StableIntFieldUpdaterVarHandle<>(accessor, adaptedUnderlying, zeroReplacement);
+        return new StableIntFieldUpdaterVarHandle<>(accessor, adaptedUnderlying);
     }
 
     @CallerSensitive
     public static <T> ToIntFunction<T> ofInt(Class<T> holderType,
                                              String fieldName,
-                                             ToIntFunction<? super T> underlying,
-                                             int zeroReplacement) {
+                                             ToIntFunction<? super T> underlying) {
         Objects.requireNonNull(holderType);
         Objects.requireNonNull(fieldName);
         Objects.requireNonNull(underlying);
 
         final long offset = offset(holderType, fieldName, int.class, Reflection.getCallerClass());
-        return new StableIntFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+        return new StableIntFieldUpdater<>(holderType, offset, underlying);
     }
 
     /**
@@ -301,54 +300,147 @@ public final class StableFieldUpdater {
                                                String staticUnderlyingMethodName) {
         return ofLong(
                 MhUtil.findVarHandle(lookup, fieldName, long.class),
-                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(long.class, lookup.lookupClass())),
-                1L << 31);
+                MhUtil.findStatic(lookup, staticUnderlyingMethodName, MethodType.methodType(long.class, lookup.lookupClass())));
     }
 
     public static <T> ToLongFunction<T> ofLong(VarHandle accessor,
-                                               MethodHandle underlying,
-                                               long zeroReplacement) {
+                                               MethodHandle underlying) {
         check(accessor, long.class);
         var adaptedUnderlying = checkAndAdapt(underlying, long.class);
 
-        return makeLong(accessor, adaptedUnderlying, zeroReplacement);
+        return makeLong(accessor, adaptedUnderlying);
     }
 
     @CallerSensitive
     public static <T> ToLongFunction<T> ofLong(Class<T> holderType,
                                                String fieldName,
-                                               ToLongFunction<? super T> underlying,
-                                               long zeroReplacement) {
+                                               ToLongFunction<? super T> underlying) {
         Objects.requireNonNull(holderType);
         Objects.requireNonNull(fieldName);
         Objects.requireNonNull(underlying);
 
         final long offset = offset(holderType, fieldName, long.class, Reflection.getCallerClass());
-        return makeLong(holderType, offset, underlying, zeroReplacement);
+        return makeLong(holderType, offset, underlying);
     }
+
+    /**
+     * {@return a function that will replace any zero value returned by the provided
+     *          {@code underlying} function with the provided {@code zeroReplacement}}
+     * @param underlying      function to filter return values from
+     * @param zeroReplacement to replace any zero values returned by the {@code underlying}
+     *                        function.
+     * @param <T>             The function's type parameter
+     */
+    public static <T> ToIntFunction<T> replaceIntZero(ToIntFunction<T> underlying, int zeroReplacement) {
+
+        record IntZeroReplacer<T>(ToIntFunction<T> underlying, int zeroReplacement) implements ToIntFunction<T> {
+            @ForceInline
+            @Override
+            public int applyAsInt(T value) {
+                return replaceZero(underlying.applyAsInt(value), zeroReplacement);
+            }
+        }
+
+        Objects.requireNonNull(underlying);
+        return new IntZeroReplacer<>(underlying, zeroReplacement);
+    }
+
+    /**
+     * {@return a method handle that will replace any zero value returned by the provided
+     *          {@code underlying} handle with the provided {@code zeroReplacement}}
+     * @param underlying      function to filter return values from
+     * @param zeroReplacement to replace any zero values returned by the {@code underlying}
+     *                        method handle.
+     */
+    public static MethodHandle replaceIntZero(MethodHandle underlying, int zeroReplacement) {
+
+        final class Holder {
+            private static final MethodHandle RETURN_FILTER =
+                    MhUtil.findStatic(LOCAL_LOOKUP, "replaceZero", MethodType.methodType(int.class, int.class, int.class));
+        }
+        check(underlying, int.class);
+        return MethodHandles.filterReturnValue(underlying,
+                MethodHandles.insertArguments(Holder.RETURN_FILTER, 1, zeroReplacement));
+    }
+
+    /**
+     * {@return a function that will replace any zero value returned by the provided
+     *          {@code underlying} function with the provided {@code zeroReplacement}}
+     * @param underlying      function to filter return values from
+     * @param zeroReplacement to replace any zero values returned by the {@code underlying}
+     *                        function.
+     * @param <T>             The function's type parameter
+     */
+    public static <T> ToLongFunction<T> replaceLongZero(ToLongFunction<T> underlying, long zeroReplacement) {
+
+        record LongZeroReplacer<T>(ToLongFunction<T> underlying, long zeroReplacement) implements ToLongFunction<T> {
+            @ForceInline
+            @Override
+            public long applyAsLong(T value) {
+                return replaceZero(underlying.applyAsLong(value), zeroReplacement);
+            }
+        }
+
+        Objects.requireNonNull(underlying);
+        return new LongZeroReplacer<>(underlying, zeroReplacement);
+    }
+
+    /**
+     * {@return a method handle that will replace any zero value returned by the provided
+     *          {@code underlying} handle with the provided {@code zeroReplacement}}
+     * @param underlying      function to filter return values from
+     * @param zeroReplacement to replace any zero values returned by the {@code underlying}
+     *                        method handle.
+     */
+    public static MethodHandle replaceLongZero(MethodHandle underlying, long zeroReplacement) {
+
+        final class Holder {
+            private static final MethodHandle RETURN_FILTER =
+                    MhUtil.findStatic(LOCAL_LOOKUP, "replaceZero", MethodType.methodType(long.class, long.class, long.class));
+        }
+
+        check(underlying, long.class);
+        return MethodHandles.filterReturnValue(underlying,
+                MethodHandles.insertArguments(Holder.RETURN_FILTER, 1, zeroReplacement));
+    }
+
+    // Also used reflectively
+    @ForceInline
+    private static int replaceZero(int value, int zeroReplacement) {
+        return value == 0
+                ? zeroReplacement
+                : value;
+    }
+
+    // Also used reflectively
+    @ForceInline
+    private static long replaceZero(long value, long zeroReplacement) {
+        return value == 0
+                ? zeroReplacement
+                : value;
+    }
+
 
     public static CallSite lazyOfInt(MethodHandles.Lookup lookup,
                                      String unused,
                                      VarHandle accessor,
-                                     MethodHandle underlying,
-                                     int zeroReplacement) {
+                                     MethodHandle underlying) {
         check(accessor, int.class);
         var adaptedUnderlying = checkAndAdapt(underlying, int.class);
         var handle = MhUtil.findStatic(LOCAL_LOOKUP,
-                "ofInt", MethodType.methodType(ToIntFunction.class, VarHandle.class, MethodHandle.class, int.class));
-        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying, zeroReplacement));
+                "ofInt", MethodType.methodType(ToIntFunction.class, VarHandle.class, MethodHandle.class));
+        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying));
     }
 
     public static CallSite lazyOfLong(MethodHandles.Lookup lookup,
                                       String unused,
                                       VarHandle accessor,
-                                      MethodHandle underlying,
-                                      long zeroReplacement) {
+                                      MethodHandle underlying) {
         check(accessor, long.class);
         var adaptedUnderlying = checkAndAdapt(underlying, long.class);
         var handle = MhUtil.findStatic(LOCAL_LOOKUP,
-                "makeLong", MethodType.methodType(ToLongFunction.class, VarHandle.class, MethodHandle.class, long.class));
-        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying, zeroReplacement));
+                "makeLong", MethodType.methodType(ToLongFunction.class, VarHandle.class, MethodHandle.class));
+        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying));
     }
 
     // Only to be used by classes that are used "early" in the init sequence.
@@ -358,59 +450,54 @@ public final class StableFieldUpdater {
 
         public static <T> ToIntFunction<T> ofInt(Class<T> holderType,
                                                  long offset,
-                                                 ToIntFunction<? super T> underlying,
-                                                 int zeroReplacement) {
+                                                 ToIntFunction<? super T> underlying) {
             Objects.requireNonNull(holderType);
             if (offset < 0) {
                 throw new IllegalArgumentException();
             }
             Objects.requireNonNull(underlying);
-            return new StableIntFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return new StableIntFieldUpdater<>(holderType, offset, underlying);
         }
 
         public static <T> ToLongFunction<T> ofLong(Class<T> holderType,
                                                    long offset,
-                                                   ToLongFunction<? super T> underlying,
-                                                   long zeroReplacement) {
+                                                   ToLongFunction<? super T> underlying) {
             Objects.requireNonNull(holderType);
             if (offset < 0) {
                 throw new IllegalArgumentException();
             }
             Objects.requireNonNull(underlying);
-            return makeLong(holderType, offset, underlying, zeroReplacement);
+            return makeLong(holderType, offset, underlying);
         }
 
     }
 
     private static <T> ToLongFunction<T> makeLong(Class<T> holderType,
                                                   long offset,
-                                                  ToLongFunction<? super T> underlying,
-                                                  long zeroReplacement) {
+                                                  ToLongFunction<? super T> underlying) {
         if (Architecture.is64bit()) {
             // We are also relying on the fact that the VM will not place 64-bit
             // instance fields that can cross cache lines.
-            return new StableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return new StableLongFieldUpdater<>(holderType, offset, underlying);
         } else {
-            return new TearingStableLongFieldUpdater<>(holderType, offset, underlying, zeroReplacement);
+            return new TearingStableLongFieldUpdater<>(holderType, offset, underlying);
         }
     }
 
     private static <T> ToLongFunction<T> makeLong(VarHandle accessor,
-                                                  MethodHandle underlying,
-                                                  long zeroReplacement) {
+                                                  MethodHandle underlying) {
         if (Architecture.is64bit()) {
             // We are also relying on the fact that the VM will not place 64-bit
             // instance fields that can cross cache lines.
-            return new StableLongFieldUpdaterVarHandle<>(accessor, underlying, zeroReplacement);
+            return new StableLongFieldUpdaterVarHandle<>(accessor, underlying);
         } else {
-            return new TearingStableLongFieldUpdaterVarHandle<>(accessor, underlying, zeroReplacement);
+            return new TearingStableLongFieldUpdaterVarHandle<>(accessor, underlying);
         }
     }
 
     private record StableIntFieldUpdater<T>(Class<T> holderType,
                                             long offset,
-                                            ToIntFunction<? super T> underlying,
-                                            int zeroReplacement) implements ToIntFunction<T> {
+                                            ToIntFunction<? super T> underlying) implements ToIntFunction<T> {
 
         @ForceInline
         @Override
@@ -426,9 +513,6 @@ public final class StableFieldUpdater {
                     v = UNSAFE.getIntAcquire(t, offset);
                     if (v == 0) {
                         v = underlying.applyAsInt(t);
-                        if (v == 0) {
-                            v = zeroReplacement;
-                        }
                         UNSAFE.putIntRelease(t, offset, v);
                     }
                 }
@@ -438,8 +522,7 @@ public final class StableFieldUpdater {
     }
 
     private record StableIntFieldUpdaterVarHandle<T>(VarHandle accessor,
-                                                     MethodHandle underlying,
-                                                     int zeroReplacement) implements ToIntFunction<T> {
+                                                     MethodHandle underlying) implements ToIntFunction<T> {
 
         @ForceInline
         @Override
@@ -458,9 +541,6 @@ public final class StableFieldUpdater {
                         } catch (Throwable e) {
                             throw new RuntimeException(e);
                         }
-                        if (v == 0) {
-                            v = zeroReplacement;
-                        }
                         accessor.setRelease(t, v);
                     }
                 }
@@ -471,8 +551,7 @@ public final class StableFieldUpdater {
 
     private record StableLongFieldUpdater<T>(Class<T> holderType,
                                              long offset,
-                                             ToLongFunction<? super T> underlying,
-                                             long zeroReplacement) implements ToLongFunction<T> {
+                                             ToLongFunction<? super T> underlying) implements ToLongFunction<T> {
 
         @ForceInline
         @Override
@@ -488,9 +567,6 @@ public final class StableFieldUpdater {
                     v = UNSAFE.getLongAcquire(t, offset);
                     if (v == 0) {
                         v = underlying.applyAsLong(t);
-                        if (v == 0) {
-                            v = zeroReplacement;
-                        }
                         UNSAFE.putLongRelease(t, offset, v);
                     }
                 }
@@ -501,8 +577,7 @@ public final class StableFieldUpdater {
 
     private record TearingStableLongFieldUpdater<T>(Class<T> holderType,
                                                     long offset,
-                                                    ToLongFunction<? super T> underlying,
-                                                    long zeroReplacement) implements ToLongFunction<T> {
+                                                    ToLongFunction<? super T> underlying) implements ToLongFunction<T> {
 
         @ForceInline
         @Override
@@ -518,9 +593,6 @@ public final class StableFieldUpdater {
                     v = UNSAFE.getLongAcquire(t, offset);
                     if (v == 0) {
                         v = underlying.applyAsLong(t);
-                        if (v == 0) {
-                            v = zeroReplacement;
-                        }
                         UNSAFE.putLongRelease(t, offset, v);
                     }
                 }
@@ -530,8 +602,7 @@ public final class StableFieldUpdater {
     }
 
     private record StableLongFieldUpdaterVarHandle<T>(VarHandle accessor,
-                                                      MethodHandle underlying,
-                                                      long zeroReplacement) implements ToLongFunction<T> {
+                                                      MethodHandle underlying) implements ToLongFunction<T> {
 
         @ForceInline
         @Override
@@ -550,9 +621,6 @@ public final class StableFieldUpdater {
                         } catch (Throwable e) {
                             throw new RuntimeException(e);
                         }
-                        if (v == 0) {
-                            v = zeroReplacement;
-                        }
                         accessor.setRelease(t, v);
                     }
                 }
@@ -562,8 +630,7 @@ public final class StableFieldUpdater {
     }
 
     private record TearingStableLongFieldUpdaterVarHandle<T>(VarHandle accessor,
-                                                             MethodHandle underlying,
-                                                             long zeroReplacement) implements ToLongFunction<T> {
+                                                             MethodHandle underlying) implements ToLongFunction<T> {
 
         @ForceInline
         @Override
@@ -581,9 +648,6 @@ public final class StableFieldUpdater {
                             v = (long) underlying.invokeExact(t);
                         } catch (Throwable e) {
                             throw new RuntimeException(e);
-                        }
-                        if (v == 0) {
-                            v = zeroReplacement;
                         }
                         accessor.setRelease(t, v);
                     }
@@ -610,15 +674,20 @@ public final class StableFieldUpdater {
     }
 
     private static MethodHandle checkAndAdapt(MethodHandle underlying, Class<?> returnType) {
+        check(underlying, returnType);
+        final var underlyingType = underlying.type();
+        if (!underlyingType.parameterType(0).equals(Object.class)) {
+            underlying = underlying.asType(underlyingType.changeParameterType(0, Object.class));
+        }
+        return underlying;
+    }
+
+    private static void check(MethodHandle underlying, Class<?> returnType) {
         // Implicit null check
         final var underlyingType = underlying.type();
         if (underlyingType.returnType() != returnType || underlyingType.parameterCount() != 1) {
             throw new IllegalArgumentException("Illegal underlying function: " + underlying);
         }
-        if (!underlyingType.parameterType(0).equals(Object.class)) {
-            underlying = underlying.asType(underlyingType.changeParameterType(0, Object.class));
-        }
-        return underlying;
     }
 
     private static long offset(Class<?> holderType,

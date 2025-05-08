@@ -128,7 +128,7 @@ public class StableFieldUpdaterBenchmark {
                     public int applyAsInt(Updater updater) {
                         return updater.string.hashCode();
                     }
-                }, -1);
+                });
 
         Updater(String string) { super(string); }
 
@@ -144,8 +144,7 @@ public class StableFieldUpdaterBenchmark {
         private static final ToIntFunction<MhUpdater> HASH_CODE_UPDATER =
                 StableFieldUpdater.ofInt(
                         MhUtil.findVarHandle(LOOKUP, "hashCode", int.class),
-                        MhUtil.findVirtual(LOOKUP, "hashCode0", MethodType.methodType(int.class)),
-                        -1);
+                        MhUtil.findVirtual(LOOKUP, "hashCode0", MethodType.methodType(int.class)));
 
         MhUpdater(String string) { super(string); }
 

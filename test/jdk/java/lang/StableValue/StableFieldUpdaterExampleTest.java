@@ -118,7 +118,7 @@ final class StableFieldUpdaterExampleTest {
 
         private static final ToIntFunction<LazyFoo> HASH_UPDATER =
                 StableFieldUpdater.ofInt(LazyFoo.class, "hash",
-                        l -> Objects.hash(l.bar, l.baz), -1);
+                        l -> Objects.hash(l.bar, l.baz));
 
         @Stable
         private int hash;
@@ -150,7 +150,7 @@ final class StableFieldUpdaterExampleTest {
 
         private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
                 StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
-                        LazySpecifiedFoo::hashCodeFor, 1L << 32);
+                        StableFieldUpdater.replaceLongZero(LazySpecifiedFoo::hashCodeFor, 1L << 32));
 
         @Stable
         private long hash;
@@ -190,8 +190,7 @@ final class StableFieldUpdaterExampleTest {
         private static final ToIntFunction<MhFoo> HASH_UPDATER =
                 StableFieldUpdater.ofInt(
                         MhUtil.findVarHandle(LOOKUP, "hash", int.class),
-                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)),
-                        -1);
+                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)));
 
         @Stable
         private int hash;

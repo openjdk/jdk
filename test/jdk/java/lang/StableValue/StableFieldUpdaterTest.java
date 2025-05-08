@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
@@ -48,16 +49,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class StableFieldUpdaterTest {
 
-    private static final int ZERO_REPLACEMENT = 42;
     private static final String STRING = "Abc";
 
     @Test
     void invariants() {
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(null, "a", _ -> 0, ZERO_REPLACEMENT));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(String.class, null, _ -> 0, ZERO_REPLACEMENT));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(Foo.class, "hash", null, ZERO_REPLACEMENT));
-        var x = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofInt(Foo.class, "dummy", _ -> 0, ZERO_REPLACEMENT));
-        assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableFieldUpdaterTest$Foo.dummy'", x.getMessage());
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(null, "a", _ -> 0));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(String.class, null, _ -> 0));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(Foo.class, "hash", null));
+        var xi = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofInt(Foo.class, "dummy", _ -> 0));
+        assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableFieldUpdaterTest$Foo.dummy'", xi.getMessage());
+
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(null, "a", _ -> 0));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(String.class, null, _ -> 0));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(Foo.class, "hash", null));
+        var xl = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofLong(Foo.class, "hash", _ -> 0));
+        assertEquals("Only fields of type 'long' are supported. The provided field is 'int StableFieldUpdaterTest$Foo.hash'", xl.getMessage());
+
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceIntZero((ToIntFunction<?>)null, 1));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceIntZero((MethodHandle) null, 1));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceLongZero((ToLongFunction<?>)null, 1L));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceLongZero((MethodHandle) null, 1L));
     }
 
     @ParameterizedTest
@@ -75,7 +86,7 @@ final class StableFieldUpdaterTest {
         var recordFoo = new RecordFoo(STRING, 0);
         // The field is `final`
         var x = assertThrows(IllegalArgumentException.class,
-                () -> StableFieldUpdater.ofInt(RecordFoo.class, "hash", _ -> 0, ZERO_REPLACEMENT));
+                () -> StableFieldUpdater.ofInt(RecordFoo.class, "hash", _ -> 0));
         assertEquals("Only non final fields are supported. The provided field is 'private final int StableFieldUpdaterTest$RecordFoo.hash'", x.getMessage());
     }
 
@@ -83,7 +94,7 @@ final class StableFieldUpdaterTest {
     @Test
     void uncheckedCall() {
         // Use a raw type
-        ToIntFunction updater = StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+        ToIntFunction updater = StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode());
         var object = new Object();
         var x = assertThrows(IllegalArgumentException.class, () -> updater.applyAsInt(object));
         assertEquals("The provided t is not an instance of class StableFieldUpdaterTest$Foo", x.getMessage());
@@ -94,8 +105,7 @@ final class StableFieldUpdaterTest {
         var lookup = MethodHandles.lookup();
         CallSite callSite = StableFieldUpdater.lazyOfInt(lookup, "",
                 MhUtil.findVarHandle(lookup, SimpleMhFoo.class, "hash", int.class),
-                MhUtil.findStatic(lookup,SimpleMhFoo.class, "computeHash", MethodType.methodType(int.class, SimpleMhFoo.class))
-                , -1);
+                MhUtil.findStatic(lookup,SimpleMhFoo.class, "computeHash", MethodType.methodType(int.class, SimpleMhFoo.class)));
 
         @SuppressWarnings("unchecked")
         ToIntFunction<SimpleMhFoo> hasher = (ToIntFunction<SimpleMhFoo>) callSite.getTarget().invoke();
@@ -110,8 +120,7 @@ final class StableFieldUpdaterTest {
         var lookup = MethodHandles.lookup();
         CallSite callSite = StableFieldUpdater.lazyOfLong(lookup, "",
                 MhUtil.findVarHandle(lookup, LongMhFoo.class, "hash", long.class),
-                MhUtil.findVirtual(lookup, LongMhFoo.class, "hash0", MethodType.methodType(long.class))
-                , -1);
+                MhUtil.findVirtual(lookup, LongMhFoo.class, "hash0", MethodType.methodType(long.class)));
 
         @SuppressWarnings("unchecked")
         ToLongFunction<LongMhFoo> hasher = (ToLongFunction<LongMhFoo>) callSite.getTarget().invoke();
@@ -121,10 +130,46 @@ final class StableFieldUpdaterTest {
         assertEquals(STRING.hashCode(), hash);
     }
 
+    @Test
+    void replaceIntZeroFunction() {
+        int zeroReplacement = -1;
+        ToIntFunction<Integer> underlying = i -> i;
+        var mod = StableFieldUpdater.replaceIntZero(underlying, zeroReplacement);
+        assertEquals(1, mod.applyAsInt(1));
+        assertEquals(zeroReplacement, mod.applyAsInt(0));
+    }
+
+    @Test
+    void replaceIntZeroHandle() throws Throwable {
+        int zeroReplacement = -1;
+        MethodHandle underlying = MethodHandles.identity(int.class);
+        var mod = StableFieldUpdater.replaceIntZero(underlying, zeroReplacement);
+        assertEquals(1, (int) mod.invoke(1));
+        assertEquals(zeroReplacement, (int) mod.invoke(0));
+    }
+
+    @Test
+    void replaceLongZeroFunction() {
+        long zeroReplacement = -1;
+        ToLongFunction<Long> underlying = i -> i;
+        var mod = StableFieldUpdater.replaceLongZero(underlying, zeroReplacement);
+        assertEquals(1L, mod.applyAsLong(1L));
+        assertEquals(zeroReplacement, mod.applyAsLong(0L));
+    }
+
+    @Test
+    void replaceLongZeroHandle() throws Throwable {
+        long zeroReplacement = -1;
+        MethodHandle underlying = MethodHandles.identity(long.class);
+        var mod = StableFieldUpdater.replaceLongZero(underlying, zeroReplacement);
+        assertEquals(1L, (long) mod.invoke(1L));
+        assertEquals(zeroReplacement, (long) mod.invoke(0L));
+    }
+
     static final class Foo implements HasHashField {
 
         private static final ToIntFunction<Foo> UPDATER =
-                StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+                StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode());
         private final String string;
 
         int hash;
@@ -148,7 +193,7 @@ final class StableFieldUpdaterTest {
     static final class LongFoo implements HasHashField {
 
         private static final ToLongFunction<LongFoo> UPDATER =
-                StableFieldUpdater.ofLong(LongFoo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+                StableFieldUpdater.ofLong(LongFoo.class, "hash", f -> f.string.hashCode());
         private final String string;
 
         long hash;
@@ -174,7 +219,7 @@ final class StableFieldUpdaterTest {
 
     static final class InheritingFoo extends AbstractFoo implements HasHashField {
         private static final ToIntFunction<InheritingFoo> UPDATER =
-                StableFieldUpdater.ofInt(InheritingFoo.class, "hash", f -> f.string.hashCode(), ZERO_REPLACEMENT);
+                StableFieldUpdater.ofInt(InheritingFoo.class, "hash", f -> f.string.hashCode());
 
         public InheritingFoo(String string) {
             super(string);
@@ -205,7 +250,7 @@ final class StableFieldUpdaterTest {
         private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(int.class));
 
         private static final ToIntFunction<MhFoo> UPDATER =
-                StableFieldUpdater.ofInt(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", int.class), HASH_MH, ZERO_REPLACEMENT);
+                StableFieldUpdater.ofInt(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", int.class), HASH_MH);
         private final String string;
 
         int hash;
@@ -267,7 +312,7 @@ final class StableFieldUpdaterTest {
         private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(long.class));
 
         private static final ToLongFunction<LongMhFoo> UPDATER =
-                StableFieldUpdater.ofLong(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", long.class), HASH_MH, ZERO_REPLACEMENT);
+                StableFieldUpdater.ofLong(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", long.class), HASH_MH);
         private final String string;
 
         long hash;
