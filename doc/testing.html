@@ -411,6 +411,13 @@ instrumentation
 special target <code>jcov-test</code> instead of <code>test</code>, e.g.
 <code>make jcov-test TEST=jdk_lang</code>. This will make sure the JCov
 image is built, and that JCov reporting is enabled.</p>
+<p>To include JCov coverage for just a subset of all modules, you can
+use the <code>--with-jcov-modules</code> arguments to
+<code>configure</code>, e.g.
+<code>--with-jcov-modules=jdk.compiler,java.desktop</code>.</p>
+<p>For more fine-grained control, you can pass arbitrary filters to JCov
+using <code>--with-jcov-filters</code>, and you can specify a specific
+JDK to instrument using <code>--with-jcov-input-jdk</code>.</p>
 <p>The JCov report is stored in
 <code>build/$BUILD/test-results/jcov-output/report</code>.</p>
 <p>Please note that running with JCov reporting can be very memory
