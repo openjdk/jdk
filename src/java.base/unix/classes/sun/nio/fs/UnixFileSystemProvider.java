@@ -250,7 +250,7 @@ public abstract class UnixFileSystemProvider
 
         boolean isDirectory = false;
         try {
-            if (UnixNativeDispatcher.eisdirSupported()) {
+            if (UnixNativeDispatcher.unlinkDirFailureSupported()) {
                 try {
                     // assume the common case that the file is a regular file
                     unlink(file);

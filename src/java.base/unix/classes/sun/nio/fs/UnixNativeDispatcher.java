@@ -532,10 +532,10 @@ class UnixNativeDispatcher {
     /**
      * Capabilities
      */
-    private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_EISDIR        = 1 << 2;
-    private static final int SUPPORTS_XATTR         = 1 << 3;
-    private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
+    private static final int SUPPORTS_OPENAT             = 1 << 1;  // syscalls
+    private static final int SUPPORTS_UNLINK_DIR_FAILURE = 1 << 2;
+    private static final int SUPPORTS_XATTR              = 1 << 3;
+    private static final int SUPPORTS_BIRTHTIME          = 1 << 16; // other features
     private static final int capabilities;
 
     /**
@@ -548,8 +548,8 @@ class UnixNativeDispatcher {
     /**
      * Supports EISDIR error of unlink(2)
      */
-    static boolean eisdirSupported() {
-        return (capabilities & SUPPORTS_EISDIR) != 0;
+    static boolean unlinkDirFailureSupported() {
+        return (capabilities & SUPPORTS_UNLINK_DIR_FAILURE) != 0;
     }
 
     /**

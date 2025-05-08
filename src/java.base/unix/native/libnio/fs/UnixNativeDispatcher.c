@@ -379,7 +379,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports EISDIR failure of unlink(2) */
 #if defined(__linux__)
-    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_EISDIR;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_UNLINK_DIR_FAILURE;
 #endif
 
     /* supports file birthtime */
