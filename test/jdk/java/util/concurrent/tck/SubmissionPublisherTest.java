@@ -178,10 +178,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         checkInitialState(p);
         assertEquals(p.getMaxBufferCapacity(), Flow.defaultBufferSize());
         Executor e = p.getExecutor(), c = ForkJoinPool.commonPool();
-        if (ForkJoinPool.getCommonPoolParallelism() > 1)
-            assertSame(e, c);
-        else
-            assertNotSame(e, c);
+        assertSame(e, c);
     }
 
     /**

@@ -45,7 +45,7 @@ import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutpu
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinResourceTest.java
+ * @compile -Xlint:all -Werror WinResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinResourceTest
  */
@@ -95,9 +95,9 @@ public class WinResourceTest {
             TKit.assertTextStream(expectedLogMessage)
                     .predicate(String::startsWith)
                     .apply(JPackageCommand.stripTimestamps(
-                            result.getOutput().stream()));
+                            result.getOutput().stream()).iterator());
             TKit.assertTextStream(expectedWixErrorMsg)
-                    .apply(result.getOutput().stream());
+                    .apply(result.getOutput());
         })
         .setExpectedExitCode(1)
         .run();

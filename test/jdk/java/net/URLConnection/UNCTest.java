@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,46 @@
  * @test
  * @bug 4401485
  * @requires (os.family == "windows")
+ * @modules java.base/sun.net.www.protocol.file
+ * @library /test/lib
  * @summary  Check that URL.openConnection() doesn't open connection to UNC
- * @run main UNCTest file://jdk/LOCAL-JAVA/jdk1.4/win/README.txt
  */
 
+import jtreg.SkippedException;
+import sun.net.www.protocol.file.FileURLConnection;
+
+import java.io.File;
+import java.net.InetAddress;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
 public class UNCTest {
-    public static void main(String args[]) throws Exception {
-        URL url = new URL( args[0] );
+    public static void main(String[] args) throws Exception {
+        // Get the "computer name" for this host
+        String hostName = InetAddress.getLocalHost().getHostName();
+
+        // UNC path which always exists with Administrative Shares enabled
+        String path = "\\\\" + hostName + "\\C$\\Windows";
+
+        // Skip test if Administrative Shares is disabled
+        if (! new File(path).exists()) {
+            throw new SkippedException("Administrative Shares not enabled");
+        }
+
+        // File URL for the UNC path
+        URL url = new URI("file://" + hostName + "/C$/Windows").toURL();
+
+        // Should open a FileURLConnection for the UNC path
         URLConnection conn = url.openConnection();
+
+        // Sanity check that the connection is a FileURLConnection
+        if (! (conn instanceof FileURLConnection)) {
+            throw new Exception("Expected FileURLConnection, instead got "
+                    + conn.getClass().getName());
+        }
+
+        // Verify that the connection is not in an already connected state
         conn.setRequestProperty( "User-Agent", "Java" );
     }
 }

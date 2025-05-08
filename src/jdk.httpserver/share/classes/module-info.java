@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,14 @@
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
  * </li></ul>
+ *
+ * @apiNote The API and SPI in this module are designed and implemented to support a minimal
+ * HTTP server and simple HTTP semantics primarily.
+ *
+ * @implNote The default implementation of the HTTP server provided in this module is intended
+ * for simple usages like local testing, development, and debugging. Accordingly, the design
+ * and implementation of the server does not intend to be a full-featured, high performance
+ * HTTP server.
  *
  * @toolGuide jwebserver
  *

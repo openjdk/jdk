@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,31 +90,24 @@ final class P11Mac extends MacSpi {
     // one byte buffer for the update(byte) method, initialized on demand
     private byte[] oneByte;
 
-    P11Mac(Token token, String algorithm, long mechanism)
-            throws PKCS11Exception {
+    P11Mac(Token token, String algorithm, long mechanism) {
         super();
         this.token = token;
         this.algorithm = algorithm;
         this.svcPbeKi = P11SecretKeyFactory.getPBEKeyInfo(algorithm);
-        Long params = null;
-        macLength = switch ((int) mechanism) {
-            case (int) CKM_MD5_HMAC -> 16;
-            case (int) CKM_SHA_1_HMAC -> 20;
-            case (int) CKM_SHA224_HMAC, (int) CKM_SHA512_224_HMAC, (int) CKM_SHA3_224_HMAC -> 28;
-            case (int) CKM_SHA256_HMAC, (int) CKM_SHA512_256_HMAC, (int) CKM_SHA3_256_HMAC -> 32;
-            case (int) CKM_SHA384_HMAC, (int) CKM_SHA3_384_HMAC -> 48;
-            case (int) CKM_SHA512_HMAC, (int) CKM_SHA3_512_HMAC -> 64;
-            case (int) CKM_SSL3_MD5_MAC -> {
-                params = Long.valueOf(16);
-                yield 16;
+        if (svcPbeKi != null) {
+            macLength = svcPbeKi.keyLen / 8;
+        } else {
+            P11SecretKeyFactory.HMACKeyInfo svcKi =
+                    P11SecretKeyFactory.getHMACKeyInfo(algorithm);
+            if (svcKi == null) {
+                throw new ProviderException("Unknown mechanism: " + mechanism);
             }
-            case (int) CKM_SSL3_SHA1_MAC -> {
-                params = Long.valueOf(20);
-                yield 20;
-            }
-            default -> throw new ProviderException("Unknown mechanism: " + mechanism);
-        };
-        ckMechanism = new CK_MECHANISM(mechanism, params);
+            macLength = svcKi.keyLen / 8;
+        }
+        ckMechanism = new CK_MECHANISM(mechanism, mechanism == CKM_SSL3_MD5_MAC
+                || mechanism == CKM_SSL3_SHA1_MAC ? Long.valueOf(macLength) :
+                null);
     }
 
     // reset the states to the pre-initialized values
@@ -203,33 +196,23 @@ final class P11Mac extends MacSpi {
         reset(true);
         p11Key = null;
         if (svcPbeKi != null) {
-            if (key instanceof P11Key) {
-                // If the key is a P11Key, it must come from a PBE derivation
-                // because this is a PBE Mac service. In addition to checking
-                // the key, check that params (if passed) are consistent.
-                PBEUtil.checkKeyAndParams(key, params, algorithm);
-            } else {
-                // If the key is not a P11Key, a derivation is needed. Data for
-                // derivation has to be carried either as part of the key or
-                // params. Use SunPKCS11 PBE key derivation to obtain a P11Key.
-                // Assign the derived key to p11Key because conversion is never
-                // needed for this case.
-                PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
-                try {
-                    P11Key.P11PBEKey p11PBEKey =
-                            P11SecretKeyFactory.derivePBEKey(token,
-                            pbeKeySpec, svcPbeKi);
-                    // This Mac service uses the token where the derived key
-                    // lives so there won't be any need to re-derive and use
-                    // the password. The p11Key cannot be accessed out of this
-                    // class.
-                    p11PBEKey.clearPassword();
-                    p11Key = p11PBEKey;
-                } catch (InvalidKeySpecException e) {
-                    throw new InvalidKeyException(e);
-                } finally {
-                    pbeKeySpec.clearPassword();
-                }
+            // Do key derivation using P11SecretKeyFactory, then store the
+            // derived key to p11Key
+            PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
+            try {
+                P11Key.P11PBKDFKey derivedKey =
+                        P11SecretKeyFactory.derivePBEKey(token,
+                        pbeKeySpec, svcPbeKi);
+                // This Mac service uses the token where the derived key
+                // lives so there won't be any need to re-derive and use
+                // the password. The p11Key cannot be accessed out of this
+                // class.
+                derivedKey.clearPassword();
+                p11Key = derivedKey;
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            } finally {
+                pbeKeySpec.clearPassword();
             }
             if (params instanceof PBEParameterSpec pbeParams) {
                 // For PBE services, reassign params to the underlying
@@ -237,15 +220,12 @@ final class P11Mac extends MacSpi {
                 // value to be null.
                 params = pbeParams.getParameterSpec();
             }
+        } else { // for the non-PBE case
+            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
         }
         if (params != null) {
             throw new InvalidAlgorithmParameterException(
                     "Parameters not supported");
-        }
-        // In non-PBE cases and PBE cases where we didn't derive,
-        // a key conversion might be needed.
-        if (p11Key == null) {
-            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
         }
         try {
             initialize();

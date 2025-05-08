@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,7 @@ public class TestConstantValuesPage extends JavadocTester {
                     <li><a href="#p1.p2b" tabindex="0">p1.p2b.*</a></li>
                     </ol>
                     </li>
-                    </ol>
-                    </nav>""");
+                    </ol>""");
     }
 
     /**
@@ -152,8 +151,7 @@ public class TestConstantValuesPage extends JavadocTester {
                     <li><a href="#unnamed-package" tabindex="0">Unnamed Package</a></li>
                     </ol>
                     </li>
-                    </ol>
-                    </nav>""");
+                    </ol>""");
     }
 
     /**
@@ -196,8 +194,7 @@ public class TestConstantValuesPage extends JavadocTester {
                    <li><a href="#p1.p2a" tabindex="0">p1.p2a.*</a></li>
                    </ol>
                    </li>
-                   </ol>
-                   </nav>""");
+                   </ol>""");
     }
 
     /**
@@ -267,7 +264,6 @@ public class TestConstantValuesPage extends JavadocTester {
                     <li><a href="#p.q" tabindex="0">p.q.*</a></li>
                     </ol>
                     </li>
-                    </ol>
-                    </nav>""");
+                    </ol>""");
     }
 }

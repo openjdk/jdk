@@ -23,22 +23,16 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # Build demos for the JDK into $(SUPPORT_OUTPUTDIR)/demos/image.
 ################################################################################
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
 
 include CopyFiles.gmk
 include JavaCompilation.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-pre.gmk))
 
 # Prepare the find cache.
 DEMO_SRC_DIRS += $(TOPDIR)/src/demo
@@ -264,11 +258,8 @@ ifneq ($(filter images, $(MAKECMDGOALS)), )
   IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)
 endif
 
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-post.gmk))
-
-all: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
-.PHONY: all
+################################################################################
+
+include MakeFileEnd.gmk

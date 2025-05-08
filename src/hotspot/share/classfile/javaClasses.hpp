@@ -228,7 +228,6 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, array_klass,            intptr_signature,  false) \
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
-  macro(java_lang_Class, protection_domain,      object_signature,  false) \
   macro(java_lang_Class, source_file,            object_signature,  false) \
   macro(java_lang_Class, init_lock,              object_signature,  false)
 
@@ -257,6 +256,8 @@ class java_lang_Class : AllStatic {
   static int _classData_offset;
   static int _classRedefinedCount_offset;
   static int _reflectionData_offset;
+  static int _modifiers_offset;
+  static int _is_primitive_offset;
 
   static bool _offsets_computed;
 
@@ -302,6 +303,7 @@ class java_lang_Class : AllStatic {
   static bool is_instance(oop obj);
 
   static bool is_primitive(oop java_class);
+  static void set_is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
   // JVM_NewArray support
@@ -336,6 +338,9 @@ class java_lang_Class : AllStatic {
 
   static oop source_file(oop java_class);
   static void set_source_file(oop java_class, oop source_file);
+
+  static int modifiers(oop java_class);
+  static void set_modifiers(oop java_class, u2 value);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);

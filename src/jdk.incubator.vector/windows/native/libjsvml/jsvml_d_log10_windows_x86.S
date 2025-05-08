@@ -1778,7 +1778,7 @@ _unwind___jsvml_dlog10_ha_cout_rare_internal_B1_B16:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
         PUBLIC __jsvml_dlog10_ha_data_internal_avx512
 __jsvml_dlog10_ha_data_internal_avx512  DD      0

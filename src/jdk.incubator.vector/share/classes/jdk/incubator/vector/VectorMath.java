@@ -67,7 +67,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code long} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Long.MIN_VALUE} and {@code Long.MAX_VALUE}, respectively.
      * <p>
      * If the result of the addition would otherwise overflow from
@@ -94,7 +94,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code long} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Long.MIN_VALUE} and {@code Long.MAX_VALUE}, respectively.
      * <p>
      * If the result of the subtraction would otherwise overflow from
@@ -122,7 +122,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code long} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0L} and {@code 0xFFFFFFFF_FFFFFFFFL}, respectively,
      * numerically treating them as unsigned.
@@ -148,7 +148,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code long} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0L} and {@code 0xFFFFFFFF_FFFFFFFFL}, respectively,
      * numerically treating them as unsigned.
@@ -204,7 +204,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code int} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Integer.MIN_VALUE} and {@code Integer.MAX_VALUE}, respectively.
      * <p>
      * If the result of the addition would otherwise overflow from
@@ -232,7 +232,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code int} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Integer.MIN_VALUE} and {@code Integer.MAX_VALUE}, respectively.
      * <p>
      * If the result of the subtraction would otherwise overflow from
@@ -260,7 +260,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code int} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code 0xFFFFFFFF}, respectively,
      * numerically treating them as unsigned.
@@ -286,7 +286,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code int} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code -0xFFFFFFFF}, respectively,
      * numerically treating them as unsigned.
@@ -342,7 +342,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code short} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Short.MIN_VALUE} and {@code Short.MAX_VALUE}, respectively.
      * <p>
      * If the result of the addition would otherwise overflow from
@@ -370,7 +370,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code short} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Short.MIN_VALUE} and {@code Short.MAX_VALUE}, respectively.
      * <p>
      * If the result of the subtraction would otherwise overflow from
@@ -398,7 +398,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code short} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code 0xFFFF}, respectively,
      * numerically treating them as unsigned.
@@ -424,7 +424,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code short} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code 0xFFFF}, respectively,
      * numerically treating them as unsigned.
@@ -480,7 +480,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code byte} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Byte.MIN_VALUE} and {@code Byte.MAX_VALUE}, respectively.
      * <p>
      * If the result of the addition would otherwise overflow from
@@ -508,7 +508,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code byte} values using saturation
-     * arithemetic. The lower and upper (inclusive) bounds are
+     * arithmetic. The lower and upper (inclusive) bounds are
      * {@code Byte.MIN_VALUE} and {@code Byte.MAX_VALUE}, respectively.
      * <p>
      * If the result of the subtraction would otherwise overflow from
@@ -536,7 +536,7 @@ public final class VectorMath {
 
     /**
      * Adds two {@code byte} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code 0xFF}, respectively,
      * numerically treating them as unsigned.
@@ -562,7 +562,7 @@ public final class VectorMath {
 
     /**
      * Subtracts two {@code byte} values using saturation
-     * arithemetic and numerically treating the values
+     * arithmetic and numerically treating the values
      * as unsigned. The lower and upper (inclusive) bounds
      * are {@code 0} and {@code 0xFF}, respectively,
      * numerically treating them as unsigned.

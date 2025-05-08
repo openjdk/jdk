@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,6 +47,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // Any changes to this needs to be synchronized with HotSpot.
     private static final String tmpdir = "/tmp";
     String socket_path;
+    private OperationProperties props = new OperationProperties(VERSION_1);
 
     /**
      * Attaches to the target VM
@@ -110,11 +111,18 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Check that we can connect to the process
         // - this ensures we throw the permission denied error now rather than
         // later when we attempt to enqueue a command.
-        int s = socket();
-        try {
-            connect(s, socket_path);
-        } finally {
-            close(s);
+        if (isAPIv2Enabled()) {
+            props = getDefaultProps();
+         } else {
+            // Check that we can connect to the process
+            // - this ensures we throw the permission denied error now rather than
+            // later when we attempt to enqueue a command.
+            int s = socket();
+            try {
+                connect(s, socket_path);
+            } finally {
+                close(s);
+            }
         }
     }
 
@@ -129,14 +137,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
-    // protocol version
-    private static final String PROTOCOL_VERSION = "1";
-
     /**
      * Execute the given command in the target VM.
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
-        assert args.length <= 3;                // includes null
         checkNulls(args);
 
         // did we detach?
@@ -162,16 +166,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // connected - write request
         // <ver> <cmd> <args...>
         try {
-            writeString(s, PROTOCOL_VERSION);
-            writeString(s, cmd);
-
-            for (int i = 0; i < 3; i++) {
-                if (i < args.length && args[i] != null) {
-                    writeString(s, (String)args[i]);
-                } else {
-                    writeString(s, "");
-                }
-            }
+            SocketOutputStream writer = new SocketOutputStream(s);
+            writeCommand(writer, props, cmd, args);
         } catch (IOException x) {
             ioe = x;
         }
@@ -185,6 +181,17 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // Return the input stream so that the command output can be read
         return sis;
+    }
+
+    private static class SocketOutputStream implements AttachOutputStream {
+        private int fd;
+        public SocketOutputStream(int fd) {
+            this.fd = fd;
+        }
+        @Override
+        public void write(byte[] buffer, int offset, int length) throws IOException {
+            VirtualMachineImpl.write(fd, buffer, offset, length);
+        }
     }
 
     /*
@@ -222,21 +229,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
         return f;
     }
-
-    /*
-     * Write/sends the given to the target VM. String is transmitted in
-     * UTF-8 encoding.
-     */
-    private void writeString(int fd, String s) throws IOException {
-        if (s.length() > 0) {
-            byte[] b = s.getBytes(UTF_8);
-            VirtualMachineImpl.write(fd, b, 0, b.length);
-        }
-        byte b[] = new byte[1];
-        b[0] = 0;
-        write(fd, b, 0, 1);
-    }
-
 
     //-- native methods
 

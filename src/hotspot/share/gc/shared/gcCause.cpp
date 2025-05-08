@@ -41,9 +41,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _jvmti_force_gc:
       return "JvmtiEnv ForceGarbageCollection";
 
-    case _gc_locker:
-      return "GCLocker Initiated GC";
-
     case _heap_inspection:
       return "Heap Inspection Initiated GC";
 

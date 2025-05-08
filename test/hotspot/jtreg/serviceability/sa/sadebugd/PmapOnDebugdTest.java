@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
@@ -33,6 +34,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8263670
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires (os.family != "windows") & (os.family != "mac")
  * @library /test/lib
  * @run driver PmapOnDebugdTest
@@ -65,7 +67,12 @@ public class PmapOnDebugdTest {
             System.err.println(out.getStderr());
 
             out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
-            out.shouldMatch("^0x[0-9a-f]+.+libjvm\\.so$"); // Find libjvm from output
+            if (Platform.isStatic()) {
+                out.shouldMatch("java"); // Find launcher
+                out.shouldNotMatch("^0x[0-9a-f]+.+libjvm\\.so$"); // No libjvm from output
+            } else {
+                out.shouldMatch("^0x[0-9a-f]+.+libjvm\\.so$"); // Find libjvm from output
+            }
             out.shouldHaveExitValue(0);
 
             // This will detect most SA failures, including during the attach.
