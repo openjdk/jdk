@@ -693,17 +693,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, obj_reg);
-      ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-      tst(tmp, KlassFlags::_misc_is_value_based_class);
-      br(Assembler::NE, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, obj_reg);
+        ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+        tst(tmp, KlassFlags::_misc_is_value_based_class);
+        br(Assembler::NE, slow_case);
+      }
+
       // Load (object->mark() | 1) into swap_reg
       ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       orr(swap_reg, rscratch1, 1);

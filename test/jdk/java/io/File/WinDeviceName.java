@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
    @bug 6176051 4858457
    @summary Check whether reserved names are handled correctly on Windows
+   @requires (os.family == "windows")
  */
 
 import java.io.File;
@@ -38,10 +39,6 @@ public class WinDeviceName {
     };
     public static void main(String[] args) {
         String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            return;
-        }
-
         for (int i = 0; i < devnames.length; i++) {
             String names[] = { devnames[i], devnames[i] + ".TXT",
                                devnames[i].toLowerCase(),
