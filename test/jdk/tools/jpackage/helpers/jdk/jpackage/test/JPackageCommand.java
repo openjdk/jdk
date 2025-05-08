@@ -1001,12 +1001,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private void assertAppImageFile() {
-        Path appImageDir = Path.of("");
-        if (isImagePackageType() && hasArgument("--app-image")) {
-            appImageDir = Path.of(getArgumentValue("--app-image"));
-        }
+        final Path lookupPath = AppImageFile.getPathInAppImage(Path.of(""));
 
-        final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
         if (!expectAppImageFile()) {
             assertFileNotInAppImage(lookupPath);
         } else {
@@ -1073,8 +1069,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return;
         }
 
-        final Path rootDir = isImagePackageType() ? outputBundle() : pathToUnpackedPackageFile(
-                appInstallationDirectory());
+        final Path rootDir;
+        if (TKit.isOSX() && MacHelper.signPredefinedAppImage(this)) {
+            rootDir = Path.of(getArgumentValue("--app-image"));
+        } else if (isImagePackageType()) {
+            rootDir = outputBundle();
+        } else {
+            rootDir = pathToUnpackedPackageFile(appInstallationDirectory());
+        }
 
         try ( Stream<Path> walk = ThrowingSupplier.toSupplier(() -> {
             if (TKit.isLinux() && rootDir.equals(Path.of("/"))) {
