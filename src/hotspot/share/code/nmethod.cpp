@@ -1532,6 +1532,10 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   run_nmethod_entry_barrier();
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(this);
 
+  if (nm == nullptr) {
+    return nullptr;
+  }
+
   // Fix relocation
   RelocIterator iter(nm_copy);
   CodeBuffer src(this);
