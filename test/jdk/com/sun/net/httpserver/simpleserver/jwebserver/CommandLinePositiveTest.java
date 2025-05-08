@@ -31,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,23 +55,30 @@ public class CommandLinePositiveTest {
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
 
     /**
-     * The <b>normalized absolute</b> path to the current working directory
-     * where
+     * The <b>real path</b> to the current working directory where
      * <ol>
      * <li>the web server process will be started in,</li>
      * <li>and hence, unless given an explicit content root directory, the web
      * server will be serving from.</li>
      * </ol>
      */
-    private static final Path CWD = Path.of(".").normalize().toAbsolutePath();
+    private static final Path CWD;
+
+    static {
+        try {
+            CWD = Path.of(".").toRealPath();
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+    }
 
     private static final String CWD_STR = CWD.toString();
 
     /**
-     * The <b>normalized absolute</b> path to the web server content root
-     * directory, if one needs to be provided explicitly.
+     * The <b>real path</b> to the web server content root directory, if one
+     * needs to be provided explicitly.
      */
-    private static final Path ROOT_DIR = Path.of("www").normalize().toAbsolutePath();
+    private static final Path ROOT_DIR = CWD.resolve("www");
 
     private static final String ROOT_DIR_STR = ROOT_DIR.toString();
 

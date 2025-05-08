@@ -112,7 +112,7 @@ final class SimpleFileServerImpl {
                         addrSpecified = true;
                     }
                     case "-d", "--directory" ->
-                        root = Path.of(optionArg = options.next()).normalize().toAbsolutePath();
+                        root = Path.of(optionArg = options.next()).toRealPath();
                     case "-o", "--output" ->
                         outputLevel = Enum.valueOf(OutputLevel.class,
                                 (optionArg = options.next()).toUpperCase(Locale.ROOT));
