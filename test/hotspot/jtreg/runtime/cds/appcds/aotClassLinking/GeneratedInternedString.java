@@ -36,9 +36,7 @@
  * @run driver GeneratedInternedString
  */
 
-import java.lang.invoke.MethodType;
 import jdk.test.lib.cds.SimpleCDSAppTester;
-import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class GeneratedInternedString {
     public static void main(String... args) throws Exception {
