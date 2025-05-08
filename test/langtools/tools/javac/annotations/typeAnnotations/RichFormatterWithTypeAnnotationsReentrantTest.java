@@ -106,24 +106,10 @@ public class RichFormatterWithTypeAnnotationsReentrantTest extends TestRunner {
                 class T implements M {
                 }
                 """;
-        List<String> output =
-                new JavacTask(tb)
-                        .classpath(libClasses)
-                        .sources(code)
-                        .run(Task.Expect.FAIL)
-                        .writeAll()
-                        .getOutputLines(Task.OutputKind.DIRECT);
-        // The crash this is a regression test for doesn't reproduce with -XDrawDiagnostics
-        List<String> expected =
-                Arrays.asList(
-                        "warning: unknown enum constant Bar.BAZ",
-                        "  reason: class file for lib.Bar not found",
-                        "T.java:2: error: T is not abstract and does not override abstract method"
-                            + " f(@lib.A String,@lib.A String) in M",
-                        "class T implements M {",
-                        "^",
-                        "1 error",
-                        "1 warning");
-        tb.checkEqual(expected, output);
+        // verify that the compilation fails wtih an error, and does not crash
+        new JavacTask(tb)
+                .classpath(libClasses)
+                .sources(code)
+                .run(Task.Expect.FAIL);
     }
 }
