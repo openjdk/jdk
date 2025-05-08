@@ -46,7 +46,8 @@ private:
 public:
   ZTLABUsage();
 
-  void add(size_t size);
+  void increase_used(size_t size);
+  void decrease_used(size_t size);
   void reset();
 
   size_t used() const;

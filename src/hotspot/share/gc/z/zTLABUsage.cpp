@@ -30,12 +30,17 @@ ZTLABUsage::ZTLABUsage()
     _used_history() {}
 
 
-void ZTLABUsage::add(size_t size) {
+void ZTLABUsage::increase_used(size_t size) {
   Atomic::add(&_used, size, memory_order_relaxed);
 }
 
+void ZTLABUsage::decrease_used(size_t size) {
+  precond(size <= _used);
+  Atomic::sub(&_used, size, memory_order_relaxed);
+}
+
 void ZTLABUsage::reset() {
-  size_t current_used = Atomic::xchg(&_used, (size_t) 0);
+  const size_t current_used = Atomic::xchg(&_used, (size_t) 0);
 
   // Avoid updates for the second young generation collection of a SystemGC
   if (current_used == 0) {
@@ -43,8 +48,8 @@ void ZTLABUsage::reset() {
   }
 
   // Save the old values for logging
-  size_t old_used = used();
-  size_t old_capacity = capacity();
+  const size_t old_used = used();
+  const size_t old_capacity = capacity();
 
   // Update the usage history with the current value
   _used_history.add(current_used);

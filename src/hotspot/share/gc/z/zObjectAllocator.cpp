@@ -109,12 +109,6 @@ zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 
         // Undo new page allocation
         undo_alloc_page(new_page);
-      } else {
-        // Page successfully installed
-        if (_age == ZPageAge::eden && page_type == ZPageType::small) {
-          // Increment TLAB usage for small eden pages
-          ZHeap::heap()->increment_tlab_used();
-        }
       }
     }
   }
