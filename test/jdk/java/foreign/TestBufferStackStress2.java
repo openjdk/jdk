@@ -29,6 +29,7 @@
  */
 
 import jdk.internal.foreign.BufferStack;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileDescriptor;
@@ -62,6 +63,14 @@ final class TestBufferStackStress2 {
      */
     @Test
     void movingVirtualThreadWithGc() throws InterruptedException {
+
+        // If the VM is configured such that the main thread is virtual,
+        // this stress test will not work as the main thread is always alive causing
+        // us to wait forever for contraction.
+        // Hence, we will skip this test if the main thread is virtual.
+        Assumptions.assumeFalse(Thread.currentThread().isVirtual(),
+                "Skipped because the main thread is a virtual thread");
+
         final long begin = System.nanoTime();
         var pool = BufferStack.of(POOL_SIZE, 1);
 
