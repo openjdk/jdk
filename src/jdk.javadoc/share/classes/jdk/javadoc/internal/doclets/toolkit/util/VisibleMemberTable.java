@@ -689,10 +689,15 @@ public class VisibleMemberTable {
         if (inInterface) {
             List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
             if (list != null) {
-                boolean found = list.stream()
-                        .anyMatch(this::isDeclaredInInterface);
-                if (found)
+                // If any interface in the hierarchy re-declares it, drop the older copy
+                if (list.stream().anyMatch(this::isDeclaredInInterface)) {
                     return false;
+                }
+                // If any class in the hierarchy has provided an implementation,
+                // drop the interface copy entirely. we'll inherit from the class
+                if (list.stream().anyMatch(m -> !isDeclaredInInterface(m))) {
+                    return false;
+                }
             }
         }
 
