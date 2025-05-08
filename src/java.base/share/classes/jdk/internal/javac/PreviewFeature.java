@@ -80,6 +80,10 @@ public @interface PreviewFeature {
         KEY_DERIVATION,
         @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
+        /**
+         * Reflective preview APIs to access preview language and VM
+         * features as a whole.
+         */
         LANGUAGE_MODEL,
         /**
          * A key for testing.
