@@ -23,7 +23,6 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Map;
 import java.util.Random;
@@ -33,20 +32,22 @@ import java.util.jar.JarOutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Utility class for zipfs tests.
+ * Utility class for {@code ZipFileSystem} tests.
  */
-
-class Utils {
-    private Utils() { }
+final class Utils {
+    private Utils() {}
 
     /**
      * Creates a JAR file of the given name with 0 or more named entries.
      *
-     * @return Path to the newly created JAR file
+     * @return the absolute path to the newly created JAR file.
      */
     static Path createJarFile(String name, String... entries) throws IOException {
         Path jarFile = Paths.get(name);
         Random rand = new Random();
+        if (Files.exists(jarFile)) {
+            throw new IllegalStateException("File must not already exist: " + jarFile);
+        }
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
             int len = 100;
@@ -66,10 +67,15 @@ class Utils {
     /**
      * Creates a JAR file of the given name with 0 or more named entries.
      *
-     * @return Path to the newly created JAR file
+     * @param jarFile a path at which to create the Jar file (relative or absolute).
+     * @param entries a map of relative file name path strings to file contents
+     *               (stored as UTF-8 encoded bytes).
+     * @return the absolute path to the newly created JAR file.
      */
-    static Path createJarFile(String name, Map<String, String> entries) throws IOException {
-        Path jarFile = Paths.get(name);
+    static Path createJarFile(Path jarFile, Map<String, String> entries) throws IOException {
+        if (Files.exists(jarFile)) {
+            throw new IllegalStateException("File must not already exist: " + jarFile);
+        }
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
             for (var entry : entries.entrySet()) {

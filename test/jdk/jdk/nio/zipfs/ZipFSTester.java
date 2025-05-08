@@ -1115,7 +1115,7 @@ public class ZipFSTester {
                 () -> newZipFileSystem(noSuchFile, ZipFSOpts.CREATE, ZipFSOpts.READ_ONLY).close());
 
         // Underlying file is read-only.
-        Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
+        Path readOnlyZip = Utils.createJarFile(Path.of("read_only.zip"), Map.of("file.txt", "Hello World"));
         try {
             readOnlyZip.toFile().setReadOnly();
             assertThrows(IOException.class, () -> newZipFileSystem(readOnlyZip, ZipFSOpts.READ_WRITE).close());
@@ -1124,7 +1124,7 @@ public class ZipFSTester {
         }
 
         // Multi-release JARs, when opened with a specified version are inherently read-only.
-        Path multiReleaseJar = Utils.createJarFile("multi_release.jar", Map.of(
+        Path multiReleaseJar = Utils.createJarFile(Path.of("multi_release.jar"), Map.of(
                 // Newline required for attribute to be read from Manifest file.
                 "META-INF/MANIFEST.MF", "Multi-Release: true\n",
                 "META-INF/versions/1/file.txt", "First version",
