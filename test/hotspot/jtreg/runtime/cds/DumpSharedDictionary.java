@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,8 @@
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
 public class DumpSharedDictionary {
 
@@ -55,11 +54,8 @@ public class DumpSharedDictionary {
             CDSTestUtils.run(opts)
                         .assertNormalExit();
         } else {
-            // Grab my own PID
-            String pid = Long.toString(ProcessTools.getProcessId());
-
             ProcessBuilder pb = new ProcessBuilder();
-            pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary"});
+            pb.command(new PidJcmdExecutor().getCommandLine("VM.systemdictionary"));
             OutputAnalyzer output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
             try {
                 output.shouldContain("Shared Dictionary statistics:");
@@ -70,7 +66,7 @@ public class DumpSharedDictionary {
                 output.shouldContain("Unknown diagnostic command");
             }
 
-            pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary", "-verbose"});
+            pb.command(new PidJcmdExecutor().getCommandLine("VM.systemdictionary", "-verbose"));
             output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary-verbose");
             try {
                 output.shouldContain("Shared Dictionary");
