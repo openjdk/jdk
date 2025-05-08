@@ -256,8 +256,6 @@ class VM_HandshakeAllThreads: public VM_Operation {
     // the read of JavaThread state in the try_process() call below.
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
-    } else {
-      OrderAccess::fence();
     }
 
     if (number_of_threads_issued < 1) {
@@ -385,8 +383,6 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
-  } else {
-    OrderAccess::fence();
   }
 
   // Keeps count on how many of own emitted handshakes
