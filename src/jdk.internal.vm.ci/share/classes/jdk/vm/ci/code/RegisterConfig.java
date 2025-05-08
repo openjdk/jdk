@@ -55,9 +55,9 @@ public interface RegisterConfig {
     /**
      * Gets the calling convention describing how arguments are passed.
      *
-     * @param type the type of calling convention being requested
-     * @param returnType the return type (can be null for methods returning {@code void})
-     * @param parameterTypes the types of the arguments of the call
+     * @param type             the type of calling convention being requested
+     * @param returnType       the return type (can be null for methods returning {@code void})
+     * @param parameterTypes   the types of the arguments of the call
      * @param valueKindFactory the factory to create custom {@link ValueKind ValueKinds}
      */
     CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory);
@@ -69,7 +69,7 @@ public interface RegisterConfig {
      * @param type the type of calling convention
      * @param kind specifies what kind of registers is being requested
      * @return the ordered set of registers that may be used to pass parameters in a call conforming
-     *         to {@code type}
+     * to {@code type}
      */
     RegisterArray getCallingConventionRegisters(Type type, JavaKind kind);
 
@@ -95,7 +95,10 @@ public interface RegisterConfig {
     RegisterArray getCalleeSaveRegisters();
 
     /**
-     * Gets the storage kind for a callee save register.
+     * Returns the storage kind for a callee-save register, which determines how the register is
+     * saved and restored. For example, according to the Windows x64 ABI, the upper portions of
+     * XMM0-XMM15 are considered destroyed, so saving the full width of these registers is not
+     * necessary.
      */
     default PlatformKind getCalleeSaveRegisterStorageKind(Architecture arch, Register calleeSaveRegister) {
         return arch.getLargestStorableKind(calleeSaveRegister.getRegisterCategory());
@@ -106,7 +109,7 @@ public interface RegisterConfig {
      * {@linkplain RegisterAttributes attributes} for this register configuration.
      *
      * @return an array where an element at index i holds the attributes of the register whose
-     *         number is i
+     * number is i
      */
     RegisterAttributes[] getAttributesMap();
 
