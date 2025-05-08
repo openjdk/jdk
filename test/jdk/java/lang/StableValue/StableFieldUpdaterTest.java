@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -85,6 +87,38 @@ final class StableFieldUpdaterTest {
         var object = new Object();
         var x = assertThrows(IllegalArgumentException.class, () -> updater.applyAsInt(object));
         assertEquals("The provided t is not an instance of class StableFieldUpdaterTest$Foo", x.getMessage());
+    }
+
+    @Test
+    void lazyOfInt() throws Throwable {
+        var lookup = MethodHandles.lookup();
+        CallSite callSite = StableFieldUpdater.lazyOfInt(lookup, "",
+                MhUtil.findVarHandle(lookup, SimpleMhFoo.class, "hash", int.class),
+                MhUtil.findStatic(lookup,SimpleMhFoo.class, "computeHash", MethodType.methodType(int.class, SimpleMhFoo.class))
+                , -1);
+
+        @SuppressWarnings("unchecked")
+        ToIntFunction<SimpleMhFoo> hasher = (ToIntFunction<SimpleMhFoo>) callSite.getTarget().invoke();
+
+        var foo = new SimpleMhFoo(STRING);
+        int hash = hasher.applyAsInt(foo);
+        assertEquals(STRING.hashCode(), hash);
+    }
+
+    @Test
+    void lazyOfLong() throws Throwable {
+        var lookup = MethodHandles.lookup();
+        CallSite callSite = StableFieldUpdater.lazyOfLong(lookup, "",
+                MhUtil.findVarHandle(lookup, LongMhFoo.class, "hash", long.class),
+                MhUtil.findVirtual(lookup, LongMhFoo.class, "hash0", MethodType.methodType(long.class))
+                , -1);
+
+        @SuppressWarnings("unchecked")
+        ToLongFunction<LongMhFoo> hasher = (ToLongFunction<LongMhFoo>) callSite.getTarget().invoke();
+
+        var foo = new LongMhFoo(STRING);
+        long hash = hasher.applyAsLong(foo);
+        assertEquals(STRING.hashCode(), hash);
     }
 
     static final class Foo implements HasHashField {

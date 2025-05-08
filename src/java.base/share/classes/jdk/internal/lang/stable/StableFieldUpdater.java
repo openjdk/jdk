@@ -33,6 +33,8 @@ import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.reflect.misc.ReflectUtil;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -217,6 +219,7 @@ public final class StableFieldUpdater {
     private StableFieldUpdater() {}
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final MethodHandles.Lookup LOCAL_LOOKUP = MethodHandles.lookup();
 
     /**
      * {@return a function that lazily sets the field named {@code fieldName} by invoking
@@ -253,7 +256,6 @@ public final class StableFieldUpdater {
                                              MethodHandle underlying,
                                              int zeroReplacement) {
         check(accessor, int.class);
-        Objects.requireNonNull(underlying);
         var adaptedUnderlying = checkAndAdapt(underlying, int.class);
 
         return new StableIntFieldUpdaterVarHandle<>(accessor, adaptedUnderlying, zeroReplacement);
@@ -307,7 +309,6 @@ public final class StableFieldUpdater {
                                                MethodHandle underlying,
                                                long zeroReplacement) {
         check(accessor, long.class);
-        Objects.requireNonNull(underlying);
         var adaptedUnderlying = checkAndAdapt(underlying, long.class);
 
         return makeLong(accessor, adaptedUnderlying, zeroReplacement);
@@ -324,6 +325,30 @@ public final class StableFieldUpdater {
 
         final long offset = offset(holderType, fieldName, long.class, Reflection.getCallerClass());
         return makeLong(holderType, offset, underlying, zeroReplacement);
+    }
+
+    public static CallSite lazyOfInt(MethodHandles.Lookup lookup,
+                                     String unused,
+                                     VarHandle accessor,
+                                     MethodHandle underlying,
+                                     int zeroReplacement) {
+        check(accessor, int.class);
+        var adaptedUnderlying = checkAndAdapt(underlying, int.class);
+        var handle = MhUtil.findStatic(LOCAL_LOOKUP,
+                "ofInt", MethodType.methodType(ToIntFunction.class, VarHandle.class, MethodHandle.class, int.class));
+        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying, zeroReplacement));
+    }
+
+    public static CallSite lazyOfLong(MethodHandles.Lookup lookup,
+                                      String unused,
+                                      VarHandle accessor,
+                                      MethodHandle underlying,
+                                      long zeroReplacement) {
+        check(accessor, long.class);
+        var adaptedUnderlying = checkAndAdapt(underlying, long.class);
+        var handle = MhUtil.findStatic(LOCAL_LOOKUP,
+                "makeLong", MethodType.methodType(ToLongFunction.class, VarHandle.class, MethodHandle.class, long.class));
+        return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying, zeroReplacement));
     }
 
     // Only to be used by classes that are used "early" in the init sequence.
@@ -585,6 +610,7 @@ public final class StableFieldUpdater {
     }
 
     private static MethodHandle checkAndAdapt(MethodHandle underlying, Class<?> returnType) {
+        // Implicit null check
         final var underlyingType = underlying.type();
         if (underlyingType.returnType() != returnType || underlyingType.parameterCount() != 1) {
             throw new IllegalArgumentException("Illegal underlying function: " + underlying);
