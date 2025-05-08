@@ -395,3 +395,14 @@ jobs:
       bootjdk-platform: windows-x64
       runs-on: windows-2025
       debug-suffix: -debug
+
+  test-windows-aarch64:
+    name: windows-aarch64
+    needs:
+      - build-windows-aarch64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: windows-aarch64
+      bootjdk-platform: windows-aarch64
+      runs-on: windows-11-arm
+
