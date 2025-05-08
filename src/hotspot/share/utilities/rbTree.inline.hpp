@@ -606,7 +606,7 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
 template <typename K, typename NodeType, typename COMPARATOR>
 template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
-  assert(key_leq(from, to), "from must be less or equal to to");
+  assert_key_leq(from, to);
   if (_root == nullptr) {
     return;
   }

@@ -230,14 +230,13 @@ private:
     return COMPARATOR::cmp(a, b);
   }
 
+  // Cannot assert if no key comparator exist.
   template <typename CMP = COMPARATOR, ENABLE_IF(!HasKeyComparator<CMP>)>
-  bool key_leq(K a, K b) const {
-    return true;
-  }
+  void assert_key_leq(K a, K b) const {}
 
   template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP>)>
-  bool key_leq(K a, K b) const {
-    return COMPARATOR::cmp(a, b) <= 0;
+  void assert_key_leq(K a, K b) const {
+    assert(COMPARATOR::cmp(a, b) <= 0, "key a must be less or equal to key b");
   }
 
   // True if node is black (nil nodes count as black)
