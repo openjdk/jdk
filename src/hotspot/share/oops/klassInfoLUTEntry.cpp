@@ -205,7 +205,6 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 #define PREAMBLE_ARGS                 p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)), _v.raw
 #define ASSERT_HERE(cond, msg)        assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS);
 #define ASSERT_HERE2(cond, msg, ...)  assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS, __VA_ARGS__);
-
   assert(k->check_stamp(), "Stamp invalid");
 
   // General static asserts that need access to private members, but I don't want
@@ -243,25 +242,21 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
       ASSERT_HERE2(cldi == KlassInfoLUT::cld_index_unknown,
                    "for CLD==nullptr cld_index is expected to be %u, was %u",
                    KlassInfoLUT::cld_index_unknown, cldi);
+      // Note: don't test anything that relies on OopStorage here, since this function is
+      // called during GCs. E.g. don't call CLD::is_permanent_class_loader_data() since that
+      // needs to resolve the class loader oop handle inside CLD.
     } else {
       ASSERT_HERE(real_cld != nullptr, "Klass CLD is null?");
     }
   } else {
     const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cldi);
     if (cldi != KlassInfoLUT::cld_index_unknown) {
-      // We expect to get one of the three permanent class loaders, and for it to match the one in Klass
-      ASSERT_HERE2(cld_from_klute->is_permanent_class_loader_data(), "not perma cld (loader_index: %d, CLD: " PTR_FORMAT ")",
-                   cldi, p2i(cld_from_klute));
       ASSERT_HERE2(cld_from_klute == real_cld,
                    "Different CLD (loader_index: %d, real Klass CLD: " PTR_FORMAT ", from klute CLD lookup table: " PTR_FORMAT ")?",
                    cldi, p2i(real_cld), p2i(cld_from_klute));
     } else {
       // We expect to get a nullptr from the CLD lookup table.
       ASSERT_HERE2(cld_from_klute == nullptr, "CLD not null? (" PTR_FORMAT ")", p2i(cld_from_klute));
-      // cld_index == 0 means "unknown CLD" and since we expect only to ever run with three permanent CLDs,
-      // that cld should not be permanent.
-      ASSERT_HERE2(!real_cld->is_permanent_class_loader_data(),
-                   "Unregistered permanent CLD? (" PTR_FORMAT ")", p2i(cld_from_klute));
     }
   }
 
@@ -337,12 +332,4 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
 void KlassLUTEntry::print(outputStream* st) const {
   st->print("%X (Kind: %d Loader: %d)", value(), kind(), cld_index());
-}
-
-// Helper function, prints current limits
-void KlassLUTEntry::print_limits(outputStream* st) {
-  st->print_cr("IKE Limits: instance byte size %zu, omb1 count: %zu, omb1 byte offset: %zu, omb2 oop count: %zu, omb2 byte offset: %zu",
-               ik_wordsize_limit * BytesPerWord,
-               ik_omb_count_1_limit, ik_omb_offset_1_limit * BytesPerHeapOop,
-               ik_omb_count_2_limit, ik_omb_offset_2_limit * BytesPerHeapOop);
 }

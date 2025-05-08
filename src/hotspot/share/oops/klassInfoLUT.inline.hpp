@@ -31,6 +31,7 @@
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "runtime/atomic.hpp"
 
 inline uint32_t KlassInfoLUT::at(unsigned index) {
   assert(_initialized, "not initialized");
@@ -47,22 +48,29 @@ inline void KlassInfoLUT::put(unsigned index, klute_raw_t klute) {
 }
 
 inline klute_raw_t KlassInfoLUT::lookup(narrowKlass nk) {
+  // This function is extremely hot. Be careful when adding/modifying.
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const klute_raw_t klute = at(nk);
   assert(klute != KlassLUTEntry::invalid_entry, "must never be invalid");
 
-#ifdef KLUT_ENABLE_EXPENSIVE_STATS
-  update_hit_stats(klute);
+#ifdef KLUT_ENABLE_HIT_STATS
+  {
+    const Klass* const k = CompressedKlassPointers::decode(nk);
+    update_hit_counters(k, klute);
+  }
 #endif
 
-#ifdef KLUT_ENABLE_EXPENSIVE_LOG
-  log_hit(klute);
+#ifdef KLUT_SUPER_PARANOID
+  {
+    const Klass* const k = CompressedKlassPointers::decode(nk);
+    KlassLUTEntry(klute).verify_against_klass(k);
+  }
 #endif
 
   return klute;
 }
 
-ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(unsigned index) {
+inline ClassLoaderData* KlassInfoLUT::lookup_cld(unsigned index) {
   assert(index <= 3, "Sanity");
   ClassLoaderData* cld = _common_loaders[index];
   assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);

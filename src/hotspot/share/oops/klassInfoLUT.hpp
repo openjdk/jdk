@@ -34,9 +34,14 @@
 class Klass;
 class ClassLoaderData;
 
+// Unexpensive stats
+#define KLUT_ENABLE_REGISTRATION_STATS
+
 #ifdef ASSERT
-#define KLUT_ENABLE_EXPENSIVE_STATS
-//#define KLUT_ENABLE_EXPENSIVE_LOG
+// expensive stats
+#define KLUT_ENABLE_HIT_STATS
+// very expensive tests
+#define KLUT_SUPER_PARANOID
 #endif
 
 // The Klass Info Lookup Table (KLUT) is a table of 32-bit values. Each value represents
@@ -88,47 +93,76 @@ class KlassInfoLUT : public AllStatic {
   static void allocate_lookup_table();
   static bool uses_lookup_table()       { return _table != nullptr; }
 
-  // Klass registration statistics. These are not expensive and therefore
-  // we carry them always.
-#define REGISTER_STATS_DO(f)    \
-  f(registered_IK)              \
-  f(registered_IRK)             \
-  f(registered_IMK)             \
-  f(registered_ICLK)            \
-  f(registered_ISCK)            \
-  f(registered_TAK)             \
-  f(registered_OAK)             \
-  f(registered_IK_for_abstract_or_interface)
-#define XX(xx) static void inc_##xx();
-  REGISTER_STATS_DO(XX)
-#undef XX
+#if defined(KLUT_ENABLE_REGISTRATION_STATS) || defined(KLUT_ENABLE_HIT_STATS)
+  class Counter {
+    volatile uint64_t _v;
+  public:
+    Counter() : _v(0) {}
+    void inc();
+    uint64_t get() const { return _v; }
+  };
+  struct Counters {
+    // How many InstanceKlass (excluding sub types)
+    Counter counter_IK;
+    // How many InstanceRefKlass
+    Counter counter_IRK;
+    // How many InstanceMirrorKlas
+    Counter counter_IMK;
+    // How many InstanceClassLoaderKlass
+    Counter counter_ICLK;
+    // How many InstanceStackChunkKlass
+    Counter counter_ISCK;
+    // How many TypeArrayKlass
+    Counter counter_TAK;
+    // How many ObjectArrayKlass
+    Counter counter_OAK;
 
-  // Statistics about the hit rate of the lookup table. These are
-  // expensive and only enabled when needed.
-#ifdef KLUT_ENABLE_EXPENSIVE_STATS
-#define HIT_STATS_DO(f)    \
-  f(hits_IK)           \
-  f(hits_IRK)          \
-  f(hits_IMK)          \
-  f(hits_ICLK)         \
-  f(hits_ISCK)         \
-  f(hits_TAK)          \
-  f(hits_OAK)          \
-  f(hits_bootloader)   \
-  f(hits_sysloader)    \
-  f(hits_platformloader)   \
-  f(noinfo_IMK)        \
-  f(noinfo_ICLK)       \
-  f(noinfo_IK_other)
-#define XX(xx) static void inc_##xx();
-  HIT_STATS_DO(XX)
-#undef XX
-  static void update_hit_stats(klute_raw_t klute);
-#endif // KLUT_ENABLE_EXPENSIVE_STATS
+    // Of InstanceKlass registrations:
+    // How many were not fully representable
+    Counter counter_IK_no_info;
+    // Of InstanceKlass registrations:
+    // How many were from abstract/interface klasses (hence not fully representable)
+    Counter counter_IK_no_info_abstract_or_interface;
+    // Of InstanceKlass registrations:
+    // How many had more than two oopmap entries (hence not fully representable)
+    Counter counter_IK_no_info_too_many_oopmapentries;
+    // Of InstanceKlass registrations:
+    // How many were larger than 64 heap words  (hence not fully representable)
+    Counter counter_IK_no_info_too_large;
 
-#ifdef KLUT_ENABLE_EXPENSIVE_LOG
-  static void log_hit(klute_raw_t klute);
+    // Of InstanceKlass: How many had zero oopmap entries
+    Counter counter_IK_zero_oopmapentries;
+    // Of InstanceKlass: How many had one oopmap entries
+    Counter counter_IK_one_oopmapentries;
+    // Of InstanceKlass: How many had two oopmap entries
+    Counter counter_IK_two_oopmapentries;
+
+    // Of Klass: How many were tied to the permanent boot class loader CLD
+    Counter counter_from_boot_cld;
+    // Of Klass: How many were tied to the permanent sys class loader CLD
+    Counter counter_from_system_cld;
+    // Of Klass: How many were tied to the permanent platform class loader CLD
+    Counter counter_from_platform_cld;
+    // Of all Klass registrations:
+    // How many were tied to an unknown CLD
+    Counter counter_from_unknown_cld;
+    // Of all Klass registrations:
+    // How many were tied to a CLD that was nullptr at
+    // registration time (AOT unlinked class)
+    Counter counter_from_null_cld;
+  };
+  static void update_counters(Counters& counters, const Klass* k, klute_raw_t klute);
+  static void print_counters(outputStream* st, const Counters& counters, const char* prefix);
+#ifdef KLUT_ENABLE_REGISTRATION_STATS
+  static Counters _registration_counters;
+  static void update_registration_counters(const Klass* k, klute_raw_t klute);
 #endif
+
+#ifdef KLUT_ENABLE_HIT_STATS
+  static Counters _hit_counters;
+  static void update_hit_counters(const Klass* k, klute_raw_t klute);
+#endif
+#endif // (KLUT_ENABLE_REGISTRATION_STATS) || defined(KLUT_ENABLE_HIT_STATS)
 
 public:
 

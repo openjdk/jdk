@@ -41,6 +41,14 @@ bool KlassInfoLUT::_initialized = false;
 klute_raw_t* KlassInfoLUT::_table = nullptr;
 unsigned KlassInfoLUT::_max_entries = -1;
 
+#ifdef KLUT_ENABLE_REGISTRATION_STATS
+KlassInfoLUT::Counters KlassInfoLUT::_registration_counters;
+#endif
+
+#ifdef KLUT_ENABLE_HIT_STATS
+KlassInfoLUT::Counters KlassInfoLUT::_hit_counters;
+#endif
+
 void KlassInfoLUT::initialize() {
   assert(!_initialized, "Only once");
   if (UseCompactObjectHeaders) {
@@ -168,10 +176,17 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
 
   // Calculate klute from Klass properties and update the table value.
   const klute_raw_t klute = KlassLUTEntry::build_from_klass(k);
+  const klute_raw_t oldklute = k->klute();
   if (add_to_table) {
     put(nk, klute);
   }
   log_klass_registration(k, nk, add_to_table, klute, "registered");
+
+#ifdef KLUT_ENABLE_REGISTRATION_STATS
+  if (oldklute != klute) {
+    update_registration_counters(k, klute);
+  }
+#endif // KLUT_ENABLE_REGISTRATION_STATS
 
 #ifdef ASSERT
   // Until See JDK-8342429 is solved
@@ -181,17 +196,6 @@ klute_raw_t KlassInfoLUT::register_klass(const Klass* k) {
     assert(e2.value() == klute, "sanity");
   }
 #endif // ASSERT
-
-  // update register stats
-  switch (k->kind()) {
-#define WHAT(name, shorthand) case name ## Kind : inc_registered_ ## shorthand(); break;
-  KLASSKIND_ALL_KINDS_DO(WHAT)
-#undef WHAT
-  default: ShouldNotReachHere();
-  };
-  if (k->is_abstract() || k->is_interface()) {
-    inc_registered_IK_for_abstract_or_interface();
-  }
 
   return klute;
 }
@@ -265,134 +269,204 @@ void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
 }
 #endif // INCLUDE_CDS
 
-// Counters and incrementors
-#define XX(xx)                      \
-volatile uint64_t counter_##xx = 0; \
-void KlassInfoLUT::inc_##xx() {     \
-  Atomic::inc(&counter_##xx);       \
+
+// Statistics
+
+#if defined(KLUT_ENABLE_REGISTRATION_STATS) || defined(KLUT_ENABLE_HIT_STATS)
+
+ void KlassInfoLUT::Counter::inc() {
+  Atomic::inc(&_v);
 }
-REGISTER_STATS_DO(XX)
-#ifdef KLUT_ENABLE_EXPENSIVE_STATS
-HIT_STATS_DO(XX)
-#endif // KLUT_ENABLE_EXPENSIVE_STATS
+
+void KlassInfoLUT::update_counters(Counters& counters, const Klass* k, klute_raw_t klute) {
+  const KlassLUTEntry kle(klute);
+
+  switch (k->kind()) {
+#define WHAT(name, shorthand) \
+  case name ## Kind : counters.counter_ ## shorthand.inc(); break;
+  KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+  default: ShouldNotReachHere();
+  };
+
+  if (kle.is_instance()) {
+    const InstanceKlass* const ik = InstanceKlass::cast(k);
+
+    if (!kle.ik_carries_infos()) {
+      counters.counter_IK_no_info.inc();
+      const InstanceKlass* const ik = InstanceKlass::cast(k);
+    }
+
+    if (ik->is_abstract() || ik->is_interface()) {
+      counters.counter_IK_no_info_abstract_or_interface.inc();
+    }
+
+    const int lh = ik->layout_helper();
+    if (!Klass::layout_helper_needs_slow_path(lh)) {
+      const size_t wordsize = Klass::layout_helper_to_size_helper(ik->layout_helper());
+      if (wordsize >= KlassLUTEntry::ik_wordsize_limit) {
+        counters.counter_IK_no_info_too_large.inc();
+      }
+    }
+
+    switch (ik->nonstatic_oop_map_count()) {
+    case 0: counters.counter_IK_zero_oopmapentries.inc(); break;
+    case 1: counters.counter_IK_one_oopmapentries.inc(); break;
+    case 2: counters.counter_IK_two_oopmapentries.inc(); break;
+    default: counters.counter_IK_no_info_too_many_oopmapentries.inc(); break;
+    }
+  }
+
+  switch (kle.cld_index()) {
+  case cld_index_unknown: {
+    if (k->class_loader_data() != nullptr) {
+      counters.counter_from_unknown_cld.inc();
+    } else {
+      counters.counter_from_null_cld.inc();
+    }
+    break;
+  }
+  case 1: counters.counter_from_boot_cld.inc(); break;
+  case 2: counters.counter_from_system_cld.inc(); break;
+  case 3: counters.counter_from_platform_cld.inc(); break;
+  default: ShouldNotReachHere();
+  }
+}
+
+static void print_part_counter(outputStream* st, const char* prefix1, const char* prefix2, uint64_t v, uint64_t total) {
+  st->print("%s %s: ", prefix1, prefix2);
+  st->fill_to(32);
+  st->print_cr(UINT64_FORMAT " (%.2f%%)", v, ((double)v * 100.0f) / total);
+}
+
+void KlassInfoLUT::print_counters(outputStream* st, const Counters& counters, const char* prefix) {
+
+  // All Klasses
+  const uint64_t all =
+#define XX(name, shortname) counters.counter_ ## shortname.get() +
+  KLASSKIND_ALL_KINDS_DO(XX)
 #undef XX
+  0;
+
+  print_part_counter(st, prefix, "(all)", all, all);
+
+  const uint64_t registered_AK = counters.counter_TAK.get() + counters.counter_OAK.get();
+  const uint64_t registered_IK = all - registered_AK;
+  print_part_counter(st, prefix, "IK (all)", registered_IK, all);
+  print_part_counter(st, prefix, "AK (all)", registered_AK, all);
+
+#define XX(name, shortname) \
+    print_part_counter(st, prefix, ""# shortname, counters.counter_ ## shortname.get(), all);
+  KLASSKIND_ALL_KINDS_DO(XX)
+#undef XX
+
+  print_part_counter(st, prefix, "IK (no info)", counters.counter_IK_no_info.get(), all);
+  print_part_counter(st, prefix, "IK (no info, abstract or interface)", counters.counter_IK_no_info_abstract_or_interface.get(), all);
+  print_part_counter(st, prefix, "IK (no info, too many oopmap entries)", counters.counter_IK_no_info_too_many_oopmapentries.get(), all);
+  print_part_counter(st, prefix, "IK (no info, obj size too large)", counters.counter_IK_no_info_too_large.get(), all);
+
+  print_part_counter(st, prefix, "IK (0 oopmap entries)", counters.counter_IK_zero_oopmapentries.get(), all);
+  print_part_counter(st, prefix, "IK (1 oopmap entry)", counters.counter_IK_one_oopmapentries.get(), all);
+  print_part_counter(st, prefix, "IK (2 oopmap entries)", counters.counter_IK_two_oopmapentries.get(), all);
+
+  print_part_counter(st, prefix, "boot cld", counters.counter_from_boot_cld.get(), all);
+  print_part_counter(st, prefix, "system cld", counters.counter_from_system_cld.get(), all);
+  print_part_counter(st, prefix, "platform cld", counters.counter_from_platform_cld.get(), all);
+  print_part_counter(st, prefix, "unknown cld", counters.counter_from_unknown_cld.get(), all);
+  print_part_counter(st, prefix, "null cld", counters.counter_from_null_cld.get(), all);
+
+}
 
 void KlassInfoLUT::print_statistics(outputStream* st) {
+  StreamAutoIndentor indent(st);
 
-  st->print_cr("KLUT statistics:");
+  st->print_cr("KLUT");
 
-  if (uses_lookup_table()) {
-    st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(klute_raw_t));
+  st->print_cr("Klass registrations:");
+  {
+    streamIndentor si(st, 4);
+#ifdef KLUT_ENABLE_REGISTRATION_STATS
+    print_counters(st, _registration_counters, "registrations");
+#else
+    st->print_cr("Not available");
+#endif
   }
 
-  const uint64_t registered_all = counter_registered_IK + counter_registered_IRK + counter_registered_IMK +
-      counter_registered_ICLK + counter_registered_ISCK + counter_registered_TAK + counter_registered_OAK;
+  st->print_cr("Hits:");
+  {
+    streamIndentor si(st, 4);
+#ifdef KLUT_ENABLE_HIT_STATS
+    if (uses_lookup_table()) {
+      print_counters(st, _hit_counters, "hits");
+    } else {
+      st->print_cr("Not available (COH disabled)");
+    }
+#else
+    st->print_cr("Not available");
+#endif
+  }
 
-#define PERCENTAGE_OF(x, x100) ( ((double)x * 100.0f) / x100 )
-#define PRINT_WITH_PERCENTAGE(title, x, x100) \
-  st->print("   " title ": "); \
-  st->fill_to(24);             \
-  st->print_cr(" " UINT64_FORMAT " (%.2f%%)", x, PERCENTAGE_OF(x, x100));
+  st->print_cr("Lookup Table:");
+  {
+    streamIndentor si(st, 4);
+    if (uses_lookup_table()) {
 
-  st->print_cr("   Registered classes, total: " UINT64_FORMAT, registered_all);
-#define XX(name, shortname) PRINT_WITH_PERCENTAGE("Registered, " #shortname, counter_registered_##shortname, registered_all);
-  KLASSKIND_ALL_KINDS_DO(XX)
-#undef XX
+      st->print_cr("Size: %u slots (%zu bytes)", _max_entries, _max_entries * sizeof(klute_raw_t));
 
-  const uint64_t registered_AK = counter_registered_OAK - counter_registered_TAK;
-  const uint64_t registered_IK = registered_all - registered_AK;
-  PRINT_WITH_PERCENTAGE("Registered classes, IK (all)", registered_IK, registered_all);
-  PRINT_WITH_PERCENTAGE("Registered classes, AK (all)", registered_AK, registered_all);
-
-  PRINT_WITH_PERCENTAGE("Registered classes, IK, for abstract/interface", counter_registered_IK_for_abstract_or_interface, registered_all);
-
-#ifdef KLUT_ENABLE_EXPENSIVE_STATS
-  const uint64_t hits = counter_hits_IK + counter_hits_IRK + counter_hits_IMK +
-                        counter_hits_ICLK + counter_hits_ISCK + counter_hits_TAK + counter_hits_OAK;
-
-  st->print_cr("   Hits, total: " UINT64_FORMAT, hits);
-#define XX(name, shortname) PRINT_WITH_PERCENTAGE("Hits, " #shortname, counter_hits_##shortname, hits);
-  KLASSKIND_ALL_KINDS_DO(XX)
-#undef XX
-
-  const uint64_t hits_ak = counter_hits_OAK + counter_hits_TAK;
-  const uint64_t hits_ik = hits - hits_ak;
-  const uint64_t no_info_hits = counter_noinfo_ICLK + counter_noinfo_IMK + counter_noinfo_IK_other;
-
-  PRINT_WITH_PERCENTAGE("Hits, IK (all)", hits_ik, hits);
-  PRINT_WITH_PERCENTAGE("Hits, AK (all)", hits_ak, hits);
-
-  PRINT_WITH_PERCENTAGE("Hits, all for bootloader", counter_hits_bootloader, hits);
-  PRINT_WITH_PERCENTAGE("Hits, all for systemloader", counter_hits_sysloader, hits);
-  PRINT_WITH_PERCENTAGE("Hits, all for platformloader", counter_hits_platformloader, hits);
-
-  st->print_cr("   IK details missing for " UINT64_FORMAT " hits (%.2f%%) due to: "
-               "IMK " UINT64_FORMAT " (%.2f%%) "
-               "ICLK " UINT64_FORMAT " (%.2f%%) "
-               "other " UINT64_FORMAT " (%.2f%%)",
-               no_info_hits, PERCENTAGE_OF(no_info_hits, hits),
-               counter_noinfo_IMK, PERCENTAGE_OF(counter_noinfo_IMK, hits),
-               counter_noinfo_ICLK, PERCENTAGE_OF(counter_noinfo_ICLK, hits),
-               counter_noinfo_IK_other, PERCENTAGE_OF(counter_noinfo_IK_other, hits)
-  );
-#endif // KLUT_ENABLE_EXPENSIVE_STATS
-
-  if (uses_lookup_table()) {
-    // Hit density per cacheline distribution (How well are narrow Klass IDs clustered to give us good local density)
-    constexpr int chacheline_size = 64;
-    constexpr int slots_per_cacheline = chacheline_size / sizeof(KlassLUTEntry);
-    const int num_cachelines = max_entries() / slots_per_cacheline;
-    int valid_hits_per_cacheline_distribution[slots_per_cacheline + 1] = { 0 };
-    for (int i = 0; i < num_cachelines; i++) {
-      int n = 0;
-      for (int j = 0; j < slots_per_cacheline; j++) {
-        KlassLUTEntry e(at((i * slots_per_cacheline) + j));
-        const bool fully_valid = e.is_valid() && (e.is_array() || e.ik_carries_infos());
-        if (fully_valid) {
-          n++;
+      // Hit density per cacheline distribution (How well are narrow Klass IDs clustered to give us good local density)
+      constexpr int chacheline_size = 64;
+      constexpr int slots_per_cacheline = chacheline_size / sizeof(KlassLUTEntry);
+      const int num_cachelines = max_entries() / slots_per_cacheline;
+      int valid_hits_per_cacheline_distribution[slots_per_cacheline + 1] = { 0 };
+      for (int i = 0; i < num_cachelines; i++) {
+        int n = 0;
+        for (int j = 0; j < slots_per_cacheline; j++) {
+          KlassLUTEntry e(at((i * slots_per_cacheline) + j));
+          const bool fully_valid = e.is_valid() && (e.is_array() || e.ik_carries_infos());
+          if (fully_valid) {
+            n++;
+          }
+        }
+        assert(n <= slots_per_cacheline, "Sanity");
+        valid_hits_per_cacheline_distribution[n]++;
+      }
+      st->print_cr("LUT valid hit density over cacheline size:");
+      {
+        streamIndentor si(st, 4);
+        for (int i = 0; i <= slots_per_cacheline; i++) {
+          st->print_cr("%d valid entries per cacheline: %d", i, valid_hits_per_cacheline_distribution[i]);
         }
       }
-      assert(n <= slots_per_cacheline, "Sanity");
-      valid_hits_per_cacheline_distribution[n]++;
-    }
-    st->print_cr("LUT valid hit density over cacheline size:");
-    for (int i = 0; i <= slots_per_cacheline; i++) {
-      st->print_cr("%d valid entries per cacheline: %d", i, valid_hits_per_cacheline_distribution[i]);
+    } else {
+      st->print_cr("Not available (COH disabled)");
     }
   }
-  // Just for info, print limits
-  KlassLUTEntry::print_limits(st);
-}
 
-#ifdef KLUT_ENABLE_EXPENSIVE_STATS
-void KlassInfoLUT::update_hit_stats(klute_raw_t klute) {
-  const KlassLUTEntry klutehelper(klute);
-  assert(klutehelper.is_valid(), "invalid klute");
-  switch (klutehelper.kind()) {
-#define XX(name, shortname) case name ## Kind: inc_hits_ ## shortname(); break;
-  KLASSKIND_ALL_KINDS_DO(XX)
-#undef XX
-  default:
-    fatal("invalid klute kind (" KLUTE_FORMAT ")", klute);
-  };
-  if (klutehelper.is_instance() && !klutehelper.ik_carries_infos()) {
-    switch (klutehelper.kind()) {
-      case InstanceClassLoaderKlassKind: inc_noinfo_ICLK(); break;
-      case InstanceMirrorKlassKind: inc_noinfo_IMK(); break;
-      default: inc_noinfo_IK_other(); break;
-    }
+  st->print_cr("Limits:");
+  {
+    streamIndentor si(st, 4);
+    st->print_cr("max instance size: %zu words", KlassLUTEntry::ik_wordsize_limit);
+    st->print_cr("max oopmap block 1 count: %zu", KlassLUTEntry::ik_omb_count_1_limit);
+    st->print_cr("max oopmap block 1 offset: %zu oops", KlassLUTEntry::ik_omb_offset_1_limit);
+    st->print_cr("max oopmap block 2 count: %zu", KlassLUTEntry::ik_omb_count_2_limit);
+    st->print_cr("max oopmap block 2 offset: %zu oops", KlassLUTEntry::ik_omb_offset_2_limit);
   }
-  switch (klutehelper.cld_index()) {
-  case 1: inc_hits_bootloader(); break;
-  case 2: inc_hits_sysloader(); break;
-  case 3: inc_hits_platformloader(); break;
-  };
+  st->cr();
 }
-#endif // KLUT_ENABLE_EXPENSIVE_STATS
+#endif // (KLUT_ENABLE_REGISTRATION_STATS) || defined(KLUT_ENABLE_HIT_STATS)
 
-#ifdef KLUT_ENABLE_EXPENSIVE_LOG
-void KlassInfoLUT::log_hit(klute_raw_t klute) {
-  //log_debug(klut)("retrieval: klute: name: %s kind: %d", k->name()->as_C_string(), k->kind());
+
+#ifdef KLUT_ENABLE_REGISTRATION_STATS
+void KlassInfoLUT::update_registration_counters(const Klass* k, klute_raw_t klute) {
+  update_counters(_registration_counters, k, klute);
 }
-#endif
+#endif // KLUT_ENABLE_REGISTRATION_STATS
 
+#ifdef KLUT_ENABLE_HIT_STATS
+void KlassInfoLUT::update_hit_counters(const Klass* k, klute_raw_t klute) {
+  update_counters(_hit_counters, k, klute);
+}
+
+
+
+#endif // KLUT_ENABLE_HIT_STATS

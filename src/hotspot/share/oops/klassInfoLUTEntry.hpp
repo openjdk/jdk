@@ -181,18 +181,18 @@ class KlassLUTEntry {
 
   const U _v;
 
+  static klute_raw_t build_from_common(const Klass* k);
+  static klute_raw_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
+  static klute_raw_t build_from_ak(const ArrayKlass* k);
+
+public:
+
   // The limits to what we can numerically represent in an (InstanceKlass) Entry
   static constexpr size_t ik_wordsize_limit = nth_bit(bits_ik_wordsize);
   static constexpr size_t ik_omb_offset_1_limit = nth_bit(bits_ik_omb_offset_1);
   static constexpr size_t ik_omb_count_1_limit = nth_bit(bits_ik_omb_count_1);
   static constexpr size_t ik_omb_offset_2_limit = nth_bit(bits_ik_omb_offset_2);
   static constexpr size_t ik_omb_count_2_limit = nth_bit(bits_ik_omb_count_2);
-
-  static klute_raw_t build_from_common(const Klass* k);
-  static klute_raw_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
-  static klute_raw_t build_from_ak(const ArrayKlass* k);
-
-public:
 
   // Invalid entries are entries that have not been set yet.
   // Note: cannot use "0" as invalid_entry, since 0 is valid (interface or abstract InstanceKlass, size = 0 and has no oop map)
@@ -264,9 +264,6 @@ public:
   // for a tak, calculates word size given header size, element size, and array length
   template <HeaderMode mode>
   inline size_t tak_calculate_wordsize_given_oop_fast(typeArrayOopDesc* obj) const;
-
-  // Helper function, prints current limits
-  static void print_limits(outputStream* st);
 
   void print(outputStream* st) const;
 
