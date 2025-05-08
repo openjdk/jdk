@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,8 @@ class CompressedKlassPointers : public AllStatic {
   static narrowKlass _lowest_valid_narrow_klass_id;
   static narrowKlass _highest_valid_narrow_klass_id;
 
+  // Protection zone size (0 if not set up)
+  static size_t _protection_zone_size;
 
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
@@ -231,6 +233,7 @@ public:
   static bool is_null(narrowKlass v) { return v == 0; }
 
   // Versions without asserts
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v);
   static inline Klass* decode_without_asserts(narrowKlass v);
   static inline Klass* decode_not_null(narrowKlass v);
   static inline Klass* decode(narrowKlass v);
@@ -257,6 +260,12 @@ public:
     return (address)addr >= _klass_range_start && (address)addr < _klass_range_end &&
         is_aligned(addr, klass_alignment_in_bytes());
   }
+
+  // Protect a zone a the start of the encoding range
+  static void establish_protection_zone(address addr, size_t size);
+
+  // Returns true if address points into protection zone (for error reporting)
+  static bool is_in_protection_zone(address addr);
 
 #if defined(AARCH64) && !defined(ZERO)
   // Check that with the given base, shift and range, aarch64 code can encode and decode the klass pointer.

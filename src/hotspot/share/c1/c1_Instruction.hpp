@@ -1607,7 +1607,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap _live_kill;                     // set of registers defined in this block
 
   ResourceBitMap _fpu_register_usage;
-  intArray*      _fpu_stack_state;               // For x86 FPU code generation with UseLinearScan
   int            _first_lir_instruction_id;      // ID of first LIR instruction in this block
   int            _last_lir_instruction_id;       // ID of last LIR instruction in this block
 
@@ -1654,7 +1653,6 @@ LEAF(BlockBegin, StateSplit)
   , _live_gen()
   , _live_kill()
   , _fpu_register_usage()
-  , _fpu_stack_state(nullptr)
   , _first_lir_instruction_id(-1)
   , _last_lir_instruction_id(-1)
   {
@@ -1682,7 +1680,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap& live_gen()                     { return _live_gen;       }
   ResourceBitMap& live_kill()                    { return _live_kill;      }
   ResourceBitMap& fpu_register_usage()           { return _fpu_register_usage; }
-  intArray* fpu_stack_state() const              { return _fpu_stack_state;    }
   int first_lir_instruction_id() const           { return _first_lir_instruction_id; }
   int last_lir_instruction_id() const            { return _last_lir_instruction_id; }
   int total_preds() const                        { return _total_preds; }
@@ -1705,7 +1702,6 @@ LEAF(BlockBegin, StateSplit)
   void set_live_gen (const ResourceBitMap& map)  { _live_gen = map;  }
   void set_live_kill(const ResourceBitMap& map)  { _live_kill = map; }
   void set_fpu_register_usage(const ResourceBitMap& map) { _fpu_register_usage = map; }
-  void set_fpu_stack_state(intArray* state)      { _fpu_stack_state = state;  }
   void set_first_lir_instruction_id(int id)      { _first_lir_instruction_id = id;  }
   void set_last_lir_instruction_id(int id)       { _last_lir_instruction_id = id;  }
   void increment_total_preds(int n = 1)          { _total_preds += n; }

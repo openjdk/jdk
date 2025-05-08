@@ -28,7 +28,7 @@
  *  basic test for simple lambda expressions in multiple scopes
  * @author  Brian Goetz
  * @author  Maurizio Cimadamore
- * @run main LambdaExpr01
+ * @run main LambdaExpr02
  */
 
 public class LambdaExpr02 {
