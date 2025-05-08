@@ -566,9 +566,9 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
-  // Separate all the writes above for other threads reading state
-  // set by this thread in case the operation is ThreadSuspendHandshake.
-  OrderAccess::fence();
+  // Separation of all the writes above for other threade reading state
+  // set by this thread in case the operation is ThreadSuspendHandshake
+  // is addressed by OrderAccess::fence() in the mutex code
 
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are

@@ -213,10 +213,16 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   /*
     This fence is introduced to the mutex code in order to make the critical
-    section provided by the mutex follow the Roach-Motel semantics. One could have
-    two mutex types, say, a strict one with a fence and a non-strict without a fence,
-    but it would complicate things. Having a fence does not have any significant impact
-    on peformance, as this is an internal VM mutex and is generally not in hot code parts.
+    section provided by the mutex follow the Roach-Motel semantics. Having a fence does
+    not have any significant impact on peformance, as this is an internal VM
+    mutex and is generally not in hot code parts.
+
+    The Mutex class used to explicitly guarantee fence(); lock(); acquire(); semantics with
+    a hand crafted implementation. That may or may not be a desirable contract for a Mutex,
+    but is nevertheless something that older HotSpot code may or may not rely on for correctness.
+    Newer code is encouraged not to rely more on this feature, but it is not generally safe to
+    remove the fence, until all usages of Mutex have been evaluated on a case-by-case basis, whether
+    they actually rely on this stronger contract, or not.
   */
   void fence_before_lock(){OrderAccess::fence();}
 };
