@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2626,7 +2626,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
         // of how big the result can be, and which algorithm to use.
-        final long scaleFactor = (long)remainingBits * exponent;
+        final long scaleFactor = (long) remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
         // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
@@ -2639,34 +2639,34 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return bitsToShift + scaleFactor <= Long.SIZE  // Fits in long?
                     ? new BigInteger(result << bitsToShift, newSign)
                     : new BigInteger(result, newSign).shiftLeft(bitsToShift);
-        } else {
-            if ((bitLength() - 1L) * exponent >= Integer.MAX_VALUE) {
-                reportOverflow();
-            }
-
-            // Large number algorithm.  This is basically identical to
-            // the algorithm above, but calls multiply()
-            // which may use more efficient algorithms for large numbers.
-            BigInteger answer = ONE;
-
-            final int expZeros = Integer.numberOfLeadingZeros(exponent);
-            int workingExp = exponent << expZeros;
-            // Perform exponentiation using repeated squaring trick
-            // The loop relies on this invariant:
-            // base^exponent == answer^(2^expLen) * base^(workingExp >>> (32-expLen))
-            for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
-                answer = answer.multiply(answer);
-                if (workingExp < 0) // leading bit is set
-                    answer = answer.multiply(base);
-
-                workingExp <<= 1;
-            }
-
-            // Multiply back the (exponentiated) powers of two (quickly,
-            // by shifting left)
-            answer = answer.shiftLeft(bitsToShift);
-            return negative ? answer.negate() : answer;
         }
+
+        if ((bitLength() - 1L) * exponent >= Integer.MAX_VALUE) {
+            reportOverflow();
+        }
+
+        // Large number algorithm.  This is basically identical to
+        // the algorithm above, but calls multiply()
+        // which may use more efficient algorithms for large numbers.
+        BigInteger answer = ONE;
+
+        final int expZeros = Integer.numberOfLeadingZeros(exponent);
+        int workingExp = exponent << expZeros;
+        // Perform exponentiation using repeated squaring trick
+        // The loop relies on this invariant:
+        // base^exponent == answer^(2^expLen) * base^(workingExp >>> (32-expLen))
+        for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
+            answer = answer.multiply(answer);
+            if (workingExp < 0) // leading bit is set
+                answer = answer.multiply(base);
+
+            workingExp <<= 1;
+        }
+
+        // Multiply back the (exponentiated) powers of two (quickly,
+        // by shifting left)
+        answer = answer.shiftLeft(bitsToShift);
+        return negative ? answer.negate() : answer;
     }
 
     /**
