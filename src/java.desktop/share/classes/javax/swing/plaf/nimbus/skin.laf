@@ -15517,7 +15517,7 @@
                   </uiComponent>
                </regions>
             </uiComponent>
-            <uiIconRegion name="ErrorIcon" subregion="true" key="errorIcon" segmentExtractorKey="OptionPane.errorIcon">
+            <uiIconRegion name="ErrorIcon" subregion="true" key="errorIcon" basicKey="OptionPane.errorIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
