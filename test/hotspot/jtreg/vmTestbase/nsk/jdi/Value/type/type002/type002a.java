@@ -59,6 +59,9 @@ public class type002a {
     }
 
     //====================================================== test program
+
+    static Threadtype002a thread2 = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,7 @@ public class type002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadtype002a thread2 =
-                             new Threadtype002a("Thread2");
+                         thread2 = new Threadtype002a("Thread2");
                          log1("       thread2 is created");
 
                          label:

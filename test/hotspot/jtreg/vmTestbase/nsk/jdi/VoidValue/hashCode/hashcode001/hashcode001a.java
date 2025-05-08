@@ -59,6 +59,9 @@ public class hashcode001a {
     }
 
     //====================================================== test program
+
+    static Threadhashcode001a thread2 = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,7 @@ public class hashcode001a {
     //------------------------------------------------------  section tested
 
                  case 0:
-                         Threadhashcode001a thread2 =
-                             new Threadhashcode001a("Thread2");
+                         thread2 = new Threadhashcode001a("Thread2");
                          log1("       thread2 is created");
 
                          label:

@@ -47,16 +47,16 @@ class location001a {
     static final String COMMAND_ERROR = "error";
 
     // line numbers where checked exceptions thrown (for user exceptions only)
-    public static final int userExceptionLocation = 98;
-    public static final int userErrorLocation     = 105;
-    public static final int userThrowableLocation = 112;
+    public static final int userExceptionLocation = 101;
+    public static final int userErrorLocation     = 108;
+    public static final int userThrowableLocation = 115;
 
     // line numbers where checked exceptions caught. Numbers were changed due to 4740123
-    public static final int userExceptionCatchLocation = 99;
-    public static final int userErrorCatchLocation     = 106;
-    public static final int userThrowableCatchLocation = 113;
-    public static final int javaExceptionCatchLocation = 120;
-    public static final int javaErrorCatchLocation     = 127;
+    public static final int userExceptionCatchLocation = 102;
+    public static final int userErrorCatchLocation     = 109;
+    public static final int userThrowableCatchLocation = 116;
+    public static final int javaExceptionCatchLocation = 123;
+    public static final int javaErrorCatchLocation     = 130;
 
     // flags marked all actually thrown exceptions
     private static boolean userExceptionThrown = false;
@@ -65,9 +65,12 @@ class location001a {
     private static boolean javaExceptionThrown = false;
     private static boolean javaErrorThrown     = false;
 
+    static Thread mainThread = null;
+
     // run debuggee from command line
     public static void main(String args[]) throws Throwable {
         location001a _location001a = new location001a();
+        mainThread = Thread.currentThread();
         System.exit(JCK_STATUS_BASE + _location001a.runIt(args, System.err));
     }
 

@@ -41,11 +41,13 @@ public class stepevent001a {
     static final String COMMAND_GO    = "go";
     static final String COMMAND_DONE  = "done";
 
-    public static final int stepLineBegin = 90;
-    public static final int stepLineEnd = 100;
+    public static final int stepLineBegin = 94;
+    public static final int stepLineEnd = 104;
 
     static private int counter;
     static private final int LIMIT = 10;
+
+    static Thread mainThread = null;
 
     static private ArgumentHandler argHandler;
     static private IOPipe pipe;
@@ -58,6 +60,8 @@ public class stepevent001a {
     int run( String args[]) {
         argHandler = new ArgumentHandler(args);
         pipe = argHandler.createDebugeeIOPipe();
+
+        mainThread = Thread.currentThread();
 
         // notify debugger about ready to execute
         pipe.println(COMMAND_READY);

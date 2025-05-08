@@ -131,16 +131,7 @@ public class method001 {
             log.display("Getting loaded class in debuggee");
             checkedClass = debuggee.classByName(DEBUGGEE_NAME);
 
-            Iterator threadIterator = vm.allThreads().iterator();
-            while (threadIterator.hasNext()) {
-                ThreadReference curThread = (ThreadReference) threadIterator.next();
-                if (curThread.name().equals("main")) {
-                    checkedThread = curThread;
-                }
-            }
-            if (checkedThread == null) {
-                throw new Failure("TEST BUG: unable to find reference to main thread");
-            }
+            checkedThread = debuggee.threadByFieldNameOrThrow(checkedClass, "mainThread", "main");
 
             log.display("Getting reference to method <foo>");
             checkedMethod = debuggee.methodByName(checkedClass, "foo");

@@ -59,6 +59,9 @@ public class equals001a {
     }
 
     //====================================================== test program
+
+    static Threadequals001a thread2 = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,7 @@ public class equals001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadequals001a thread2 =
-                             new Threadequals001a("Thread2");
+                         thread2 = new Threadequals001a("Thread2");
                          log1("       thread2 is created");
 
                          label:

@@ -60,12 +60,15 @@ public class owningthread001a {
     //====================================================== test program
 
     private static Thread thread2 = null;
+    static Thread mainThread = null;
 
     static TestClass  testObj  = new TestClass();
 
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+
+        mainThread = Thread.currentThread();
 
         for (int i=0; i<argv.length; i++) {
             if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {

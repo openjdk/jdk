@@ -40,10 +40,12 @@ public class breakpoint001a {
     static final String COMMAND_GO    = "go";
     static final String COMMAND_DONE  = "done";
 
-    public static final int breakpointLineNumber = 86;
+    public static final int breakpointLineNumber = 90;
 
     static private int counter = 0;
     static private final int LIMIT = 10;
+
+    static Thread mainThread = null;
 
     public static void main(String args[]) {
         breakpoint001a _breakpoint001a = new breakpoint001a();
@@ -54,6 +56,8 @@ public class breakpoint001a {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
+        mainThread = Thread.currentThread();
+ 
         // notify debugger about ready to execute
         pipe.println(COMMAND_READY);
 

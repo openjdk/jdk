@@ -105,7 +105,6 @@ public class owningthread001 {
     static VirtualMachine      vm  = null;
 
     ReferenceType     testedClass  = null;
-    ThreadReference   thread2      = null;
     ThreadReference   mainThread   = null;
 
     static int  testExitCode = PASSED;
@@ -150,6 +149,7 @@ public class owningthread001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -174,11 +174,7 @@ public class owningthread001 {
 
             int expresult = returnCode0;
 
-            String threadName = "testedThread";
-
-            List            allThreads   = null;
             List            monitors     = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
             ObjectReference objRef       = null;
 
@@ -187,7 +183,6 @@ public class owningthread001 {
 
                 log2("getting ThreadReference object");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedClass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -196,19 +191,7 @@ public class owningthread001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        mainThread = (ThreadReference) listIterator.next();
-                        if (mainThread.name().equals("main"))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO 'main' thread  ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                mainThread = debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread", "main");
             }
 
 

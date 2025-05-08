@@ -45,8 +45,8 @@ public class method001a {
     static final String COMMAND_DONE  = "done";
 
     // line numbers for auxilary breakpoints
-    public static final int STARTING_BREAKPOINT_LINE = 86;
-    public static final int ENDING_BREAKPOINT_LINE = 91;
+    public static final int STARTING_BREAKPOINT_LINE = 89;
+    public static final int ENDING_BREAKPOINT_LINE = 94;
 
     // scaffold objects
     static private ArgumentHandler argHandler;
@@ -58,9 +58,12 @@ public class method001a {
     static private int depth;
     static private boolean methodInvoked;
 
+    static Thread mainThread = null;
+
     // start debuggee
     public static void main(String args[]) {
         method001a _method001a = new method001a();
+        mainThread = Thread.currentThread();
         System.exit(JCK_STATUS_BASE + _method001a.run(args, System.err));
     }
 

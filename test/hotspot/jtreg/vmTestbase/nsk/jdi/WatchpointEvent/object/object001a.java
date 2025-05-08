@@ -48,6 +48,8 @@ class object001a {
 
     public static CheckedClass foo;
 
+    static Thread mainThread = null;
+
     public static void main(String args[]) {
 //        object001a _object001a = new object001a();
         System.exit(JCK_STATUS_BASE + run(args));
@@ -56,6 +58,7 @@ class object001a {
     static int run( String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
+        mainThread = Thread.currentThread();
 
         // create instance of checked class
         foo = new CheckedClass();

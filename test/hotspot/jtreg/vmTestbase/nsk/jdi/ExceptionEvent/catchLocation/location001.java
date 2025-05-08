@@ -165,16 +165,7 @@ public class location001 {
 
             // get mirror of main thread in debuggee
             log.display("Getting reference to main thread");
-            Iterator threadIterator = vm.allThreads().iterator();
-            while (threadIterator.hasNext()) {
-                ThreadReference curThread = (ThreadReference) threadIterator.next();
-                if (curThread.name().equals("main")) {
-                     checkedThread = curThread;
-                }
-            }
-            if (checkedThread == null) {
-                throw new Failure("TEST BUG: unable to find reference to main thread");
-            }
+            checkedThread = debuggee.threadByFieldNameOrThrow(checkedClass, "mainThread", "main");
 
             // create ExceptionRequest for all throwable classes (initially disabled)
             log.display("Creating ExceptionRequest");

@@ -65,9 +65,12 @@ class exception001a {
     private static boolean javaExceptionThrown = false;
     private static boolean javaErrorThrown     = false;
 
+    static Thread mainThread = null;
+
     // run debuggee from command line
     public static void main(String args[]) throws Throwable {
         exception001a _exception001a = new exception001a();
+        mainThread = Thread.currentThread();
         System.exit(JCK_STATUS_BASE + _exception001a.runIt(args, System.err));
     }
 

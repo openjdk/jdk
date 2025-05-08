@@ -58,6 +58,9 @@ public class location005a {
     }
 
     //====================================================== test program
+
+    static Thread thread2 = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -93,7 +96,7 @@ public class location005a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread thread2 =
+                         thread2 =
                              JDIThreadFactory.newThread(new Threadlocation005a("Thread2"));
                          log1("       thread2 is created");
 
