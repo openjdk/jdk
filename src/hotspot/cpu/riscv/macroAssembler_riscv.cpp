@@ -1806,7 +1806,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       for (int i = 0; i < N; i++) {
         vmv_x_s(tmp2, vcrc);
         // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
-        zext_w(tmp2, tmp2);
+        zext(tmp2, tmp2, 32);
         vslidedown_vi(vcrc, vcrc, 1);
         xorr(crc, crc, tmp2);
         for (int j = 0; j < W; j++) {

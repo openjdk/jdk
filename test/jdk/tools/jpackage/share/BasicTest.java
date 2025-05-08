@@ -169,9 +169,9 @@ public final class BasicTest {
         };
 
         TKit.trace("Check parameters in help text");
-        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)),
+        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)).longValue(),
                 "Check help text contains platform specific parameters");
-        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes),
+        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes).longValue(),
                 "Check help text doesn't contain unexpected parameters");
     }
 
