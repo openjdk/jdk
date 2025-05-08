@@ -256,7 +256,7 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
                    "Different CLD (loader_index: %d, real Klass CLD: " PTR_FORMAT ", from klute CLD lookup table: " PTR_FORMAT ")?",
                    cldi, p2i(real_cld), p2i(cld_from_klute));
     } else {
-      // We expect to get a NULL from the CLD lookup table.
+      // We expect to get a nullptr from the CLD lookup table.
       ASSERT_HERE2(cld_from_klute == nullptr, "CLD not null? (" PTR_FORMAT ")", p2i(cld_from_klute));
       // cld_index == 0 means "unknown CLD" and since we expect only to ever run with three permanent CLDs,
       // that cld should not be permanent.
