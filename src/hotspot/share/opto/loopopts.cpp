@@ -1091,13 +1091,12 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 // Detect if split_through_phi would split an LShift that multiplies a
 // (potential) loop iv. Return true if we match the node pattern
 // (BaseCounted)Loop -> Phi -> LShift. Splitting this pattern can prevent range
-// check elminiation of or addressing optimizations.
-bool PhaseIdealLoop::would_split_lshift_through_phi(Node* n, Node* n_blk) {
+// check elminiation or addressing optimizations.
+bool PhaseIdealLoop::would_split_lshift_through_phi(const Node* n, const Node* n_blk) const {
   const PhiNode* phi = n->in(1)->isa_Phi();
   if (phi == nullptr) {
     return false;
   }
-
   if (n_blk->is_BaseCountedLoop()) {
     const BaseCountedLoopNode* cloop = n_blk->as_BaseCountedLoop();
     return n->Opcode() == Op_LShift(cloop->bt()) && phi == cloop->phi();
@@ -1105,12 +1104,31 @@ bool PhaseIdealLoop::would_split_lshift_through_phi(Node* n, Node* n_blk) {
     // In some cases, we have not been able to detect a counted loop before
     // PhaseIdeal loop attempts to split ifs. Often, this is due to the loop
     // iv not being loop invariant in after one pass of beautify loops. In this
-    // case, we can match the same pattern as for counted loops, allbeit with
-    // slightly less precision, since we do not yet know the basic type of the
-    // loop iv.
+    // case, we can match the same pattern as for counted loops. However, since
+    // We do not know whether the Loop will turn into a CountedLoop, we also
+    // match down to the range check to reduce false positives.
     const LoopNode* loop = n_blk->as_Loop();
+    if (!loop->can_be_counted_loop(&_igvn)) {
+      return false;
+    }
     const BasicType phi_t = phi->in(1)->bottom_type()->basic_type();
-    return (phi_t == T_INT || T_LONG) && n->Opcode() == Op_LShift(phi_t) && phi->in(0) == loop;
+    // Return early if the phi does not look like an IV.
+    if ((phi_t != T_INT && phi_t != T_LONG) ||
+        n->Opcode() != Op_LShift(phi_t) ||
+        phi->in(0) != loop) {
+      return false;
+    }
+    // Try to match down from the LShift to a possible correpsonding RangeCheck.
+    //   LShift -> CmpU(L) -> Bool -> RangeCheck
+    const Node* cmp = n->find_out_with(Op_Cmp_unsigned(phi_t));
+    if (cmp == nullptr) {
+      return false;
+    }
+    const Node* cmp_res = cmp->find_out_with(Op_Bool);
+    if (cmp_res == nullptr) {
+      return false;
+    }
+    return cmp_res->has_out_with(Op_RangeCheck);
   }
   return false;
 }

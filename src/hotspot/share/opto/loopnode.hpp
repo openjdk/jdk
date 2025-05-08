@@ -1611,7 +1611,7 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
-  bool would_split_lshift_through_phi(Node* n, Node* n_blk);
+  bool would_split_lshift_through_phi(const Node* lshift, const Node* n_blk) const;
   bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
 
   // Check for aggressive application of 'split-if' optimization,
