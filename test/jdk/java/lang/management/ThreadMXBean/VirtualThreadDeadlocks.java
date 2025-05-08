@@ -95,8 +95,8 @@ public class VirtualThreadDeadlocks {
         System.out.println("thread2 => " + thread2);
 
         System.out.println("Waiting for thread1 and thread2 to deadlock ...");
-        awaitBlocked(thread1, reached1);
-        awaitBlocked(thread2, reached2);
+        awaitTrueAndBlocked(thread1, reached1);
+        awaitTrueAndBlocked(thread2, reached2);
 
         ThreadMXBean bean = ManagementFactory.getPlatformMXBean(ThreadMXBean.class);
         long[] deadlockedThreads = sorted(bean.findMonitorDeadlockedThreads());
@@ -113,7 +113,7 @@ public class VirtualThreadDeadlocks {
             throw new RuntimeException("Unexpected result");
     }
 
-    private static void awaitBlocked(Thread thread, AtomicBoolean flag) throws InterruptedException {
+    private static void awaitTrueAndBlocked(Thread thread, AtomicBoolean flag) throws InterruptedException {
         while (!flag.get() || thread.getState() != Thread.State.BLOCKED) {
             Thread.sleep(10);
             if (!thread.isAlive()) {
