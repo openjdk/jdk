@@ -45,27 +45,19 @@ public class ValidateCurrencyCoverage {
     // Mapping array to track defined country codes
     private static final byte[] codes = new byte[ALPHA_NUM * ALPHA_NUM];
 
-    // Global error flag
-    private static boolean errorOccurred = false;
-
-    // Set to store all test currencies found in the input
-    private static final Set<Currency> testCurrencies = new HashSet<>();
-
     public static void main(String[] args) throws Exception {
         Path SRC_DIR = Paths.get(System.getProperty("test.src", "src"));
 
         // Override the default Java currency data property for testing
         System.setProperty("java.util.currency.data", SRC_DIR + File.separator + "currency.properties");
         testCurrencyCoverage();
-        if (errorOccurred) {
-            throw new RuntimeException("Currency validation failed");
-        }
     }
 
     /**
      * Reads the currency definitions from the input file and validates each entry.
      */
     private static void testCurrencyCoverage() throws Exception {
+        boolean failureFlag = false;
         try (FileReader fr = new FileReader(new File(System.getProperty("test.src", "."), DATA_FILE));
                 BufferedReader in = new BufferedReader(fr)) {
             String line;
@@ -96,7 +88,6 @@ public class ValidateCurrencyCoverage {
                     currency = tokens.nextToken();
                     numeric = tokens.nextToken();
                     minorUnit = tokens.nextToken();
-                    testCurrencies.add(Currency.getInstance(currency));
                     // Handle future currency transitions if date is specified
                     if (tokensCount > 3) {
                         if (format == null) {
@@ -105,23 +96,39 @@ public class ValidateCurrencyCoverage {
                             format.setLenient(false);
                         }
                         String dates = tokens.nextToken();
-                        System.out.println(dates);
                         if (format.parse(dates).getTime() < System.currentTimeMillis()) {
                             currency = tokens.nextToken();
                             numeric = tokens.nextToken();
                             minorUnit = tokens.nextToken();
-                            testCurrencies.add(Currency.getInstance(currency));
                         }
                     }
                 }
                 int index = toIndex(country);
                 int numericCode = Integer.parseInt(numeric);
                 int digits = Integer.parseInt(minorUnit);
-                testCountryCurrencyWithLocale(country, currency, numericCode, digits, index);
-                testCountryCurrencyWithCurrencyCode(currency, numericCode, digits);
+                String failmessage = testCountryCurrencyWithLocale(country, currency, numericCode, digits, index);
+                System.out.println("\nTest case for : Country = " + country + " , Currency = " + currency);
+                if (failmessage == null) {
+                    System.out.println("testCountryCurrencyWithLocale: PASS");
+                } else {
+                    failureFlag = true;
+                    System.out.println("testCountryCurrencyWithLocale: FAIL");
+                    System.out.println(failmessage);
+                }
+                failmessage = testCountryCurrencyWithCurrencyCode(currency, numericCode, digits);
+                if (failmessage == null) {
+                    System.out.println("\ntestCountryCurrencyWithCurrencyCode: PASS");
+                } else {
+                    failureFlag = true;
+                    System.out.println("\ntestCountryCurrencyWithCurrencyCode: FAIL");
+                    System.out.println(failmessage);
+                }
             }
         }
 
+        if (failureFlag) {
+            throw new RuntimeException("Test FAILED");
+        }
     }
 
     /**
@@ -134,19 +141,18 @@ public class ValidateCurrencyCoverage {
     /**
      * Validates the locale based currency instance returned.
      */
-    private static void testCountryCurrencyWithLocale(String country, String currencyCode, int numericCode, int digits,
-            int index) {
+    private static String testCountryCurrencyWithLocale(String country, String currencyCode, int numericCode,
+            int digits, int index) {
+        String failMessage = null;
         if (currencyCode.length() == 0) {
-            return;
+            return failMessage;
         }
         Locale loc = new Locale("", country);
         try {
             Currency currency = Currency.getInstance(loc);
             if (!currency.getCurrencyCode().equals(currencyCode)) {
-                System.err.println("testCountryCurrencyWithLocale:");
-                System.err.println("Error: [" + country + ":" + loc.getDisplayCountry() + "] expected: " + currencyCode
-                        + ", got: " + currency.getCurrencyCode());
-                errorOccurred = true;
+                failMessage = "Fail: [ Country: " + country + ":" + loc.getDisplayCountry() + "] expected currencyCode: " + currencyCode
+                        + ", got: " + currency.getCurrencyCode();
             }
             if (codes[index] != UNDEFINED) {
                 System.out.println("Warning: [" + country + ":" + loc.getDisplayCountry()
@@ -154,37 +160,38 @@ public class ValidateCurrencyCoverage {
             }
             codes[index] = DEFINED;
         } catch (Exception e) {
-            System.err.println("testCountryCurrencyWithLocale:");
-            System.err.println("Error: " + e + ": Country=" + country);
-            errorOccurred = true;
+            failMessage = "Fail: " + e + ": Country=" + country;
         }
+
+        return failMessage;
     }
 
     /**
      * Validates the currencycode based currency instance.
+     * 
+     * @return
      */
-    private static void testCountryCurrencyWithCurrencyCode(String currencyCode, int numericCode, int digits) {
+    private static String testCountryCurrencyWithCurrencyCode(String currencyCode, int numericCode, int digits) {
+        String failMessage = null;
         if (currencyCode.length() == 0) {
-            return;
+            return failMessage;
         }
         try {
             Currency currency = Currency.getInstance(currencyCode);
             if (currency.getNumericCode() != numericCode) {
-                System.err.println("testCountryCurrencyWithCurrencyCode:");
-                System.err.println("Error: [" + currencyCode + "] expected: " + numericCode + "; got: "
-                        + currency.getNumericCode());
-                errorOccurred = true;
+                failMessage = "Fail: [ CurrencyCode: " + currencyCode + "] expected numericCode: " + numericCode + "; got: "
+                        + currency.getNumericCode();
+
             }
             if (currency.getDefaultFractionDigits() != digits) {
-                System.err.println("testCountryCurrencyWithCurrencyCode:");
-                System.err.println("Error: [" + currencyCode + "] expected: " + digits + "; got: "
-                        + currency.getDefaultFractionDigits());
-                errorOccurred = true;
+                failMessage = "Fail: [" + currencyCode + "] expected: " + digits + "; got: "
+                        + currency.getDefaultFractionDigits();
             }
         } catch (Exception e) {
-            System.err.println("testCountryCurrencyWithCurrencyCode:");
-            System.err.println("Error: " + e + ": Currency code=" + currencyCode);
-            errorOccurred = true;
+            System.out.println("" + e.getStackTrace());
+            failMessage = "Fail: " + e + ": Currency code=" + currencyCode;
         }
+
+        return failMessage;
     }
 }
