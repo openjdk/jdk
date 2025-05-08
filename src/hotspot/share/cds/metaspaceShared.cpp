@@ -1141,7 +1141,8 @@ void MetaspaceShared::report_loading_error(const char* format, ...) {
 
   static bool printed_error = false;
   if (!printed_error) { // No need for locks. Loading error checks happen only in main thread.
-    ls.print_cr("An error has occurred while processing the %s. Run with -Xlog:cds for details.", CDSConfig::type_of_archive_being_loaded());
+    ls.print_cr("An error has occurred while processing the %s. Run with -Xlog:%s for details.",
+                CDSConfig::type_of_archive_being_loaded(), PrintCDSLogsAsAOTLogs ? "aot" : "cds");
     printed_error = true;
   }
 

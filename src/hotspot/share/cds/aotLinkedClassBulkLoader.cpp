@@ -179,11 +179,11 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
 
   for (int i = 0; i < classes->length(); i++) {
     InstanceKlass* ik = classes->at(i);
-    if (log_is_enabled(Info, cds, aot, load)) {
+    if (log_is_enabled(Info, aot, load)) {
       ResourceMark rm(THREAD);
-      log_info(cds, aot, load)("%-5s %s%s%s", category_name, ik->external_name(),
-                               ik->is_loaded() ? " (already loaded)" : "",
-                               ik->is_hidden() ? " (hidden)" : "");
+      log_info(aot, load)("%-5s %s%s%s", category_name, ik->external_name(),
+                          ik->is_loaded() ? " (already loaded)" : "",
+                          ik->is_hidden() ? " (hidden)" : "");
     }
 
     if (!ik->is_loaded()) {
@@ -236,11 +236,11 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
     assert(ik->class_loader() == nullptr ||
            ik->class_loader() == SystemDictionary::java_platform_loader(), "must be");
     if (ik->is_public() && !ik->is_hidden()) {
-      if (log_is_enabled(Info, cds, aot, load)) {
+      if (log_is_enabled(Info, aot, load)) {
         ResourceMark rm(current);
         const char* defining_loader = (ik->class_loader() == nullptr ? "boot" : "plat");
-        log_info(cds, aot, load)("%s %s (initiated, defined by %s)", category_name, ik->external_name(),
-                                 defining_loader);
+        log_info(aot, load)("%s %s (initiated, defined by %s)", category_name, ik->external_name(),
+                            defining_loader);
       }
       SystemDictionary::add_to_initiating_loader(current, ik, loader_data);
     }

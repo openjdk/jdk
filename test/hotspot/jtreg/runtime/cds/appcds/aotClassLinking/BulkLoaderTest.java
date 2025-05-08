@@ -137,7 +137,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load,cds+class=debug",
+                "-Xlog:cds,aot+load,cds+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
@@ -158,7 +158,7 @@ public class BulkLoaderTest {
 
             if (isDumping(runMode)) {
                 // Check that we are archiving classes for custom class loaders.
-                out.shouldMatch("cds,class.* SimpleCusty");
+                out.shouldMatch(",class.* SimpleCusty");
             }
         }
     }
