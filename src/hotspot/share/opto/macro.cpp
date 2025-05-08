@@ -2468,7 +2468,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
-  // Perform refining of strip mined loop before expanding macro nodes.
   refine_strip_mined_loop_macro_node();
   // Do not allow new macro nodes once we started to expand
   C->reset_allow_macro_nodes();
