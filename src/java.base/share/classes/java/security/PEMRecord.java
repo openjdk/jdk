@@ -25,6 +25,8 @@
 
 package java.security;
 
+import sun.security.util.Pem;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -82,7 +84,9 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * @throws IllegalArgumentException on incorrect input values.
      */
     public PEMRecord(String type, String pem, byte[] leadingData) {
-        if (type == null && pem == null && leadingData == null) {
+        this.leadingData = (leadingData == null ? null : leadingData.clone());
+
+        if (type == null && pem == null && this.leadingData == null) {
             throw new IllegalArgumentException("All values may not be null.");
         }
 
@@ -101,7 +105,6 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
 
         this.type = type;
         this.pem = pem;
-        this.leadingData = leadingData;
     }
 
     /**
@@ -141,5 +144,24 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      */
     public byte[] getEncoded() {
         return (pem == null ? null : Base64.getMimeDecoder().decode(pem));
+    }
+
+    /**
+     * Returns the leadingData that maybe stored in this record.
+     * {@code null} will be returned if there is none.
+     *
+     * @return a copy of the leadingData.
+     */
+    public byte[] leadingData() {
+        return (leadingData == null ? null : leadingData.clone());
+    }
+
+    /**
+     * Returns the type and Base64 encoding in PEM format.  {@code leadingData}
+     * is not returned by this method.
+     */
+    @Override
+    public String toString() {
+        return Pem.pemEncoded(this);
     }
 }

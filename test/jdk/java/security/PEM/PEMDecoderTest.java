@@ -134,6 +134,11 @@ public class PEMDecoderTest {
         testPEMRecord(PEMData.ec25519priv);
         testPEMRecord(PEMData.ecCSR);
         testPEMRecord(PEMData.ecCSRWithData);
+        testPEMRecordDecode(PEMData.rsapub);
+        testPEMRecordDecode(PEMData.ecCert);
+        testPEMRecordDecode(PEMData.ec25519priv);
+        testPEMRecordDecode(PEMData.ecCSR);
+        testPEMRecordDecode(PEMData.ecCSRWithData);
     }
 
     static void testInputStream() throws IOException {
@@ -216,6 +221,33 @@ public class PEMDecoderTest {
         if (!result) {
             System.err.println("PEMRecord type is a " + r.type());
             System.err.println("Entry is a " + entry.clazz().getName());
+            throw new AssertionError("PEMRecord class didn't match:" +
+                entry.name());
+        }
+        System.out.println("Success (" + entry.name() + ")");
+    }
+
+
+    static void testPEMRecordDecode(PEMData.Entry entry) {
+        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
+        DEREncodable de = PEMDecoder.of().decode(r.toString());
+
+        boolean result = switch(r.type()) {
+            case Pem.PRIVATE_KEY ->
+                PrivateKey.class.isAssignableFrom(de.getClass());
+            case Pem.PUBLIC_KEY ->
+                PublicKey.class.isAssignableFrom(de.getClass());
+            case Pem.CERTIFICATE, Pem.X509_CERTIFICATE ->
+                (de instanceof X509Certificate);
+            case Pem.X509_CRL -> (de instanceof X509CRL);
+            case "CERTIFICATE REQUEST" -> (de instanceof PEMRecord);
+            default -> false;
+        };
+
+        if (!result) {
+            System.err.println("Entry is a " + entry.clazz().getName());
+            System.err.println("PEMRecord type is a " + r.type());
+            System.err.println("Returned was a " + entry.clazz().getName());
             throw new AssertionError("PEMRecord class didn't match:" +
                 entry.name());
         }
