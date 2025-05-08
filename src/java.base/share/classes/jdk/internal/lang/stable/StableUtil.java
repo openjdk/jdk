@@ -25,15 +25,10 @@
 
 package jdk.internal.lang.stable;
 
-import jdk.internal.misc.Unsafe;
-
-import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 
 public final class StableUtil {
 
@@ -99,14 +94,6 @@ public final class StableUtil {
             entries[i++] = Map.entry(key, StableValueImpl.of());
         }
         return Map.ofEntries(entries);
-    }
-
-    // This method is not annotated with @ForceInline as it is always called
-    // in a slow path.
-    static void preventReentry(Object obj) {
-        if (Thread.holdsLock(obj)) {
-            throw new IllegalStateException("Recursive initialization of a stable value is illegal");
-        }
     }
 
     public static void assertSizeNonNegative(int size) {
