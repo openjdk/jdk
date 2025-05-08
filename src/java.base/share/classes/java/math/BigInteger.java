@@ -2653,7 +2653,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int workingExp = exponent << expZeros;
             // Perform exponentiation using repeated squaring trick
             // The loop relies on this invariant:
-            // base^exponent == answer^(2^expLen) * base^(exponent & (2^expLen - 1))
+            // base^exponent == answer^(2^expLen) * base^(workingExp >>> (32-expLen))
             for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
                 answer = answer.multiply(answer);
                 if (workingExp < 0) // leading bit is set

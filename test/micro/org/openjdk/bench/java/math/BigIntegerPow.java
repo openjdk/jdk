@@ -56,30 +56,25 @@ public class BigIntegerPow {
     private static final int TESTSIZE = 1;
 
     private int xsExp = (1 << 20) - 1;
-    private BigInteger[] xsArray = new BigInteger[TESTSIZE]; /*
-     * Each array entry is atmost 64 bits
-     * in size
-     */
+    /* Each array entry is atmost 64 bits in size */
+    private BigInteger[] xsArray = new BigInteger[TESTSIZE];
+
     private int sExp = (1 << 18) - 1;
-    private BigInteger[] sArray = new BigInteger[TESTSIZE]; /*
-     * Each array entry is atmost 256 bits
-     * in size
-     */
+    /* Each array entry is atmost 256 bits in size */
+    private BigInteger[] sArray = new BigInteger[TESTSIZE];
+
     private int mExp = (1 << 16) - 1;
-    private BigInteger[] mArray = new BigInteger[TESTSIZE]; /*
-     * Each array entry is atmost 1024 bits
-     * in size
-     */
+    /* Each array entry is atmost 1024 bits in size */
+    private BigInteger[] mArray = new BigInteger[TESTSIZE];
+
     private int lExp = (1 << 14) - 1;
-    private BigInteger[] lArray = new BigInteger[TESTSIZE]; /*
-     * Each array entry is atmost 4096 bits
-     * in size
-     */
+    /* Each array entry is atmost 4096 bits in size */
+    private BigInteger[] lArray = new BigInteger[TESTSIZE];
+
     private int xlExp = (1 << 12) - 1;
-    private BigInteger[] xlArray = new BigInteger[TESTSIZE]; /*
-     * Each array entry is atmost 16384 bits
-     * in size
-     */
+    /* Each array entry is atmost 16384 bits in size */
+    private BigInteger[] xlArray = new BigInteger[TESTSIZE];
+
     private int[] randomExps;
 
     /*
