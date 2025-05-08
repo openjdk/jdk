@@ -504,6 +504,9 @@ public class MOAT {
 
     private static <T> void testImmutableSeqColl(final SequencedCollection<T> c, T t) {
         SequencedCollection<T> r = c.reversed();
+        if (r instanceof List<T> list && list.reversed() != c) {
+            fail("List::reversed()::reversed() was not an identity function: " + r.getClass().getName());
+        }
         testImmutableCollection(c, t);
         testImmutableCollection(r, t);
         THROWS(UnsupportedOperationException.class,

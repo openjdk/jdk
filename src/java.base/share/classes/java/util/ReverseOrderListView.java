@@ -395,6 +395,11 @@ class ReverseOrderListView<E> implements List<E> {
         return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
     }
 
+    @Override
+    public List<E> reversed() {
+        return base;
+    }
+
     static void checkClosedRange(int index, int size) {
         if (index < 0 || index > size) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
