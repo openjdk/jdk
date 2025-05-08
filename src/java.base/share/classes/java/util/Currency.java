@@ -143,7 +143,7 @@ public final class Currency implements Serializable {
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
     private static final Supplier<HashSet<Currency>> available =
-            StableValue.supplier(Currency::getCurrencies);
+            StableValue.supplier(Currency::computeAllCurrencies);
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:
@@ -468,7 +468,7 @@ public final class Currency implements Serializable {
     }
 
     // Builds and returns the set of available Currencies
-    private static HashSet<Currency> getCurrencies() {
+    private static HashSet<Currency> computeAllCurrencies() {
         var sysTime = System.currentTimeMillis();
         HashSet<Currency> available = HashSet.newHashSet(256);
 
