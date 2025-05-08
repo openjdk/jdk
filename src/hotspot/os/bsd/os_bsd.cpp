@@ -658,7 +658,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
           break;
         }
 
-        log_warning(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+        log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
         ::usleep(next_delay);
         next_delay *= 2;
       }
