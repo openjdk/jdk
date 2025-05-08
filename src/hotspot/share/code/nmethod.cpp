@@ -1532,7 +1532,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   run_nmethod_entry_barrier();
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(this);
 
-  if (nm == nullptr) {
+  if (nm_copy == nullptr) {
     return nullptr;
   }
 
