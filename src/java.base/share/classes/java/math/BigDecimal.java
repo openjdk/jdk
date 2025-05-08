@@ -105,8 +105,8 @@ import jdk.internal.util.DecimalDigits;
  * considers members of the same cohort to be equal to each other. In
  * contrast, the {@link equals equals} method requires both the
  * numerical value and representation to be the same for equality to
- * hold. The results of methods like {@link scale} and {@link
- * unscaledValue} will differ for numerically equal values with
+ * hold. The results of methods like {@link #scale()} and {@link
+ * #unscaledValue()} will differ for numerically equal values with
  * different representations.
  *
  * <p>In general the rounding modes and precision setting determine
