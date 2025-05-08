@@ -28,8 +28,11 @@
  * @run main/othervm SlowStream
  */
 
-import java.io.*;
-import java.security.cert.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.security.cert.CertificateFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SlowStream {
@@ -42,17 +45,21 @@ public class SlowStream {
         final var writer = new Thread(() -> {
             try {
                 for (int i = 0; i < 5; i++) {
-                    final var fin = new FileInputStream(new File(new File(
-                            System.getProperty("test.src", "."), "openssl"), "pem"));
-                    final byte[] buffer = new byte[4096];
-                    while (true) {
-                        int len = fin.read(buffer);
-                        if (len < 0) {
-                            break;
+                    try (final var fin = new FileInputStream(new File(
+                            new File(System.getProperty("test.src", "."),
+                                    "openssl"),
+                            "pem"))) {
+
+                        final byte[] buffer = new byte[4096];
+                        while (true) {
+                            int len = fin.read(buffer);
+                            if (len < 0) {
+                                break;
+                            }
+                            outputStream.write(buffer, 0, len);
                         }
-                        outputStream.write(buffer, 0, len);
+                        Thread.sleep(2000);
                     }
-                    Thread.sleep(2000);
                 }
                 outputStream.close();
             } catch (final Exception e) {
