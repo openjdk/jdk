@@ -432,7 +432,7 @@ final class StringConcatHelper {
     @ForceInline
     static String doConcat(String s1, String s2) {
         byte coder = (byte) (s1.coder() | s2.coder());
-        int newLength = (s1.length() + s2.length()) << coder;
+        int newLength = checkOverflow(s1.length() + s2.length()) << coder;
         byte[] buf = newArray(newLength);
         s1.getBytes(buf, 0, coder);
         s2.getBytes(buf, s1.length(), coder);
