@@ -37,19 +37,6 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
-
-void AOTConstantPoolResolver::initialize() {
-  assert(_processed_classes == nullptr, "must be");
-  _processed_classes = new (mtClass)ClassesTable();
-}
-
-void AOTConstantPoolResolver::dispose() {
-  assert(_processed_classes != nullptr, "must be");
-  delete _processed_classes;
-  _processed_classes = nullptr;
-}
-
 // Returns true if we CAN PROVE that cp_index will always resolve to
 // the same information at both dump time and run time. This is a
 // necessary (but not sufficient) condition for pre-resolving cp_index
@@ -144,17 +131,11 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   }
 }
 
-void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
+void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
+    // The cp->resolved_referenced() array is not ready yet, so we can't call resolve_string().
     return;
   }
-  bool first_time;
-  _processed_classes->put_if_absent(ik, &first_time);
-  if (!first_time) {
-    // We have already resolved the constants in class, so no need to do it again.
-    return;
-  }
-
   constantPoolHandle cp(THREAD, ik->constants());
   for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
     switch (cp->tag_at(cp_index).value()) {

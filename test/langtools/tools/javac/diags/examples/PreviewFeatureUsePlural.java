@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.return.before.superclass.initialized
+//key: compiler.warn.preview.feature.use.plural
+//key: compiler.misc.feature.var.syntax.in.implicit.lambda
+//options: -Xlint:preview -XDforcePreview -source ${jdk.version} --enable-preview
 
-class ReturnBeforeSuperclassInit {
-    ReturnBeforeSuperclassInit(boolean maybe) {
-        if (maybe)
-            return;
-        super();
+import java.util.function.Function;
+
+class PreviewFeatureUsePlural {
+    void test() {
+        Function<String, String> f = (var s) -> s;
     }
 }
