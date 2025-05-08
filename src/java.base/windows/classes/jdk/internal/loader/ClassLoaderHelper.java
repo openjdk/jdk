@@ -107,7 +107,7 @@ class ClassLoaderHelper {
     /**
      * Add a dot to the end of the library file name ultimately passed to
      * <code>LoadLibrary</code>. This prevents <code>LoadLibrary</code> from
-     * automatically infering a .DLL extension.
+     * automatically inferring a .DLL extension.
      */
     static String nativeLoaderFileNameSuffix() {
         return ".";
