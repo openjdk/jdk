@@ -289,9 +289,7 @@ public final class CaptureStateUtil {
 
     @ForceInline
     private static MemorySegment allocate(Arena arena) {
-        // We do not need to zero out the segment.
-        return ((NoInitSegmentAllocator) arena)
-                .allocateNoInit(CAPTURE_LAYOUT.byteSize(), CAPTURE_LAYOUT.byteAlignment());
+        return arena.allocate(CAPTURE_LAYOUT.byteSize(), CAPTURE_LAYOUT.byteAlignment());
     }
 
     @ForceInline
