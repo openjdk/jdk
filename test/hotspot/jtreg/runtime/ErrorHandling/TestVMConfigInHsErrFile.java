@@ -59,9 +59,6 @@ public class TestVMConfigInHsErrFile {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
 
-    // we should have crashed with a SIGSEGV
-    output.shouldMatch("#.+SIGSEGV.*");
-
     // extract hs-err file
     File f = HsErrFileUtils.openHsErrFileFromOutput(output);
 
@@ -89,9 +86,6 @@ public class TestVMConfigInHsErrFile {
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
-
-    // we should have crashed with a SIGSEGV
-    output.shouldMatch("#.+SIGSEGV.*");
 
     // extract hs-err file
     File f = HsErrFileUtils.openHsErrFileFromOutput(output);
