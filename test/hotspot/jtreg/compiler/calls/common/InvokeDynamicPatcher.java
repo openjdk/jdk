@@ -23,6 +23,7 @@
 
 package compiler.calls.common;
 
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -64,6 +65,85 @@ public class InvokeDynamicPatcher extends ClassVisitor {
     private static final String ASSERTS_CLASS = "jdk/test/lib/Asserts";
     private static final String ASSERTTRUE_METHOD_NAME = "assertTrue";
 
+    private static final String SRC = """
+            package compiler.calls.common;
+
+            import java.lang.invoke.CallSite;
+            import java.lang.invoke.ConstantCallSite;
+            import java.lang.invoke.MethodHandles;
+            import java.lang.invoke.MethodType;
+
+            /**
+             * A test class checking InvokeDynamic instruction.
+             * This is not quite "ready-to-use" class, since javac can't generate indy
+             * directly(only as part of lambda init) so, this class bytecode should be
+             * patched with method "caller" which uses indy. Other methods can be written in
+             * java for easier support and readability.
+             */
+
+            public class InvokeDynamic extends CallsBase {
+                private static final Object LOCK = new Object();
+
+                public static void main(String args[]) {
+                    new InvokeDynamic().runTest(args);
+                }
+
+                /**
+                 * Caller method to call "callee" method. Must be overwritten with InvokeDynamicPatcher
+                 */
+                @Override
+                public void caller() {
+                }
+
+                /**
+                 * A bootstrap method for invokedynamic
+                 * @param lookup a lookup object
+                 * @param methodName methodName
+                 * @param type method type
+                 * @return CallSite for method
+                 */
+                public static CallSite bootstrapMethod(MethodHandles.Lookup lookup,
+                        String methodName, MethodType type) throws IllegalAccessException,
+                        NoSuchMethodException {
+                    MethodType mtype = MethodType.methodType(boolean.class,
+                            new Class<?>[]{int.class, long.class, float.class,
+                                double.class, String.class});
+                    return new ConstantCallSite(lookup.findVirtual(lookup.lookupClass(),
+                            methodName, mtype));
+                }
+
+                /**
+                 * A callee method, assumed to be called by "caller"
+                 */
+                public boolean callee(int param1, long param2, float param3, double param4,
+                        String param5) {
+                    calleeVisited = true;
+                    CallsBase.checkValues(param1, param2, param3, param4, param5);
+                    return true;
+                }
+
+                /**
+                 * A native callee method, assumed to be called by "caller"
+                 */
+                public native boolean calleeNative(int param1, long param2, float param3,
+                        double param4, String param5);
+
+                /**
+                 * Returns object to lock execution on
+                 * @return lock object
+                 */
+                @Override
+                protected Object getLockObject() {
+                    return LOCK;
+                }
+
+                @Override
+                protected void callerNative() {
+                    throw new Error("No native call for invokedynamic");
+                }
+            }
+            """;
+
     public static void main(String args[]) {
         ClassReader cr;
         Path filePath;
@@ -73,11 +153,7 @@ public class InvokeDynamicPatcher extends ClassVisitor {
         } catch (URISyntaxException ex) {
             throw new Error("TESTBUG: Can't get code source" + ex, ex);
         }
-        try (FileInputStream fis = new FileInputStream(filePath.toFile())) {
-            cr = new ClassReader(fis);
-        } catch (IOException e) {
-            throw new Error("Error reading file", e);
-        }
+        cr = new ClassReader(InMemoryJavaCompiler.compile(InvokeDynamic.class.getName(), SRC, "--release", "21"));
         ClassWriter cw = new ClassWriter(cr,
                 ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cr.accept(new InvokeDynamicPatcher(Opcodes.ASM5, cw), 0);

@@ -139,7 +139,7 @@ public class RedefineGenericSignatureTest {
     }
 
     private byte[] getNewClassBytes() {
-        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource);
+        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource, "--release", "21");
 
         ClassWriter cw = new ClassWriter(0);
         ClassReader cr = new ClassReader(bytecode);

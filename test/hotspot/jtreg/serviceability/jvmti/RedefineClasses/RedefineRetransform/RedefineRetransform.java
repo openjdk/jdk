@@ -30,6 +30,7 @@
  * @library /testlibrary/asm
  * @library /test/lib
  *
+ * @compile --release 21 RedefineRetransform.java
  * @comment main/othervm/native -Xlog:redefine*=trace -agentlib:RedefineRetransform RedefineRetransform
  * @run main/othervm/native -agentlib:RedefineRetransform RedefineRetransform 1
  * @run main/othervm/native -agentlib:RedefineRetransform RedefineRetransform 2
