@@ -200,9 +200,9 @@ klute_raw_t KlassLUTEntry::build_from_klass(const Klass* k) {
 
 #ifdef ASSERT
 void KlassLUTEntry::verify_against_klass(const Klass* k) const {
-
+  char tmp[1024];
 #define PREAMBLE_FORMAT               "Klass: " PTR_FORMAT "(%s), klute " KLUTE_FORMAT ": "
-#define PREAMBLE_ARGS                 p2i(k), k->external_name(), _v.raw
+#define PREAMBLE_ARGS                 p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)), _v.raw
 #define ASSERT_HERE(cond, msg)        assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS);
 #define ASSERT_HERE2(cond, msg, ...)  assert( (cond), PREAMBLE_FORMAT msg, PREAMBLE_ARGS, __VA_ARGS__);
 

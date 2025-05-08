@@ -32,6 +32,7 @@
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/klassKind.hpp"
 #include "runtime/atomic.hpp"
+
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
@@ -257,9 +258,10 @@ void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
     put(nk, newklute);
   }
 
+  char tmp[1024];
   log_debug(klut)("Updated klute for Klass " PTR_FORMAT " (%s) after CLD change:"
                   "old: " KLUTE_FORMAT ", new: " KLUTE_FORMAT,
-                  p2i(k), k->external_name(), oldklute, newklute);
+                  p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)), oldklute, newklute);
 }
 #endif // INCLUDE_CDS
 
