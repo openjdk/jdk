@@ -213,8 +213,6 @@ public class threadgroup001 {
             ThreadReference thread3 = null;
             ThreadReference thread4 = null;
 
-            String threadNames [] = { "Thread2", "Thread3", "Thread4" };
-
             ReferenceType mainthreadClass = null;
             ReferenceType thread2Class    = null;
 
