@@ -59,7 +59,7 @@ public class AddReads {
     private static final String MAIN_CLASS = "com.norequires.Main";
     private static final String APP_CLASS = "org.astro.World";
 
-    private static final String sharedClassA = 
+    private static final String sharedClassA =
         "[class,load] com.norequires.Main source: shared objects file";
     private static final String sharedClassB =
         "[class,load] org.astro.World source: shared objects file";
