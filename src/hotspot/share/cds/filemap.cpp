@@ -1510,7 +1510,7 @@ bool FileMapInfo::can_use_heap_region() {
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
   log_info(cds)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
+  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());

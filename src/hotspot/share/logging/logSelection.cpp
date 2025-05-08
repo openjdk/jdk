@@ -187,7 +187,7 @@ bool LogSelection::selects(const LogTagSet& ts) const {
 #if INCLUDE_CDS
   if (PrintCDSLogsAsAOTLogs && _ntags > 0 && _tags[0] == LogTag::_aot && ts.tag(0) == LogTag::_cds) {
     // Consider it a match
-    i ++;
+    i++;
   }
 #endif
 
