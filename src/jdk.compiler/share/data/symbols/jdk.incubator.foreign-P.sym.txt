@@ -47,3 +47,55 @@ innerclass innerClass jdk/internal/foreign/LayoutPath$GroupElementByIndex outerC
 innerclass innerClass jdk/internal/foreign/LayoutPath$GroupElementByName outerClass jdk/internal/foreign/LayoutPath innerClassName GroupElementByName flags 19
 field name EMPTY_PATH_ELEMENTS descriptor [Ljava/lang/foreign/MemoryLayout$PathElement; flags 19
 
+class name jdk/internal/foreign/abi/LinkerOptions
+header extends java/lang/Object nestMembers jdk/internal/foreign/abi/LinkerOptions$Critical,jdk/internal/foreign/abi/LinkerOptions$CaptureCallState,jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg,jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl flags 21
+innerclass innerClass java/lang/foreign/Linker$Option outerClass java/lang/foreign/Linker innerClassName Option flags 609
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName LinkerOptionImpl flags 609
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName FirstVariadicArg flags 19
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$CaptureCallState outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName CaptureCallState flags 19
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$Critical outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName Critical flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name jdk/internal/foreign/abi/LinkerOptions$CaptureCallState
+header extends java/lang/Record implements jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl nestHost jdk/internal/foreign/abi/LinkerOptions record true flags 31
+recordcomponent name compact descriptor I
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$CaptureCallState outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName CaptureCallState flags 19
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName LinkerOptionImpl flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name <init> descriptor (Ljava/util/Set;)V
+-method name hashCode descriptor ()I
+-method name equals descriptor (Ljava/lang/Object;)Z
+method name <init> descriptor (I)V flags 1 methodParameters 0:compact
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name compact descriptor ()I flags 1
+
+class name jdk/internal/foreign/abi/LinkerOptions$Critical
+header extends java/lang/Enum implements jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl nestHost jdk/internal/foreign/abi/LinkerOptions flags 4031 signature Ljava/lang/Enum<Ljdk/internal/foreign/abi/LinkerOptions$Critical;>;Ljdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl;
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$Critical outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName Critical flags 4019
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName LinkerOptionImpl flags 609
+-field name ALLOW_HEAP descriptor Ljdk/internal/foreign/abi/LinkerOptions$Critical;
+-field name DONT_ALLOW_HEAP descriptor Ljdk/internal/foreign/abi/LinkerOptions$Critical;
+-method name <init> descriptor (Z)V
+-method name toString descriptor ()Ljava/lang/String;
+-method name hashCode descriptor ()I
+-method name equals descriptor (Ljava/lang/Object;)Z
+field name ALLOW_HEAP descriptor Ljdk/internal/foreign/abi/LinkerOptions$Critical; flags 4019
+field name DONT_ALLOW_HEAP descriptor Ljdk/internal/foreign/abi/LinkerOptions$Critical; flags 4019
+method name values descriptor ()[Ljdk/internal/foreign/abi/LinkerOptions$Critical; flags 9
+method name valueOf descriptor (Ljava/lang/String;)Ljdk/internal/foreign/abi/LinkerOptions$Critical; flags 9 methodParameters 8000:null
+
+class name jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg
+-method name hashCode descriptor ()I
+-method name equals descriptor (Ljava/lang/Object;)Z
+method name hashCode descriptor ()I flags 1
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+
+class name jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl
+header extends java/lang/Object implements java/lang/foreign/Linker$Option nestHost jdk/internal/foreign/abi/LinkerOptions sealed true permittedSubclasses jdk/internal/foreign/abi/LinkerOptions$CaptureCallState,jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg,jdk/internal/foreign/abi/LinkerOptions$Critical flags 601
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName LinkerOptionImpl flags 609
+innerclass innerClass java/lang/foreign/Linker$Option outerClass java/lang/foreign/Linker innerClassName Option flags 609
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$CaptureCallState outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName CaptureCallState flags 19
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName FirstVariadicArg flags 19
+innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$Critical outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName Critical flags 4019
+
