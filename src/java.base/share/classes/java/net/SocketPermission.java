@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ import sun.security.util.Debug;
  * <P>
  * The actions string is converted to lowercase before processing.
  *
- * @deprecated
+ * @apiNote
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -126,7 +126,6 @@ import sun.security.util.Debug;
  * @serial exclude
  */
 
-@Deprecated(since = "25", forRemoval = true)
 public final class SocketPermission extends Permission
     implements java.io.Serializable
 {
@@ -1145,7 +1144,6 @@ public final class SocketPermission extends Permission
      * @return a new PermissionCollection object suitable for storing SocketPermissions.
      */
     @Override
-    @SuppressWarnings("removal")
     public PermissionCollection newPermissionCollection() {
         return new SocketPermissionCollection();
     }
@@ -1307,8 +1305,6 @@ else its the cname?
  * @serial include
  */
 
-@SuppressWarnings("removal")
-@Deprecated(since = "25", forRemoval = true)
 final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {
