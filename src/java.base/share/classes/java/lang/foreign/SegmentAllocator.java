@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
-import jdk.internal.foreign.NoInitSegmentAllocator;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -721,22 +720,22 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(long byteSize) {
-        return this instanceof NoInitSegmentAllocator noInit
-                ? noInit.allocateNoInit(byteSize, 1)
-                : allocate(byteSize);
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(byteSize, 1) :
+                allocate(byteSize);
     }
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout) {
-        return this instanceof NoInitSegmentAllocator noInit
-                ? noInit.allocateNoInit(layout.byteSize(), layout.byteAlignment())
-                : allocate(layout);
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
+                allocate(layout);
     }
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        return this instanceof NoInitSegmentAllocator noInit
-                ? noInit.allocateNoInit(layout.byteSize() * size, layout.byteAlignment())
-                : allocate(layout, size);
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+                allocate(layout, size);
     }
 }

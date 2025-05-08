@@ -25,12 +25,10 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.vm.annotation.ForceInline;
-
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
 
-public final class ArenaImpl implements Arena, NoInitSegmentAllocator {
+public final class ArenaImpl implements Arena {
 
     private final MemorySessionImpl session;
     private final boolean shouldReserveMemory;
@@ -49,13 +47,10 @@ public final class ArenaImpl implements Arena, NoInitSegmentAllocator {
         session.close();
     }
 
-    @ForceInline
-    @Override
     public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
         return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, false);
     }
 
-    @ForceInline
     @Override
     public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
         return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, true);

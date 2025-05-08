@@ -24,7 +24,6 @@
 package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
-import jdk.internal.lang.stable.InternalStableFactories;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Arena;
@@ -37,7 +36,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -76,7 +74,7 @@ public final class CaptureStateUtil {
                 inputs.add(new BasicKey(c, layout.name().orElseThrow()));
             }
         }
-        BASIC_HANDLE_CACHE = InternalStableFactories.function(inputs, UNDERLYING_MAKE_BASIC_HANDLE);
+        BASIC_HANDLE_CACHE = StableValue.function(inputs, UNDERLYING_MAKE_BASIC_HANDLE);
     }
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
@@ -354,7 +352,7 @@ public final class CaptureStateUtil {
     };
 
     private static final IntFunction<MethodHandle> HANDLES_CACHE =
-            InternalStableFactories.intFunction(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
+            StableValue.intFunction(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
