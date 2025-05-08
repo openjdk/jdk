@@ -1167,6 +1167,7 @@ private:
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.
+  // This field is checked by the interpreter which expects it to be an integer.
   int               _interp_only_mode;
 
  public:
