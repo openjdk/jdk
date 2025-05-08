@@ -98,7 +98,7 @@ JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --override-methods=summary
+    --override-methods=summary --syntax-highlight
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
@@ -262,7 +262,7 @@ define create_overview_file
   $$($1_OVERVIEW): $$($1_OVERVIEW_VARDEPS_FILE)
 	$$(call LogInfo, Creating overview.html for $1)
 	$$(call MakeDir, $$(@D))
-	$$(ECHO) -n '$$($1_OVERVIEW_TEXT)' > $$@
+	$$(PRINTF) "%s" '$$($1_OVERVIEW_TEXT)' > $$@
 endef
 
 ################################################################################
