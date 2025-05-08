@@ -125,7 +125,7 @@ public class ZipInputStreamCRCCheck {
         final int currentCRC;
         if (hasDataDescriptor) {
             final int ddSigStart = findDataDescriptor(bb);
-            // CRC value resides 4 bytes after the data descriptor signature
+            // CRC value resides 4 bytes after the start of the data descriptor signature
             crcOffset = ddSigStart + 4;
         } else {
             // CRC value resides 14 bytes after the start of the LOC (which starts at the
