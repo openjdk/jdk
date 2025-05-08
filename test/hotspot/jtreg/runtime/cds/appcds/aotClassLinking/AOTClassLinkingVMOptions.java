@@ -61,24 +61,24 @@ public class AOTClassLinkingVMOptions {
 
         testCase("Archived full module graph must be enabled at runtime");
         TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used when archived full module graph is not used");
 
         testCase("Cannot use -Djava.system.class.loader");
         TestCommon.run("-cp", appJar, "-Djava.system.class.loader=dummy", "Hello")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used when the java.system.class.loader property is specified.");
 
         testCase("Cannot use a different main module");
         TestCommon.run("-cp", appJar, "-Xlog:cds", "-m", "jdk.compiler/com.sun.tools.javac.Main")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used when archived full module graph is not used.");
         testCase("Cannot use security manager");
         TestCommon.run("-cp", appJar, "-Xlog:cds", "-Djava.security.manager=allow")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used with -Djava.security.manager=allow.");
         TestCommon.run("-cp", appJar, "-Xlog:cds", "-Djava.security.manager=default")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used with -Djava.security.manager=default.");
 
         // Dumping with AOTInvokeDynamicLinking disabled
@@ -91,7 +91,7 @@ public class AOTClassLinkingVMOptions {
 
         testCase("Archived full module graph must be enabled at runtime (with -XX:-AOTInvokeDynamicLinking)");
         TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
-            .assertAbnormalExit("CDS archive has aot-linked classes." +
+            .assertAbnormalExit("shared archive file has aot-linked classes." +
                                 " It cannot be used when archived full module graph is not used");
 
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
@@ -132,7 +132,7 @@ public class AOTClassLinkingVMOptions {
         TestCommon.run("-Xlog:cds",
                        "--module-path", modulePath + "/bad",
                        "-m", MAIN_MODULE)
-            .assertAbnormalExit("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+            .assertAbnormalExit("shared archive file has aot-linked classes. It cannot be used when archived full module graph is not used.");
 
         testCase("Cannot use mis-matched --add-modules");
         TestCommon.testDump(null, appClasses,
@@ -150,6 +150,6 @@ public class AOTClassLinkingVMOptions {
                        "--add-modules", "java.base",
                        MAIN_CLASS)
             .assertAbnormalExit("Mismatched values for property jdk.module.addmods",
-                                "CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+                                "shared archive file has aot-linked classes. It cannot be used when archived full module graph is not used.");
     }
 }
