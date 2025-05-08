@@ -1008,9 +1008,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
         if (!expectAppImageFile()) {
-            assertFileInAppImage(lookupPath, null);
+            assertFileNotInAppImage(lookupPath);
         } else {
-            assertFileInAppImage(lookupPath, lookupPath);
+            assertFileInAppImage(lookupPath);
 
             if (TKit.isOSX()) {
                 final Path rootDir = isImagePackageType() ? outputBundle() :
@@ -1035,22 +1035,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         final Path lookupPath = PackageFile.getPathInAppImage(Path.of(""));
 
         if (isRuntime() || isImagePackageType() || TKit.isLinux()) {
-            assertFileInAppImage(lookupPath, null);
+            assertFileNotInAppImage(lookupPath);
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
                 String appImage = getArgumentValue("--app-image");
                 if (AppImageFile.load(Path.of(appImage)).macSigned()) {
-                    assertFileInAppImage(lookupPath, null);
+                    assertFileNotInAppImage(lookupPath);
                 } else {
-                    assertFileInAppImage(lookupPath, lookupPath);
+                    assertFileInAppImage(lookupPath);
                 }
             } else {
-                assertFileInAppImage(lookupPath, lookupPath);
+                assertFileInAppImage(lookupPath);
             }
         }
     }
 
+    public void assertFileInAppImage(Path expectedPath) {
+        assertFileInAppImage(expectedPath.getFileName(), expectedPath);
+    }
+
+    public void assertFileNotInAppImage(Path filename) {
+        assertFileInAppImage(filename, null);
+    }
+
     private void assertFileInAppImage(Path filename, Path expectedPath) {
+        if (expectedPath != null) {
+            if (expectedPath.isAbsolute()) {
+                throw new IllegalArgumentException();
+            }
+            if (!expectedPath.getFileName().equals(filename.getFileName())) {
+                throw new IllegalArgumentException();
+            }
+        }
+
         if (filename.getNameCount() > 1) {
             assertFileInAppImage(filename.getFileName(), expectedPath);
             return;

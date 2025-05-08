@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,18 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8160699
- * @summary Verify that having finished executing a switch statement live locals are exactly the same as it was upon entry of the switch.
- * @run main SwitchExitStateTest
- */
+#include "export.h"
 
-public class SwitchExitStateTest {
-    public static void main(String[] args) throws Exception {
-        switch (0) {
-        case 0:
-            String a = "";
-            break;
-        default:
-            throw new Exception("Unknown ");
-        }
+typedef struct {
+    double x;
+    double y;
+} DoublePoint;
 
-        switch (0) {
-        case 0:
-            String b = "";
-            break;
-        default:
-            throw new Exception("Unknown ");
-        }
-    }
+EXPORT DoublePoint unit() {
+    DoublePoint result = { 1, 0 };
+    return result;
+}
+
+EXPORT void unit_ptr(DoublePoint* out) {
+  *out = unit();
 }

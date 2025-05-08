@@ -26,7 +26,7 @@
  * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545
  * 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
  * 8245147 8245586 8257453 8286035 8306586 8320806 8306586 8319414 8330183
- * 8342982 8355748
+ * 8342982 8355748 8356108
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -402,6 +402,14 @@ public class Versions {
                                         default        -> o.toString();
                                         });
                  }
+             }
+             """),
+
+         SOURCE_25(25, "New25.java",
+             // New feature in 25: module import declarations
+             """
+             import module java.base;
+             public class New25 {
              }
              """),
             ; // Reduce code churn when appending new constants
