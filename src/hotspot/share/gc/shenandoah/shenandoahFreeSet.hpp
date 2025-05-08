@@ -80,6 +80,7 @@ private:
   // and _used[p], even though the region may have been removed from the free set.
   size_t _capacity[UIntNumPartitions];
   size_t _used[UIntNumPartitions];
+  size_t _available[UIntNumPartitions];
   size_t _region_counts[UIntNumPartitions];
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
@@ -220,17 +221,40 @@ public:
 
   inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    return _capacity[int(which_partition)] - _used[int(which_partition)];
+    shenandoah_assert_heaplocked();
+    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+    return _available[int(which_partition)];
+  }
+
+  // Acquire heap lock and return available_in, assuming heap lock is not acquired by the caller.
+  inline size_t available_in_under_lock(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    shenandoah_assert_not_heaplocked();
+#ifdef ASSERT
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
+    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+#endif
+    return _available[int(which_partition)];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _capacity[int(which_partition)] = value;
+    _available[int(which_partition)] = value - _used[int(which_partition)];
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[int(which_partition)] = value;
+    _available[int(which_partition)] = _capacity[int(which_partition)] - value;
   }
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
@@ -441,13 +465,15 @@ public:
   // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
   // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
   // rebuild are not counted as part of capacity.)
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
 
-  inline size_t available() const {
-    assert(used() <= capacity(), "must use less than capacity");
-    return capacity() - used();
-  }
+  // All three of the following functions may produce stale data if called without owning the global heap lock.
+  // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
+  // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
+  // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
+  // locked action can be seen by these unlocked functions.
+  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
+  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
+  inline size_t available() const { return _partitions.available_in_under_lock(ShenandoahFreeSetPartitionId::Mutator); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
