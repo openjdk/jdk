@@ -125,7 +125,7 @@ final class TestCaptureStateUtil {
         assertTrue(wrongRetEx.getMessage().contains("does not return an int or a long"));
 
         var wrongCaptureName = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, "foo"));
-        assertEquals("Input not allowed: BasicKey[returnType=long, stateName=foo]", wrongCaptureName.getMessage());
+        assertEquals("Input not allowed: SegmentExtractorKey[returnType=long, stateName=foo]", wrongCaptureName.getMessage());
 
         assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, ERRNO_NAME));
         assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));

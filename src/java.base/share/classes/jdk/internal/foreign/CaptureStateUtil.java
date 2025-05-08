@@ -50,40 +50,41 @@ public final class CaptureStateUtil {
     private static final StructLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
     private static final BufferStack POOL = BufferStack.of(CAPTURE_LAYOUT);
 
-    // Do not use a lambda in order to allow early use in the init sequence
-    private static final Function<BasicKey, MethodHandle> UNDERLYING_MAKE_BASIC_HANDLE = new Function<>() {
-        @Override
-        public MethodHandle apply(BasicKey basicKey) {
-            return makeBasicHandle(basicKey);
-        }
-    };
-
     // The `BASIC_HANDLE_CACHE` contains the common "basic handles" that can be reused for
     // all adapted method handles. Keeping as much as possible reusable reduces the number
     // of combinators needed to form an adapted method handle.
     // The function is lazily computed.
     //
-    private static final Function<BasicKey, MethodHandle> BASIC_HANDLE_CACHE;
+    private static final Function<SegmentExtractorKey, MethodHandle> SEGMENT_EXTRACTION_HANDLE_CACHE;
 
     static {
-        final Set<BasicKey> inputs = new HashSet<>();
+        final Set<SegmentExtractorKey> inputs = new HashSet<>();
         // The Cartesian product : (int.class, long.class) x ("errno", ...)
         // Do not use Streams in order to enable "early" use in the init sequence.
         for (Class<?> c : new Class<?>[]{int.class, long.class}) {
             for (MemoryLayout layout : CAPTURE_LAYOUT.memberLayouts()) {
-                inputs.add(new BasicKey(c, layout.name().orElseThrow()));
+                inputs.add(new SegmentExtractorKey(c, layout.name().orElseThrow()));
             }
         }
-        BASIC_HANDLE_CACHE = StableValue.function(inputs, UNDERLYING_MAKE_BASIC_HANDLE);
+
+        // Do not use a lambda in order to allow early use in the init sequence
+        final Function<SegmentExtractorKey, MethodHandle> segmentExtractionHandle = new Function<>() {
+            @Override
+            public MethodHandle apply(SegmentExtractorKey basicKey) {
+                return makeSegmentExtractionHandle(basicKey);
+            }
+        };
+
+        SEGMENT_EXTRACTION_HANDLE_CACHE = StableValue.function(inputs, segmentExtractionHandle);
     }
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
     // specific "basic handle" in the `BASIC_HANDLE_CACHE`.
     //   returnType in {int.class | long.class}
     //   stateName can be anything non-null but should be in {"GetLastError" | "WSAGetLastError" | "errno"}
-    private record BasicKey(Class<?> returnType, String stateName) {
+    private record SegmentExtractorKey(Class<?> returnType, String stateName) {
 
-        BasicKey(MethodHandle target, String stateName) {
+        SegmentExtractorKey(MethodHandle target, String stateName) {
             this(returnType(target), Objects.requireNonNull(stateName));
         }
 
@@ -106,17 +107,6 @@ public final class CaptureStateUtil {
                     + " does not " + info);
         }
 
-        @Override
-        public int hashCode() {
-            return returnType.hashCode() ^ stateName.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return obj instanceof BasicKey(Class<?> oReturnType, String oStateName)
-                    && returnType.equals(oReturnType)
-                    && stateName.equals(oStateName);
-        }
     }
 
     private CaptureStateUtil() {}
@@ -193,16 +183,16 @@ public final class CaptureStateUtil {
     public static MethodHandle adaptSystemCall(MethodHandle target,
                                                String stateName) {
         // Invariants checked in the BasicKey record
-        final BasicKey basicKey = new BasicKey(target, stateName);
+        final SegmentExtractorKey key = new SegmentExtractorKey(target, stateName);
 
         // ((int | long), MemorySegment)(int | long)
-        final MethodHandle basicHandle = BASIC_HANDLE_CACHE.apply(basicKey);
+        final MethodHandle segmentExtractor = SEGMENT_EXTRACTION_HANDLE_CACHE.apply(key);
 
         // Make `target` specific adaptations of the basic handle
 
         // Pre-pend all the parameters from the `target` MH.
         // (C0=MemorySegment, C1-Cn, MemorySegment)(int|long)
-        MethodHandle innerAdapted = MethodHandles.collectArguments(basicHandle, 0, target);
+        MethodHandle innerAdapted = MethodHandles.collectArguments(segmentExtractor, 0, target);
 
         final int[] perm = new int[target.type().parameterCount() + 1];
         for (int i = 0; i < target.type().parameterCount(); i++) {
@@ -220,7 +210,7 @@ public final class CaptureStateUtil {
 
         // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
-        MethodHandle cleanup = MethodHandles.identity(basicKey.returnType());
+        MethodHandle cleanup = MethodHandles.identity(key.returnType());
         // Add a dummy `Throwable` argument for the cleanup action.
         // This means, anything thrown will just be propagated.
         // (Throwable, (int|long))(int|long)
@@ -241,9 +231,9 @@ public final class CaptureStateUtil {
         return MethodHandles.collectArguments(tryFinally, 0, HANDLES_CACHE.apply(ACQUIRE_ARENA));
     }
 
-    private static MethodHandle makeBasicHandle(BasicKey basicKey) {
+    private static MethodHandle makeSegmentExtractionHandle(SegmentExtractorKey segmentExtractorKey) {
         final VarHandle vh = CAPTURE_LAYOUT.varHandle(
-                MemoryLayout.PathElement.groupElement(basicKey.stateName()));
+                MemoryLayout.PathElement.groupElement(segmentExtractorKey.stateName()));
         // This MH is used to extract the named captured state
         // from the capturing `MemorySegment`.
         // (MemorySegment, long)int
@@ -265,7 +255,7 @@ public final class CaptureStateUtil {
         //         return -(X)intExtractor.invokeExact(segment);
         //     }
         // }
-        if (basicKey.returnType().equals(int.class)) {
+        if (segmentExtractorKey.returnType().equals(int.class)) {
             // (int, MemorySegment)int
             return MethodHandles.guardWithTest(
                     HANDLES_CACHE.apply(NON_NEGATIVE_INT),

@@ -15517,7 +15517,7 @@
                   </uiComponent>
                </regions>
             </uiComponent>
-            <uiIconRegion name="ErrorIcon" subregion="true" key="errorIcon" basicKey="OptionPane.errorIcon">
+            <uiIconRegion name="ErrorIcon" subregion="true" key="errorIcon" segmentExtractorKey="OptionPane.errorIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -15672,7 +15672,7 @@
                <borderStates/>
                <regions/>
             </uiIconRegion>
-            <uiIconRegion name="InformationIcon" subregion="true" key="informationIcon" basicKey="OptionPane.informationIcon">
+            <uiIconRegion name="InformationIcon" subregion="true" key="informationIcon" segmentExtractorKey="OptionPane.informationIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -15813,7 +15813,7 @@
                <borderStates/>
                <regions/>
             </uiIconRegion>
-            <uiIconRegion name="QuestionIcon" subregion="true" key="questionIcon" basicKey="OptionPane.questionIcon">
+            <uiIconRegion name="QuestionIcon" subregion="true" key="questionIcon" segmentExtractorKey="OptionPane.questionIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -15937,7 +15937,7 @@
                <borderStates/>
                <regions/>
             </uiIconRegion>
-            <uiIconRegion name="WarningIcon" subregion="true" key="warningIcon" basicKey="OptionPane.warningIcon">
+            <uiIconRegion name="WarningIcon" subregion="true" key="warningIcon" segmentExtractorKey="OptionPane.warningIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -23159,7 +23159,7 @@
          <foregroundStates/>
          <borderStates/>
          <regions>
-            <uiIconRegion name="AscendingSortIcon" subregion="true" key="ascendingSortIcon" basicKey="Table.ascendingSortIcon">
+            <uiIconRegion name="AscendingSortIcon" subregion="true" key="ascendingSortIcon" segmentExtractorKey="Table.ascendingSortIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -23224,7 +23224,7 @@
                <borderStates/>
                <regions/>
             </uiIconRegion>
-            <uiIconRegion name="DescendingSortIcon" subregion="true" key="descendingSortIcon" basicKey="Table.descendingSortIcon">
+            <uiIconRegion name="DescendingSortIcon" subregion="true" key="descendingSortIcon" segmentExtractorKey="Table.descendingSortIcon">
                <contentMargins top="0" bottom="0" left="0" right="0"/>
                <style>
                   <textForeground/>
@@ -27659,7 +27659,7 @@
                <borderStates/>
                <regions/>
             </uiComponent>
-            <uiIconRegion name="leafIcon" subregion="true" key="leafIcon" basicKey="Tree.leafIcon">
+            <uiIconRegion name="leafIcon" subregion="true" key="leafIcon" segmentExtractorKey="Tree.leafIcon">
                 <contentMargins top="0" bottom="0" left="0" right="0"/>
                 <style>
                     <textForeground/>
@@ -27791,7 +27791,7 @@
                 <borderStates/>
                 <regions/>
             </uiIconRegion>
-            <uiIconRegion name="closedIcon" subregion="true" key="closedIcon" basicKey="Tree.closedIcon">
+            <uiIconRegion name="closedIcon" subregion="true" key="closedIcon" segmentExtractorKey="Tree.closedIcon">
                 <contentMargins top="0" bottom="0" left="0" right="0"/>
                 <style>
                     <textForeground/>
@@ -27999,7 +27999,7 @@
                 <borderStates/>
                 <regions/>
             </uiIconRegion>
-                <uiIconRegion name="openIcon" subregion="true" key="openIcon" basicKey="Tree.openIcon">
+                <uiIconRegion name="openIcon" subregion="true" key="openIcon" segmentExtractorKey="Tree.openIcon">
                     <contentMargins top="0" bottom="0" left="0" right="0"/>
                     <style>
                         <textForeground/>
