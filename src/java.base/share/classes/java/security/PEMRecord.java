@@ -37,13 +37,14 @@ import java.util.Base64;
  * Java API cryptographic object is not desired or there is no other
  * {@code DEREncodable} for the type.
  *
- * <p> Types with Java API representation, such as a {@link PrivateKey},
+ * <p>Types with Java API representation, such as a {@link PrivateKey},
  * can return a {@code PEMRecord} when used with
  * {@linkplain PEMDecoder#decode(String, Class)}. Using {@code PEMRecord} can
  * be helpful when generating a representation is not desired or when used
- * with {@code leadingData}.
+ * with {@code leadingData}.  {@code leadingData} can depend on which
+ * decode() methods is used.
  *
- * <p> {@code PEMRecord} may have a null {@code type} and {@code pem} when
+ * <p>{@code PEMRecord} may have a null {@code type} and {@code pem} when
  * {@code PEMDecoder.decode()} methods encounter only non-PEM data and has
  * reached the end of the stream. If there is PEM data, {@code type} and
  * {@code pem} will both be non-null. {@code leadingData} may be null if the
@@ -61,6 +62,9 @@ import java.util.Base64;
  *
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
+ *
+ * @see PEMDecoder
+ * @see PEMEncoder
  */
 public record PEMRecord(String type, String pem, byte[] leadingData)
     implements DEREncodable {

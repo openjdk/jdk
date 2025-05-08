@@ -103,7 +103,7 @@ public class PEMDecoderTest {
         test(PEMData.ecCSR);
 
         System.out.println("Checking if ecCSR with preData:");
-        DEREncodable result = test(PEMData.ecCSRWithData);
+        DEREncodable result = PEMDecoder.of().decode(PEMData.ecCSRWithData.pem(), PEMRecord.class);
         if (result instanceof PEMRecord rec) {
             if (PEMData.preData.compareTo(new String(rec.leadingData())) != 0) {
                 System.err.println("expected: " + PEMData.preData);

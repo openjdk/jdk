@@ -44,8 +44,8 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * PEMEncoder is an immutable class for Privacy-Enhanced Mail (PEM)
- * data.  PEM is a textual encoding used to store and transfer security
+ * {@code PEMEncoder} is used for encoding Privacy-Enhanced Mail (PEM) data.
+ * PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRL).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
  * Base64-formatted binary encoding enclosed by a type-identifying header
@@ -72,6 +72,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>{@code String} values returned by this class use character set
  * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1}.
  *
+ * <p>This class is immutable and thread-safe.
+ *
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
  * {@snippet lang = java:
@@ -81,6 +83,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @see PKCS8EncodedKeySpec
  * @see X509EncodedKeySpec
+ * @see PEMDecoder
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
