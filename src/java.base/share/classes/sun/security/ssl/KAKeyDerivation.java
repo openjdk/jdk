@@ -28,15 +28,14 @@ import javax.crypto.KDF;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
-
-import jdk.internal.access.SharedSecrets;
+import sun.security.util.KeyUtil;
 
 /**
  * A common class for creating various KeyDerivation types.
@@ -91,9 +90,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         } finally {
-            if (preMasterSecret instanceof SecretKeySpec s) {
-                SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
-            }
+            KeyUtil.destroySecretKeys(preMasterSecret);
         }
     }
 
@@ -137,13 +134,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         } finally {
-            SecretKey tbcKeys[] = { sharedSecret, earlySecret, saltSecret };
-            for (SecretKey key : tbcKeys) {
-                if (key instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
-            }
+            KeyUtil.destroySecretKeys(sharedSecret, earlySecret, saltSecret);
         }
     }
 }

@@ -33,7 +33,6 @@ import javax.crypto.KDF;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
@@ -43,8 +42,7 @@ import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
-
-import jdk.internal.access.SharedSecrets;
+import sun.security.util.KeyUtil;
 
 import static sun.security.ssl.SSLExtension.*;
 import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
@@ -579,9 +577,7 @@ final class PreSharedKeyExtension {
                         "Incorrect PSK binder value");
             }
         } finally {
-            if (binderKey instanceof SecretKeySpec s) {
-                SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
-            }
+            KeyUtil.destroySecretKeys(binderKey);
         }
     }
 
@@ -747,10 +743,7 @@ final class PreSharedKeyExtension {
                 chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
                 return pskMessage.getEncoded();
             } finally {
-                if (binderKey instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
+                KeyUtil.destroySecretKeys(binderKey);
             }
         }
 
@@ -822,10 +815,7 @@ final class PreSharedKeyExtension {
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
                 throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
             } finally {
-                if (finishedKey instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
+                KeyUtil.destroySecretKeys(finishedKey);
             }
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);

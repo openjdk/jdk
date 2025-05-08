@@ -40,7 +40,6 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
 import jdk.internal.event.EventHelper;
@@ -52,8 +51,7 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
-
-import jdk.internal.access.SharedSecrets;
+import sun.security.util.KeyUtil;
 
 /**
  * Pack of the Finished handshake message.
@@ -353,10 +351,7 @@ final class Finished {
                 throw new ProviderException(
                         "Failed to generate verify_data", ex);
             } finally {
-                if (finishedSecret instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
+                KeyUtil.destroySecretKeys(finishedSecret);
             }
         }
     }
@@ -849,10 +844,7 @@ final class Finished {
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
             } finally {
-                if (saltSecret instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
+                KeyUtil.destroySecretKeys(saltSecret);
             }
 
             /*
@@ -1008,10 +1000,7 @@ final class Finished {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
             } finally {
-                if (saltSecret instanceof SecretKeySpec s) {
-                    SharedSecrets.getJavaxCryptoSpecAccess()
-                            .clearSecretKeySpec(s);
-                }
+                KeyUtil.destroySecretKeys(saltSecret);
             }
 
             //

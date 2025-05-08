@@ -36,6 +36,9 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+import jdk.internal.access.SharedSecrets;
 
 import sun.security.jca.JCAUtil;
 
@@ -444,6 +447,24 @@ public final class KeyUtil {
     public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
         return alg.equalsIgnoreCase("TlsPremasterSecret")
                 || alg.equalsIgnoreCase("Generic");
+    }
+
+    // destroy secret keys in a best-effort way
+    public static void destroySecretKeys(SecretKey... keys) {
+        for (SecretKey k : keys) {
+            if (k != null) {
+                if (k instanceof SecretKeySpec sk) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(sk);
+                } else {
+                    try {
+                        k.destroy();
+                    } catch (DestroyFailedException e) {
+                        // swallow
+                    }
+                }
+            }
+        }
     }
 }
 

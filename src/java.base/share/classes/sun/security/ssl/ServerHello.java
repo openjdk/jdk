@@ -1221,7 +1221,7 @@ final class ServerHello {
             KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
                     HKDFParameterSpec.ofExtract().addIKM(psk)
-                    .extractOnly());
+                    .addSalt(new byte[hashAlg.hashLength]).extractOnly());
             hc.handshakeKeyDerivation =
                     new SSLSecretDerivation(hc, earlySecret);
         } catch (GeneralSecurityException gse) {
