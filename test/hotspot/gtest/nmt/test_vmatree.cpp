@@ -763,8 +763,6 @@ constexpr const size_t SimpleVMATracker::num_pages;
 TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   // In this test we use ASSERT macros from gtest instead of EXPECT
   // as any error will propagate and become larger as the test progresses.
-  tty->print_cr("Skipped");
-  return;
   SimpleVMATracker* tr = new SimpleVMATracker();
   const size_t page_size = tr->page_size;
   VMATree tree;
@@ -2772,13 +2770,13 @@ TEST_VM_F(NMTVMATreeTest, UpdateRegionTest) {
                                {{Rs,   mtGC, s0, ES},        ReleaseRequest, {Rl, mtNone, ES, ES}, {-a, 0}, {0,  0}},
                                {{Rs,   mtGC, s0, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {-a, a}, {0,  0}}, // diff tag
                                {{Rs, mtTest, s0, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  0}, {0,  0}}, // same tag
-                               {{Rs,   mtGC, s0, ES},         CommitRequest, { C, ReqTag, s0, s2}, {0,  0}, {0,  a}},
+                               {{Rs,   mtGC, s0, ES},         CommitRequest, { C, ReqTag, s0, s2}, {-a, a}, {0,  a}},
                                {{Rs,   mtGC, s0, ES},  CopyTagCommitRequest, { C,   mtGC, s0, s2}, {0,  0}, {0,  a}},
                                {{Rs,   mtGC, s0, ES},       UncommitRequest, {Rs,   mtGC, s0, ES}, {0,  0}, {0,  0}},
                                {{ C,   mtGC, s0, s1},        ReleaseRequest, {Rl, mtNone, ES, ES}, {-a, 0}, {-a, 0}},
                                {{ C,   mtGC, s0, s1},        ReserveRequest, {Rs, ReqTag, s2, ES}, {-a, a}, {-a, 0}}, // diff tag
                                {{ C, mtTest, s0, s1},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  0}, {-a, 0}}, // same tag
-                               {{ C,   mtGC, s0, s1},         CommitRequest, { C, ReqTag, s0, s2}, {0,  0}, {-a, a}},
+                               {{ C,   mtGC, s0, s1},         CommitRequest, { C, ReqTag, s0, s2}, {-a, a}, {-a, a}},
                                {{ C,   mtGC, s0, s1},  CopyTagCommitRequest, { C,   mtGC, s0, s2}, {0,  0}, {-a, a}},
                                {{ C,   mtGC, s0, s1},       UncommitRequest, {Rs,   mtGC, s0, ES}, {0,  0}, {-a, 0}}
                               };

@@ -177,7 +177,7 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
   SingleDiff::delta reserve[4][3*2] = {// Rl    Rs     C
                                          {0,0, -a,0, -a,0 },   // op == Release
                                          {0,a, -a,a, -a,a },   // op == Reserve
-                                         {0,a,  0,0,  0,0 },   // op == Commit
+                                         {0,a, -a,a, -a,a },   // op == Commit
                                          {0,0,  0,0,  0,0 }    // op == Uncommit
                                       };
   SingleDiff::delta commit[4][3*2] = {// Rl    Rs     C
