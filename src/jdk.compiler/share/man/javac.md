@@ -596,6 +596,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `finally`: Warns about `finally` clauses that do not terminate normally.
 
+    -   `identity`: Warns about use of a value-based class where an identity
+        class is expected
+
     -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions

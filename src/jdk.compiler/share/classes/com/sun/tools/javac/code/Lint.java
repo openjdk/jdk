@@ -263,6 +263,11 @@ public class Lint {
         FINALLY("finally"),
 
         /**
+         * Warn about uses of @ValueBased classes where an identity class is expected.
+         */
+        IDENTITY("identity"),
+
+        /**
          * Warn about use of incubating modules.
          *
          * <p>
@@ -367,12 +372,7 @@ public class Lint {
         /**
          * Warn about synchronization attempts on instances of @ValueBased classes.
          */
-        SYNCHRONIZATION("synchronization"),
-
-        /**
-         * Warn about uses of @ValueBased classes where an identity class is expected.
-         */
-        IDENTITY("identity"),
+        SYNCHRONIZATION("synchronization", IDENTITY),
 
         /**
          * Warn about issues relating to use of text blocks
@@ -417,9 +417,22 @@ public class Lint {
         }
 
         LintCategory(String option, boolean annotationSuppression) {
+            this(option, annotationSuppression, null);
+        }
+
+        LintCategory(String option, LintCategory alias) {
+            this(option, true, alias);
+        }
+
+        LintCategory(String option, boolean annotationSuppression, LintCategory alias) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
+            this.alias = alias;
             map.put(option, this);
+            // we need to do this as forward references are not allowed
+            if (alias != null) {
+                alias.alias = this;
+            }
         }
 
         /**
@@ -441,6 +454,8 @@ public class Lint {
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
+
+        public LintCategory alias;
     }
 
     /**
@@ -450,7 +465,7 @@ public class Lint {
      */
     public boolean isEnabled(LintCategory lc) {
         initializeRootIfNeeded();
-        return values.contains(lc);
+        return values.contains(lc) || (lc.alias != null && values.contains(lc.alias));
     }
 
     /**
@@ -461,7 +476,7 @@ public class Lint {
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
-        return suppressedValues.contains(lc);
+        return suppressedValues.contains(lc) || (lc.alias != null && suppressedValues.contains(lc.alias));
     }
 
     /**
@@ -502,20 +517,6 @@ public class Lint {
         return suppressions;
     }
 
-    /**
-     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
-     *
-     * @param annotation @SuppressWarnings annotation, or null
-     * @return set of lint categories, possibly empty but never null
-     */
-    private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
-        initializeSymbolsIfNeeded();
-        if (annotation == null)
-            return LintCategory.newEmptySet();
-        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
-        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
-    }
-
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
         initializeSymbolsIfNeeded();
@@ -536,6 +537,11 @@ public class Lint {
               .flatMap(LintCategory::get)
               .filter(lc -> lc.annotationSuppression)
               .ifPresent(result::add);
+        }
+        for (LintCategory lc : result) {
+            if (lc.alias != null) {
+                result.add(lc.alias);
+            }
         }
         return result;
     }

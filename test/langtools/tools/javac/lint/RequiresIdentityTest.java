@@ -4,11 +4,14 @@
  * @summary Expand value-based class warnings to java.lang.ref API
  * @compile --patch-module java.base=${test.src} RequiresIdentityHelper.java
  * @compile/fail/ref=RequiresIdentityTest.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:identity RequiresIdentityTest.java
+ * @compile/ref=RequiresIdentityTest2.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:-identity RequiresIdentityTest.java
  * @compile/fail/ref=RequiresIdentityTest.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:identity RequiresIdentityHelper.java RequiresIdentityTest.java
+ * @compile/ref=RequiresIdentityTest2.out --patch-module java.base=${test.src} -Werror -XDrawDiagnostics -Xlint:-identity RequiresIdentityHelper.java RequiresIdentityTest.java
  */
 
 package java.lang;
 
+@SuppressWarnings("deprecation")
 public class RequiresIdentityTest extends RequiresIdentityHelper<Integer> // should warn
                                   implements RequiresIdentityHelper.RequiresIdentityInt<Integer> { // should warn
     class Box<T> {}
