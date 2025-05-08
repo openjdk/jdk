@@ -28,8 +28,8 @@
  *      instead of a close_notify alert.
  * @library /test/lib
  *
- * @run main/othervm CloseKeepAliveCached false
- * @run main/othervm CloseKeepAliveCached true
+ * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached false
+ * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached true
  *
  * @comment SunJSSE does not support dynamic system properties, no way to re-use
  *    system properties in samevm/agentvm mode.
@@ -39,10 +39,21 @@
 
 import jdk.test.lib.Asserts;
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
-import javax.net.ssl.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.URI;
+import java.net.URL;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
 public class CloseKeepAliveCached {
     public static final String CLOSE_THE_SSL_CONNECTION_PASSIVE = "close the SSL connection (passive)";
@@ -58,7 +69,7 @@ public class CloseKeepAliveCached {
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = true;
+    static boolean separateServerThread = Boolean.getBoolean("test.separateThreads");
 
     /*
      * Where do we find the keystores?
@@ -82,10 +93,10 @@ public class CloseKeepAliveCached {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
+        SSLServerSocketFactory sslSsf =
                 (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         sslServerSocket =
-                (SSLServerSocket) sslssf.createServerSocket(serverPort);
+                (SSLServerSocket) sslSsf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -106,7 +117,7 @@ public class CloseKeepAliveCached {
             // read request
             String x;
             while ((x = r.readLine()) != null) {
-                if (x.length() == 0) {
+                if (x.isEmpty()) {
                     break;
                 }
             }
@@ -144,24 +155,24 @@ public class CloseKeepAliveCached {
         HostnameVerifier reservedHV =
                 HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            HttpsURLConnection http = null;
+            HttpsURLConnection http;
 
             /* establish http connection to server */
-            URL url = new URL("https://localhost:" + serverPort+"/");
+            URL url = new URI("https://localhost:" + serverPort + "/").toURL();
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-            http = (HttpsURLConnection)url.openConnection();
-            InputStream is = http.getInputStream ();
-            while (is.read() != -1);
+            http = (HttpsURLConnection) url.openConnection();
+            InputStream is = http.getInputStream();
+            while (is.read() != -1) ;
             is.close();
 
-            url = new URL("https://localhost:" + serverPort+"/");
-            http = (HttpsURLConnection)url.openConnection();
-            is = http.getInputStream ();
-            while (is.read() != -1);
+            url = new URI("https://localhost:" + serverPort + "/").toURL();
+            http = (HttpsURLConnection) url.openConnection();
+            is = http.getInputStream();
+            while (is.read() != -1) ;
 
             // if inputstream.close() called, the http.disconnect() will
             // not able to close the cached connection. If application
-            // wanna close the keep-alive cached connection immediately
+            // want to close the keep-alive cached connection immediately
             // with httpURLConnection.disconnect(), they should not call
             // inputstream.close() explicitly, the
             // httpURLConnection.disconnect() will do it internally.
@@ -171,10 +182,10 @@ public class CloseKeepAliveCached {
             // otherwise, the connection will be closed by Finalizer or
             // Keep-Alive-Timer if timeout.
             http.disconnect();
-            // Thread.sleep(5000);
         } catch (IOException ioex) {
-            if (sslServerSocket != null)
+            if (sslServerSocket != null) {
                 sslServerSocket.close();
+            }
             throw ioex;
         } finally {
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
@@ -198,16 +209,16 @@ public class CloseKeepAliveCached {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         separateServerThread = Boolean.parseBoolean(args[0]);
         System.out.printf("separateServerThread: %s%n", separateServerThread);
 
         String keyFilename =
                 System.getProperty("test.src", "./") + "/" + pathToStores +
-                        "/" + keyStoreFile;
+                "/" + keyStoreFile;
         String trustFilename =
                 System.getProperty("test.src", "./") + "/" + pathToStores +
-                        "/" + trustStoreFile;
+                "/" + trustStoreFile;
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
@@ -239,9 +250,9 @@ public class CloseKeepAliveCached {
         // example of pass: javax.net.ssl|DEBUG|91|MainThread|...|close the SSL connection (passive)
         // example of fail: javax.net.ssl|DEBUG|C1|Keep-Alive-Timer|...|close the SSL connection (passive)
         var isTestPassed = false;
-        for (final var line : errorCapture.toString().split("\n")) {
+        for (final String line : errorCapture.toString().split("\n")) {
             if (line.contains(CLOSE_THE_SSL_CONNECTION_PASSIVE) &&
-                    line.contains("MainThread")) {
+                line.contains("MainThread")) {
 
                 System.out.println("close was called by the MainThread: ");
                 System.out.println(line);
@@ -249,7 +260,7 @@ public class CloseKeepAliveCached {
                 isTestPassed = true;
                 break;
             } else if (line.contains(CLOSE_THE_SSL_CONNECTION_PASSIVE) &&
-                    line.contains("Keep-Alive-Timer")) {
+                       line.contains("Keep-Alive-Timer")) {
 
                 System.out.println("close was called by the Keep-Alive-Timer: ");
                 System.out.println(line);
@@ -263,6 +274,7 @@ public class CloseKeepAliveCached {
 
     Thread clientThread = null;
     Thread serverThread = null;
+
     /*
      * Primary constructor, used to drive remainder of the test.
      *
@@ -301,22 +313,20 @@ public class CloseKeepAliveCached {
 
     void startServer(boolean newThread) throws Exception {
         if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
+            serverThread = new Thread(() -> {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died...");
+                    serverReady = true;
+                    serverException = e;
                 }
-            };
+            });
             serverThread.start();
         } else {
             doServerSide();
@@ -325,19 +335,17 @@ public class CloseKeepAliveCached {
 
     void startClient(boolean newThread) throws Exception {
         if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
+            clientThread = new Thread(() -> {
+                try {
+                    doClientSide();
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died...");
+                    clientException = e;
                 }
-            };
+            });
             clientThread.start();
         } else {
             doClientSide();
