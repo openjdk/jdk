@@ -31,8 +31,8 @@
 
 import java.util.List;
 import jdk.test.lib.Utils;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -59,7 +59,7 @@ public class InconsistentEntries {
     @BeforeTest
     public void setUp() throws Exception {
         // Clone the tested JDK to the scratch directory
-        CDSTestUtils.clone(new File(JDK_HOME), new File(TEMP_JDK_HOME.toString()));
+        FileUtils.copyDirectory(Path.of(JDK_HOME), TEMP_JDK_HOME);
 
         // create policy directory in the cloned JDK
         if (!POLICY_DIR.toFile().exists()) {

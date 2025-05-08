@@ -31,7 +31,6 @@
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -60,6 +59,9 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
@@ -221,12 +223,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If dumping static archive then don't fall back to the old verifier on
-    // verification failure. If a class fails verification with the split verifier,
-    // it might fail the CDS runtime verifier constraint check. In that case, we
-    // don't want to share the class. We only archive classes that pass the split
-    // verifier.
-    bool can_failover = !CDSConfig::is_dumping_static_archive() &&
+    // If dumping {classic, final} static archive, don't bother to run the old verifier, as
+    // the class will be excluded from the archive anyway.
+    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_final_static_archive()) &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
@@ -234,11 +233,14 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
-      // Exclude any classes that fail over during dynamic dumping
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        SystemDictionaryShared::warn_excluded(klass, "Failed over class verification while dynamic dumping");
+#if INCLUDE_CDS
+      // Exclude any classes that are verified with the old verifier, as the old verifier
+      // doesn't call SystemDictionaryShared::add_verification_constraint()
+      if (CDSConfig::is_dumping_archive()) {
+        SystemDictionaryShared::warn_excluded(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
+#endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(
@@ -741,7 +743,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   LogTarget(Debug, verification) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -784,7 +785,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,

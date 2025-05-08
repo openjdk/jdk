@@ -67,7 +67,7 @@ final class ShutdownHook extends Thread {
             }
         } catch (Exception e) {
             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
-                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit.");
+                Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit. " + e.getMessage());
             }
         }
     }

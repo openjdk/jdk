@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ public class SharedSecrets {
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
@@ -285,19 +284,6 @@ public class SharedSecrets {
 
     public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {
         javaIOFileDescriptorAccess = jiofda;
-    }
-
-    public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        var access = javaIOFilePermissionAccess;
-        if (access == null) {
-            ensureClassInitialized(FilePermission.class);
-            access = javaIOFilePermissionAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
-        javaIOFilePermissionAccess = jiofpa;
     }
 
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {

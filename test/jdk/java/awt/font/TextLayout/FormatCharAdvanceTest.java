@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8208377 6562489
+ * @bug 8208377 6562489 8270265
  * @summary Confirm that format-category glyphs are not rendered or measured.
  */
 
@@ -275,6 +275,12 @@ public class FormatCharAdvanceTest {
         g2d.drawString(as2.getIterator(), w / 2, h / 2);
         ab2 = findTextBoundingBox(image).width;
         assertEqual(ab1, ab2, "drawString (using AttributedCharacterIterator)", c, font);
+
+        int max = metrics.stringWidth("AB") + 2; // add a little wiggle room to the max width
+        LineBreakMeasurer measurer1 = new LineBreakMeasurer(as1.getIterator(), frc);
+        LineBreakMeasurer measurer2 = new LineBreakMeasurer(as2.getIterator(), frc);
+        assertEqual(2, measurer1.nextOffset(max), "nextOffset 1", c, font);
+        assertEqual(7, measurer2.nextOffset(max), "nextOffset 2", c, font);
     }
 
     private static void assertEqual(int i1, int i2, String scenario, char c, Font font) {

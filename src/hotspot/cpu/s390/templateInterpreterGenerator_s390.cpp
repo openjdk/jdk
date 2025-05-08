@@ -637,6 +637,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   Register sp_before_i2c_extension = Z_bcp;
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ z_lg(sp_before_i2c_extension, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  __ z_slag(sp_before_i2c_extension, sp_before_i2c_extension, Interpreter::logStackElementSize);
+  __ z_agr(sp_before_i2c_extension, Z_fp);
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
@@ -1134,7 +1136,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
@@ -1168,7 +1174,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->monitors = fp - frame::z_ijava_state_size - Interpreter::stackElementSize;
   // z_ijava_state->esp = Z_esp = z_ijava_state->monitors;
   __ add2reg(Z_esp, -frame::z_ijava_state_size, fp);
-  __ z_stg(Z_esp, _z_ijava_state_neg(monitors), fp);
+
+  __ z_sgrk(Z_R0, Z_esp, fp);
+  __ z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  __ z_stg(Z_R0, _z_ijava_state_neg(monitors), fp);
+
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
 
   __ z_ldgr(Z_F1, Z_R1); // this is not required, once locals PR merges.
@@ -1633,7 +1643,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ add2reg(Rfirst_monitor, -(frame::z_ijava_state_size + (int)sizeof(BasicObjectLock)), Z_fp);
 #ifdef ASSERT
     NearLabel ok;
-    __ z_lg(Z_R1, _z_ijava_state_neg(monitors), Z_fp);
+    __ get_monitors(Z_R1);
     __ compareU64_and_branch(Rfirst_monitor, Z_R1, Assembler::bcondEqual, ok);
     reentry = __ stop_chain_static(reentry, "native_entry:unlock: inconsistent z_ijava_state.monitors");
     __ bind(ok);
@@ -2012,12 +2022,20 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return __ addr_at(entry_off);
 }
 
+address TemplateInterpreterGenerator::generate_currentThread() {
+  uint64_t entry_off = __ offset();
+
+  __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
+  __ resolve_oop_handle(Z_RET);
+
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  __ z_br(Z_R14);
+
+  return __ addr_at(entry_off);
+}
+
 // Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -2226,7 +2244,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
 
-  __ get_vm_result(Z_ARG1);     // Restore exception.
+  __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);
   __ z_lgr(Z_ARG2, return_pc);  // Restore return address.
 
@@ -2323,7 +2341,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
     // Skip runtime call, if the trace threshold is not yet reached.
     __ load_absolute_address(Z_tmp_1, (address)&BytecodeCounter::_counter_value);
     __ load_absolute_address(Z_tmp_2, (address)&TraceBytecodesAt);
-    __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 4, false /*signed*/);
+    __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 8, false /*signed*/);
     __ load_sized_value(Z_tmp_2, Address(Z_tmp_2), 8, false /*signed*/);
     __ compareU64_and_branch(Z_tmp_1, Z_tmp_2, Assembler::bcondLow, counter_below_trace_threshold);
   }
@@ -2353,7 +2371,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 // Make feasible for old CPUs.
 void TemplateInterpreterGenerator::count_bytecode() {
   __ load_absolute_address(Z_R1_scratch, (address) &BytecodeCounter::_counter_value);
-  __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
+  __ add2mem_64(Address(Z_R1_scratch), 1, Z_R0_scratch);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template * t) {
@@ -2400,7 +2418,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
   __ load_absolute_address(Z_tmp_1, (address)&BytecodeCounter::_counter_value);
   __ load_absolute_address(Z_tmp_2, (address)&StopInterpreterAt);
-  __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 4, false /*signed*/);
+  __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 8, false /*signed*/);
   __ load_sized_value(Z_tmp_2, Address(Z_tmp_2), 8, false /*signed*/);
   __ compareU64_and_branch(Z_tmp_1, Z_tmp_2, Assembler::bcondLow, L);
   assert(Z_tmp_1->is_nonvolatile(), "must be nonvolatile to preserve Z_tos");

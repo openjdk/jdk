@@ -51,7 +51,6 @@ public class NMethod extends CodeBlob {
   private static CIntegerField deoptMhHandlerOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
-  private static CIntField     metadataOffsetField;
   private static CIntField     handlerTableOffsetField;
   private static CIntField     nulChkTableOffsetField;
   private static CIntegerField scopesPCsOffsetField;
@@ -85,13 +84,11 @@ public class NMethod extends CodeBlob {
     osrLinkField                = type.getAddressField("_osr_link");
     immutableDataField          = type.getAddressField("_immutable_data");
     immutableDataSizeField      = type.getCIntegerField("_immutable_data_size");
-
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     deoptHandlerOffsetField     = type.getCIntegerField("_deopt_handler_offset");
     deoptMhHandlerOffsetField   = type.getCIntegerField("_deopt_mh_handler_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField             = type.getCIntegerField("_stub_offset");
-    metadataOffsetField         = new CIntField(type.getCIntegerField("_metadata_offset"), 0);
     scopesPCsOffsetField        = type.getCIntegerField("_scopes_pcs_offset");
     scopesDataOffsetField       = type.getCIntegerField("_scopes_data_offset");
     handlerTableOffsetField     = new CIntField(type.getCIntegerField("_handler_table_offset"), 0);
@@ -132,9 +129,7 @@ public class NMethod extends CodeBlob {
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return dataBegin();                                        }
   public Address oopsBegin()            { return dataBegin();                                        }
-  public Address oopsEnd()              { return dataBegin().addOffsetTo(getMetadataOffset());       }
-  public Address metadataBegin()        { return dataBegin().addOffsetTo(getMetadataOffset());       }
-  public Address metadataEnd()          { return dataEnd();                                          }
+  public Address oopsEnd()              { return dataEnd();                                          }
 
   public Address immutableDataBegin()   { return immutableDataField.getValue(addr);                         }
   public Address immutableDataEnd()     { return immutableDataBegin().addOffsetTo(getImmutableDataSize());  }
@@ -148,6 +143,9 @@ public class NMethod extends CodeBlob {
   public Address scopesDataEnd()        { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsBegin()       { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsEnd()         { return immutableDataEnd();                                        }
+
+  public Address metadataBegin()        { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
+  public Address metadataEnd()          { return mutableDataEnd();                                      }
 
   public int getImmutableDataSize()     { return (int) immutableDataSizeField.getValue(addr);        }
   public int constantsSize()            { return (int) constantsEnd()   .minus(constantsBegin());    }
@@ -489,42 +487,6 @@ public class NMethod extends CodeBlob {
            method.getSignature().asString();
   }
 
-  public void dumpReplayData(PrintStream out) {
-    HashMap<Metadata, Metadata> h = new HashMap<>();
-    for (int i = 1; i < getMetadataLength(); i++) {
-      Metadata meta = Metadata.instantiateWrapperFor(getMetadataAt(i));
-      System.err.println(meta);
-      if (h.get(meta) != null) continue;
-      h.put(meta, meta);
-      if (meta instanceof InstanceKlass) {
-        meta.dumpReplayData(out);
-      } else if (meta instanceof Method) {
-        meta.dumpReplayData(out);
-        MethodData mdo = ((Method)meta).getMethodData();
-        if (mdo != null) {
-          mdo.dumpReplayData(out);
-        }
-      }
-    }
-    Method method = getMethod();
-    if (h.get(method) == null) {
-      method.dumpReplayData(out);
-      MethodData mdo = method.getMethodData();
-      if (mdo != null) {
-        mdo.dumpReplayData(out);
-      }
-    }
-    if (h.get(method.getMethodHolder()) == null) {
-      method.getMethodHolder().dumpReplayData(out);
-    }
-    Klass holder = method.getMethodHolder();
-    out.println("compile " + holder.getName().asString() + " " +
-                OopUtilities.escapeString(method.getName().asString()) + " " +
-                method.getSignature().asString() + " " +
-                getEntryBCI() + " " + getCompLevel());
-
-  }
-
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //
@@ -534,7 +496,6 @@ public class NMethod extends CodeBlob {
   private int getDeoptHandlerOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
   private int getDeoptMhHandlerOffset() { return (int) deoptMhHandlerOffsetField.getValue(addr); }
   private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
-  private int getMetadataOffset()     { return (int) metadataOffsetField    .getValue(addr); }
   private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
   private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }

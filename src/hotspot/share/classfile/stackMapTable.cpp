@@ -231,6 +231,9 @@ StackMapFrame* StackMapReader::next(TRAPS) {
   StackMapFrame* frame = next_helper(CHECK_VERIFY_(_verifier, nullptr));
   if (frame != nullptr) {
     check_offset(frame);
+    if (frame->verifier()->has_error()) {
+      return nullptr;
+    }
     _prev_frame = frame;
   }
   return frame;

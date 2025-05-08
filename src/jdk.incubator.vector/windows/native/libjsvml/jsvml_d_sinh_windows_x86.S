@@ -1942,7 +1942,7 @@ _unwind___jsvml_sinh8_ha_z0_B1_B9:
 
         ALIGN 004H
 _unwind___jsvml_sinh8_ha_z0_B11_B15:
-        DD      2808865
+        DD      2284577
         DD      7558364
         DD      7369937
         DD      7431367
@@ -1960,10 +1960,6 @@ _unwind___jsvml_sinh8_ha_z0_B11_B15:
         DD      2799687
         DD      3057724
         DD      3307569
-        DD      7109414
-        DD      7170845
-        DD      7232276
-        DD      7293707
         DD      imagerel _B9_1
         DD      imagerel _B9_11
         DD      imagerel _unwind___jsvml_sinh8_ha_z0_B1_B9
