@@ -33,7 +33,7 @@
   volatile_nonstatic_field(JavaFrameAnchor,         _last_Java_fp,                  intptr_t*)               \
               static_field(VM_Version,              _features,                      VM_Version::VM_Features) \
            nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)                \
-              static_field(VM_Version::VM_Features, _features_bitmap_size_in_bytes, int)
+              static_field(VM_Version::VM_Features, _features_bitmap_size,          int)
 
 #define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
   declare_toplevel_type(VM_Version::VM_Features)

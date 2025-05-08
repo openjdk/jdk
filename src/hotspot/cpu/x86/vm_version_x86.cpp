@@ -63,7 +63,7 @@ address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
 
-int VM_Version::VM_Features::_features_bitmap_size_in_bytes = sizeof(VM_Version::VM_Features::_features_bitmap);
+int VM_Version::VM_Features::_features_bitmap_size = sizeof(VM_Version::VM_Features::_features_bitmap) / BytesPerLong;
 
 VM_Version::VM_Features VM_Version::_features;
 VM_Version::VM_Features VM_Version::_cpu_features;

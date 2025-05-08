@@ -482,7 +482,7 @@ protected:
       return (1ULL << (feature & features_bitmap_element_mask()));
     }
 
-    static int _features_bitmap_size_in_bytes; // for JVMCI purposes
+    static int _features_bitmap_size; // for JVMCI purposes
    public:
     VM_Features() {
       for (int i = 0; i < features_bitmap_element_count(); i++) {
