@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
 #define SHARE_RUNTIME_VMOPERATIONS_HPP
 
-#include "code/codeBlob.hpp"
 #include "oops/oop.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/vmOperation.hpp"
