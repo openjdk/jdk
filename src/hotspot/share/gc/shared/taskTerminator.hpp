@@ -55,9 +55,10 @@ class Thread;
  */
 class TaskTerminationTracker;
 
+#define TERMINATION_EVENT_NAME(task_name) "Termination:" task_name ""
+
 class TaskTerminator : public CHeapObj<mtGC> {
   friend class TaskTerminationTracker;
-  static char* termination_event_name_prefix;
   class DelayContext {
     uint _yield_count;
     // Number of hard spin loops done since last yield
@@ -77,7 +78,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
-  const char* _task_name;
+  const char* _termination_event_name;
 
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile uint _offered_termination;
@@ -101,7 +102,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
   NONCOPYABLE(TaskTerminator);
 
 public:
-  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* task_name = nullptr);
+  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* termination_event_name = nullptr);
   ~TaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
@@ -126,10 +127,9 @@ public:
   // given number.
   void reset_for_reuse(uint n_threads);
   // Same as above but task name is set to new task name.
-  void reset_for_reuse(uint n_threads, const char* task_name);
-
-  void set_task_name(const char* task_name);
-
+  void reset_for_reuse(uint n_threads, const char* termination_event_name);
+  // Set termination event name
+  void set_termination_event_name(const char* termination_event_name);
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

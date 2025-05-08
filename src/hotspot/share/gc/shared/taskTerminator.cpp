@@ -32,8 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 
-char* TaskTerminator::termination_event_name_prefix = os::strdup("Termination: ");
-
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
   reset_hard_spin_information();
@@ -70,10 +68,10 @@ void TaskTerminator::DelayContext::do_step() {
   }
 }
 
-TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* task_name) :
+TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* termination_event_name) :
   _n_threads(n_threads),
   _queue_set(queue_set),
-  _task_name(task_name),
+  _termination_event_name(termination_event_name),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
   _spin_master(nullptr) { }
@@ -106,13 +104,13 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
   _n_threads = n_threads;
 }
 
-void TaskTerminator::reset_for_reuse(uint n_threads, const char* task_name) {
+void TaskTerminator::reset_for_reuse(uint n_threads, const char* termination_event_name) {
   reset_for_reuse(n_threads);
-  _task_name = task_name;
+  _termination_event_name = termination_event_name;
 }
 
-void TaskTerminator::set_task_name(const char* task_name) {
-  _task_name = task_name;
+void TaskTerminator::set_termination_event_name(const char* termination_event_name) {
+  _termination_event_name = termination_event_name;
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
@@ -151,11 +149,8 @@ public:
   _worker_id(worker_id) { }
 
   ~TaskTerminationTracker() {
-    if (_terminator->_task_name != nullptr && _event.should_commit()) {
-      char* event_name = NEW_C_HEAP_ARRAY(char, strlen(TaskTerminator::termination_event_name_prefix) + strlen(_terminator->_task_name) + 1, mtGC);
-      strcpy(event_name, TaskTerminator::termination_event_name_prefix);
-      strcat(event_name, _terminator->_task_name);
-      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id : 0, event_name);
+    if (_terminator->_termination_event_name != nullptr && _event.should_commit()) {
+      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id : 0, _terminator->_termination_event_name);
     }
   }
 };

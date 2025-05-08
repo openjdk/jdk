@@ -54,7 +54,6 @@ private:
 public:
   ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
     WorkerTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
-    _terminator->set_task_name(this->name());
   }
 
   void work(uint worker_id) {
@@ -99,7 +98,6 @@ private:
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
     WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
-    _terminator->set_task_name(this->name());
   }
 
   void work(uint worker_id) {
@@ -223,28 +221,25 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
+  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Shenandoah Concurrent Mark"));
   for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     switch (gen_type) {
       case YOUNG: {
-        TaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<YOUNG> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
       case OLD: {
-        TaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<OLD> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
       case GLOBAL: {
-        TaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<GLOBAL> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
       case NON_GEN: {
-        TaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator);
         workers->run_task(&task);
         break;
@@ -269,6 +264,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       // No more retries needed, break out.
       break;
     }
+    terminator.reset_for_reuse();
   }
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
@@ -300,7 +296,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   task_queues()->reserve(nworkers);
 
   StrongRootsScope scope(nworkers);
-  TaskTerminator terminator(nworkers, task_queues());
+  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Shenandoah Final Mark"));
 
   switch (_generation->type()) {
     case YOUNG:{

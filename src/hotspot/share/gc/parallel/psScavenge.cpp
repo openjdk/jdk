@@ -259,12 +259,11 @@ public:
     _gen_top(old_gen->object_space()->top()),
     _active_workers(active_workers),
     _is_old_gen_empty(old_gen->object_space()->is_empty()),
-    _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
+    _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth(), TERMINATION_EVENT_NAME("ScavengeRootsTask")) {
     if (!_is_old_gen_empty) {
       PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
       card_table->pre_scavenge(active_workers);
     }
-    _terminator.set_task_name(this->name());
   }
 
   virtual void work(uint worker_id) {

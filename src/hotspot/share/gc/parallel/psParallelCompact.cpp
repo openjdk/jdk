@@ -1228,7 +1228,7 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _terminator(active_workers, ParCompactionManager::marking_stacks(), this->name()),
+      _terminator(active_workers, ParCompactionManager::marking_stacks(), TERMINATION_EVENT_NAME("MarkFromRootsTask")),
       _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
@@ -1267,7 +1267,7 @@ class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelCompactRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
-      _terminator(_max_workers, ParCompactionManager::marking_stacks(), this->name()) {}
+      _terminator(_max_workers, ParCompactionManager::marking_stacks(), TERMINATION_EVENT_NAME("ParallelCompactRefProcProxyTask")) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -1793,7 +1793,7 @@ public:
   FillDensePrefixAndCompactionTask(uint active_workers) :
       WorkerTask("FillDensePrefixAndCompactionTask"),
       _num_workers(active_workers),
-      _terminator(active_workers, ParCompactionManager::region_task_queues(), this->name()) {
+      _terminator(active_workers, ParCompactionManager::region_task_queues(), TERMINATION_EVENT_NAME("FillDensePrefixAndCompactionTask")) {
   }
 
   virtual void work(uint worker_id) {

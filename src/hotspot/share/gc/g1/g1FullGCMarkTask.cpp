@@ -34,7 +34,7 @@
 G1FullGCMarkTask::G1FullGCMarkTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Parallel Marking Task", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
-    _terminator(collector->workers(), collector->array_queue_set(), this->name()) {
+    _terminator(collector->workers(), collector->array_queue_set(), TERMINATION_EVENT_NAME("G1 Parallel Marking Task")) {
 }
 
 void G1FullGCMarkTask::work(uint worker_id) {
