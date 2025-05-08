@@ -57,7 +57,7 @@ public class breakpoint001a {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         mainThread = Thread.currentThread();
- 
+
         // notify debugger about ready to execute
         pipe.println(COMMAND_READY);
 
