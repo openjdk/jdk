@@ -121,6 +121,11 @@ public:
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
   void invalidate_nmethod_mirror(nmethod* nm);
 
+  // Used during nmethod relocation to clear the mirror index of the original nmethod.
+  // This prevents the original, non-entrant nmethod from interacting with the
+  // HotSpotNmethod mirror after relocation.
+  void clear_nmethod_mirror_index();
+
   // Updates the HotSpotNmethod fields after nmethod relocation
   void relocate_nmethod_mirror(nmethod* nm);
 
