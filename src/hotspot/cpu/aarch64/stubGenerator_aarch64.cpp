@@ -79,7 +79,9 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-// Stub Code definitions
+  int ppp;
+
+  // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
  private:
@@ -2566,6 +2568,173 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start_pc = __ pc();
+      __ mov(r0, 0);
+      __ ret(lr);
+    return start_pc;
+  }
+
+  // Helper for generate_unsafe_setmemory
+  //
+  // Atomically fill an array of memory using 1-, 2-, 4-, or 8-byte chunks and return.
+  static void do_setmemory_atomic_loop(int elem_size, Register dest, Register size, Register byteVal,
+                                       MacroAssembler *_masm) {
+    __ andr(rscratch1, byteVal, (u1)0xff);
+    if (elem_size > 8) {
+      __ dup(v0, __ T16B, byteVal);
+    } else {
+      if (elem_size > 1)  __ orr(rscratch1, rscratch1, rscratch1, __ LSL, 8);
+      if (elem_size > 2)  __ orr(rscratch1, rscratch1, rscratch1, __ LSL, 16);
+      if (elem_size > 4)  __ orr(rscratch1, rscratch1, rscratch1, __ LSL, 32);
+    }
+
+    Label done, tail;
+
+    int shift = exact_log2(elem_size);
+
+    __ lsr(size, size, shift);
+
+    __ tst(size, -2);
+    __ br(__ EQ, tail);
+
+    {
+      Label again;
+      __ subs(size, size, 2);
+      __ br(__ LO, tail);
+      __ bind(again);
+      switch(elem_size) {
+        case 1:
+        case 2:
+          __ ld_st2(rscratch1, Address(dest,         0), shift, 0);
+          __ ld_st2(rscratch1, Address(dest, elem_size), shift, 0);
+          break;
+        case 4:
+          __ stpw(rscratch1, rscratch1, Address(dest));
+          break;
+        case 8:
+          __ stp(rscratch1, rscratch1, Address(dest));
+          break;
+        case 32:
+          __ stpq(v0, v0, Address(dest));
+          __ stpq(v0, v0, Address(dest, 32));
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      __ subs(size, size, 2);
+      __ add(dest, dest, elem_size * 2);
+      __ br(__ HS, again);
+    }
+
+    {
+      Label one;
+      __ bind(tail);
+      __ tbnz(size, 0, one);
+      __ b(done);
+
+      __ bind(one);
+      switch(elem_size) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+          __ ld_st2(rscratch1, Address(dest,     0), shift, 0);
+          break;
+        case 32:
+          __ stpq(v0, v0, Address(dest));
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+    }
+
+    __ bind(done);
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory(address unsafe_byte_fill) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    address start = __ pc();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    __ mov(rscratch1, (uintptr_t)&ppp);
+    __ addmw(Address(rscratch1), 1, rscratch2);
+
+    // Mark remaining code as such which performs Unsafe accesses.
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    {
+      Label L_fill8Bytes, L_fill4Bytes, L_fillBytes;
+
+      const Register dest = c_rarg0;
+      const Register size = c_rarg1;
+      const Register byteVal = c_rarg2;
+
+      // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+      {
+        Label small;
+        __ cmp(size, (u1)64);
+        __ br(__ LT, small);
+        __ mov(rscratch2, size);
+        __ andr(size, size, 31);
+        do_setmemory_atomic_loop(32, dest, rscratch2, byteVal, _masm);
+        __ bind(small);
+      }
+
+      // Check for pointer & size alignment
+      __ orr(rscratch1, dest, size);
+
+      __ tst(rscratch1, (u1)7);
+      __ br(__ EQ, L_fill8Bytes);
+
+      __ tst(rscratch1, (u1)3);
+      __ br(__ EQ, L_fill4Bytes);
+
+      __ tst(rscratch1, 1);
+      __ br(__ NE, L_fillBytes);
+
+      // At this point, we know the lower bit of size is zero and a
+      // multiple of 2
+      do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
+      __ ret(lr);
+
+      __ align(32);
+      __ bind(L_fill8Bytes);
+      // At this point, we know the lower 3 bits of size are zero and a
+      // multiple of 8
+      do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
+      __ ret(lr);
+
+      __ align(32);
+      __ bind(L_fill4Bytes);
+      // At this point, we know the lower 2 bits of size are zero and a
+      // multiple of 4
+      do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
+      __ ret(lr);
+
+      __ align(32);
+      __ bind(L_fillBytes);
+      do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
+      __ ret(lr);
+    }
+
+    return start;
+  }
+
   address generate_data_cache_writeback() {
     const Register line        = c_rarg0;  // address of line to write back
 
@@ -2614,6 +2783,9 @@ class StubGenerator: public StubCodeGenerator {
     address entry_oop_arraycopy;
     address entry_jlong_arraycopy;
     address entry_checkcast_arraycopy;
+
+    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     generate_copy_longs(StubGenStubId::copy_byte_f_id, IN_HEAP | IS_ARRAY, copy_f, r0, r1, r15);
     generate_copy_longs(StubGenStubId::copy_byte_b_id, IN_HEAP | IS_ARRAY, copy_b, r0, r1, r15);
@@ -11252,6 +11424,8 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 #endif
+
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
