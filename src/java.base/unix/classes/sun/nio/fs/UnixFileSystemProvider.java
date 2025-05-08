@@ -250,22 +250,30 @@ public abstract class UnixFileSystemProvider
 
         boolean isDirectory = false;
         try {
-            try {
-                // assume the common case that the file is a regular file
-                unlink(file);
-            } catch (UnixException e) {
-                // check whether the file is a directory
-                if (e.errno() == EISDIR ||
-                    UnixFileAttributes.get(file, false).isDirectory())
-                    isDirectory = true;
+            if (UnixNativeDispatcher.eisdirSupported()) {
+                try {
+                    // assume the common case that the file is a regular file
+                    unlink(file);
+                } catch (UnixException e) {
+                    // check whether the file is a directory
+                    if (e.errno() == EISDIR ||
+                        UnixFileAttributes.get(file, false).isDirectory())
+                        isDirectory = true;
 
-                // if the file is a directory then try rmdir, otherwise
-                // re-throw and let the exception be handled below
-                if (isDirectory) {
-                    rmdir(file);
-                } else {
-                    throw e;
+                    // if the file is a directory then try rmdir, otherwise
+                    // re-throw and let the exception be handled below
+                    if (isDirectory) {
+                        rmdir(file);
+                    } else {
+                        throw e;
+                    }
                 }
+            } else {
+                isDirectory = UnixFileAttributes.get(file, false).isDirectory();
+                if (isDirectory)
+                    rmdir(file);
+                else
+                    unlink(file);
             }
             return true;
         } catch (UnixException x) {

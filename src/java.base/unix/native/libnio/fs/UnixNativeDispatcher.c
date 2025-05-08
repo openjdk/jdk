@@ -377,6 +377,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_OPENAT;
     }
 
+    /* supports EISDIR failure of unlink(2) */
+#if defined(__linux__)
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_EISDIR;
+#endif
+
     /* supports file birthtime */
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
