@@ -138,7 +138,7 @@ public class TestSplitIfPinnedLoadInStripMinedLoop {
     }
 
     // Same as test2 but with reference to inner loop induction variable 'j' and different order of instructions.
-    // Triggered an assert in PhaseCFG::raise_above_anti_dependences if loop strip mining verification was disabled:
+    // Triggers an assert in PhaseCFG::raise_above_anti_dependences if loop strip mining verification is disabled:
     // assert(!LCA_orig->dominates(pred_block) || early->dominates(pred_block)) failed: early is high enough
     int test4(MyClass obj1, MyClass obj2) {
         for (int i = 0; i < 10; ++i) {

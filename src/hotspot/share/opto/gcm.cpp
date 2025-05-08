@@ -664,6 +664,9 @@ public:
 };
 
 //------------------------raise_above_anti_dependences---------------------------
+// Enforce a scheduling of the argument load that ensures anti-dependent stores
+// do not overwrite the load's input memory state before the load executes.
+//
 // The argument load has a current scheduling range in the dominator tree that
 // starts at the load's early block (computed in schedule_early) and ends at
 // the argument LCA block. However, there may still exist anti-dependent stores
@@ -706,8 +709,7 @@ public:
 // the store in B4. We cannot legally schedule the load in B4, so an
 // anti-dependence edge is redundant. However, we must raise the LCA above
 // B4, which means that the updated LCA is B2. Now, consider the store in B2.
-// Raising the LCA above B2 has no effect, because B2 is on the dominator tree
-// branch between early and the current LCA (in fact, B2 is the current LCA).
+// The LCA is already B2, so we do not need to raise it any further.
 // If we, eventually, decide to schedule the load in B2, it could happen that
 // LCM decides to place the load after the anti-dependent store in B2.
 // Therefore, we now need to add an anti-dependence edge between the load and
@@ -718,9 +720,8 @@ public:
 // The raise_above_anti_dependences method returns the updated LCA and ensures
 // there are no anti-dependent stores between the load's early block and the
 // updated LCA. Any stores in the updated LCA will have new anti-dependence
-// edges back to the load. The caller is expected to eventually schedule the
-// load in the LCA, but may also hoist the load above the LCA, if it is not the
-// early block.
+// edges back to the load. The caller may schedule the load in the LCA, or it
+// may hoist the load above the LCA, if it is not the early block.
 Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verify) {
   ResourceMark rm;
   assert(load->needs_anti_dependence_check(), "must be a load of some sort");
@@ -755,7 +756,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   node_idx_t load_index = load->_idx;
 
   // Note the earliest legal placement of 'load', as determined by
-  // by the unique point in the dominator tree where all memory effects
+  // the unique point in the dominator tree where all memory effects
   // and other inputs are first available.  (Computed by schedule_early.)
   // For normal loads, 'early' is the shallowest place (dom graph wise)
   // to look for anti-deps between this load and any store.
@@ -782,8 +783,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   // very end when we know the final updated LCA.
   Node_List non_early_stores(area);
 
-  // Flag that indicates if we must attempt to raise the LCA after the main
-  // worklist loop below.
+  // Whether we must raise the LCA after the main worklist loop below.
   bool must_raise_LCA = false;
 
   // The input load uses some memory state (initial_mem).
@@ -800,16 +800,14 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   //
   // MergeMems do not modify the memory state. Anti-dependent stores or memory
   // Phis may, however, exist downstream of MergeMems. Therefore, we must
-  // permit the search to continue through MergeMems. Memory-state-modifying
-  // nodes may raise the LCA and may potentially also require an
-  // anti-dependence edge. Memory Phis may raise the LCA but never require
-  // anti-dependence edges. See the comments throughout the worklist loop below
-  // for further details.
+  // permit the search to continue through MergeMems. Stores may raise the LCA
+  // and may potentially also require an anti-dependence edge. Memory Phis may
+  // raise the LCA but never require anti-dependence edges. See the comments
+  // throughout the worklist loop below for further details.
   //
   // It may be useful to think of the anti-dependence search as traversing a
   // tree rooted at initial_mem, with internal nodes of type MergeMem and
-  // memory Phis and memory-state-modifying nodes as (potentially repeated)
-  // leaves.
+  // memory Phis and stores as (potentially repeated) leaves.
 
   // We don't optimize the memory graph for pinned loads, so we may need to raise the
   // root of our search tree through the corresponding slices of MergeMem nodes to
@@ -846,11 +844,9 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
     // - at the root of the search with the edge (nullptr, initial_mem),
     // - just past initial_mem with the edge (initial_mem, use_mem_state), or
     // - just past a MergeMem with the edge (MergeMem, use_mem_state).
-    // we have passed a MergeMem and are now at an edge
-    // (MergeMem, use_mem_state).
     assert(def_mem_state == nullptr || def_mem_state == initial_mem ||
                def_mem_state->is_MergeMem(),
-           "invariant failed");
+           "unexpected memory state");
 
     uint op = use_mem_state->Opcode();
 
@@ -888,8 +884,8 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
       continue;
     }
 
-    // At this point, use_mem_state is either a store or a memory Phi.
-    assert(!use_mem_state->is_MergeMem(), "invariant failed");
+    assert(!use_mem_state->is_MergeMem(),
+        "use_mem_state should be either a store or a memory Phi");
 
     if (op == Op_MachProj || op == Op_Catch)   continue;
 
@@ -948,13 +944,13 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
     // adding anti-dependence edges. In this worklist loop, we only mark blocks
     // which we must raise the LCA above (set_raise_LCA_mark), and keep
     // track of nodes that potentially need anti-dependence edges
-    // (non_early_stores). The only exceptions to this is if we
+    // (non_early_stores). The only exceptions to this are if we
     // immediately see that we have to raise the LCA all the way to the early
     // block, and if we find stores in the early block (which always need
     // anti-dependence edges).
     //
     // After the worklist loop, we perform an efficient combined LCA-raising
-    // operation over all marks and then only add anti-dependence edges where
+    // operation over all marks and only then add anti-dependence edges where
     // strictly necessary according to the new raised LCA.
 
     if (use_mem_state->is_Phi()) {
@@ -1011,7 +1007,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
             // Lazily set the LCA mark
             pred_block->set_raise_LCA_mark(load_index);
             must_raise_LCA = true;
-          } else /* if (pred_block == early */ {
+          } else /* if (pred_block == early) */ {
             // We know already now that we must raise LCA all the way to early.
             LCA = early;
             // This turns off the process of gathering non_early_stores.
@@ -1049,7 +1045,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
       // This turns off the process of gathering non_early_stores.
     }
   }
-  // (Worklist is now empty; we have visited all possible anti-dependences.)
+  // Worklist is now empty; we have visited all possible anti-dependences.
 
   // Finished if 'load' must be scheduled in its 'early' block.
   // If we found any stores there, they have already been given
