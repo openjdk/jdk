@@ -758,34 +758,32 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
-  {
-    int trials_remaining = 3;
-    DWORD next_delay_ms = 1;
-    while (true) {
-      thread_handle =
-        (HANDLE)_beginthreadex(nullptr,
-                              (unsigned)stack_size,
-                              &thread_native_entry,
-                              thread,
-                              initflag,
-                              &thread_id);
+  int trials_remaining = 3;
+  DWORD next_delay_ms = 1;
+  while (true) {
+    thread_handle =
+      (HANDLE)_beginthreadex(nullptr,
+                             (unsigned)stack_size,
+                             &thread_native_entry,
+                             thread,
+                             initflag,
+                             &thread_id);
 
-      if (thread_handle != nullptr) {
-        break;
-      }
-
-      if (errno != EAGAIN) {
-        break;
-      }
-
-      if (trials_remaining-- <= 0) {
-        break;
-      }
-
-      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dms.", os::errno_name(errno), next_delay_ms);
-      Sleep(next_delay_ms);
-      next_delay_ms *= 2;
+    if (thread_handle != nullptr) {
+      break;
     }
+
+    if (errno != EAGAIN) {
+      break;
+    }
+
+    if (trials_remaining-- <= 0) {
+      break;
+    }
+
+    log_debug(os, thread)("Failed to start native thread (%s), retrying after %dms.", os::errno_name(errno), next_delay_ms);
+    Sleep(next_delay_ms);
+    next_delay_ms *= 2;
   }
 
   ResourceMark rm;
