@@ -89,8 +89,7 @@ static size_t raw_malloc_size(void* ptr)      { return ::_msize(ptr); }
 static size_t raw_malloc_size(void* ptr)      { return ::malloc_size(ptr); }
 #endif
 
-
-#define NMT_HEADER_SIZE 16
+constexpr size_t NMT_HEADER_SIZE = sizeof(MallocHeader);
 
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
@@ -173,7 +172,7 @@ void NMT_LogRecorder::logThreadName() {
         if (_threads_names[i].name[0] == 0) {
           // but we don't have the name yet, so try
           NMT_LogRecorder::get_thread_name(_threads_names[i].name);
-          tty->print(" got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
+          //tty->print(" got name for thread %6ld:%lx [%s]\n", tid, tid, _threads_names[i].name);
         }
         break;
       }

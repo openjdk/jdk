@@ -57,6 +57,11 @@ public:
 
 class NMT_LogRecorder : public StackObj {
 protected:
+  struct Entry {
+    long int time;
+    long int thread;
+    address ptr;
+  };
   long int _limit  = 0;
   long int _count  = 0;
   int _log_fd;
@@ -68,7 +73,7 @@ protected:
     char name[MAXTHREADNAMESIZE];
     long int thread;
   } thread_name_info;
-  thread_name_info *_threads_names = nullptr;
+  thread_name_info* _threads_names = nullptr;
 
 public:
   static void initialize();
@@ -91,7 +96,7 @@ private:
   static NMT_MemoryLogRecorder _recorder;
 
 private:
-    struct Entry {
+    struct Entry : NMT_LogRecorder::Entry {
     long int time;
     long int thread;
     address ptr;
@@ -127,10 +132,7 @@ private:
   static NMT_VirtualMemoryLogRecorder _recorder;
 
 private:
-  struct Entry {
-    long int time;
-    long int thread;
-    address ptr;
+  struct Entry : NMT_LogRecorder::Entry {
     address stack[NMT_TrackingStackDepth];
     long int mem_tag;
     long int mem_tag_split;
