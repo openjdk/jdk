@@ -23,10 +23,14 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Map;
 import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class for zipfs tests.
@@ -41,7 +45,7 @@ class Utils {
      * @return Path to the newly created JAR file
      */
     static Path createJarFile(String name, String... entries) throws IOException {
-        Path jarFile = Paths.get("basic.jar");
+        Path jarFile = Paths.get(name);
         Random rand = new Random();
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
@@ -56,6 +60,25 @@ class Utils {
                 len += 1024;
             }
         }
-        return jarFile;
+        return jarFile.toAbsolutePath();
+    }
+
+    /**
+     * Creates a JAR file of the given name with 0 or more named entries.
+     *
+     * @return Path to the newly created JAR file
+     */
+    static Path createJarFile(String name, Map<String, String> entries) throws IOException {
+        Path jarFile = Paths.get(name);
+        try (OutputStream out = Files.newOutputStream(jarFile);
+             JarOutputStream jout = new JarOutputStream(out)) {
+            for (var entry : entries.entrySet()) {
+                JarEntry je = new JarEntry(entry.getKey());
+                jout.putNextEntry(je);
+                jout.write(entry.getValue().getBytes(UTF_8));
+                jout.closeEntry();
+            }
+        }
+        return jarFile.toAbsolutePath();
     }
 }

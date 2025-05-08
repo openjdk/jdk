@@ -158,7 +158,7 @@ class ZipFileSystem extends FileSystem {
 
         // Parses the file system permission from an environmental parameter. While
         // the FileSystemAccessMode is private, we don't need to check if it was
-        // given as a value. Returns null to indicate default behaviour.
+        // given as an enum value. Returns null to indicate default behaviour.
         static AccessMode from(Object value) {
             switch (value) {
                 case null -> {
@@ -371,7 +371,8 @@ class ZipFileSystem extends FileSystem {
 
     // Return the default permissions for files inside the zip archive.
     // If not specified in env, it will return 777.
-    private Set<PosixFilePermission> initPermissions(Object o) {
+    private Set<PosixFilePermission> initPermissions(Map<String, ?> env) {
+        Object o = env.get(PROPERTY_DEFAULT_PERMISSIONS);
         if (o == null) {
             return PosixFilePermissions.fromString("rwxrwxrwx");
         }
