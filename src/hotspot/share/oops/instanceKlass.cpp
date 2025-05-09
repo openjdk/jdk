@@ -2506,6 +2506,7 @@ void InstanceKlass::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Kl
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
+  assert_lock_strong(CodeCache_lock);
   dependencies().add_dependent_nmethod(nm);
 }
 

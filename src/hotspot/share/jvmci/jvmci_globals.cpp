@@ -229,7 +229,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graa
 }
 
 bool JVMCIGlobals::gc_supports_jvmci() {
-  return UseSerialGC || UseParallelGC || UseG1GC || UseZGC || UseEpsilonGC;
+  return UseSerialGC || UseParallelGC || UseG1GC || UseZGC || UseShenandoahGC || UseEpsilonGC;
 }
 
 void JVMCIGlobals::check_jvmci_supported_gc() {

@@ -1774,8 +1774,8 @@ Node* Node::find(const int idx, bool only_ctrl) {
 
 class PrintBFS {
 public:
-  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st)
-  : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st),
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, const frame* fr)
+    : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st), _frame(fr),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
   void run();
@@ -1796,6 +1796,7 @@ private:
   const Node* _target;
   const char* _options;
   outputStream* _output;
+  const frame* _frame;
 
   // options
   bool _traverse_inputs = false;
@@ -2057,7 +2058,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", _print_list);
+      C->igv_print_graph_to_network(nullptr, _print_list, _frame);
     }
   } else {
     _output->print_cr("No nodes to print.");
@@ -2102,6 +2103,8 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
   _output->print_cr("      !: show nodes on IGV (sent over network stream)");
+  _output->print_cr("        (use preferably with dump_bfs(int, Node*, char*, void*, void*, void*)");
+  _output->print_cr("         to produce a C2 stack trace along with the graph dump, see examples below)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
@@ -2151,6 +2154,9 @@ void PrintBFS::print_options_help(bool print_examples) {
     _output->print_cr("    find all paths (A) between two nodes of length at most 8");
     _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")");
     _output->print_cr("    find all control loops for this node");
+    _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A!\", $sp, $fp, $pc)");
+    _output->print_cr("    same as above, but printing the resulting subgraph");
+    _output->print_cr("    along with a C2 stack trace on IGV");
   }
 }
 
@@ -2409,14 +2415,21 @@ void Node::dump_bfs(const int max_distance, Node* target, const char* options) c
 }
 
 // Used to dump to stream.
-void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const {
-  PrintBFS bfs(this, max_distance, target, options, st);
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, const frame* fr) const {
+  PrintBFS bfs(this, max_distance, target, options, st, fr);
   bfs.run();
 }
 
 // Call this from debugger, with default arguments
 void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
+}
+
+// Call this from debugger, with stack handling register arguments for IGV dumps.
+// Example: p find_node(741)->dump_bfs(7, find_node(741), "c+A!", $sp, $fp, $pc).
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const {
+  frame fr(sp, fp, pc);
+  dump_bfs(max_distance, target, options, tty, &fr);
 }
 
 // -----------------------------dump_idx---------------------------------------
