@@ -678,16 +678,22 @@ public class VisibleMemberTable {
             return false;
         }
 
-        // Multiple-Inheritance: No Contention. In Java's method resolution,
-        // any override of a signature (whether by a subclass or by a subinterface,
-        // including when it is final from superclasses) always takes precedence
-        // over the original interface definition. All interface methods have low resolution priority.
-        // Therefore, when considering an interface inherited method, as soon as
-        // at least one overrider exists in the inheritance chain,
-        // we do not inherit the older interface definition.
+        // Multiple-Inheritance: remove the interface method that may have
+        // been overridden by another interface method in the hierarchy
+        //
+        // Note: The following approach is very simplistic and is compatible
+        // with old VMM. A future enhancement, may include a contention breaker,
+        // to correctly eliminate those methods that are merely definitions
+        // in favor of concrete overriding methods, for instance those that have
+        // API documentation and are not abstract OR default methods.
         if (inInterface) {
             List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
-            if (list != null && !list.isEmpty()) return false;
+            if (list != null) {
+                boolean found = list.stream()
+                        .anyMatch(this::isDeclaredInInterface);
+                if (found)
+                    return false;
+            }
         }
 
         Elements elementUtils = config.docEnv.getElementUtils();
