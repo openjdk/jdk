@@ -229,7 +229,7 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _rightmosts_empty[partition_id] = -1;;
     _capacity[partition_id] = 0;
     _used[partition_id] = 0;
-    _available[partition_id] = 0;
+    _available[partition_id] = FreeSetUnderConstruction;
   }
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
 }

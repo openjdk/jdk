@@ -109,6 +109,8 @@ public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
 
+  static const size_t FreeSetUnderConstruction = SIZE_MAX;
+
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
 
@@ -235,7 +237,8 @@ public:
     shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
+           (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
            "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
            partition_membership_name(ssize_t(which_partition)));
@@ -406,6 +409,8 @@ private:
   void log_status();
 
 public:
+  static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
+
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
   // Public because ShenandoahRegionPartitions assertions require access.
