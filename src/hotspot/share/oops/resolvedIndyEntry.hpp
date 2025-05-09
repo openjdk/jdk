@@ -69,7 +69,7 @@ public:
 
   // Bit shift to get flags
   enum {
-    resolutin_failed_shift    = 0,
+    resolution_failed_shift    = 0,
     has_appendix_shift        = 1,
   };
 
@@ -117,7 +117,7 @@ public:
     u1 new_flags = (has_appendix ? 1 : 0) << has_appendix_shift;
     u1 old_flags = _flags & ~(1 << has_appendix_shift);
     // Preserve the unaffected bits
-    _flags = _old_flags | new_flags;
+    _flags = old_flags | new_flags;
   }
 
 
