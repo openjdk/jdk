@@ -14280,6 +14280,23 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// TODO: use separate node for add/sub ...
+
+instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2, flagsRegCR0 cr0) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
+  match(Set dst (MinReductionV srcInt srcVec));
+  match(Set dst (MaxReductionV srcInt srcVec));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
+  format %{ "REDUCEI_MINMAX // $dst,$srcInt,$srcVec,$tmp1,$tmp2\t// reduce vector int" %}
+  size(28);
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ reduceI(opcode, $dst$$Register, $srcInt$$Register, $srcVec$$VectorSRegister->to_vr(),
+        $tmp1$$VectorSRegister->to_vr(), $tmp2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (MaxV src1 src2));
   format %{ "VMAX  $dst,$src1,$src2\t// vector max" %}
