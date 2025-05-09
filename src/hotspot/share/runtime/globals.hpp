@@ -650,6 +650,10 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, StressCompiledExceptionHandlers, false,                     \
           "Exercise compiled exception handlers")                           \
                                                                             \
+  product(bool, DeoptimizeOnAllocationException, false, DIAGNOSTIC,          \
+          "Deoptimize on exception during allocation instead of using the"  \
+          " compiled exception handlers")                                   \
+                                                                            \
   develop(bool, InterceptOSException, false,                                \
           "Start debugger when an implicit OS (e.g. null pointer) "         \
           "exception happens")                                              \
