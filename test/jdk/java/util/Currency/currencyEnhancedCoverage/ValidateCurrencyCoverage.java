@@ -40,34 +40,69 @@ public class ValidateCurrencyCoverage {
     private static final byte DEFINED = 1; // Indicates that a country-currency mapping has been processed and defined
 
     // Input data file
-    private static final String DATA_FILE = "VerifyCurrencyList.txt";
+    private static final String DATA_FILE = "CurrencyList.txt";
 
     // Mapping array to track defined country codes
     private static final byte[] codes = new byte[ALPHA_NUM * ALPHA_NUM];
 
     public static void main(String[] args) throws Exception {
+        boolean failureFlag = false;
         Path SRC_DIR = Paths.get(System.getProperty("test.src", "src"));
-
         // Override the default Java currency data property for testing
         System.setProperty("java.util.currency.data", SRC_DIR + File.separator + "currency.properties");
-        testCurrencyCoverage();
+        List<String[]> inputList = parseCurrencyTextFile();
+        for (String[] currencyDetails : inputList) {
+            String country = currencyDetails[0];
+            String currency = currencyDetails[1];
+            String numeric = currencyDetails[2];
+            String minorUnit = currencyDetails[3];
+            int index = toIndex(country);
+            int numericCode = Integer.parseInt(numeric);
+            int digits = Integer.parseInt(minorUnit);
+            String failmessage = testCountryCurrencyWithLocale(country, currency, numericCode, digits, index);
+            System.out.println("\nTest case for : Country = " + country + " , Currency = " + currency);
+            if (failmessage == null) {
+                System.out.println("testCountryCurrencyWithLocale: PASS");
+            } else {
+                failureFlag = true;
+                System.out.println("testCountryCurrencyWithLocale: FAIL");
+                System.out.println(failmessage);
+            }
+            failmessage = testCountryCurrencyWithCurrencyCode(currency, numericCode, digits);
+            if (failmessage == null) {
+                System.out.println("\ntestCountryCurrencyWithCurrencyCode: PASS");
+            } else {
+                failureFlag = true;
+                System.out.println("\ntestCountryCurrencyWithCurrencyCode: FAIL");
+                System.out.println(failmessage);
+            }
+
+        }
+
+        if (failureFlag) {
+            throw new RuntimeException("Test FAILED");
+        }
+
     }
 
     /**
      * Reads the currency definitions from the input file and validates each entry.
+     * 
+     * @return
      */
-    private static void testCurrencyCoverage() throws Exception {
-        boolean failureFlag = false;
+    private static List<String[]> parseCurrencyTextFile() throws Exception {
+        List<String[]> inputList = new ArrayList<String[]>();
+        String[] inputArray;
         try (FileReader fr = new FileReader(new File(System.getProperty("test.src", "."), DATA_FILE));
                 BufferedReader in = new BufferedReader(fr)) {
             String line;
             SimpleDateFormat format = null;
-
             while ((line = in.readLine()) != null) {
                 // Skip empty or commented lines
                 if (line.length() == 0 || line.charAt(0) == '#') {
                     continue;
                 }
+                inputArray = new String[4];
                 StringTokenizer tokens = new StringTokenizer(line, "\t");
                 String country = tokens.nextToken();
 
@@ -103,32 +138,15 @@ public class ValidateCurrencyCoverage {
                         }
                     }
                 }
-                int index = toIndex(country);
-                int numericCode = Integer.parseInt(numeric);
-                int digits = Integer.parseInt(minorUnit);
-                String failmessage = testCountryCurrencyWithLocale(country, currency, numericCode, digits, index);
-                System.out.println("\nTest case for : Country = " + country + " , Currency = " + currency);
-                if (failmessage == null) {
-                    System.out.println("testCountryCurrencyWithLocale: PASS");
-                } else {
-                    failureFlag = true;
-                    System.out.println("testCountryCurrencyWithLocale: FAIL");
-                    System.out.println(failmessage);
-                }
-                failmessage = testCountryCurrencyWithCurrencyCode(currency, numericCode, digits);
-                if (failmessage == null) {
-                    System.out.println("\ntestCountryCurrencyWithCurrencyCode: PASS");
-                } else {
-                    failureFlag = true;
-                    System.out.println("\ntestCountryCurrencyWithCurrencyCode: FAIL");
-                    System.out.println(failmessage);
-                }
+                inputArray[0] = country;
+                inputArray[1] = currency;
+                inputArray[2] = numeric;
+                inputArray[3] = minorUnit;
+                inputList.add(inputArray);
+
             }
         }
-
-        if (failureFlag) {
-            throw new RuntimeException("Test FAILED");
-        }
+        return inputList;
     }
 
     /**
@@ -151,8 +169,8 @@ public class ValidateCurrencyCoverage {
         try {
             Currency currency = Currency.getInstance(loc);
             if (!currency.getCurrencyCode().equals(currencyCode)) {
-                failMessage = "Fail: [ Country: " + country + ":" + loc.getDisplayCountry() + "] expected currencyCode: " + currencyCode
-                        + ", got: " + currency.getCurrencyCode();
+                failMessage = "Fail: [ Country: " + country + ":" + loc.getDisplayCountry()
+                        + "] expected currencyCode: " + currencyCode + ", got: " + currency.getCurrencyCode();
             }
             if (codes[index] != UNDEFINED) {
                 System.out.println("Warning: [" + country + ":" + loc.getDisplayCountry()
@@ -162,7 +180,6 @@ public class ValidateCurrencyCoverage {
         } catch (Exception e) {
             failMessage = "Fail: " + e + ": Country=" + country;
         }
-
         return failMessage;
     }
 
@@ -179,19 +196,16 @@ public class ValidateCurrencyCoverage {
         try {
             Currency currency = Currency.getInstance(currencyCode);
             if (currency.getNumericCode() != numericCode) {
-                failMessage = "Fail: [ CurrencyCode: " + currencyCode + "] expected numericCode: " + numericCode + "; got: "
-                        + currency.getNumericCode();
-
+                failMessage = "Fail: [ CurrencyCode: " + currencyCode + "] expected numericCode: " + numericCode
+                        + "; got: " + currency.getNumericCode();
             }
             if (currency.getDefaultFractionDigits() != digits) {
                 failMessage = "Fail: [" + currencyCode + "] expected: " + digits + "; got: "
                         + currency.getDefaultFractionDigits();
             }
         } catch (Exception e) {
-            System.out.println("" + e.getStackTrace());
             failMessage = "Fail: " + e + ": Currency code=" + currencyCode;
         }
-
         return failMessage;
     }
 }
