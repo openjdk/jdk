@@ -778,9 +778,15 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   ResourceArea* area = Thread::current()->resource_area();
 
   // Bookkeeping of possibly anti-dependent stores that we find outside of the
-  // early block and that may need anti-dependence edges. For efficiency, we
-  // use a lazy approach to add anti-dependence edges, and only add them at the
-  // very end when we know the final updated LCA.
+  // early block and that may need anti-dependence edges. Note that stores in
+  // non_early_stores are not necessarily dominated by early. The search starts
+  // from initial_mem, which can reside in a block that dominates early, and
+  // therefore, stores we find may be in blocks that are on completely distinct
+  // control-flow paths compared to early. However, in the end, only stores in
+  // blocks dominated by early matters. The reason for bookkeeping not only
+  // relevant stores is efficiency: we lazily record all possible
+  // anti-dependent stores and add anti-dependence edges only to the relevant
+  // ones at the very end of this method when we know the final updated LCA.
   Node_List non_early_stores(area);
 
   // Whether we must raise the LCA after the main worklist loop below.
