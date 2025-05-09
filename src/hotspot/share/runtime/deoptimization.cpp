@@ -857,6 +857,8 @@ static bool falls_through(Bytecodes::Code bc) {
     case Bytecodes::_lreturn:
     case Bytecodes::_ret:
     case Bytecodes::_return:
+    case Bytecodes::_lookupswitch:
+    case Bytecodes::_tableswitch:
       return false;
     default:
       return true;
