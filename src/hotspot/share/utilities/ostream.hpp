@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,7 @@ class outputStream : public CHeapObjBase {
 extern outputStream* tty;           // tty output
 
 class streamIndentor : public StackObj {
+protected:
   outputStream* const _str;
   const int _amount;
   NONCOPYABLE(streamIndentor);
@@ -186,14 +187,13 @@ public:
   ~streamIndentor() { _str->dec(_amount); }
 };
 
-class StreamAutoIndentor : public StackObj {
-  outputStream* const _os;
+class StreamAutoIndentor : public streamIndentor {
   const bool _old;
   NONCOPYABLE(StreamAutoIndentor);
  public:
-  StreamAutoIndentor(outputStream* os) :
-    _os(os), _old(os->set_autoindent(true)) {}
-  ~StreamAutoIndentor() { _os->set_autoindent(_old); }
+  StreamAutoIndentor(outputStream* os, int indentation = 0) :
+    streamIndentor(os, indentation), _old(os->set_autoindent(true)) {}
+  ~StreamAutoIndentor() { _str->set_autoindent(_old); }
 };
 
 // advisory locking for the shared tty stream:
@@ -270,6 +270,7 @@ class stringStream : public outputStream {
   bool is_empty() const { return _buffer[0] == '\0'; }
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
+  char* as_string(Arena* arena) const;
 };
 
 class fileStream : public outputStream {

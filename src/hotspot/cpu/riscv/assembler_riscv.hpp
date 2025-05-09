@@ -371,7 +371,6 @@ protected:
     return -1;
   }
 
-
   static int zfa_zli_lookup_float(uint32_t value) {
     switch(value) {
       case 0xbf800000 : return  0;
@@ -411,7 +410,54 @@ protected:
     return -1;
   }
 
+  static int zfa_zli_lookup_half_float(uint16_t value) {
+    switch(value) {
+      case 0xbc00 : return  0;
+      case 0x0400 : return  1;
+      case 0x0100 : return  2;
+      case 0x0200 : return  3;
+      case 0x1c00 : return  4;
+      case 0x2000 : return  5;
+      case 0x2c00 : return  6;
+      case 0x3000 : return  7;
+      case 0x3400 : return  8;
+      case 0x3500 : return  9;
+      case 0x3600 : return 10;
+      case 0x3700 : return 11;
+      case 0x3800 : return 12;
+      case 0x3900 : return 13;
+      case 0x3a00 : return 14;
+      case 0x3b00 : return 15;
+      case 0x3c00 : return 16;
+      case 0x3d00 : return 17;
+      case 0x3e00 : return 18;
+      case 0x3f00 : return 19;
+      case 0x4000 : return 20;
+      case 0x4100 : return 21;
+      case 0x4200 : return 22;
+      case 0x4400 : return 23;
+      case 0x4800 : return 24;
+      case 0x4c00 : return 25;
+      case 0x5800 : return 26;
+      case 0x5c00 : return 27;
+      case 0x7800 : return 28;
+      case 0x7c00 : return 29;
+      // case 0x7c00 : return 30; // redundant with 29
+      case 0x7e00 : return 31;
+      default: break;
+    }
+    return -1;
+  }
+
  public:
+
+  static bool can_zfa_zli_half_float(jshort hf) {
+    if (!UseZfa || !UseZfh) {
+      return false;
+    }
+    uint16_t hf_bits = (uint16_t)hf;
+    return zfa_zli_lookup_half_float(hf_bits) != -1;
+  }
 
   static bool can_zfa_zli_float(jfloat f) {
     if (!UseZfa) {
@@ -769,7 +815,7 @@ protected:
     emit(insn);
   }
 
- public:
+ protected:
 
   enum barrier {
     i = 0b1000, o = 0b0100, r = 0b0010, w = 0b0001,
@@ -799,6 +845,8 @@ protected:
     patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
+
+ public:
 
 #define INSN(NAME, op, funct3, funct7)                      \
   void NAME() {                                             \
@@ -1316,6 +1364,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
  public:
 
+  void  flh(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b001>(Rd, Rs, offset); }
   void  flw(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b010>(Rd, Rs, offset); }
   void _fld(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b011>(Rd, Rs, offset); }
 
@@ -1397,8 +1446,53 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
   }
 
+  void fadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00000>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsub_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00001>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fmul_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00010>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fdiv_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00011>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsqrt_h(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b01011>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fmin_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fmax_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fmadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    assert_cond(UseZfh);
+    fp_fm<H_16_hp, 0b1000011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
 // --------------  ZFA Instruction Definitions  --------------
 // Zfa Extension for Additional Floating-Point Instructions
+  void _fli_h(FloatRegister Rd, uint8_t Rs1) {
+    assert_cond(UseZfa && UseZfh);
+    fp_base<H_16_hp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
+  }
+
   void _fli_s(FloatRegister Rd, uint8_t Rs1) {
     assert_cond(UseZfa);
     fp_base<S_32_sp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
@@ -1407,6 +1501,36 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   void _fli_d(FloatRegister Rd, uint8_t Rs1) {
     assert_cond(UseZfa);
     fp_base<D_64_dp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
+  }
+
+  void fminm_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa && UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa && UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
+  void fminm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
+  void fminm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b011);
   }
 
 // ==========================
@@ -1780,8 +1904,14 @@ enum VectorMask {
   INSN(vand_vv, 0b1010111, 0b000, 0b001001);
 
   // Vector Single-Width Integer Add and Subtract
-  INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
   INSN(vadd_vv, 0b1010111, 0b000, 0b000000);
+  INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
+
+  // Vector Saturating Integer Add and Subtract
+  INSN(vsadd_vv,  0b1010111, 0b000, 0b100001);
+  INSN(vsaddu_vv, 0b1010111, 0b000, 0b100000);
+  INSN(vssub_vv,  0b1010111, 0b000, 0b100011);
+  INSN(vssubu_vv, 0b1010111, 0b000, 0b100010);
 
   // Vector Register Gather Instructions
   INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
@@ -2199,6 +2329,7 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
 
@@ -2323,6 +2454,7 @@ enum Nf {
     emit(insn);                                         \
   }
 
+  INSN(brev8,  0b0010011, 0b101, 0b011010000111);
   INSN(rev8,   0b0010011, 0b101, 0b011010111000);
   INSN(_sext_b, 0b0010011, 0b001, 0b011000000100);
   INSN(_sext_h, 0b0010011, 0b001, 0b011000000101);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -743,8 +743,10 @@ public class MergeStores {
         UNSAFE.putLongUnaligned(null, native_adr + offset + 0, vL);
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores",
+        "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED"
     })
     public static class MergeStoresDisabled extends MergeStores {}
 }

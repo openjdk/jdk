@@ -1043,7 +1043,12 @@ public class TransPatterns extends TreeTranslator {
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
         if (l.hasTag(Tag.PATTERNCASELABEL)) {
             Type principalType = principalType(((JCPatternCaseLabel) l).pat);
-            if (((JCPatternCaseLabel) l).pat.type.isReference()) {
+
+            if (target.switchBootstrapOnlyAllowsReferenceTypesAsCaseLabels()) {
+                principalType = types.boxedTypeOrType(principalType);
+            }
+
+            if (principalType.isReference()) {
                 if (types.isSubtype(selector, principalType)) {
                     return (LoadableConstant) selector;
                 } else {

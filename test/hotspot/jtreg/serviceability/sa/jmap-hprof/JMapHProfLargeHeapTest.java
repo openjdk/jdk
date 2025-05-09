@@ -42,6 +42,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @test
  * @bug 6313383
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @summary Regression test for hprof export issue due to large heaps (>2G)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

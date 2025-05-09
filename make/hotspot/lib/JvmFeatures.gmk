@@ -125,6 +125,7 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
+      aotCodeCache.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
       systemDictionaryShared.cpp
@@ -224,11 +225,9 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       frame_ppc.cpp \
       frame_s390.cpp \
       frame_x86.cpp \
-      genCollectedHeap.cpp \
       generation.cpp \
       growableArray.cpp \
       handles.cpp \
-      hashtable.cpp \
       heap.cpp \
       icache.cpp \
       icache_arm.cpp \
@@ -246,7 +245,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       linkResolver.cpp \
       klass.cpp \
       klassVtable.cpp \
-      markSweep.cpp \
       memRegion.cpp \
       memoryPool.cpp \
       method.cpp \

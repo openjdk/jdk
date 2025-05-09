@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class NonExistClasspath {
     }
 
     static void doTest(String appJar, boolean bootcp) throws Exception {
-        final String errorMessage3 = (bootcp ? "BOOT" : "APP") + " classpath mismatch";
+        final String errorMessage3 = (bootcp ? "boot" : "app") + " classpath validation: failed";
         (new File(nonExistPath)).delete();
 
         String classPath = nonExistPath + File.pathSeparator + appJar;

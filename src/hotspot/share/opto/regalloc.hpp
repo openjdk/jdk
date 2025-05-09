@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ class PhaseCFG;
 //------------------------------PhaseRegAlloc------------------------------------
 // Abstract register allocator
 class PhaseRegAlloc : public Phase {
-  friend class VMStructs;
   static void (*_alloc_statistics[MAX_REG_ALLOCATORS])();
   static int _num_allocators;
 
@@ -61,12 +60,12 @@ public:
 
   // Get the register associated with the Node
   OptoReg::Name get_reg_first( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+    DEBUG_ONLY( if( n->_idx >= _node_regs_max_index ) n->dump(); );
     assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
     return _node_regs[n->_idx].first();
   }
   OptoReg::Name get_reg_second( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+    DEBUG_ONLY( if( n->_idx >= _node_regs_max_index ) n->dump(); );
     assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
     return _node_regs[n->_idx].second();
   }

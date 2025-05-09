@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,11 +256,10 @@ public class ModuleWriter extends HtmlDocletWriter {
      *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription,
+                TableOfContents.Level.FIRST);
         if (!options.noComment()) {
-            tableOfContents.pushNestedList();
             addModuleDescription(moduleContent);
-            tableOfContents.popNestedList();
         }
     }
 
@@ -529,7 +528,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
-            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules);
+            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules, TableOfContents.Level.FIRST);
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
@@ -574,7 +573,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
-            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages);
+            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages, TableOfContents.Level.FIRST);
             var section = HtmlTree.SECTION(HtmlStyles.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
@@ -788,7 +787,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
-            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices);
+            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices, TableOfContents.Level.FIRST);
             var section = HtmlTree.SECTION(HtmlStyles.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
