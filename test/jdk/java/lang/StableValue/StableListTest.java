@@ -262,6 +262,24 @@ final class StableListTest {
         assertEquals("java.util.ImmutableCollections$StableList", reversed2.getClass().getName());
     }
 
+    @Test
+    void sublistReversedToString() {
+        var actual = StableValue.list(4, IDENTITY);
+        var expected = List.of(0, 1, 2, 3);
+        for (UnaryOperation op : List.of(
+                new UnaryOperation("subList", l -> l.subList(1, 3)),
+                new UnaryOperation("reversed", List::reversed))) {
+            actual = op.apply(actual);
+            expected = op.apply(expected);
+        }
+        // Touch one of the elements
+        actual.getLast();
+
+        var actualToString = actual.toString();
+        var expectedToString = expected.toString().replace("2", ".unset");
+        assertEquals(expectedToString, actualToString);
+    }
+
     // This test makes sure successive view operations retains the property
     // of being a Stable view.
     @Test

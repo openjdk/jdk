@@ -785,8 +785,15 @@ class ImmutableCollections {
         }
     }
 
+    @FunctionalInterface
+    interface HasStableDelegates<E> {
+        StableValueImpl<E>[] delegates();
+    }
+
     @jdk.internal.ValueBased
-    static final class StableList<E> extends AbstractImmutableList<E> {
+    static final class StableList<E>
+            extends AbstractImmutableList<E>
+            implements HasStableDelegates<E> {
 
         @Stable
         private final IntFunction<? extends E> mapper;
@@ -870,7 +877,7 @@ class ImmutableCollections {
         public List<E> subList(int fromIndex, int toIndex) {
             final int size = size();
             subListRangeCheck(fromIndex, toIndex, size);
-            return StableSubList.fromList(this, fromIndex, toIndex);
+            return StableSubList.fromStableList(this, fromIndex, toIndex);
         }
 
         @Override
@@ -878,7 +885,13 @@ class ImmutableCollections {
             return StableUtil.renderElements(this, "StableList", delegates);
         }
 
-        private static final class StableSubList<E> extends SubList<E> {
+        @Override
+        public StableValueImpl<E>[] delegates() {
+            return delegates;
+        }
+
+        private static final class StableSubList<E> extends SubList<E>
+                implements HasStableDelegates<E> {
 
             private StableSubList(AbstractImmutableList<E> root, int offset, int size) {
                 super(root, offset, size);
@@ -892,27 +905,34 @@ class ImmutableCollections {
             @Override
             public List<E> subList(int fromIndex, int toIndex) {
                 subListRangeCheck(fromIndex, toIndex, size());
-                return StableSubList.fromSubList(this, fromIndex, toIndex);
+                return StableSubList.fromStableSubList(this, fromIndex, toIndex);
             }
 
             @Override
             public String toString() {
-                // Todo: Provide a copy free solution
-                final StableValueImpl<E>[] reversed = Arrays.copyOfRange(deepRoot(root).delegates, this.offset, this.size - offset);
-                return StableUtil.renderElements(this, "StableCollection", reversed);
+                return StableUtil.renderElements(this, "StableCollection", delegates());
             }
 
-            static <E> SubList<E> fromList(AbstractImmutableList<E> list, int fromIndex, int toIndex) {
+            @Override
+            public StableValueImpl<E>[] delegates() {
+                @SuppressWarnings("unchecked")
+                final var rootDelegates = ((HasStableDelegates<E>) root).delegates();
+                return Arrays.copyOfRange(rootDelegates, offset, offset + size);
+            }
+
+            static <E> SubList<E> fromStableList(StableList<E> list, int fromIndex, int toIndex) {
                 return new StableSubList<>(list, fromIndex, toIndex - fromIndex);
             }
 
-            static <E> SubList<E> fromSubList(SubList<E> parent, int fromIndex, int toIndex) {
+            static <E> SubList<E> fromStableSubList(StableSubList<E> parent, int fromIndex, int toIndex) {
                 return new StableSubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
             }
 
         }
 
-        private static final class StableReverseOrderListView<E> extends ReverseOrderListView.Rand<E> {
+        private static final class StableReverseOrderListView<E>
+                extends ReverseOrderListView.Rand<E>
+                implements HasStableDelegates<E> {
 
             private StableReverseOrderListView(List<E> base) {
                 super(base, false);
@@ -921,11 +941,7 @@ class ImmutableCollections {
             // This method does not evaluate the elements
             @Override
             public String toString() {
-                final StableValueImpl<E>[] delegates = deepRoot(base).delegates;
-                // Todo: Provide a copy free solution
-                final StableValueImpl<E>[] reversed = ArraysSupport.reverse(
-                        Arrays.copyOf(delegates, delegates.length));
-                return StableUtil.renderElements(this, "Collection", reversed);
+                return StableUtil.renderElements(this, "StableCollection", delegates());
             }
 
             @Override
@@ -940,18 +956,13 @@ class ImmutableCollections {
                 return new StableReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex));
             }
 
-        }
-
-        static <E> StableList<E> deepRoot(List<E> list) {
-            // Avoid spinning code for a pattern matching switch, instead use an if rake
-            if (list instanceof StableList<E> sl) {
-                return sl;
-            } else if (list instanceof StableList.StableReverseOrderListView<E> rev) {
-                return deepRoot(rev.base);
-            } else if (list instanceof StableList.StableSubList<E> sub) {
-                return deepRoot(sub.root);
+            @Override
+            public StableValueImpl<E>[] delegates() {
+                @SuppressWarnings("unchecked")
+                final var baseDelegates = ((HasStableDelegates<E>) base).delegates();
+                return ArraysSupport.reverse(
+                        Arrays.copyOf(baseDelegates, baseDelegates.length));
             }
-            throw new InternalError("Should not reach here: " + list.getClass().getName());
         }
 
     }
