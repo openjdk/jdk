@@ -22,9 +22,9 @@
  *
  */
 
-package compiler/interpreter/verifyStack;
+package compiler/interpreter;
 
-super class TestImpl version 49:0
+super class TestVerifyStackWithUnreachableBytecodeImpl version 49:0
 {
     public Method "<init>":"()V"
         stack  1 locals  1
@@ -36,10 +36,10 @@ super class TestImpl version 49:0
     public static Method testAreturn:"()Ljava/lang/Object;"
         stack 1 locals 0
     {
-        // If A not loaded -> trap for A unloaded
-        // If a loaded, but B not -> assume A.val null, else trap.
+        // If A not loaded -> trap for TestVerifyStackWithUnreachableBytecodeA unloaded
+        // If a loaded, but TestVerifyStackWithUnreachableBytecodeB not -> assume TestVerifyStackWithUnreachableBytecodeA.val null, else trap.
         //   -> "null_assert_or_unreached0"
-        getstatic    Field compiler/interpreter/verifyStack/A.val:"Lcompiler/interpreter/verifyStack/B;";
+        getstatic    Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
         areturn;
 
         // some unreachable instruction after return
@@ -48,7 +48,7 @@ super class TestImpl version 49:0
     public static Method testReturn:"()V"
         stack  1 locals  0
     {
-        getstatic   Field compiler/interpreter/verifyStack/A.val:"Lcompiler/interpreter/verifyStack/B;";
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
         return;
         // unreachable
         iconst_0;
@@ -56,7 +56,7 @@ super class TestImpl version 49:0
     public static Method testGoto:"()V"
         stack  1 locals  0
     {
-        getstatic   Field compiler/interpreter/verifyStack/A.val:"Lcompiler/interpreter/verifyStack/B;";
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
         goto There;
         // unreachable
         iconst_0;
@@ -66,7 +66,7 @@ super class TestImpl version 49:0
     public static Method testGotow:"()V"
         stack  1 locals  0
     {
-        getstatic   Field compiler/interpreter/verifyStack/A.val:"Lcompiler/interpreter/verifyStack/B;";
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
         goto_w There;
         // unreachable
         iconst_0;

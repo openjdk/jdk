@@ -26,45 +26,45 @@
  * @test id=return
  * @bug 8336906
  * @summary Ensure VerifyStack does not crash on bytecodes in unreachable basic blocks after return.
- * @compile B.java A.java TestImpl.jasm TestVerifyStackWithUnreachableBytecode.java
+ * @compile TestVerifyStackWithUnreachableBytecodeImpl.jasm TestVerifyStackWithUnreachableBytecode.java
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -Xcomp
- *      -XX:CompileCommand=compileonly,compiler/interpreter/verifyStack/TestImpl.test*
- *      compiler.interpreter.verifyStack.TestVerifyStackWithUnreachableBytecode return
+ *      -XX:CompileCommand=compileonly,compiler/interpreter/TestVerifyStackWithUnreachableBytecodeImpl.test*
+ *      compiler.interpreter.TestVerifyStackWithUnreachableBytecode return
  */
 
 /*
  * @test id=areturn
  * @bug 8336906
  * @summary Ensure VerifyStack does not crash on bytecodes in unreachable basic blocks after areturn.
- * @compile B.java A.java TestImpl.jasm TestVerifyStackWithUnreachableBytecode.java
+ * @compile TestVerifyStackWithUnreachableBytecodeImpl.jasm TestVerifyStackWithUnreachableBytecode.java
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -Xcomp
- *      -XX:CompileCommand=compileonly,compiler/interpreter/verifyStack/TestImpl.test*
- *      compiler.interpreter.verifyStack.TestVerifyStackWithUnreachableBytecode areturn
+ *      -XX:CompileCommand=compileonly,compiler/interpreter/TestVerifyStackWithUnreachableBytecodeImpl.test*
+ *      compiler.interpreter.TestVerifyStackWithUnreachableBytecode areturn
  */
 
 /*
  * @test id=goto
  * @bug 8336906 8271055
  * @summary Ensure VerifyStack does not crash on bytecodes in unreachable basic blocks after goto.
- * @compile B.java A.java TestImpl.jasm TestVerifyStackWithUnreachableBytecode.java
+ * @compile TestVerifyStackWithUnreachableBytecodeImpl.jasm TestVerifyStackWithUnreachableBytecode.java
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -Xcomp
- *      -XX:CompileCommand=compileonly,compiler/interpreter/verifyStack/TestImpl.test*
- *      compiler.interpreter.verifyStack.TestVerifyStackWithUnreachableBytecode goto
+ *      -XX:CompileCommand=compileonly,compiler/interpreter/TestVerifyStackWithUnreachableBytecodeImpl.test*
+ *      compiler.interpreter.TestVerifyStackWithUnreachableBytecode goto
  */
 
 /*
  * @test id=gotow
  * @bug 8336906 8271055
  * @summary Ensure VerifyStack does not crash on bytecodes in unreachable basic blocks after gotow.
- * @compile B.java A.java TestImpl.jasm TestVerifyStackWithUnreachableBytecode.java
+ * @compile TestVerifyStackWithUnreachableBytecodeImpl.jasm TestVerifyStackWithUnreachableBytecode.java
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -Xcomp
- *      -XX:CompileCommand=compileonly,compiler/interpreter/verifyStack/TestImpl.test*
- *      compiler.interpreter.verifyStack.TestVerifyStackWithUnreachableBytecode gotow
+ *      -XX:CompileCommand=compileonly,compiler/interpreter/TestVerifyStackWithUnreachableBytecodeImpl.test*
+ *      compiler.interpreter.TestVerifyStackWithUnreachableBytecode gotow
  */
 
-package compiler.interpreter.verifyStack;
+package compiler.interpreter;
 
-import compiler.interpreter.verifyStack.*;
+import compiler.interpreter.TestVerifyStackWithUnreachableBytecodeImpl;
 
 public class TestVerifyStackWithUnreachableBytecode {
     public static void main(String[] args) {
@@ -73,9 +73,9 @@ public class TestVerifyStackWithUnreachableBytecode {
         // The following is designed to cause a deopt with the reason `null_assert_or_unreached0`
         // when accessing A.val using getstatic due to the class B not being loaded and the consequent
         // assumption of A.val == null.
-        A.val = null;
+        TestVerifyStackWithUnreachableBytecodeA.val = null;
         dispatchTest(t);
-        A.val = new B(42);
+        TestVerifyStackWithUnreachableBytecodeA.val = new TestVerifyStackWithUnreachableBytecodeB(42);
         dispatchTest(t);
     }
 
@@ -98,10 +98,20 @@ public class TestVerifyStackWithUnreachableBytecode {
 
     private static void dispatchTest(TestCase testCase) {
         switch (testCase) {
-            case ARETURN -> TestImpl.testAreturn();
-            case RETURN -> TestImpl.testReturn();
-            case GOTO -> TestImpl.testGoto();
-            case GOTOW -> TestImpl.testGotow();
+            case ARETURN -> TestVerifyStackWithUnreachableBytecodeImpl.testAreturn();
+            case RETURN -> TestVerifyStackWithUnreachableBytecodeImpl.testReturn();
+            case GOTO -> TestVerifyStackWithUnreachableBytecodeImpl.testGoto();
+            case GOTOW -> TestVerifyStackWithUnreachableBytecodeImpl.testGotow();
         }
     }
+}
+
+class TestVerifyStackWithUnreachableBytecodeA {
+    public static TestVerifyStackWithUnreachableBytecodeB val = null;
+}
+
+class TestVerifyStackWithUnreachableBytecodeB {
+    public int val = 0;
+
+    TestVerifyStackWithUnreachableBytecodeB(int v) { this.val = v; }
 }
