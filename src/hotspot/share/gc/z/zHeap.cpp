@@ -132,11 +132,11 @@ size_t ZHeap::unused() const {
 }
 
 size_t ZHeap::tlab_capacity() const {
-  return _tlab_usage.capacity();
+  return _tlab_usage.tlab_capacity();
 }
 
 size_t ZHeap::tlab_used() const {
-  return _tlab_usage.used();
+  return _tlab_usage.tlab_used();
 }
 
 size_t ZHeap::max_tlab_size() const {

@@ -29,42 +29,42 @@ ZTLABUsage::ZTLABUsage()
   : _used(0),
     _used_history() {}
 
-
 void ZTLABUsage::increase_used(size_t size) {
   Atomic::add(&_used, size, memory_order_relaxed);
 }
 
 void ZTLABUsage::decrease_used(size_t size) {
   precond(size <= _used);
+
   Atomic::sub(&_used, size, memory_order_relaxed);
 }
 
 void ZTLABUsage::reset() {
-  const size_t current_used = Atomic::xchg(&_used, (size_t) 0);
+  const size_t used = Atomic::xchg(&_used, (size_t) 0);
 
-  // Avoid updates for the second young generation collection of a SystemGC
-  if (current_used == 0) {
+  // Avoid updates when nothing has been allocated since the last YC
+  if (used == 0) {
     return;
   }
 
   // Save the old values for logging
-  const size_t old_used = used();
-  const size_t old_capacity = capacity();
+  const size_t old_tlab_used = tlab_used();
+  const size_t old_tlab_capacity = tlab_capacity();
 
   // Update the usage history with the current value
-  _used_history.add(current_used);
+  _used_history.add(used);
 
   log_debug(gc, tlab)("TLAB usage update: used %zuM -> %zuM, capacity: %zuM -> %zuM",
-                      old_used / M,
-                      used() / M,
-                      old_capacity / M,
-                      capacity() / M);
+                      old_tlab_used / M,
+                      tlab_used() / M,
+                      old_tlab_capacity / M,
+                      tlab_capacity() / M);
   }
 
-size_t ZTLABUsage::used() const {
+size_t ZTLABUsage::tlab_used() const {
   return _used_history.last();
 }
 
-size_t ZTLABUsage::capacity() const {
+size_t ZTLABUsage::tlab_capacity() const {
   return _used_history.davg();
 }

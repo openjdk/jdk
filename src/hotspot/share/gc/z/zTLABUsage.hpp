@@ -36,11 +36,14 @@
 // ZGC does not have set generation sizes unlike most other GCs and because of
 // this there is no fixed TLAB capacity. For the common TLAB sizing heuristic
 // to work properly ZGC estimates the current capacity by using a weighted
-// average of the last 10 used values.
+// average of the last 10 used values. ZGC uses the last snapshotted value as
+// the value returned as tlab_used().
 
 class ZTLABUsage {
 private:
+  // Accounting TLAB used until the next GC cycle
   volatile size_t _used;
+  // Sequence of historic used values
   TruncatedSeq    _used_history;
 
 public:
@@ -50,8 +53,8 @@ public:
   void decrease_used(size_t size);
   void reset();
 
-  size_t used() const;
-  size_t capacity() const;
+  size_t tlab_used() const;
+  size_t tlab_capacity() const;
 };
 
 #endif // SHARE_GC_Z_ZTLABUSAGE_HPP
