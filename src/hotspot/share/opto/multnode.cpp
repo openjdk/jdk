@@ -47,60 +47,58 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
   assert(number_of_projs(which_proj) <= 1, "only when there's a single projection");
   auto find_proj = [which_proj, this](ProjNode* proj) {
-    if (proj->_con == which_proj) {
-      assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse), "bad if #2");
-      return true;
-    }
+    assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse),
+           "bad if #2");
+    return true;
   };
-  return apply_to_projs_fast(find_proj);
+  return apply_to_projs(find_proj, which_proj);
 }
 
 ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
   assert(number_of_projs(which_proj, is_io_use) <= 1, "only when there's a single projection");
-  auto find_proj = [which_proj, is_io_use](ProjNode* proj) {
-    if (proj->_con == which_proj && proj->_is_io_use == is_io_use) {
-      return true;
-    }
+  auto find_proj = [](ProjNode* proj) {
+    return true;
   };
-  return apply_to_projs_fast(find_proj);
+  return apply_to_projs(find_proj, which_proj, is_io_use);
 }
 
-template<class Callback> ProjNode* MultiNode::apply_to_projs_fast(Callback callback) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* p = fast_out(i);
-    if (p->is_Proj()) {
-      ProjNode* proj = p->as_Proj();
-      if (callback(proj)) {
-        return proj;
-      }
-    } else {
-      assert(p == this && this->is_Start(), "else must be proj");
+template<class Callback> ProjNode* MultiNode::apply_to_projs(Callback callback, uint which_proj) const {
+  auto filter = [which_proj, callback](ProjNode* proj) {
+    if (proj->_con == which_proj && callback(proj)) {
+      return true;
     }
-  }
-  return nullptr;
+    return false;
+  };
+  return apply_to_projs(filter);
+}
+
+template<class Callback> ProjNode* MultiNode::apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const {
+  auto filter = [is_io_use,callback](ProjNode* proj) {
+    if (proj->_is_io_use == is_io_use && callback(proj)) {
+      return true;
+    }
+    return false;
+  };
+  return apply_to_projs(filter, which_proj);
 }
 
 uint MultiNode::number_of_projs(uint which_proj) const {
   uint cnt = 0;
-  auto count_projs = [which_proj, &cnt](ProjNode* proj) {
-    if (proj->_con == which_proj) {
-      cnt++;
-    }
+  auto count_projs = [&cnt](ProjNode* proj) {
+    cnt++;
     return false;
   };
-  apply_to_projs_fast(count_projs);
+  apply_to_projs(count_projs, which_proj);
   return cnt;
 }
 
 uint MultiNode::number_of_projs(uint which_proj, bool is_io_use) const {
   uint cnt = 0;
-  auto count_projs = [which_proj, &cnt, is_io_use](ProjNode* proj) {
-    if (proj->_con == which_proj && proj->_is_io_use == is_io_use) {
-      cnt++;
-    }
+  auto count_projs = [&cnt](ProjNode* proj) {
+    cnt++;
     return false;
   };
-  apply_to_projs_fast(count_projs);
+  apply_to_projs(count_projs, which_proj, is_io_use);
   return cnt;
 }
 

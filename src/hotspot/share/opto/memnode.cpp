@@ -5452,12 +5452,13 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* proj = fast_out(i)->as_Proj();
+  auto replace_proj = [C, mem](ProjNode* proj) {
     if (proj->_con == TypeFunc::Memory) {
       C->gvn_replace_by(proj, mem);
     }
-  }
+    return false;
+  };
+  apply_to_projs(replace_proj);
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
@@ -5470,14 +5471,31 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   }
 }
 
-bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    NarrowMemProjNode* proj = fast_out(i)->as_Proj()->isa_NarrowMemProj();
-    if (proj != nullptr && proj->adr_type() == adr_type) {
+template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
+  auto filter = [callback](ProjNode* proj) {
+    if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
       return true;
     }
-  }
-  return false;
+    return false;
+  };
+  return apply_to_projs(filter);
+}
+
+template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
+  auto filter = [callback, adr_type](NarrowMemProjNode* proj) {
+    if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj())) {
+      return true;
+    }
+    return false;
+  };
+  return apply_to_narrow_mem_projs(filter);
+}
+
+bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
+  auto find_proj = [](ProjNode* proj) {
+    return true;
+  };
+  return apply_to_narrow_mem_projs(find_proj, adr_type) != nullptr;
 }
 
 #ifdef ASSERT

@@ -51,7 +51,22 @@ public:
   ProjNode* proj_out_or_null(uint which_proj, bool is_io_use) const;
   uint number_of_projs(uint which_proj) const;
   uint number_of_projs(uint which_proj, bool is_io_use) const;
-  template <class Callback> ProjNode* apply_to_projs_fast(Callback callback) const;
+  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
+    for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+      Node* p = fast_out(i);
+      if (p->is_Proj()) {
+        ProjNode* proj = p->as_Proj();
+        if (callback(proj)) {
+          return proj;
+        }
+      } else {
+        assert(p == this && this->is_Start(), "else must be proj");
+      }
+    }
+    return nullptr;
+  }
+  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const;
+  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
 };
 
 //------------------------------ProjNode---------------------------------------

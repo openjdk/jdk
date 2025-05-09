@@ -1367,6 +1367,8 @@ public:
   void replace_mem_projs_by(Node* mem, PhaseIterGVN* ivn);
 
   bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback) const;
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
 
 private:
   void remove_extra_zeroes();
