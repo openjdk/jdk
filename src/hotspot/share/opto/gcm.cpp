@@ -783,7 +783,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   // from initial_mem, which can reside in a block that dominates early, and
   // therefore, stores we find may be in blocks that are on completely distinct
   // control-flow paths compared to early. However, in the end, only stores in
-  // blocks dominated by early matters. The reason for bookkeeping not only
+  // blocks dominated by early matter. The reason for bookkeeping not only
   // relevant stores is efficiency: we lazily record all possible
   // anti-dependent stores and add anti-dependence edges only to the relevant
   // ones at the very end of this method when we know the final updated LCA.
