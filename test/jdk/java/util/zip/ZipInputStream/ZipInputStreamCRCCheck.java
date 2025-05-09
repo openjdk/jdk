@@ -37,7 +37,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -96,19 +98,14 @@ public class ZipInputStreamCRCCheck {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipContent))) {
             final ZipEntry entry = zis.getNextEntry();
             assertEquals(entryName, entry.getName(), "unexpected entry name");
-            try {
+            final ZipException zipEx = assertThrows(ZipException.class, () -> {
                 zis.readAllBytes();
                 zis.closeEntry();
-                fail(entryName + " entry was expected to fail with a CRC error,"
-                        + " but didn't. computed crc=" + entry.getCrc());
-            } catch (ZipException zex) {
-                final String msg = zex.getMessage();
-                if (msg != null && msg.contains("invalid entry CRC")) {
-                    System.out.println("got expected CRC failure for entry " + entryName);
-                } else {
-                    throw zex;
-                }
-            }
+            }, "expected to fail due to CRC error but didn't, computed crc=" + entry.getCrc());
+            assertNotNull(zipEx.getMessage(), "missing exception message");
+            assertTrue(zipEx.getMessage().contains("invalid entry CRC"),
+                    "Expected exception message to contain 'invalid entry CRC' but was "
+                            + zipEx.getMessage());
         }
     }
 
