@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8289106 8293627
- * @summary Tests of AccessFlag.locations(ClassFileFormatVersion)
+ * @summary Tests of AccessFlag.locations(ClassFileFormatVersion) and
+ *          accessors on AccessFlag.Location
  */
 
 import java.lang.reflect.AccessFlag;
@@ -79,6 +80,8 @@ public class VersionedLocationsTest {
         testSynthetic();
         testStrict();
         testLatestMatch();
+        testFlagVersionConsistency();
+        testLocationMaskFlagConsistency();
     }
 
     /**
@@ -241,12 +244,13 @@ public class VersionedLocationsTest {
     private static void testSynthetic() {
         for (var cffv : ClassFileFormatVersion.values()) {
             Set<AccessFlag.Location> expected;
-            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_6) <= 0) {
+            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) < 0) {
                 expected = Set.of();
             } else {
                 expected =
                     switch(cffv) {
-                        case RELEASE_7 -> Set.of(Location.CLASS, Location.FIELD,
+                        case RELEASE_5, RELEASE_6,
+                             RELEASE_7 -> Set.of(Location.CLASS, Location.FIELD,
                                                  Location.METHOD,
                                                  Location.INNER_CLASS);
                         case RELEASE_8 -> Set.of(Location.CLASS, Location.FIELD,
@@ -285,4 +289,47 @@ public class VersionedLocationsTest {
         }
     }
 
+    private static void testFlagVersionConsistency() {
+        for (var flag : AccessFlag.values()) {
+            for (var location : AccessFlag.Location.values()) {
+                if (location.flags().contains(flag) != flag.locations().contains(location)) {
+                    throw new RuntimeException(String.format("AccessFlag and Location inconsistency:" +
+                            "flag %s and location %s are inconsistent for the latest version"));
+                }
+            }
+        }
+        for (var cffv : ClassFileFormatVersion.values()) {
+            for (var flag : AccessFlag.values()) {
+                for (var location : AccessFlag.Location.values()) {
+                    if (location.flags(cffv).contains(flag) != flag.locations(cffv).contains(location)) {
+                        throw new RuntimeException(String.format("AccessFlag and Location inconsistency:" +
+                                "flag %s and location %s are inconsistent for class file version %s"));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void testLocationMaskFlagConsistency() {
+        for (var location : AccessFlag.Location.values()) {
+            if (!flagsAndMaskMatch(location.flags(), location.flagsMask())) {
+                throw new RuntimeException(String.format("Flags and mask mismatch for %s", location));
+            }
+            for (var cffv : ClassFileFormatVersion.values()) {
+                if (!flagsAndMaskMatch(location.flags(cffv), location.flagsMask(cffv))) {
+                    throw new RuntimeException(String.format("Flags and mask mismatch for %s in %s", location, cffv));
+                }
+            }
+        }
+    }
+
+    private static boolean flagsAndMaskMatch(Set<AccessFlag> flags, int mask) {
+        for (var flag : flags) {
+            int bit = flag.mask();
+            if (((mask & bit) == 0))
+                return false;
+            mask &= ~bit;
+        }
+        return mask == 0;
+    }
 }

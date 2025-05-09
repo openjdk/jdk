@@ -45,7 +45,7 @@ void PSPromotionLAB::initialize(MemRegion lab) {
   // We can be initialized to a zero size!
   if (free() > 0) {
     if (ZapUnusedHeapArea) {
-      debug_only(Copy::fill_to_words(top(), free()/HeapWordSize, badHeapWord));
+      DEBUG_ONLY(Copy::fill_to_words(top(), free()/HeapWordSize, badHeapWord));
     }
 
     // NOTE! We need to allow space for a filler object.

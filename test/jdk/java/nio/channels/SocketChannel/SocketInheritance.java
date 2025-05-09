@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Sockets shouldn't be inherited when creating a child process
+ * @requires (os.family == "windows")
  */
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -138,9 +139,6 @@ public class SocketInheritance {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!System.getProperty("os.name").startsWith("Windows"))
-            return;
-
         if (args.length == 0) {
             start();
         } else {

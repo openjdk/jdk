@@ -2237,6 +2237,72 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
+static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
+  int vopc = n->Opcode();
+  assert(vopc == Op_UMinV || vopc == Op_UMaxV, "Unexpected opcode");
+
+  Node* umin = nullptr;
+  Node* umax = nullptr;
+  int lopc = n->in(1)->Opcode();
+  int ropc = n->in(2)->Opcode();
+
+  if (lopc == Op_UMinV && ropc == Op_UMaxV) {
+    umin = n->in(1);
+    umax = n->in(2);
+  } else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
+    umin = n->in(2);
+    umax = n->in(1);
+  } else {
+    return nullptr;
+  }
+
+  // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
+  // UMin (UMax(a, b), UMin(b, a))  => UMin(a, b)
+  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
+  // UMax (UMax(a, b), UMin(b, a))  => UMax(a, b)
+  if (umin != nullptr && umax != nullptr) {
+    if ((umin->in(1) == umax->in(1) && umin->in(2) == umax->in(2)) ||
+        (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
+      if (vopc == Op_UMinV) {
+        return new UMinVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
+      } else {
+        return new UMaxVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* UMinVNode::Identity(PhaseGVN* phase) {
+  // UMin (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* UMaxVNode::Identity(PhaseGVN* phase) {
+  // UMax (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

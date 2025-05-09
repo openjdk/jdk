@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,12 @@
  *     Summary of Tools for Java Platform Security}
  *     (for example {@code keytool} and {@code jarsigner}),</li>
  *
+ * </ul>
+ *
+ * <h2>Additional Specification</h2>
+ * <ul>
+ *   <li><a href="doc-files/debug-system-property.html">
+ *     The {@code java.security.debug} System Property</a></li>
  * </ul>
  *
  * @spec security/standard-names.html Java Security Standard Algorithm Names

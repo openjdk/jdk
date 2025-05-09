@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.RootPaneUI;
@@ -225,8 +223,6 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             // put the listener in the button's client properties so that
             // we can get at it later
             b.putClientProperty(this, listener);
-
-            b.addAncestorListener(listener);
         }
         installHierListener(b);
         AquaUtilControlSize.addSizePropertyListener(b);
@@ -252,11 +248,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
     protected void uninstallListeners(final AbstractButton b) {
         super.uninstallListeners(b);
-        final AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
-        if (listener != null) {
-            b.removeAncestorListener(listener);
-        }
         uninstallHierListener(b);
         AquaUtilControlSize.removeSizePropertyListener(b);
     }
@@ -591,7 +583,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    class AquaButtonListener extends BasicButtonListener implements AncestorListener {
+    class AquaButtonListener extends BasicButtonListener {
         protected final AbstractButton b;
 
         public AquaButtonListener(final AbstractButton b) {
@@ -657,28 +649,6 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
                     b.setBorder(AquaButtonExtendedTypes.getBorderForPosition(b, buttonType, buttonPosition));
                 }
             }
-        }
-
-        public void ancestorMoved(final AncestorEvent e) {}
-
-        public void ancestorAdded(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        public void ancestorRemoved(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        protected void updateDefaultButton() {
-            if (!(b instanceof JButton)) return;
-            if (!((JButton)b).isDefaultButton()) return;
-
-            final JRootPane rootPane = b.getRootPane();
-            if (rootPane == null) return;
-
-            final RootPaneUI ui = rootPane.getUI();
-            if (!(ui instanceof AquaRootPaneUI)) return;
-            ((AquaRootPaneUI)ui).updateDefaultButton(rootPane);
         }
     }
 }

@@ -205,7 +205,7 @@ void JfrDoublyLinkedList<T>::append_list(T* const head_node, T* const tail_node,
   }
   *lt = tail_node;
   const T* node = head_node;
-  debug_only(validate_count_param(node, count);)
+  DEBUG_ONLY(validate_count_param(node, count);)
     _count += count;
   assert(tail() == tail_node, "invariant");
   assert(in_list(tail_node), "not in list error");

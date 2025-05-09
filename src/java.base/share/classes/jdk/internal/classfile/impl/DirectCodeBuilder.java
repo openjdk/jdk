@@ -48,10 +48,8 @@ public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder {
     private static final CharacterRange[] EMPTY_CHARACTER_RANGE = {};
-    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = {};
     private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = {};
     private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = {};
-    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = {};
     private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = {};
 
     final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
@@ -73,6 +71,9 @@ public final class DirectCodeBuilder
 
     private DeferredLabel[] deferredLabels = EMPTY_DEFERRED_LABEL_ARRAY;
     private int deferredLabelsCount = 0;
+
+    private int maxStackHint = -1;
+    private int maxLocalsHint = -1;
 
     /* Locals management
        lazily computed maxLocal = -1
@@ -171,6 +172,12 @@ public final class DirectCodeBuilder
 
     public MethodInfo methodInfo() {
         return methodInfo;
+    }
+
+    public static void withMaxs(CodeBuilder cob, int stacks, int locals) {
+        var dcb = (DirectCodeBuilder) cob;
+        dcb.maxStackHint = stacks;
+        dcb.maxLocalsHint = locals;
     }
 
     private UnboundAttribute<CodeAttribute> content = null;
@@ -319,6 +326,8 @@ public final class DirectCodeBuilder
                 if (codeMatch) {
                     var originalAttribute = (CodeImpl) original;
                     buf.writeU2U2(originalAttribute.maxStack(), originalAttribute.maxLocals());
+                } else if (maxLocalsHint >= 0 && maxStackHint >= 0) {
+                    buf.writeU2U2(maxStackHint, maxLocalsHint);
                 } else {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     buf.writeU2U2(cntr.maxStack(), cntr.maxLocals());

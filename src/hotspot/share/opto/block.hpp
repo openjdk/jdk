@@ -48,7 +48,7 @@ struct Tarjan;
 // allocation I do not need a destructor to reclaim storage.
 class Block_Array : public ArenaObj {
   uint _size;                   // allocated size, as opposed to formal limit
-  debug_only(uint _limit;)      // limit to formal domain
+  DEBUG_ONLY(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
   ReallocMark _nesting;         // Safety checks for arena reallocation
 protected:
@@ -57,7 +57,7 @@ protected:
 
 public:
   Block_Array(Arena *a) : _size(OptoBlockListSize), _arena(a) {
-    debug_only(_limit=0);
+    DEBUG_ONLY(_limit=0);
     _blocks = NEW_ARENA_ARRAY( a, Block *, OptoBlockListSize );
     for( int i = 0; i < OptoBlockListSize; i++ ) {
       _blocks[i] = nullptr;
@@ -69,7 +69,7 @@ public:
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
   void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
-  uint Max() const { debug_only(return _limit); return _size; }
+  uint Max() const { DEBUG_ONLY(return _limit); return _size; }
 };
 
 

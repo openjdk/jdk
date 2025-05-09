@@ -51,7 +51,7 @@ import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.XORComposite;
 
-public class GDIWindowSurfaceData extends SurfaceData {
+public final class GDIWindowSurfaceData extends SurfaceData {
     private WComponentPeer peer;
     private Win32GraphicsConfig graphicsConfig;
     private RenderLoops solidloops;
@@ -139,6 +139,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         return SurfaceDataProxy.UNCACHED;
     }
 
+    @Override
     public Raster getRaster(int x, int y, int w, int h) {
         throw new InternalError("not implemented yet");
     }
@@ -155,6 +156,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
 
     }
 
+    @Override
     public void validatePipe(SunGraphics2D sg2d) {
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON &&
             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
@@ -223,6 +225,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         }
     }
 
+    @Override
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
         if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
             sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY)
@@ -232,6 +235,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         return super.getRenderLoops(sg2d);
     }
 
+    @Override
     public GraphicsConfiguration getDeviceConfiguration() {
         return graphicsConfig;
     }
@@ -299,6 +303,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         return mgr.getReplacementScreenSurface(peer, this);
     }
 
+    @Override
     public Rectangle getBounds() {
         Rectangle r = peer.getBounds();
         r.x = r.y = 0;
@@ -307,6 +312,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         return r;
     }
 
+    @Override
     public boolean copyArea(SunGraphics2D sg2d,
                             int x, int y, int w, int h, int dx, int dy)
     {

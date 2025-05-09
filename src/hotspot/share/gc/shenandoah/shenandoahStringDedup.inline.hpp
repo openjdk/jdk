@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahStringDedup.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "oops/markWord.hpp"
 
 bool ShenandoahStringDedup::is_string_candidate(oop obj) {

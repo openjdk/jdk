@@ -656,7 +656,7 @@ public final class TKit {
     }
 
 
-    public static void assertEquals(String expected, String actual, String msg) {
+    public static void assertEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -668,7 +668,7 @@ public final class TKit {
         traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
-    public static void assertNotEquals(String expected, String actual, String msg) {
+    public static void assertNotEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -760,9 +760,9 @@ public final class TKit {
                 try (var files = Files.list(path)) {
                     boolean actualIsEmpty = files.findFirst().isEmpty();
                     if (isEmptyCheck.get()) {
-                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is an empty directory", path));
                     } else {
-                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
                     }
                 }
             }).run();
@@ -803,18 +803,22 @@ public final class TKit {
     }
 
     public static DirectoryContentVerifier assertDirectoryContent(Path dir) {
-        return new DirectoryContentVerifier(dir);
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.list(dir)) {
+                return files.map(Path::getFileName).collect(toSet());
+            }
+        }).get());
+    }
+
+    public static DirectoryContentVerifier assertDirectoryContentRecursive(Path dir) {
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.walk(dir).skip(1)) {
+                return files.map(dir::relativize).collect(toSet());
+            }
+        }).get());
     }
 
     public static final class DirectoryContentVerifier {
-        public DirectoryContentVerifier(Path baseDir) {
-            this(baseDir, ThrowingSupplier.toSupplier(() -> {
-                try (var files = Files.list(baseDir)) {
-                    return files.map(Path::getFileName).collect(toSet());
-                }
-            }).get());
-        }
-
         public void match(Path ... expected) {
             DirectoryContentVerifier.this.match(Set.of(expected));
         }
@@ -969,8 +973,17 @@ public final class TKit {
 
     public static final class TextStreamVerifier {
         TextStreamVerifier(String value) {
-            this.value = value;
+            this.value = Objects.requireNonNull(value);
             predicate(String::contains);
+        }
+
+        TextStreamVerifier(TextStreamVerifier other) {
+            predicate = other.predicate;
+            label = other.label;
+            negate = other.negate;
+            createException = other.createException;
+            anotherVerifier = other.anotherVerifier;
+            value = other.value;
         }
 
         public TextStreamVerifier label(String v) {
@@ -979,7 +992,7 @@ public final class TKit {
         }
 
         public TextStreamVerifier predicate(BiPredicate<String, String> v) {
-            predicate = v;
+            predicate = Objects.requireNonNull(v);
             return this;
         }
 
@@ -988,17 +1001,8 @@ public final class TKit {
             return this;
         }
 
-        public TextStreamVerifier andThen(Consumer<? super Stream<String>> anotherVerifier) {
-            this.anotherVerifier = anotherVerifier;
-            return this;
-        }
-
-        public TextStreamVerifier andThen(TextStreamVerifier anotherVerifier) {
-            this.anotherVerifier = anotherVerifier::apply;
-            return this;
-        }
-
         public TextStreamVerifier orElseThrow(RuntimeException v) {
+            Objects.requireNonNull(v);
             return orElseThrow(() -> v);
         }
 
@@ -1007,22 +1011,22 @@ public final class TKit {
             return this;
         }
 
-        public void apply(Stream<String> lines) {
-            final String matchedStr;
-
-            lines = lines.dropWhile(line -> !predicate.test(line, value));
-            if (anotherVerifier == null) {
-                matchedStr = lines.findFirst().orElse(null);
-            } else {
-                var tail = lines.toList();
-                if (tail.isEmpty()) {
-                    matchedStr = null;
-                } else {
-                    matchedStr = tail.get(0);
+        private String findMatch(Iterator<String> lineIt) {
+            while (lineIt.hasNext()) {
+                final var line = lineIt.next();
+                if (predicate.test(line, value)) {
+                    return line;
                 }
-                lines = tail.stream().skip(1);
             }
+            return null;
+        }
 
+        public void apply(List<String> lines) {
+            apply(lines.iterator());
+        }
+
+        public void apply(Iterator<String> lineIt) {
+            final String matchedStr = findMatch(lineIt);
             final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
@@ -1049,15 +1053,67 @@ public final class TKit {
             }
 
             if (anotherVerifier != null) {
-                anotherVerifier.accept(lines);
+                anotherVerifier.accept(lineIt);
             }
+        }
+
+        public static TextStreamVerifier.Group group() {
+            return new TextStreamVerifier.Group();
+        }
+
+        public static final class Group {
+            public Group add(TextStreamVerifier verifier) {
+                if (verifier.anotherVerifier != null) {
+                    throw new IllegalArgumentException();
+                }
+                verifiers.add(verifier);
+                return this;
+            }
+
+            public Group add(Group other) {
+                verifiers.addAll(other.verifiers);
+                return this;
+            }
+
+            public boolean isEmpty() {
+                return verifiers.isEmpty();
+            }
+
+            public Optional<Consumer<Iterator<String>>> tryCreate() {
+                if (isEmpty()) {
+                    return Optional.empty();
+                } else {
+                    return Optional.of(create());
+                }
+            }
+
+            public Consumer<Iterator<String>> create() {
+                if (verifiers.isEmpty()) {
+                    throw new IllegalStateException();
+                }
+
+                if (verifiers.size() == 1) {
+                    return verifiers.getFirst()::apply;
+                }
+
+                final var head = new TextStreamVerifier(verifiers.getFirst());
+                var prev = head;
+                for (var verifier : verifiers.subList(1, verifiers.size())) {
+                    verifier = new TextStreamVerifier(verifier);
+                    prev.anotherVerifier = verifier::apply;
+                    prev = verifier;
+                }
+                return head::apply;
+            }
+
+            private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        private Consumer<? super Stream<String>> anotherVerifier;
+        private Consumer<? super Iterator<String>> anotherVerifier;
         private final String value;
     }
 

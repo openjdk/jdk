@@ -929,8 +929,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
 }
 
 void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
+  assert_lock_strong(CodeCache_lock);
   DependencyContext deps = java_lang_invoke_CallSite::vmdependencies(call_site);
   deps.add_dependent_nmethod(nm);
 }

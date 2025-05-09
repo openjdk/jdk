@@ -36,6 +36,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.ModuleElement.ExportsDirective;
+import javax.lang.model.element.ModuleElement.RequiresDirective;
+import javax.lang.model.util.ElementFilter;
+
+import jdk.jshell.Snippet.SubKind;
+import jdk.jshell.TaskFactory.AnalyzeTask;
 
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.REPL_PACKAGE;
@@ -51,6 +58,7 @@ final class SnippetMaps {
     private final List<Snippet> keyIndexToSnippet = new ArrayList<>();
     private final Set<Snippet> snippets = new LinkedHashSet<>();
     private final Map<String, Set<Integer>> dependencies = new HashMap<>();
+    private final Map<String, Set<String>> module2PackagesForImport = new HashMap<>();
     private final JShell state;
 
     SnippetMaps(JShell proc) {
@@ -186,6 +194,13 @@ final class SnippetMaps {
         if (Stream.concat(Stream.of("java.lang"), pkgs).anyMatch(pkg::equals)) {
             return full.substring(pkg.length() + 1);
         }
+        Stream<String> modPkgs = importSnippets()
+                                   .filter(isi -> isi.subKind() == SubKind.MODULE_IMPORT_SUBKIND)
+                                   .map(isi -> isi.fullname)
+                                   .flatMap(this::module2PackagesForImport);
+        if (modPkgs.anyMatch(pkg::equals)) {
+            return full.substring(pkg.length() + 1);
+        }
         return full;
     }
 
@@ -197,5 +212,39 @@ final class SnippetMaps {
         return state.keyMap.importKeys()
                 .map(key -> (ImportSnippet)getSnippet(key))
                 .filter(sn -> sn != null && state.status(sn).isDefined());
+    }
+
+    private Stream<String> module2PackagesForImport(String module) {
+        return module2PackagesForImport.computeIfAbsent(module, mod -> {
+            return state.taskFactory
+                        .analyze(new OuterWrap(Wrap.identityWrap(" ")),
+                                 at -> computeImports(at, mod));
+        }).stream();
+    }
+
+    private Set<String> computeImports(AnalyzeTask at, String mod) {
+        List<ModuleElement> todo = new ArrayList<>();
+        Set<ModuleElement> seenModules = new HashSet<>();
+        Set<String> exportedPackages = new HashSet<>();
+        todo.add(at.getElements().getModuleElement(mod));
+        while (!todo.isEmpty()) {
+            ModuleElement current = todo.remove(todo.size() - 1);
+            if (current == null || !seenModules.add(current)) {
+                continue;
+            }
+            for (ExportsDirective exp : ElementFilter.exportsIn(current.getDirectives())) {
+                if (exp.getTargetModules() != null) {
+                    continue;
+                }
+                exportedPackages.add(exp.getPackage().getQualifiedName().toString());
+            }
+            for (RequiresDirective req : ElementFilter.requiresIn(current.getDirectives())) {
+                if (!req.isTransitive()) {
+                    continue;
+                }
+                todo.add(req.getDependency());
+            }
+        }
+        return exportedPackages;
     }
 }

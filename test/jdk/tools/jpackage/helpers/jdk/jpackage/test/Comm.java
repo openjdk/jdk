@@ -34,6 +34,10 @@ public record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
         unique1.removeAll(common);
         Set<T> unique2 = new HashSet<>(b);
         unique2.removeAll(common);
-        return new Comm<T>(common, unique1, unique2);
+        return new Comm<>(common, unique1, unique2);
+    }
+
+    public boolean uniqueEmpty() {
+        return unique1.isEmpty() && unique2.isEmpty();
     }
 }

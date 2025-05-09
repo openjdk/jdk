@@ -26,8 +26,8 @@
 
 #include "gc/z/zVirtualMemoryManager.hpp"
 
-#include "utilities/globalDefinitions.hpp"
 #include "gc/z/zRangeRegistry.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 
 inline bool ZVirtualMemoryManager::is_multi_partition_enabled() const {

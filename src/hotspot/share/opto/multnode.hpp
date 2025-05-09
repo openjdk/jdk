@@ -71,7 +71,7 @@ public:
     // Optimistic setting. Need additional checks in Node::is_dead_loop_safe().
     if (con != TypeFunc::Memory || src->is_Start())
       init_flags(Flag_is_dead_loop_safe);
-    debug_only(check_con());
+    DEBUG_ONLY(check_con());
   }
   const uint _con;              // The field in the tuple we are projecting
   const bool _is_io_use;        // Used to distinguish between the projections

@@ -29,8 +29,8 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "memory/universe.hpp"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "utilities/copy.hpp"

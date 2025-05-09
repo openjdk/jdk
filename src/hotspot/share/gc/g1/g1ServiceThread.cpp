@@ -26,8 +26,8 @@
 #include "logging/log.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
   set_time(max_jlong);

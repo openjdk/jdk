@@ -41,7 +41,8 @@ public abstract class CGraphicsConfig extends GraphicsConfiguration
 
     private final CGraphicsDevice device;
     private ColorModel colorModel;
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     protected CGraphicsConfig(CGraphicsDevice device) {
         this.device = device;

@@ -34,6 +34,7 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -337,6 +338,19 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
     }
     features >>= 1;
     ++features_names_index;
+  }
+}
+
+const char* Abstract_VM_Version::extract_features_string(const char* cpu_info_string,
+                                                         size_t cpu_info_string_len,
+                                                         size_t features_offset) {
+  assert(features_offset <= cpu_info_string_len, "");
+  if (features_offset < cpu_info_string_len) {
+    assert(cpu_info_string[features_offset + 0] == ',', "");
+    assert(cpu_info_string[features_offset + 1] == ' ', "");
+    return cpu_info_string + features_offset + 2; // skip initial ", "
+  } else {
+    return ""; // empty
   }
 }
 

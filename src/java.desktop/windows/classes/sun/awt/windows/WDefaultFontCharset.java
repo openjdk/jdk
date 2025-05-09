@@ -46,7 +46,7 @@ final class WDefaultFontCharset extends AWTCharset
         return new Encoder();
     }
 
-    private class Encoder extends AWTCharset.Encoder {
+    private final class Encoder extends AWTCharset.Encoder {
         @Override
         public boolean canEncode(char c){
             return canConvert(c);

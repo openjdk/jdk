@@ -40,6 +40,7 @@
 
 typedef AutoModifyRestore<bool> FlagSetting;
 typedef AutoModifyRestore<uint> UIntFlagSetting;
+typedef AutoModifyRestore<int>  IntFlagSetting;
 
 // Legacy use of FLAG_GUARD. Retained in the code to help identify use-cases
 // that should be addressed when this file is removed.

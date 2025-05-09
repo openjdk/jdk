@@ -39,7 +39,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
  * @author Jeff Dinkins
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class WindowsSplitPaneDivider extends BasicSplitPaneDivider
+public final class WindowsSplitPaneDivider extends BasicSplitPaneDivider
 {
 
     /**
@@ -52,6 +52,7 @@ public class WindowsSplitPaneDivider extends BasicSplitPaneDivider
     /**
       * Paints the divider.
       */
+    @Override
     public void paint(Graphics g) {
         Color bgColor = (splitPane.hasFocus()) ?
                             UIManager.getColor("SplitPane.shadow") :

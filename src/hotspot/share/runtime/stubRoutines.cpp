@@ -101,8 +101,6 @@ jint    StubRoutines::_verify_oop_count                         = 0;
 
 
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
 const char* StubRoutines::get_blob_name(StubGenBlobId id) {
   assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");

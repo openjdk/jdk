@@ -647,7 +647,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -675,7 +675,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -685,6 +685,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             this, m,
             UN_IMPL.find(op, opc, LongVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<LongVector, VectorMask<Long>>>
@@ -782,6 +783,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                     = this.compare(EQ, (long) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -807,6 +809,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             this, that, m,
             BIN_IMPL.find(op, opc, LongVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<LongVector, VectorMask<Long>>>

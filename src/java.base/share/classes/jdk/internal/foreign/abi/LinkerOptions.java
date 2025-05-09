@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -137,18 +138,57 @@ public class LinkerOptions {
                 throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
+
+        @Override
+        public int hashCode() {
+            return index;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof FirstVariadicArg that && index == that.index;
+        }
     }
 
-    public record CaptureCallState(Set<CapturableState> saved) implements LinkerOptionImpl {
+    public record CaptureCallState(int compact) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
+
+        public Set<CapturableState> saved() {
+            var set = EnumSet.noneOf(CapturableState.class);
+            int mask = compact;
+            int i = 0;
+            while (mask != 0) {
+                if ((mask & 1) == 1) {
+                    set.add(CapturableState.BY_ORDINAL.get(i));
+                }
+                mask >>= 1;
+                i++;
+            }
+            return set;
+        }
+
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof CaptureCallState that && compact == that.compact;
+        }
+
+        @Override
+        public int hashCode() {
+            return compact;
+        }
     }
 
-    public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
-        public static Critical ALLOW_HEAP = new Critical(true);
-        public static Critical DONT_ALLOW_HEAP = new Critical(false);
+    public enum Critical implements LinkerOptionImpl {
+        ALLOW_HEAP,
+        DONT_ALLOW_HEAP;
+
+        public boolean allowHeapAccess() {
+            return ordinal() == 0; // this == ALLOW_HEAP
+        }
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {

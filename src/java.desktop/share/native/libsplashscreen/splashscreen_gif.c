@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
                                 // restore the area overwritten by the graphic with
                                 // what was there prior to rendering the graphic.
 
-static const char szNetscape20ext[11] = "NETSCAPE2.0";
+static const char szNetscape20ext[] = "NETSCAPE2.0";
 
 #define NSEXT_LOOP      0x01    // Loop Count field code
 
@@ -181,7 +181,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
                 }
             case APPLICATION_EXT_FUNC_CODE:
                 {
-                    if (size == sizeof(szNetscape20ext)
+                    if (size == strlen(szNetscape20ext)
                         && memcmp(pExtension, szNetscape20ext, size) == 0) {
                         int iSubCode;
 

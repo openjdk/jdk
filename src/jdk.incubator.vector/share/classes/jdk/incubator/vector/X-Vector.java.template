@@ -712,10 +712,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return blend(broadcast(-1), compare(NE, 0));
             }
 #if[BITWISE]
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
 #end[BITWISE]
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op);
+            }
+#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -742,10 +747,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
 #if[BITWISE]
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
 #end[BITWISE]
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return blend(unaryMathOp(op), m);
+            }
+#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -753,6 +763,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             this, m,
             UN_IMPL.find(op, opc, $abstractvectortype$::unaryOperations));
     }
+
+#if[FP]
+    @ForceInline
+    final
+    $abstractvectortype$ unaryMathOp(VectorOperators.Unary op) {
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), $abstractvectortype$::unaryOperations,
+                                             this);
+    }
+#end[FP]
 
     private static final
     ImplCache<Unary, UnaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>>>
@@ -856,6 +875,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     = this{#if[FP]?.viewAsIntegralLanes()}.compare(EQ, ($bitstype$) 0);
                 return this.blend(that, mask{#if[FP]?.cast(vspecies())});
             }
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, that);
+            }
+#end[FP]
 #if[BITWISE]
 #if[!FP]
             if (opKind(op, VO_SHIFT)) {
@@ -915,6 +939,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return this.blend(that, mask);
 #end[FP]
             }
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return this.blend(binaryMathOp(op, that), m);
+            }
+#end[FP]
+
 #if[BITWISE]
 #if[!FP]
             if (opKind(op, VO_SHIFT)) {
@@ -944,6 +974,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             this, that, m,
             BIN_IMPL.find(op, opc, $abstractvectortype$::binaryOperations));
     }
+
+#if[FP]
+    @ForceInline
+    final
+    $abstractvectortype$ binaryMathOp(VectorOperators.Binary op, $abstractvectortype$ that) {
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), $abstractvectortype$::binaryOperations,
+                                              this, that);
+    }
+#end[FP]
 
     private static final
     ImplCache<Binary, BinaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>>>

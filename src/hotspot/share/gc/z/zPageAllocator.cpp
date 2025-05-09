@@ -1155,12 +1155,12 @@ void ZPartition::threads_do(ThreadClosure* tc) const {
 }
 
 void ZPartition::print_on(outputStream* st) const {
-  st->print("Partition %u", _numa_id);
+  st->print("Partition %u ", _numa_id);
   st->fill_to(17);
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
                _used / M, _capacity / M, _max_capacity / M);
 
-  streamIndentor indentor(st, 1);
+  StreamAutoIndentor indentor(st, 1);
   print_cache_on(st);
 }
 
@@ -1168,11 +1168,10 @@ void ZPartition::print_cache_on(outputStream* st) const {
   _cache.print_on(st);
 }
 
-void ZPartition::print_extended_on_error(outputStream* st) const {
+void ZPartition::print_cache_extended_on(outputStream* st) const {
   st->print_cr("Partition %u", _numa_id);
 
-  streamIndentor indentor(st, 1);
-
+  StreamAutoIndentor indentor(st, 1);
   _cache.print_extended_on(st);
 }
 
@@ -2394,11 +2393,6 @@ void ZPageAllocator::threads_do(ThreadClosure* tc) const {
   }
 }
 
-void ZPageAllocator::print_on(outputStream* st) const {
-  ZLocker<ZLock> lock(&_lock);
-  print_on_inner(st);
-}
-
 static bool try_lock_on_error(ZLock* lock) {
   if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
     return lock->try_lock();
@@ -2409,10 +2403,52 @@ static bool try_lock_on_error(ZLock* lock) {
   return true;
 }
 
-void ZPageAllocator::print_extended_on_error(outputStream* st) const {
+void ZPageAllocator::print_usage_on(outputStream* st) const {
+  const bool locked = try_lock_on_error(&_lock);
+
+  if (!locked) {
+    st->print_cr("<Without lock>");
+  }
+
+  // Print information even though we may not have successfully taken the lock.
+  // This is thread-safe, but may produce inconsistent results.
+
+  print_total_usage_on(st);
+
+  StreamAutoIndentor indentor(st, 1);
+  print_partition_usage_on(st);
+
+  if (locked) {
+    _lock.unlock();
+  }
+}
+
+void ZPageAllocator::print_total_usage_on(outputStream* st) const {
+  st->print("ZHeap ");
+  st->fill_to(17);
+  st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
+               used() / M, capacity() / M, max_capacity() / M);
+}
+
+void ZPageAllocator::print_partition_usage_on(outputStream* st) const {
+  if (_partitions.count() == 1) {
+    // Partition usage is redundant if we only have one partition. Only
+    // print the cache.
+    _partitions.get(0).print_cache_on(st);
+    return;
+  }
+
+  // Print all partitions
+  ZPartitionConstIterator iter = partition_iterator();
+  for (const ZPartition* partition; iter.next(&partition);) {
+    partition->print_on(st);
+  }
+}
+
+void ZPageAllocator::print_cache_extended_on(outputStream* st) const {
   st->print_cr("ZMappedCache:");
 
-  streamIndentor indentor(st, 1);
+  StreamAutoIndentor indentor(st, 1);
 
   if (!try_lock_on_error(&_lock)) {
     // We can't print without taking the lock since printing the contents of
@@ -2426,47 +2462,8 @@ void ZPageAllocator::print_extended_on_error(outputStream* st) const {
   // Print each partition's cache content
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    partition->print_extended_on_error(st);
+    partition->print_cache_extended_on(st);
   }
 
   _lock.unlock();
-}
-
-void ZPageAllocator::print_on_error(outputStream* st) const {
-  const bool locked = try_lock_on_error(&_lock);
-
-  if (!locked) {
-    st->print_cr("<Without lock>");
-  }
-
-  // Print information even though we have not successfully taken the lock.
-  // This is thread-safe, but may produce inconsistent results.
-  print_on_inner(st);
-
-  if (locked) {
-    _lock.unlock();
-  }
-}
-
-void ZPageAllocator::print_on_inner(outputStream* st) const {
-  // Print total usage
-  st->print("ZHeap");
-  st->fill_to(17);
-  st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
-               used() / M, capacity() / M, max_capacity() / M);
-
-  // Print per-partition
-
-  streamIndentor indentor(st, 1);
-
-  if (_partitions.count() == 1) {
-    // The summary printing is redundant if we only have one partition
-    _partitions.get(0).print_cache_on(st);
-    return;
-  }
-
-  ZPartitionConstIterator iter = partition_iterator();
-  for (const ZPartition* partition; iter.next(&partition);) {
-    partition->print_on(st);
-  }
 }

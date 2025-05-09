@@ -311,10 +311,6 @@ public interface PKCS11Constants {
     // pseudo key type ANY (for template manager)
     public static final long  PCKK_ANY                 = 0x7FFFFF22L;
 
-    public static final long  PCKK_TLSPREMASTER        = 0x7FFFFF25L;
-    public static final long  PCKK_TLSRSAPREMASTER     = 0x7FFFFF26L;
-    public static final long  PCKK_TLSMASTER           = 0x7FFFFF27L;
-
     /* Uncomment when actually used
     public static final long  CK_CERTIFICATE_CATEGORY_UNSPECIFIED   = 0L;
     public static final long  CK_CERTIFICATE_CATEGORY_TOKEN_USER    = 1L;

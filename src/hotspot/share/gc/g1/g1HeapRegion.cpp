@@ -57,6 +57,10 @@ size_t G1HeapRegion::max_region_size() {
   return G1HeapRegionBounds::max_size();
 }
 
+size_t G1HeapRegion::max_ergonomics_size() {
+  return G1HeapRegionBounds::max_ergonomics_size();
+}
+
 size_t G1HeapRegion::min_region_size_in_words() {
   return G1HeapRegionBounds::min_size() >> LogHeapWordSize;
 }

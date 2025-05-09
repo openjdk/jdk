@@ -22,13 +22,12 @@
  *
  */
 
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :

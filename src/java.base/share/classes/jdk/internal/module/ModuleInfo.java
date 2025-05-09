@@ -408,24 +408,10 @@ public final class ModuleInfo {
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has ACC_SYNTHETIC set");
                 }
-                // requires transitive java.base is illegal unless:
-                // - the major version is 53 (JDK 9), or:
-                // - the classfile is a preview classfile, or:
-                // - the module is deemed to be participating in preview
-                //   (i.e. the module is a java.* module)
-                // requires static java.base is illegal unless:
-                // - the major version is 53 (JDK 9), or:
-                if (major >= 54
-                    && ((mods.contains(Requires.Modifier.TRANSITIVE)
-                         && !isPreview
-                         && !"java.se".equals(mn))
-                        || mods.contains(Requires.Modifier.STATIC))) {
-                    String flagName;
-                    if (mods.contains(Requires.Modifier.STATIC)) {
-                        flagName = "ACC_STATIC_PHASE";
-                    } else {
-                        flagName = "ACC_TRANSITIVE";
-                    }
+                // requires static java.base is illegal unless
+                // the major version is 53 (JDK 9)
+                if (major >= 54 && mods.contains(Requires.Modifier.STATIC)) {
+                    String flagName = "ACC_STATIC_PHASE";
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has " + flagName + " set");
                 }

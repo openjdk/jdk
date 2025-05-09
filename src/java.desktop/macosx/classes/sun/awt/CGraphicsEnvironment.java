@@ -37,9 +37,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import sun.java2d.MacosxSurfaceManagerFactory;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.java2d.SurfaceManagerFactory;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the default
@@ -70,8 +68,6 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     static {
         // Load libraries and initialize the Toolkit.
         Toolkit.getDefaultToolkit();
-        // Install the correct surface manager factory.
-        SurfaceManagerFactory.setInstance(new MacosxSurfaceManagerFactory());
     }
 
     /**

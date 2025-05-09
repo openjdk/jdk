@@ -21,6 +21,10 @@ var activeTableTab = "active-table-tab";
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 
+if (hljs) {
+    hljs.highlightAll();
+}
+
 function loadScripts(doc, tag) {
     createElem(doc, tag, 'script-files/search.js');
 

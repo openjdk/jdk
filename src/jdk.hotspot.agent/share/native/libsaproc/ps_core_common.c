@@ -141,6 +141,7 @@ map_info* add_map_info(struct ps_prochandle* ph, int fd, off_t offset,
                        uintptr_t vaddr, size_t memsz, uint32_t flags) {
   map_info* map;
   if ((map = allocate_init_map(fd, offset, vaddr, memsz, flags)) == NULL) {
+    print_error("failed to allocate map\n");
     return NULL;
   }
 
@@ -158,6 +159,7 @@ static map_info* add_class_share_map_info(struct ps_prochandle* ph, off_t offset
   map_info* map;
   if ((map = allocate_init_map(ph->core->classes_jsa_fd,
                                offset, vaddr, memsz, MAP_R_FLAG)) == NULL) {
+    print_debug("failed to allocate class share map\n");
     return NULL;
   }
 

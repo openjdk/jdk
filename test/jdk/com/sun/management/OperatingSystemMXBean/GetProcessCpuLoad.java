@@ -34,18 +34,21 @@ import java.lang.management.*;
 import jdk.test.lib.Platform;
 
 public class GetProcessCpuLoad {
+
+    private static final int TEST_COUNT = 10;
+
     public static void main(String[] argv) throws Exception {
         OperatingSystemMXBean mbean = (com.sun.management.OperatingSystemMXBean)
             ManagementFactory.getOperatingSystemMXBean();
 
         Exception ex = null;
-        double load;
+        int good = 0;
 
-        for(int i = 0; i < 10; i++) {
-            load = mbean.getProcessCpuLoad();
+        for (int i = 0; i < TEST_COUNT; i++) {
+            double load = mbean.getProcessCpuLoad();
             if (load == -1.0 && Platform.isWindows()) {
-                // Some Windows 2019 systems can return -1 for the first few reads.
-                // Remember a -1 in case it never gets better.
+                // Some Windows systems can return -1 occasionally, at any time.
+                // Will fail if we never see good values.
                 ex = new RuntimeException("getProcessCpuLoad() returns " + load
                      + " which is not in the [0.0,1.0] interval");
             } else if (load < 0.0 || load > 1.0) {
@@ -54,6 +57,7 @@ public class GetProcessCpuLoad {
             } else {
                 // A good reading: forget any previous -1.
                 ex = null;
+                good++;
             }
             try {
                 Thread.sleep(200);
@@ -62,7 +66,8 @@ public class GetProcessCpuLoad {
             }
         }
 
-        if (ex != null) {
+        if (good == 0) {
+            // Delayed failure for Windows.
             throw ex;
         }
     }

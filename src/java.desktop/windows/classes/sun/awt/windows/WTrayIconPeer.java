@@ -199,7 +199,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
 
     native void _displayMessage(String caption, String text, String messageType);
 
-    class IconObserver implements ImageObserver {
+    final class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
             if (image != ((TrayIcon)target).getImage() || // if the image has been changed

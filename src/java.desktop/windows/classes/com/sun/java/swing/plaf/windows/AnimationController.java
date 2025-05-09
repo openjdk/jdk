@@ -62,7 +62,7 @@ import sun.awt.AppContext;
  *
  * @author Igor Kushnirskiy
  */
-class AnimationController implements ActionListener, PropertyChangeListener {
+final class AnimationController implements ActionListener, PropertyChangeListener {
 
     private static final boolean VISTA_ANIMATION_DISABLED =
                         Boolean.getBoolean("swing.disablevistaanimation");
@@ -253,6 +253,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void propertyChange(PropertyChangeEvent e) {
         if ("lookAndFeel" == e.getPropertyName()
             && ! (e.getNewValue() instanceof WindowsLookAndFeel) ) {
@@ -260,6 +261,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void actionPerformed(ActionEvent e) {
         java.util.List<JComponent> componentsToRemove = null;
         java.util.List<Part> partsToRemove = null;
@@ -319,7 +321,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class AnimationState {
+    private static final class AnimationState {
         private final State startState;
 
         //animation duration in nanoseconds
@@ -407,7 +409,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class PartUIClientPropertyKey
+    private static final class PartUIClientPropertyKey
           implements UIClientPropertyKey {
 
         private static final Map<Part, PartUIClientPropertyKey> map =
@@ -426,6 +428,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         private PartUIClientPropertyKey(Part part) {
             this.part  = part;
         }
+        @Override
         public String toString() {
             return part.toString();
         }

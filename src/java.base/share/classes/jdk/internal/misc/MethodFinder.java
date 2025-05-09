@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,14 @@ public class MethodFinder {
      * @jls 12.1.4 Invoke a main method
      */
     public static Method findMainMethod(Class<?> cls) {
-        boolean isPreview = PreviewFeatures.isEnabled();
-        Method mainMethod = JLA.findMethod(cls, !isPreview, "main", String[].class);
+        Method mainMethod = JLA.findMethod(cls, true, "main", String[].class);
 
-        if (isPreview && mainMethod == null) {
+        if (mainMethod == null) {
+            //if not public method, try to lookup a non-public one
+            mainMethod = JLA.findMethod(cls, false, "main", String[].class);
+        }
+
+        if (mainMethod == null) {
             mainMethod = JLA.findMethod(cls, false, "main");
         }
 
@@ -97,8 +101,7 @@ public class MethodFinder {
 
         if (Modifier.isAbstract(mods) ||
                 mainMethod.getReturnType() != void.class ||
-                (isPreview && Modifier.isPrivate(mods)) ||
-                (!isPreview && !Modifier.isStatic(mods))) {
+                Modifier.isPrivate(mods)) {
             return null;
         }
 

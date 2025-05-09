@@ -448,7 +448,6 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
 
         List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--enable-preview", "--source", System.getProperty("java.specification.version"),
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -458,8 +457,6 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
 
         List<String> expected = Arrays.asList(
                 "Test.java:1:54: compiler.err.cant.resolve.location: kindname.class, Api, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "1 error");
 
         if (!expected.equals(log))

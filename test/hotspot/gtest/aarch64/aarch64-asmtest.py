@@ -14,10 +14,9 @@ immediates8 \
 
 immediates16 \
      = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
-        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
-        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
-        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
-        0xff03, 0xfffe]
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x8000,
+        0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff, 0xe03f,
+        0xe1ff, 0xf801, 0xfc00, 0xfc07, 0xff03, 0xfffe]
 
 immediates32 \
      = [0x1, 0x3f, 0x1f0, 0x7e0,
@@ -1065,7 +1064,7 @@ class FloatInstruction(Instruction):
     def aname(self):
         if (self._name in ["fcvtsh", "fcvths"]):
             return self._name[:len(self._name)-2]
-        elif (self._name.endswith("s") | self._name.endswith("d")):
+        elif (self._name.endswith("h") | self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1684,19 +1683,24 @@ generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
 generate(ThreeRegFloatOp,
-         [["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+         [["fabdh", "hhh"], ["fmulh", "hhh"], ["fdivh", "hhh"], ["faddh", "hhh"], ["fsubh", "hhh"],
+          ["fmaxh", "hhh"], ["fminh", "hhh"], ["fnmulh", "hhh"],
+          ["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+          ["fmaxs", "sss"], ["fmins", "sss"], ["fnmuls", "sss"],
           ["fabdd", "ddd"], ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
+          ["fmaxd", "ddd"], ["fmind", "ddd"], ["fnmuld", "ddd"]
           ])
 
 generate(FourRegFloatOp,
-         [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
-          ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"], ["fnmaddd", "dddd"],])
+         [["fmaddh", "hhhh"], ["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"],
+          ["fnmadds", "ssss"], ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"],
+          ["fnmaddd", "dddd"],])
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
           ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
-          ["fcvtd", "sd"],
+          ["fcvtd", "sd"], ["fsqrth", "hh"]
           ])
 
 generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"],

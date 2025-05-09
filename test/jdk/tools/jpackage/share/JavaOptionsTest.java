@@ -91,7 +91,7 @@ public class JavaOptionsTest {
         // 2.) run the launcher it generated
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
         for (String expect : expected) {
-            TKit.assertTextStream(expect).apply(output.stream());
+            TKit.assertTextStream(expect).apply(output);
         }
     }
 

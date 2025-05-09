@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,37 +217,6 @@ public class ConsoleImpl {
 
         /**
          * {@inheritDoc}
-         *
-         * @throws IOError {@inheritDoc}
-         */
-        @Override
-        public String readln(String prompt) {
-            char[] chars = (prompt == null ? "null" : prompt).toCharArray();
-
-            try {
-                return sendAndReceive(() -> {
-                    remoteInput.write(Task.READ_LINE.ordinal());
-                    sendChars(chars, 0, chars.length);
-                    char[] line = readChars();
-                    return new String(line);
-                });
-            } catch (IOException ex) {
-                throw new IOError(ex);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @throws IOError {@inheritDoc}
-         */
-        @Override
-        public String readln() {
-            return readLine();
-        }
-
-        /**
-         * {@inheritDoc}
          */
         @Override
         public JdkConsole format(Locale locale, String format, Object... args) {
@@ -285,15 +254,7 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine() {
-            try {
-                return sendAndReceive(() -> {
-                    remoteInput.write(Task.READ_LINE_NO_PROMPT.ordinal());
-                    char[] line = readChars();
-                    return new String(line);
-                });
-            } catch (IOException ex) {
-                throw new IOError(ex);
-            }
+            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         /**
@@ -432,12 +393,6 @@ public class ConsoleImpl {
                         bp = 0;
                     }
                 }
-                case READ_LINE_NO_PROMPT -> {
-                    String line = console.readLine();
-                    char[] chars = line.toCharArray();
-                    sendChars(sinkOutput, chars, 0, chars.length);
-                    bp = 0;
-                }
                 case READ_PASSWORD -> {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
@@ -516,7 +471,6 @@ public class ConsoleImpl {
         FLUSH_OUTPUT,
         READ_CHARS,
         READ_LINE,
-        READ_LINE_NO_PROMPT,
         READ_PASSWORD,
         FLUSH_CONSOLE,
         CHARSET,

@@ -737,46 +737,6 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_GENERIC_SECRET_KEY_GEN));
 
         /*
-         * PBE Secret Key Factories
-         *
-         * KeyDerivationPrf must be supported for these services
-         * to be available.
-         *
-        */
-        d(SKF, "PBEWithHmacSHA1AndAES_128",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
-        d(SKF, "PBEWithHmacSHA224AndAES_128",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
-        d(SKF, "PBEWithHmacSHA256AndAES_128",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
-        d(SKF, "PBEWithHmacSHA384AndAES_128",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
-        d(SKF, "PBEWithHmacSHA512AndAES_128",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
-        d(SKF, "PBEWithHmacSHA1AndAES_256",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
-        d(SKF, "PBEWithHmacSHA224AndAES_256",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
-        d(SKF, "PBEWithHmacSHA256AndAES_256",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
-        d(SKF, "PBEWithHmacSHA384AndAES_256",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
-        d(SKF, "PBEWithHmacSHA512AndAES_256",
-                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
-        /*
-         * PBA Secret Key Factories
-         */
-        d(SKF, "HmacPBESHA1",       P11SecretKeyFactory,
-                m(CKM_PBA_SHA1_WITH_SHA1_HMAC));
-        d(SKF, "HmacPBESHA224",     P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN));
-        d(SKF, "HmacPBESHA256",     P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN));
-        d(SKF, "HmacPBESHA384",     P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
-        d(SKF, "HmacPBESHA512",     P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
-        /*
          * PBKDF2 Secret Key Factories
          */
         dA(SKF, "PBKDF2WithHmacSHA1",  P11SecretKeyFactory,

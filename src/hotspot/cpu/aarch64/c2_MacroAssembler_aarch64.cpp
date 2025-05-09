@@ -2743,3 +2743,107 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   }
   return MacroAssembler::in_scratch_emit_size();
 }
+
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeInt::INT) {
+    return;
+  }
+  BLOCK_COMMENT("verify_int_in_range {");
+  Label L_success, L_failure;
+
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+
+  if (lo != min_jint && hi != max_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  movw(c_rarg2, lo);
+  movw(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_int_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_int_in_range");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeLong::LONG) {
+    return;
+  }
+  BLOCK_COMMENT("verify_long_in_range {");
+  Label L_success, L_failure;
+
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+
+  if (lo != min_jlong && hi != max_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  mov(c_rarg2, lo);
+  mov(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_long_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_long_in_range");
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rfp.
+    add(rtmp, sp, framesize - 2 * wordSize);
+    Label L_success;
+    cmp(rfp, rtmp);
+    br(Assembler::EQ, L_success);
+    stop("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    add(rfp, sp, framesize - 2 * wordSize);
+  }
+}

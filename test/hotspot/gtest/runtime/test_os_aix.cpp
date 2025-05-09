@@ -34,9 +34,9 @@
 TEST_VM(os_aix, aix_reserve_at_non_shmlba_aligned_address) {
   if (os::vm_page_size() != 4*K && !os::Aix::supports_64K_mmap_pages()) {
     // With this condition true shmget() is used inside
-    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
+    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M, mtTest);
     ASSERT_EQ(p, nullptr); // should have failed
-    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
+    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M, mtTest);
     ASSERT_EQ(p, nullptr); // should have failed
   }
 }

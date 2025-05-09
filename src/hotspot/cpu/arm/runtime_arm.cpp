@@ -54,6 +54,9 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Measured 8/7/03 at 660 in 32bit debug build
   CodeBuffer buffer(name, 2000, 512);
 #endif
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   const Register Rublock = R6;
@@ -209,6 +212,9 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Measured 8/7/03 at 256 in 32bit debug build
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 600, 512);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
   int framesize_in_words = 2; // FP + LR

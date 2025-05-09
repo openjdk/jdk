@@ -88,9 +88,12 @@ public final class SystemProps {
             put(props, "file.encoding", nativeEncoding);
         }
 
-        // "stdout/err.encoding", prepared for System.out/err. For compatibility
-        // purposes, substitute them with "sun.*" if they don't exist. If "sun.*" aren't
-        // available either, fall back to "native.encoding".
+        // Encoding properties for stdin, stdout, and stderr. For stdout and stderr,
+        // check "sun.stdout.encoding" and "sun.stderr.encoding" properties for backward
+        // compatibility reasons before falling back to the "native.encoding" property.
+        putIfAbsent(props, "stdin.encoding",
+                raw.propDefault(Raw._stdin_encoding_NDX));
+        putIfAbsent(props, "stdin.encoding", nativeEncoding);
         putIfAbsent(props, "stdout.encoding", props.getOrDefault("sun.stdout.encoding",
                 raw.propDefault(Raw._stdout_encoding_NDX)));
         putIfAbsent(props, "stdout.encoding", nativeEncoding);
@@ -241,7 +244,8 @@ public final class SystemProps {
         @Native private static final int _socksProxyHost_NDX = 1 + _socksNonProxyHosts_NDX;
         @Native private static final int _socksProxyPort_NDX = 1 + _socksProxyHost_NDX;
         @Native private static final int _stderr_encoding_NDX = 1 + _socksProxyPort_NDX;
-        @Native private static final int _stdout_encoding_NDX = 1 + _stderr_encoding_NDX;
+        @Native private static final int _stdin_encoding_NDX = 1 + _stderr_encoding_NDX;
+        @Native private static final int _stdout_encoding_NDX = 1 + _stdin_encoding_NDX;
         @Native private static final int _sun_arch_abi_NDX = 1 + _stdout_encoding_NDX;
         @Native private static final int _sun_arch_data_model_NDX = 1 + _sun_arch_abi_NDX;
         @Native private static final int _sun_cpu_endian_NDX = 1 + _sun_arch_data_model_NDX;

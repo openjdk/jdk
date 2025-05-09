@@ -138,3 +138,9 @@ ciKlass* ciInstance::java_lang_Class_klass() {
   assert(java_lang_Class::as_Klass(get_oop()) != nullptr, "klass is null");
   return CURRENT_ENV->get_metadata(java_lang_Class::as_Klass(get_oop()))->as_klass();
 }
+
+char* ciInstance::java_lang_String_str(char* buf, size_t buflen) {
+  VM_ENTRY_MARK;
+  assert(get_oop()->is_a(vmClasses::String_klass()), "not a String");
+  return java_lang_String::as_utf8_string(get_oop(), buf, buflen);
+}

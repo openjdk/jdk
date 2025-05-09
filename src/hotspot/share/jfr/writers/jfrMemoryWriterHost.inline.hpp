@@ -52,18 +52,18 @@ inline MemoryWriterHost<Adapter, AP, AccessAssert>::MemoryWriterHost(Thread* thr
 
 template <typename Adapter, typename AP, typename AccessAssert>
 inline void MemoryWriterHost<Adapter, AP, AccessAssert>::acquire() {
-  debug_only(_access.acquire();)
+  DEBUG_ONLY(_access.acquire();)
   if (!this->is_valid()) {
     this->flush();
   }
-  debug_only(is_acquired();)
+  DEBUG_ONLY(is_acquired();)
 }
 
 template <typename Adapter, typename AP, typename AccessAssert>
 inline void MemoryWriterHost<Adapter, AP, AccessAssert>::release() {
-  debug_only(is_acquired();)
+  DEBUG_ONLY(is_acquired();)
   StorageHost<Adapter, AP>::release();
-  debug_only(_access.release();)
+  DEBUG_ONLY(_access.release();)
 }
 
 #ifdef ASSERT

@@ -605,7 +605,7 @@ protected:
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock, const char * Name);
+  static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)

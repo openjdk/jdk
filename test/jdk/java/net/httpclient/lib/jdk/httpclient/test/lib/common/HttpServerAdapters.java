@@ -765,7 +765,7 @@ public interface HttpServerAdapters {
     /**
      * A version agnostic adapter class for HTTP Servers.
      */
-    public static abstract class HttpTestServer {
+    abstract class HttpTestServer implements AutoCloseable {
         private static final class ServerLogging {
             private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
             static void enableLogging() {
@@ -781,6 +781,11 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
         public abstract void setRequestApprover(final Predicate<String> approver);
+
+        @Override
+        public void close() throws Exception {
+            stop();
+        }
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -971,6 +976,13 @@ public interface HttpServerAdapters {
                 System.out.println("Http2TestServerImpl: stop");
                 impl.stop();
             }
+
+            @Override
+            public void close() throws Exception {
+                System.out.println("Http2TestServerImpl: close");
+                impl.close();
+            }
+
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()

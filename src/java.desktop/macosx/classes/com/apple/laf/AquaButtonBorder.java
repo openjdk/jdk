@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,12 +200,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
 
         public Dynamic(final Dynamic other) {
             super(other);
-        }
-
-        protected State getButtonState(final AbstractButton b, final ButtonModel model) {
-            final State state = super.getButtonState(b, model);
-            painter.state.set(state == State.PULSED ? Animating.YES : Animating.NO);
-            return state;
         }
 
         public Insets getContentInsets(final AbstractButton b, final int width, final int height) {

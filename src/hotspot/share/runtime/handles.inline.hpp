@@ -80,7 +80,7 @@ inline void HandleMark::push() {
   // This is intentionally a NOP. pop_and_restore will reset
   // values to the HandleMark further down the stack, typically
   // in JavaCalls::call_helper.
-  debug_only(_area->_handle_mark_nesting++);
+  DEBUG_ONLY(_area->_handle_mark_nesting++);
 }
 
 inline void HandleMark::pop_and_restore() {
@@ -95,7 +95,7 @@ inline void HandleMark::pop_and_restore() {
   _area->_chunk = _chunk;
   _area->_hwm = _hwm;
   _area->_max = _max;
-  debug_only(_area->_handle_mark_nesting--);
+  DEBUG_ONLY(_area->_handle_mark_nesting--);
 }
 
 inline HandleMarkCleaner::HandleMarkCleaner(Thread* thread) {

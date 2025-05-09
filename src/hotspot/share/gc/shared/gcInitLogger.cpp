@@ -22,9 +22,9 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/globals.hpp"

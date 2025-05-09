@@ -924,13 +924,15 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t12 && t12->is_con() ) { // Shift is by a constant
       int shift = t12->get_con();
       shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-      const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
-      // If the AND'ing of the 2 masks has no bits, then only original shifted
-      // bits survive.  NO sign-extension bits survive the maskings.
-      if( (sign_bits_mask & mask) == 0 ) {
-        // Use zero-fill shift instead
-        Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
-        return new AndLNode(zshift, in(2));
+      if (shift != 0) {
+        const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
+        // If the AND'ing of the 2 masks has no bits, then only original shifted
+        // bits survive.  NO sign-extension bits survive the maskings.
+        if( (sign_bits_mask & mask) == 0 ) {
+          // Use zero-fill shift instead
+          Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
+          return new AndLNode(zshift, in(2));
+        }
       }
     }
   }

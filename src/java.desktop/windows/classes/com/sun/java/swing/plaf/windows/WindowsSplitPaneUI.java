@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 /**
  * Windows rendition of the component.
  */
-public class WindowsSplitPaneUI extends BasicSplitPaneUI
+public final class WindowsSplitPaneUI extends BasicSplitPaneUI
 {
 
     public WindowsSplitPaneUI() {
@@ -50,6 +50,7 @@ public class WindowsSplitPaneUI extends BasicSplitPaneUI
     /**
       * Creates the default divider.
       */
+    @Override
     public BasicSplitPaneDivider createDefaultDivider() {
         return new WindowsSplitPaneDivider(this);
     }

@@ -22,8 +22,8 @@
  */
 
  // key: compiler.misc.feature.module.imports
- // key: compiler.warn.preview.feature.use.plural
- // options: --release ${jdk.version} --enable-preview -Xlint:preview
+ // key: compiler.err.feature.not.supported.in.source.plural
+ // options: --release 24 -Xlint:preview
 
 import module java.base;
 

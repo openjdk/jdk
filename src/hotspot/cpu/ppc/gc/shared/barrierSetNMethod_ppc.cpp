@@ -23,8 +23,8 @@
  */
 
 #include "code/codeBlob.hpp"
-#include "code/nmethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -108,7 +108,7 @@ static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 

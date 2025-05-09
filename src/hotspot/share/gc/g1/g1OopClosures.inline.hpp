@@ -38,8 +38,8 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 

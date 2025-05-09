@@ -23,8 +23,8 @@
  */
 
 #include "gc/shared/bufferNode.hpp"
-#include "utilities/debug.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/debug.hpp"
 
 #include <new>
 

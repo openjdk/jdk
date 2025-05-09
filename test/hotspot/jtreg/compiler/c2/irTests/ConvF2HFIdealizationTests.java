@@ -55,6 +55,9 @@ public class ConvF2HFIdealizationTests {
     @IR(counts = {IRNode.REINTERPRET_S2HF, ">=1", IRNode.REINTERPRET_HF2S, ">=1", IRNode.ADD_HF, ">=1" },
         failOn = {IRNode.ADD_F, IRNode.CONV_HF2F, IRNode.CONV_F2HF},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+    @IR(counts = {IRNode.REINTERPRET_S2HF, ">=1", IRNode.REINTERPRET_HF2S, ">=1", IRNode.ADD_HF, ">=1" },
+        failOn = {IRNode.ADD_F, IRNode.CONV_HF2F, IRNode.CONV_F2HF},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     // Test pattern - ConvHF2F -> AddF -> ConvF2HF is optimized to ReinterpretS2HF -> AddHF -> ReinterpretHF2S
     public void test1() {
         for (int i = 0; i < SIZE; i++) {

@@ -24,11 +24,11 @@
  */
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/threadSMR.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.inline.hpp"
 
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
   : _evacuations_completed(0), _bytes_completed(0),

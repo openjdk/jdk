@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

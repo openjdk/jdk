@@ -104,7 +104,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   context->jfa.copy(thread->frame_anchor());
   thread->frame_anchor()->clear();
 
-  debug_only(thread->inc_java_call_counter());
+  DEBUG_ONLY(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
 
   return thread;
@@ -118,7 +118,7 @@ void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
   // restore previous handle block
   thread->set_active_handles(context->old_handles);
 
-  debug_only(thread->dec_java_call_counter());
+  DEBUG_ONLY(thread->dec_java_call_counter());
 
   thread->frame_anchor()->copy(&context->jfa);
 

@@ -56,16 +56,22 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 
 UNAME_SYSTEM=`uname -s`
 UNAME_RELEASE=`uname -r`
+UNAME_OS=`uname -o`
 
 # Detect cygwin or WSL
 IS_CYGWIN=`echo $UNAME_SYSTEM | grep -i CYGWIN`
 IS_WSL=`echo $UNAME_RELEASE | grep Microsoft`
+IS_MSYS=`echo $UNAME_OS | grep -i Msys`
+MSYS2_ARG_CONV_EXCL="*"          # make "cmd.exe /c" work for msys2
+CMD_EXE="cmd.exe /c"
 if test "x$IS_CYGWIN" != "x"; then
+    BUILD_ENV="cygwin"
+elif test "x$IS_MSYS" != "x"; then
     BUILD_ENV="cygwin"
 elif test "x$IS_WSL" != "x"; then
     BUILD_ENV="wsl"
 else
-    echo "Unknown environment; only Cygwin and WSL are supported."
+    echo "Unknown environment; only Cygwin/MSYS2/WSL are supported."
     exit 1
 fi
 
@@ -76,7 +82,7 @@ elif test "x$BUILD_ENV" = "xwsl"; then
 fi
 
 # Work around the insanely named ProgramFiles(x86) env variable
-PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
+PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(${CMD_EXE} set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
 PROGRAMFILES="$($WINDOWS_PATH_TO_UNIX_PATH "$PROGRAMFILES")"
 
 case $VS_VERSION in
@@ -99,13 +105,15 @@ esac
 
 
 # Find Visual Studio installation dir
-VSNNNCOMNTOOLS=`cmd.exe /c echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS=`${CMD_EXE} echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS")"
 if [ -d "$VSNNNCOMNTOOLS" ]; then
-    VS_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS/../..")"
+    VS_INSTALL_DIR="$VSNNNCOMNTOOLS/../.."
 else
     VS_INSTALL_DIR="${MSVC_PROGRAMFILES_DIR}/Microsoft Visual Studio/$VS_VERSION"
     VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional,Enterprise} 2>/dev/null | head -n1)"
 fi
+echo "VSNNNCOMNTOOLS: $VSNNNCOMNTOOLS"
 echo "VS_INSTALL_DIR: $VS_INSTALL_DIR"
 
 # Extract semantic version
@@ -180,7 +188,11 @@ cp $DEVKIT_ROOT/VC/redist/arm64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/arm64
 ################################################################################
 # Copy SDK files
 
-SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+SDK_INSTALL_DIR=`${CMD_EXE} echo %WindowsSdkDir% | tr -d '\r'`
+SDK_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$SDK_INSTALL_DIR")"
+if [ ! -d "$SDK_INSTALL_DIR" ]; then
+    SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+fi
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
 SDK_FULL_VERSION="$(ls "$SDK_INSTALL_DIR/bin" | sort -r -n | head -n1)"

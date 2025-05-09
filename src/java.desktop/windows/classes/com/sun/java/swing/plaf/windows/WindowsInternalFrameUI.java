@@ -45,10 +45,11 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsInternalFrameUI extends BasicInternalFrameUI
+public final class WindowsInternalFrameUI extends BasicInternalFrameUI
 {
     XPStyle xp = XPStyle.getXP();
 
+    @Override
     public void installDefaults() {
         super.installDefaults();
 
@@ -59,6 +60,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
         }
     }
 
+    @Override
     public void installUI(JComponent c)   {
         super.installUI(c);
 
@@ -66,6 +68,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
                                     xp == null? Boolean.TRUE : Boolean.FALSE);
     }
 
+    @Override
     public void uninstallDefaults() {
         frame.setBorder(null);
         super.uninstallDefaults();
@@ -79,17 +82,19 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
         super(w);
     }
 
+    @Override
     protected DesktopManager createDesktopManager(){
         return new WindowsDesktopManager();
     }
 
+    @Override
     protected JComponent createNorthPane(JInternalFrame w) {
         titlePane = new WindowsInternalFrameTitlePane(w);
         return titlePane;
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPBorder extends AbstractBorder {
+    private final class XPBorder extends AbstractBorder {
         private Skin leftSkin   = xp.getSkin(frame, Part.WP_FRAMELEFT);
         private Skin rightSkin  = xp.getSkin(frame, Part.WP_FRAMERIGHT);
         private Skin bottomSkin = xp.getSkin(frame, Part.WP_FRAMEBOTTOM);
@@ -100,6 +105,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
          * @param width the width of the painted border
          * @param height the height of the painted border
          */
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             State state = ((JInternalFrame)c).isSelected() ? State.ACTIVE : State.INACTIVE;
             int topBorderHeight  = (titlePane != null) ? titlePane.getSize().height : 0;
@@ -118,6 +124,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
 
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.top    = 4;
             insets.left   = leftSkin.getWidth();
@@ -127,6 +134,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
             return insets;
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }

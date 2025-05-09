@@ -307,12 +307,13 @@ public class JavadocTokenizer extends JavaTokenizer {
 
             while (need > grow) {
                 grow <<= 1;
+                // Handle overflow.
+                if (grow <= 0) {
+                    throw new IndexOutOfBoundsException();
+                }
             }
 
-            // Handle overflow.
-            if (grow < map.length) {
-                throw new IndexOutOfBoundsException();
-            } else if (grow != map.length) {
+            if (grow != map.length) {
                 map = Arrays.copyOf(map, grow);
             }
         }

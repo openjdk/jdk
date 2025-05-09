@@ -59,7 +59,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     __ call(Runtime1::entry_for(C1StubId::predicate_failed_trap_id), relocInfo::runtime_call_type);
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ should_not_reach_here());
+    DEBUG_ONLY(__ should_not_reach_here());
     return;
   }
   // Pass the array index on stack because all registers must be preserved
@@ -91,7 +91,7 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ call(Runtime1::entry_for(C1StubId::predicate_failed_trap_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {

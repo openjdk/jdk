@@ -55,6 +55,19 @@ public sealed interface ModuleEntry extends PoolEntry
 
     /**
      * {@return a symbolic descriptor for the {@linkplain #name() module name}}
+     *
+     * @apiNote
+     * If only symbol equivalence is desired, {@link #matches(ModuleDesc)
+     * matches} should be used.  It requires reduced parsing and can
+     * improve {@code class} file reading performance.
      */
     ModuleDesc asSymbol();
+
+    /**
+     * {@return whether this entry describes the given module}
+     *
+     * @param desc the module descriptor
+     * @since 25
+     */
+    boolean matches(ModuleDesc desc);
 }

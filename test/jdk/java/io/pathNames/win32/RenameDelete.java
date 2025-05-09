@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4042592 4042593
+   @requires (os.family == "windows")
  * @summary Test operation of rename and delete on win32
  */
 
@@ -39,11 +40,6 @@ public class RenameDelete {
 
     public static void main(String[] args) throws Exception {
         boolean success = false;
-
-        if (File.separatorChar != '\\') {
-            System.err.println("Not a win32 platform -- test inapplicable");
-            return;
-        }
 
         //construct a test file in this location
         File f1 = new File(".");

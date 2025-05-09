@@ -1944,7 +1944,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 #ifndef PRODUCT
   SharedRuntime::_find_handler_ctr++;          // find exception handler
 #endif
-  debug_only(NoHandleMark __hm;)
+  DEBUG_ONLY(NoHandleMark __hm;)
   nmethod* nm = nullptr;
   address handler_address = nullptr;
   {

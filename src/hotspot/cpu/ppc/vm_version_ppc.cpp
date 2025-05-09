@@ -219,7 +219,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -308,8 +308,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (UseGHASHIntrinsics) {
-    warning("GHASH intrinsics are not available on this CPU");
+  if (VM_Version::has_vsx()) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      UseGHASHIntrinsics = true;
+    }
+  } else if (UseGHASHIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      warning("GHASH intrinsics are not available on this CPU");
+    }
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
@@ -519,7 +525,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", cpu_info_string(), L1_data_cache_line_size());
 
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
@@ -726,6 +732,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }

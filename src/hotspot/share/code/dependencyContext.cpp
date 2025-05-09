@@ -91,18 +91,40 @@ void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope
 //
 void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
-  for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
-    if (nm == b->get_nmethod()) {
-      return;
-    }
+  assert(nm->is_not_installed(), "Precondition: new nmethod");
+
+  // This method tries to add never before seen nmethod, holding the CodeCache_lock
+  // until all dependencies are added. The caller code can call multiple times
+  // with the same nmethod, but always under the same lock hold.
+  //
+  // This means the buckets list is guaranteed to be in either of two states, with
+  // regards to the newly added nmethod:
+  //   1. The nmethod is not in the list, and can be just added to the head of the list.
+  //   2. The nmethod is in the list, and it is already at the head of the list.
+  //
+  // This path is the only path that adds to the list. There can be concurrent removals
+  // from the list, but they do not break this invariant. This invariant allows us
+  // to skip list scans. The individual method checks are cheap, but walking the large
+  // list of dependencies gets expensive.
+
+  nmethodBucket* head = Atomic::load(_dependency_context_addr);
+  if (head != nullptr && nm == head->get_nmethod()) {
+    return;
   }
+
+#ifdef ASSERT
+  for (nmethodBucket* b = head; b != nullptr; b = b->next()) {
+    assert(nm != b->get_nmethod(), "Invariant: should not be in the list yet");
+  }
+#endif
+
   nmethodBucket* new_head = new nmethodBucket(nm, nullptr);
   for (;;) {
-    nmethodBucket* head = Atomic::load(_dependency_context_addr);
     new_head->set_next(head);
     if (Atomic::cmpxchg(_dependency_context_addr, head, new_head) == head) {
       break;
     }
+    head = Atomic::load(_dependency_context_addr);
   }
   if (UsePerfData) {
     _perf_total_buckets_allocated_count->inc();

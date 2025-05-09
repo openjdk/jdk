@@ -634,7 +634,7 @@ GetJavaProperties(JNIEnv* env)
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
-            HANDLE hStdOutErr;
+            HANDLE hStdHandle;
 
             // Windows UI Language selection list only cares "language"
             // information of the UI Language. For example, the list
@@ -677,14 +677,19 @@ GetJavaProperties(JNIEnv* env)
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
 
-            hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+            hStdHandle = GetStdHandle(STD_INPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
+                sprops.stdin_encoding = getConsoleEncoding(FALSE);
+            }
+            hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
                 sprops.stdout_encoding = getConsoleEncoding(TRUE);
             }
-            hStdOutErr = GetStdHandle(STD_ERROR_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+            hStdHandle = GetStdHandle(STD_ERROR_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
                 if (sprops.stdout_encoding != NULL)
                     sprops.stderr_encoding = sprops.stdout_encoding;
                 else

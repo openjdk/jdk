@@ -46,6 +46,8 @@ import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsDevice;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
+import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 import sun.java2d.Surface;
@@ -385,5 +387,11 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     public int getMaxTextureHeight() {
         return Math.max(maxTextureSize / getDevice().getScaleFactor(),
                         getBounds().height);
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new CGLVolatileSurfaceManager(image, context);
     }
 }

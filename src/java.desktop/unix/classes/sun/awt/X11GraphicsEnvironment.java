@@ -41,8 +41,6 @@ import java.util.Map;
 
 import sun.awt.X11.XToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.java2d.SurfaceManagerFactory;
-import sun.java2d.UnixSurfaceManagerFactory;
 import sun.java2d.xr.XRSurfaceData;
 
 /**
@@ -124,10 +122,6 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                 XRSurfaceData.initXRSurfaceData();
             }
         }
-
-        // Install the correct surface manager factory.
-        SurfaceManagerFactory.setInstance(new UnixSurfaceManagerFactory());
-
     }
 
 

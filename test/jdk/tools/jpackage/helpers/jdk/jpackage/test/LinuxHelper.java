@@ -309,9 +309,9 @@ public final class LinuxHelper {
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
         String packageName = LinuxHelper.getPackageName(cmd);
-        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
-        TKit.assertNotEquals(0L, packageSize, String.format(
+        TKit.assertNotEquals(0, packageSize, String.format(
                 "Check installed size of [%s] package in not zero", packageName));
 
         final boolean checkPrerequisites;
@@ -427,7 +427,7 @@ public final class LinuxHelper {
 
         Map<String, String> data = lines.stream()
         .skip(1)
-        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(Stream.of(str)))
+        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str)))
         .map(str -> {
             String components[] = str.split("=(?=.+)");
             if (components.length == 1) {

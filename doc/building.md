@@ -175,7 +175,7 @@ time of writing.
 | ----------------- | ---------------------------------- |
 | Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
 | Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
-| macOS             | macOS 13.x (Ventura)               |
+| macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
 The double version numbers for Linux are due to the hybrid model used at
@@ -327,7 +327,7 @@ difficult for a project such as the JDK to keep pace with a continuously
 updated machine running macOS. See the section on [Apple Xcode](#apple-xcode)
 on some strategies to deal with this.
 
-It is recommended that you use at least macOS 13 (Ventura) and Xcode 14, but
+It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
@@ -390,11 +390,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                           |
-| ------------------ | ------------------------------------------- |
-| Linux              | gcc 14.2.0                                  |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
-| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
+| Operating system   | Toolchain version                            |
+| ------------------ | -------------------------------------------- |
+| Linux              | gcc 14.2.0                                   |
+| macOS              | Apple Xcode 15.4 (using clang 15.0.0)       |
+| Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.

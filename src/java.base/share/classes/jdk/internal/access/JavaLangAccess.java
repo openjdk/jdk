@@ -120,6 +120,12 @@ public interface JavaLangAccess {
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
     /**
+     * Returns the big-endian packed minor-major version of the class file
+     * of this class.
+     */
+    int classFileVersion(Class<?> clazz);
+
+    /**
      * Set current thread's blocker field.
      */
     void blockedOn(Interruptible b);
@@ -229,11 +235,6 @@ public interface JavaLangAccess {
      * Updates module m to open a package to all unnamed modules.
      */
     void addOpensToAllUnnamed(Module m, String pkg);
-
-    /**
-     * Updates module m to open all packages in the given sets.
-     */
-    void addOpensToAllUnnamed(Module m, Set<String> concealedPkgs, Set<String> exportedPkgs);
 
     /**
      * Updates module m to use a service.

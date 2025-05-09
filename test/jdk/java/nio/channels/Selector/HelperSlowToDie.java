@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6823609
  * @summary Selector.select can hangs on Windows for cases where a helper thread
  *   becomes redudant but a new helper is immediately needed.
+ * @requires (os.family == "windows")
  */
 
 import java.nio.channels.*;
@@ -37,11 +38,6 @@ public class HelperSlowToDie {
     private static volatile boolean done;
 
     public static void main(String[] args) throws IOException {
-        if (!System.getProperty("os.name").startsWith("Windows")) {
-            System.out.println("Test skipped as it verifies a Windows specific bug");
-            return;
-        }
-
         Selector sel = Selector.open();
 
         // register channels

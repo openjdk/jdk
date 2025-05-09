@@ -31,7 +31,6 @@ import jdk.test.lib.Asserts;
  * @summary Test that code generation for fp comparison works as intended
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestFPComparison
- * @requires os.arch != "riscv64"
  */
 public class TestFPComparison {
     static final double[] DOUBLES = new double[] {

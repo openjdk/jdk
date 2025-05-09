@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,14 @@ public final class JRSUIConstants {
         @Native private static final byte _pressed = 4;
         public static final State PRESSED = new State(_pressed);
         @Native private static final byte _pulsed = 5;
+        /**
+         * This identifies the default button in a window/dialog.
+         * The name PULSED has become misleading over time.
+         * The default button used to continually pulse up until
+         * Mac OS 10.9, but now there is no pulsing animation.
+         * We still need this State constant to render default
+         * buttons correctly, though.
+         */
         public static final State PULSED = new State(_pulsed);
         @Native private static final byte _rollover = 6;
         public static final State ROLLOVER = new State(_rollover);

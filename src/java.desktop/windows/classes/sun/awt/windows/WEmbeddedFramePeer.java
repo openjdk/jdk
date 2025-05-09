@@ -32,7 +32,7 @@ import java.awt.Rectangle;
 import sun.awt.EmbeddedFrame;
 import sun.awt.Win32GraphicsEnvironment;
 
-public class WEmbeddedFramePeer extends WFramePeer {
+public final class WEmbeddedFramePeer extends WFramePeer {
 
     public WEmbeddedFramePeer(EmbeddedFrame target) {
         super(target);

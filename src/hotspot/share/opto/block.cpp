@@ -42,7 +42,7 @@ void Block_Array::grow( uint i ) {
   if (i < Max()) {
     return; // No need to grow
   }
-  debug_only(_limit = i+1);
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
