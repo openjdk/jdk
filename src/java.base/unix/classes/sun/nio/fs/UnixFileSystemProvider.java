@@ -255,18 +255,16 @@ public abstract class UnixFileSystemProvider
                     // assume the common case that the file is a regular file
                     unlink(file);
                 } catch (UnixException e) {
-                    // check whether the file is a directory
-                    if (e.errno() == EISDIR ||
-                        UnixFileAttributes.get(file, false).isDirectory())
+                    // check whether the file is a directory and, if so,
+                    // try rmdir, otherwise re-throw and let the exception
+                    // be handled below
+                    if (e.errno() == EISDIR) {
                         isDirectory = true;
-
-                    // if the file is a directory then try rmdir, otherwise
-                    // re-throw and let the exception be handled below
-                    if (isDirectory) {
                         rmdir(file);
-                    } else {
-                        throw e;
+                        return true;
                     }
+
+                    throw e;
                 }
             } else {
                 isDirectory = UnixFileAttributes.get(file, false).isDirectory();
