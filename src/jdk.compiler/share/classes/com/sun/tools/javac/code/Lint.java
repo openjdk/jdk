@@ -80,12 +80,6 @@ public class Lint {
             Lint lint = new Lint(this);
             lint.values.removeAll(suppressions);
             lint.suppressedValues.addAll(suppressions);
-            for (LintCategory suppressed : suppressions) {
-                if (suppressed.alias != null) {
-                    lint.values.remove(suppressed.alias);
-                    lint.suppressedValues.add(suppressed.alias);
-                }
-            }
             return lint;
         }
         return this;
@@ -99,12 +93,6 @@ public class Lint {
         Lint l = new Lint(this);
         l.values.addAll(Arrays.asList(lc));
         l.suppressedValues.removeAll(Arrays.asList(lc));
-        for (LintCategory lintCategory : lc) {
-            if (lintCategory.alias != null) {
-                l.values.add(lintCategory.alias);
-                l.suppressedValues.remove(lintCategory.alias);
-            }
-        }
         return l;
     }
 
@@ -116,12 +104,6 @@ public class Lint {
         Lint l = new Lint(this);
         l.values.removeAll(Arrays.asList(lc));
         l.suppressedValues.addAll(Arrays.asList(lc));
-        for (LintCategory lintCategory : lc) {
-            if (lintCategory.alias != null) {
-                l.values.remove(lintCategory.alias);
-                l.suppressedValues.add(lintCategory.alias);
-            }
-        }
         return l;
     }
 
@@ -191,23 +173,18 @@ public class Lint {
             if (!options.isSet(Option.PREVIEW)) {
                 values.add(LintCategory.PREVIEW);
             }
-            values.add(LintCategory.SYNCHRONIZATION);
             values.add(LintCategory.IDENTITY);
             values.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
+            if (options.isSet(Option.XLINT_CUSTOM, lc.option) ||
+                    (lc.alias != null && options.isSet(Option.XLINT_CUSTOM, lc.alias))) {
                 values.add(lc);
-                if (lc.alias != null) {
-                    values.add(lc.alias);
-                }
-            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
+            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option) ||
+                    (lc.alias != null && options.isSet(Option.XLINT_CUSTOM, "-" + lc.alias))) {
                 values.remove(lc);
-                if (lc.alias != null) {
-                    values.remove(lc.alias);
-                }
             }
         }
 
@@ -289,7 +266,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity"),
+        IDENTITY("identity", "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -394,11 +371,6 @@ public class Lint {
         STRICTFP("strictfp"),
 
         /**
-         * Warn about synchronization attempts on instances of @ValueBased classes.
-         */
-        SYNCHRONIZATION("synchronization", IDENTITY),
-
-        /**
          * Warn about issues relating to use of text blocks
          *
          * <p>
@@ -444,18 +416,18 @@ public class Lint {
             this(option, annotationSuppression, null);
         }
 
-        LintCategory(String option, LintCategory alias) {
+        LintCategory(String option, String alias) {
             this(option, true, alias);
         }
 
-        LintCategory(String option, boolean annotationSuppression, LintCategory alias) {
+        LintCategory(String option, boolean annotationSuppression, String alias) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
             this.alias = alias;
             map.put(option, this);
             // we need to do this as forward references are not allowed
             if (alias != null) {
-                alias.alias = this;
+                map.put(alias, this);
             }
         }
 
@@ -479,7 +451,7 @@ public class Lint {
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
 
-        public LintCategory alias;
+        public String alias;
     }
 
     /**
@@ -489,7 +461,7 @@ public class Lint {
      */
     public boolean isEnabled(LintCategory lc) {
         initializeRootIfNeeded();
-        return values.contains(lc) || (lc.alias != null && values.contains(lc.alias));
+        return values.contains(lc);
     }
 
     /**
@@ -500,7 +472,7 @@ public class Lint {
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
-        return suppressedValues.contains(lc) || (lc.alias != null && suppressedValues.contains(lc.alias));
+        return suppressedValues.contains(lc);
     }
 
     /**
@@ -561,11 +533,6 @@ public class Lint {
               .flatMap(LintCategory::get)
               .filter(lc -> lc.annotationSuppression)
               .ifPresent(result::add);
-        }
-        for (LintCategory lc : result) {
-            if (lc.alias != null) {
-                result.add(lc.alias);
-            }
         }
         return result;
     }

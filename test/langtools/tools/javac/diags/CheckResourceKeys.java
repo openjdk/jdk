@@ -178,7 +178,7 @@ public class CheckResourceKeys {
                 boolean found = false;
 
                 for (LintCategory lc : LintCategory.values()) {
-                    if (option.equals(lc.option))
+                    if (option.equals(lc.option) || (lc.alias != null && option.equals(lc.alias)))
                         found = true;
                 }
 

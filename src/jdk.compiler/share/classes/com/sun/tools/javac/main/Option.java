@@ -499,6 +499,13 @@ public enum Option {
                                                 lc.option,
                                                 log.localize(PrefixKind.JAVAC,
                                                              "opt.Xlint.desc." + lc.option)));
+                if (lc.alias != null) {
+                    log.printRawLines(WriterKind.STDOUT,
+                            String.format(LINT_KEY_FORMAT,
+                                    lc.alias,
+                                    log.localize(PrefixKind.JAVAC,
+                                            "opt.Xlint.desc." + lc.alias)));
+                }
             }
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
@@ -1368,6 +1375,10 @@ public enum Option {
         for (Lint.LintCategory c : Lint.LintCategory.values()) {
             choices.add(c.option);
             choices.add("-" + c.option);
+            if (c.alias != null) {
+                choices.add(c.alias);
+                choices.add("-" + c.alias);
+            }
         }
         choices.add("none");
         return choices;
