@@ -43,16 +43,24 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
+import javax.net.ssl.X509ExtendedKeyManager;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
-interface KeyManagerAlgorithmConstraints {
+abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
+
+    // Indicates whether we should skip the constraints check.
+    private final boolean constraintsDisabled;
+
+    protected X509KeyManagerConstraints() {
+        constraintsDisabled = isConstraintsDisabled();
+    }
 
     // Gets algorithm constraints of the socket.
-    default AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
+    protected AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
 
-        if (isConstraintsDisabled()) {
+        if (constraintsDisabled) {
             return null;
         }
 
@@ -82,9 +90,9 @@ interface KeyManagerAlgorithmConstraints {
     }
 
     // Gets algorithm constraints of the engine.
-    default AlgorithmConstraints getAlgorithmConstraints(SSLEngine engine) {
+    protected AlgorithmConstraints getAlgorithmConstraints(SSLEngine engine) {
 
-        if (isConstraintsDisabled()) {
+        if (constraintsDisabled) {
             return null;
         }
 
@@ -108,11 +116,11 @@ interface KeyManagerAlgorithmConstraints {
         return SSLAlgorithmConstraints.forEngine(engine, true);
     }
 
-    default boolean conformsToAlgorithmConstraints(
+    protected boolean conformsToAlgorithmConstraints(
             AlgorithmConstraints constraints, Certificate[] chain,
             String variant) {
 
-        if (isConstraintsDisabled()) {
+        if (constraintsDisabled) {
             return true;
         }
 
@@ -149,12 +157,10 @@ interface KeyManagerAlgorithmConstraints {
         return true;
     }
 
-    default boolean isSystemConstraintsDisabled() {
+    protected boolean isConstraintsDisabled() {
         return "true".equals(System.getProperty(
                 "jdk.tls.keymanager.disableConstraintsChecking"));
     }
-
-    boolean isConstraintsDisabled();
 
     // enum for the result of the extension check
     // NOTE: the order of the constants is important as they are used

@@ -46,8 +46,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509KeyManager;
 import javax.security.auth.x500.X500Principal;
 
 
@@ -81,8 +79,7 @@ import javax.security.auth.x500.X500Principal;
  * the remote peer.
  */
 
-final class SunX509KeyManagerImpl extends X509ExtendedKeyManager
-        implements KeyManagerAlgorithmConstraints {
+final class SunX509KeyManagerImpl extends X509KeyManagerConstraints {
 
     private static final String[] STRING0 = new String[0];
 
@@ -100,9 +97,6 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager
      * Map: String(keyType) -> String[](alias)
      */
     private final Map<String, String[]> serverAliasCache;
-
-    // Indicates whether we should skip the constraints check.
-    private final boolean constraintsDisabled;
 
     /*
      * Basic container for credentials implemented as an inner class.
@@ -131,8 +125,6 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager
     SunX509KeyManagerImpl(KeyStore ks, char[] password)
             throws KeyStoreException,
             NoSuchAlgorithmException, UnrecoverableKeyException {
-
-        constraintsDisabled = isSystemConstraintsDisabled();
         credentialsMap = new HashMap<>();
         serverAliasCache = Collections.synchronizedMap(
                 new HashMap<>());
@@ -168,11 +160,6 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager
                 SSLLogger.fine("found key for : " + alias, (Object[]) certs);
             }
         }
-    }
-
-    @Override
-    public boolean isConstraintsDisabled() {
-        return constraintsDisabled;
     }
 
     /*

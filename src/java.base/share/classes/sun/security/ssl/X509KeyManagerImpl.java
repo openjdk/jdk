@@ -58,8 +58,7 @@ import javax.net.ssl.*;
  * @author  Andreas Sterbenz
  */
 
-final class X509KeyManagerImpl extends X509ExtendedKeyManager
-        implements KeyManagerAlgorithmConstraints {
+final class X509KeyManagerImpl extends X509KeyManagerConstraints {
 
     // for unit testing only, set via privileged reflection
     private static Date verificationDate;
@@ -73,15 +72,11 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // cached entries
     private final Map<String,Reference<PrivateKeyEntry>> entryCacheMap;
 
-    // Indicates whether we should skip the constraints check.
-    private final boolean constraintsDisabled;
-
     X509KeyManagerImpl(Builder builder) {
         this(Collections.singletonList(builder));
     }
 
     X509KeyManagerImpl(List<Builder> builders) {
-        constraintsDisabled = isSystemConstraintsDisabled();
         this.builders = builders;
         uidCounter = new AtomicLong();
         entryCacheMap = Collections.synchronizedMap
@@ -102,11 +97,6 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     //
     // public methods
     //
-
-    @Override
-    public boolean isConstraintsDisabled() {
-        return constraintsDisabled;
-    }
 
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
