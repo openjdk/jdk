@@ -52,10 +52,13 @@ void NMTUsage::walk_thread_stacks() {
 }
 
 void NMTUsage::update_malloc_usage() {
-  // Lock needed keep values in sync, total area size
+  MallocMemorySnapshot* ms;
+  // Lock needed to keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  ChunkPoolLocker lock;
-  const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
+  {
+    ChunkPoolLocker lock;
+    ms = MallocMemorySummary::as_snapshot();
+  }
 
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
