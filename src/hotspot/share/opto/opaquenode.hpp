@@ -125,12 +125,6 @@ public:
   void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
   virtual uint size_of() const { return sizeof(OpaqueMultiversioningNode); }
-  virtual uint hash() const { return Node::hash() + _is_delayed_slow_loop + _useless; }
-  virtual bool cmp(const Node& n) const {
-    return Node::cmp(n)
-           && _is_delayed_slow_loop == ((OpaqueMultiversioningNode&)n).is_delayed_slow_loop()
-           DEBUG_ONLY(&& _useless == ((OpaqueMultiversioningNode&)n).is_useless());
-  }
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
