@@ -43,9 +43,7 @@ class ReverseOrderListView<E> implements List<E> {
     final boolean modifiable;
 
     public static <T> List<T> of(List<T> list, boolean modifiable) {
-        if (list instanceof ReverseOrderListView<T> rolv) {
-            return rolv.base;
-        } else if (list instanceof RandomAccess) {
+        if (list instanceof RandomAccess) {
             return new ReverseOrderListView.Rand<>(list, modifiable);
         } else {
             return new ReverseOrderListView<>(list, modifiable);
@@ -395,7 +393,6 @@ class ReverseOrderListView<E> implements List<E> {
         return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
     }
 
-    @Override
     public List<E> reversed() {
         return base;
     }
