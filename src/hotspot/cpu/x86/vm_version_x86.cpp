@@ -466,11 +466,13 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
     __ movl(rcx, 0x18000000); // cpuid1 bits osxsave | avx
     __ andl(rcx, Address(rsi, 8)); // cpuid1 bits osxsave | avx
-    __ jccb(Assembler::equal, done); // jump if AVX is not supported
+    __ cmpl(rcx, 0x18000000);
+    __ jccb(Assembler::notEqual, done); // jump if AVX is not supported
 
     __ movl(rax, 0x6);
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-    __ jccb(Assembler::notEqual, start_simd_check); // return if AVX is not supported
+    __ cmpl(rax, 0x6);
+    __ jccb(Assembler::equal, start_simd_check); // return if AVX is not supported
 
     // we need to bridge farther than imm8, so we use this island as a thunk
     __ bind(done);
@@ -503,7 +505,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // check _cpuid_info.xem_xcr0_eax.bits.zmm32
       __ movl(rax, 0xE0);
       __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-      __ jccb(Assembler::equal, legacy_setup); // jump if EVEX is not supported
+      __ cmpl(rax, 0xE0);
+      __ jccb(Assembler::notEqual, legacy_setup); // jump if EVEX is not supported
 
       if (FLAG_IS_DEFAULT(UseAVX)) {
         __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
@@ -583,7 +586,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // check _cpuid_info.xem_xcr0_eax.bits.zmm32
       __ movl(rax, 0xE0);
       __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-      __ jcc(Assembler::equal, legacy_save_restore);
+      __ cmpl(rax, 0xE0);
+      __ jcc(Assembler::notEqual, legacy_save_restore);
 
       if (FLAG_IS_DEFAULT(UseAVX)) {
         __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));

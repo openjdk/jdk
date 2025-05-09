@@ -92,7 +92,7 @@ public class ClhsdbLongConstant {
 
         // Expected output snippet is of the form (on x64-64):
         // ...
-        // longConstant VM_Version::CPU_SHA 17179869184
+        // longConstant VM_Version::CPU_SHA 34
         // longConstant markWord::age_shift 3
         // longConstant markWord::hash_mask_in_place 4398046509056
         // ...
