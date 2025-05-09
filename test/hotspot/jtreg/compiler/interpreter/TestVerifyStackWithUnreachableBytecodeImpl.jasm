@@ -24,6 +24,9 @@
 
 package compiler/interpreter;
 
+// We need a class file format version < 50:0 so we do not need to specify a
+// stack map for the unreachable bytecodes, which are the reason this test
+// relies on a JASM implementation.
 super class TestVerifyStackWithUnreachableBytecodeImpl version 49:0
 {
     public Method "<init>":"()V"
