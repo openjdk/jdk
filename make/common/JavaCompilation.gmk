@@ -80,15 +80,13 @@ endef
 #
 # The sed expression does this:
 # 1. Add a backslash before any :, = or ! that do not have a backslash already.
-# 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX
-#    conversions.
-# 3. Delete all lines starting with #.
-# 4. Delete empty lines.
-# 5. Append lines ending with \ with the next line.
-# 6. Remove leading and trailing white space. Note that tabs must be explicit
+# 2. Delete all lines starting with #.
+# 3. Delete empty lines.
+# 4. Append lines ending with \ with the next line.
+# 5. Remove leading and trailing white space. Note that tabs must be explicit
 #    as sed on macosx does not understand '\t'.
-# 7. Replace the first \= with just =.
-# 8. Finally it's all sorted to create a stable output.
+# 6. Replace the first \= with just =.
+# 7. Finally it's all sorted to create a stable output.
 #
 # It is assumed that = is the character used for separating names and values.
 define add_file_to_clean
@@ -108,7 +106,6 @@ define add_file_to_clean
 	( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
 	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/^[ 	]*#.*/#/g' \
-	    | $(SED) -f "$$(TOPDIR)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
 	        -e 's/^[ 	]*//;s/[ 	]*$$$$//' \
@@ -265,10 +262,12 @@ define SetupJavaCompilationBody
   endif
 
   # Tell javac to do exactly as told and no more
-  PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
+  PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true
 
   $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS)
   $1_FLAGS += $$($1_JAVAC_FLAGS)
+  # Set character encoding in source
+  $1_FLAGS += -encoding utf-8
 
   ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
     $1_FLAGS += -Werror
