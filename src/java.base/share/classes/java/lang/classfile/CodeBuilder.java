@@ -2483,7 +2483,7 @@ public sealed interface CodeBuilder
         var cpArgs = ref.bootstrapArgs();
         List<LoadableConstantEntry> bsArguments = new ArrayList<>(cpArgs.length);
         for (var constantValue : cpArgs) {
-            bsArguments.add(BytecodeHelpers.constantEntry(constantPool(), constantValue));
+            bsArguments.add(constantPool().loadableConstantEntry(requireNonNull(constantValue)));
         }
         BootstrapMethodEntry bm = constantPool().bsmEntry(bsMethod, bsArguments);
         NameAndTypeEntry nameAndType = constantPool().nameAndTypeEntry(ref.invocationName(), ref.invocationType());
@@ -2941,7 +2941,7 @@ public sealed interface CodeBuilder
      * @see ConstantInstruction.LoadConstantInstruction
      */
     default CodeBuilder ldc(ConstantDesc value) {
-        return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
+        return ldc(constantPool().loadableConstantEntry(requireNonNull(value)));
     }
 
     /**
