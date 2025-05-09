@@ -491,7 +491,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
-      // OR check _cpuid_info.std_cpuid24_ebx.bits.avx10
+      // OR check _cpuid_info.sefsl1_cpuid7_edx.bits.avx10
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
       __ movl(rax, 0x10000);
       __ andl(rax, Address(rsi, 4));
@@ -1066,6 +1066,8 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_AVX512_IFMA);
       _features.clear_feature(CPU_AVX_IFMA);
       _features.clear_feature(CPU_AVX512_FP16);
+      _features.clear_feature(CPU_AVX10_1);
+      _features.clear_feature(CPU_AVX10_2);
     }
   }
 
