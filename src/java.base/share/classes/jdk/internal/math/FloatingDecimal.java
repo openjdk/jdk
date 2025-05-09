@@ -1835,7 +1835,6 @@ public class FloatingDecimal{
      * @throws NullPointerException if the input is null
      * @throws NumberFormatException if the input is malformed
      */
-    /* ix is one of the BINARY_<S>_IX constants, where <S> = 16, 32, 64 */
     static ASCIIToBinaryConverter readJavaFormatString(String in, int ix) {
         /*
          * The scanning proper does not allocate any object,
