@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,6 +148,6 @@ final class ApplicationImageUtils {
             }
         }
 
-        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes);
+        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes, LinkOption.NOFOLLOW_LINKS);
     }
 }
