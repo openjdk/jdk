@@ -235,7 +235,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     /**
      * {@return true if the byte array should be replaced due to increased capacity or coder change}
      * <ul>
-     *     <li>The new coder is the different than the old coder
+     *     <li>The new coder is different than the old coder
      *     <li>The new length is greater than to the current length
      *     <li>The new length is negative, as it might have overflowed due to an increment
      * </ul>
