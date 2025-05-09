@@ -115,7 +115,9 @@ public:
 
   void set_has_appendix(bool has_appendix) {
     u1 new_flags = (has_appendix ? 1 : 0) << has_appendix_shift;
-    _flags = _flags | new_flags;
+    u1 old_flags = _flags & ~(1 << has_appendix_shift);
+    // Preserve the unaffected bits
+    _flags = _old_flags | new_flags;
   }
 
 
