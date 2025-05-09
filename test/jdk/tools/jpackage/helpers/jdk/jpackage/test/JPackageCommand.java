@@ -23,10 +23,18 @@
 
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -46,7 +54,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -78,6 +85,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
+        readOnlyPathAsserts = cmd.readOnlyPathAsserts;
         outputValidators = cmd.outputValidators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
@@ -843,10 +851,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
-        Executor.Result result = new JPackageCommand(this)
-                .adjustArgumentsBeforeExecution()
-                .createExecutor()
-                .execute(expectedExitCode);
+        final var copy = new JPackageCommand(this).adjustArgumentsBeforeExecution();
+
+        final var directoriesAssert = new ReadOnlyPathsAssert(copy);
+
+        Executor.Result result = copy.createExecutor().execute(expectedExitCode);
+
+        directoriesAssert.updateAndAssert();
 
         for (final var outputValidator: outputValidators) {
             outputValidator.accept(result.getOutput().iterator());
@@ -901,6 +912,136 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public String macroValue(Macro macro) {
         return macro.value(this);
+    }
+
+    private static final class ReadOnlyPathsAssert {
+        ReadOnlyPathsAssert(JPackageCommand cmd) {
+            this.asserts = cmd.readOnlyPathAsserts.stream().map(a -> {
+                return a.getPaths(cmd).stream().map(dir -> {
+                    return Map.entry(a, dir);
+                });
+            }).flatMap(x -> x).collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue, toList())));
+            snapshots = createSnapshots();
+        }
+
+        void updateAndAssert() {
+            final var newSnapshots = createSnapshots();
+            for (final var a : asserts.keySet().stream().sorted().toList()) {
+                final var snapshopGroup = snapshots.get(a);
+                final var newSnapshopGroup = newSnapshots.get(a);
+                for (int i = 0; i < snapshopGroup.size(); i++) {
+                    TKit.PathSnapshot.assertEquals(snapshopGroup.get(i), newSnapshopGroup.get(i),
+                            String.format("Check jpackage didn't modify ${%s}=[%s]", a, asserts.get(a).get(i)));
+                }
+            }
+        }
+
+        private Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> createSnapshots() {
+            return asserts.entrySet().stream()
+                    .map(e -> {
+                        return Map.entry(e.getKey(), e.getValue().stream().map(TKit.PathSnapshot::new).toList());
+                    }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+
+        private final Map<ReadOnlyPathAssert, List<Path>> asserts;
+        private final Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> snapshots;
+    }
+
+    public static enum ReadOnlyPathAssert{
+        APP_IMAGE(new Builder("--app-image").enable(cmd -> {
+            // External app image should be R/O unless it is an app image signing on macOS.
+            return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
+        }).create()),
+        APP_CONTENT(new Builder("--app-content").multiple().create()),
+        RESOURCE_DIR(new Builder("--resource-dir").create()),
+        MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
+        RUNTIME_IMAGE(new Builder("--runtime-image").create());
+
+        ReadOnlyPathAssert(Function<JPackageCommand, List<Path>> getPaths) {
+            this.getPaths = getPaths;
+        }
+
+        List<Path> getPaths(JPackageCommand cmd) {
+            return getPaths.apply(cmd).stream().toList();
+        }
+
+        private final static class Builder {
+
+            Builder(String argName) {
+                this.argName = Objects.requireNonNull(argName);
+            }
+
+            Builder multiple() {
+                multiple = true;
+                return this;
+            }
+
+            Builder enable(Predicate<JPackageCommand> v) {
+                enable = v;
+                return this;
+            }
+
+            Function<JPackageCommand, List<Path>> create() {
+                return cmd -> {
+                    if (enable != null && !enable.test(cmd)) {
+                        return List.of();
+                    } else {
+                        final List<Optional<Path>> dirs;
+                        if (multiple) {
+                            dirs = Stream.of(cmd.getAllArgumentValues(argName))
+                                    .map(Builder::tokenizeValue)
+                                    .flatMap(x -> x)
+                                    .map(Builder::toExistingFile).toList();
+                        } else {
+                            dirs = Optional.ofNullable(cmd.getArgumentValue(argName))
+                                    .map(Builder::toExistingFile).map(List::of).orElseGet(List::of);
+                        }
+
+                        final var mutablePaths = Stream.of("--temp", "--dest")
+                                .map(cmd::getArgumentValue)
+                                .filter(Objects::nonNull)
+                                .map(Builder::toExistingFile)
+                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .collect(toSet());
+
+                        return dirs.stream()
+                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .filter(Predicate.not(mutablePaths::contains))
+                                .toList();
+                    }
+                };
+            }
+
+            private static Optional<Path> toExistingFile(String path) {
+                Objects.requireNonNull(path);
+                try {
+                    return Optional.of(Path.of(path)).filter(Files::exists).map(Path::toAbsolutePath);
+                } catch (InvalidPathException ex) {
+                    return Optional.empty();
+                }
+            }
+
+            private static Stream<String> tokenizeValue(String str) {
+                return Stream.of(str.split(","));
+            }
+
+            private Predicate<JPackageCommand> enable;
+            private final String argName;
+            private boolean multiple;
+        }
+
+        private final Function<JPackageCommand, List<Path>> getPaths;
+    }
+
+    public JPackageCommand setReadOnlyPathAsserts(ReadOnlyPathAssert... asserts) {
+        readOnlyPathAsserts = Set.of(asserts);
+        return this;
+    }
+
+    public JPackageCommand excludeReadOnlyPathAssert(ReadOnlyPathAssert... asserts) {
+        var asSet = Set.of(asserts);
+        return setReadOnlyPathAsserts(readOnlyPathAsserts.stream().filter(Predicate.not(
+                asSet::contains)).toArray(ReadOnlyPathAssert[]::new));
     }
 
     public static enum AppLayoutAssert {
@@ -1320,6 +1461,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Path winMsiLogFile;
+    private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
     private static boolean defaultWithToolProvider;
