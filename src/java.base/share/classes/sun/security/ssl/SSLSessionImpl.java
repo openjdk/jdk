@@ -501,17 +501,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // Exporter master secret length of secret key algorithm (one byte)
-        i = buf.get();
-        if (i > 0) {
-            b = new byte[i];
-            // Get algorithm string
-            buf.get(b, 0, i);
+        b = Record.getBytes8(buf);
+        if (b.length > 0) {
             String algName = new String(b);
-            // Encoded length
-            i = Short.toUnsignedInt(buf.getShort());
-            // Encoded SecretKey
-            b = new byte[i];
-            buf.get(b);
+            b = Record.getBytes16(buf);
             this.exporterMasterSecret = new SecretKeySpec(b, algName);
         } else {
             // TLSv1.2-
@@ -519,10 +512,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // Get clientRandom
-        i = Byte.toUnsignedInt(buf.get());
-        if (i > 0) {
-            b = new byte[i];
-            buf.get(b, 0, i);
+        b = Record.getBytes8(buf);
+        if (b.length > 0) {
             this.clientRandom = new RandomCookie(ByteBuffer.wrap(b));
         } else {
             // TLSv1.3+
@@ -530,10 +521,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // Get serverRandom
-        i = Byte.toUnsignedInt(buf.get());
-        if (i > 0) {
-            b = new byte[i];
-            buf.get(b, 0, i);
+        b = Record.getBytes8(buf);
+        if (b.length > 0) {
             this.serverRandom = new RandomCookie(ByteBuffer.wrap(b));
         } else {
             // TLSv1.3+
