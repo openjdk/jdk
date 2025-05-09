@@ -182,6 +182,7 @@ public abstract class ClassValue<T> {
         // racing type.classValueMap{.cacheArray} : null => new Entry[X] <=> new Entry[Y]
         ClassValueMap map = type.classValueMap;
         if (map == null)  return EMPTY_CACHE;
+        // reads non-null due to StoreStore barrier in critical section in initializeMap
         Entry<?>[] cache = map.getCache();
         return cache;
         // invariant:  returned value is safe to dereference and check for an Entry
@@ -219,7 +220,7 @@ public abstract class ClassValue<T> {
             return cast.value;
         }
 
-        RemovalToken permission = (RemovalToken) accessed; // nullable
+        RemovalToken token = (RemovalToken) accessed; // nullable
         for (; ; ) {
             T value;
             try {
@@ -241,13 +242,13 @@ public abstract class ClassValue<T> {
                 }
             }
             // computeValue succeed, proceed to associate
-            accessed = map.associateAccess(this, permission, value);
+            accessed = map.associateAccess(this, token, value);
             if (accessed instanceof Entry) {
                 @SuppressWarnings("unchecked")
                 var cast = (Entry<T>) accessed;
                 return cast.value;
             } else {
-                permission = (RemovalToken) accessed;
+                token = (RemovalToken) accessed;
                 // repeat
             }
         }
@@ -324,17 +325,30 @@ public abstract class ClassValue<T> {
         }
     }
 
+    /**
+     * Besides a value (represented by an Entry), a "removal token" object,
+     * including the value {@code null}, can be present at a ClassValue-Class
+     * coordinate.  A removal token indicates whether the value from a
+     * computation is up-to-date; the value is up-to-date if the token is the
+     * same before and after computation (no removal during this period), or if
+     * the token is from the same thread (removed during computeValue).
+     * {@code null} is the initial state, meaning all computations are valid.
+     * Later tokens are always non-null, no matter if they replace existing
+     * entries or outdated tokens.
+     */
     private static final class RemovalToken {
-        private final WeakReference<Thread> actor;
+        // Use thread ID, which presumably don't duplicate and is cheaper than WeakReference
+        private final long actorId;
 
         private RemovalToken() {
-            this.actor = new WeakReference<>(Thread.currentThread());
+            this.actorId = Thread.currentThread().threadId();
         }
 
-        // Arguments are nullable, intentionally
+        // Arguments are nullable, intentionally to allow initial tokens
         static boolean areCompatible(RemovalToken current, RemovalToken original) {
+            // No removal token after the initial can be null
             assert current != null || original == null : current + " : " + original;
-            return current == original || current.actor.refersTo(Thread.currentThread());
+            return current == original || current.actorId == Thread.currentThread().threadId();
         }
     }
 
@@ -346,8 +360,6 @@ public abstract class ClassValue<T> {
      *  <li> dead if version == null
      *  <li> stale if version != classValue.version
      *  <li> else live </ul>
-     *  Promises are never put into the cache; they only live in the
-     *  backing map while a computeValue call is in flight.
      *  Once an entry goes stale, it can be reset at any time
      *  into the dead state.
      */
@@ -396,11 +408,12 @@ public abstract class ClassValue<T> {
             // happens about once per type
             if ((map = type.classValueMap) == null) {
                 map = new ClassValueMap();
-                // Place a Store fence after construction and before publishing to emulate
-                // ClassValueMap containing final fields. This ensures it can be
-                // published safely in the non-volatile field Class.classValueMap,
-                // since stores to the fields of ClassValueMap will not be reordered
-                // to occur after the store to the field type.classValueMap
+                // getCacheCarefully anticipates entry array to be non-null when
+                // a ClassValueMap is published to it.  However, ClassValueMap
+                // has no final field, so compiler does not emit a fence, and
+                // we must manually issue a Store-Store barrier to prevent
+                // the assignment below to be reordered with the store to
+                // entry array in the constructor above
                 UNSAFE.storeFence();
 
                 type.classValueMap = map;
@@ -452,6 +465,7 @@ public abstract class ClassValue<T> {
         Entry<?>[] getCache() { return cacheArray; }
 
         // A simple read access to this map, for the initial step of get or failure recovery.
+        // This may refresh the entry for the cache, but the associated value always stays the same.
         synchronized <T> Object readAccess(ClassValue<T> classValue) {
             var item = get(classValue.identity);
             if (item instanceof Entry) {
@@ -467,12 +481,12 @@ public abstract class ClassValue<T> {
         }
 
         // An association attempt, for when a computeValue returns a value.
-        synchronized <T> Object associateAccess(ClassValue<T> classValue, RemovalToken computationalToken, T value) {
+        synchronized <T> Object associateAccess(ClassValue<T> classValue, RemovalToken startToken, T value) {
             var item = readAccess(classValue);
             if (item instanceof Entry)
                 return item; // value already associated
             var currentToken = (RemovalToken) item;
-            if (RemovalToken.areCompatible(currentToken, computationalToken)) {
+            if (RemovalToken.areCompatible(currentToken, startToken)) {
                 var entry = makeEntry(classValue.version, value);
                 put(classValue.identity, entry);
                 // Add to the cache, to enable the fast path, next time.
