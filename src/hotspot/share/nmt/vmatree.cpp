@@ -647,15 +647,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    if (current->val().out.has_committed_stack()) {
-      out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
-                statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
-    } else {
-      out->print("%zu (%s) - %s [%d, --]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
-                statetype_to_string(out_state(current).type()), current->val().out.reserved_stack());
-
-    }
-
+    out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+              statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
   });
   out->cr();
 }

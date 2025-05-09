@@ -2275,10 +2275,10 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
   {
     // row  9:  ........XA....YW.............B.....
     // nodes:   ........10----70................
-    // request:             50*****************250
-    // post:    ........10--50**70*************250
-    //                    si1  si1    si2
-    //                    -    si2    si2
+    // request:         10*******************250
+    // post:    ........10****70*************250
+    //                    si1        si2
+    //                    si2        si2
     Tree tree;
     ExpectedTree<2> pre = {{    10,     70,       },
                            {mtNone, mtTest, mtNone},
@@ -2287,14 +2287,14 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
+    VMATree::SummaryDiff diff = tree.commit_mapping(10, 240, call_stack_2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 240);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 70);
-    ExpectedTree<4> et = {{    10,     50,     70,    250        },
-                          {mtNone, mtTest, mtTest, mtTest, mtNone},
-                          {Rl    , Rs    , C     , C     , Rl    },
-                          {-1    , si_1  , si_1  , si_2  , -1    },
-                          {-1    , -1    , si_2  , si_2  , -1    }
+    ExpectedTree<3> et = {{    10,     70,    250        },
+                          {mtNone, mtTest, mtTest, mtNone},
+                          {Rl    , C     , C     , Rl    },
+                          {-1    , si_1  , si_2  , -1    },
+                          {-1    , si_2  , si_2  , -1    }
                          };
     check_tree(tree, et, __LINE__);
   }
@@ -2614,7 +2614,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
 
 }
 
-TEST_VM_F(NMTVMATreeTest, OverlapTableRows19to23) {
+TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
   using SIndex = NativeCallStackStorage::StackIndex;
   using State = VMATree::StateType;
   SIndex si_1 = si[0];
@@ -2760,8 +2760,8 @@ TEST_VM_F(NMTVMATreeTest, UpdateRegionTest) {
   const VMATree::RequestInfo      UncommitRequest{0, a, Rs, mtNone, ES, true};
   const VMATree::RequestInfo CopyTagCommitRequest{0, a,  C, ReqTag, s2, true};
                               //  existing state           request              expected state     expected diff
-                              // st   tag    stacks                           st   tag    stacks   reserve commit
-                              // --  ------  ------  ----------------------   --  ------  ------   ------  -----
+                              // st   tag    stacks                           st   tag    stacks   reserve  commit
+                              // --  ------  ------  ----------------------   --  ------  ------   -------  -------
   UpdateCallInfo  call_info[]={{{Rl, mtNone, ES, ES},        ReleaseRequest, {Rl, mtNone, ES, ES}, {0,  0}, {0,  0}},
                                {{Rl, mtNone, ES, ES},        ReserveRequest, {Rs, ReqTag, s2, ES}, {0,  a}, {0,  0}},
                                {{Rl, mtNone, ES, ES},         CommitRequest, { C, ReqTag, s2, s2}, {0,  a}, {0,  a}},
