@@ -193,9 +193,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @param length  the number of bytes of EKM material needed
      *
      * @throws SSLKeyException if the key could not be generated
-     * @throws IllegalArgumentException if {@code length} is negative
-     *         or the {@code context} length is larger than can be
-     *         accommodated
+     * @throws IllegalArgumentException if {@code length} is non-positive,
+     *         or if the {@code label} or {@code context} length can
+     *         not be accommodated
      * @throws NullPointerException if {@code label} is null
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation
@@ -236,23 +236,23 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @implSpec The default implementation throws
      *           {@code UnsupportedOperationException}
      *
-     * @param label   the label bytes used in the EKM calculation
+     * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
      *                before the operation begins
      * @param context the context bytes used in the EKM calculation
      * @param length  the number of bytes of EKM material needed
      *
      * @throws SSLKeyException if the key could not be generated
-     * @throws IllegalArgumentException if {@code length} is negative
-     *         or the {@code context} length is larger than can be
-     *         accommodated
+     * @throws IllegalArgumentException if {@code length} is non-positive,
+     *         or if the {@code label} or {@code context} length can
+     *         not be accommodated
      * @throws NullPointerException if {@code label} is null
      * @throws UnsupportedOperationException if the underlying provider
-     *         does not implement the operation, or if the derived key
-     *         material is not extractable.
+     *         does not implement the operation
      *
-     * @return a byte buffer of size {@code length} that contains the EKM
-     *         material
+     * @return a byte array of size {@code length} that contains the EKM
+     *         material, or null if the derived key material does not support
+     *         encoding
      * @since 25
      */
     public byte[] exportKeyingMaterialData(

@@ -35,6 +35,7 @@
 
 import java.security.Security;
 import java.util.Arrays;
+import javax.crypto.SecretKey;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.nio.ByteBuffer;
@@ -278,6 +279,8 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
             ExtendedSSLSession clientSession,
             ExtendedSSLSession serverSession) throws Exception {
 
+        SecretKey clientKey, serverKey;
+
         // Create output arrays
         byte[] clientBytes, serverBytes;
 
@@ -293,37 +296,53 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
         byte[] bytesDiffSize = new byte[21];
         random.nextBytes(bytesDiffSize);
 
-        // Inputs exactly equal.  Use exportKeyMaterialKey()
-        clientBytes = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 128).getEncoded();
-        serverBytes = serverSession.exportKeyingMaterialKey("hello",
-                bytes, 128).getEncoded();
-        assertEqualsByteArray(clientBytes, serverBytes,
-                "Equal inputs but exporters are not equal");
-        log("Equal inputs test passed");
+        // Run a bunch of similar derivations using both the Key/Data methods,
+        // exercising the various valid/invalid combinations.
 
-        // Empty label.  I don't see anything that says this is
-        // forbidden.  There is some verbiage about: labels being registered
-        // with IANA, must not collide with existing PRF labels, SHOULD use
-        // "EXPORTER"/"EXPERIMENTAL" prefixes, etc.
-        clientBytes = clientSession.exportKeyingMaterialKey("",
-                bytes, 128).getEncoded();
-        serverBytes = serverSession.exportKeyingMaterialKey("",
-                bytes, 128).getEncoded();
+        // We may need to adjust if it turns out that this is run with
+        // non-extractable keys if .equals() doesn't work.
+
+        // Inputs exactly equal.
+        clientKey = clientSession.exportKeyingMaterialKey("hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("hello", bytes, 128);
+        assertEquals(clientKey, serverKey,
+                "Key: Equal inputs but exporters are not equal");
+        log("Key: Equal inputs test passed");
+
+        clientBytes = clientSession.exportKeyingMaterialData("hello",
+                bytes, 128);
+        serverBytes = serverSession.exportKeyingMaterialData("hello",
+                bytes, 128);
         assertEqualsByteArray(clientBytes, serverBytes,
-                "Empty label and exporters are equal");
-        log("Empty label test passed");
+                "Data: Equal inputs but exporters are not equal");
+        log("Data: Equal inputs test passed");
 
         // Different labels, now use exportKeyMaterialData() for coverage
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("goodbye",
+                bytes, 128);
+        assertNotEquals(clientKey, serverKey,
+                "Key: Different labels but exporters same");
+        log("Key: Different labels test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
         serverBytes = serverSession.exportKeyingMaterialData("goodbye",
                 bytes, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
-                "Different labels but exporters same");
-        log("Different labels test passed");
+                "Data: Different labels but exporters same");
+        log("Data: Different labels test passed");
 
         // Different output sizes
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("hello",
+                bytes, 127);
+        assertNotEquals(clientKey, serverKey,
+                "Key: Different output sizes but exporters same");
+        log("Key: Different output size test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
@@ -331,46 +350,93 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
         assertEquals(clientBytes.length, 128, "client length != 128");
         assertEquals(serverBytes.length, 127, "server length != 127");
         assertNotEqualsByteArray(clientBytes, serverBytes,
-                "Different output sizes but exporters same");
-        log("Different output size test passed");
+                "Data: Different output sizes but exporters same");
+        log("Data: Different output size test passed");
 
         // Different context values
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("hello",
+                bytesDiff, 128);
+        assertNotEquals(clientKey, serverKey,
+                "Key: Different context but exporters same");
+        log("Key: Different context test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytesDiff, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
-                "Different context but exporters same");
-        log("Different context test passed");
+                "Data: Different context but exporters same");
+        log("Data: Different context test passed");
 
         // Different context sizes
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("hello",
+                bytesDiffSize, 128);
+        assertNotEquals(clientKey, serverKey,
+                "Key: Different context sizes but exporters same");
+        log("Key: Different context sizes test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
                 bytes, 128);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
                 bytesDiffSize, 128);
         assertNotEqualsByteArray(clientBytes, serverBytes,
-                "Different context sizes but exporters same");
-        log("Different context sizes test passed");
+                "Data: Different context sizes but exporters same");
+        log("Data: Different context sizes test passed");
 
         // No context, but otherwise the same
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                null, 128);
+        serverKey = serverSession.exportKeyingMaterialKey("hello",
+                null, 128);
+        assertEquals(clientKey, serverKey,
+                "Key: No context and exporters are not the same");
+        log("Key: No context test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
                 null, 128);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
                 null, 128);
         assertEqualsByteArray(clientBytes, serverBytes,
-                "No context and exporters are not the same");
-        log("No context test passed");
+                "Data: No context and exporters are not the same");
+        log("Data: No context test passed");
 
         // Smaller key size
+        clientKey = clientSession.exportKeyingMaterialKey("hello",
+                bytes, 1);
+        serverKey = serverSession.exportKeyingMaterialKey("hello",
+                bytes, 1);
+        assertEquals(clientKey, serverKey,
+                "Key: Smaller key size should be the same");
+        log("Key: Smaller key size test passed");
+
         clientBytes = clientSession.exportKeyingMaterialData("hello",
-                bytes, 40);
+                bytes, 1);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
-                bytes, 40);
+                bytes, 1);
         assertEqualsByteArray(clientBytes, serverBytes,
-                "Smaller key size should be the same");
-        log("Smaller key size test passed");
+                "Data: Smaller key size should be the same");
+        log("Data: Smaller key size test passed");
 
         // Check error conditions
+
+        try {
+            clientSession.exportKeyingMaterialData("hello", bytes, -1);
+            throw new Exception("negative length accepted");
+        } catch (IllegalArgumentException e) {
+            log("negative length test passed");
+        }
+
+        try {
+            clientSession.exportKeyingMaterialData("hello", bytes, 0);
+            throw new Exception("zero length accepted");
+        } catch (IllegalArgumentException e) {
+            log("zero length test passed");
+        }
+
         try {
             clientSession.exportKeyingMaterialData(null, bytes, 128);
             throw new Exception("null label accepted");
@@ -379,25 +445,83 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
         }
 
         try {
-            clientSession.exportKeyingMaterialData("hello",
-                    new byte[1<<16], 128);
-            if (!clientSession.getProtocol().equals("TLSv1.3")) {
-                throw new Exception("large context accepted in " +
-                        "SSLv3/TLSv1/TLSv1.1/TLSv1.2");
-            } else {
-                log("large context test passed in TLSv1.3");
-            }
+            clientSession.exportKeyingMaterialData("", bytes, 128);
+            throw new Exception("empty label accepted");
         } catch (IllegalArgumentException e) {
-            log("large context test passed in " +
-                    "SSLv3/TLSv1/TLSv1.1/TLSv1.2");
+            log("empty label test passed");
         }
 
-        try {
-            clientSession.exportKeyingMaterialData("hello", bytes, -20);
-            throw new Exception("negative length accepted");
-        } catch (IllegalArgumentException e) {
-            log("negative length test passed");
+        switch (clientSession.getProtocol()) {
+
+        case "TLSv1.3":
+            // 249 bytes is the max label we can accept (<7..255>, since
+            // "tls13 " is added in HkdfLabel)
+            String longString =
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "12345678901234567890123456789012345678901234567890" +
+                    "1234567890123456789012345678901234567890123456789";
+
+            clientSession.exportKeyingMaterialData(longString, bytes, 128);
+            log("large label test passed in TLSv1.3");
+
+            try {
+                clientSession.exportKeyingMaterialData(
+                        longString + "0", bytes, 128);
+                throw new Exception("too large label accepted in TLSv1.3");
+            } catch (IllegalArgumentException e) {
+                log("too large label test passed in TLSv1.3");
+            }
+
+            // 255 bytes is the max context we can accept (<0..255>)
+            clientSession.exportKeyingMaterialData(
+                    longString, new byte[255], 128);
+            log("large context test passed in TLSv1.3");
+
+            try {
+                clientSession.exportKeyingMaterialData(
+                        longString, new byte[256], 128);
+                throw new Exception("too large context accepted in TLSv1.3");
+            } catch (IllegalArgumentException e) {
+                log("too large context test passed in TLSv1.3");
+            }
+
+            // RFC 5869 says 255*HashLen bytes is the max length we can accept.
+            // So we'll choose something a bit bigger than the largest
+            // hashLen/ciphertext which is 384 (48 bytes) so this will always
+            // fail.
+            try {
+                clientSession.exportKeyingMaterialData(
+                        longString, new byte[256], 12240);
+                throw new Exception("too large length accepted in TLSv1.3");
+            } catch (IllegalArgumentException e) {
+                log("too large length test passed in TLSv1.3");
+            }
+
+            break;
+
+        case "TLSv1":
+        case "TLSv1.1":
+        case "TLSv1.2":
+            // Don't see a limit of the label.length or output length.
+
+            // Check for large context.length
+            try {
+                clientSession.exportKeyingMaterialData("hello",
+                        new byte[1 << 16], 128);
+                throw new Exception("large context accepted in " +
+                        "TLSv1/TLSv1.1/TLSv1.2");
+            } catch (IllegalArgumentException e) {
+                log("large context passed in TLSv1/TLSv1.1/TLSv1.2");
+            }
+
+            break;
+
+        default:
+            throw new RuntimeException("Unknown protocol: " + clientSession.getProtocol());
         }
+
     }
 
     static boolean isOpen(SSLEngine engine) {

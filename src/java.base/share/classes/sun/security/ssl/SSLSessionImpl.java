@@ -1605,24 +1605,59 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return requestedServerNames;
     }
 
-    /**
-     * Generate Exported Key Material (EKM) calculated according to the
-     * algorithms defined in RFCs 5705/8446.
+    /*
+     * deriveKey is used for switching between Keys/Data.  Will redo
+     * if we ever introduce additional types.
      */
-    @Override
-    public SecretKey exportKeyingMaterialKey(
-            String label, byte[] context, int length) throws SSLKeyException {
+    public Object exportKeyingMaterial(
+            boolean deriveKey, String label, byte[] context, int length)
+            throws SSLKeyException {
 
         // Global preconditions
+
         Objects.requireNonNull(label, "label can not be null");
-        if (length < 0) {
+        if (length < 1) {
             throw new IllegalArgumentException(
-                    "Output length can not be negative");
+                    "length must be positive");
         }
 
         // Calculations are primarily based on protocol version.
         switch (protocolVersion) {
         case TLS13:  // HKDF-based
+
+            // Check the label/context lengths:
+            //       struct {
+            //           uint16 length = Length;
+            //           opaque label<7..255> = "tls13 " + Label;
+            //           opaque context<0..255> = Context;
+            //       } HkdfLabel;
+            // label can have 249 bytes (+6 for "tls13 "), and context 255
+
+            // RFC 8446 allows for length of 2^16-1 (65536), but RFC 5869
+            // states:
+            //
+            //     L    length of output keying material in octets
+            //          (<= 255*HashLen)
+            if (length >= (255 * cipherSuite.hashAlg.hashLength )) {
+                throw new IllegalArgumentException(
+                        "length is too large");
+            }
+
+            byte[] hkdfInfoLabel =
+                        ("tls13 " + label).getBytes(StandardCharsets.UTF_8);
+            if ((hkdfInfoLabel.length < 7) || hkdfInfoLabel.length > 255) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
+            // If no context (null) is provided, RFC 8446 requires an empty
+            // context be used, unlike RFC 5705.
+            context = (context != null ? context : new byte[0]);
+            if (context.length > 255) {
+                throw new IllegalArgumentException(
+                        "context length outside range");
+            }
+
             // Unlikely, but check anyway.
             if (exporterMasterSecret == null) {
                 throw new RuntimeException(
@@ -1640,10 +1675,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
              *     HKDF-Expand-Label(Secret, Label,
              *         Transcript-Hash(Messages), Hash.length)
              */
-
-            // If no context (null) is provided, RFC 8446 requires an empty
-            // context be used, unlike RFC 5705.
-            context = (context != null ? context : new byte[0]);
 
             try {
                 // Use the ciphersuite's hashAlg for these calcs.
@@ -1666,8 +1697,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
                 // ...then the hkdfInfo...
                 byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
-                        ("tls13 " + label).getBytes(StandardCharsets.UTF_8),
-                        emptyHash, hashAlg.hashLength);
+                        hkdfInfoLabel, emptyHash, hashAlg.hashLength);
 
                 // ...then the "inner" HKDF-Expand-Label() to get the
                 // derivedSecret that is used as the Secret in the "outer"
@@ -1691,12 +1721,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                             hash, length);
 
                     // ...now the final expand.
-                    SecretKey key = hkdf.deriveKey(label,
-                            HKDFParameterSpec.expandOnly(derivedSecret,
-                                    hkdfInfo, length));
-                    return key;
+                    return (deriveKey ?
+                            hkdf.deriveKey("ExportKeyingMaterial",
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)) :
+                            hkdf.deriveData(
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)));
                 } finally {
-                    // Best effort
+                    // Best effort to clear the intermediate SecretKey.
                     if (derivedSecret instanceof SecretKeySpec s) {
                         SharedSecrets.getJavaxCryptoSpecAccess()
                                 .clearSecretKeySpec(s);
@@ -1730,13 +1763,20 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                         "Exporters require extended master secrets");
             }
 
+            // Check for a "disambiguating label string" (i.e. non-empty).
+            // Don't see a max length restriction.
+            if (label.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
             // Unlikely, but check if randoms were not captured.
             if (clientRandom == null || serverRandom == null) {
                 throw new RuntimeException("Random nonces not captured");
             }
 
             // context length must fit in 2 unsigned bytes.
-            if ((context != null) && context.length >= (1 << 16)) {
+            if ((context != null) && context.length >= 65536) {
                 throw new IllegalArgumentException(
                         "Only 16-bit context lengths supported");
             }
@@ -1783,7 +1823,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                         hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
                 KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
                 kg.init(spec);
-                return kg.generateKey();
+                SecretKey key = kg.generateKey();
+                return (deriveKey ? key : key.getEncoded());
             } catch (NoSuchAlgorithmException |
                      InvalidAlgorithmParameterException e) {
                 throw new SSLKeyException("Could not generate Exporter/PRF", e);
@@ -1802,15 +1843,19 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * algorithms defined in RFCs 5705/8446.
      */
     @Override
+    public SecretKey exportKeyingMaterialKey(
+            String label, byte[] context, int length) throws SSLKeyException {
+        return (SecretKey)exportKeyingMaterial(true, label, context, length);
+    }
+
+    /**
+     * Generate Exported Key Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     */
+    @Override
     public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
-        byte[] bytes =
-                exportKeyingMaterialKey(label, context, length).getEncoded();
-        if (bytes == null) {
-            throw new UnsupportedOperationException(
-                    "Exported key material is not extractable");
-        }
-        return bytes;
+        return (byte[])exportKeyingMaterial(false, label, context, length);
     }
 
     /** Returns a string representation of this SSL session */
