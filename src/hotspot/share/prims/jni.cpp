@@ -1876,6 +1876,7 @@ static void log_debug_if_final_static_field(JavaThread* thread, const char* func
     assert(found, "bad field offset");
     assert(fd.is_static(), "static/instance mismatch");
     if (fd.is_final() && !fd.is_mutable_static_final()) {
+      ResourceMark rm(thread);
       log_debug(jni)("%s mutated final static field %s.%s", func_name, klass->external_name(), fd.name()->as_C_string());
     }
   }
@@ -1888,6 +1889,7 @@ static void log_debug_if_final_instance_field(JavaThread* thread, const char* fu
     assert(found, "bad field offset");
     assert(!fd.is_static(), "static/instance mismatch");
     if (fd.is_final()) {
+      ResourceMark rm(thread);
       log_debug(jni)("%s mutated final instance field %s.%s", func_name, klass->external_name(), fd.name()->as_C_string());
     }
   }
