@@ -51,6 +51,11 @@ interface KeyManagerAlgorithmConstraints {
 
     // Gets algorithm constraints of the socket.
     default AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
+
+        if (isConstraintsDisabled()) {
+            return null;
+        }
+
         if (socket != null && socket.isConnected() &&
                 socket instanceof SSLSocket sslSocket) {
 
@@ -78,6 +83,11 @@ interface KeyManagerAlgorithmConstraints {
 
     // Gets algorithm constraints of the engine.
     default AlgorithmConstraints getAlgorithmConstraints(SSLEngine engine) {
+
+        if (isConstraintsDisabled()) {
+            return null;
+        }
+
         if (engine != null) {
             SSLSession session = engine.getHandshakeSession();
             if (session != null) {
@@ -101,6 +111,10 @@ interface KeyManagerAlgorithmConstraints {
     default boolean conformsToAlgorithmConstraints(
             AlgorithmConstraints constraints, Certificate[] chain,
             String variant) {
+
+        if (isConstraintsDisabled()) {
+            return true;
+        }
 
         AlgorithmChecker checker = new AlgorithmChecker(constraints, variant);
         try {
@@ -134,6 +148,13 @@ interface KeyManagerAlgorithmConstraints {
 
         return true;
     }
+
+    default boolean isSystemConstraintsDisabled() {
+        return "true".equals(System.getProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking"));
+    }
+
+    boolean isConstraintsDisabled();
 
     // enum for the result of the extension check
     // NOTE: the order of the constants is important as they are used

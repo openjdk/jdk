@@ -55,8 +55,6 @@ public class SunJSSE extends java.security.Provider {
         ps("Signature", "MD5andSHA1withRSA",
             "sun.security.ssl.RSASignature", null, null);
 
-        ps("KeyManagerFactory", "SunX509c",
-                "sun.security.ssl.KeyManagerFactoryImpl$SunX509c", null, null);
         ps("KeyManagerFactory", "SunX509",
             "sun.security.ssl.KeyManagerFactoryImpl$SunX509", null, null);
         ps("KeyManagerFactory", "NewSunX509",

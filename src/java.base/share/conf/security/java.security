@@ -320,7 +320,7 @@ security.overridePropertiesFile=true
 # Determines the default key and trust manager factory algorithms for
 # the javax.net.ssl package.
 #
-ssl.KeyManagerFactory.algorithm=SunX509c
+ssl.KeyManagerFactory.algorithm=SunX509
 ssl.TrustManagerFactory.algorithm=PKIX
 
 #
