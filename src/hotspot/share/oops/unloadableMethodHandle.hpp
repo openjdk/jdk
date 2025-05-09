@@ -44,7 +44,7 @@
 //  3. Strong. Method* holder is strongly reachable, cannot be unloaded.
 //     Calling method() is always safe in this state.
 //  4. Released. Method* is in unknown state, and cannot be accessed.
-//     method() returns nullptr in this state.
+//     method() is unsafe to call in this state.
 //
 // The handle transitions are one-shot:
 //    weak   --(make_always_safe) --> strong
@@ -68,7 +68,7 @@
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
 //   mh.make_always_safe();               // Now in safe state.
 //   <safepoint>
-//   mh.method()->print_on(tty);          // method() is always good now.
+//   mh.method()->print_on(tty);          // method() is always safe now.
 //   mh.release();                        // Release the handle.
 //
 
@@ -77,15 +77,25 @@ class Method;
 class UnloadableMethodHandle {
   friend class VMStructs;
 private:
+  enum State {
+    EMPTY,
+    WEAK,
+    STRONG,
+    RELEASED,
+  } volatile _state;
+
+  volatile int _spin_lock;
+
   Method* _method;
   WeakHandle _weak_handle;
   OopHandle _strong_handle;
-  int _spin_lock;
 
+  inline State get_state() const;
+  inline void set_state(State s);
   inline oop get_unload_blocker(Method* method);
 
 public:
-  UnloadableMethodHandle() : _method(nullptr), _spin_lock(0) {}
+  UnloadableMethodHandle();
   UnloadableMethodHandle(Method* method);
   inline void release();
 

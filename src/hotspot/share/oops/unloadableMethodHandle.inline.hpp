@@ -32,13 +32,28 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 
-inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) : _method(method), _spin_lock(0) {
+inline UnloadableMethodHandle::UnloadableMethodHandle() : _spin_lock(0), _method(nullptr) {
+  set_state(EMPTY);
+}
+
+inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) : _spin_lock(0), _method(method) {
   assert(method != nullptr, "Should be");
   oop obj = get_unload_blocker(method);
   if (obj != nullptr) {
     _weak_handle = WeakHandle(Universe::vm_weak(), obj);
+    set_state(WEAK);
+  } else {
+    set_state(STRONG);
   }
   assert(is_safe(), "Should be");
+}
+
+inline UnloadableMethodHandle::State UnloadableMethodHandle::get_state() const {
+  return Atomic::load_acquire(&_state);
+}
+
+inline void UnloadableMethodHandle::set_state(State s) {
+  Atomic::release_store_fence(&_state, s);
 }
 
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
@@ -59,64 +74,92 @@ oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
 }
 
 void UnloadableMethodHandle::release() {
-  if (_method != nullptr) {
-    _method = nullptr;
-    _weak_handle.release(Universe::vm_weak());
-    _strong_handle.release(Universe::vm_global());
+  switch (get_state()) {
+    case RELEASED: {
+      // Nothing to do.
+      break;
+    }
+    case STRONG:
+    case WEAK: {
+      _strong_handle.release(Universe::vm_global());
+      _weak_handle.release(Universe::vm_weak());
+      _method = nullptr;
+      set_state(RELEASED);
+      break;
+    }
+    case EMPTY: {
+      set_state(RELEASED);
+      break;
+    }
+    default:
+      ShouldNotReachHere();
   }
-  assert(is_safe(), "Should be");
+
+  assert(!is_safe(), "Should not be");
 }
 
 bool UnloadableMethodHandle::is_safe() const {
-  // Definitely safe state: no need to block unloading.
-  if (_weak_handle.is_empty()) {
-    return true;
+  switch (get_state()) {
+    case EMPTY:
+    case STRONG: {
+      // Definitely safe.
+      return true;
+    }
+    case RELEASED: {
+      // Definitely unsafe.
+      return false;
+    }
+    case WEAK: {
+      // Safe only if weak handle was not cleared by GC.
+      // This is only trustworthy if caller is a Java thread in proper state.
+      // Otherwise, unloading can happen without coordinating with this thread.
+      // (Access API would assert this too, but do not rely on it.)
+      Thread* t = Thread::current();
+      if (t->is_Java_thread() &&
+          (JavaThread::cast(t)->thread_state() != _thread_in_native) &&
+          (_weak_handle.peek() != nullptr)) {
+        return true;
+      }
+      return false;
+    }
+    default:
+      ShouldNotReachHere();
+      return false;
   }
-
-  // Definitely safe state: already blocked for unloading.
-  if (!_strong_handle.is_empty()) {
-    return true;
-  }
-
-  // Try to see if weak handle was cleared by GC.
-  // This is only trustworthy if caller is a Java thread in proper state.
-  // Otherwise, unloading can happen without coordinating with this thread.
-  // (Access API would assert this too, but do not rely on it.)
-  Thread* t = Thread::current();
-  if (t->is_Java_thread() &&
-      (JavaThread::cast(t)->thread_state() != _thread_in_native) &&
-      (_weak_handle.peek() != nullptr)) {
-    return true;
-  }
-
-  // Assume unsafe by default.
-  return false;
 }
 
 inline void UnloadableMethodHandle::make_always_safe() {
   assert(is_safe(), "Should be");
 
-  if (_weak_handle.is_empty()) {
-    // Nothing to do: no need to block unloading.
-    return;
-  }
-
-  if (!_strong_handle.is_empty()) {
-    // Nothing to do: already blocked for unloading.
-    return;
-  }
-
-  // Need to capture holder strongly. Under concurrent calls, we need to make
-  // sure we create the strong handle only once, otherwise we can leak some.
-  // This path is normally uncontended, so a simple spin lock would do.
-  Thread::SpinAcquire(&_spin_lock);
-  if (_strong_handle.is_empty()) {
-    oop obj = get_unload_blocker(_method);
-    if (obj != nullptr) {
-      _strong_handle = OopHandle(Universe::vm_global(), obj);
+  switch (get_state()) {
+    case EMPTY:
+    case STRONG: {
+      // Already safe.
+      break;
     }
+    case RELEASED: {
+      assert(false, "Cannot be RELEASED: check lifecycle");
+      break;
+    }
+    case WEAK: {
+      // Need to capture holder strongly. Under concurrent calls, we need to make
+      // sure we create the strong handle only once, otherwise we can leak some.
+      // This path is normally uncontended, so a simple spin lock would do.
+      Thread::SpinAcquire(&_spin_lock);
+      if (get_state() == WEAK) {
+        oop obj = get_unload_blocker(_method);
+        assert(obj != nullptr, "Should have one");
+        _strong_handle = OopHandle(Universe::vm_global(), obj);
+        set_state(STRONG);
+      } else {
+        assert(get_state() == STRONG, "Should be otherwise");
+      }
+      Thread::SpinRelease(&_spin_lock);
+      break;
+    }
+    default:
+      ShouldNotReachHere();
   }
-  Thread::SpinRelease(&_spin_lock);
 
   assert(is_safe(), "Should be");
 }

@@ -118,11 +118,12 @@ void CompileTask::initialize(int compile_id,
   _failure_reason_on_C_heap = false;
   _arena_bytes = 0;
 
-  if (LogCompilation) {
-    if (hot_method.not_null() && hot_method() != method()) {
-      // Only do capture unload blocker if _hot_method is different from _method.
-      _hot_method_handle = UnloadableMethodHandle(hot_method());
-    }
+  // Only capture unload blocker if _hot_method is different from _method.
+  // Otherwise, re-initialize it to empty handle to avoid keeping old hot method alive.
+  if (hot_method.not_null() && hot_method() != method()) {
+    _hot_method_handle = UnloadableMethodHandle(hot_method());
+  } else {
+    _hot_method_handle = UnloadableMethodHandle();
   }
 
   _next = nullptr;
