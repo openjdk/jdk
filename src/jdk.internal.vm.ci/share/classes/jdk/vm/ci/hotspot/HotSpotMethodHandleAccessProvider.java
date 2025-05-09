@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import java.lang.invoke.MethodHandle;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.hotspot.HotSpotMethodData.VMState;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -107,7 +106,7 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
         /**
          * Singleton instance lazily initialized via double-checked locking.
          */
-        @NativeImageReinitialize private static volatile Internals instance;
+        private static volatile Internals instance;
 
         static Internals instance() {
             Internals result = instance;

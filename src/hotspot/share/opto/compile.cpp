@@ -41,6 +41,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -66,6 +67,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
@@ -393,13 +395,16 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->is_OpaqueTemplateAssertionPredicate()) {
-    remove_template_assertion_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaque(dead->as_OpaqueTemplateAssertionPredicate());
   }
   if (dead->is_ParsePredicate()) {
     remove_parse_predicate(dead->as_ParsePredicate());
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
+  }
+  if (dead->for_merge_stores_igvn()) {
+    remove_from_merge_stores_igvn(dead);
   }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
@@ -416,7 +421,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist) {
+void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -436,6 +441,9 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
+        if (child->is_data_proj_of_pure_function(n)) {
+          worklist.push(n);
+        }
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
@@ -446,9 +454,11 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
-  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
+  // Remove useless Template Assertion Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
+  remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
 #ifdef ASSERT
@@ -464,7 +474,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
-  debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
+  DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
 
 // ============================================================================
@@ -623,6 +633,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -635,7 +646,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
-      _comp_arena(mtCompiler),
+      _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
       _directive(directive),
@@ -644,9 +655,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _intrinsics(comp_arena(), 0, 0, nullptr),
       _macro_nodes(comp_arena(), 8, 0, nullptr),
       _parse_predicates(comp_arena(), 8, 0, nullptr),
-      _template_assertion_predicate_opaqs(comp_arena(), 8, 0, nullptr),
+      _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -658,7 +670,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
       _mach_constant_base_node(nullptr),
-      _Compile_types(mtCompiler),
+      _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
       _igvn_worklist(nullptr),
       _types(nullptr),
@@ -901,6 +913,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -912,23 +925,24 @@ Compile::Compile(ciEnv* ci_env,
       _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
-      _comp_arena(mtCompiler),
+      _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
       _directive(directive),
       _log(ci_env->log()),
       _first_failure_details(nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
-      _node_arena_one(mtCompiler),
-      _node_arena_two(mtCompiler),
+      _node_arena_one(mtCompiler, Arena::Tag::tag_node),
+      _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
       _mach_constant_base_node(nullptr),
-      _Compile_types(mtCompiler),
+      _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
       _igvn_worklist(nullptr),
       _types(nullptr),
@@ -999,8 +1013,6 @@ void Compile::Init(bool aliasing) {
   _top     = nullptr;  // cached later
   _matcher = nullptr;  // filled in later
   _cfg     = nullptr;  // filled in later
-
-  IA32_ONLY( set_24_bit_selection_and_mode(true, false); )
 
   _node_note_array = nullptr;
   _default_node_notes = nullptr;
@@ -1820,8 +1832,7 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   }
   for (int i = 0; i < parse_predicate_count(); i++) {
     ParsePredicateNode* parse_predicate = _parse_predicates.at(i);
-    parse_predicate->mark_useless();
-    igvn._worklist.push(parse_predicate);
+    parse_predicate->mark_useless(igvn);
   }
   _parse_predicates.clear();
 }
@@ -1844,6 +1855,9 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
 
+  if (has_loops() || _loop_opts_cnt > 0) {
+    print_method(PHASE_AFTER_LOOP_OPTS, 2);
+  }
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
   assert(!C->major_progress(), "not cleared");
@@ -1863,6 +1877,49 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
     if (C->major_progress()) {
       C->clear_major_progress(); // ensure that major progress is now clear
     }
+  }
+}
+
+void Compile::record_for_merge_stores_igvn(Node* n) {
+  if (!n->for_merge_stores_igvn()) {
+    assert(!_for_merge_stores_igvn.contains(n), "duplicate");
+    n->add_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+    _for_merge_stores_igvn.append(n);
+  }
+}
+
+void Compile::remove_from_merge_stores_igvn(Node* n) {
+  n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  _for_merge_stores_igvn.remove(n);
+}
+
+// We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+// the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
+// the stores, and we merge the wrong sequence of stores.
+// Example:
+//   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+// Apply MergeStores:
+//   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+// Remove more RangeChecks:
+//   StoreI            [   StoreL  ]            StoreI
+// But now it would have been better to do this instead:
+//   [         StoreL       ] [       StoreL         ]
+//
+// Note: we allow stores to merge in this dedicated IGVN round, and any later IGVN round,
+//       since we never unset _merge_stores_phase.
+void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
+  C->set_merge_stores_phase();
+
+  if (_for_merge_stores_igvn.length() > 0) {
+    while (_for_merge_stores_igvn.length() > 0) {
+      Node* n = _for_merge_stores_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    if (failing()) return;
+    assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
+    print_method(PHASE_AFTER_MERGE_STORES, 3);
   }
 }
 
@@ -2029,6 +2086,7 @@ bool Compile::inline_incrementally_one() {
   for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
     CallGenerator* cg = _late_inlines.at(i);
+    bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node());
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
       cg->do_late_inline();
@@ -2039,6 +2097,16 @@ bool Compile::inline_incrementally_one() {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
+      } else {
+        bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
+        if (!is_scheduled_for_igvn_before && is_scheduled_for_igvn_after) {
+          // Avoid potential infinite loop if node already in the IGVN list
+          assert(false, "scheduled for IGVN during inlining attempt");
+        } else {
+          // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
+          assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
+          cg->call_node()->set_generator(cg);
+        }
       }
     } else {
       // Ignore late inline direct calls when inlining is not allowed.
@@ -2310,6 +2378,10 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
+  if (has_loops()) {
+    print_method(PHASE_BEFORE_LOOP_OPTS, 2);
+  }
+
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
@@ -2424,6 +2496,8 @@ void Compile::Optimize() {
   C->clear_major_progress(); // ensure that major progress is now clear
 
   process_for_post_loop_opts_igvn(igvn);
+
+  process_for_merge_stores_igvn(igvn);
 
   if (failing())  return;
 
@@ -3009,6 +3083,13 @@ void Compile::Code_Gen() {
     cfg.postalloc_expand(_regalloc);
     print_method(PHASE_POSTALLOC_EXPAND, 3);
   }
+
+#ifdef ASSERT
+  {
+    CompilationMemoryStatistic::do_test_allocations();
+    if (failing()) return;
+  }
+#endif
 
   // Convert Nodes to instruction bits in a buffer
   {
@@ -4017,17 +4098,6 @@ bool Compile::final_graph_reshaping() {
     }
   }
 
-#ifdef IA32
-  // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogeneous, item (3).
-  if (UseSSE == 0 &&
-      frc.get_float_count() > 32 &&
-      frc.get_double_count() == 0 &&
-      (10 * frc.get_call_count() < frc.get_float_count()) ) {
-    set_24_bit_selection_and_mode(false, true);
-  }
-#endif // IA32
-
   set_java_calls(frc.get_java_call_count());
   set_inner_loops(frc.get_inner_loop_count());
 
@@ -4188,11 +4258,25 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 //------------------------------verify_bidirectional_edges---------------------
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
-void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
+void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints) const {
   // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
   uint stack_size = live_nodes() >> 4;
-  Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
-  nstack.push(_root);
+  Node_List nstack(MAX2(stack_size, (uint) OptoNodeListSize));
+  if (root_and_safepoints != nullptr) {
+    assert(root_and_safepoints->member(_root), "root is not in root_and_safepoints");
+    for (uint i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
+      Node* root_or_safepoint = root_and_safepoints->at(i);
+      // If the node is a safepoint, let's check if it still has a control input
+      // Lack of control input signifies that this node was killed by CCP or
+      // recursively by remove_globally_dead_node and it shouldn't be a starting
+      // point.
+      if (!root_or_safepoint->is_SafePoint() || root_or_safepoint->in(0) != nullptr) {
+        nstack.push(root_or_safepoint);
+      }
+    }
+  } else {
+    nstack.push(_root);
+  }
 
   while (nstack.size() > 0) {
     Node* n = nstack.pop();
@@ -4242,12 +4326,12 @@ void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
-void Compile::verify_graph_edges(bool no_dead_code) {
+void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List* root_and_safepoints) const {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
 
     // Call graph walk to check edges
-    verify_bidirectional_edges(visited);
+    verify_bidirectional_edges(visited, root_and_safepoints);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;
@@ -4310,6 +4394,7 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
     _dolog(CITimeVerbose)
 {
   assert(_compile != nullptr, "sanity check");
+  assert(id != PhaseTraceId::_t_none, "Don't use none");
   if (_dolog) {
     _log = _compile->log();
   }
@@ -4318,12 +4403,23 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
     _log->stamp();
     _log->end_head();
   }
+
+  // Inform memory statistic, if enabled
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_start((int)id, name);
+  }
 }
 
 Compile::TracePhase::TracePhase(PhaseTraceId id)
   : TracePhase(Phase::get_phase_trace_id_text(id), id) {}
 
 Compile::TracePhase::~TracePhase() {
+
+  // Inform memory statistic, if enabled
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_end();
+  }
+
   if (_compile->failing_internal()) {
     if (_log != nullptr) {
       _log->done("phase");
@@ -5109,32 +5205,39 @@ IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
 // Called from debugger. Prints method to the default file with the default phase name.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_print() {
-  Compile::current()->igv_print_method_to_file();
+// Use in debugger (gdb/rr): p igv_print($sp, $fp, $pc).
+void igv_print(void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(nullptr, false, &fr);
 }
 
 // Same as igv_print() above but with a specified phase name.
-void igv_print(const char* phase_name) {
-  Compile::current()->igv_print_method_to_file(phase_name);
+void igv_print(const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(phase_name, false, &fr);
 }
 
 // Called from debugger. Prints method with the default phase name to the default network or the one specified with
 // the network flags for the Ideal Graph Visualizer, or to the default file depending on the 'network' argument.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_print(bool network) {
+// Use in debugger (gdb/rr): p igv_print(true, $sp, $fp, $pc).
+void igv_print(bool network, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
   if (network) {
-    Compile::current()->igv_print_method_to_network();
+    Compile::current()->igv_print_method_to_network(nullptr, &fr);
   } else {
-    Compile::current()->igv_print_method_to_file();
+    Compile::current()->igv_print_method_to_file(nullptr, false, &fr);
   }
 }
 
-// Same as igv_print(bool network) above but with a specified phase name.
-void igv_print(bool network, const char* phase_name) {
+// Same as igv_print(bool network, ...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_print(true, "MyPhase", $sp, $fp, $pc).
+void igv_print(bool network, const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
   if (network) {
-    Compile::current()->igv_print_method_to_network(phase_name);
+    Compile::current()->igv_print_method_to_network(phase_name, &fr);
   } else {
-    Compile::current()->igv_print_method_to_file(phase_name);
+    Compile::current()->igv_print_method_to_file(phase_name, false, &fr);
   }
 }
 
@@ -5146,16 +5249,20 @@ void igv_print_default() {
 // Called from debugger, especially when replaying a trace in which the program state cannot be altered like with rr replay.
 // A method is appended to an existing default file with the default phase name. This means that igv_append() must follow
 // an earlier igv_print(*) call which sets up the file. This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_append() {
-  Compile::current()->igv_print_method_to_file("Debug", true);
+// Use in debugger (gdb/rr): p igv_append($sp, $fp, $pc).
+void igv_append(void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(nullptr, true, &fr);
 }
 
-// Same as igv_append() above but with a specified phase name.
-void igv_append(const char* phase_name) {
-  Compile::current()->igv_print_method_to_file(phase_name, true);
+// Same as igv_append(...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_append("MyPhase", $sp, $fp, $pc).
+void igv_append(const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(phase_name, true, &fr);
 }
 
-void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
+void Compile::igv_print_method_to_file(const char* phase_name, bool append, const frame* fr) {
   const char* file_name = "custom_debug.xml";
   if (_debug_file_printer == nullptr) {
     _debug_file_printer = new IdealGraphPrinter(C, file_name, append);
@@ -5163,23 +5270,23 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
     _debug_file_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
-  _debug_file_printer->print_graph(phase_name);
+  _debug_file_printer->print_graph(phase_name, fr);
 }
 
-void Compile::igv_print_method_to_network(const char* phase_name) {
+void Compile::igv_print_method_to_network(const char* phase_name, const frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  igv_print_graph_to_network(phase_name, (Node*) C->root(), empty_list);
+  igv_print_graph_to_network(phase_name, empty_list, fr);
 }
 
-void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
+void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {
     _debug_network_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method printed over network stream to IGV");
-  _debug_network_printer->print(name, C->root(), visible_nodes);
+  _debug_network_printer->print(name, C->root(), visible_nodes, fr);
 }
 #endif
 

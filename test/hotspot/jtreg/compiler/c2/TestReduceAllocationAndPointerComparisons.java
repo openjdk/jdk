@@ -28,7 +28,7 @@
  * @requires vm.flagless & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndPointerComparisons*::*
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndPointerComparisons*::*
- *                   -XX:-TieredCompilation -Xcomp -server
+ *                   -XX:-TieredCompilation -Xcomp
  *                   compiler.c2.TestReduceAllocationAndPointerComparisons
  * @run main compiler.c2.TestReduceAllocationAndPointerComparisons
  */

@@ -23,13 +23,22 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
+static size_t get_max_offset_for_map() {
+  // The page table has (ZAddressOffsetMax >> ZGranuleSizeShift) slots
+  const size_t max_count = ZAddressOffsetMax >> ZGranuleSizeShift;
+  const size_t required_count = ZIndexDistributor::get_count(max_count);
+
+  return required_count << ZGranuleSizeShift;
+}
+
 ZPageTable::ZPageTable()
-  : _map(ZAddressOffsetMax) {}
+  : _map(get_max_offset_for_map()) {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();
@@ -72,11 +81,9 @@ ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTa
     _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();
-  _page_allocator->enable_safe_recycle();
 }
 
 ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
-  _page_allocator->disable_safe_recycle();
   _page_allocator->disable_safe_destroy();
 }
 
@@ -85,10 +92,8 @@ ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table,
     _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();
-  _page_allocator->enable_safe_recycle();
 }
 
 ZGenerationPagesIterator::~ZGenerationPagesIterator() {
-  _page_allocator->disable_safe_recycle();
   _page_allocator->disable_safe_destroy();
 }

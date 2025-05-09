@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -350,6 +351,7 @@ public final class HelloApp {
             this.launcherPath = helloAppLauncher;
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
+            this.env = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
         }
 
@@ -360,6 +362,16 @@ public final class HelloApp {
 
         public AppOutputVerifier expectedExitCode(int v) {
             expectedExitCode = v;
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironment(Map<String, String> v) {
+            env.putAll(v);
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironmentVar(String name, String value) {
+            env.put(Objects.requireNonNull(name), Objects.requireNonNull(name));
             return this;
         }
 
@@ -393,7 +405,7 @@ public final class HelloApp {
             return addParams(v.entrySet());
         }
 
-        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+        public AppOutputVerifier addParams(Map.Entry<String, String> v) {
             return addParams(List.of(v));
         }
 
@@ -466,6 +478,10 @@ public final class HelloApp {
                     .setExecutable(executablePath)
                     .addArguments(List.of(args));
 
+            env.forEach((envVarName, envVarValue) -> {
+                executor.setEnvVar(envVarName, envVarValue);
+            });
+
             return configureEnvironment(executor);
         }
 
@@ -476,6 +492,7 @@ public final class HelloApp {
         private int expectedExitCode;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
+        private final Map<String, String> env;
     }
 
     public static AppOutputVerifier assertApp(Path helloAppLauncher) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
             "-Xlog:class+load,cds=debug,cds+dynamic",
             "-cp", appJar, mainClass, appJar, "init", "keep-alive")
             .assertNormalExit(output -> {
-                output.shouldMatch("Skipping.LambHello[$][$]Lambda.*0x.*:.Hidden.class")
+                output.shouldMatch("Skipping.LambHello[$][$]Lambda.*0x.*:.Unreferenced.hidden.class")
                       .shouldHaveExitValue(0);
             });
 
