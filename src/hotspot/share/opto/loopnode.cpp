@@ -1219,7 +1219,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     // dependent on the short_limit predicate is added to narrow the limit and future predicates may be dependent on the
     // new limit (so have to be between the loop and short_limit predicate). The current limit could, itself, be
     // dependent on an existing predicate. Clone parse predicates below existing predicates to get proper ordering of
-    // predicates when coming from the loop: future predicates, short_limit predicate, existing predicates.
+    // predicates when walking from the loop up: future predicates, short_limit predicate, existing predicates.
     const Predicates predicates_before_cloning(entry_control);
     const PredicateBlock* short_running_loop_predicate_block = predicates_before_cloning.short_running_loop_predicate_block();
     if (!short_running_loop_predicate_block->has_parse_predicate()) { // already trapped
