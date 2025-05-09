@@ -47,7 +47,7 @@ public class PinyinIMCapsTest {
 
             Test settings:
             Go to "System Preferences -> Keyboard -> Input Sources" and
-            add "Pinyin – Traditional" or "Pinyin – Simplified" IM from Chinese language group.
+            add "Pinyin - Traditional" or "Pinyin - Simplified" IM from Chinese language group.
             Set current IM to "Pinyin".
 
             1. Set focus to the text field shown below and press Caps Lock key on the keyboard.
@@ -79,4 +79,3 @@ public class PinyinIMCapsTest {
         return panel;
     }
 }
-

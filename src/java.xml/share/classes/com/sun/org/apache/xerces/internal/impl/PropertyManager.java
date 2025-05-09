@@ -27,13 +27,10 @@ package com.sun.org.apache.xerces.internal.impl;
 import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
-import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -188,20 +185,13 @@ public class PropertyManager {
         if (XMLInputFactory.SUPPORT_DTD.equals(property)) {
             return fSecurityManager.is(XMLSecurityManager.Limit.STAX_SUPPORT_DTD);
         }
-        /**
-         * Check to see if the property is managed by the security manager *
-         */
-        String propertyValue = (fSecurityManager != null)
-                ? fSecurityManager.getLimitAsString(property) : null;
-        /**
-         * Check to see if the property is managed by the security property
-         * manager
-         */
-        if (propertyValue == null) {
-            propertyValue = (fSecurityPropertyMgr != null)
-                    ? fSecurityPropertyMgr.getValue(property) : null;
+
+        //check if the property is managed by security manager
+        String value;
+        if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, property)) != null) {
+            return value;
         }
-        return propertyValue != null ? propertyValue : supportedProps.get(property);
+        return supportedProps.get(property);
     }
 
     /**
@@ -250,15 +240,9 @@ public class PropertyManager {
             return;
         }
 
-        //check if the property is managed by security manager
-        if (fSecurityManager == null
-                || !fSecurityManager.setLimit(property, JdkProperty.State.APIPROPERTY, value)) {
-            //check if the property is managed by security property manager
-            if (fSecurityPropertyMgr == null
-                    || !fSecurityPropertyMgr.setValue(property, FeaturePropertyBase.State.APIPROPERTY, value)) {
-                //fall back to the existing property manager
-                supportedProps.put(property, value);
-            }
+        if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, property, value)) {
+            //fall back to the existing property manager
+            supportedProps.put(property, value);
         }
 
         if (equivalentProperty != null) {
