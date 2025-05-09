@@ -782,7 +782,6 @@ inline julong max_unsigned_integer(BasicType bt) {
   return max_julong;
 }
 
-
 inline uint bits_per_java_integer(BasicType bt) {
   if (bt == T_INT) {
     return BitsPerJavaInteger;
