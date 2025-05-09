@@ -1192,7 +1192,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   if (!known_short_running_loop) {
     loop->compute_profile_trip_cnt(this);
     if (StressShortRunningLongLoop) {
-     profile_short_running_loop = true;
+      profile_short_running_loop = true;
     } else {
       profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() < iters_limit / ABS(stride_con);
     }
