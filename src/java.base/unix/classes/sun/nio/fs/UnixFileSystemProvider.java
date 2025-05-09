@@ -261,10 +261,9 @@ public abstract class UnixFileSystemProvider
                     if (e.errno() == EISDIR) {
                         isDirectory = true;
                         rmdir(file);
-                        return true;
+                    } else {
+                        throw e;
                     }
-
-                    throw e;
                 }
             } else {
                 isDirectory = UnixFileAttributes.get(file, false).isDirectory();
