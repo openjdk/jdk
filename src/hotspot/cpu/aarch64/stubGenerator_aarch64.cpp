@@ -2650,7 +2650,107 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(done);
+    __ ret(lr);
   }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address better_generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    address start = __ pc();
+
+    Register dest = c_rarg0, count = c_rarg1, value = c_rarg2;
+    Label tail;
+
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ mov(rscratch1, (uintptr_t)&ppp);
+    __ addmw(Address(rscratch1), 1, rscratch2);
+
+    __ subs(count, count, (u1)64);
+    __ br(__ LO, tail);
+    {
+      Label again;
+      __ bind(again);
+      __ stpq(v0, v0, Address(dest));
+      __ stpq(v0, v0, Address(dest, 32));
+
+      __ subs(count, count, 64);
+      __ add(dest, dest, 64);
+      __ br(__ HS, again);
+    }
+
+    __ bind(tail);
+    __ add(count, count, 64);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(32), dont);
+      __ stpq(v0, v0, Address(dest));
+      __ add(dest, dest, 32);
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(16), dont);
+      __ strq(v0, Address(dest));
+      __ add(dest, dest, 16);
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(8), dont);
+      __ strd(v0, Address(dest));
+      __ add(dest, dest, 8);
+      __ bind(dont);
+    }
+
+    Label finished;
+    __ tst(count, 7);
+    __ br(__ EQ, finished);
+
+    __ orr(value, value, value, __ LSL, 8);
+    __ orr(value, value, value, __ LSL, 16);
+    __ orr(value, value, value, __ LSL, 32);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(4), dont);
+      __ strw(value, Address(dest));
+      __ add(dest, dest, 4);
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(2), dont);
+      __ strh(value, Address(dest));
+      __ add(dest, dest, 2);
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(1), dont);
+      __ strb(value, Address(dest));
+      // add(dest, dest, 1);
+      __ bind(dont);
+    }
+
+    __ bind(finished);
+    __ ret(lr);
+    
+    return start;
+  }
+
+
 
   //
   //  Generate 'unsafe' set memory stub
@@ -2669,9 +2769,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // bump this on entry, not on exit:
     // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
-
-    __ mov(rscratch1, (uintptr_t)&ppp);
-    __ addmw(Address(rscratch1), 1, rscratch2);
 
     // Mark remaining code as such which performs Unsafe accesses.
     UnsafeMemoryAccessMark umam(this, true, false);
@@ -11425,7 +11522,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
+    StubRoutines::_unsafe_setmemory = better_generate_unsafe_setmemory();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
