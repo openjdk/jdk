@@ -422,7 +422,7 @@ public final class ML_KEM {
 
     private K_PKE_CipherText kPkeEncrypt(
             K_PKE_EncryptionKey publicKey, byte[] message, byte[] sigma) {
-        short[][] zeroes = new short[mlKem_k][ML_KEM_N];
+        short[][] zeroes = shortMatrixAlloc(mlKem_k, ML_KEM_N);
         byte[] pkBytes = publicKey.keyBytes;
         byte[] rho = Arrays.copyOfRange(pkBytes,
                 pkBytes.length - 32, pkBytes.length);
@@ -511,7 +511,7 @@ public final class ML_KEM {
         System.arraycopy(rho, 0, seedBuf, 0, rho.length);
         seedBuf[rhoLen + 2] = 0x1F;
         seedBuf[XOF_BLOCK_LEN - 1] = (byte)0x80;
-        byte[][] xofBufArr = new byte[nrPar][XOF_BLOCK_LEN + XOF_PAD];
+        byte[][] xofBufArr = byteMatrixAlloc(nrPar, XOF_BLOCK_LEN + XOF_PAD);
         int[] iIndex = new int[nrPar];
         int[] jIndex = new int[nrPar];
 
@@ -1179,5 +1179,23 @@ public final class ML_KEM {
         int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >> (32 - MONT_R_BITS);
 
         return (aHigh - ((m * MONT_Q) >> MONT_R_BITS)); // subtract signed high product
+    }
+
+    // For multidimensional array initialization, manually allocating each entry is
+    // faster than doing the entire initialization in one go
+    static short[][] shortMatrixAlloc(int first, int second) {
+        short[][] res = new short[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new short[second];
+        }
+        return res;
+    }
+
+    static byte[][] byteMatrixAlloc(int first, int second) {
+        byte[][] res = new byte[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new byte[second];
+        }
+        return res;
     }
 }
