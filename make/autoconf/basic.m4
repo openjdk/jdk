@@ -416,11 +416,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 
   # Test from where we are running configure, in or outside of src root.
   if test "x$OPENJDK_BUILD_OS" = xwindows || test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
-    # These systems have case insensitive paths. Use bash variable substitution
-    # to convert paths to all lower case
-    cmp_configure_start_dir="${CONFIGURE_START_DIR,,}"
-    cmp_topdir="${TOPDIR,,}"
-    cmp_custom_root="${CUSTOM_ROOT,,}"
+    # These systems have case insensitive paths, so convert them to lower case.
+    [ cmp_configure_start_dir=`$ECHO $CONFIGURE_START_DIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_topdir=`$ECHO $TOPDIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_custom_root=`$ECHO $CUSTOM_ROOT | $TR '[:upper:]' '[:lower:]'` ]
   else
     cmp_configure_start_dir="$CONFIGURE_START_DIR"
     cmp_topdir="$TOPDIR"
