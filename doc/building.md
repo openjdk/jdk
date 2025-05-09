@@ -83,19 +83,44 @@ on where and how to check out the source code.
   for the source code, see below for suggestions on how to keep the build
   artifacts on a local disk.
 
-* On Windows, if using [Cygwin](#cygwin), extra care must be taken to make sure
-  the environment is consistent. It is recommended that you follow this
-  procedure:
+* UTF-8 support is needed to compile the JDK. On Unix systems, this typically
+  means that the `C.UTF-8` or `en_US.UTF-8` locale needs to be available. For
+  Windows users, please see the section on [Locale
+  Requirements](#locale-requirements) below.
 
-  * Create the directory that is going to contain the top directory of the JDK
-    clone by using the `mkdir` command in the Cygwin bash shell. That is, do
-    *not* create it using Windows Explorer. This will ensure that it will have
-    proper Cygwin attributes, and that it's children will inherit those
-    attributes.
+* On Windows, extra care must be taken to have a smooth building experience:
 
-  * Do not put the JDK clone in a path under your Cygwin home directory. This
-    is especially important if your user name contains spaces and/or mixed
-    upper and lower case letters.
+  * Make sure that all relevant paths have short names. Short names are used by
+    the build system to create space-free alternative paths. Short name
+    creation is enabled per volume. The default setting can be checked with the
+    command: `fsutil 8dot3name query`. If short name creation was turned off
+    when a directory was created, it will not have a short name. Whether a
+    short name exists can be checked by running `dir /X` in the containing
+    directory (in cmd.exe). If a short path is present you should see something
+    like 'ASDF~1' being displayed in one of the columns of the ouput. If a
+    directory is missing a short name, the safest way to get one is to enable
+    short names for that particular volume with `fsutil 8dot3name set <drive
+    letter>: 0` (note that you need to run as administrator for this), and then
+    re-create the particular directory. A short name should be generated
+    automatically then. Another option is to manually assign a short name to
+    the directory using `fsutil file setShortName <path> <short name>`.
+
+  * If using [Cygwin](#cygwin), you must make sure the file permissions and
+    attributes between Windows and Cygwin are consistent. It is recommended
+    that you follow this procedure:
+
+    * Create the directory that is going to contain the top directory of the
+      JDK clone by using the `mkdir` command in the Cygwin bash shell. That is,
+      do *not* create it using Windows Explorer. This will ensure that it will
+      have proper Cygwin attributes, and that it's children will inherit those
+      attributes.
+
+    * Do not put the JDK clone in a path under your Cygwin home directory. This
+      is especially important if your user name contains spaces and/or mixed
+      upper and lower case letters.
+
+    Failure to follow these procedures might result in hard-to-debug build
+    problems.
 
   * You need to install a git client. You have two choices, Cygwin git or Git
     for Windows. Unfortunately there are pros and cons with each choice.
@@ -112,9 +137,6 @@ on where and how to check out the source code.
       the Skara CLI tooling, however. To alleviate the line ending problems,
       make sure you set `core.autocrlf` to `false` (this is asked during
       installation).
-
-  Failure to follow this procedure might result in hard-to-debug build
-  problems.
 
 ## Build Hardware Requirements
 
@@ -175,7 +197,7 @@ time of writing.
 | ----------------- | ---------------------------------- |
 | Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
 | Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
-| macOS             | macOS 13.x (Ventura)               |
+| macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
 The double version numbers for Linux are due to the hybrid model used at
@@ -327,7 +349,7 @@ difficult for a project such as the JDK to keep pace with a continuously
 updated machine running macOS. See the section on [Apple Xcode](#apple-xcode)
 on some strategies to deal with this.
 
-It is recommended that you use at least macOS 13 (Ventura) and Xcode 14, but
+It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
@@ -393,7 +415,7 @@ issues.
 | Operating system   | Toolchain version                            |
 | ------------------ | -------------------------------------------- |
 | Linux              | gcc 14.2.0                                   |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)      |
+| macOS              | Apple Xcode 15.4 (using clang 15.0.0)       |
 | Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
