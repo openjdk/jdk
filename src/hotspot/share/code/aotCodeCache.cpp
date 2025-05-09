@@ -54,7 +54,6 @@
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
-
 #endif
 
 #include <sys/stat.h>
