@@ -360,10 +360,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private final BigInteger intVal;
 
     /**
-     * The scale of this BigDecimal, as returned by {@link #scale}.
+     * The scale of this BigDecimal, as returned by {@link #scale()}.
      *
      * @serial
-     * @see #scale
+     * @see #scale()
      */
     private final int scale;  // Note: this may have any value, so
                               // calculations must be done in longs
