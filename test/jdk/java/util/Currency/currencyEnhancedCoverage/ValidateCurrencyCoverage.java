@@ -87,7 +87,7 @@ public class ValidateCurrencyCoverage {
 
     /**
      * Reads the currency definitions from the input file and validates each entry.
-     * 
+     *
      * @return
      */
     private static List<String[]> parseCurrencyTextFile() throws Exception {
@@ -185,7 +185,7 @@ public class ValidateCurrencyCoverage {
 
     /**
      * Validates the currencycode based currency instance.
-     * 
+     *
      * @return
      */
     private static String testCountryCurrencyWithCurrencyCode(String currencyCode, int numericCode, int digits) {
