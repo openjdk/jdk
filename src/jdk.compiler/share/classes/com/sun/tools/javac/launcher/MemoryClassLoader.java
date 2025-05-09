@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+import jdk.internal.module.Resources;
+
 /**
  * An in-memory classloader, that uses an in-memory cache of classes written by
  * {@link MemoryFileManager}.
@@ -229,7 +231,7 @@ final class MemoryClassLoader extends ClassLoader {
     public URL findResource(String name) {
         String binaryName = toBinaryName(name);
         if (binaryName == null || sourceFileClasses.get(binaryName) == null) {
-            return toResourceInRootPath(name); // can be null
+            return toResourceInRootPath(name);
         }
 
         URLStreamHandler handler = this.handler;
@@ -275,7 +277,7 @@ final class MemoryClassLoader extends ClassLoader {
      * @return the URL of the resource, or null
      */
     private URL toResourceInRootPath(String name) {
-        var file = programDescriptor.sourceRootPath().resolve(name);
+        var file = Resources.toFilePath(programDescriptor.sourceRootPath(), name);
         if (!Files.exists(file)) {
             return null;
         }
