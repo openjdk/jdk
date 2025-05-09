@@ -89,8 +89,14 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 void AOTCodeCache::initialize() {
+#if !(defined(AMD64) || defined(AARCH64))
+  log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
+  AOTAdapterCaching = false;
+  return;
+#else
   if (FLAG_IS_DEFAULT(AOTCache)) {
     log_info(aot, codecache, init)("AOT Code Cache is not used: AOTCache is not specified.");
+    AOTAdapterCaching = false;
     return; // AOTCache must be specified to dump and use AOT code
   }
 
@@ -133,6 +139,7 @@ void AOTCodeCache::initialize() {
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
   FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
+#endif // defined(AMD64) || defined(AARCH64)
 }
 
 void AOTCodeCache::init2() {
