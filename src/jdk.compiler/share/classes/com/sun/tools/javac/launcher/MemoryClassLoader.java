@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -277,12 +278,14 @@ final class MemoryClassLoader extends ClassLoader {
      * @return the URL of the resource, or null
      */
     private URL toResourceInRootPath(String name) {
-        var file = Resources.toFilePath(programDescriptor.sourceRootPath(), name);
-        if (!Files.exists(file)) {
-            return null;
-        }
         try {
-            return file.toUri().toURL();
+            var file = Resources.toFilePath(programDescriptor.sourceRootPath(), name);
+            if (Files.exists(file)) {
+                return file.toUri().toURL();
+            }
+            return null;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
