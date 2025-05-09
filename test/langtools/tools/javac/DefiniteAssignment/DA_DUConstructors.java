@@ -3,7 +3,6 @@
  * @bug 8325805
  * @summary Permit non-superclass instance field assignments before this/super in constructors
  * @compile/fail/ref=DA_DUConstructors.out -XDrawDiagnostics DA_DUConstructors.java
- * @enablePreview
  */
 
 public class DA_DUConstructors {

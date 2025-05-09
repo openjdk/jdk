@@ -109,16 +109,19 @@ inline frame::z_ijava_state* frame::ijava_state() const {
   return state;
 }
 
-inline BasicObjectLock** frame::interpreter_frame_monitors_addr() const {
-  return (BasicObjectLock**) &(ijava_state()->monitors);
-}
-
 // The next two functions read and write z_ijava_state.monitors.
 inline BasicObjectLock* frame::interpreter_frame_monitors() const {
-  return *interpreter_frame_monitors_addr();
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(_z_ijava_idx(monitors));
+  // make sure the pointer points inside the frame
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));
+  return result;
 }
+
 inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
-  *interpreter_frame_monitors_addr() = monitors;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitors
+  ijava_state()->monitors = (intptr_t) ((intptr_t*)monitors - fp());
 }
 
 // Accessors
@@ -203,11 +206,14 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 // Also begin is one past last monitor.
 
 inline intptr_t* frame::interpreter_frame_top_frame_sp() {
-  return (intptr_t*)ijava_state()->top_frame_sp;
+  intptr_t n = *addr_at(_z_ijava_idx(top_frame_sp));
+  return &fp()[n]; // return relativized locals
 }
 
 inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
-  ijava_state()->top_frame_sp = (intptr_t) top_frame_sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized top_frame_sp
+  ijava_state()->top_frame_sp = (intptr_t) (top_frame_sp - fp());
 }
 
 inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp) {
