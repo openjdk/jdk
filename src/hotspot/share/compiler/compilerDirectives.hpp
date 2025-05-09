@@ -202,7 +202,7 @@ void set_##name(void* value) {                                      \
   void set_ideal_phase_name_set(const BitMap& set) {
     _ideal_phase_name_set.set_from(set);
   };
-  bool should_print_phase(const CompilerPhaseType cpt) const {
+  bool should_print_ideal_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
   };
   void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {
