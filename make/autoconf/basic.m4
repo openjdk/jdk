@@ -415,11 +415,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
 
   # Test from where we are running configure, in or outside of src root.
+  if test "x$OPENJDK_BUILD_OS" = xwindows || test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    # These systems have case insensitive paths. Use bash variable substitution
+    # to convert paths to all lower case
+    cmp_configure_start_dir="${CONFIGURE_START_DIR,,}"
+    cmp_topdir="${TOPDIR,,}"
+    cmp_custom_root="${CUSTOM_ROOT,,}"
+  else
+    cmp_configure_start_dir="$CONFIGURE_START_DIR"
+    cmp_topdir="$TOPDIR"
+    cmp_custom_root="$CUSTOM_ROOT"
+  fi
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CONFIGURE_START_DIR" = "x$TOPDIR" \
-      || test "x$CONFIGURE_START_DIR" = "x$CUSTOM_ROOT" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make/autoconf" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make" ; then
+  if test "x$cmp_configure_start_dir" = "x$cmp_topdir" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_custom_root" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make/autoconf" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -440,7 +451,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CONFIGURE_START_DIR | $SED -e "s!^${TOPDIR}/build/!!"`
+      [ if [[ "$cmp_configure_start_dir" =~ ^${cmp_topdir}/build/[^/]+$ ||
+          "$cmp_configure_start_dir" =~ ^${cmp_custom_root}/build/[^/]+$ ]]; then ]
+          CONF_NAME="${CONFIGURE_START_DIR##*/}"
+      else
+          CONF_NAME="$CONFIGURE_START_DIR"
+      fi
     fi
     OUTPUTDIR="$CONFIGURE_START_DIR"
     AC_MSG_RESULT([in current directory])
