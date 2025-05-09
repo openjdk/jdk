@@ -515,24 +515,13 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   // It is now safe to peel or not.
   if (StressLoopPeeling) {
     static constexpr uint max_peeling_opportunities = 5;
-    auto& rounds_of_node = phase->C->_peeling_rounds_of_node;
-    uint* rounds = nullptr;
-    for(int i = 0; i < rounds_of_node.length(); ++i) {
-      auto& head_and_round_count = rounds_of_node.at(i);
-      if(head_and_round_count.first == _head->_idx) {
-        rounds = &head_and_round_count.second;
-        break;
-      }
-    }
-    if (rounds == nullptr) {
-      rounds_of_node.push(Pair<node_idx_t, uint>(_head->_idx, 0));
-      rounds = &rounds_of_node.at(rounds_of_node.length() - 1).second;
-    }
-    if (*rounds < max_peeling_opportunities) {
-      (*rounds)++;
+    uint& rounds = phase->C->peeling_rounds_at_node(_head);
+    if (rounds < max_peeling_opportunities) {
+      rounds++;
       // In case of stress, let's just pick randomly...
       return phase->C->random() % 2 == 0 ? estimate : 0;
     }
+    return 0;
   }
   // ...otherwise, let's apply our heuristic.
 #endif
