@@ -2658,6 +2658,10 @@ class StubGenerator: public StubCodeGenerator {
   //  Though just as safe as the other stubs, it takes an unscaled
   //  size_t (# bytes) argument instead of an element count.
   //
+  //  This fill operation is atomicity preserving: as long as the
+  //  address supplied is sufficiently aligned, all writes of up to 64
+  //  bits in size are single-copy atomic.
+  //
   //  Input:
   //    c_rarg0   - destination array address
   //    c_rarg1   - byte count (size_t)
@@ -2673,8 +2677,12 @@ class StubGenerator: public StubCodeGenerator {
 
     UnsafeMemoryAccessMark umam(this, true, false);
 
+#ifdef ASSERT
     __ mov(rscratch1, (uintptr_t)&ppp);
     __ addmw(Address(rscratch1), 1, rscratch2);
+#endif
+
+    __ dup(v0, __ T16B, value);
 
     __ subs(count, count, (u1)64);
     __ br(__ LO, tail);
@@ -2695,22 +2703,19 @@ class StubGenerator: public StubCodeGenerator {
     {
       Label dont;
       __ tbz(count, exact_log2(32), dont);
-      __ stpq(v0, v0, Address(dest));
-      __ add(dest, dest, 32);
+      __ stpq(v0, v0, __ post(dest, 32));
       __ bind(dont);
     }
     {
       Label dont;
       __ tbz(count, exact_log2(16), dont);
-      __ strq(v0, Address(dest));
-      __ add(dest, dest, 16);
+      __ strq(v0, __ post(dest, 16));
       __ bind(dont);
     }
     {
       Label dont;
       __ tbz(count, exact_log2(8), dont);
-      __ strd(v0, Address(dest));
-      __ add(dest, dest, 8);
+      __ strd(v0, __ post(dest, 8));
       __ bind(dont);
     }
 
@@ -2720,33 +2725,29 @@ class StubGenerator: public StubCodeGenerator {
 
     __ orr(value, value, value, __ LSL, 8);
     __ orr(value, value, value, __ LSL, 16);
-    __ orr(value, value, value, __ LSL, 32);
 
     {
       Label dont;
       __ tbz(count, exact_log2(4), dont);
-      __ strw(value, Address(dest));
-      __ add(dest, dest, 4);
+      __ strw(value, __ post(dest, 4));
       __ bind(dont);
     }
     {
       Label dont;
       __ tbz(count, exact_log2(2), dont);
-      __ strh(value, Address(dest));
-      __ add(dest, dest, 2);
+      __ strh(value, __ post(dest, 2));
       __ bind(dont);
     }
     {
       Label dont;
       __ tbz(count, exact_log2(1), dont);
       __ strb(value, Address(dest));
-      // add(dest, dest, 1);
       __ bind(dont);
     }
 
     __ bind(finished);
     __ ret(lr);
-    
+
     return start;
   }
 
