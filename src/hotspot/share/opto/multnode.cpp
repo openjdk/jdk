@@ -45,60 +45,62 @@ Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->
 // Get a named projection or null if not found
 ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
-  assert(number_of_projs(which_proj) <= 1, "");
-  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
-    Node *p = fast_out(i);
+  assert(number_of_projs(which_proj) <= 1, "only when there's a single projection");
+  auto find_proj = [which_proj, this](ProjNode* proj) {
+    if (proj->_con == which_proj) {
+      assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse), "bad if #2");
+      return true;
+    }
+  };
+  return apply_to_projs_fast(find_proj);
+}
+
+ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
+  assert(number_of_projs(which_proj, is_io_use) <= 1, "only when there's a single projection");
+  auto find_proj = [which_proj, is_io_use](ProjNode* proj) {
+    if (proj->_con == which_proj && proj->_is_io_use == is_io_use) {
+      return true;
+    }
+  };
+  return apply_to_projs_fast(find_proj);
+}
+
+template<class Callback> ProjNode* MultiNode::apply_to_projs_fast(Callback callback) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* p = fast_out(i);
     if (p->is_Proj()) {
-      ProjNode *proj = p->as_Proj();
-      if (proj->_con == which_proj) {
-        assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse), "bad if #2");
+      ProjNode* proj = p->as_Proj();
+      if (callback(proj)) {
         return proj;
       }
     } else {
       assert(p == this && this->is_Start(), "else must be proj");
-      continue;
-    }
-  }
-  return nullptr;
-}
-
-ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
-  assert(number_of_projs(which_proj, is_io_use) <= 1, "");
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* proj = fast_out(i)->isa_Proj();
-    if (proj != nullptr && (proj->_con == which_proj) && (proj->_is_io_use == is_io_use)) {
-      return proj;
     }
   }
   return nullptr;
 }
 
 uint MultiNode::number_of_projs(uint which_proj) const {
-  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
   uint cnt = 0;
-  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
-    Node* p = fast_out(i);
-    if (p->is_Proj()) {
-      ProjNode* proj = p->as_Proj();
-      if (proj->_con == which_proj) {
-        cnt++;
-      }
-    } else {
-      assert(p == this && this->is_Start(), "else must be proj");
-      continue;
+  auto count_projs = [which_proj, &cnt](ProjNode* proj) {
+    if (proj->_con == which_proj) {
+      cnt++;
     }
-  }
+    return false;
+  };
+  apply_to_projs_fast(count_projs);
   return cnt;
 }
 
 uint MultiNode::number_of_projs(uint which_proj, bool is_io_use) const {
   uint cnt = 0;
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* proj = fast_out(i)->isa_Proj();
-    if (proj != nullptr && (proj->_con == which_proj) && (proj->_is_io_use == is_io_use)) {
+  auto count_projs = [which_proj, &cnt, is_io_use](ProjNode* proj) {
+    if (proj->_con == which_proj && proj->_is_io_use == is_io_use) {
       cnt++;
     }
-  }
+    return false;
+  };
+  apply_to_projs_fast(count_projs);
   return cnt;
 }
 

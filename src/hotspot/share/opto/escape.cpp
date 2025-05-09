@@ -4120,21 +4120,6 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
       result = result->in(MemNode::Memory);
     }
-    if (!is_instance && result->is_NarrowMemProj() && 0) {
-      // Memory for non known instance can safely skip over a known instance allocation (that memory state doesn't access
-      // the result of an allocation for a known instance).
-      assert(toop != nullptr, "");
-      Node* proj_in = result->in(0);
-      if (proj_in->is_Initialize()) {
-        AllocateNode* alloc = proj_in->as_Initialize()->allocation();
-        assert(alloc->result_cast() == nullptr ||
-               ((alloc->_is_scalar_replaceable) == igvn->type(alloc->result_cast())->is_oopptr()->is_known_instance()),
-               "only scalar replaceable allocations are known instance");
-        if (alloc != nullptr && alloc->_is_scalar_replaceable) {
-          result = alloc->in(TypeFunc::Memory);
-        }
-      }
-    }
     if (!is_instance) {
       continue;  // don't search further for non-instance types
     }
@@ -4881,25 +4866,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           }
         }
         mem = mem->in(MemNode::Memory);
-      }
-      if (mem->is_NarrowMemProj() && 0) {
-        const TypePtr* at = mem->adr_type();
-        uint alias_idx = (uint) _compile->get_alias_index(at->is_ptr());
-        if (alias_idx == i) {
-          // projection for a non known allocation on a non known allocation slice: can't skip over the allocation
-          if (cur == nullptr) {
-            cur = mem;
-          }
-        } else {
-          // projection for a known allocation on a non known allocation slice: skip over the allocation
-          if (alias_idx >= nmm->req() || nmm->is_empty_memory(nmm->in(alias_idx))) {
-            nmm->set_memory_at(alias_idx, mem);
-          }
-          InitializeNode* init = mem->in(0)->as_Initialize();
-          AllocateNode* alloc = init->allocation();
-          assert(alloc != nullptr, "can find Allocate node from the Initialize node");
-          mem = alloc->in(TypeFunc::Memory);
-        }
       }
       nmm->set_memory_at(i, (cur != nullptr) ? cur : mem);
       // Find any instance of the current type if we haven't encountered
