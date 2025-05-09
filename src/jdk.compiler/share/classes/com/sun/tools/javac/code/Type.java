@@ -1151,7 +1151,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         public List<Type> allparams() {
             if (allparams_field == null) {
-                allparams_field = getTypeArguments().prependList(getEnclosingType().allparams());
+                Type enclosingType = getEnclosingType();
+                if (!enclosingType.isUnbound() && enclosingType.getUpperBound() instanceof Type t) {
+                    enclosingType = t;
+                }
+                allparams_field = getTypeArguments().prependList(enclosingType.allparams());
             }
             return allparams_field;
         }
