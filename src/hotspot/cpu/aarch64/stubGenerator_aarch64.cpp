@@ -79,9 +79,7 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-  int ppp;
-
-  // Stub Code definitions
+// Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
  private:
