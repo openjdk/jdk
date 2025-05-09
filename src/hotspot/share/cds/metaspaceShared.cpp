@@ -1130,42 +1130,31 @@ void MetaspaceShared::unrecoverable_loading_error(const char* message) {
   }
 }
 
-ATTRIBUTE_PRINTF(2, 0)
-static void report_loading_error_helper(LogStream& ls, const char* format, va_list ap) {
+void MetaspaceShared::report_loading_error(const char* format, ...) {
+  // When using AOT cache, errors messages are always printed on the error channel.
+  LogStream ls_aot(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot)>::tagset());
+
+  // If we are loading load the default CDS archive, it may fail due to incompatible VM options.
+  // Print at the info level to avoid excessive verbosity.
+  // However, if the user has specified a CDS archive (or AOT cache), they would be interested in
+  // knowing that the loading fails, so we print at the error level.
+  LogLevelType level = (!CDSConfig::is_using_archive() || CDSConfig::is_using_only_default_archive()) ?
+                        LogLevel::Info : LogLevel::Error;
+  LogStream ls_cds(level, LogTagSetMapping<LOG_TAGS(cds)>::tagset());
+
+  LogStream& ls = CDSConfig::new_aot_flags_used() ? ls_aot : ls_cds;
+  va_list ap;
+  va_start(ap, format);
+
   static bool printed_error = false;
   if (!printed_error) { // No need for locks. Loading error checks happen only in main thread.
     ls.print_cr("An error has occurred while processing the %s. Run with -Xlog:%s for details.",
                 CDSConfig::type_of_archive_being_loaded(), CDSConfig::new_aot_flags_used() ? "aot" : "aot,cds");
     printed_error = true;
   }
-
   ls.vprint_cr(format, ap);
-}
 
-void MetaspaceShared::report_loading_error(const char* format, ...) {
-  if (CDSConfig::new_aot_flags_used()) {
-    // When using AOT cache, errors messages are always printed on the error channel.
-    Log(aot) log;
-    LogStream ls(log.error());
-    va_list ap;
-    va_start(ap, format);
-    report_loading_error_helper(ls, format, ap);
-    va_end(ap);
-  } else {
-    // If the user doesn't specify any CDS/AOT options, we will try to load the default CDS archive, which
-    // may fail due to incompatible VM options. Print at the info level to avoid excessive verbosity.
-    // However, if the user has specified a CDS archive (or AOT cache), they would be interested in
-    // knowing that the loading fails, so we print at the error level.
-    Log(cds) log;
-    LogStream ls_error(log.error());
-    LogStream ls_info(log.info());
-    LogStream& ls = (!CDSConfig::is_using_archive()) || CDSConfig::is_using_only_default_archive() ? ls_info : ls_error;
-
-    va_list ap;
-    va_start(ap, format);
-    report_loading_error_helper(ls, format, ap);
-    va_end(ap);
-  }
+  va_end(ap);
 }
 
 // This function is called when the JVM is unable to write the specified CDS archive due to an

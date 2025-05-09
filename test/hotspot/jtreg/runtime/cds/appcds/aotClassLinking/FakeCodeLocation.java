@@ -73,7 +73,9 @@ public class FakeCodeLocation {
         @Override
         public String[] vmArgs(RunMode runMode) {
             String[] args = new String[] {
+                "-Xlog:aot",
                 "-Xlog:cds",
+                "-Xlog:aot+class=debug",
                 "-Xlog:cds+class=debug",
                 "-Xlog:class+load",
             };

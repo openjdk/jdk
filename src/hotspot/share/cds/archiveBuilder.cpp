@@ -134,7 +134,7 @@ public:
     address old_p = *ptr_loc;
     address new_p = _builder->get_buffered_addr(old_p);
 
-    log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
+    log_trace(aot)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
 
     ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
@@ -316,7 +316,7 @@ address ArchiveBuilder::reserve_buffer() {
                                              os::vm_page_size(),
                                              mtNone);
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
+    aot_log_error(aot)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
@@ -365,9 +365,9 @@ address ArchiveBuilder::reserve_buffer() {
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
-    log_error(cds)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
-    log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
-    log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
+    aot_log_error(aot)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
+    aot_log_error(aot)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
+    aot_log_error(aot)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
     MetaspaceShared::unrecoverable_writing_error();
   }
@@ -425,7 +425,7 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
     if (_src_obj_table.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
+      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
 
@@ -677,7 +677,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
     if (_buffered_to_src_table.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
+      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
     }
   }
 
@@ -687,7 +687,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     ArchivePtrMarker::mark_pointer((address*)dest);
   }
 
-  log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
+  log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
@@ -924,9 +924,9 @@ void ArchiveBuilder::make_klasses_shareable() {
       ik->remove_unshareable_info();
     }
 
-    if (log_is_enabled(Debug, cds, class)) {
+    if (aot_log_is_enabled(Debug, aot, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s%s", i,
+      aot_log_debug(aot, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s%s", i,
                             p2i(to_requested(k)), type, k->external_name(),
                             kind, hidden, old, unlinked, generated, aotlinked_msg, inited_msg);
     }
@@ -1051,7 +1051,7 @@ class RelocateBufferToRequested : public BitMapClosure {
     address top = _builder->buffer_top();
     address new_bottom = bottom + _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
-    log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
+    aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                    p2i(bottom), p2i(top),
                    p2i(new_bottom), p2i(new_top));
@@ -1575,8 +1575,8 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   mapinfo->write_header();
   mapinfo->close();
 
-  if (log_is_enabled(Info, cds)) {
-    log_info(cds)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
+  if (log_is_enabled(Info, aot)) {
+    log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
     print_stats();
   }
 
@@ -1614,12 +1614,12 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
     print_heap_region_stats(heap_info, total_reserved);
   }
 
-  log_debug(cds)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
+  aot_log_debug(aot)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
+  aot_log_debug(aot)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
                  size, size/double(total_size)*100.0, size);
 }
 
@@ -1627,7 +1627,7 @@ void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total
   char* start = info->buffer_start();
   size_t size = info->buffer_byte_size();
   char* top = start + size;
-  log_debug(cds)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
+  aot_log_debug(aot)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));
 }
 
@@ -1638,6 +1638,6 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
-  log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
+  log_error(aot)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
   MetaspaceShared::unrecoverable_writing_error();
 }

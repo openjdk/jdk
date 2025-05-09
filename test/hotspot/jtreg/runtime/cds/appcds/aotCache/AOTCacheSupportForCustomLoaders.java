@@ -47,7 +47,7 @@ public class AOTCacheSupportForCustomLoaders {
     public static void main(String... args) throws Exception {
         SimpleCDSAppTester.of("AOTCacheSupportForCustomLoaders")
             .classpath("app.jar")
-            .addVmArgs("-Xlog:cds+class=debug", "-Xlog:aot", "-Xlog:cds")
+            .addVmArgs("-Xlog:aot+class=debug", "-Xlog:aot", "-Xlog:cds")
             .appCommandLine("AppWithCustomLoaders")
             .setAssemblyChecker((OutputAnalyzer out) -> {
                     out.shouldMatch(",class.*unreg AppWithCustomLoaders[$]MyLoadeeA")

@@ -97,7 +97,7 @@
 #define aot_log_debug(...)    (!aot_log_is_enabled(Debug, __VA_ARGS__))   ? (void)0 : AOTLogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
 #define aot_log_trace(...)    (!aot_log_is_enabled(Trace, __VA_ARGS__))   ? (void)0 : AOTLogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
 
-template <LogTagType IGNORED, LogTagType T2 = LogTag::__NO_TAG, LogTagType T1 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
+template <LogTagType IGNORED, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class AOTLogImpl {
  public:
@@ -113,9 +113,9 @@ class AOTLogImpl {
 
   static bool is_level(LogLevelType level) {
     if (PrintAOTLogsAsCDSLogs) {
-      return LogTagSetMapping<LogTag::_cds, T2, T3, T4>::tagset().is_level(level);
+      return LogTagSetMapping<LogTag::_cds, T1, T2, T3, T4>::tagset().is_level(level);
     } else {
-      return LogTagSetMapping<LogTag::_aot, T2, T3, T4>::tagset().is_level(level);
+      return LogTagSetMapping<LogTag::_aot, T1, T2, T3, T4>::tagset().is_level(level);
     }
   }
 
