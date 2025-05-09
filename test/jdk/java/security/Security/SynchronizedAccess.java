@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 4162583 7054918 8130181 8028127
- * @library /test/lib ../testlibrary
+ * @library /test/lib
  * @summary Make sure Provider api implementations are synchronized properly
  */
 
 import java.security.*;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.security.ProvidersSnapshot;
 
 public class SynchronizedAccess {
 

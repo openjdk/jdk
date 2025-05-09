@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
 }
 
 inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap.size() / NumSegments;
+  return _bitmap_size / NumSegments;
 }
 
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
@@ -222,7 +222,7 @@ inline BitMap::idx_t ZLiveMap::find_base_bit_in_segment(BitMap::idx_t start, Bit
   }
 
   // The bitmaps contain pairs of bits to deal with strongly marked vs only
-  // finalizable marked. Align down to get the the first bit position.
+  // finalizable marked. Align down to get the first bit position.
   return bit & ~BitMap::idx_t(1);
 }
 

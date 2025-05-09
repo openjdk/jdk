@@ -72,7 +72,6 @@ public final class SharedUtils {
     private SharedUtils() {
     }
 
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final MethodHandle MH_ALLOC_BUFFER;
@@ -310,7 +309,7 @@ public final class SharedUtils {
                 t.printStackTrace();
                 System.err.println("Unrecoverable uncaught exception encountered. The VM will now exit");
             } finally {
-                JLA.exit(1);
+                System.exit(1);
             }
         }
     }
@@ -321,9 +320,18 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static long unboxSegment(MemorySegment segment) {
         checkNative(segment);
         return segment.address();
+    }
+
+    @ForceInline
+    public static int unboxSegment32(MemorySegment segment) {
+        // This cast to 'int' is safe, because we only call this method on 32-bit
+        // platforms, where we know the address of a segment is truncated to 32-bits.
+        // There's a similar cast for 4-byte addresses in Unsafe.putAddress.
+        return (int) unboxSegment(segment);
     }
 
     public static void checkExceptions(MethodHandle target) {
@@ -382,12 +390,26 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
-    private static final BufferStack LINKER_STACK = new BufferStack(LINKER_STACK_SIZE);
-
-    @ForceInline
     public static Arena newBoundedArena(long size) {
-        return LINKER_STACK.pushFrame(size, 8);
+        return new Arena() {
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
+
+            @Override
+            public Scope scope() {
+                return arena.scope();
+            }
+
+            @Override
+            public void close() {
+                arena.close();
+            }
+
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return slicingAllocator.allocate(byteSize, byteAlignment);
+            }
+        };
     }
 
     public static Arena newEmptyArena() {

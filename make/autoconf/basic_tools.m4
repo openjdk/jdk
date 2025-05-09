@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_LOOKUP_PROGS(LOCALE, locale)
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 ])
 
 ################################################################################
@@ -105,9 +106,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
   UTIL_LOOKUP_PROGS(WHOAMI, whoami)
-
-  # Tools only needed on some platforms
-  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)

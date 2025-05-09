@@ -27,6 +27,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -114,13 +115,13 @@ void AOTArtifactFinder::find_artifacts() {
         // All non-hidden classes are always included into the AOT cache
         add = true;
       } else {
-        if (!CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
           // Legacy support of lambda proxies -- these are always included into the AOT cache
-          if (SystemDictionaryShared::is_registered_lambda_proxy_class(ik)) {
+          if (LambdaProxyClassDictionary::is_registered_lambda_proxy_class(ik)) {
             add = true;
           }
         } else {
-          assert(!SystemDictionaryShared::is_registered_lambda_proxy_class(ik),
+          assert(!LambdaProxyClassDictionary::is_registered_lambda_proxy_class(ik),
                  "registered lambda proxies are only for legacy lambda proxy support");
         }
       }

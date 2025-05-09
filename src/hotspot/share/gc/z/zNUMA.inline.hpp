@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 
 inline bool ZNUMA::is_enabled() {
   return _enabled;
+}
+
+inline uint32_t ZNUMA::count() {
+  return _count;
 }
 
 #endif // SHARE_GC_Z_ZNUMA_INLINE_HPP

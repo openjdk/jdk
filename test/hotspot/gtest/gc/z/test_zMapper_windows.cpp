@@ -26,6 +26,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zList.inline.hpp"
+#include "gc/z/zMapper_windows.hpp"
 #include "gc/z/zMemory.inline.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 #include "gc/z/zVirtualMemory.hpp"
@@ -43,7 +44,9 @@ private:
   static bool            _initialized;
   static ZMemoryManager* _va;
 
-  ZVirtualMemoryManager* _vmm;
+  static ZVirtualMemoryManager* _vmm;
+
+  static bool _has_unreserved;
 
 public:
   bool reserve_for_test() {
@@ -87,6 +90,7 @@ public:
     }
 
     _initialized = true;
+    _has_unreserved = false;
   }
 
   virtual void TearDown() {
@@ -95,10 +99,24 @@ public:
       return;
     }
 
-    if (_initialized) {
+    if (_initialized && !_has_unreserved) {
       _vmm->pd_unreserve(ZOffset::address_unsafe(zoffset(0)), 0);
     }
     os::free(_vmm);
+  }
+
+  static void test_unreserve() {
+    zoffset bottom = _va->alloc_low_address(ZGranuleSize);
+    zoffset top    = _va->alloc_high_address(ZGranuleSize);
+
+    // Unreserve the middle part
+    ZMapper::unreserve(ZOffset::address_unsafe(bottom + ZGranuleSize), ZGranuleSize);
+
+    // Make sure that we still can unreserve the memory before and after
+    ZMapper::unreserve(ZOffset::address_unsafe(bottom), ZGranuleSize);
+    ZMapper::unreserve(ZOffset::address_unsafe(top), ZGranuleSize);
+
+    _has_unreserved = true;
   }
 
   static void test_alloc_low_address() {
@@ -170,6 +188,12 @@ public:
 
 bool ZMapperTest::_initialized   = false;
 ZMemoryManager* ZMapperTest::_va = nullptr;
+ZVirtualMemoryManager* ZMapperTest::_vmm = nullptr;
+bool ZMapperTest::_has_unreserved;
+
+TEST_VM_F(ZMapperTest, test_unreserve) {
+  test_unreserve();
+}
 
 TEST_VM_F(ZMapperTest, test_alloc_low_address) {
   test_alloc_low_address();

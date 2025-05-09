@@ -41,10 +41,6 @@
           "Maximum allowed heap fragmentation")                             \
           range(0, 100)                                                     \
                                                                             \
-  product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
-          "Maximum number of bytes allocated for mark stacks")              \
-          range(32*M, 1024*G)                                               \
-                                                                            \
   product(double, ZCollectionInterval, 0,                                   \
           "Force GC at a fixed time interval (in seconds). "                \
           "Backwards compatible alias for ZCollectionIntervalMajor")        \

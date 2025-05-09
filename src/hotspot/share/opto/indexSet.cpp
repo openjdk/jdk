@@ -228,6 +228,11 @@ IndexSet::IndexSet (IndexSet *set) {
   _count = set->_count;
   _current_block_limit = set->_current_block_limit;
   _max_blocks = set->_max_blocks;
+  if (set->_blocks == nullptr) {
+    _blocks = nullptr;
+    _arena = arena();
+    return;
+  }
   if (_max_blocks <= preallocated_block_list_size) {
     _blocks = _preallocated_block_list;
   } else {
@@ -258,15 +263,8 @@ void IndexSet::initialize(uint max_elements) {
   _count = 0;
   _current_block_limit = 0;
   _max_blocks = (max_elements + bits_per_block - 1) / bits_per_block;
-
-  if (_max_blocks <= preallocated_block_list_size) {
-    _blocks = _preallocated_block_list;
-  } else {
-    _blocks = (IndexSet::BitBlock**) arena()->AmallocWords(sizeof(IndexSet::BitBlock*) * _max_blocks);
-  }
-  for (uint i = 0; i < _max_blocks; i++) {
-    set_block(i, &_empty_block);
-  }
+  _arena = arena();
+  _blocks = nullptr;
 }
 
 //---------------------------- IndexSet::initialize()------------------------------
@@ -283,15 +281,8 @@ void IndexSet::initialize(uint max_elements, Arena *arena) {
   _count = 0;
   _current_block_limit = 0;
   _max_blocks = (max_elements + bits_per_block - 1) / bits_per_block;
-
-  if (_max_blocks <= preallocated_block_list_size) {
-    _blocks = _preallocated_block_list;
-  } else {
-    _blocks = (IndexSet::BitBlock**) arena->AmallocWords(sizeof(IndexSet::BitBlock*) * _max_blocks);
-  }
-  for (uint i = 0; i < _max_blocks; i++) {
-    set_block(i, &_empty_block);
-  }
+  _arena = arena;
+  _blocks = nullptr;
 }
 
 //---------------------------- IndexSet::swap() -----------------------------
@@ -303,6 +294,12 @@ void IndexSet::swap(IndexSet *set) {
   check_watch("swap", set->_serial_number);
   set->check_watch("swap", _serial_number);
 #endif
+
+  if (_blocks == nullptr && set->_blocks == nullptr) {
+    return;
+  }
+  initialize_if_needed();
+  set->initialize_if_needed();
 
   uint max = MAX2(_current_block_limit, set->_current_block_limit);
   for (uint i = 0; i < max; i++) {
@@ -344,7 +341,7 @@ void IndexSet::tally_iteration_statistics() const {
   inc_stat_counter(&_total_bits, count());
 
   for (uint i = 0; i < _max_blocks; i++) {
-    if (_blocks[i] != &_empty_block) {
+    if (_blocks != nullptr && _blocks[i] != &_empty_block) {
       inc_stat_counter(&_total_used_blocks, 1);
     } else {
       inc_stat_counter(&_total_unused_blocks, 1);

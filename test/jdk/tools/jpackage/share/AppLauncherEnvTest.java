@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
-import static jdk.jpackage.test.HelloApp.configureEnvironment;
+import static jdk.jpackage.test.HelloApp.configureAndExecute;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -62,16 +62,12 @@ public class AppLauncherEnvTest {
 
         final String envVarName = envVarName();
 
-        final int attempts = 3;
-        final int waitBetweenAttemptsSeconds = 5;
-        List<String> output = configureEnvironment(new Executor())
+        List<String> output = configureAndExecute(0, new Executor()
                 .saveOutput()
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                 .addArguments("--print-env-var=" + envVarName)
                 .addArguments("--print-sys-prop=" + testAddDirProp)
-                .addArguments("--print-sys-prop=" + "java.library.path")
-                .executeAndRepeatUntilExitCode(0, attempts,
-                        waitBetweenAttemptsSeconds).getOutput();
+                .addArguments("--print-sys-prop=" + "java.library.path")).getOutput();
 
         BiFunction<Integer, String, String> getValue = (idx, name) -> {
             return  output.get(idx).substring((name + "=").length());

@@ -29,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
@@ -59,7 +60,9 @@ class LogFileStreamOutput;
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
   friend class AsyncLogTest_logBuffer_vm_Test;
-  class AsyncLogLocker;
+  class Locker;
+  class ProducerLocker;
+  class ConsumerLocker;
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
@@ -125,7 +128,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     void push_flush_token();
-    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
+    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msg_len);
 
     void reset() {
       // Ensure _pos is Message-aligned
@@ -159,8 +162,13 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
-  PlatformMonitor _lock;
+  // Producers take both locks in the order producer lock and then consumer lock.
+  // The consumer protects the buffers and performs all communication between producer and consumer via wait/notify.
+  // This allows a producer to await progress from the consumer thread (by only releasing the producer lock)), whilst preventing all other producers from progressing.
+  PlatformMonitor _producer_lock;
+  PlatformMonitor _consumer_lock;
   bool _data_available;
+  // _initialized is set to true if the constructor succeeds
   volatile bool _initialized;
   AsyncLogMap<AnyObj::C_HEAP> _stats;
 
@@ -168,11 +176,17 @@ class AsyncLogWriter : public NonJavaThread {
   Buffer* _buffer;
   Buffer* _buffer_staging;
 
+  // Stalled message
+  // Stalling is implemented by the producer writing to _stalled_message, notifying the consumer lock and releasing it.
+  // The consumer will then write all of the current buffers' content and then write the stalled message, at the end notifying the consumer lock and releasing it for the
+  // owning producer thread of the stalled message. This thread will finally release both locks in order, allowing for other producers to continue.
+  volatile Message* _stalled_message;
+
   static const LogDecorations& None;
 
   AsyncLogWriter();
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
-  void write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
+  bool write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
@@ -195,9 +209,11 @@ class AsyncLogWriter : public NonJavaThread {
     ~BufferUpdater();
   };
 
- public:
-  void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
-  void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  static bool is_enqueue_allowed();
+
+public:
+  static bool enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
+  static bool enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   static AsyncLogWriter* instance();
   static void initialize();

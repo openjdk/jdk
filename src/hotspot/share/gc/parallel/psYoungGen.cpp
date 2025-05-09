@@ -91,8 +91,8 @@ void PSYoungGen::initialize_work() {
   _to_space   = new MutableSpace(virtual_space()->alignment());
 
   // Generation Counters - generation 0, 3 subspaces
-  _gen_counters = new PSGenerationCounters("new", 0, 3, min_gen_size(),
-                                           max_gen_size(), virtual_space());
+  _gen_counters = new GenerationCounters("new", 0, 3, min_gen_size(),
+                                         max_gen_size(), virtual_space()->committed_size());
 
   // Compute maximum space sizes for performance counters
   size_t alignment = SpaceAlignment;
@@ -809,7 +809,7 @@ void PSYoungGen::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space->committed_size());
   }
 }
 

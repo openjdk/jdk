@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class DocCommentParser {
         this.fac = fac;
         this.diags = fac.log.diags;
         this.diagSource = diagSource;
-        this.comment = comment;
+        this.comment = comment.stripIndent();
         names = fac.names;
         this.isHtmlFile = isHtmlFile;
         textKind = isHtmlFile ? DocTree.Kind.TEXT : getTextKind(comment);

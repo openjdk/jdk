@@ -21,12 +21,13 @@
  * questions.
  */
 
+#include "gc/shared/gcArguments.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
-#include "gc/shared/gcArguments.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -119,15 +120,6 @@ void ZArguments::select_max_gc_threads() {
 
 void ZArguments::initialize() {
   GCArguments::initialize();
-
-  // Check mark stack size
-  const size_t mark_stack_space_limit = ZAddressSpaceLimit::mark_stack();
-  if (ZMarkStackSpaceLimit > mark_stack_space_limit) {
-    if (!FLAG_IS_DEFAULT(ZMarkStackSpaceLimit)) {
-      vm_exit_during_initialization("ZMarkStackSpaceLimit too large for limited address space");
-    }
-    FLAG_SET_DEFAULT(ZMarkStackSpaceLimit, mark_stack_space_limit);
-  }
 
   // Enable NUMA by default
   if (FLAG_IS_DEFAULT(UseNUMA)) {
@@ -228,7 +220,21 @@ size_t ZArguments::heap_virtual_to_physical_ratio() {
 }
 
 CollectedHeap* ZArguments::create_heap() {
-  return new ZCollectedHeap();
+  // ZCollectedHeap has an alignment greater than or equal to ZCacheLineSize,
+  // which may be larger than std::max_align_t. Instead of using operator new,
+  // align the storage manually and construct the ZCollectedHeap using operator
+  // placement new.
+
+  static_assert(alignof(ZCollectedHeap) >= ZCacheLineSize,
+                "ZCollectedHeap is no longer ZCacheLineSize aligned");
+
+  // Allocate aligned storage for ZCollectedHeap
+  const size_t alignment = alignof(ZCollectedHeap);
+  const size_t size = sizeof(ZCollectedHeap);
+  void* const addr = reinterpret_cast<void*>(ZUtils::alloc_aligned_unfreeable(alignment, size));
+
+  // Construct ZCollectedHeap in the aligned storage
+  return ::new (addr) ZCollectedHeap();
 }
 
 bool ZArguments::is_supported() const {

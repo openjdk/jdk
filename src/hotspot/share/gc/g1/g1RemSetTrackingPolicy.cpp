@@ -104,6 +104,17 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
                                            r->rem_set()->clear(true /* only_cardset */);
                                          });
     }
+
+    size_t remset_bytes = r->rem_set()->mem_size();
+    size_t occupied = 0;
+    // per region cardset details only valid if group contains a single region.
+    if (r->rem_set()->is_added_to_cset_group() &&
+        r->rem_set()->cset_group()->length() == 1 ) {
+        G1CardSet *card_set = r->rem_set()->cset_group()->card_set();
+        remset_bytes += card_set->mem_size();
+        occupied = card_set->occupied();
+    }
+
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
                                     "(tams " PTR_FORMAT " "
@@ -113,7 +124,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
                                     r->hrm_index(),
                                     p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
-                                    r->rem_set()->occupied(),
-                                    r->rem_set()->mem_size());
+                                    occupied,
+                                    remset_bytes);
   }
 }

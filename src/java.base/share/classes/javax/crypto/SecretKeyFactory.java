@@ -52,7 +52,7 @@ import sun.security.jca.GetInstance.Instance;
  * {@link #generateSecret(java.security.spec.KeySpec) generateSecret} and
  * {@link #getKeySpec(javax.crypto.SecretKey, java.lang.Class) getKeySpec}
  * methods.
- * For example, the DESede (Triple DES) secret-key factory supplied by the
+ * For example, the DESede (Triple DES) secret key factory supplied by the
  * "SunJCE" provider supports {@code DESedeKeySpec} as a transparent
  * representation of Triple DES keys.
  *
@@ -100,7 +100,7 @@ public class SecretKeyFactory {
      *
      * @param keyFacSpi the delegate
      * @param provider the provider
-     * @param algorithm the secret-key algorithm
+     * @param algorithm the secret key algorithm
      */
     protected SecretKeyFactory(SecretKeyFactorySpi keyFacSpi,
                                Provider provider, String algorithm) {
@@ -140,7 +140,7 @@ public class SecretKeyFactory {
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
-     * @param algorithm the standard name of the requested secret-key
+     * @param algorithm the standard name of the requested secret key
      * algorithm.
      * See the SecretKeyFactory section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#secretkeyfactory-algorithms">
@@ -176,7 +176,7 @@ public class SecretKeyFactory {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param algorithm the standard name of the requested secret-key
+     * @param algorithm the standard name of the requested secret key
      * algorithm.
      * See the SecretKeyFactory section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#secretkeyfactory-algorithms">
@@ -221,7 +221,7 @@ public class SecretKeyFactory {
      * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
-     * @param algorithm the standard name of the requested secret-key
+     * @param algorithm the standard name of the requested secret key
      * algorithm.
      * See the SecretKeyFactory section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#secretkeyfactory-algorithms">
@@ -327,7 +327,7 @@ public class SecretKeyFactory {
      * @return the secret key
      *
      * @exception InvalidKeySpecException if the given key specification
-     * is inappropriate for this secret-key factory to produce a secret key.
+     * is inappropriate for this secret key factory to produce a secret key.
      */
     public final SecretKey generateSecret(KeySpec keySpec)
             throws InvalidKeySpecException {
@@ -371,7 +371,7 @@ public class SecretKeyFactory {
      * whereas {@code keySpec} is the specification of a software-based
      * key), or the given key cannot be dealt with
      * (e.g., the given key has an algorithm or format not supported by this
-     * secret-key factory).
+     * secret key factory).
      */
     public final KeySpec getKeySpec(SecretKey key, Class<?> keySpec)
             throws InvalidKeySpecException {
@@ -399,14 +399,14 @@ public class SecretKeyFactory {
 
     /**
      * Translates a key object, whose provider may be unknown or potentially
-     * untrusted, into a corresponding key object of this secret-key factory.
+     * untrusted, into a corresponding key object of this secret key factory.
      *
      * @param key the key whose provider is unknown or untrusted
      *
      * @return the translated key
      *
      * @exception InvalidKeyException if the given key cannot be processed
-     * by this secret-key factory.
+     * by this secret key factory.
      */
     public final SecretKey translateKey(SecretKey key)
             throws InvalidKeyException {

@@ -68,16 +68,9 @@ import sun.security.util.Debug;
  * <p>Since no other parameters are specified when you call the above
  * algorithm-independent {@code initialize} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
- * associated with each of the keys.
- *
- * <p>If the algorithm is the <i>DSA</i> algorithm, and the keysize (modulus
- * size) is 512, 768, 1024, or 2048, then the <i>Sun</i> provider uses a set of
- * precomputed values for the {@code p}, {@code q}, and
- * {@code g} parameters. If the modulus size is not one of the above
- * values, the <i>Sun</i> provider creates a new set of parameters. Other
- * providers might have precomputed parameter sets for more than just the
- * modulus sizes mentioned above. Still others might not have a list of
- * precomputed parameters at all and instead always create new parameter sets.
+ * associated with each of the keys. See the
+ * {@extLink security_guide_jdk_providers JDK Providers} document for information
+ * on the default algorithm-specific parameters used by JDK providers.
  *
  * <li><b>Algorithm-Specific Initialization</b>
  * <p>For situations where a set of algorithm-specific parameters already

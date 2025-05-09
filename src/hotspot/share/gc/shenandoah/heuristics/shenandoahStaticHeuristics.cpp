@@ -55,6 +55,7 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
+    accept_trigger();
     return true;
   }
   return ShenandoahHeuristics::should_start_gc();

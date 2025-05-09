@@ -225,7 +225,7 @@ public class Locations {
                 try {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
-                    lint.logIfEnabled(log, LintWarnings.InvalidPath(s));
+                    lint.logIfEnabled(LintWarnings.InvalidPath(s));
                 }
             }
         }
@@ -319,7 +319,7 @@ public class Locations {
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    lint.logIfEnabled(log, LintWarnings.DirPathElementNotFound(dir));
+                    lint.logIfEnabled(LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -364,7 +364,7 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    lint.logIfEnabled(log, LintWarnings.PathElementNotFound(file));
+                    lint.logIfEnabled(LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -386,12 +386,12 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                lint.logIfEnabled(log, LintWarnings.UnexpectedArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                lint.logIfEnabled(log, LintWarnings.InvalidArchiveFile(file));
+                                lint.logIfEnabled(LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -1654,7 +1654,7 @@ public class Locations {
 
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
-                lint.logIfEnabled(log, Files.exists(prefix) ?
+                lint.logIfEnabled(Files.exists(prefix) ?
                     LintWarnings.DirPathElementNotDirectory(prefix) :
                     LintWarnings.DirPathElementNotFound(prefix));
                 return;

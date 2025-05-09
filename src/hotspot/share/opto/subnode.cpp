@@ -53,11 +53,16 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
-  // Remove double negation
-  const Type *zero = add_id();
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  const Type* zero = add_id();
+
+  // Remove double negation if it is not a floating point number since negation
+  // is not the same as subtraction for floating point numbers
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
@@ -552,6 +557,24 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 
 
 //=============================================================================
+//------------------------------sub--------------------------------------------
+// A subtract node differences its two inputs.
+const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
+  // no folding if one of operands is infinity or NaN, do not do constant folding
+  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+    return TypeH::make(t1->getf() - t2->getf());
+  }
+  else if(g_isnan(t1->getf())) {
+    return t1;
+  }
+  else if(g_isnan(t2->getf())) {
+    return t2;
+  }
+  else {
+    return Type::HALF_FLOAT;
+  }
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
@@ -1989,6 +2012,15 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   return TypeF::make( (float)sqrt( (double)f ) );
 }
 
+const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t1->base() != Type::HalfFloatCon) { return Type::HALF_FLOAT; }
+  float f = t1->getf();
+  if (f < 0.0f) return Type::HALF_FLOAT;
+  return TypeH::make((float)sqrt((double)f));
+}
+
 const Type* ReverseINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if (t1 == Type::TOP) {
@@ -2015,15 +2047,9 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
-  }
-  return this;
-}
-
-Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
+Node* InvolutionNode::Identity(PhaseGVN* phase) {
+  // Op ( Op x ) => x
+  if (in(1)->Opcode() == Opcode()) {
     return in(1)->in(1);
   }
   return this;

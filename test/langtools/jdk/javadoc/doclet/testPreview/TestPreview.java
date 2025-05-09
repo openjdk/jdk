@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,11 @@ public class TestPreview extends JavadocTester {
         checkOutput("preview-list.html", true,
                 """
                     <ul class="preview-feature-list checkboxes">
-                    <li><label for="feature-1">
-                    <input type="checkbox" id="feature-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                    <span>2147483647: <a href="https://openjdk.org/jeps/2147483647">Test Feature (Preview)</a></span></label></li>
-                    <li><label for="feature-all">
-                    <input type="checkbox" id="feature-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
-                    <span>Toggle all</span></label></li>
+                    <li><label for="feature-1"><input type="checkbox" id="feature-1" disabled checked onclick="tog\
+                    gleGlobal(this, '1', 3)"><span>2147483647: <a href="https://openjdk.org/jeps/2147483647">Test \
+                    Feature (Preview)</a></span></label></li>
+                    <li><label for="feature-all"><input type="checkbox" id="feature-all" disabled checked onclick=\
+                    "toggleGlobal(this, 'all', 3)"><span>Toggle all</span></label></li>
                     </ul>
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
@@ -177,7 +176,7 @@ public class TestPreview extends JavadocTester {
                     reRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecor\
                     d.html" title="class in preview"><code>core record</code></a><sup class="previe\
                     w-mark"><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>,
-                     <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
+                    <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
                     reRecord.html" title="class in preview">core record</a>.</div>""",
                 """
                     <li><a href="CoreRecord.html" title="class in preview"><code>CoreRecord</code><\

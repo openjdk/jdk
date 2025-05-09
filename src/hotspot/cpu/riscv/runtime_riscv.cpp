@@ -57,11 +57,12 @@ public:
 #define __ masm->
 
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
 
@@ -239,7 +240,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  _uncommon_trap_blob =  UncommonTrapBlob::create(&buffer, oop_maps,
+  return UncommonTrapBlob::create(&buffer, oop_maps,
                                                   SimpleRuntimeFrame::framesize >> 1);
 }
 
@@ -269,7 +270,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //       Registers x10, x13, x12, x14, x15, t0 are not callee saved.
 //
 
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(!OptoRuntime::is_callee_saved_register(R13_num), "");
   assert(!OptoRuntime::is_callee_saved_register(R10_num), "");
   assert(!OptoRuntime::is_callee_saved_register(R12_num), "");
@@ -279,7 +280,8 @@ void OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
 
@@ -374,6 +376,6 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob
-  _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
 #endif // COMPILER2

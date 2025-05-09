@@ -109,16 +109,19 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
-    _verbose     (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections  (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector(_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _info        (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
+    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -214,7 +217,7 @@ public:
     _vloop_analyzer(vloop_analyzer),
     _vloop(vloop_analyzer.vloop()),
     NOT_PRODUCT(_trace(trace) COMMA)
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
     _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
@@ -244,6 +247,10 @@ private:
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
+
+  void apply_speculative_runtime_checks();
+  void add_speculative_alignment_check(Node* node, juint alignment);
+  void add_speculative_check(BoolNode* bol);
 
   void apply_vectorization() const;
 };

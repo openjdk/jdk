@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ import java.util.zip.ZipFile;
  * multi-release jar file, the content of a versioned entry is verified against
  * its own signature and {@link JarEntry#getCodeSigners()} returns its own signers.
  *
- * Please note that the verification process does not include validating the
+ * <p>Please note that the verification process does not include validating the
  * signer's certificate. A caller should inspect the return value of
  * {@link JarEntry#getCodeSigners()} to further determine if the signature
  * can be trusted.

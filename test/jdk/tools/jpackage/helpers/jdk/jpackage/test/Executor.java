@@ -33,9 +33,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -76,6 +79,10 @@ public final class Executor extends CommandArguments<Executor> {
         return setToolProvider(v.asToolProvider());
     }
 
+    public Optional<Path> getExecutable() {
+        return Optional.ofNullable(executable);
+    }
+
     public Executor setDirectory(Path v) {
         directory = v;
         return this;
@@ -87,6 +94,13 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor removeEnvVar(String envVarName) {
         removeEnvVars.add(Objects.requireNonNull(envVarName));
+        setEnvVars.remove(envVarName);
+        return this;
+    }
+
+    public Executor setEnvVar(String envVarName, String envVarValue) {
+        setEnvVars.put(Objects.requireNonNull(envVarName), Objects.requireNonNull(envVarValue));
+        removeEnvVars.remove(envVarName);
         return this;
     }
 
@@ -173,10 +187,10 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
-    public class Result {
+    public record Result(int exitCode, List<String> output, Supplier<String> cmdline) {
 
-        Result(int exitCode) {
-            this.exitCode = exitCode;
+        public Result {
+            Objects.requireNonNull(cmdline);
         }
 
         public String getFirstLineOfOutput() {
@@ -187,14 +201,10 @@ public final class Executor extends CommandArguments<Executor> {
             return output;
         }
 
-        public String getPrintableCommandLine() {
-            return Executor.this.getPrintableCommandLine();
-        }
-
         public Result assertExitCodeIs(int expectedExitCode) {
             TKit.assertEquals(expectedExitCode, exitCode, String.format(
                     "Check command %s exited with %d code",
-                    getPrintableCommandLine(), expectedExitCode));
+                    cmdline.get(), expectedExitCode));
             return this;
         }
 
@@ -205,9 +215,6 @@ public final class Executor extends CommandArguments<Executor> {
         public int getExitCode() {
             return exitCode;
         }
-
-        final int exitCode;
-        private List<String> output;
     }
 
     public Result executeWithoutExitCodeCheck() {
@@ -259,7 +266,8 @@ public final class Executor extends CommandArguments<Executor> {
             return value;
         }
 
-        private final Result value;
+        private final transient Result value;
+        private static final long serialVersionUID = 1L;
     }
 
     /*
@@ -371,11 +379,27 @@ public final class Executor extends CommandArguments<Executor> {
             builder.directory(directory.toFile());
             sb.append(String.format("; in directory [%s]", directory));
         }
-        if (!removeEnvVars.isEmpty()) {
-            final var envComm = Comm.compare(builder.environment().keySet(), removeEnvVars);
-            builder.environment().keySet().removeAll(envComm.common());
+        if (!setEnvVars.isEmpty()) {
+            final var defaultEnv = builder.environment();
+            final var envComm = Comm.compare(defaultEnv.keySet(), setEnvVars.keySet());
+            envComm.unique2().forEach(envVar -> {
+                trace(String.format("Adding %s=[%s] to environment", envVar, setEnvVars.get(envVar)));
+            });
             envComm.common().forEach(envVar -> {
-                TKit.trace(String.format("Clearing %s in environment", envVar));
+                final var curValue = defaultEnv.get(envVar);
+                final var newValue = setEnvVars.get(envVar);
+                if (!curValue.equals(newValue)) {
+                    trace(String.format("Setting %s=[%s] in environment", envVar, setEnvVars.get(envVar)));
+                }
+            });
+            defaultEnv.putAll(setEnvVars);
+        }
+        if (!removeEnvVars.isEmpty()) {
+            final var defaultEnv = builder.environment().keySet();
+            final var envComm = Comm.compare(defaultEnv, removeEnvVars);
+            defaultEnv.removeAll(envComm.common());
+            envComm.common().forEach(envVar -> {
+                trace(String.format("Clearing %s in environment", envVar));
             });
         }
 
@@ -407,28 +431,34 @@ public final class Executor extends CommandArguments<Executor> {
             }
         }
 
-        Result reply = new Result(process.waitFor());
-        trace("Done. Exit code: " + reply.exitCode);
+        final int exitCode = process.waitFor();
+        trace("Done. Exit code: " + exitCode);
 
+        final List<String> output;
         if (outputLines != null) {
-            reply.output = Collections.unmodifiableList(outputLines);
+            output = Collections.unmodifiableList(outputLines);
+        } else {
+            output = null;
         }
-        return reply;
+        return createResult(exitCode, output);
     }
 
-    private Result runToolProvider(PrintStream out, PrintStream err) {
+    private int runToolProvider(PrintStream out, PrintStream err) {
         trace("Execute " + getPrintableCommandLine() + "...");
-        Result reply = new Result(toolProvider.run(out, err, args.toArray(
-                String[]::new)));
-        trace("Done. Exit code: " + reply.exitCode);
-        return reply;
+        final int exitCode = toolProvider.run(out, err, args.toArray(
+                String[]::new));
+        trace("Done. Exit code: " + exitCode);
+        return exitCode;
     }
 
+    private Result createResult(int exitCode, List<String> output) {
+        return new Result(exitCode, output, this::getPrintableCommandLine);
+    }
 
     private Result runToolProvider() throws IOException {
         if (!withSavedOutput()) {
             if (saveOutputType.contains(SaveOutputType.DUMP)) {
-                return runToolProvider(System.out, System.err);
+                return createResult(runToolProvider(System.out, System.err), null);
             }
 
             PrintStream nullPrintStream = new PrintStream(new OutputStream() {
@@ -437,36 +467,40 @@ public final class Executor extends CommandArguments<Executor> {
                     // Nop
                 }
             });
-            return runToolProvider(nullPrintStream, nullPrintStream);
+            return createResult(runToolProvider(nullPrintStream, nullPrintStream), null);
         }
 
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(buf)) {
-            Result reply = runToolProvider(ps, ps);
+            final var exitCode = runToolProvider(ps, ps);
             ps.flush();
+            final List<String> output;
             try (BufferedReader bufReader = new BufferedReader(new StringReader(
                     buf.toString()))) {
                 if (saveOutputType.contains(SaveOutputType.FIRST_LINE)) {
                     String firstLine = bufReader.lines().findFirst().orElse(null);
                     if (firstLine != null) {
-                        reply.output = List.of(firstLine);
+                        output = List.of(firstLine);
+                    } else {
+                        output = null;
                     }
                 } else if (saveOutputType.contains(SaveOutputType.FULL)) {
-                    reply.output = bufReader.lines().collect(
-                            Collectors.toUnmodifiableList());
+                    output = bufReader.lines().collect(Collectors.toUnmodifiableList());
+                } else {
+                    output = null;
                 }
 
                 if (saveOutputType.contains(SaveOutputType.DUMP)) {
                     Stream<String> lines;
                     if (saveOutputType.contains(SaveOutputType.FULL)) {
-                        lines = reply.output.stream();
+                        lines = output.stream();
                     } else {
                         lines = bufReader.lines();
                     }
                     lines.forEach(System.out::println);
                 }
             }
-            return reply;
+            return createResult(exitCode, output);
         }
     }
 
@@ -506,6 +540,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private Set<String> removeEnvVars = new HashSet<>();
+    private Map<String, String> setEnvVars = new HashMap<>();
     private boolean winEnglishOutput;
     private String winTmpDir = null;
 

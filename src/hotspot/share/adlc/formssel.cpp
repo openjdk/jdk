@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1088,7 +1088,7 @@ uint  InstructForm::reloc(FormDict &globals) {
     } else if ( oper ) {
       // floats and doubles loaded out of method's constant pool require reloc info
       Form::DataType type = oper->is_base_constant(globals);
-      if ( (type == Form::idealF) || (type == Form::idealD) ) {
+      if ( (type == Form::idealH) || (type == Form::idealF) || (type == Form::idealD) ) {
         ++reloc_entries;
       }
     }
@@ -1099,7 +1099,7 @@ uint  InstructForm::reloc(FormDict &globals) {
   // !!!!!
   // Check for any component being an immediate float or double.
   Form::DataType data_type = is_chain_of_constant(globals);
-  if( data_type==idealD || data_type==idealF ) {
+  if( data_type==idealH || data_type==idealD || data_type==idealF ) {
     reloc_entries++;
   }
 
@@ -1854,14 +1854,14 @@ void InsEncode::output(FILE *fp) {
   fprintf(fp,"InsEncode: ");
   _encoding.reset();
 
-  while ( (encoding = (NameAndList*)_encoding.iter()) != 0 ) {
+  while ( (encoding = (NameAndList*)_encoding.iter()) != nullptr ) {
     // Output the encoding being used
     fprintf(fp,"%s(", encoding->name() );
 
     // Output its parameter list, if any
     bool first_param = true;
     encoding->reset();
-    while (  (parameter = encoding->iter()) != 0 ) {
+    while (  (parameter = encoding->iter()) != nullptr ) {
       // Output the ',' between parameters
       if ( ! first_param )  fprintf(fp,", ");
       first_param = false;
@@ -2662,6 +2662,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealH: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -2743,6 +2744,7 @@ void OperandForm::access_constant(FILE *fp, FormDict &globals,
   case idealP: fprintf(fp,"_c%d->get_con()",const_index); break;
   case idealL: fprintf(fp,"_c%d",           const_index); break;
   case idealF: fprintf(fp,"_c%d",           const_index); break;
+  case idealH: fprintf(fp,"_c%d",           const_index); break;
   case idealD: fprintf(fp,"_c%d",           const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -3303,7 +3305,7 @@ void ComponentList::output(FILE *fp) {
 MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
                      const char *opType, MatchNode *lChild, MatchNode *rChild)
   : _AD(ad), _result(result), _name(mexpr), _opType(opType),
-    _lChild(lChild), _rChild(rChild), _internalop(0), _numleaves(0),
+    _lChild(lChild), _rChild(rChild), _internalop(nullptr), _numleaves(0),
     _commutative_id(0) {
   _numleaves = (lChild ? lChild->_numleaves : 0)
                + (rChild ? rChild->_numleaves : 0);
@@ -3312,14 +3314,14 @@ MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType), _lChild(mnode._lChild), _rChild(mnode._rChild),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
 }
 
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode, int clone)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
   if (mnode._lChild) {
     _lChild = new MatchNode(ad, *mnode._lChild, clone);
@@ -3622,7 +3624,7 @@ void MatchNode::dump() {
 }
 
 void MatchNode::output(FILE *fp) {
-  if (_lChild==0 && _rChild==0) {
+  if (_lChild==nullptr && _rChild==nullptr) {
     fprintf(fp," %s",_name);    // operand
   }
   else {
@@ -3953,11 +3955,12 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
-    "AddI","AddL","AddF","AddD",
+    "AddI","AddL","AddHF","AddF","AddD",
     "AndI","AndL",
-    "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MulI","MulL","MulF","MulD",
-    "OrI","OrL", "XorI","XorL",
+    "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
+    "MulI","MulL","MulHF","MulF","MulD",
+    "OrI","OrL",
+    "XorI","XorL"
     "UMax","UMin"
   };
 
@@ -4193,6 +4196,7 @@ int MatchRule::is_expensive() const {
     if( strcmp(opType,"AtanD")==0 ||
         strcmp(opType,"DivD")==0 ||
         strcmp(opType,"DivF")==0 ||
+        strcmp(opType,"DivHF")==0 ||
         strcmp(opType,"DivI")==0 ||
         strcmp(opType,"Log10D")==0 ||
         strcmp(opType,"ModD")==0 ||
@@ -4200,6 +4204,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ModI")==0 ||
         strcmp(opType,"SqrtD")==0 ||
         strcmp(opType,"SqrtF")==0 ||
+        strcmp(opType,"SqrtHF")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||
         strcmp(opType,"ConvD2I")==0 ||
@@ -4219,9 +4224,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"FmaD") == 0 ||
         strcmp(opType,"FmaF") == 0 ||
-        strcmp(opType,"RoundDouble")==0 ||
+        strcmp(opType,"FmaHF") == 0 ||
         strcmp(opType,"RoundDoubleMode")==0 ||
-        strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||

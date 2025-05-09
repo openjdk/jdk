@@ -238,4 +238,11 @@ public enum Target {
     public boolean usesReferenceOnlySelectorTypes() {
         return compareTo(Target.JDK1_23) < 0;
     }
+
+    /**
+     * Should we emit a null check against incoming outer this argument by default?
+     */
+    public boolean nullCheckOuterThisByDefault() {
+        return compareTo(JDK1_25) >= 0;
+    }
 }

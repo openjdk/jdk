@@ -86,6 +86,7 @@ public:
   void register_callbacks(const Callbacks& callbacks);
 
   zoffset peek_low_address() const;
+  zoffset_end peak_high_address_end() const;
   zoffset alloc_low_address(size_t size);
   zoffset alloc_low_address_at_most(size_t size, size_t* allocated);
   zoffset alloc_high_address(size_t size);

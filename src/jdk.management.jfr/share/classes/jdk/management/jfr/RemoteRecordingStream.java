@@ -196,7 +196,6 @@ public final class RemoteRecordingStream implements EventStream {
         this(connection, directory, false);
     }
 
-    @SuppressWarnings("removal")
     private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
         Objects.requireNonNull(connection, "connection");
         Objects.requireNonNull(directory, "directory");

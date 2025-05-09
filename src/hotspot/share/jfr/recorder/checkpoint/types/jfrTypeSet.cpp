@@ -347,7 +347,7 @@ static void do_write_klass(JfrCheckpointWriter* writer, CldPtr cld, KlassPtr kla
   writer->write(cld != nullptr ? cld_id(cld, leakp) : 0);
   writer->write(mark_symbol(klass, leakp));
   writer->write(package_id(klass, leakp));
-  writer->write(klass->modifier_flags());
+  writer->write(klass->compute_modifier_flags());
   writer->write<bool>(klass->is_hidden());
   if (leakp) {
     assert(IS_LEAKP(klass), "invariant");

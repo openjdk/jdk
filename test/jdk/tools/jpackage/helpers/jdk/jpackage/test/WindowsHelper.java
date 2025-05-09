@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,25 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
@@ -67,21 +68,24 @@ public class WindowsHelper {
         return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
 
-    private static void runMsiexecWithRetries(Executor misexec) {
+    private static int runMsiexecWithRetries(Executor misexec, Optional<Path> msiLog) {
         Executor.Result result = null;
+        final boolean isUnpack = misexec.getExecutable().orElseThrow().equals(Path.of("cmd"));
+        final List<String> origArgs = msiLog.isPresent() ? misexec.getAllArguments() : null;
         for (int attempt = 0; attempt < 8; ++attempt) {
+            msiLog.ifPresent(v -> misexec.clearArguments().addArguments(origArgs).addArgument("/L*v").addArgument(v));
             result = misexec.executeWithoutExitCodeCheck();
 
-            if (result.exitCode == 1605) {
+            if (result.exitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
-                return;
+                return result.exitCode();
             }
 
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode == 1618) || (result.exitCode == 1603)) {
+            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && isUnpack)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -91,74 +95,129 @@ public class WindowsHelper {
             break;
         }
 
-        result.assertExitCodeIsZero();
+        return result.exitCode();
     }
 
-    static PackageHandlers createMsiPackageHandlers() {
-        BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
-            cmd.verifyIsOfType(PackageType.WIN_MSI);
-            var msiPath = TransientMsi.create(cmd).path();
-            runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(msiPath));
-        };
+    static PackageHandlers createMsiPackageHandlers(boolean createMsiLog) {
+        return new PackageHandlers(cmd -> installMsi(cmd, createMsiLog),
+                cmd -> uninstallMsi(cmd, createMsiLog), WindowsHelper::unpackMsi);
+    }
 
-        PackageHandlers msi = new PackageHandlers();
-        msi.installHandler = cmd -> installMsi.accept(cmd, true);
-        msi.uninstallHandler = cmd -> {
-            if (Files.exists(cmd.outputBundle())) {
-                installMsi.accept(cmd, false);
+    private static Optional<Path> configureMsiLogFile(JPackageCommand cmd, boolean createMsiLog) {
+        final Optional<Path> msiLogFile;
+        if (createMsiLog) {
+            msiLogFile = Optional.of(TKit.createTempFile(String.format("logs\\%s-msi.log",
+                    cmd.packageType().getType())));
+        } else {
+            msiLogFile = Optional.empty();
+        }
+
+        cmd.winMsiLogFile(msiLogFile.orElse(null));
+
+        return msiLogFile;
+    }
+
+    private static int runMsiInstaller(JPackageCommand cmd, boolean createMsiLog, boolean install) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        final var msiPath = TransientMsi.create(cmd).path();
+        return runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
+                install ? "/i" : "/x").addArgument(msiPath), configureMsiLogFile(cmd, createMsiLog));
+    }
+
+    private static int installMsi(JPackageCommand cmd, boolean createMsiLog) {
+        return runMsiInstaller(cmd, createMsiLog, true);
+    }
+
+    private static void uninstallMsi(JPackageCommand cmd, boolean createMsiLog) {
+        if (Files.exists(cmd.outputBundle())) {
+            runMsiInstaller(cmd, createMsiLog, false);
+        } else {
+            configureMsiLogFile(cmd, false);
+        }
+    }
+
+    private static Path unpackMsi(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        configureMsiLogFile(cmd, false);
+        final Path unpackBat = destinationDir.resolve("unpack.bat");
+        final Path unpackDir = destinationDir.resolve(
+                TKit.removeRootFromAbsolutePath(
+                        getInstallationRootDirectory(cmd)));
+
+        final Path msiPath = TransientMsi.create(cmd).path();
+
+        // Put msiexec in .bat file because can't pass value of TARGETDIR
+        // property containing spaces through ProcessBuilder properly.
+        // Set folder permissions to allow msiexec unpack msi bundle.
+        TKit.createTextFile(unpackBat, List.of(
+                String.format("icacls \"%s\" /inheritance:e /grant Users:M",
+                        destinationDir),
+                String.join(" ", List.of(
+                "msiexec",
+                "/a",
+                String.format("\"%s\"", msiPath),
+                "/qn",
+                String.format("TARGETDIR=\"%s\"",
+                        unpackDir.toAbsolutePath().normalize())))));
+        runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()), Optional.empty());
+
+        //
+        // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+        // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+        // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
+        // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
+        // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
+        //
+        // WiX4 does the same thing for %LocalAppData%.
+        //
+        for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
+            if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
+                Path installationSubDirectory = getInstallationSubDirectory(cmd);
+                Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
+                Path to = installationSubDirectory;
+
+                ThrowingRunnable.toRunnable(() -> {
+                    Files.createDirectories(unpackDir.resolve(to).getParent());
+                }).run();
+
+                // Files.move() occasionally results into java.nio.file.AccessDeniedException
+                Executor.tryRunMultipleTimes(ThrowingRunnable.toRunnable(() -> {
+                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to, unpackDir));
+                    final var dstDir = unpackDir.resolve(to);
+                    TKit.deleteDirectoryRecursive(dstDir);
+                    Files.move(unpackDir.resolve(from), dstDir);
+                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
+                }), 3, 5);
             }
-        };
-        msi.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.WIN_MSI);
-            final Path unpackBat = destinationDir.resolve("unpack.bat");
-            final Path unpackDir = destinationDir.resolve(
-                    TKit.removeRootFromAbsolutePath(
-                            getInstallationRootDirectory(cmd)));
+        }
+        return destinationDir;
+    }
 
-            final Path msiPath = TransientMsi.create(cmd).path();
+    static PackageHandlers createExePackageHandlers(boolean createMsiLog) {
+        return new PackageHandlers(cmd -> installExe(cmd, createMsiLog), WindowsHelper::uninstallExe, Optional.empty());
+    }
 
-            // Put msiexec in .bat file because can't pass value of TARGETDIR
-            // property containing spaces through ProcessBuilder properly.
-            // Set folder permissions to allow msiexec unpack msi bundle.
-            TKit.createTextFile(unpackBat, List.of(
-                    String.format("icacls \"%s\" /inheritance:e /grant Users:M",
-                            destinationDir),
-                    String.join(" ", List.of(
-                    "msiexec",
-                    "/a",
-                    String.format("\"%s\"", msiPath),
-                    "/qn",
-                    String.format("TARGETDIR=\"%s\"",
-                            unpackDir.toAbsolutePath().normalize())))));
-            runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+    private static int runExeInstaller(JPackageCommand cmd, boolean createMsiLog, boolean install) {
+        cmd.verifyIsOfType(PackageType.WIN_EXE);
+        Executor exec = new Executor().setExecutable(cmd.outputBundle());
+        if (install) {
+            exec.addArgument("/qn").addArgument("/norestart");
+        } else {
+            exec.addArgument("uninstall");
+        }
+        return runMsiexecWithRetries(exec, configureMsiLogFile(cmd, createMsiLog));
+    }
 
-            //
-            // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
-            // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
-            // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
-            // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
-            // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
-            //
-            // WiX4 does the same thing for %LocalAppData%.
-            //
-            for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
-                if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
-                    Path installationSubDirectory = getInstallationSubDirectory(cmd);
-                    Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
-                    Path to = installationSubDirectory;
-                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
-                            unpackDir));
-                    ThrowingRunnable.toRunnable(() -> {
-                        Files.createDirectories(unpackDir.resolve(to).getParent());
-                        Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
-                        TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
-                    }).run();
-                }
-            }
-            return destinationDir;
-        };
-        return msi;
+    private static int installExe(JPackageCommand cmd, boolean createMsiLog) {
+        return runExeInstaller(cmd, createMsiLog, true);
+    }
+
+    private static void uninstallExe(JPackageCommand cmd) {
+        if (Files.exists(cmd.outputBundle())) {
+            runExeInstaller(cmd, false, false);
+        } else {
+            configureMsiLogFile(cmd, false);
+        }
     }
 
     record TransientMsi(Path path) {
@@ -202,28 +261,6 @@ public class WindowsHelper {
         } else {
             return Optional.empty();
         }
-    }
-
-    static PackageHandlers createExePackageHandlers() {
-        BiConsumer<JPackageCommand, Boolean> installExe = (cmd, install) -> {
-            cmd.verifyIsOfType(PackageType.WIN_EXE);
-            Executor exec = new Executor().setExecutable(cmd.outputBundle());
-            if (install) {
-                exec.addArgument("/qn").addArgument("/norestart");
-            } else {
-                exec.addArgument("uninstall");
-            }
-            runMsiexecWithRetries(exec);
-        };
-
-        PackageHandlers exe = new PackageHandlers();
-        exe.installHandler = cmd -> installExe.accept(cmd, true);
-        exe.uninstallHandler = cmd -> {
-            if (Files.exists(cmd.outputBundle())) {
-                installExe.accept(cmd, false);
-            }
-        };
-        return exe;
     }
 
     static void verifyDesktopIntegration(JPackageCommand cmd,
@@ -415,14 +452,12 @@ public class WindowsHelper {
         }
 
         private void verifySystemDesktopShortcut(boolean exists) {
-            Path dir = Path.of(queryRegistryValueCache(
-                    SYSTEM_SHELL_FOLDERS_REGKEY, "Common Desktop"));
+            Path dir = SpecialFolder.COMMON_DESKTOP.getPath();
             verifyShortcut(dir.resolve(desktopShortcutPath), exists);
         }
 
         private void verifyUserLocalDesktopShortcut(boolean exists) {
-            Path dir = Path.of(
-                    queryRegistryValueCache(USER_SHELL_FOLDERS_REGKEY, "Desktop"));
+            Path dir = SpecialFolder.USER_DESKTOP.getPath();
             verifyShortcut(dir.resolve(desktopShortcutPath), exists);
         }
 
@@ -445,19 +480,22 @@ public class WindowsHelper {
             Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath);
             verifyShortcut(shortcutPath, exists);
             if (!exists) {
-                TKit.assertDirectoryNotEmpty(shortcutPath.getParent());
+                final var parentDir = shortcutPath.getParent();
+                if (Files.isDirectory(parentDir)) {
+                    TKit.assertDirectoryNotEmpty(parentDir);
+                } else {
+                    TKit.assertPathExists(parentDir, false);
+                }
             }
         }
 
         private void verifySystemStartMenuShortcut(boolean exists) {
-            verifyStartMenuShortcut(Path.of(queryRegistryValueCache(
-                    SYSTEM_SHELL_FOLDERS_REGKEY, "Common Programs")), exists);
+            verifyStartMenuShortcut(SpecialFolder.COMMON_START_MENU_PROGRAMS.getPath(), exists);
 
         }
 
         private void verifyUserLocalStartMenuShortcut(boolean exists) {
-            verifyStartMenuShortcut(Path.of(queryRegistryValueCache(
-                    USER_SHELL_FOLDERS_REGKEY, "Programs")), exists);
+            verifyStartMenuShortcut(SpecialFolder.USER_START_MENU_PROGRAMS.getPath(), exists);
         }
 
         private void verifyFileAssociationsRegistry(Path faFile) {
@@ -523,7 +561,7 @@ public class WindowsHelper {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
-        if (status.exitCode == 1) {
+        if (status.exitCode() == 1) {
             // Should be the case of no such registry value or key
             String lookupString = "ERROR: The system was unable to find the specified registry key or value.";
             TKit.assertTextStream(lookupString)
@@ -565,16 +603,66 @@ public class WindowsHelper {
         return value;
     }
 
-    private static String queryRegistryValueCache(String keyPath,
-            String valueName) {
-        String key = String.format("[%s][%s]", keyPath, valueName);
-        String value = REGISTRY_VALUES.get(key);
-        if (value == null) {
-            value = queryRegistryValue(keyPath, valueName);
-            REGISTRY_VALUES.put(key, value);
+    // See .NET special folders
+    private enum SpecialFolderDotNet {
+        Desktop,
+        CommonDesktop,
+
+        Programs,
+        CommonPrograms;
+
+        Path getPath() {
+            final var str = Executor.of("powershell", "-NoLogo", "-NoProfile",
+                    "-NonInteractive", "-Command",
+                    String.format("[Environment]::GetFolderPath('%s')", name())
+                    ).saveFirstLineOfOutput().execute().getFirstLineOfOutput();
+
+            TKit.trace(String.format("Value of .NET special folder '%s' is [%s]", name(), str));
+
+            return Path.of(str);
+        }
+    }
+
+    private record RegValuePath(String keyPath, String valueName) {
+        RegValuePath {
+            Objects.requireNonNull(keyPath);
+            Objects.requireNonNull(valueName);
         }
 
-        return value;
+        Optional<String> findValue() {
+            return Optional.ofNullable(queryRegistryValue(keyPath, valueName));
+        }
+    }
+
+    private enum SpecialFolder {
+        COMMON_START_MENU_PROGRAMS(SYSTEM_SHELL_FOLDERS_REGKEY, "Common Programs", SpecialFolderDotNet.CommonPrograms),
+        USER_START_MENU_PROGRAMS(USER_SHELL_FOLDERS_REGKEY, "Programs", SpecialFolderDotNet.Programs),
+
+        COMMON_DESKTOP(SYSTEM_SHELL_FOLDERS_REGKEY, "Common Desktop", SpecialFolderDotNet.CommonDesktop),
+        USER_DESKTOP(USER_SHELL_FOLDERS_REGKEY, "Desktop", SpecialFolderDotNet.Desktop);
+
+        SpecialFolder(String keyPath, String valueName) {
+            reg = new RegValuePath(keyPath, valueName);
+            alt = Optional.empty();
+        }
+
+        SpecialFolder(String keyPath, String valueName, SpecialFolderDotNet alt) {
+            reg = new RegValuePath(keyPath, valueName);
+            this.alt = Optional.of(alt);
+        }
+
+        Path getPath() {
+            return CACHE.computeIfAbsent(this, k -> reg.findValue().map(Path::of).orElseGet(() -> {
+                return alt.map(SpecialFolderDotNet::getPath).orElseThrow(() -> {
+                    return new NoSuchElementException(String.format("Failed to find path to %s folder", name()));
+                });
+            }));
+        }
+
+        private final RegValuePath reg;
+        private final Optional<SpecialFolderDotNet> alt;
+
+        private static final Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
     }
 
     private static final class ShortPathUtils {
@@ -616,8 +704,6 @@ public class WindowsHelper {
 
     private static final String SYSTEM_SHELL_FOLDERS_REGKEY = "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
     private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
-
-    private static final Map<String, String> REGISTRY_VALUES = new HashMap<>();
 
     private static final int WIN_MAX_PATH = 260;
 }

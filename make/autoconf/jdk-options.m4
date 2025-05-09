@@ -516,10 +516,11 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
       OPTIONAL: true)
 
   # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
+  # GCC 13 also for array-bounds and stringop-overflow
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
@@ -551,16 +552,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   AC_SUBST(UBSAN_CFLAGS)
   AC_SUBST(UBSAN_LDFLAGS)
   AC_SUBST(UBSAN_ENABLED)
-])
-
-################################################################################
-#
-# Static build support.  When enabled will generate static
-# libraries instead of shared libraries for all JDK libs.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(static-build)
 ])
 
 ################################################################################
@@ -629,6 +620,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
       DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+
+  ################################################################################
+  #
+  # Extra jlink options to be (optionally) passed to the JDK build
+  #
+  UTIL_ARG_WITH(NAME: extra-jlink-flags, TYPE: string,
+      DEFAULT: [],
+      DESC: [extra flags to be passed to jlink during the build],
+      OPTIONAL: true)
+
+  JLINK_USER_EXTRA_FLAGS="$EXTRA_JLINK_FLAGS"
+  AC_SUBST(JLINK_USER_EXTRA_FLAGS)
 ])
 
 ################################################################################
@@ -668,15 +671,6 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
   fi
 
   AC_SUBST(EXCLUDE_TRANSLATIONS)
-])
-
-################################################################################
-#
-# Optionally disable man pages (deprecated)
-#
-AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(manpages)
 ])
 
 ################################################################################
@@ -865,8 +859,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
-
-  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])
 
 ################################################################################
@@ -971,6 +963,29 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
   fi
   AC_SUBST(MACOSX_CODESIGN_IDENTITY)
   AC_SUBST(MACOSX_CODESIGN_MODE)
+])
+
+################################################################################
+#
+# Setup a hook to invoke a script that runs for file produced by the native
+# compilation steps, after linking.
+# Parameter is the path to the script to be called.
+#
+AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
+[
+  UTIL_ARG_WITH(NAME: signing-hook, TYPE: executable,
+      OPTIONAL: true, DEFAULT: "",
+      DESC: [specify path to script used to code sign native binaries]
+  )
+
+  AC_MSG_CHECKING([for signing hook])
+  if test "x$SIGNING_HOOK" != x; then
+    UTIL_FIXUP_EXECUTABLE(SIGNING_HOOK)
+    AC_MSG_RESULT([$SIGNING_HOOK])
+  else
+    AC_MSG_RESULT([none])
+  fi
+  AC_SUBST(SIGNING_HOOK)
 ])
 
 ################################################################################

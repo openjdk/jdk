@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
      * Need RuntimePermission "accessSystemModules" to create or get jrt:/
      */
     private void checkPermission() {
-        @SuppressWarnings("removal")
+        @SuppressWarnings({ "removal", "suppression" })
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             RuntimePermission perm = new RuntimePermission("accessSystemModules");
@@ -123,7 +123,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         ClassLoader cl = newJrtFsLoader(jrtfs);
         try {
             Class<?> c = Class.forName(JrtFileSystemProvider.class.getName(), false, cl);
-            @SuppressWarnings("deprecation")
+            @SuppressWarnings({ "deprecation", "suppression" })
             Object tmp = c.newInstance();
             return ((FileSystemProvider)tmp).newFileSystem(uri, newEnv);
         } catch (ClassNotFoundException |
@@ -156,7 +156,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         }
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({ "removal", "suppression" })
     private static URLClassLoader newJrtFsLoader(Path jrtfs) {
         final URL url;
         try {
@@ -261,7 +261,6 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V
             getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         return JrtFileAttributeView.get(toJrtPath(path), type, options);

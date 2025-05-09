@@ -32,8 +32,10 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -1156,7 +1158,7 @@ public final class Currency implements Serializable {
                                 && !isPastCutoverDate(prop.date)) {
                             prop = null;
                         }
-                    } catch (ParseException ex) {
+                    } catch (DateTimeParseException ex) {
                         prop = null;
                     }
                 }
@@ -1196,15 +1198,12 @@ public final class Currency implements Serializable {
                     || prop.fraction != fractionDigit);
         }
 
-        private static boolean isPastCutoverDate(String s)
-                throws ParseException {
-            SimpleDateFormat format = new SimpleDateFormat(
-                    "yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
-            format.setTimeZone(TimeZone.getTimeZone("UTC"));
-            format.setLenient(false);
-            long time = format.parse(s.trim()).getTime();
-            return System.currentTimeMillis() > time;
-
+        // cutOver adheres to ISO8601 Local Date Time format (excluding nano secs)
+        private static boolean isPastCutoverDate(String cutOver) {
+            return System.currentTimeMillis() >
+                    LocalDateTime.parse(cutOver, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            .toInstant(ZoneOffset.UTC)
+                            .toEpochMilli();
         }
 
         private static void info(String message, Throwable t) {

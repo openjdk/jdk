@@ -25,10 +25,7 @@
 
 void ZNUMA::pd_initialize() {
   _enabled = false;
-}
-
-uint32_t ZNUMA::count() {
-  return 1;
+  _count = 1;
 }
 
 uint32_t ZNUMA::id() {

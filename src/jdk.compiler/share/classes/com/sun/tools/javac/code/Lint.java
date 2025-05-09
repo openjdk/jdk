@@ -109,6 +109,7 @@ public class Lint {
 
     private final Context context;
     private final Options options;
+    private final Log log;
 
     // These are initialized lazily to avoid dependency loops
     private Symtab syms;
@@ -125,6 +126,7 @@ public class Lint {
         this.context = context;
         context.put(lintKey, this);
         options = Options.instance(context);
+        log = Log.instance(context);
     }
 
     // Instantiate a non-root ("symbol scoped") instance
@@ -132,6 +134,7 @@ public class Lint {
         other.initializeRootIfNeeded();
         this.context = other.context;
         this.options = other.options;
+        this.log = other.log;
         this.syms = other.syms;
         this.names = other.names;
         this.values = other.values.clone();
@@ -434,21 +437,19 @@ public class Lint {
     /**
      * Helper method. Log a lint warning if its lint category is enabled.
      *
-     * @param log warning destination
      * @param warning key for the localized warning message
      */
-    public void logIfEnabled(Log log, LintWarning warning) {
-        logIfEnabled(log, null, warning);
+    public void logIfEnabled(LintWarning warning) {
+        logIfEnabled(null, warning);
     }
 
     /**
      * Helper method. Log a lint warning if its lint category is enabled.
      *
-     * @param log warning destination
      * @param pos source position at which to report the warning
      * @param warning key for the localized warning message
      */
-    public void logIfEnabled(Log log, DiagnosticPosition pos, LintWarning warning) {
+    public void logIfEnabled(DiagnosticPosition pos, LintWarning warning) {
         if (isEnabled(warning.getLintCategory())) {
             log.warning(pos, warning);
         }

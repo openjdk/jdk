@@ -120,7 +120,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   kit->final_sync(ideal);
 }
 
-bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() const {
+bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
   return ReduceInitialCardMarks;
 }
 

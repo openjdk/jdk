@@ -256,7 +256,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
 
@@ -992,10 +992,6 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
 bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
-
-  if (GCLocker::check_active_before_gc()) {
-    return false;
-  }
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 

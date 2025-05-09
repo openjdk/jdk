@@ -85,7 +85,7 @@
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
-  do_arch_blob(compiler, 20000 LP64_ONLY(+60000) WINDOWS_ONLY(+2000))   \
+  do_arch_blob(compiler, 20000 LP64_ONLY(+64000) WINDOWS_ONLY(+2000))   \
   do_stub(compiler, vector_float_sign_mask)                             \
   do_arch_entry(x86, compiler, vector_float_sign_mask,                  \
                 vector_float_sign_mask, vector_float_sign_mask)         \

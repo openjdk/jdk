@@ -980,6 +980,7 @@ void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
 
 void CodeBuffer::verify_section_allocation() {
   address tstart = _total_start;
+  if (tstart == nullptr) return;  // ignore not fully initialized buffer
   if (tstart == badAddress)  return;  // smashed by set_blob(nullptr)
   address tend   = tstart + _total_size;
   if (_blob != nullptr) {

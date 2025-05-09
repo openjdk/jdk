@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 #
 
 ###
-### This file is just a very small wrapper needed to run the real make/Init.gmk.
-### It also performs some sanity checks on make.
+### This file is just a very small wrapper which will include make/PreInit.gmk,
+### where the real work is done. This wrapper also performs some sanity checks
+### on make that must be done before we can include another file.
 ###
 
 # The shell code below will be executed on /usr/bin/make on Solaris, but not in GNU Make.
@@ -58,7 +59,7 @@ ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))),)
 else
   makefile_path := $(lastword $(MAKEFILE_LIST))
 endif
-topdir := $(strip $(patsubst %/, %, $(dir $(makefile_path))))
+TOPDIR := $(strip $(patsubst %/, %, $(dir $(makefile_path))))
 
-# ... and then we can include the real makefile
-include $(topdir)/make/Init.gmk
+# ... and then we can include the real makefile to bootstrap the build
+include $(TOPDIR)/make/PreInit.gmk

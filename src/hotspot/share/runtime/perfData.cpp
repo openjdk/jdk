@@ -34,6 +34,7 @@
 #include "runtime/os.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 PerfDataList*   PerfDataManager::_all = nullptr;
@@ -257,15 +258,13 @@ void PerfDataManager::destroy() {
     // destroy already called, or initialization never happened
     return;
 
-  // Clear the flag before we free the PerfData counters. Thus begins
-  // the race between this thread and another thread that has just
-  // queried PerfDataManager::has_PerfData() and gotten back 'true'.
-  // The hope is that the other thread will finish its PerfData
-  // manipulation before we free the memory. The two alternatives are
-  // 1) leak the PerfData memory or 2) do some form of synchronized
-  // access or check before every PerfData operation.
-  _has_PerfData = false;
-  os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
+  // About to delete the counters than might still be accessed by other threads.
+  // The shutdown is performed in two stages: a) clear the flag to notify future
+  // counter users that we are at shutdown; b) sync up with current users, waiting
+  // for them to finish with counters.
+  //
+  Atomic::store(&_has_PerfData, false);
+  GlobalCounter::write_synchronize();
 
   log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
                                 _all->length(), _sampled == nullptr ? 0 : _sampled->length(),
@@ -292,7 +291,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
   // Default sizes determined using -Xlog:perf+datacreation=debug
   if (_all == nullptr) {
     _all = new PerfDataList(191);
-    _has_PerfData = true;
+    Atomic::release_store(&_has_PerfData, true);
   }
 
   assert(!_all->contains(p->name()), "duplicate name added: %s", p->name());

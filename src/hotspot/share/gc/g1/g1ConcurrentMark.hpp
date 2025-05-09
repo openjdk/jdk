@@ -562,6 +562,8 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+  // Approximate number of incoming references found during marking.
+  size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
 
   // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(G1HeapRegion* r);
@@ -952,6 +954,8 @@ public:
 
   inline void update_liveness(oop const obj, size_t const obj_size);
 
+  inline void inc_incoming_refs(oop const obj);
+
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);
   // Evict the whole statistics cache into the global statistics. Returns the
@@ -973,14 +977,14 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  size_t _young_cardset_bytes_per_region;
-
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
+
+  void do_cset_groups();
 
 public:
   // The header and footer are printed in the constructor and

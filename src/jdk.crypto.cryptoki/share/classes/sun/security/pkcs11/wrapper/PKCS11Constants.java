@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -311,8 +311,6 @@ public interface PKCS11Constants {
     // pseudo key type ANY (for template manager)
     public static final long  PCKK_ANY                 = 0x7FFFFF22L;
 
-    public static final long  PCKK_HMAC                = 0x7FFFFF23L;
-    public static final long  PCKK_SSLMAC              = 0x7FFFFF24L;
     public static final long  PCKK_TLSPREMASTER        = 0x7FFFFF25L;
     public static final long  PCKK_TLSRSAPREMASTER     = 0x7FFFFF26L;
     public static final long  PCKK_TLSMASTER           = 0x7FFFFF27L;
@@ -1156,11 +1154,11 @@ public interface PKCS11Constants {
                                                               = 0x00000001L;
     public static final long  CK_SP800_108_DKM_LENGTH_SUM_OF_SEGMENTS
                                                               = 0x00000002L;
+    */
 
     public static final long  CKF_HKDF_SALT_NULL   = 0x00000001L;
     public static final long  CKF_HKDF_SALT_DATA   = 0x00000002L;
     public static final long  CKF_HKDF_SALT_KEY    = 0x00000004L;
-    */
 
     // private NSS attribute (for DSA and DH private keys)
     public static final long  CKA_NETSCAPE_DB         = 0xD5A0DB00L;

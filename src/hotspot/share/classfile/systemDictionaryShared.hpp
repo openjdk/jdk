@@ -28,7 +28,6 @@
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
-#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/packageEntry.hpp"
@@ -113,11 +112,8 @@ class ConstantPoolCache;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
-class LambdaProxyClassDictionary;
 class RunTimeClassInfo;
 class RunTimeSharedDictionary;
-class DumpTimeLambdaProxyClassDictionary;
-class LambdaProxyClassKey;
 
 class SharedClassLoadingMark {
  private:
@@ -137,32 +133,19 @@ class SharedClassLoadingMark {
 };
 
 class SystemDictionaryShared: public SystemDictionary {
-  friend class CleanupDumpTimeLambdaProxyClassTable;
+  friend class LambdaProxyClassDictionary;
 
   struct ArchiveInfo {
     RunTimeSharedDictionary _builtin_dictionary;
     RunTimeSharedDictionary _unregistered_dictionary;
-    LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
 
-    const RunTimeLambdaProxyClassInfo* lookup_lambda_proxy_class(RunTimeLambdaProxyClassKey* key) {
-      return _lambda_proxy_class_dictionary.lookup(key, key->hash(), 0);
-    }
-
-    void print_on(const char* prefix, outputStream* st);
-    void print_table_statistics(const char* prefix, outputStream* st);
-  };
-
-public:
-  enum : char {
-    FROM_FIELD_IS_PROTECTED = 1 << 0,
-    FROM_IS_ARRAY           = 1 << 1,
-    FROM_IS_OBJECT          = 1 << 2
+    void print_on(const char* prefix, outputStream* st, bool is_static_archive);
+    void print_table_statistics(const char* prefix, outputStream* st, bool is_static_archive);
   };
 
 private:
 
   static DumpTimeSharedClassTable* _dumptime_table;
-  static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
 
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
@@ -189,19 +172,16 @@ private:
 
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
-  static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
-  static void cleanup_lambda_proxy_class_dictionary();
-  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
-  static InstanceKlass* retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) NOT_CDS_RETURN_(nullptr);
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
+  static void copy_verification_constraints_from_preimage(InstanceKlass* klass);
+  static void copy_linking_constraints_from_preimage(InstanceKlass* klass);
+
 public:
-  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);
   static void set_has_archived_enum_objs(InstanceKlass* ik);
@@ -229,6 +209,7 @@ public:
 
   static void initialize() NOT_CDS_RETURN;
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static void init_dumptime_info_from_preimage(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {
@@ -260,24 +241,6 @@ public:
   static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);
   static void set_class_has_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN;
   static bool has_class_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN_(false);
-  static void add_lambda_proxy_class(InstanceKlass* caller_ik,
-                                     InstanceKlass* lambda_ik,
-                                     Symbol* invoked_name,
-                                     Symbol* invoked_type,
-                                     Symbol* method_type,
-                                     Method* member_method,
-                                     Symbol* instantiated_method_type, TRAPS) NOT_CDS_RETURN;
-  static void add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
-                                                             InstanceKlass* proxy_klass) NOT_CDS_RETURN;
-  static InstanceKlass* get_shared_lambda_proxy_class(InstanceKlass* caller_ik,
-                                                      Symbol* invoked_name,
-                                                      Symbol* invoked_type,
-                                                      Symbol* method_type,
-                                                      Method* member_method,
-                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(nullptr);
-  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(nullptr);
-  static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(nullptr);
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
@@ -297,18 +260,16 @@ public:
   static void set_excluded_locked(InstanceKlass* k);
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
-  static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
-  static void adjust_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);
+  static const char* loader_type_for_shared_class(Klass* k);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
-  static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
   DEBUG_ONLY(static bool class_loading_may_happen() {return _class_loading_may_happen;})
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,6 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   JNIEnv *env;
-  jsize nVMs;
   jint res;
   jclass clazz;
   jmethodID mid;
@@ -165,12 +164,6 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   LOG("vthread events enabled\n");
 
   // call VThreadEventTest.agentStarted to notify test that agent has started
-
-  res = JNI_GetCreatedJavaVMs(&vm, 1, &nVMs);
-  if (res != JNI_OK) {
-      LOG("JNI_GetCreatedJavaVMs failed: %d\n", res);
-      return JNI_ERR;
-  }
 
   res = vm->GetEnv((void **) &env, JNI_VERSION_21);
   if (res != JNI_OK) {
