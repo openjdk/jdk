@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public enum SourceVersion {
      *      preview, simple source files and instance main in fourth
      *      preview, flexible constructor bodies in third preview)
      *  25: module import declarations, compact source files and
-     *      instance main methods,
+     *      instance main methods, and flexible constructor bodies
      */
 
     /**
@@ -451,8 +451,9 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 25.
      *
-     * Additions in this release include module import declarations
-     * and compact source files and instance main methods.
+     * Additions in this release include module import declarations,
+     * compact source files and instance main methods, and flexible
+     * constructor bodies.
      *
      * @since 25
      *
@@ -463,6 +464,8 @@ public enum SourceVersion {
      * JEP 511: Module Import Declarations</a>
      * @see <a href="https://openjdk.org/jeps/512">
      * JEP 512: Compact Source Files and Instance Main Methods</a>
+     * @see <a href="https://openjdk.org/jeps/513">
+     * JEP 513: Flexible Constructor Bodies</a>
      */
     RELEASE_25,
     ; // Reduce code churn when appending new constants

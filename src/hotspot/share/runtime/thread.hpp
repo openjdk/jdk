@@ -113,10 +113,8 @@ class Thread: public ThreadShadow {
   friend class JavaThread;
  private:
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   // Current thread is maintained as a thread-local variable
   static THREAD_LOCAL Thread* _thr_current;
-#endif
 
   // On AArch64, the high order 32 bits are used by a "patching epoch" number
   // which reflects if this thread has executed the required fences, after
@@ -660,14 +658,7 @@ inline Thread* Thread::current() {
 }
 
 inline Thread* Thread::current_or_null() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   return _thr_current;
-#else
-  if (ThreadLocalStorage::is_initialized()) {
-    return ThreadLocalStorage::thread();
-  }
-  return nullptr;
-#endif
 }
 
 inline Thread* Thread::current_or_null_safe() {
