@@ -286,8 +286,6 @@ final class MemoryClassLoader extends ClassLoader {
             return null;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
         }
     }
 
