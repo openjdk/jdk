@@ -678,7 +678,7 @@ public class VisibleMemberTable {
             return false;
         }
 
-        // Multiple-Inheritance: No Contention. In Java’s method resolution,
+        // Multiple-Inheritance: No Contention. In Java's method resolution,
         // any override of a signature (whether by a subclass or by a subinterface,
         // including when it is final from superclasses) always takes precedence
         // over the original interface definition. All interface methods have low resolution priority.
