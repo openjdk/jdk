@@ -262,7 +262,7 @@ define create_overview_file
   $$($1_OVERVIEW): $$($1_OVERVIEW_VARDEPS_FILE)
 	$$(call LogInfo, Creating overview.html for $1)
 	$$(call MakeDir, $$(@D))
-	$$(ECHO) -n '$$($1_OVERVIEW_TEXT)' > $$@
+	$$(PRINTF) "%s" '$$($1_OVERVIEW_TEXT)' > $$@
 endef
 
 ################################################################################
