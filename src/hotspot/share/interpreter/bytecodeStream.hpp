@@ -137,9 +137,6 @@ class RawBytecodeStream: public BaseBytecodeStream {
              && code != Bytecodes::_lookupswitch, "can't be special bytecode");
       _is_wide = false;
       _next_bci += len;
-      if (_next_bci <= _bci) { // Check for integer overflow
-        code = Bytecodes::_illegal;
-      }
       _raw_code = code;
       return code;
     } else {

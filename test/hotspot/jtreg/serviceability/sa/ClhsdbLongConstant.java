@@ -26,6 +26,7 @@
  * @bug 8190198
  * @summary Test clhsdb longConstant command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbLongConstant
  */

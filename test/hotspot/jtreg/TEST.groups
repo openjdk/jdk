@@ -171,6 +171,8 @@ tier1_compiler_1 = \
   -compiler/c2/Test6912517.java
 
 tier1_compiler_2 = \
+  compiler/ccp/ \
+  compiler/ciTypeFlow/ \
   compiler/classUnloading/ \
   compiler/codecache/ \
   compiler/codegen/ \
@@ -181,11 +183,11 @@ tier1_compiler_2 = \
   compiler/exceptions/ \
   compiler/floatingpoint/ \
   compiler/gcbarriers/ \
+  compiler/igvn/ \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
   compiler/jvmci/ \
-  compiler/igvn/ \
   -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   -compiler/codecache/stress \
   -compiler/codegen/aes \
@@ -199,9 +201,12 @@ tier1_compiler_3 = \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
   compiler/osr/ \
+  compiler/predicates/ \
   compiler/profiling \
   compiler/regalloc/ \
   compiler/runtime/ \
+  compiler/sharedstubs/ \
+  compiler/splitif/ \
   compiler/startup/ \
   compiler/types/ \
   compiler/uncommontrap/ \
@@ -410,6 +415,7 @@ hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -511,6 +517,7 @@ hotspot_aot_classlinking = \
   runtime/cds \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
@@ -589,6 +596,7 @@ hotspot_metaspace = \
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
+  runtime/cds/appcds/aotCode \
   runtime/cds/appcds/HelloTest.java
 
 tier1_runtime_appcds_exclude = \

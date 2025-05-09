@@ -169,6 +169,17 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 	globally through their user interface). Note that this property is
 	checked only once at startup.</P>
 </UL>
+<a id="FileHandler"></a>
+<H2>File URL stream protocol handler properties</H2>
+<P>The following properties are used to configure the handler for URLs with the {@code file://} scheme:</P>
+<UL>
+	<LI><P><B>{@systemProperty jdk.net.file.ftpfallback}</B> (default: &lt;false&gt;)<BR>
+		The {@code file://} handler by default rejects any non-local file URL (as defined by RFC 8089)
+		as invalid. Setting this property to <B>true</B> enables a legacy feature where
+		the handler instead opens an FTP connection for such non-local URLs.</P>
+		<P>Any modern code should use explicit {@code ftp://} URLs instead and not rely on
+			enabling this legacy FTP fallback feature.</P>
+</UL>
 <a id="MiscHTTP"></a>
 <H2>Misc HTTP URL stream protocol handler properties</H2>
 <UL>
