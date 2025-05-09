@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 
-#include <cstddef>
-
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+
+#include <cstddef>
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
 //       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:

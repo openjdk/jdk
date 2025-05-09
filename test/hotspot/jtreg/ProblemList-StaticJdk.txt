@@ -1,0 +1,9 @@
+# Dynamically link with JDK/VM native libraries
+gtest/GTestWrapper.java                                 8356201 generic-all
+gtest/LargePageGtests.java#use-large-pages              8356201 generic-all
+gtest/LargePageGtests.java#use-large-pages-1G           8356201 generic-all
+gtest/LockStackGtests.java                              8356201 generic-all
+gtest/MetaspaceGtests.java#no-ccs                       8356201 generic-all
+gtest/NMTGtests.java#nmt-detail                         8356201 generic-all
+gtest/NMTGtests.java#nmt-off                            8356201 generic-all
+gtest/NMTGtests.java#nmt-summary                        8356201 generic-all

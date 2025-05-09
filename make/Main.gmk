@@ -875,6 +875,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
 ))
 
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \

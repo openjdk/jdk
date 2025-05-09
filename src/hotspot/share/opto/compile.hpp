@@ -106,7 +106,6 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
-  LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify
 };
@@ -674,13 +673,13 @@ public:
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_graph(graph_name);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -1300,21 +1299,6 @@ public:
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
-#ifdef IA32
- private:
-  bool _select_24_bit_instr;   // We selected an instruction with a 24-bit result
-  bool _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-
-  // Remember if this compilation changes hardware mode to 24-bit precision.
-  void set_24_bit_selection_and_mode(bool selection, bool mode) {
-    _select_24_bit_instr = selection;
-    _in_24_bit_fp_mode   = mode;
-  }
-
- public:
-  bool select_24_bit_instr() const { return _select_24_bit_instr; }
-  bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-#endif // IA32
 #ifdef ASSERT
   VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }

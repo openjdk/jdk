@@ -125,7 +125,7 @@ const size_t minimumSymbolTableSize = 1024;
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
   product(bool, UseCompressedClassPointers, true,                           \
-          "Use 32-bit class pointers in 64-bit VM. "                        \
+          "(Deprecated) Use 32-bit class pointers in 64-bit VM. "           \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
   product(bool, UseCompactObjectHeaders, false, EXPERIMENTAL,               \
@@ -325,6 +325,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for the vectorized version of ChaCha20")          \
                                                                             \
+  product(bool, UseKyberIntrinsics, false, DIAGNOSTIC,                      \
+          "Use intrinsics for the vectorized version of Kyber")             \
   product(bool, UseDilithiumIntrinsics, false, DIAGNOSTIC,                  \
           "Use intrinsics for the vectorized version of Dilithium")         \
                                                                             \
@@ -699,6 +701,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, PrintClassLoaderDataGraphAtExit, false,                     \
           "Print the class loader data graph at exit")                      \
+                                                                            \
+  product(bool, PrintVMInfoAtExit, false, DIAGNOSTIC,                       \
+          "Executes the VM.info diagnostic command at exit")                \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
@@ -1164,9 +1169,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyJNIFields, trueInDebug,                               \
           "Verify jfieldIDs for instance fields")                           \
-                                                                            \
-  develop(bool, VerifyFPU, false,                                           \
-          "Verify FPU state (check for NaN's, etc.)")                       \
                                                                             \
   develop(bool, VerifyActivationFrameSize, false,                           \
           "Verify that activation frame didn't become smaller than its "    \
