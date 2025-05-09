@@ -119,11 +119,11 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   Node* init_n = cl->init_trip();
   Node* limit_n = cl->limit();
   if (init_n != nullptr && limit_n != nullptr) {
-    // Use longs to avoid integer overflow.
     jlong stride_con = cl->stride_con();
     const TypeInteger* init_type = phase->_igvn.type(init_n)->is_integer(loop_bt);
     const TypeInteger* limit_type = phase->_igvn.type(limit_n)->is_integer(loop_bt);
 
+    // Use unsigned longs to avoid overflow
     jlong init_con = (stride_con > 0) ? init_type->lo_as_long() : init_type->hi_as_long();
     julong uinit_con = init_con;
     jlong limit_con = (stride_con > 0) ? limit_type->hi_as_long() : limit_type->lo_as_long();
@@ -136,13 +136,18 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
     } else if (stride_con < 0 && limit_con < init_con) {
       udiff = uinit_con - ulimit_con;
     }
+    // The loop runs for one more iteration if the limit is (stride > 0 in this example):
+    // init + k * stride + small_value, 0 < small_value < stride
     julong utrip_count = udiff / ABS(stride_con);
     if (utrip_count * ABS(stride_con) != udiff) {
+      // Guaranteed to not overflow because it can only happen for stride > 1 in which case, utrip_count can't be
+      // max_juint
       utrip_count++;
     }
 
 #ifdef ASSERT
     if (loop_bt == T_INT) {
+      // Use longs to avoid integer overflow.
       jlong init_con = (stride_con > 0) ? init_type->is_int()->_lo : init_type->is_int()->_hi;
       jlong limit_con = (stride_con > 0) ? limit_type->is_int()->_hi : limit_type->is_int()->_lo;
       int stride_m = stride_con - (stride_con > 0 ? 1 : -1);

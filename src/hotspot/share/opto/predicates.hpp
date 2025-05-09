@@ -73,6 +73,14 @@ class TemplateAssertionPredicate;
  *                           counted loop to avoid these overflow problems.
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
+ *     - Short Short:        This predicate is created when a long counted loop is transformed into an int counted
+ *       Running Long        loop. In the general, that transformation requires an outer loop to guarantee that the new
+ *       Loop                loop nest iterates over the entire range of the loop before transformation. However, if the
+ *       Predicate           loop is speculated to run for a small enough number of iterations, the outer loop is not
+ *                           needed. This predicate is added to catch mis-speculation in this case. It also applies to
+ *                           int counted loops with long range checks for which a loop nest also needs to be created
+ *                           in the general case (so the transformation of long range checks to int range checks is
+ *                           legal).
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
  *                        Hoisted Check Predicate or the main-loop entry guard) but is required in order to fold away a
  *                        dead sub loop in which some data could be proven to be dead (by the type system) and replaced
@@ -954,7 +962,7 @@ class Predicates : public StackObj {
   const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
-  const PredicateBlock _short_running_loop_predicate_block;
+  const PredicateBlock _short_running_long_loop_predicate_block;
   Node* const _entry;
 
  public:
@@ -967,9 +975,9 @@ class Predicates : public StackObj {
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
-        _short_running_loop_predicate_block(_loop_predicate_block.entry(),
+        _short_running_long_loop_predicate_block(_loop_predicate_block.entry(),
                                             Deoptimization::Reason_short_running_long_loop),
-        _entry(_short_running_loop_predicate_block.entry()) {}
+        _entry(_short_running_long_loop_predicate_block.entry()) {}
   NONCOPYABLE(Predicates);
 
   // Returns the control input the first predicate if there are any predicates. If there are no predicates, the same
@@ -994,8 +1002,8 @@ class Predicates : public StackObj {
     return &_loop_limit_check_predicate_block;
   }
 
-  const PredicateBlock* short_running_loop_predicate_block() const {
-    return &_short_running_loop_predicate_block;
+  const PredicateBlock* short_running_long_loop_predicate_block() const {
+    return &_short_running_long_loop_predicate_block;
   }
 
   bool has_any() const {

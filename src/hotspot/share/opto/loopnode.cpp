@@ -1091,7 +1091,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (safepoint != nullptr) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
-    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
+    if (ShortRunningLongLoop) {
+      add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
+    }
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
       if (UseProfiledLoopPredicate) {
@@ -1174,8 +1176,8 @@ public:
   }
 };
 
-// If bounds are known is the loop doesn't need an outer loop or profile data indicates it runs for less than
-// ShortLoopIter, don't create the outer loop
+// If bounds are known, or profile data indicates it runs for a small enough number of iterations, so the loop doesn't
+// need an outer loop, don't create the outer loop
 bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit) {
   if (!ShortRunningLongLoop) {
     return false;
@@ -1215,14 +1217,15 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   PhiNode* phi = head->phi()->as_Phi();
   const Type* new_phi_t = TypeInt::INT;
   if (profile_short_running_loop) {
-    // Add a short_limit predicate. It's the last predicate when coming from the loop because a cast that's control
-    // dependent on the short_limit predicate is added to narrow the limit and future predicates may be dependent on the
-    // new limit (so have to be between the loop and short_limit predicate). The current limit could, itself, be
-    // dependent on an existing predicate. Clone parse predicates below existing predicates to get proper ordering of
-    // predicates when walking from the loop up: future predicates, short_limit predicate, existing predicates.
+    // Add a Short Running Long Loop Predicate. It's the first predicate in the predicate chain before entering a loop
+    // because a cast that's control dependent on the Short Running Long Loop Predicate is added to narrow the limit and
+    // future predicates may be dependent on the new limit (so have to be between the loop and Short Running Long Loop
+    // Predicate). The current limit could, itself, be dependent on an existing predicate. Clone parse and template
+    // assertion predicates below existing predicates to get proper ordering of predicates when walking from the loop
+    // up: future predicates, Short Running Long Loop Predicate, existing predicates.
     const Predicates predicates_before_cloning(entry_control);
-    const PredicateBlock* short_running_loop_predicate_block = predicates_before_cloning.short_running_loop_predicate_block();
-    if (!short_running_loop_predicate_block->has_parse_predicate()) { // already trapped
+    const PredicateBlock* short_running_long_loop_predicate_block = predicates_before_cloning.short_running_long_loop_predicate_block();
+    if (!short_running_long_loop_predicate_block->has_parse_predicate()) { // already trapped
       return false;
     }
     PredicateIterator predicate_iterator(entry_control);
@@ -1235,7 +1238,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     const Predicates predicates_after_cloning(entry_control);
 
     ParsePredicateSuccessProj* short_running_loop_predicate_proj = predicates_after_cloning.
-        short_running_loop_predicate_block()->
+        short_running_long_loop_predicate_block()->
         parse_predicate_success_proj();
     assert(short_running_loop_predicate_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
 
@@ -4517,7 +4520,7 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (predicates.short_running_loop_predicate_block()->is_non_empty()) {
+  if (predicates.short_running_long_loop_predicate_block()->is_non_empty()) {
     tty->print(" short_running");
   }
   if (UseLoopPredicate) {
