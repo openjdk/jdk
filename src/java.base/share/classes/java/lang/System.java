@@ -133,7 +133,7 @@ public final class System {
      * {@snippet lang=java :
      *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
      * }
-     * Or with a {@link java.util.Scanner Scanner}:
+     * Or using a {@link java.util.Scanner Scanner}:
      * {@snippet lang=java :
      *     new Scanner(System.in, System.getProperty("stdin.encoding"));
      * }
