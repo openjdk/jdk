@@ -101,19 +101,20 @@ public class MultiScreenTest {
             if (gc.length > 0) {
                 for (int i = 0; i < gc.length && i < 10; i++) {
                     JFrame f = new JFrame(gc[i]); //test JFrame( gc )
-                    GCCanvas c = new GCCanvas(gc[i]);//test canvas( gc )
-                    Rectangle gcBounds = gc[i].getBounds(); //test getBounds()
+                    GCCanvas c = new GCCanvas(gc[i]);// test canvas( gc )
+                    Rectangle gcBounds = gc[i].getBounds(); // test getBounds()
                     int xoffs = gcBounds.x;
                     int yoffs = gcBounds.y;
 
                     f.getContentPane().add(c);
                     f.setTitle("Screen# " + Integer.toString(j) + ", GC#" + Integer.toString(i));
                     f.setSize(300, 200);
-                    f.setLocation(400 + xoffs, (i * 150) + yoffs);//test displaying in right location
+                    f.setLocation(400 + xoffs, (i * 150) + yoffs);// test
+                    // displaying in right location
                     list.add(f);
 
                     Frame ditherfs = new Frame("DitherTest GC#" + Integer.toString(i), gc[i]);
-                    ditherfs.setLayout(new BorderLayout()); //showDitherTest
+                    ditherfs.setLayout(new BorderLayout()); // showDitherTest
                     DitherTest ditherTest = new DitherTest(gc[i]);
                     ditherfs.add("Center", ditherTest);
                     ditherfs.setBounds(300, 200, 300, 200);
@@ -141,6 +142,7 @@ class GCCanvas extends Canvas {
         bounds = gc.getBounds();
     }
 
+    @Override
     public void paint( Graphics _g ) {
 
         Graphics2D g = (Graphics2D) _g;
@@ -173,7 +175,7 @@ class GCCanvas extends Canvas {
         g.setColor(Color.cyan);
         g.fillArc(150, 30, 30, 30, 0, 200);
     }
-
+@Override
     public Dimension getPreferredSize(){
          return new Dimension(300, 200);
     }
@@ -194,6 +196,7 @@ class DitherCanvas extends Canvas {
         return mGC;
     }
 
+    @Override
     public void paint(Graphics g) {
         int w = getSize().width;
         int h = getSize().height;
@@ -209,14 +212,17 @@ class DitherCanvas extends Canvas {
         }
     }
 
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
 
+    @Override
     public Dimension getMinimumSize() {
         return new Dimension(20, 20);
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return new Dimension(200, 200);
     }
@@ -371,6 +377,7 @@ class DitherTest extends Panel implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         canvas.setImage(null);  // Wipe previous image
         Image img = calculateImage();
@@ -477,6 +484,7 @@ class DitherControls extends Panel implements ActionListener {
         return choice.getSelectedIndex();
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == button) {
             dt.start();
