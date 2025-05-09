@@ -1824,6 +1824,17 @@ public class FloatingDecimal{
         return buf;
     }
 
+    /**
+     * The input must match the {@link Double#valueOf(String) rules described here},
+     * about leading and trailing whitespaces, and the grammar.
+     *
+     * @param in the non-null input
+     * @param ix one of the {@code BINARY_<S>_IX} constants, where {@code <S>}
+     *          is one of 16, 32, 64
+     * @return an appropriate binary converter
+     * @throws NullPointerException if the input is null
+     * @throws NumberFormatException if the input is malformed
+     */
     /* ix is one of the BINARY_<S>_IX constants, where <S> = 16, 32, 64 */
     static ASCIIToBinaryConverter readJavaFormatString(String in, int ix) {
         /*
