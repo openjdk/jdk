@@ -1829,7 +1829,7 @@ public:
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 
-  bool short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit);
+  bool short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, uint iters_limit);
 
   ConINode* intcon(jint i);
 
