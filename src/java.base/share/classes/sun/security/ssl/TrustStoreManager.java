@@ -112,7 +112,7 @@ final class TrustStoreManager {
                 SSLLogger.fine(
                     "trustStore is: " + storeName + "\n" +
                     "trustStore type is: " + storeType + "\n" +
-                    "trustStore provider is: " + ((storeProvider == null || storeProvider.isEmpty()) ? "unspecified" : storeProvider) + "\n" +
+                    "trustStore provider is: " + (storeProvider.isEmpty() ? "unspecified" : storeProvider) + "\n" +
                     "the last modified time is: " + (new Date(lastModified)));
             }
         }
