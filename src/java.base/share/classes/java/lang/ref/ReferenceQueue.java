@@ -27,7 +27,6 @@ package java.lang.ref;
 
 import java.util.function.Consumer;
 import jdk.internal.misc.VM;
-import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationSupport;
 
 /**
@@ -160,13 +159,13 @@ public class ReferenceQueue<T> {
 
         // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier that is polling the same reference queue.
-        boolean pinned = Thread.currentThread().isVirtual() && ContinuationSupport.pinIfSupported();
+        ContinuationSupport.pinIfSupported();
         try {
             synchronized (lock) {
                 return poll0();
             }
         } finally {
-            if (pinned) Continuation.unpin();
+            ContinuationSupport.unpinIfSupported();
         }
     }
 

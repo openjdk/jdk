@@ -95,11 +95,11 @@ public abstract class ThreadContainer extends StackableScope {
     public final void add(Thread thread) {
         // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier is removing a virtual thread from the container
-        boolean pinned = ContinuationSupport.pinIfSupported();
+        ContinuationSupport.pinIfSupported();
         try {
             onStart(thread);
         } finally {
-            if (pinned) Continuation.unpin();
+            ContinuationSupport.unpinIfSupported();
         }
     }
 
@@ -111,11 +111,11 @@ public abstract class ThreadContainer extends StackableScope {
     public final void remove(Thread thread) {
         // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier is removing a virtual thread from the container
-        boolean pinned = ContinuationSupport.pinIfSupported();
+        ContinuationSupport.pinIfSupported();
         try {
             onExit(thread);
         } finally {
-            if (pinned) Continuation.unpin();
+            ContinuationSupport.unpinIfSupported();
         }
     }
 

@@ -25,7 +25,6 @@
 
 package sun.nio.fs;
 
-import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationSupport;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -106,7 +105,7 @@ class WindowsSecurity {
         final boolean needToRevert = elevated;
 
         // prevent yielding with privileges
-        boolean pinned = ContinuationSupport.pinIfSupported();
+        ContinuationSupport.pinIfSupported();
         return () -> {
             try {
                 if (token != 0L) {
@@ -124,7 +123,7 @@ class WindowsSecurity {
                 }
             } finally {
                 LocalFree(pLuid);
-                if (pinned) Continuation.unpin();
+                ContinuationSupport.unpinIfSupported();
             }
         };
     }

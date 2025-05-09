@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,19 @@ public class ContinuationSupport {
 
     /**
      * Pins the current continuation if the VM has continuations support.
-     * @return true if pinned or there is no current continuation
      */
-    public static boolean pinIfSupported() {
+    public static void pinIfSupported() {
         if (ContinuationSupport.isSupported()) {
             Continuation.pin();
-            return true;
-        } else {
-            return false;
+        }
+    }
+
+    /**
+     * Unpins the current continuation if the VM has continuations support.
+     */
+    public static void unpinIfSupported() {
+        if (ContinuationSupport.isSupported()) {
+            Continuation.unpin();
         }
     }
 
