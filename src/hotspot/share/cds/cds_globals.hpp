@@ -99,8 +99,9 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
-  product(bool, PrintCDSLogsAsAOTLogs, true, DIAGNOSTIC,                    \
-          "Print [cds] logs as [aot] logs when AOT cache is used")          \
+  product(bool, PrintAOTLogsAsCDSLogs, false, DIAGNOSTIC,                   \
+          "Print some [aot] logs as [cds] logs when AOT cache is not "      \
+          "specified in command line")                                      \
                                                                             \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \

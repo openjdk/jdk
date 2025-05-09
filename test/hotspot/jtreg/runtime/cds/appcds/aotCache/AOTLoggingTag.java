@@ -85,7 +85,7 @@ public class AOTLoggingTag {
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("-Xlog:aot+heap should alias to -Xlog:cds+heap");
+        printTestCase("All old -Xlog:cds+heap logs have been changed to -Xlog:aot+heap should alias to -Xlog:cds+heap");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot+heap",
@@ -93,16 +93,6 @@ public class AOTLoggingTag {
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldNotContain("No tag set matches selection: aot+heap");
         out.shouldContain("[info][aot,heap] resolve subgraph java.lang.Integer$IntegerCache");
-        out.shouldHaveExitValue(0);
-
-        //----------------------------------------------------------------------
-        printTestCase("When running with AOT cache, -Xlog:cds should be printed using [aot] decoration");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:cds",
-            "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("[info][aot] Opened AOT cache hello.aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------

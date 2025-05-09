@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
@@ -251,7 +252,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   AOTArtifactFinder::initialize();
   AOTArtifactFinder::find_artifacts();
 
-  log_info(cds)("Gathering classes and symbols ... ");
+  aot_log_info(aot)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
 #if INCLUDE_CDS_JAVA_HEAP
@@ -281,7 +282,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    log_info(cds)("Sorting symbols ... ");
+    aot_log_info(aot)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
   }
@@ -303,7 +304,7 @@ int ArchiveBuilder::compare_klass_by_name(Klass** a, Klass** b) {
 }
 
 void ArchiveBuilder::sort_klasses() {
-  log_info(cds)("Sorting classes ... ");
+  aot_log_info(aot)("Sorting classes ... ");
   _klasses->sort(compare_klass_by_name);
 }
 
@@ -322,7 +323,7 @@ address ArchiveBuilder::reserve_buffer() {
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
+  aot_log_info(aot)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
@@ -503,7 +504,7 @@ void ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure
 
 void ArchiveBuilder::gather_source_objs() {
   ResourceMark rm;
-  log_info(cds)("Gathering all archivable objects ... ");
+  aot_log_info(aot)("Gathering all archivable objects ... ");
   gather_klasses_and_symbols();
   GatherSortedSourceObjs doit(this);
   iterate_sorted_roots(&doit);
@@ -590,7 +591,7 @@ void ArchiveBuilder::sort_metadata_objs() {
 
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
-  log_info(cds)("Allocating RW objects ... ");
+  aot_log_info(aot)("Allocating RW objects ... ");
   make_shallow_copies(&_rw_region, &_rw_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -605,7 +606,7 @@ void ArchiveBuilder::dump_rw_metadata() {
 
 void ArchiveBuilder::dump_ro_metadata() {
   ResourceMark rm;
-  log_info(cds)("Allocating RO objects ... ");
+  aot_log_info(aot)("Allocating RO objects ... ");
 
   start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
@@ -626,7 +627,7 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
   for (int i = 0; i < src_objs->objs()->length(); i++) {
     make_shallow_copy(dump_region, src_objs->objs()->at(i));
   }
-  log_info(cds)("done (%d objects)", src_objs->objs()->length());
+  aot_log_info(aot)("done (%d objects)", src_objs->objs()->length());
 }
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
@@ -752,7 +753,7 @@ void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* s
 }
 
 void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
-  log_info(cds)("Relocating embedded pointers in core regions ... ");
+  aot_log_info(aot)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
 }
@@ -934,21 +935,21 @@ void ArchiveBuilder::make_klasses_shareable() {
 #define STATS_FORMAT    "= %5d, aot-linked = %5d, inited = %5d"
 #define STATS_PARAMS(x) num_ ## x, num_ ## x ## _a, num_ ## x ## _i
 
-  log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
-  log_info(cds)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
-  log_info(cds)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
-  log_info(cds)("        vm             " STATS_FORMAT, STATS_PARAMS(vm_klasses));
-  log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
-  log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
-  log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
-  log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
-  log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
-  log_info(cds)("      (old)            " STATS_FORMAT, STATS_PARAMS(old_klasses));
-  log_info(cds)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
+  aot_log_info(aot)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
+  aot_log_info(aot)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
+  aot_log_info(aot)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
+  aot_log_info(aot)("        vm             " STATS_FORMAT, STATS_PARAMS(vm_klasses));
+  aot_log_info(aot)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
+  aot_log_info(aot)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
+  aot_log_info(aot)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  aot_log_info(aot)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
+  aot_log_info(aot)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
+  aot_log_info(aot)("      (old)            " STATS_FORMAT, STATS_PARAMS(old_klasses));
+  aot_log_info(aot)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
                 num_unlinked_klasses, boot_unlinked, platform_unlinked, app_unlinked, unreg_unlinked);
-  log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
-  log_info(cds)("    type array classes = %5d", num_type_array_klasses);
-  log_info(cds)("               symbols = %5d", _symbols->length());
+  aot_log_info(aot)("    obj array classes  = %5d", num_obj_array_klasses);
+  aot_log_info(aot)("    type array classes = %5d", num_type_array_klasses);
+  aot_log_info(aot)("               symbols = %5d", _symbols->length());
 
 #undef STATS_FORMAT
 #undef STATS_PARAMS
