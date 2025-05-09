@@ -158,7 +158,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     // Ignore nodes with non-primitive type.
     BasicType bt;
     if (n->is_Mem()) {
-      bt = n->as_Mem()->memory_type();
+      bt = n->as_Mem()->value_basic_type();
     } else {
       bt = n->bottom_type()->basic_type();
     }
@@ -191,7 +191,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       BasicType bt;
       Node* n = lpt->_body.at(i);
       if (n->is_Mem()) {
-        bt = n->as_Mem()->memory_type();
+        bt = n->as_Mem()->value_basic_type();
       } else {
         bt = n->bottom_type()->basic_type();
       }
@@ -564,7 +564,7 @@ void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) const {
     const VPointer& p = vpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
-        is_java_primitive(mem->memory_type())) {
+        is_java_primitive(mem->value_basic_type())) {
       memops.append(MemOp(mem, &p, original_index++));
     }
   });
@@ -764,8 +764,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
   if (!in_bb(s1)    || !in_bb(s2))    return false;
 
   // Do not use superword for non-primitives
-  if (!is_java_primitive(s1->as_Mem()->memory_type()) ||
-      !is_java_primitive(s2->as_Mem()->memory_type())) {
+  if (!is_java_primitive(s1->as_Mem()->value_basic_type()) ||
+      !is_java_primitive(s2->as_Mem()->value_basic_type())) {
     return false;
   }
 
@@ -2604,7 +2604,7 @@ void VLoopTypes::compute_vector_element_type() {
 const Type* VLoopTypes::container_type(Node* n) const {
   int opc = n->Opcode();
   if (n->is_Mem()) {
-    BasicType bt = n->as_Mem()->memory_type();
+    BasicType bt = n->as_Mem()->value_basic_type();
     if (n->is_Store() && (bt == T_CHAR)) {
       // Use T_SHORT type instead of T_CHAR for stored values because any
       // preceding arithmetic operation extends values to signed Int.
