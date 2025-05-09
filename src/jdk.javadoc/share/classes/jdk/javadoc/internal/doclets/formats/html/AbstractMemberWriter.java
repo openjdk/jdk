@@ -299,13 +299,10 @@ public abstract class AbstractMemberWriter {
         var summaryCount = kind == METHODS && utils.isClass(typeElement) ? -1 : 0;
 
         for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
-            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
+            if (!utils.isVisible(inheritedClass)) {
                 continue;
             }
             if (Objects.equals(inheritedClass, typeElement)) {
-                continue;
-            }
-            if (utils.hasHiddenTag(inheritedClass)) {
                 continue;
             }
 

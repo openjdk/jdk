@@ -22,6 +22,14 @@ const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 const toggleMemberListing = "##REPLACE:doclet.Toggle_member_listing##";
 
+if (typeof hljs !== "undefined") {
+    try {
+        hljs.highlightAll();
+    } catch (err) {
+        console.error(err)
+    }
+}
+
 function loadScripts(doc, tag) {
     createElem(doc, tag, 'script-files/search.js');
 

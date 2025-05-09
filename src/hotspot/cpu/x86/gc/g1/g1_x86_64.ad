@@ -52,7 +52,7 @@ static void write_barrier_pre(MacroAssembler* masm,
   for (RegSetIterator<Register> reg = no_preserve.begin(); *reg != noreg; ++reg) {
     stub->dont_preserve(*reg);
   }
-  g1_asm->g1_write_barrier_pre_c2(masm, obj, pre_val, r15_thread, tmp, stub);
+  g1_asm->g1_write_barrier_pre_c2(masm, obj, pre_val, tmp, stub);
 }
 
 static void write_barrier_post(MacroAssembler* masm,
@@ -67,7 +67,7 @@ static void write_barrier_post(MacroAssembler* masm,
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
   G1PostBarrierStubC2* const stub = G1PostBarrierStubC2::create(node);
-  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, r15_thread, tmp1, tmp2, stub);
+  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, tmp2, stub);
 }
 
 %}

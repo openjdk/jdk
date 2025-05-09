@@ -26,12 +26,14 @@
  * @test
  * @summary "AOT" aliases for traditional CDS command-line options
  * @requires vm.cds
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
  * @run driver AOTFlags
  */
 
+import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -297,6 +299,74 @@ public class AOTFlags {
         out.shouldContain("class path and/or module path are not compatible with the ones " +
                           "specified when the AOTConfiguration file was recorded");
         out.shouldContain("Unable to use create AOT cache");
+        out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use multiple paths in AOTConfiguration");
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile + File.pathSeparator + "dummy",
+            "-cp", "noSuchJar.jar");
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("Option AOTConfiguration must specify a single file name");
+        out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use multiple paths in AOTCache");
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile + File.pathSeparator + "dummy",
+            "-cp", "noSuchJar.jar");
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("Option AOTCache must specify a single file name");
+        out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        String staticArchive = "static.jsa";
+        String dynamicArchive = "dynamic.jsa";
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xshare:dump",
+            "-XX:SharedArchiveFile=" + staticArchive);
+        out = CDSTestUtils.executeAndLog(pb, "static");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:SharedArchiveFile=" + staticArchive,
+            "-XX:ArchiveClassesAtExit=" + dynamicArchive,
+            "--version");
+        out = CDSTestUtils.executeAndLog(pb, "dynamic");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:cds",
+            "-XX:AOTMode=on",
+            "-XX:AOTCache=" + dynamicArchive,
+            "--version");
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("Unable to use AOT cache.");
+        out.shouldContain("Not a valid AOT cache (dynamic.jsa)");
+        out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        testEmptyValue("AOTCache");
+        testEmptyValue("AOTConfiguration");
+        testEmptyValue("AOTMode");
+    }
+
+    static void testEmptyValue(String option) throws Exception {
+        printTestCase("Empty values for " + option);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:" + option + "=", "--version");
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("Improperly specified VM option '" + option + "='");
         out.shouldHaveExitValue(1);
     }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100 8182765 8196202 8261079 8261976
+ * @bug 8073100 8182765 8196202 8261079 8261976 8254622
  * @summary ensure the hidden tag works as intended
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -139,7 +139,8 @@ public class TestHiddenTag extends JavadocTester {
                 "InvisibleParent.InvisibleInner",
                 "invisibleField",
                 "invisibleMethod",
-                "invisibleDefaultMethod");
+                "invisibleDefaultMethod",
+                "InvisibleInterface");
 
         checkOutput("pkg1/InvisibleParent.VisibleInner.html", true,
                 """
@@ -151,12 +152,13 @@ public class TestHiddenTag extends JavadocTester {
 
         checkOutput("pkg1/package-tree.html", false, "A.InvisibleInner");
 
-        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html");
+        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html", "InvisibleInterface");
 
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",
                 "pkg1/A.InvisibleInnerExtendsVisibleInner.html",
                 "pkg1/InvisibleParent.html",
-                "pkg1/InvisibleParent.InvisibleInner.html");
+                "pkg1/InvisibleParent.InvisibleInner.html",
+                "pkg1/InvisibleParent.InvisibleInterface.html");
     }
 }

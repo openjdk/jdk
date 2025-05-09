@@ -83,8 +83,37 @@ public class RichDiagnosticFormatter extends
     /* type/symbol printer used by this formatter */
     private RichPrinter printer;
 
+    private static class WhereClauses {
+        private final Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses;
+
+        WhereClauses() {
+            Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses = new EnumMap<>(WhereClauseKind.class);
+            for (WhereClauseKind kind : WhereClauseKind.values()) {
+                whereClauses.put(kind, new LinkedHashMap<>());
+            }
+            this.whereClauses = whereClauses;
+        }
+
+        public Map<Type, JCDiagnostic> get(WhereClauseKind kind) {
+            return whereClauses.get(kind);
+        }
+    }
+
     /* map for keeping track of a where clause associated to a given type */
-    Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses;
+    WhereClauses whereClauses;
+
+    private void enter() {
+        if (nameSimplifier != null || whereClauses != null) {
+            throw new IllegalStateException();
+        }
+        nameSimplifier = new ClassNameSimplifier();
+        whereClauses = new WhereClauses();
+    }
+
+    private void exit() {
+        nameSimplifier = null;
+        whereClauses = null;
+    }
 
     /** Get the DiagnosticFormatter instance for this context. */
     public static RichDiagnosticFormatter instance(Context context) {
@@ -102,39 +131,42 @@ public class RichDiagnosticFormatter extends
         this.diags = JCDiagnostic.Factory.instance(context);
         this.types = Types.instance(context);
         this.messages = JavacMessages.instance(context);
-        whereClauses = new EnumMap<>(WhereClauseKind.class);
         configuration = new RichConfiguration(Options.instance(context), formatter);
-        for (WhereClauseKind kind : WhereClauseKind.values())
-            whereClauses.put(kind, new LinkedHashMap<Type, JCDiagnostic>());
     }
 
     @Override
     public String format(JCDiagnostic diag, Locale l) {
-        StringBuilder sb = new StringBuilder();
-        nameSimplifier = new ClassNameSimplifier();
-        for (WhereClauseKind kind : WhereClauseKind.values())
-            whereClauses.get(kind).clear();
-        preprocessDiagnostic(diag);
-        sb.append(formatter.format(diag, l));
-        if (getConfiguration().isEnabled(RichFormatterFeature.WHERE_CLAUSES)) {
-            List<JCDiagnostic> clauses = getWhereClauses();
-            String indent = formatter.isRaw() ? "" :
-                formatter.indentString(DetailsInc);
-            for (JCDiagnostic d : clauses) {
-                String whereClause = formatter.format(d, l);
-                if (whereClause.length() > 0) {
-                    sb.append('\n' + indent + whereClause);
+        enter();
+        try {
+            StringBuilder sb = new StringBuilder();
+            preprocessDiagnostic(diag);
+            sb.append(formatter.format(diag, l));
+            if (getConfiguration().isEnabled(RichFormatterFeature.WHERE_CLAUSES)) {
+                List<JCDiagnostic> clauses = getWhereClauses();
+                String indent = formatter.isRaw() ? "" :
+                        formatter.indentString(DetailsInc);
+                for (JCDiagnostic d : clauses) {
+                    String whereClause = formatter.format(d, l);
+                    if (whereClause.length() > 0) {
+                        sb.append('\n' + indent + whereClause);
+                    }
                 }
             }
+            return sb.toString();
+        } finally {
+            exit();
         }
-        return sb.toString();
     }
 
     @Override
     public String formatMessage(JCDiagnostic diag, Locale l) {
-        nameSimplifier = new ClassNameSimplifier();
-        preprocessDiagnostic(diag);
-        return super.formatMessage(diag, l);
+        enter();
+        try {
+            preprocessDiagnostic(diag);
+            return super.formatMessage(diag, l);
+        } finally {
+            exit();
+        }
     }
 
     /**
@@ -556,7 +588,7 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitTypeVar(TypeVar t, Void ignored) {
-            t = (TypeVar)t.stripMetadataIfNeeded();
+            t = (TypeVar)t.stripMetadata();
             if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
                 //access the bound type and skip error types
                 Type bound = t.getUpperBound();
