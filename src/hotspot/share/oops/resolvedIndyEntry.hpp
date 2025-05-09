@@ -68,9 +68,9 @@ public:
     _flags(0) {}
 
   // Bit shift to get flags
-  // Note: Only two flags exists at the moment but more could be added
   enum {
-      has_appendix_shift        = 1,
+    resolutin_failed_shift    = 0,
+    has_appendix_shift        = 1,
   };
 
   // Getters
@@ -120,7 +120,7 @@ public:
 
 
   void set_resolution_failed() {
-    _flags = _flags | 1;
+    _flags = _flags | (1 << resolution_failed_shift);
   }
 
   void adjust_method_entry(Method* new_method) { _method = new_method; }
