@@ -88,7 +88,7 @@ class ClassLoaderHelper {
         return paths.toArray(new String[paths.size()]);
     }
 
-    static String nativeLoaderFileNameSuffix() {
-        return "";
+    static String mapToNativeLibraryName(String name) {
+        return name;
     }
 }

@@ -109,7 +109,7 @@ class ClassLoaderHelper {
      * <code>LoadLibrary</code>. This prevents <code>LoadLibrary</code> from
      * automatically inferring a .DLL extension.
      */
-    static String nativeLoaderFileNameSuffix() {
-        return ".";
+    static String mapToNativeLibraryName(String name) {
+        return name.regionMatches(true, name.length() - 4, ".dll", 0, 4) ? name : name + ".";
     }
 }
