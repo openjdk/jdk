@@ -25,7 +25,6 @@
  * @test
  * @bug 6813340
  * @summary X509Factory should not depend on is.available()==0
- * @run main/othervm SlowStream
  */
 
 import java.io.File;
@@ -50,14 +49,8 @@ public class SlowStream {
                                     "openssl"),
                             "pem"))) {
 
-                        final byte[] buffer = new byte[4096];
-                        while (true) {
-                            int len = fin.read(buffer);
-                            if (len < 0) {
-                                break;
-                            }
-                            outputStream.write(buffer, 0, len);
-                        }
+                        fin.transferTo(outputStream);
+
                         Thread.sleep(2000);
                     }
                 }
@@ -72,10 +65,10 @@ public class SlowStream {
         final var reader = new Thread(() -> {
             try {
                 final var factory = CertificateFactory.getInstance("X.509");
-                final var factorySize = factory.generateCertificates(inputStream).size();
-                if (factorySize != 5) {
+                final var numOfCerts = factory.generateCertificates(inputStream).size();
+                if (numOfCerts != 5) {
                     throw new Exception(
-                            String.format("Not all certs read. %d found 5 expected", factorySize)
+                            String.format("Not all certs read. %d found 5 expected", numOfCerts)
                     );
                 }
                 inputStream.close();
