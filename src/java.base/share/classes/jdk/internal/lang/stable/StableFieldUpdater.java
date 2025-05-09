@@ -443,35 +443,6 @@ public final class StableFieldUpdater {
         return new ConstantCallSite(MethodHandles.insertArguments(handle, 0, accessor, adaptedUnderlying));
     }
 
-    // Only to be used by classes that are used "early" in the init sequence.
-    public static final class Raw {
-
-        private Raw() {}
-
-        public static <T> ToIntFunction<T> ofInt(Class<T> holderType,
-                                                 long offset,
-                                                 ToIntFunction<? super T> underlying) {
-            Objects.requireNonNull(holderType);
-            if (offset < 0) {
-                throw new IllegalArgumentException();
-            }
-            Objects.requireNonNull(underlying);
-            return new StableIntFieldUpdater<>(holderType, offset, underlying);
-        }
-
-        public static <T> ToLongFunction<T> ofLong(Class<T> holderType,
-                                                   long offset,
-                                                   ToLongFunction<? super T> underlying) {
-            Objects.requireNonNull(holderType);
-            if (offset < 0) {
-                throw new IllegalArgumentException();
-            }
-            Objects.requireNonNull(underlying);
-            return makeLong(holderType, offset, underlying);
-        }
-
-    }
-
     private static <T> ToLongFunction<T> makeLong(Class<T> holderType,
                                                   long offset,
                                                   ToLongFunction<? super T> underlying) {

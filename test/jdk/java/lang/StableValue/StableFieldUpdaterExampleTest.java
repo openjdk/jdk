@@ -41,6 +41,10 @@ import java.util.function.ToLongFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * This test is to make sure the example in the documentation of
+ * {@linkplain StableFieldUpdater} remains correct and compilable.
+ */
 final class StableFieldUpdaterExampleTest {
 
     @interface Stable {} // No access to the real @Stable
