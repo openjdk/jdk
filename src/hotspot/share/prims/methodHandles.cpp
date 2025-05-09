@@ -1258,58 +1258,8 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
 
-
   objArrayHandle buf(THREAD, (objArrayOop)JNIHandles::resolve(buf_jh));
-  // A pos < 0 is invalid, but we delegate throwing the error to ConstantPool::copy_bootstrap_arguments_at
-  if (pos >= 0) {
-    int min_end = MIN2(0, end);
-    while (-4 <= start && start < min_end) {
-      if (pos >= buf->length()) break;
-      oop pseudo_arg = nullptr;
-      switch (start) {
-      case -4: // bootstrap method
-      {
-        int bsm_index = caller->constants()->bootstrap_method_ref_index_at(bss_index_in_pool);
-        pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
-        break;
-      }
-      case -3: // name
-      {
-        Symbol* name =
-            caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
-        Handle str = java_lang_String::create_from_symbol(name, CHECK);
-        pseudo_arg = str();
-        break;
-      }
-      case -2: // type
-      {
-        Symbol* type =
-            caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
-        Handle th;
-        if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
-          th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
-        } else {
-          th = SystemDictionary::find_java_mirror_for_type(type, caller, SignatureStream::NCDFError,
-                                                           CHECK);
-        }
-        pseudo_arg = th();
-        break;
-      }
-      case -1: // argument count
-      {
-        int argc = caller->constants()->bootstrap_argument_count_at(bss_index_in_pool);
-        jvalue argc_value;
-        argc_value.i = (jint)argc;
-        pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
-        break;
-      }
-      };
-      // Store the pseudo-argument, and advance the pointers.
-      buf->obj_at_put(pos++, pseudo_arg);
-      start++;
-    }
-  }
-  // Now that we are done with this there may be regular arguments to process too.
+
   Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
   caller->constants()->
     copy_bootstrap_arguments_at(bss_index_in_pool,
