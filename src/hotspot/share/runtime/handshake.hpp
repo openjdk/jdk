@@ -173,18 +173,18 @@ class HandshakeState {
   bool _async_suspend_handshake;
 
   // Called from the suspend handshake.
-  bool suspend_with_handshake();
+  bool suspend_with_handshake(bool register_vthread_SR);
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
   void do_self_suspend();
 
   bool is_suspended()                       { return Atomic::load(&_suspended); }
-  void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
+  void set_suspended(bool to, bool register_vthread_SR);
   bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 
-  bool suspend();
-  bool resume();
+  bool suspend(bool register_vthread_SR);
+  bool resume(bool register_vthread_SR);
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

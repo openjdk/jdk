@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
@@ -5460,9 +5461,7 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
     }
   }
 
-  if (klass->is_subclass_of(vmClasses::Reference_klass())) {
-    // It's problematic to archive Reference objects. One of the reasons is that
-    // Reference::discovered may pull in unwanted objects (see JDK-8284336)
+  if (!AOTReferenceObjSupport::is_enabled() && klass->is_subclass_of(vmClasses::Reference_klass())) {
     return false;
   }
 
