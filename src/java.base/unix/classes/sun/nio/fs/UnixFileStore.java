@@ -241,7 +241,7 @@ abstract class UnixFileStore
 
     @Override
     public int hashCode() {
-        return (int)(dev ^ (dev >>> 32)) ^ Arrays.hashCode(entry.dir());
+        return Long.hashCode(dev) ^ Arrays.hashCode(entry.dir());
     }
 
     @Override
