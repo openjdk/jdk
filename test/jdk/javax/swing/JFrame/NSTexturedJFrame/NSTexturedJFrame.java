@@ -22,6 +22,7 @@
  */
 
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -39,7 +40,7 @@ import jdk.test.lib.Platform;
  * @summary We should support NSWindowStyleMaskTexturedBackground style on OSX.
  * @library /test/lib
  *          /lib/client
- * @build ExtendedRobot jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform
  * @run main NSTexturedJFrame
  */
 
@@ -51,14 +52,14 @@ public final class NSTexturedJFrame {
     private static Rectangle bounds;
     private static volatile int step;
     private static JFrame frame;
-    private static ExtendedRobot robot;
+    private static Robot robot;
 
     public static void main(final String[] args) throws Exception {
         if (!Platform.isOSX()) {
             System.out.println("This test is for OSX, considered passed.");
             return;
         }
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.setAutoDelay(50);
         // Default window appearance
         showFrame();

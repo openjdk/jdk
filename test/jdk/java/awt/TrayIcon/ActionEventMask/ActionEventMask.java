@@ -38,7 +38,7 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main ActionEventMask
  */
 
@@ -47,7 +47,7 @@ public class ActionEventMask {
     private Image image;
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     boolean actionPerformed = false;
     boolean listenersInvoked = false;
@@ -159,7 +159,7 @@ public class ActionEventMask {
 
     private void doTest() throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
 
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
