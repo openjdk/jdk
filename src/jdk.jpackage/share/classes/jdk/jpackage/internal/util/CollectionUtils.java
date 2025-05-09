@@ -67,7 +67,7 @@ public final class CollectionUtils {
      * Converts the given collection to {@link Set}.
      *
      * @param <T> the type of elements in this output collection
-     * @param v   the input collection. Null is permitted.
+     * @param col the input collection. Null is permitted.
      * @return the input collection if it is of type {@link Set} or a new
      *         {@link Set} instance created from the input collection
      */
