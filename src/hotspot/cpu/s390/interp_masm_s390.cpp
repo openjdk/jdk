@@ -627,7 +627,7 @@ void InterpreterMacroAssembler::verify_esp(Register Resp, Register Rtemp) {
     // i.e. IJAVA_STATE.monitors > Resp.
     NearLabel OK;
     Register Rmonitors = Rtemp;
-    z_lg(Rmonitors, _z_ijava_state_neg(monitors), Z_fp);
+    get_monitors(Rmonitors);
     compareU64_and_branch(Rmonitors, Resp, bcondHigh, OK);
     reentry = stop_chain_static(reentry, "too many pops: Z_esp points into monitor area");
     bind(OK);
@@ -676,10 +676,28 @@ void InterpreterMacroAssembler::restore_esp() {
 
 void InterpreterMacroAssembler::get_monitors(Register reg) {
   asm_assert_ijava_state_magic(reg);
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
   mem2reg_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
+  z_slag(reg, reg, Interpreter::logStackElementSize);
+  z_agr(reg, Z_fp);
 }
 
 void InterpreterMacroAssembler::save_monitors(Register reg) {
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
+  z_sgr(reg, Z_fp);
+  z_srag(reg, reg, Interpreter::logStackElementSize);
   reg2mem_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
 }
 
@@ -840,12 +858,11 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
     Register R_monitor_block_bot = Z_ARG1;
-    const Address monitor_block_top(Z_fp, _z_ijava_state_neg(monitors));
     const Address monitor_block_bot(Z_fp, -frame::z_ijava_state_size);
 
     bind(restart);
     // Starting with top-most entry.
-    z_lg(R_current_monitor, monitor_block_top);
+    get_monitors(R_current_monitor);
     // Points to word before bottom of monitor block.
     load_address(R_monitor_block_bot, monitor_block_bot);
     z_bru(entry);
