@@ -48,6 +48,23 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-NoShortRunningLongLoop
+ * @bug 8329273
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoShortRunningLongLoop
+ */
+
+/*
+ * @test id=byte-array-AlignVector-NoShortRunningLongLoop
+ * @bug 8329273 8348263
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoShortRunningLongLoop
+ */
+
+
+/*
  * @test id=char-array
  * @bug 8329273
  * @summary Test vectorization of loops over MemorySegment
@@ -172,6 +189,13 @@ public class TestMemorySegment {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
+        for (int i = 1; i < args.length; i++) {
+            String tag = args[i];
+            switch (tag) {
+                case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
+                case "NoShortRunningLongLoop" ->     framework.addFlags("-XX:-ShortRunningLongLoop");
+            }
+        }
         if (args.length > 1 && args[1].equals("AlignVector")) {
             framework.addFlags("-XX:+AlignVector");
         }
@@ -774,6 +798,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.ADD_VI,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
@@ -793,6 +823,12 @@ class TestMemorySegmentImpl {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.ADD_VI,        "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "false", "AlignVector", "false" },
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
