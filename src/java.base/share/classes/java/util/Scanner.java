@@ -78,8 +78,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>To read lines from {@link System#in} with {@link System##stdin.encoding
- * stdin.encoding}:
+ * <p>This code reads lines from {@link System#in} with {@link
+ * System##stdin.encoding stdin.encoding}:
  * {@snippet :
  *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
  *      while (sc.hasNextLine()) {
