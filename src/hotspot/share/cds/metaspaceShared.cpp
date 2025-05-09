@@ -1130,6 +1130,7 @@ void MetaspaceShared::unrecoverable_loading_error(const char* message) {
   }
 }
 
+ATTRIBUTE_PRINTF(2, 0)
 static void report_loading_error_helper(LogStream& ls, const char* format, va_list ap) {
   static bool printed_error = false;
   if (!printed_error) { // No need for locks. Loading error checks happen only in main thread.
@@ -1138,9 +1139,7 @@ static void report_loading_error_helper(LogStream& ls, const char* format, va_li
     printed_error = true;
   }
 
-  if (strcmp(format, "") != 0) {
-    ls.vprint_cr(format, ap);
-  }
+  ls.vprint_cr(format, ap);
 }
 
 void MetaspaceShared::report_loading_error(const char* format, ...) {

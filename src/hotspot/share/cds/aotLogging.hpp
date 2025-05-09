@@ -65,7 +65,7 @@
 //
 // However, when running with an AOT cache, these messages are under the [aot] tag
 //
-//     $ java -Xlog:aot -XX:AOTCace=bad.aot ...
+//     $ java -Xlog:aot -XX:AOTCache=bad.aot ...
 //     [0.020s][info][cds] trying to map bad.jsa
 //     [0.020s][warning][cds] Unable to read the file header
 //
