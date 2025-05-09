@@ -88,7 +88,7 @@ abstract class AsynchronousSocketChannelImpl
         throws IOException
     {
         super(group.provider());
-        this.fd = Net.socket(true);
+        this.fd = Net.socket();
         this.state = ST_UNCONNECTED;
     }
 
