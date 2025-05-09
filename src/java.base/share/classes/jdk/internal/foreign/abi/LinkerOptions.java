@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,9 @@ public class LinkerOptions {
         return getOption(CaptureCallState.class) != null;
     }
 
-    public Stream<CapturableState> capturedCallState() {
+    public int capturedCallStateMask() {
         CaptureCallState stl = getOption(CaptureCallState.class);
-        return stl == null ? Stream.empty() : stl.saved().stream();
+        return stl == null ? 0 : stl.mask();
     }
 
     public boolean isVariadicFunction() {
@@ -150,35 +150,25 @@ public class LinkerOptions {
         }
     }
 
-    public record CaptureCallState(int compact) implements LinkerOptionImpl {
+    public record CaptureCallState(int mask) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
 
-        public Set<CapturableState> saved() {
-            var set = EnumSet.noneOf(CapturableState.class);
-            int mask = compact;
-            int i = 0;
-            while (mask != 0) {
-                if ((mask & 1) == 1) {
-                    set.add(CapturableState.BY_ORDINAL.get(i));
-                }
-                mask >>= 1;
-                i++;
-            }
-            return set;
-        }
-
-
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof CaptureCallState that && compact == that.compact;
+            return obj instanceof CaptureCallState that && mask == that.mask;
         }
 
         @Override
         public int hashCode() {
-            return compact;
+            return mask;
+        }
+
+        @Override
+        public String toString() {
+            return "CaptureCallState" + CapturableState.displayString(mask);
         }
     }
 
