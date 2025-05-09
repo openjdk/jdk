@@ -401,8 +401,13 @@ public class PacketEncodingTest {
 
     }
 
+    private static ByteBuffer encodeFrame(QuicFrame frame) {
+        ByteBuffer result = ByteBuffer.allocate(frame.size());
+        frame.encode(result);
+        return result;
+    }
     private static List<ByteBuffer> getBuffers(List<QuicFrame> payload) {
-        return payload.stream().map(QuicFrame::payload).toList();
+        return payload.stream().map(PacketEncodingTest::encodeFrame).toList();
     }
     private static List<ByteBuffer> getBuffers(List<QuicFrame> payload, int minSize) {
         int payloadSize = payload.stream().mapToInt(QuicFrame::size).sum();
@@ -410,7 +415,7 @@ public class PacketEncodingTest {
             payload = new ArrayList<>(payload);
             payload.add(0, new PaddingFrame(minSize - payloadSize));
         }
-        return payload.stream().map(QuicFrame::payload).toList();
+        return payload.stream().map(PacketEncodingTest::encodeFrame).toList();
     }
 
     private static String toHex(ByteBuffer buffer) {

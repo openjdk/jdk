@@ -199,15 +199,16 @@ public final class StreamFrame extends QuicFrame {
         }
     }
 
-    // TODO: maybe we should have a List<ByteBuffer> here
-    //       this would be useful when creating a new StreamFrame
-    //       from gathered byte buffers.
-    @Override
+    /**
+     * {@return the frame payload}
+     */
     public ByteBuffer payload() {
         return streamData.slice();
     }
 
-    @Override
+    /**
+     * {@return the frame offset}
+     */
     public long offset() { return offset; }
 
     /**

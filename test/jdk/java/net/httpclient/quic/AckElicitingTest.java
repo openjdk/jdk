@@ -688,12 +688,7 @@ public class AckElicitingTest {
         assertEquals(decoded.getClass(), expected.getClass());
         assertEquals(decoded.size(), expected.size());
         assertEquals(decoded.getTypeField(), expected.getTypeField());
-        assertEquals(decoded.offset(), expected.offset());
         assertEquals(decoded.isAckEliciting(), expected.isAckEliciting());
-        var payload = expected.payload();
-        var decodedPayload = decoded.payload();
-        if (payload == null) assertNull(decodedPayload);
-        else assertEquals(payload.mismatch(decodedPayload), -1);
     }
 
     // This is not a full-fledged test for packet encoding/decoding.

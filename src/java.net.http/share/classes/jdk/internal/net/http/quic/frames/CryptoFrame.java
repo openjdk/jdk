@@ -121,6 +121,9 @@ public final class CryptoFrame extends QuicFrame {
                 + length;
     }
 
+    /**
+     * {@return the frame offset}
+     */
     public long offset() {
         return offset;
     }
@@ -129,6 +132,9 @@ public final class CryptoFrame extends QuicFrame {
         return length;
     }
 
+    /**
+     * {@return the frame payload}
+     */
     public ByteBuffer payload() {
         return cryptoData.slice();
     }

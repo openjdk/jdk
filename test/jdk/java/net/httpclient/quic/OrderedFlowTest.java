@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 import jdk.internal.net.http.quic.OrderedFlow;
@@ -353,13 +354,13 @@ public class OrderedFlowTest {
                 .toArray(Object[][]::new);
     }
 
-    private <T extends QuicFrame> void testOrderedFlow(TestData<T> testData) {
+    private <T extends QuicFrame> void testOrderedFlow(TestData<T> testData, ToLongFunction<T> offset) {
         System.out.println("\n    ---------------- "
                 + testData.frameType().getName()
                 + " ----------------   \n");
         System.out.println("testOrderedFlow: " + testData);
-        String offsets = testData.frames().stream().map(QuicFrame::offset)
-                .map(String::valueOf).collect(Collectors.joining(", "));
+        String offsets = testData.frames().stream().mapToLong(offset)
+                .mapToObj(Long::toString).collect(Collectors.joining(", "));
         System.out.println("offsets: " + offsets);
 
         // we should not have empty frames, but maybe we do?
@@ -389,12 +390,12 @@ public class OrderedFlowTest {
 
     @Test(dataProvider = "CryptoFrame")
     public void testCryptoFlow(TestData<CryptoFrame> testData) {
-        testOrderedFlow(testData);
+        testOrderedFlow(testData, CryptoFrame::offset);
     }
 
     @Test(dataProvider = "StreamFrame")
     public void testStreamFlow(TestData<StreamFrame> testData) {
-        testOrderedFlow(testData);
+        testOrderedFlow(testData, StreamFrame::offset);
     }
 
 }

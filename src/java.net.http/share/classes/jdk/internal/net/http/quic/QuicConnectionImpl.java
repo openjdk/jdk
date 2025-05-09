@@ -3880,7 +3880,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     KeySpace.ONE_RTT, frame.frameType(),
                     QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
         }
-        QuicFrame nextFrame = peerCryptoFlow.receive(frame);
+        CryptoFrame nextFrame = peerCryptoFlow.receive(frame);
         while (nextFrame != null) {
             quicTLSEngine.consumeHandshakeBytes(KeySpace.ONE_RTT, nextFrame.payload());
             nextFrame = peerCryptoFlow.poll();

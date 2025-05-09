@@ -240,18 +240,6 @@ public abstract sealed class QuicFrame permits
     }
 
     /**
-     * {@return the frame payload}
-     * May be {@code null} if not applicable to this frame type.
-     */
-    public ByteBuffer payload() { return null; }
-
-    /**
-     * {@return the frame offset}
-     * Defaults to 0 if not applicable
-     */
-    public long offset() { return 0; }
-
-    /**
      * {@return true if this frame is <em>ACK-eliciting</em>}
      * A frame is <em>ACK-eliciting</em> if it is anything
      * other than {@link QuicFrame#ACK},
