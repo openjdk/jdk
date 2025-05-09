@@ -48,7 +48,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.cpu.features ~= ".*sve.*" | vm.cpu.features ~= ".*rvv.*"
- * @summary AArch64: Add optimized rules for masked vector multiply-add/sub for SVE
+ * @summary Add optimized rules for masked vector multiply-add/sub for SVE and RVV
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorFusedMultiplyAddSubTest
