@@ -37,9 +37,9 @@
 //  1. Empty. There is no Method* inside. All methods are safe to call.
 //     This is a convenience state to allow easy initializations.
 //  2. Weak. Method* is present, but its holder is only weakly-reachable, and can
-//     be unloaded. Users need to check !is_unloaded() before calling method().
+//     be unloaded. Users need to check is_safe() before calling method().
 //     method() is safe to call iff we have not crossed a safepoint since construction
-//     or last !is_unloaded() check. Calling block_unloading() after !is_unloaded() check
+//     or last is_safe() check. Calling make_always_safe() after is_safe() check
 //     moves handle to the strong state.
 //  3. Strong. Method* holder is strongly reachable, cannot be unloaded.
 //     Calling method() is always safe in this state.
@@ -47,13 +47,13 @@
 //     method() returns nullptr in this state.
 //
 // The handle transitions are one-shot:
-//    weak   --(block_unloading) --> strong
-//    weak   ------(release) ------> released
-//    strong ------(release) ------> released
+//    weak   --(make_always_safe) --> strong
+//    weak   ------(release) -------> released
+//    strong ------(release) -------> released
 //
 // Additionally, when handle is empty, it stays empty:
-//    empty  --(block_unloading) --> empty
-//    empty  ------(release) ------> empty
+//    empty  --(make_always_safe) --> empty
+//    empty  ------(release) -------> empty
 //
 // Common usage pattern:
 //
@@ -61,12 +61,12 @@
 //   mh = UnloadableMethodHandle(method); // Now in weak state.
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
 //   <safepoint>
-//   if (mh.is_unloaded()) {              // Can still use method()?
+//   if (!mh.is_safe()) {                 // Safe to use method()?
 //     mh.release();                      // No! Release the handle and exit.
 //     return;
 //   }
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
-//   mh.block_unloading();                // Now in strong state.
+//   mh.make_always_safe();               // Now in safe state.
 //   <safepoint>
 //   mh.method()->print_on(tty);          // method() is always good now.
 //   mh.release();                        // Release the handle.
@@ -80,18 +80,19 @@ private:
   Method* _method;
   WeakHandle _weak_handle;
   OopHandle _strong_handle;
+  int _spin_lock;
 
   inline oop get_unload_blocker(Method* method);
 
 public:
-  UnloadableMethodHandle() : _method(nullptr) {}
+  UnloadableMethodHandle() : _method(nullptr), _spin_lock(0) {}
   UnloadableMethodHandle(Method* method);
   inline void release();
 
   inline Method* method() const;
 
-  inline bool is_unloaded() const;
-  void block_unloading();
+  inline bool is_safe() const;
+  void make_always_safe();
 };
 
 #endif // SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP

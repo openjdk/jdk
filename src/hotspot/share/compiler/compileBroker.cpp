@@ -218,14 +218,14 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
-  if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
+  if (log != nullptr && task->is_safe())  task->log_task_start(log);
 }
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
-  if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
+  if (log != nullptr && task->is_safe())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
   if (task->is_blocking()) {
@@ -1694,6 +1694,8 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   assert(task->is_blocking(), "can only wait on blocking task");
 
   JavaThread* thread = JavaThread::current();
+
+  methodHandle method(thread, task->is_safe() ? task->method() : nullptr);
 
   bool free_task;
 #if INCLUDE_JVMCI

@@ -32,13 +32,13 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 
-inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) {
+inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) : _method(method), _spin_lock(0) {
   assert(method != nullptr, "Should be");
-  _method = method;
   oop obj = get_unload_blocker(method);
   if (obj != nullptr) {
     _weak_handle = WeakHandle(Universe::vm_weak(), obj);
   }
+  assert(is_safe(), "Should be");
 }
 
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
@@ -64,34 +64,65 @@ void UnloadableMethodHandle::release() {
     _weak_handle.release(Universe::vm_weak());
     _strong_handle.release(Universe::vm_global());
   }
+  assert(is_safe(), "Should be");
 }
 
-bool UnloadableMethodHandle::is_unloaded() const {
-  // Unloaded if weak handle was set, but now had been cleared by GC.
-  return !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
+bool UnloadableMethodHandle::is_safe() const {
+  // Definitely safe state: no need to block unloading.
+  if (_weak_handle.is_empty()) {
+    return true;
+  }
+
+  // Definitely safe state: already blocked for unloading.
+  if (!_strong_handle.is_empty()) {
+    return true;
+  }
+
+  // Try to see if weak handle was cleared by GC.
+  // This is only trustworthy if caller is a Java thread in proper state.
+  // Otherwise, unloading can happen without coordinating with this thread.
+  // (Access API would assert this too, but do not rely on it.)
+  Thread* t = Thread::current();
+  if (t->is_Java_thread() &&
+      (JavaThread::cast(t)->thread_state() != _thread_in_native) &&
+      (_weak_handle.peek() != nullptr)) {
+    return true;
+  }
+
+  // Assume unsafe by default.
+  return false;
 }
 
-inline void UnloadableMethodHandle::block_unloading() {
-  assert(!is_unloaded(), "Pre-condition: should not be unloaded");
+inline void UnloadableMethodHandle::make_always_safe() {
+  assert(is_safe(), "Should be");
 
-  if (!_weak_handle.is_empty()) {
-    assert(_weak_handle.peek() != nullptr, "Should not be cleared");
-    assert(_method->method_holder()->is_loader_alive(), "Should be alive");
-    assert(_strong_handle.is_empty(), "Should be empty");
+  if (_weak_handle.is_empty()) {
+    // Nothing to do: no need to block unloading.
+    return;
+  }
+
+  if (!_strong_handle.is_empty()) {
+    // Nothing to do: already blocked for unloading.
+    return;
+  }
+
+  // Need to capture holder strongly. Under concurrent calls, we need to make
+  // sure we create the strong handle only once, otherwise we can leak some.
+  // This path is normally uncontended, so a simple spin lock would do.
+  Thread::SpinAcquire(&_spin_lock);
+  if (_strong_handle.is_empty()) {
     oop obj = get_unload_blocker(_method);
     if (obj != nullptr) {
       _strong_handle = OopHandle(Universe::vm_global(), obj);
     }
-    // Release the weak handle right away, so that is_unloaded() does not touch
-    // peek() when thread is in the wrong state.
-    _weak_handle.release(Universe::vm_weak());
   }
+  Thread::SpinRelease(&_spin_lock);
 
-  assert(!is_unloaded(), "Post-condition: should not be unloaded");
+  assert(is_safe(), "Should be");
 }
 
 inline Method* UnloadableMethodHandle::method() const {
-  assert(!is_unloaded(), "Should not be unloaded");
+  assert(is_safe(), "Should be");
   return _method;
 }
 

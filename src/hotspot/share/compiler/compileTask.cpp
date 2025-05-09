@@ -136,20 +136,18 @@ AbstractCompiler* CompileTask::compiler() const {
 }
 
 CompileTask* CompileTask::select_for_compilation() {
-  if (is_unloaded()) {
-    // Guard against concurrent class unloading
+  if (!is_safe()) {
     return nullptr;
   }
 
-  // Block unloading for currently held method handles.
-  _method_handle.block_unloading();
-  _hot_method_handle.block_unloading();
+  _method_handle.make_always_safe();
+  _hot_method_handle.make_always_safe();
 
   return this;
 }
 
 void CompileTask::mark_on_stack() {
-  if (is_unloaded()) {
+  if (!is_safe()) {
     return;
   }
   // Mark these methods as something redefine classes cannot remove.
@@ -159,13 +157,13 @@ void CompileTask::mark_on_stack() {
   }
 }
 
-bool CompileTask::is_unloaded() const {
-  return _method_handle.is_unloaded();
+bool CompileTask::is_safe() const {
+  return _method_handle.is_safe() && _hot_method_handle.is_safe();
 }
 
 // RedefineClasses support
 void CompileTask::metadata_do(MetadataClosure* f) {
-  if (is_unloaded()) {
+  if (!is_safe()) {
     return;
   }
   f->do_metadata(method());
@@ -270,7 +268,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_safe() ? method() : nullptr, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
 }
 
 // ------------------------------------------------------------------
