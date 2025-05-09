@@ -41,7 +41,7 @@
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
 static PlatformMutex* _global_chunk_pool_mutex = nullptr;
-static volatile int _recursion_count = 0;
+static int _recursion_count = 0;
 
 void Arena::initialize_chunk_pool() {
   _global_chunk_pool_mutex = new PlatformMutex();
