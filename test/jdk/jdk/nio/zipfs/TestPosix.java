@@ -430,14 +430,21 @@ public class TestPosix {
             paths.forEach(p -> {
                 assertFalse(Files.isWritable(p), "File should not be writable: " + p);
                 assertSame(zfs, p.getFileSystem());
-                assertThrows(AccessDeniedException.class, () -> zfs.provider().checkAccess(p, AccessMode.WRITE));
-                assertThrows(ReadOnlyFileSystemException.class, () -> zfs.provider().setAttribute(p, "zip:permissions", badPerms));
+                assertThrows(
+                        AccessDeniedException.class,
+                        () -> zfs.provider().checkAccess(p, AccessMode.WRITE));
+                assertThrows(
+                        ReadOnlyFileSystemException.class,
+                        () -> zfs.provider().setAttribute(p, "zip:permissions", badPerms));
 
                 // These fail because there is not corresponding File for a zip path (they will
                 // currently fail for read-write ZIP file systems too, but we sanity-check here).
-                assertThrows(UnsupportedOperationException.class, () -> Files.setLastModifiedTime(p, anyTime));
-                assertThrows(UnsupportedOperationException.class, () -> Files.setAttribute(p, "zip:permissions", badPerms));
-                assertThrows(UnsupportedOperationException.class, () -> Files.setPosixFilePermissions(p, badPerms));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setLastModifiedTime(p, anyTime));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setAttribute(p, "zip:permissions", badPerms));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setPosixFilePermissions(p, badPerms));
             });
         }
     }

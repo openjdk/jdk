@@ -38,16 +38,19 @@ final class Utils {
     private Utils() {}
 
     /**
-     * Creates a JAR file of the given name with 0 or more named entries.
+     * Creates a JAR file of the given name with 0 or more named entries with
+     * random content.
      *
+     * <p>If an existing file of the same name already exists, it is silently
+     * overwritten.
+     *
+     * @param name the file name of the jar file to create in the working directory.
+     * @param entries a list of JAR entries to be populated with random bytes.
      * @return the absolute path to the newly created JAR file.
      */
     static Path createJarFile(String name, String... entries) throws IOException {
         Path jarFile = Paths.get(name);
         Random rand = new Random();
-        if (Files.exists(jarFile)) {
-            throw new IllegalStateException("File must not already exist: " + jarFile);
-        }
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
             int len = 100;
@@ -65,17 +68,19 @@ final class Utils {
     }
 
     /**
-     * Creates a JAR file of the given name with 0 or more named entries.
+     * Creates a JAR file of the given name with 0 or more entries with specified
+     * content.
      *
-     * @param jarFile a path at which to create the Jar file (relative or absolute).
-     * @param entries a map of relative file name path strings to file contents
+     * <p>If an existing file of the same name already exists, it is silently
+     * overwritten.
+     *
+     * @param name the file name of the jar file to create in the working directory.
+     * @param entries a map of relative file name path strings to file content
      *               (stored as UTF-8 encoded bytes).
      * @return the absolute path to the newly created JAR file.
      */
-    static Path createJarFile(Path jarFile, Map<String, String> entries) throws IOException {
-        if (Files.exists(jarFile)) {
-            throw new IllegalStateException("File must not already exist: " + jarFile);
-        }
+    static Path createJarFile(String name, Map<String, String> entries) throws IOException {
+        Path jarFile = Paths.get(name);
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
             for (var entry : entries.entrySet()) {

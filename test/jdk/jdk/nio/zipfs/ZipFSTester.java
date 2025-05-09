@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -41,7 +40,6 @@ import java.nio.file.FileSystemException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,7 +66,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
 
@@ -78,12 +75,13 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
- *      8131067 8034802 8210899 8273961 8271079 8299864 8350881
+ *      8131067 8034802 8210899 8273961 8271079 8299864
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
  * @run main ZipFSTester
  * @run main/othervm ZipFSTester
  */
+
 public class ZipFSTester {
     public static void main(String[] args) throws Exception {
         // create JAR file for test, actual contents don't matter
@@ -93,7 +91,7 @@ public class ZipFSTester {
                 "dir2/bar",
                 "dir1/dir3/fooo");
 
-        try (FileSystem fs = newZipFileSystem(jarFile)) {
+        try (FileSystem fs = newZipFileSystem(jarFile, Collections.emptyMap())) {
             test0(fs);
             test1(fs);
             test2(fs);
@@ -103,7 +101,6 @@ public class ZipFSTester {
         testTime(jarFile);
         test8069211();
         test8131067();
-        testOpenFailure();
     }
 
     private static final Random RDM = new Random();
@@ -143,7 +140,9 @@ public class ZipFSTester {
 
         // clone a fs from fs0 and test on it
         Path tmpfsPath = getTempPath();
-        try (FileSystem copy = newZipFileSystem(tmpfsPath, ZipFSOpts.CREATE)) {
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+        try (FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
             z2zcopy(fs0, copy, "/", 0);
 
             // copy the test jar itself in
@@ -154,7 +153,8 @@ public class ZipFSTester {
             }
         }
 
-        try (FileSystem fs = newZipFileSystem(tmpfsPath)) {
+        try (FileSystem fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>())) {
+
             FileSystemProvider provider = fs.provider();
             // newFileSystem(path...) should not throw exception
             try (FileSystem fsPath = provider.newFileSystem(tmpfsPath, new HashMap<String, Object>())){}
@@ -167,12 +167,12 @@ public class ZipFSTester {
 
             try {
                 provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
-                        new HashMap<String, Object>()).close();
+                        new HashMap<String, Object>());
                 throw new RuntimeException("newFileSystem() opens a directory as zipfs");
             } catch (UnsupportedOperationException uoe) {}
 
             try {
-                provider.newFileSystem(src, new HashMap<String, Object>()).close();
+                provider.newFileSystem(src, new HashMap<String, Object>());
                 throw new RuntimeException("newFileSystem() opens a non-zip file as zipfs");
             } catch (UnsupportedOperationException uoe) {}
 
@@ -228,7 +228,7 @@ public class ZipFSTester {
             // newInputStream on dir
             Path parent = dst2.getParent();
             try {
-                Files.newInputStream(parent).close();
+                Files.newInputStream(parent);
                 throw new RuntimeException("Failed");
             } catch (FileSystemException e) {
                 // expected fse
@@ -285,17 +285,20 @@ public class ZipFSTester {
         Path fs3Path = getTempPath();
 
         // create a new filesystem, copy everything from fs
-        FileSystem fs0 = newZipFileSystem(fs1Path, ZipFSOpts.CREATE);
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+        FileSystem fs0 = newZipFileSystem(fs1Path, env);
 
-        final FileSystem fs2 = newZipFileSystem(fs2Path, ZipFSOpts.CREATE);
-        final FileSystem fs3 = newZipFileSystem(fs3Path, ZipFSOpts.CREATE);
+        final FileSystem fs2 = newZipFileSystem(fs2Path, env);
+        final FileSystem fs3 = newZipFileSystem(fs3Path, env);
 
         System.out.println("copy src: fs -> fs0...");
         z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
         fs0.close();                // dump to file
 
         System.out.println("open fs0 as fs1");
-        final FileSystem fs1 = newZipFileSystem(fs1Path);
+        env = new HashMap<String, Object>();
+        final FileSystem fs1 = newZipFileSystem(fs1Path, env);
 
         System.out.println("listing...");
         final ArrayList<String> files = new ArrayList<>();
@@ -393,7 +396,8 @@ public class ZipFSTester {
         fs3.close();
 
         System.out.println("opening: fs3 as fs4");
-        FileSystem fs4 = newZipFileSystem(fs3Path);
+        FileSystem fs4 = newZipFileSystem(fs3Path, env);
+
 
         ArrayList<String> files2 = new ArrayList<>();
         ArrayList<String> dirs2 = new ArrayList<>();
@@ -538,8 +542,7 @@ public class ZipFSTester {
                    zos.closeEntry();
                 }
             }
-
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.READ_ONLY)) {
+            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
                 for (Object[] e : entries) {
                     Path path = zfs.getPath((String)e[0]);
                     byte[] bytes = (byte[])e[2];
@@ -549,7 +552,7 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [2] create zip via zfs.newByteChannel
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.CREATE)) {
+            try (var zfs = newZipFileSystem(zpath, Map.of("create", "true"))) {
                 for (Object[] e : entries) {
                     //  tbd: method is not used
                     try (var sbc = Files.newByteChannel(zfs.getPath((String)e[0]),
@@ -558,7 +561,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.READ_ONLY)) {
+            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -566,12 +569,12 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [3] create zip via Files.write()/newoutputStream/
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.CREATE)) {
+            try (var zfs = newZipFileSystem(zpath, Map.of("create", "true"))) {
                 for (Object[] e : entries) {
                     Files.write(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
             }
-            try (var zfs = newZipFileSystem(zpath)) {
+            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -579,7 +582,8 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [4] create zip via zfs.newByteChannel, with "method_stored"
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.CREATE, ZipFSOpts.UNCOMPRESSED)) {
+            try (var zfs = newZipFileSystem(zpath,
+                    Map.of("create", true, "noCompression", true))) {
                 for (Object[] e : entries) {
                     try (var sbc = Files.newByteChannel(zfs.getPath((String)e[0]),
                                                         CREATE_NEW, WRITE)) {
@@ -587,7 +591,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, ZipFSOpts.READ_ONLY)) {
+            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -605,8 +609,10 @@ public class ZipFSTester {
                         .getFileAttributeView(src, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
         Path fsPath = getTempPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, ZipFSOpts.CREATE)) {
+        try (FileSystem fs = newZipFileSystem(fsPath, env)) {
             System.out.println("test copy with timestamps...");
             // copyin
             Path dst = getPathWithParents(fs, "me");
@@ -639,14 +645,16 @@ public class ZipFSTester {
 
     static void test8069211() throws Exception {
         // create a new filesystem, copy this file into it
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
         Path fsPath = getTempPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, ZipFSOpts.CREATE);) {
+        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
             OutputStream out = Files.newOutputStream(fs.getPath("/foo"));
             out.write("hello".getBytes());
             out.close();
             out.close();
         }
-        try (FileSystem fs = newZipFileSystem(fsPath)) {
+        try (FileSystem fs = newZipFileSystem(fsPath, new HashMap<String, Object>())) {
             if (!Arrays.equals(Files.readAllBytes(fs.getPath("/foo")),
                                "hello".getBytes())) {
                 throw new RuntimeException("entry close() failed");
@@ -659,11 +667,14 @@ public class ZipFSTester {
     }
 
     static void test8131067() throws Exception {
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+
         // file name with space character for URI to quote it
         File tmp = File.createTempFile("test zipfs", "zip");
         tmp.delete();    // we need a clean path, no file
         Path fsPath = tmp.toPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, ZipFSOpts.CREATE);) {
+        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
             Files.write(fs.getPath("/foo"), "hello".getBytes());
             URI fooUri = fs.getPath("/foo").toUri();
             if (!Arrays.equals(Files.readAllBytes(Paths.get(fooUri)),
@@ -675,31 +686,22 @@ public class ZipFSTester {
         }
     }
 
-    private static FileSystem newZipFileSystem(Path path, ZipFSOpts... opts)
-            throws IOException {
-        return FileSystems.newFileSystem(pathToUri(path), ZipFSOpts.toEnvMap(opts));
-    }
-
-    // Use URLDecoder (for test only) to remove the double escaped space
-    // character. For the path which is not encoded by UTF-8, we need to
-    // replace "+" by "%2b" manually before feeding into the decoder.
-    // Otherwise, the URLDecoder would replace "+" by " ", which may
-    // raise NoSuchFileException.
-    //
-    // eg. var path = "file:///jdk-18+9/basic.jar";
-    //     URLDecoder.decode(path, "utf8") -> file:///jdk-18 9/basic.jar
-    //
-    // Also, we should not use URLEncoder in case of the path has been
-    // encoded.
-    private static URI pathToUri(Path path) {
-        try {
-            return new URI(
-                    "jar",
-                    URLDecoder.decode(path.toUri().toString().replace("+", "%2b"), UTF_8),
-                    null);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+    private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
+            throws Exception {
+        // Use URLDecoder (for test only) to remove the double escaped space
+        // character. For the path which is not encoded by UTF-8, we need to
+        // replace "+" by "%2b" manually before feeding into the decoder.
+        // Otherwise, the URLDecoder would replace "+" by " ", which may
+        // raise NoSuchFileException.
+        //
+        // eg. var path = "file:///jdk-18+9/basic.jar";
+        //     URLDecoder.decode(path, "utf8") -> file:///jdk-18 9/basic.jar
+        //
+        // Also, we should not use URLEncoder in case of the path has been
+        // encoded.
+        return FileSystems.newFileSystem(
+                new URI("jar", URLDecoder.decode(path.toUri().toString()
+                        .replace("+", "%2b"), "utf8"), null), env, null);
     }
 
     private static Path getTempPath() throws IOException
@@ -1087,7 +1089,7 @@ public class ZipFSTester {
      *
      * @see 8299864
      */
-    static void testFileStoreNullArgs(FileSystem fs) throws IOException {
+    static void testFileStoreNullArgs(FileSystem fs) {
         FileStore store = fs.getFileStores().iterator().next();
 
         // Make sure we are testing the right thing
@@ -1100,86 +1102,21 @@ public class ZipFSTester {
         assertThrowsNPE(() -> store.getFileStoreAttributeView(null));
     }
 
-    static void testOpenFailure() throws IOException {
-        // This deletes a newly created temporary file to "ensure" it's not there.
-        Path noSuchFile = getTempPath();
-        // No such file.
-        assertThrows(NoSuchFileException.class,
-                () -> newZipFileSystem(noSuchFile).close());
-        assertThrows(NoSuchFileException.class,
-                () -> newZipFileSystem(noSuchFile, ZipFSOpts.READ_ONLY).close());
-        assertThrows(NoSuchFileException.class,
-                () -> newZipFileSystem(noSuchFile, ZipFSOpts.READ_WRITE).close());
-        // Disallowed combinations of options (trumps file existence check).
-        assertThrows(IllegalArgumentException.class,
-                () -> newZipFileSystem(noSuchFile, ZipFSOpts.CREATE, ZipFSOpts.READ_ONLY).close());
-
-        // Underlying file is read-only.
-        Path readOnlyZip = Utils.createJarFile(Path.of("read_only.zip"), Map.of("file.txt", "Hello World"));
-        try {
-            readOnlyZip.toFile().setReadOnly();
-            assertThrows(IOException.class, () -> newZipFileSystem(readOnlyZip, ZipFSOpts.READ_WRITE).close());
-        } finally {
-            Files.delete(readOnlyZip);
-        }
-
-        // Multi-release JARs, when opened with a specified version are inherently read-only.
-        Path multiReleaseJar = Utils.createJarFile(Path.of("multi_release.jar"), Map.of(
-                // Newline required for attribute to be read from Manifest file.
-                "META-INF/MANIFEST.MF", "Multi-Release: true\n",
-                "META-INF/versions/1/file.txt", "First version",
-                "META-INF/versions/2/file.txt", "Second version",
-                "file.txt", "Default version"));
-        try {
-            // Check the JAR can be opened in read/write mode when no version is specified.
-            Map<String, Object> env = ZipFSOpts.toEnvMap(ZipFSOpts.READ_WRITE);
-
-            try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, env)) {
-                if (!"Default version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                    throw new RuntimeException("unexpected file content");
-                }
-            }
-
-            // But once the version is set, it can only be opened read-only.
-            env.put("releaseVersion", 2);
-            assertThrows(IOException.class, () -> FileSystems.newFileSystem(multiReleaseJar, env).close());
-
-            ZipFSOpts.READ_ONLY.setIn(env);
-            try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, env)) {
-                if (!"Second version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                    throw new RuntimeException("unexpected file content");
-                }
-                if (!fs.isReadOnly()) {
-                    throw new RuntimeException("expected read-only file system");
-                }
-            }
-        } finally {
-            Files.delete(multiReleaseJar);
-        }
-    }
-
     @FunctionalInterface
-    private interface ThrowingRunnable<X extends Exception> {
-        void run() throws X;
+    private interface ThrowingRunnable {
+        void run() throws Exception;
     }
 
-    static <E extends Exception, X extends Exception>
-    void assertThrows(Class<E> clz, ThrowingRunnable<X> r) throws X {
+    static void assertThrowsNPE(ThrowingRunnable r) {
         try {
             r.run();
-            throw new AssertionError("Expected exception: " + clz.getSimpleName());
+            // Didn't throw an exception
+            throw new AssertionError();
+        } catch (NullPointerException expected) {
+            // happy path
         } catch (Exception e) {
-            if (!clz.isInstance(e)) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                } else {
-                    throw new RuntimeException(e);
-                }
-            }
+            throw new AssertionError(e);
         }
     }
 
-    static void assertThrowsNPE(ThrowingRunnable<IOException> r) throws IOException {
-        assertThrows(NullPointerException.class, r);
-    }
 }
