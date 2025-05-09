@@ -206,7 +206,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state, Register Rsc
 // Dispatch value in Lbyte_code and increment Lbcp.
 
 void InterpreterMacroAssembler::load_dispatch_table(Register dst, address* table) {
-  address table_base = (address)Interpreter::dispatch_table((TosState)0);
+  address table_base = (address)Interpreter::dispatch_table();
   intptr_t table_offs = (intptr_t)table - (intptr_t)table_base;
   if (is_simm16(table_offs)) {
     addi(dst, R25_templateTableBase, (int)table_offs);

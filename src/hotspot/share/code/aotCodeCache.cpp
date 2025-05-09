@@ -32,6 +32,7 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "interpreter/interpreter.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -53,6 +54,7 @@
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
+
 #endif
 
 #include <sys/stat.h>
@@ -1032,6 +1034,9 @@ void AOTCodeAddressTable::init_extrs() {
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   SET_ADDRESS(_extrs, MacroAssembler::debug64);
+#endif
+#if defined (PPC64)
+  SET_ADDRESS(_extrs, Interpreter::dispatch_table());
 #endif
 #endif // ZERO
 

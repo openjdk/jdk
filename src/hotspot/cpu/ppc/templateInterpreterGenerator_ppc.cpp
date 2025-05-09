@@ -621,7 +621,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
 
   // Compiled code destroys templateTableBase, reload.
-  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table(), R12_scratch2);
 
   if (state == atos) {
     __ profile_return_type(R3_RET, R11_scratch1, R12_scratch2);
@@ -699,7 +699,7 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
   if (!Continuations::enabled()) return nullptr;
   address start = __ pc();
 
-  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table(), R12_scratch2);
   __ restore_interpreter_state(R11_scratch1, false, true /*restore_top_frame_sp*/);
   __ blr();
 
@@ -2023,7 +2023,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
 
     // Compiled code destroys templateTableBase, reload.
-    __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+    __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table(), R11_scratch1);
   }
 
   // Entry point if a interpreted method throws an exception (throw).

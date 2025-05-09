@@ -23,7 +23,7 @@
  *
  */
 
-#include "asm/assembler.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -63,6 +63,8 @@ address Relocation::pd_call_destination(address orig_addr) {
   } else if (NativeConditionalFarBranch::is_conditional_far_branch_at(inst_loc)) {
     NativeConditionalFarBranch* branch = NativeConditionalFarBranch_at(inst_loc);
     return branch->branch_destination();
+  } else if (MacroAssembler::is_simple_call_c_at(inst_loc)) {
+    return (address)MacroAssembler::get_const(inst_loc);
   } else {
     orig_addr = nativeCall_at(inst_loc)->get_trampoline();
     if (orig_addr == nullptr) {
@@ -85,6 +87,8 @@ void Relocation::pd_set_call_destination(address x) {
   } else if (NativeConditionalFarBranch::is_conditional_far_branch_at(inst_loc)) {
     NativeConditionalFarBranch* branch = NativeConditionalFarBranch_at(inst_loc);
     branch->set_branch_destination(x);
+  } else if (MacroAssembler::is_simple_call_c_at(inst_loc)) {
+    MacroAssembler::patch_const(inst_loc, (uintptr_t)x);
   } else {
     NativeCall* call = nativeCall_at(inst_loc);
     call->set_destination_mt_safe(x, false);

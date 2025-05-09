@@ -919,7 +919,10 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   __ std(return_pc, _abi0(lr), R1_SP);
   RegisterSaver::push_frame_and_save_argument_registers(masm, tmp, adapter_size, total_args_passed, regs);
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), R19_method, return_pc);
+  __ mr(R3_ARG1, R19_method);
+  __ mr(R4_ARG2, return_pc);
+  // Relocation needed for AOTAdapterCaching
+  __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), relocInfo::runtime_call_type);
 
   RegisterSaver::restore_argument_registers_and_pop_frame(masm, adapter_size, total_args_passed, regs);
   __ ld(return_pc, _abi0(lr), R1_SP);
@@ -997,7 +1000,10 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
   // Jump to the interpreter just as if interpreter was doing it.
 
-  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+  // Relocation needed for AOTAdapterCaching
+  address dispatch_table_addr = (address)Interpreter::dispatch_table();
+  __ relocate(external_word_Relocation::spec(dispatch_table_addr));
+  __ load_const(R25_templateTableBase, (address)0, R11_scratch1);
 
   // load TOS
   __ addi(R15_esp, R1_SP, st_off);
@@ -3084,7 +3090,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Initialize R14_state.
   __ restore_interpreter_state(R11_scratch1);
-  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table(), R11_scratch1);
 
   // Return to the interpreter entry point.
   __ blr();
@@ -3224,7 +3230,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // optional c2i, caller of deoptee, ...).
 
   __ restore_interpreter_state(R11_scratch1);
-  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table(), R11_scratch1);
 
   // Return to the interpreter entry point.
   __ blr();
