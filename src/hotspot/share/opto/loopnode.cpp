@@ -1180,8 +1180,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   if (!ShortRunningLongLoop) {
     return false;
   }
-  Node* x = loop->_head;
-  BaseCountedLoopNode* head = x->as_BaseCountedLoop();
+  BaseCountedLoopNode* head = loop->_head->as_BaseCountedLoop();
   BasicType bt = head->bt();
   Node* entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
