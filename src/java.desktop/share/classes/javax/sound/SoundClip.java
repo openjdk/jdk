@@ -48,7 +48,7 @@ public final class SoundClip {
 
     /**
      * Creates a {@code SoundClip} instance which will play a clip from the supplied file.
-     *
+     * <p>
      * If the file does not contain recognizable and supported sound data, or
      * if the implementation does not find a suitable output device for the data,
      * playing the clip will be a no-op.
@@ -75,7 +75,7 @@ public final class SoundClip {
      * A value of {@code false} means that calling any of the other methods
      * of this class is a no-op.
      */
-    public boolean canPlay() {
+    public synchronized boolean canPlay() {
         return clip.canPlay();
     }
 

@@ -52,6 +52,7 @@ public class SoundClipTest {
         }
         boolean playing = false;
         int waitCount = 0;
+        System.out.println("Call loop()");
         clip.loop();
         while (!playing && waitCount < 10) {
             Thread.sleep(500);
@@ -64,27 +65,33 @@ public class SoundClipTest {
             throw new RuntimeException("Clip does not play");
         }
         waitCount = 0;
+        System.out.println("Call stop()");
         clip.stop();
+        System.out.println("Called stop()");
 
         while (playing && waitCount < 10) {
             Thread.sleep(500);
             if (clip.isPlaying()) {
                 playing = false;
-                break;
             }
             waitCount++;
         }
         if (!playing) {
             throw new RuntimeException("Clip does not stop");
         }
+        System.out.println("Clip has stopped.");
 
         // Should also test play() but don't check isPlaying() for test reliability reasons.
+        System.out.println("Call play.");
         clip.play();
+        System.out.println("Called play()");
         Thread.sleep(1000);
+        System.out.println("Call stop()");
         clip.stop();
+        System.out.println("Called stop(), test should exit now.");
     }
 
-   /**
+    /**
      * Returns true if at least one soundcard is correctly installed
      * on the system.
      */
