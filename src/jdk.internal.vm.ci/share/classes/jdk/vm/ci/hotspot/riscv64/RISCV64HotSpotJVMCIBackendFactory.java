@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,50 +41,23 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    private static EnumSet<RISCV64.CPUFeature> computeFeatures(RISCV64HotSpotVMConfig config) {
+    private static EnumSet<RISCV64.CPUFeature> computeFeatures(HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
         return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
     }
 
-    private static EnumSet<RISCV64.Flag> computeFlags(RISCV64HotSpotVMConfig config) {
-        EnumSet<RISCV64.Flag> flags = EnumSet.noneOf(RISCV64.Flag.class);
-
-        if (config.useConservativeFence) {
-            flags.add(RISCV64.Flag.UseConservativeFence);
-        }
-        if (config.avoidUnalignedAccesses) {
-            flags.add(RISCV64.Flag.AvoidUnalignedAccesses);
-        }
-        if (config.traceTraps) {
-            flags.add(RISCV64.Flag.TraceTraps);
-        }
-        if (config.useRVV) {
-            flags.add(RISCV64.Flag.UseRVV);
-        }
-        if (config.useRVC) {
-            flags.add(RISCV64.Flag.UseRVC);
-        }
-        if (config.useZba) {
-            flags.add(RISCV64.Flag.UseZba);
-        }
-        if (config.useZbb) {
-            flags.add(RISCV64.Flag.UseZbb);
-        }
-
-        return flags;
-    }
-
-    private static TargetDescription createTarget(RISCV64HotSpotVMConfig config) {
+    private static TargetDescription createTarget(HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new RISCV64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new RISCV64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -92,7 +65,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         return new HotSpotConstantReflectionProvider(runtime);
     }
 
-    private static RegisterConfig createRegisterConfig(RISCV64HotSpotVMConfig config, TargetDescription target) {
+    private static RegisterConfig createRegisterConfig(HotSpotVMConfig config, TargetDescription target) {
         return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, target.linuxOs);
     }
 
@@ -118,8 +91,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
         assert host == null;
-        RISCV64HotSpotVMConfig config = new RISCV64HotSpotVMConfig(runtime.getConfigStore());
-        TargetDescription target = createTarget(config);
+        TargetDescription target = createTarget(runtime.getConfig());
 
         RegisterConfig regConfig;
         HotSpotCodeCacheProvider codeCache;
@@ -131,7 +103,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
                 metaAccess = createMetaAccess(runtime);
             }
             try (InitTimer rt = timer("create RegisterConfig")) {
-                regConfig = createRegisterConfig(config, target);
+                regConfig = createRegisterConfig(runtime.getConfig(), target);
             }
             try (InitTimer rt = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
