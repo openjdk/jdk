@@ -279,11 +279,8 @@ final class MemoryClassLoader extends ClassLoader {
      */
     private URL toResourceInRootPath(String name) {
         try {
-            var file = Resources.toFilePath(programDescriptor.sourceRootPath(), name);
-            if (Files.exists(file)) {
-                return file.toUri().toURL();
-            }
-            return null;
+            var path = Resources.toFilePath(programDescriptor.sourceRootPath(), name);
+            return path == null ? null : path.toUri().toURL();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
