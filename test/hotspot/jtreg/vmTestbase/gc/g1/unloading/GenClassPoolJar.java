@@ -26,6 +26,9 @@ package gc.g1.unloading;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.constant.ClassDesc;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -42,11 +45,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-
 /**
  * Class that imitates shell script to produce jar file with many similar
  * classes inside.
@@ -259,28 +257,7 @@ public class GenClassPoolJar {
     * @return              new class file to write into class
     */
    byte[] morphClass(byte[] classToMorph, String newName) {
-       ClassReader cr = new ClassReader(classToMorph);
-       ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-       ClassVisitor cv = new ClassRenamer(cw, newName);
-       cr.accept(cv, 0);
-       return cw.toByteArray();
+       var cf = ClassFile.of();
+       return cf.transformClass(cf.parse(classToMorph), ClassDesc.ofInternalName(newName), ClassTransform.ACCEPT_ALL);
    }
-
-    /**
-     * Visitor to rename class.
-     */
-    static class ClassRenamer extends ClassVisitor implements Opcodes {
-        private final String newName;
-
-        public ClassRenamer(ClassVisitor cv, String newName) {
-            super(ASM4, cv);
-            this.newName = newName;
-        }
-
-        @Override
-        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            cv.visit(version, access, newName, signature, superName, interfaces);
-        }
-
-    }
 }

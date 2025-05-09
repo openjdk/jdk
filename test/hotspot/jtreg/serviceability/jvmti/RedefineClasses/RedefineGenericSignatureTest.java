@@ -35,6 +35,11 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -139,29 +144,30 @@ public class RedefineGenericSignatureTest {
     }
 
     private byte[] getNewClassBytes() {
-        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource, "--release", "21");
+        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource);
 
-        ClassWriter cw = new ClassWriter(0);
-        ClassReader cr = new ClassReader(bytecode);
-        cr.accept(new ClassVisitor(Opcodes.ASM7, cw) {
+        var cf = ClassFile.of();
+        return cf.transformClass(cf.parse(bytecode), new ClassTransform() {
             private boolean sourceSet = false;
             @Override
-            public void visitSource(String source, String debug) {
-                sourceSet = true;
-                log("Changing source: \"" + source + "\" -> \"" + sourceFileNameNew + "\"");
-                super.visitSource(sourceFileNameNew, debug);
+            public void accept(ClassBuilder builder, ClassElement element) {
+                if (element instanceof SourceFileAttribute src) {
+                    sourceSet = true;
+                    log("Changing source: \"" + src.sourceFile() + "\" -> \"" + sourceFileNameNew + "\"");
+                    builder.with(SourceFileAttribute.of(sourceFileNameNew));
+                } else {
+                    builder.with(element);
+                }
             }
 
             @Override
-            public void visitEnd() {
+            public void atEnd(ClassBuilder builder) {
                 if (!sourceSet) {
                     log("Set source: \"" + sourceFileNameNew + "\"");
-                    super.visitSource(sourceFileNameNew, null);
+                    builder.with(SourceFileAttribute.of(sourceFileNameNew));
                 }
-                super.visitEnd();
             }
-        }, 0);
-        return cw.toByteArray();
+        });
     }
 
     private void runTest() throws Throwable {
