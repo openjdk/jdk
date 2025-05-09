@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.ConfigException;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
-import jdk.jpackage.internal.resources.ResourceLocator;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 
 /**
@@ -543,17 +542,6 @@ final class StandardBundlerParam {
                             applicationImage.toString()));
         }
         return applicationImage;
-    }
-
-    static OverridableResource createResource(String defaultName,
-            Map<String, ? super Object> params) {
-        final OverridableResource resource;
-        if (defaultName == null) {
-            resource = new OverridableResource();
-        } else {
-            resource = new OverridableResource(defaultName, ResourceLocator.class);
-        }
-        return resource.setResourceDir(RESOURCE_DIR.fetchFrom(params));
     }
 
     private static String getDefaultAppVersion(Map<String, ? super Object> params) {
